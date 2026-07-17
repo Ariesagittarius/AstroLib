@@ -1,0 +1,194 @@
+---
+
+import { collections } from '../config/collections.config.mjs';
+---
+
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MinerU + Astro</title>
+    <style>
+      :root {
+        --md-primary: #3b82f6;
+        --md-bg: #f8fafc;
+        --md-card-bg: #ffffff;
+        --md-text: #0f172a;
+        --md-text-muted: #64748b;
+        --md-border: #e2e8f0;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --md-bg: #0f172a;
+          --md-card-bg: #1e293b;
+          --md-text: #f8fafc;
+          --md-text-muted: #94a3b8;
+          --md-border: #334155;
+        }
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, sans-serif;
+        background-color: var(--md-bg);
+        color: var(--md-text);
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1000px;
+        width: 100%;
+        padding: 4rem 2rem;
+        box-sizing: border-box;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 4rem;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.025em;
+      }
+
+      .subtitle {
+        color: var(--md-text-muted);
+        font-size: 1.1rem;
+      }
+
+      /* 合集板块区 */
+      .collection-section {
+        margin-bottom: 4rem;
+      }
+
+      .collection-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.015em;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .collection-title::before {
+        content: "";
+        display: inline-block;
+        width: 4px;
+        height: 1.5rem;
+        background-color: var(--md-primary);
+        border-radius: 4px;
+      }
+
+      .collection-desc {
+        color: var(--md-text-muted);
+        font-size: 0.95rem;
+        margin: 0 0 1.5rem 0;
+      }
+
+      /* 图书卡片网格 */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+      }
+
+      .card {
+        background-color: var(--md-card-bg);
+        border: 1px solid var(--md-border);
+        border-radius: 16px;
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.15);
+        border-color: var(--md-primary);
+      }
+
+      .cover-img {
+        width: 100%;
+        height: 180px;
+        background-size: cover;
+        background-position: center;
+      }
+
+      .content {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+      }
+
+      .card-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin: 0 0 0.5rem 0;
+        line-height: 1.4;
+      }
+
+      .desc {
+        font-size: 0.9rem;
+        color: var(--md-text-muted);
+        line-height: 1.5;
+        flex-grow: 1;
+        margin: 0 0 1.5rem 0;
+      }
+
+      .action-btn {
+        align-self: flex-start;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #ffffff;
+        background-color: var(--md-primary);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        transition: background-color 0.15s ease;
+      }
+
+      .card:hover .action-btn {
+        background-color: #2563eb;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>MinerU + Astro</h1>
+        <p class="subtitle">Ariesagittarius</p>
+      </header>
+
+      {collections.map(col => (
+        <section class="collection-section">
+          <h2 class="collection-title">{col.title}</h2>
+          <p class="collection-desc">{col.description}</p>
+          
+          <div class="grid">
+            {col.books.map(book => (
+              <a href={`/collections/${col.slug}/${book.slug}/${book.entryPoint}/`} class="card">
+                <div class="cover-img" style={`background-image: url(${book.cover});`}></div>
+                <div class="content">
+                  <h3 class="card-title">{book.title}</h3>
+                  <p class="desc">{book.description}</p>
+                  <div class="action-btn">开始学习 →</div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  </body>
+</html>

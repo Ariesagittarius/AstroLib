@@ -1,0 +1,849 @@
+---
+// 终极高防御力、高容错、防图片空格、错位覆盖、防图片吞入选项版本：全自适应多合集大一统跨页联动右大纲组件 - 替代 Starlight 的 PageSidebar.astro
+import { collections } from '../config/collections.config.mjs';
+
+const pathname = Astro.url.pathname;
+
+// 1. 深度遍历两级结构，感知当前路由所属的图书及其 TOC 规则
+let currentBook = null;
+for (const col of collections) {
+  const matchedBook = col.books.find(book => pathname.includes(`/collections/${col.slug}/${book.slug}/`));
+  if (matchedBook) {
+    currentBook = matchedBook;
+    break;
+  }
+}
+
+// 降级方案
+if (!currentBook) {
+  currentBook = collections[0].books[0];
+}
+const bookConfigJson = JSON.stringify(currentBook);
+---
+
+<aside class="custom-page-sidebar" data-book-config={bookConfigJson}>
+  <div class="toc-container">
+    <h2 class="toc-title">大纲</h2>
+    <ul id="custom-toc-list" class="toc-list">
+      <li class="toc-loading">Loading...</li>
+    </ul>
+  </div>
+</aside>
+
+<style>
+  /* 1. 默认隐藏所有自定义大纲，防止在移动端正文中泄露 */
+  .custom-page-sidebar {
+    display: none;
+  }
+  
+  /* 2. 只有当大纲处于桌面端右侧面板内部时，才显示它 */
+  :global(.right-sidebar) .custom-page-sidebar,
+  :global(.right-sidebar-container) .custom-page-sidebar,
+  :global(.right-sidebar-panel) .custom-page-sidebar {
+    display: block;
+    position: sticky;
+    top: 4.5rem;
+    padding: 1rem 1.5rem;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    font-size: 0.85rem;
+    width: 17rem;
+  }
+
+  .toc-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--sl-color-white);
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--sl-color-hairline-light);
+    padding-bottom: 0.5rem;
+    letter-spacing: 0.05em;
+  }
+
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .toc-loading {
+    color: var(--sl-color-gray-4);
+    font-style: italic;
+  }
+
+  /* 导航项样式 */
+  :global(.toc-item) {
+    line-height: 1;
+  }
+
+  :global(.toc-link) {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    transition: all 0.2s ease;
+    border-left: 2px solid transparent;
+    padding-left: 0.6rem;
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+  }
+
+  /* MD3 风格微透胶囊标签 */
+  :global(.toc-chip) {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.15rem 0.45rem;
+    border-radius: 6px;
+    line-height: 1.1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+  }
+
+  /* 编号文本样式 */
+  :global(.toc-number) {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--sl-color-gray-3);
+    transition: color 0.2s ease;
+    white-space: nowrap; 
+  }
+
+  /* 悬浮与激活反馈 */
+  :global(.toc-link:hover) {
+    padding-left: 0.8rem;
+  }
+  :global(.toc-link:hover .toc-number) {
+    color: var(--sl-color-text-accent);
+  }
+
+  :global(.toc-link.active) {
+    background-color: rgba(59, 130, 246, 0.06);
+    border-left: 2px solid var(--sl-color-text-accent);
+    padding-left: 0.8rem;
+    border-radius: 0 4px 4px 0;
+  }
+  :global(.toc-link.active .toc-number) {
+    color: var(--sl-color-text-accent);
+    font-weight: 600;
+  }
+
+  /* MD3 柔和调色盘 */
+  :global(.chip-example) {
+    background-color: rgba(16, 185, 129, 0.12);
+    color: #059669;
+  }
+  :global(.chip-variant) {
+    background-color: rgba(249, 115, 22, 0.12);
+    color: #ea580c;
+  }
+  :global(.chip-conclusion) {
+    background-color: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+  }
+  :global(.chip-method) {
+    background-color: rgba(13, 148, 136, 0.12);
+    color: #0d9488;
+  }
+  :global(.chip-knowledge) {
+    background-color: rgba(59, 130, 246, 0.12);
+    color: #2563eb;
+  }
+  :global(.chip-guide) {
+    background-color: rgba(100, 116, 139, 0.12);
+    color: #475569;
+  }
+  :global(.chip-problem) {
+    background-color: rgba(139, 92, 246, 0.12);
+    color: #7c3aed;
+  }
+  :global(.chip-default) {
+    background-color: rgba(100, 116, 139, 0.12);
+    color: #475569;
+  }
+</style>
+
+<script>
+  import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
+
+  const CHIP_CLASSES = {
+    '例': 'chip-example',
+    '例题': 'chip-example',
+    '变式': 'chip-variant',
+    '结论总结': 'chip-conclusion',
+    '结论': 'chip-conclusion',
+    '经验总结': 'chip-conclusion',
+    '方法总结': 'chip-method',
+    '方法': 'chip-method',
+    '知识点': 'chip-knowledge',
+    '导读': 'chip-guide',
+    '问题': 'chip-problem'
+  };
+
+  function parseTitleToChip(title) {
+    title = title.trim();
+    const emojiRegex = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}\u{27BF}\uFE0F]/gu;
+    title = title.replace(emojiRegex, '').trim();
+
+    const match = title.match(/^([^\d\s]+)\s*([\d\s\.].*)$/);
+    if (match) {
+      const type = match[1].trim();
+      const number = match[2].trim();
+      return { type, number };
+    }
+    
+    if (title.includes('导读')) {
+      return { type: '导读', number: '' };
+    }
+    return { type: '模块', number: title };
+  }
+
+  /**
+   * HTML 标签安全分词器
+   */
+  function extractOptionsSafely(html) {
+    html = html.replace(/([A-D])．/g, '$1.');
+
+    const regex = /(<[^>]+>)|(\s*\b[A-D]\.\s*)/g;
+    const parts = html.split(regex);
+    
+    const options = [];
+    let currentOption = null;
+
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (part === undefined || part === '') continue;
+
+      const delimiterMatch = part.match(/^\s*\b([A-D])\.\s*$/);
+      if (delimiterMatch) {
+        const label = delimiterMatch[1];
+        currentOption = { label, content: '' };
+        options.push(currentOption);
+      } else {
+        if (currentOption) {
+          currentOption.content += part;
+        }
+      }
+    }
+    return options;
+  }
+
+  /**
+   * 智能提取选择题，自适应重构为响应式 MD3 选项卡片 (DOM 节点流版本 - 支持全面阻断与后置图片拦截)
+   */
+  function formatMultipleChoiceQuestions() {
+    const cardBodies = document.querySelectorAll('.card-body');
+    
+    cardBodies.forEach(body => {
+      if (body.classList.contains('formatted-choices-v3')) return;
+
+      const textContent = body.textContent || '';
+      const hasA = /[A][\.．]\s*/.test(textContent);
+      const hasB = /[B][\.．]\s*/.test(textContent);
+      if (!hasA || !hasB) return;
+
+      const childNodes = Array.from(body.childNodes);
+      const questionNodes = [];
+      const optionNodes = [];
+      const trailingElements = []; 
+      let foundA = false;
+      let isProcessingTrailing = false; 
+
+      // 1. 遍历节点流分离
+      for (let i = 0; i < childNodes.length; i++) {
+        const node = childNodes[i];
+        
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          // A. 卡片大块组件阻断校验
+          const isBlockComponent = node.classList.contains('analysis-block') || 
+                                   node.classList.contains('note-block') || 
+                                   node.classList.contains('fallback-block') || 
+                                   node.classList.contains('conclusion-card') || 
+                                   node.classList.contains('summary-card') || 
+                                   node.classList.contains('method-card') || 
+                                   node.classList.contains('guide-block') || 
+                                   node.classList.contains('solution-details') ||
+                                   node.classList.contains('knowledge-card');
+          
+          if (isBlockComponent) {
+            isProcessingTrailing = true; 
+          }
+
+          // B. 核心优化：后置图片阻断机制
+          // 如果选项已经开始搜集（foundA = true），且遇到任何包含 <img> 的节点，或者图注（如“图 3-15”），立即强制触发阻断，将其推入 trailing 队列！
+          if (foundA && !isProcessingTrailing) {
+            const hasImg = node.tagName === 'IMG' || node.querySelector('img') !== null;
+            const text = node.textContent || '';
+            const isFigCaption = text.trim().match(/^图\s*(\d+\s*[-－]\s*\d+)$/) !== null;
+
+            if (hasImg || isFigCaption) {
+              isProcessingTrailing = true;
+            }
+          }
+        }
+
+        if (isProcessingTrailing) {
+          trailingElements.push(node);
+        } else {
+          if (!foundA) {
+            const nodeText = node.textContent || '';
+            const aIndex = nodeText.search(/(?:^|[\s\.（\()停\s])A[\.．]/);
+            
+            if (aIndex !== -1) {
+              foundA = true;
+              
+              if (node.nodeType === Node.TEXT_NODE) {
+                const stemText = nodeText.substring(0, aIndex).trim();
+                const optionsText = nodeText.substring(aIndex).trim();
+                if (stemText) {
+                  questionNodes.push(document.createTextNode(stemText));
+                }
+                const optSpan = document.createElement('span');
+                optSpan.innerHTML = optionsText;
+                optionNodes.push(optSpan);
+              } else if (node.nodeType === Node.ELEMENT_NODE) {
+                const html = node.innerHTML;
+                const htmlMatch = html.match(/(?:\s+\.|\s+|^|[\(\)（）\s])(A[\.．])/);
+                if (htmlMatch) {
+                  const htmlIndex = htmlMatch.index;
+                  let stemHtml = html.substring(0, htmlIndex).trim();
+                  const optionsHtml = html.substring(htmlIndex).trim();
+                  
+                  if (stemHtml.endsWith('.')) {
+                    stemHtml = stemHtml.slice(0, -1).trim();
+                  }
+                  if (stemHtml) {
+                    const stemElement = document.createElement(node.tagName);
+                    stemElement.className = node.className;
+                    stemElement.innerHTML = stemHtml;
+                    questionNodes.push(stemElement);
+                  }
+                  const optElement = document.createElement('span');
+                  optElement.innerHTML = optionsHtml;
+                  optionNodes.push(optElement);
+                } else {
+                  optionNodes.push(node);
+                }
+              }
+            } else {
+              questionNodes.push(node);
+            }
+          } else {
+            optionNodes.push(node);
+          }
+        }
+      }
+
+      // 2. 序列化并安全提取
+      let combinedOptionsHtml = '';
+      optionNodes.forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          combinedOptionsHtml += node.textContent;
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          combinedOptionsHtml += node.outerHTML;
+        }
+      });
+
+      const options = extractOptionsSafely(combinedOptionsHtml);
+
+      // 3. 重构渲染
+      if (options.length > 0) {
+        body.innerHTML = ''; 
+        body.classList.add('formatted-choices-v3');
+
+        // 挂载题干
+        const stemContainer = document.createElement('div');
+        stemContainer.className = 'question-stem';
+        questionNodes.forEach(node => {
+          stemContainer.appendChild(node);
+        });
+        body.appendChild(stemContainer);
+
+        // 智能判断选项长度
+        let isLongText = false;
+        options.forEach(opt => {
+          const pureText = opt.content.replace(/<[^>]+>/g, '').trim();
+          if (pureText.length > 10) {
+            isLongText = true;
+          }
+        });
+
+        // 挂载选项卡片网格
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = `options-container ${isLongText ? 'options-vertical' : ''}`;
+        
+        options.forEach(opt => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'option-chip-wrapper';
+          
+          const labelSpan = document.createElement('span');
+          labelSpan.className = 'option-chip-label';
+          labelSpan.textContent = opt.label;
+          
+          const contentSpan = document.createElement('span');
+          contentSpan.className = 'option-chip-content';
+          contentSpan.innerHTML = opt.content;
+          
+          wrapper.appendChild(labelSpan);
+          wrapper.appendChild(contentSpan);
+          optionsContainer.appendChild(wrapper);
+        });
+        body.appendChild(optionsContainer);
+
+        // 还原尾部挂载元素（此时插图和图注会被整齐有序地排布在选项网格的最下方）
+        trailingElements.forEach(el => {
+          body.appendChild(el);
+        });
+      }
+    });
+  }
+
+  /**
+   * 极智纯文本树遍历器 (TreeWalker) - 包含模块头部隔离保护
+   */
+  function walkTextNodes(root, callback) {
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode: function(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          if (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE') return NodeFilter.FILTER_REJECT;
+          if (parent.closest('.custom-page-sidebar') || parent.closest('nav') || parent.closest('header')) return NodeFilter.FILTER_REJECT;
+          if (parent.closest('.fig-ref-badge') || parent.closest('.block-ref-badge')) return NodeFilter.FILTER_REJECT;
+          if (
+            parent.closest('.card-header') || 
+            parent.closest('.fallback-header') || 
+            parent.closest('.guide-header') || 
+            parent.closest('summary')
+          ) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+
+    const nodes = [];
+    while (walker.nextNode()) {
+      nodes.push(walker.currentNode);
+    }
+    
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      callback(nodes[i]);
+    }
+  }
+
+  /**
+   * 客户端全时无条件高阶联动引擎 (高防御力、高容错、近邻无冲突匹配优化版)
+   */
+  function linkPageElements(bookConfig) {
+    const mainContent = document.querySelector('main') || document.querySelector('.main-pane') || document.querySelector('article') || document.body;
+    if (!mainContent) return;
+
+    const modules = bookConfig.modules || {};
+
+    // 防御性安全拦截：强制纠正本地可能未成功保存更新的“图/图片”模块定义
+    if (modules['图']) {
+      modules['图'].isImage = true;
+      modules['图'].short = '图';
+      modules['图'].theme = 'chip-default';
+    }
+
+    // 1. 【同页联动地图】
+    const localTargets = {};
+    const trackSelectors = bookConfig.trackClasses ? bookConfig.trackClasses.join(', ') : '.toc-chunk';
+    const chunks = Array.from(document.querySelectorAll(trackSelectors));
+    
+    chunks.forEach((chunk, index) => {
+      const rawTitle = chunk.getAttribute('data-title') || chunk.querySelector('.card-header, h1, h2, h3')?.textContent || '';
+      if (rawTitle) {
+        const { type, number } = parseTitleFromConfig(rawTitle, modules);
+        if (number) {
+          const cleanKey = `${type}${number}`.replace(/\s+/g, '');
+          localTargets[cleanKey] = chunk.id;
+        }
+      }
+    });
+
+    // 收集 Solution 进入同页地图
+    const solutions = Array.from(document.querySelectorAll('.solution-details'));
+    solutions.forEach((sol, idx) => {
+      const summary = sol.querySelector('summary');
+      const summaryText = summary ? summary.textContent.trim() : '';
+      const { type, number } = parseTitleFromConfig(summaryText, modules);
+      if (number) {
+        const cleanKey = `${type}${number}`.replace(/\s+/g, '');
+        let id = sol.id;
+        if (!id) {
+          id = `sol-ref-block-${idx + 1}`;
+          sol.id = id;
+        }
+        localTargets[cleanKey] = id;
+      }
+    });
+
+    // 2. 【大统一构建】：动态编译匹配全书所有注册别名 + 编号的复合正则
+    const allAliases = [];
+    Object.entries(modules).forEach(([key, meta]) => {
+      if (key !== '图' && !meta.isImage && meta.aliases) {
+        allAliases.push(...meta.aliases);
+      }
+    });
+
+    const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const typePattern = allAliases.map(escapeRegExp).join('|');
+    const globalRefRegex = new RegExp(`(${typePattern})\\s*(\\d+(?:\\.\\d+)*)`, 'g');
+
+    // 过滤得到独立的图片参考模块
+    const imageModules = Object.entries(modules).filter(([_, meta]) => meta.isImage);
+
+    // 3. 【核心修正】：等深近邻无冲突匹配算法（Proximity Claim Matcher）
+    // 先行对 main 主区域内所有的图片进行扁平式扫描，防止其产生错位重叠
+    imageModules.forEach(([_, meta]) => {
+      const targetQuery = meta.targetQuery || 'p, div, figcaption';
+      const targetPattern = /^图\s*(\d+\s*[-－]\s*\d+)$/;
+      
+      // A. 获取全页面所有的实际 img 标签
+      const allImages = Array.from(mainContent.querySelectorAll('img'));
+      // B. 获取所有符合图注规则的段落元素
+      const allParagraphs = Array.from(mainContent.querySelectorAll(targetQuery));
+
+      allParagraphs.forEach(el => {
+        const text = el.textContent || '';
+        const captionMatch = text.trim().match(targetPattern);
+        
+        if (captionMatch) {
+          // 归一化剔除空格，将“2 -1”合并为 ID 中的“2-1”
+          const figNum = captionMatch[1].replace(/\s+/g, '');
+          const figId = `${meta.short}-${figNum}`;
+          el.id = figId;
+          el.classList.add('fig-target-caption');
+          
+          // C. 核心：自下而上逆向位置寻像，且锁定“非抢占”机制，保证图注 3-6 只匹配图片 3-6
+          let bestImg = null;
+          for (let i = allImages.length - 1; i >= 0; i--) {
+            const img = allImages[i];
+            
+            // 检验图片是否在 DOM 树中处于当前图注的前方
+            const isPreceding = img.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_PRECEDING;
+            if (isPreceding) {
+              // 独占占有锁校验：该图片是否已经被先前的其他图注领用了？
+              if (!img.hasAttribute('data-fig-ref')) {
+                bestImg = img;
+                break; // 匹配到最临近的未领用图片，成功，跳出
+              }
+            }
+          }
+
+          if (bestImg) {
+            bestImg.classList.add('fig-target-image');
+            bestImg.setAttribute('data-fig-ref', figId);
+          }
+        }
+      });
+    });
+
+    // 4. 开始无损纯文本节点扫描
+    walkTextNodes(mainContent, (node) => {
+      let text = node.textContent || '';
+      let modified = false;
+
+      // A. 执行全时无条件胶囊化替换
+      if (globalRefRegex.test(text)) {
+        const span = document.createElement('span');
+        
+        span.innerHTML = text.replace(globalRefRegex, (match, matchedType, matchedNum) => {
+          const cleanType = matchedType.trim();
+          const cleanNum = matchedNum.trim();
+          
+          let masterKey = cleanType;
+          for (const [modKey, modMeta] of Object.entries(modules)) {
+            if (modMeta.aliases && modMeta.aliases.includes(cleanType)) {
+              masterKey = modKey;
+              break;
+            }
+          }
+          const modMeta = modules[masterKey] || {};
+          const emoji = modMeta.emoji || '📦';
+          const fullMatchedText = `${matchedType}${matchedNum}`;
+
+          const lookupKey = `${masterKey}${cleanNum}`.replace(/\s+/g, '');
+          const localId = localTargets[lookupKey];
+
+          if (localId) {
+            return `
+              <span class="block-ref-badge interactive-badge" data-target="${localId}" data-type="${masterKey}">
+                <span class="block-icon">${emoji}</span>
+                <span class="block-text">${fullMatchedText}</span>
+              </span>
+            `.trim().replace(/\n\s*/g, '');
+          } else {
+            return `
+              <span class="block-ref-badge static-badge" data-type="${masterKey}">
+                <span class="block-icon">${emoji}</span>
+                <span class="block-text">${fullMatchedText}</span>
+              </span>
+            `.trim().replace(/\n\s*/g, '');
+          }
+        });
+
+        if (span.innerHTML !== text) {
+          node.parentNode.replaceChild(span, node);
+          modified = true;
+        }
+      }
+
+      if (modified) return; 
+
+      // B. 独立匹配图片参考组件（全面自适应兼容减号空格，并在本地进行归一化无冲突锚点配对）
+      imageModules.forEach(([_, meta]) => {
+        const typePattern = meta.aliases.map(escapeRegExp).join('|');
+        const refRegex = new RegExp(`(${typePattern})\\s*(\\d+\\s*[-－]\\s*\\d+)`, 'g');
+        
+        if (refRegex.test(text)) {
+          const span = document.createElement('span');
+          span.innerHTML = text.replace(refRegex, (match, matchedType, matchedNum) => {
+            const figNum = matchedNum.replace(/\s+/g, '');
+            const figId = `${meta.short}-${figNum}`;
+            const localFig = document.getElementById(figId);
+            
+            if (localFig) {
+              return `
+                <span class="fig-ref-badge interactive-badge" data-target="${figId}">
+                  <span class="fig-icon">图</span>
+                  <span class="fig-text">${matchedNum}</span>
+                </span>
+              `.trim().replace(/\n\s*/g, '');
+            } else {
+              return `
+                <span class="fig-ref-badge static-badge">
+                  <span class="fig-icon">图</span>
+                  <span class="fig-text">${matchedNum}</span>
+                </span>
+              `.trim().replace(/\n\s*/g, '');
+            }
+          });
+          node.parentNode.replaceChild(span, node);
+        }
+      });
+    });
+
+    // 5. 对可交互的徽章绑定监听事件
+    attachInteractiveListeners();
+  }
+
+  // 绑定高亮与平滑水波跳转事件
+  function attachInteractiveListeners() {
+    document.querySelectorAll('.fig-ref-badge.interactive-badge').forEach(badge => {
+      if (badge.classList.contains('listeners-attached')) return;
+      badge.classList.add('listeners-attached');
+
+      const targetId = badge.getAttribute('data-target');
+      
+      badge.addEventListener('mouseenter', () => {
+        const caption = document.getElementById(targetId);
+        const image = document.querySelector(`.fig-target-image[data-fig-ref="${targetId}"]`);
+        if (caption) caption.classList.add('fig-highlight');
+        if (image) image.classList.add('fig-highlight');
+        badge.classList.add('badge-highlight');
+      });
+
+      badge.addEventListener('mouseleave', () => {
+        const caption = document.getElementById(targetId);
+        const image = document.querySelector(`.fig-target-image[data-fig-ref="${targetId}"]`);
+        if (caption) caption.classList.remove('fig-highlight');
+        if (image) image.classList.remove('fig-highlight');
+        badge.classList.remove('badge-highlight');
+      });
+
+      badge.addEventListener('click', (e) => {
+        e.preventDefault();
+        const caption = document.getElementById(targetId);
+        if (caption) {
+          caption.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const image = document.querySelector(`.fig-target-image[data-fig-ref="${targetId}"]`);
+          if (caption) {
+            caption.classList.add('fig-flash');
+            setTimeout(() => caption.classList.remove('fig-flash'), 1000);
+          }
+          if (image) {
+            image.classList.add('fig-flash');
+            setTimeout(() => image.classList.remove('fig-flash'), 1000);
+          }
+        }
+      });
+    });
+
+    document.querySelectorAll('.block-ref-badge.interactive-badge').forEach(badge => {
+      if (badge.classList.contains('listeners-attached')) return;
+      badge.classList.add('listeners-attached');
+
+      const targetId = badge.getAttribute('data-target');
+      
+      badge.addEventListener('mouseenter', () => {
+        const card = document.getElementById(targetId);
+        if (card) card.classList.add('card-ref-highlight');
+        badge.classList.add('badge-highlight');
+      });
+
+      badge.addEventListener('mouseleave', () => {
+        const card = document.getElementById(targetId);
+        if (card) card.classList.remove('card-ref-highlight');
+        badge.classList.remove('badge-highlight');
+      });
+
+      badge.addEventListener('click', (e) => {
+        e.preventDefault();
+        const card = document.getElementById(targetId);
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.classList.add('card-ref-flash');
+          setTimeout(() => card.classList.remove('card-ref-flash'), 1200);
+        }
+      });
+    });
+  }
+
+  /**
+   * 自动感知分词
+   */
+  function parseTitleFromConfig(title, modules) {
+    title = title.trim();
+    const emojiRegex = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}\u{27BF}\uFE0F]/gu;
+    title = title.replace(emojiRegex, '').trim();
+
+    for (const [modKey, modMeta] of Object.entries(modules)) {
+      const aliases = modMeta.aliases || [modKey];
+      for (const alias of aliases) {
+        const escapedAlias = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`^(${escapedAlias})\\s*(.*)$`, 'i');
+        const match = title.match(regex);
+        
+        if (match) {
+          return { type: modKey, number: match[2].trim() };
+        }
+      }
+    }
+
+    if (title.includes('导读')) {
+      return { type: '导读', number: '' };
+    }
+    return { type: '模块', number: title };
+  }
+
+  function buildBookTOC() {
+    const sidebarContainer = document.querySelector('.custom-page-sidebar');
+    if (!sidebarContainer) return;
+
+    // 解析出整本书的配置
+    const rawConfig = sidebarContainer.getAttribute('data-book-config') || '{}';
+    const bookConfig = JSON.parse(rawConfig);
+    const modules = bookConfig.modules || {};
+
+    const tocList = document.getElementById('custom-toc-list');
+    if (!tocList) return;
+
+    const trackSelectors = bookConfig.trackClasses && bookConfig.trackClasses.length > 0 
+      ? bookConfig.trackClasses.join(', ') 
+      : '.toc-chunk';
+
+    const chunks = Array.from(document.querySelectorAll(trackSelectors));
+    
+    if (chunks.length === 0) {
+      tocList.innerHTML = '<li class="toc-loading">本节无知识点与题目分块</li>';
+      return;
+    }
+
+    tocList.innerHTML = '';
+
+    const chipLabels = rules => bookConfig.modules ? bookConfig.modules : {};
+
+    chunks.forEach((chunk, index) => {
+      const rawTitle = chunk.getAttribute('data-title') || chunk.querySelector('.card-header, h1, h2, h3')?.textContent || '无标题';
+      
+      let id = chunk.id;
+      if (!id) {
+        id = `section-block-${index + 1}`;
+        chunk.id = id;
+      }
+
+      // 通过中央配置映射语义解析类型
+      const { type, number } = parseTitleToChip(rawTitle);
+
+      const modMeta = modules[type] || {};
+      const chipClass = modMeta.theme || 'chip-default';
+      const labelText = modMeta.short || type;
+
+      const li = document.createElement('li');
+      li.className = 'toc-item';
+
+      const a = document.createElement('a');
+      a.href = `#${id}`;
+      a.className = 'toc-link';
+
+      const chipSpan = document.createElement('span');
+      chipSpan.className = `toc-chip ${chipClass}`;
+      chipSpan.textContent = labelText;
+
+      const numSpan = document.createElement('span');
+      numSpan.className = 'toc-number';
+      numSpan.textContent = number;
+
+      a.appendChild(chipSpan);
+      a.appendChild(numSpan);
+      li.appendChild(a);
+      tocList.appendChild(li);
+    });
+
+    // 侧边栏公式二次渲染
+    const sidebar = document.querySelector('.custom-page-sidebar');
+    if (sidebar) {
+      renderMathInElement(sidebar, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '$', right: '$', display: false },
+        ],
+        throwOnError: false
+      });
+    }
+
+    formatMultipleChoiceQuestions(); // 1. 重构选择题
+    linkPageElements(bookConfig);    // 2. 激发全时无条件大一统联动
+
+    const tocLinks = Array.from(document.querySelectorAll('.toc-link'));
+    
+    function handleSpyScroll() {
+      let activeIndex = -1;
+      const scrollPosition = window.scrollY + 120;
+
+      chunks.forEach((chunk, index) => {
+        const rect = chunk.getBoundingClientRect();
+        const elementTop = rect.top + window.scrollY;
+        if (scrollPosition >= elementTop) {
+          activeIndex = index;
+        }
+      });
+
+      tocLinks.forEach((link, index) => {
+        if (index === activeIndex) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
+    }
+
+    window.addEventListener('scroll', handleSpyScroll);
+    handleSpyScroll();
+  }
+
+  buildBookTOC();
+  document.addEventListener('astro:page-load', buildBookTOC);
+</script>

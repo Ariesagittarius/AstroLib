@@ -1,0 +1,271 @@
+---
+// 自定义右侧侧边栏组件 - 替代 Starlight 的 PageSidebar.astro
+---
+
+<aside class="custom-page-sidebar">
+  <div class="toc-container">
+    <h2 class="toc-title">大纲</h2>
+    <ul id="custom-toc-list" class="toc-list">
+      <li class="toc-loading">Loading...</li>
+    </ul>
+  </div>
+</aside>
+
+<style>
+  /* 1. 默认隐藏所有自定义大纲，防止其在移动端/正文插槽中泄露 */
+  .custom-page-sidebar {
+    display: none;
+  }
+  
+  /* 2. 只有当大纲处于 Starlight 官方右侧面板（.right-sidebar-panel）内部时，才显示它 */
+  :global(.right-sidebar-panel) .custom-page-sidebar {
+    display: block;
+    position: sticky;
+    top: 4.5rem;
+    padding: 1rem 1.5rem;
+    max-height: calc(100vh - 6rem);
+    overflow-y: auto;
+    font-size: 0.85rem;
+    width: 17rem;
+  }
+
+  .toc-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--sl-color-white);
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--sl-color-hairline-light);
+    padding-bottom: 0.5rem;
+    letter-spacing: 0.05em;
+  }
+
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .toc-loading {
+    color: var(--sl-color-gray-4);
+    font-style: italic;
+  }
+
+  /* 导航项样式 */
+  :global(.toc-item) {
+    line-height: 1;
+  }
+
+  :global(.toc-link) {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    transition: all 0.2s ease;
+    border-left: 2px solid transparent;
+    padding-left: 0.6rem;
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+  }
+
+  /* MD3 风格微透胶囊标签 */
+  :global(.toc-chip) {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.15rem 0.45rem;
+    border-radius: 6px;
+    line-height: 1.1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+  }
+
+  /* 编号文本样式 */
+  :global(.toc-number) {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--sl-color-gray-3);
+    transition: color 0.2s ease;
+    white-space: nowrap; 
+  }
+
+  /* 悬浮与激活反馈 */
+  :global(.toc-link:hover) {
+    padding-left: 0.8rem;
+  }
+  :global(.toc-link:hover .toc-number) {
+    color: var(--sl-color-text-accent);
+  }
+
+  :global(.toc-link.active) {
+    background-color: rgba(59, 130, 246, 0.06);
+    border-left: 2px solid var(--sl-color-text-accent);
+    padding-left: 0.8rem;
+    border-radius: 0 4px 4px 0;
+  }
+  :global(.toc-link.active .toc-number) {
+    color: var(--sl-color-text-accent);
+    font-weight: 600;
+  }
+
+  /* MD3 柔和调色盘 */
+  :global(.chip-example) {
+    background-color: rgba(16, 185, 129, 0.12);
+    color: #059669;
+  }
+  :global(.chip-variant) {
+    background-color: rgba(249, 115, 22, 0.12);
+    color: #ea580c;
+  }
+  :global(.chip-conclusion) {
+    background-color: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+  }
+  :global(.chip-method) {
+    background-color: rgba(13, 148, 136, 0.12);
+    color: #0d9488;
+  }
+  :global(.chip-knowledge) {
+    background-color: rgba(59, 130, 246, 0.12);
+    color: #2563eb;
+  }
+  :global(.chip-guide) {
+    background-color: rgba(100, 116, 139, 0.12);
+    color: #475569;
+  }
+  :global(.chip-problem) {
+    background-color: rgba(139, 92, 246, 0.12);
+    color: #7c3aed;
+  }
+  :global(.chip-default) {
+    background-color: rgba(100, 116, 139, 0.12);
+    color: #475569;
+  }
+</style>
+
+<script>
+  import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
+
+  const CHIP_CLASSES = {
+    '例': 'chip-example',
+    '例题': 'chip-example',
+    '变式': 'chip-variant',
+    '结论总结': 'chip-conclusion',
+    '结论': 'chip-conclusion',
+    '经验总结': 'chip-conclusion',
+    '方法总结': 'chip-method',
+    '方法': 'chip-method',
+    '知识点': 'chip-knowledge',
+    '导读': 'chip-guide',
+    '问题': 'chip-problem'
+  };
+
+  function parseTitleToChip(title) {
+    title = title.trim();
+    const emojiRegex = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
+    title = title.replace(emojiRegex, '').trim();
+
+    const match = title.match(/^([^\d\s]+)\s*([\d\s\.].*)$/);
+    if (match) {
+      const type = match[1].trim();
+      const number = match[2].trim();
+      return { type, number };
+    }
+    
+    if (title.includes('导读')) {
+      return { type: '导读', number: '' };
+    }
+    return { type: '模块', number: title };
+  }
+
+  function buildBookTOC() {
+    const tocList = document.getElementById('custom-toc-list');
+    if (!tocList) return;
+
+    const chunks = Array.from(document.querySelectorAll('.toc-chunk'));
+    
+    if (chunks.length === 0) {
+      tocList.innerHTML = '<li class="toc-loading">本节无知识点与题目分块</li>';
+      return;
+    }
+
+    tocList.innerHTML = '';
+
+    chunks.forEach((chunk, index) => {
+      const rawTitle = chunk.getAttribute('data-title') || '无标题分块';
+      
+      let id = chunk.id;
+      if (!id) {
+        id = `section-block-${index + 1}`;
+        chunk.id = id;
+      }
+
+      const { type, number } = parseTitleToChip(rawTitle);
+      const chipClass = CHIP_CLASSES[type] || 'chip-default';
+
+      const li = document.createElement('li');
+      li.className = 'toc-item';
+
+      const a = document.createElement('a');
+      a.href = `#${id}`;
+      a.className = 'toc-link';
+
+      const chipSpan = document.createElement('span');
+      chipSpan.className = `toc-chip ${chipClass}`;
+      chipSpan.textContent = type;
+
+      const numSpan = document.createElement('span');
+      numSpan.className = 'toc-number';
+      numSpan.textContent = number;
+
+      a.appendChild(chipSpan);
+      a.appendChild(numSpan);
+      li.appendChild(a);
+      tocList.appendChild(li);
+    });
+
+    const sidebar = document.querySelector('.custom-page-sidebar');
+    if (sidebar) {
+      renderMathInElement(sidebar, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '$', right: '$', display: false },
+        ],
+        throwOnError: false
+      });
+    }
+
+    const tocLinks = Array.from(document.querySelectorAll('.toc-link'));
+    
+    function handleSpyScroll() {
+      let activeIndex = -1;
+      const scrollPosition = window.scrollY + 120;
+
+      chunks.forEach((chunk, index) => {
+        const rect = chunk.getBoundingClientRect();
+        const elementTop = rect.top + window.scrollY;
+        if (scrollPosition >= elementTop) {
+          activeIndex = index;
+        }
+      });
+
+      tocLinks.forEach((link, index) => {
+        if (index === activeIndex) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
+    }
+
+    window.addEventListener('scroll', handleSpyScroll);
+    handleSpyScroll();
+  }
+
+  buildBookTOC();
+  document.addEventListener('astro:page-load', buildBookTOC);
+</script>

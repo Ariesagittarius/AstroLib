@@ -1,0 +1,154 @@
+---
+// src/pages/print.astro
+// 该页面在构建时自动抓取并拼装全书所有章节，提供一键 PDF 导出
+import { getCollection, render } from 'astro:content'; // 修复：在 Astro v5+ 中直接导入 render 渲染器
+import 'katex/dist/katex.min.css';
+import '../styles/custom.css'; // 载入你的卡片自定义样式
+
+const docs = await getCollection('docs');
+
+// 筛选出 book_chapters 目录下的所有文件，并按照文件名（序号）进行严格排序
+const chapters = docs
+  .filter((doc) => doc.id.startsWith('book_chapters/'))
+  .sort((a, b) => a.id.localeCompare(b.id));
+
+// 预渲染所有章节的 MDX 内容
+const renderedChapters = await Promise.all(
+  chapters.map(async (doc) => {
+    // 修复：使用 Astro v5+ 推荐的 render(doc) 标准全局渲染函数
+    const { Content } = await render(doc); 
+    return {
+      title: doc.data.title,
+      Content,
+    };
+  })
+);
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>导出全书为 PDF | 打印控制台</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        color: #1e293b;
+        background-color: #fff;
+        margin: 0;
+        padding: 2rem;
+        line-height: 1.6;
+      }
+
+      .print-header {
+        max-width: 820px;
+        margin: 0 auto 3rem auto;
+        padding: 1.5rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .print-btn {
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+        margin-top: 1rem;
+      }
+
+      .print-btn:hover {
+        background-color: #2563eb;
+      }
+
+      .book-container {
+        max-width: 820px;
+        margin: 0 auto;
+      }
+
+      .chapter-section {
+        /* 在打印时，每个新大章都自动强制从新一页开始 */
+        page-break-before: always;
+        margin-bottom: 4rem;
+      }
+
+      .chapter-section:first-of-type {
+        page-break-before: avoid; /* 第一章不需要在顶部留白 */
+      }
+
+      .chapter-title {
+        font-size: 2rem;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 0.5rem;
+        margin-bottom: 2rem;
+        color: #0f172a;
+      }
+
+      /* 针对打印机排版的专门优化 CSS */
+      @media print {
+        body {
+          padding: 0;
+        }
+        .print-header {
+          display: none !important; /* 打印输出时隐藏控制面板 */
+        }
+        .chapter-section {
+          page-break-before: always !important;
+        }
+        /* 核心安全优化：防止例题、变式等卡片在页缝处被生硬切成两半，卡片内容较多时会自动整体移到下一页开始 */
+        .example-card, 
+        .variant-card, 
+        .summary-card, 
+        .method-card, 
+        .knowledge-card, 
+        .fallback-block, 
+        details {
+          page-break-inside: avoid !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 打印引导面板 -->
+    <header class="print-header">
+      <h1 style="margin: 0 0 0.5rem 0; font-size: 1.5rem;">📖 全书 PDF 导出控制台</h1>
+      <p style="margin: 0; color: #475569;">系统已经将全书所有章节动态汇总到下方。点击下方按钮即可唤起浏览器的 PDF 生成器。</p>
+      <button class="print-btn" onclick="window.print()">🖨️ 一键唤起打印 / 导出 PDF</button>
+      <div style="color: #64748b; font-size: 0.8rem; margin-top: 1rem; text-align: left; display: inline-block;">
+        <b>💡 最佳打印设置建议：</b><br />
+        1. 目标打印机：选择<b>“另存为 PDF”</b> (Save as PDF)。<br />
+        2. 更多设置：必须勾选<b>“背景图形”</b> (Background graphics)，否则卡片的彩色背景和边框不会显示。<br />
+        3. 页面边距：建议设为“默认”，纸张大小设为“A4”。
+      </div>
+    </header>
+
+    <!-- 全书内容汇总 -->
+    <main class="book-container">
+      {
+        renderedChapters.map(({ title, Content }) => (
+          <section class="chapter-section">
+            <h1 class="chapter-title">{title}</h1>
+            <Content />
+          </section>
+        ))
+      }
+    </main>
+
+    <!-- 打印前自动展开脚本 -->
+    <script is:inline>
+      // 核心体验优化：在打印事件触发前，自动将页面上所有折叠的“查看解析”盒子展开，确保导出的 PDF 包含完整步骤
+      window.addEventListener('DOMContentLoaded', () => {
+        const details = document.querySelectorAll('details');
+        details.forEach(d => d.setAttribute('open', ''));
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,357 @@
+/* ==========================================================================
+   教辅数字化智库：全套精调 UI 样式表 (Consolidated Styles)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. 数学公式排版优化：让行间公式在超出边界时支持横向滚动，防止溢出或截断
+   -------------------------------------------------------------------------- */
+.katex-display {
+  width: 100%;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 0.5rem 0;
+  -webkit-overflow-scrolling: touch;
+}
+.katex-display::-webkit-scrollbar {
+  height: 4px;
+}
+.katex-display::-webkit-scrollbar-thumb {
+  background-color: var(--sl-color-gray-5, #cbd5e1);
+  border-radius: 4px;
+}
+.katex-display::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+
+/* --------------------------------------------------------------------------
+   2. 选择题排版优化：等宽响应式网格与自适应单列折行
+   -------------------------------------------------------------------------- */
+.question-stem {
+  margin-bottom: 1.25rem !important;
+  line-height: 1.6;
+}
+
+.options-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 大屏严格等宽 4 列，防止大小不一 */
+  gap: 0.75rem 1.5rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.options-container.options-vertical {
+  grid-template-columns: 1fr !important; /* 长文本自动转为单列 */
+}
+
+.option-chip-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  user-select: none;
+  margin-top: 0 !important;
+}
+
+.option-chip-wrapper:hover {
+  background-color: var(--sl-color-gray-6, #f1f5f9);
+}
+
+.option-chip-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--sl-color-gray-3, #475569);
+  background-color: var(--sl-color-gray-6, #f1f5f9);
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-right: 0.6rem;
+  transition: all 0.15s ease;
+}
+
+.option-chip-wrapper:hover .option-chip-label {
+  background-color: var(--sl-color-text-accent, #3b82f6);
+  color: #ffffff !important;
+}
+
+.option-chip-content {
+  font-size: 0.88rem;
+  color: var(--sl-color-text, #1e293b);
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+@media (max-width: 48rem) {
+  .options-container:not(.options-vertical) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 30rem) {
+  .options-container:not(.options-vertical) {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ==========================================================================
+   图文与块级组件深度联动组件 (全时无条件高阶胶囊化版本)
+   ========================================================================== */
+
+/* 1. 正文与题干中的联动胶囊通用样式 */
+.fig-ref-badge, .block-ref-badge {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none !important;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.15rem 0.55rem;
+  border-radius: 6px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  vertical-align: middle;
+  margin: 0 0.18rem;
+  box-sizing: border-box;
+}
+
+/* 仅对可交互（本页有目标卡片）的微章赋予手势与微灰悬浮底色 */
+.fig-ref-badge.interactive-badge, .block-ref-badge.interactive-badge {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* 静态微章（跨页引用）保持默认朴素状态 */
+.fig-ref-badge.static-badge, .block-ref-badge.static-badge {
+  cursor: default;
+}
+
+/* 徽章内的圆形图标样式（用于承载 Emojis，完全取消刺眼的实体底色） */
+.fig-icon, .block-icon {
+  font-size: 0.85rem; /* 稍微放大表情图标，增加呼吸感 */
+  width: auto;
+  height: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-right: 0.35rem;
+}
+
+/* 徽章内的数字/文本样式 */
+.fig-text, .block-text {
+  font-size: 0.82rem;
+  font-weight: 600; /* 加粗选项名与编号，提高可读性 */
+  line-height: 1.2;
+  transition: color 0.15s ease;
+}
+
+/* --- 2. 依据各组件类型的微型卡片自适应配色与悬停加深设计 --- */
+
+/* A. 例题 (绿系) */
+.block-ref-badge[data-type="例题"], .block-ref-badge[data-type="例"] {
+  background-color: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+}
+.block-ref-badge[data-type="例题"] .block-text, .block-ref-badge[data-type="例"] .block-text {
+  color: #059669;
+}
+.block-ref-badge[data-type="例题"].interactive-badge:hover, .block-ref-badge[data-type="例"].interactive-badge:hover {
+  background-color: rgba(16, 185, 129, 0.12);
+  border-color: #059669;
+}
+
+/* B. 变式 (橙系) */
+.block-ref-badge[data-type="变式"] {
+  background-color: rgba(249, 115, 22, 0.05);
+  border: 1px solid rgba(249, 115, 22, 0.15);
+}
+.block-ref-badge[data-type="变式"] .block-text {
+  color: #ea580c;
+}
+.block-ref-badge[data-type="变式"].interactive-badge:hover {
+  background-color: rgba(249, 115, 22, 0.12);
+  border-color: #ea580c;
+}
+
+/* C. 结论与经验总结 (红系) */
+.block-ref-badge[data-type="结论总结"], .block-ref-badge[data-type="结论"], 
+.block-ref-badge[data-type="经验总结"] {
+  background-color: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+}
+.block-ref-badge[data-type="结论总结"] .block-text, .block-ref-badge[data-type="结论"] .block-text,
+.block-ref-badge[data-type="经验总结"] .block-text {
+  color: #dc2626;
+}
+.block-ref-badge[data-type="结论总结"].interactive-badge:hover, .block-ref-badge[data-type="结论"].interactive-badge:hover,
+.block-ref-badge[data-type="经验总结"].interactive-badge:hover {
+  background-color: rgba(239, 68, 68, 0.12);
+  border-color: #dc2626;
+}
+
+/* D. 方法总结 (蓝绿系) */
+.block-ref-badge[data-type="方法总结"], .block-ref-badge[data-type="方法"] {
+  background-color: rgba(13, 148, 136, 0.05);
+  border: 1px solid rgba(13, 148, 136, 0.15);
+}
+.block-ref-badge[data-type="方法总结"] .block-text, .block-ref-badge[data-type="方法"] .block-text {
+  color: #0d9488;
+}
+.block-ref-badge[data-type="方法总结"].interactive-badge:hover, .block-ref-badge[data-type="方法"].interactive-badge:hover {
+  background-color: rgba(13, 148, 136, 0.12);
+  border-color: #0d9488;
+}
+
+/* E. 知识点 (蓝系) */
+.block-ref-badge[data-type="知识点"], .block-ref-badge[data-type="考点"] {
+  background-color: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+}
+.block-ref-badge[data-type="知识点"] .block-text, .block-ref-badge[data-type="考点"] .block-text {
+  color: #2563eb;
+}
+.block-ref-badge[data-type="知识点"].interactive-badge:hover, .block-ref-badge[data-type="考点"].interactive-badge:hover {
+  background-color: rgba(59, 130, 246, 0.12);
+  border-color: #2563eb;
+}
+
+/* F. 问题与解析步骤 (紫系) */
+.block-ref-badge[data-type="问题"], .block-ref-badge[data-type="解析"] {
+  background-color: rgba(139, 92, 246, 0.05);
+  border: 1px solid rgba(139, 92, 246, 0.15);
+}
+.block-ref-badge[data-type="问题"] .block-text, .block-ref-badge[data-type="解析"] .block-text {
+  color: #7c3aed;
+}
+.block-ref-badge[data-type="问题"].interactive-badge:hover, .block-ref-badge[data-type="解析"].interactive-badge:hover {
+  background-color: rgba(139, 92, 246, 0.12);
+  border-color: #7c3aed;
+}
+
+/* G. 图片参考 (灰系) */
+.fig-ref-badge {
+  background-color: var(--sl-color-gray-6, #f1f5f9);
+  border: 1px solid var(--sl-color-hairline-light, #e2e8f0);
+}
+.fig-ref-badge .fig-text {
+  color: var(--sl-color-gray-3, #475569);
+}
+.fig-ref-badge.interactive-badge:hover {
+  border-color: var(--sl-color-text-accent, #3b82f6);
+  background-color: rgba(59, 130, 246, 0.04);
+}
+.fig-ref-badge.interactive-badge:hover .fig-text {
+  color: var(--sl-color-text-accent, #3b82f6);
+}
+
+/* --- 3. 目标插图与卡片的高亮与闪烁 (Glow & Flash Transition) --- */
+
+.fig-target-image, .fig-target-caption,
+.example-card, .variant-card, .summary-card, .knowledge-card, .method-card, .fallback-block, .solution-details {
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* 插图高亮 */
+.fig-target-image.fig-highlight {
+  border-color: var(--sl-color-text-accent, #3b82f6) !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2) !important;
+  transform: scale(1.01);
+}
+.fig-target-caption.fig-highlight {
+  color: var(--sl-color-text-accent, #3b82f6) !important;
+  font-weight: 700;
+  transform: translateX(4px);
+}
+
+/* 组件卡片高亮 */
+.card-ref-highlight {
+  box-shadow: 0 12px 24px -6px rgba(59, 130, 246, 0.12) !important;
+  transform: translateY(-2.5px);
+}
+
+/* 大卡片点击时的弹性水波纹放大与闪烁动效关键帧 */
+@keyframes card-flash-pulse {
+  0% {
+    box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.4);
+    transform: scale(1.015);
+  }
+  100% {
+    box-shadow: 0 0 0 16px rgba(59, 130, 246, 0);
+    transform: scale(1);
+  }
+}
+.card-ref-flash {
+  animation: card-flash-pulse 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* 图片点击水波闪烁动画 */
+@keyframes fig-flash-pulse {
+  0% {
+    background-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.6);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 16px rgba(59, 130, 246, 0);
+  }
+}
+.fig-target-image.fig-flash, .fig-target-caption.fig-flash {
+  animation: fig-flash-pulse 1s cubic-bezier(0.25, 1, 0.5, 1);
+  border-color: var(--sl-color-text-accent, #3b82f6) !important;
+}
+
+
+/* --------------------------------------------------------------------------
+   4. 插图高亮与点击水波闪烁过渡
+   -------------------------------------------------------------------------- */
+.fig-target-image {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
+  border-radius: 6px;
+}
+
+.fig-target-caption {
+  transition: all 0.3s ease;
+}
+
+.fig-target-image.fig-highlight {
+  border-color: var(--sl-color-text-accent, #3b82f6) !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2) !important;
+  transform: scale(1.01);
+}
+
+.fig-target-caption.fig-highlight {
+  color: var(--sl-color-text-accent, #3b82f6) !important;
+  font-weight: 700;
+  transform: translateX(4px);
+}
+
+@keyframes fig-flash-pulse {
+  0% {
+    background-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.6);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 16px rgba(59, 130, 246, 0);
+  }
+}
+
+.fig-target-image.fig-flash {
+  animation: fig-flash-pulse 1s cubic-bezier(0.25, 1, 0.5, 1);
+  border-color: var(--sl-color-text-accent, #3b82f6) !important;
+}
+
+.fig-target-caption.fig-flash {
+  animation: fig-flash-pulse 1s cubic-bezier(0.25, 1, 0.5, 1);
+  color: var(--sl-color-text-accent, #3b82f6) !important;
+}

@@ -1,0 +1,39 @@
+---
+import DefaultSidebar from '@astrojs/starlight/components/Sidebar.astro';
+---
+
+<!-- 1. 首先渲染 Starlight 默认的侧边栏结构 -->
+<DefaultSidebar {...Astro.props} />
+
+<!-- 2. 注入客户端脚本，同时渲染“侧边栏”与“页面大标题 (h1)”中的数学公式 -->
+<script>
+  // @ts-ignore
+  import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
+  import 'katex/dist/katex.min.css';
+
+  function renderCustomMath() {
+    // 渲染参数配置
+    const katexConfig = {
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '$', right: '$', display: false },
+      ],
+      throwOnError: false
+    };
+
+    const sidebar = document.querySelector('.sidebar') || document.querySelector('aside');
+    if (sidebar) {
+      renderMathInElement(sidebar, katexConfig);
+    }
+    const mainTitle = document.querySelector('h1');
+    if (mainTitle) {
+      renderMathInElement(mainTitle, katexConfig);
+    }
+  }
+
+  // 页面初次加载时执行一次
+  renderCustomMath();
+
+  // 监听 Astro 页面过渡和加载事件，确保在路由切换后依然生效
+  document.addEventListener('astro:page-load', renderCustomMath);
+</script>
