@@ -1,0 +1,658 @@
+---
+title: '§$13.2$ 正项级数'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Solution from '@/components/Solution.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+
+
+从本节开始我们将主要关注级数的敛散性判别法. 如果能够判定一个级数收敛, 则原则上至少可以用数值方法来计算级数和的近似值. 关于级数求和的内容则在 §$16.2$ 中讨论.
+
+正项级数的敛散性一般只需要从其部分和数列是否有界就可以解决, 在这方面已经得到了许多丰富的成果. 以下的前两个小节分别介绍比较判别法的一般形式和特殊形式, 然后在 $13.2.3$ 小节介绍 $Cauchy$ 积分判别法、$Cauchy$ 凝聚判别法、$Sapagof$ (萨巴高夫) 判别法和 $Kummer$ (库默尔) 判别法.
+
+## $13.2.1$ 比较判别法的一般形式
+
+首先列出比较判别法的几种常用形式, 它们的证明见教科书.
+
+<Method title="比较判别法的基本形式">
+设正项级数 $\sum a_{n}$ 和 $\sum b_{n}$ 的通项之间满足条件 $a_{n} \leqslant b_{n}, n = 1, 2, \cdots$ ，则就有以下结论：
+
+$$
+\sum b _ {n} \text {   收敛   } \Longrightarrow \sum a _ {n} \text {   收敛   };\tag{13.10}
+$$
+
+(2)
+
+$$
+\sum a _ {n} \text {发散} \Longrightarrow \sum b _ {n} \text {发散}.\tag{13.11}
+$$
+
+注意其中关于两个级数通项之间的不等式关系只需要对充分大的 $n$ 成立即可.
+
+我们称 ($13.10$) 中的 $\sum b_{n}$ 与 ($13.11$) 中的 $\sum a_{n}$ 为比较级数. 一般常用的比较级数如
+
+$$
+\sum_ {n = 1} ^ {\infty} a q ^ {n}, \sum_ {n = 1} ^ {\infty} \frac {1}{n ^ {p}}, \sum_ {n = 2} ^ {\infty} \frac {1}{n \ln^ {p} n}
+$$
+
+等等. 在使用比较判别法时经常需要知道以下“级别”关系 (参见 $2.7.1$ 小节):
+
+$$
+\ln n \ll n ^ {\varepsilon} \ll a ^ {n} \ll n! \ll n ^ {n} (a > 1, \varepsilon > 0).
+$$
+</Method>
+
+<Method title="比较判别法的极限形式">
+若对于正项级数 $\sum a_{n}$ 和 $\sum b_{n}$ 存在 (广义) 极限
+
+$$
+c = \lim _ {n \rightarrow \infty} \frac {b _ {n}}{a _ {n}},\tag{13.12}
+$$
+
+则当 $0 < c < +\infty$ 时正项级数 $\sum a_{n}$ 与 $\sum b_{n}$ 同敛散，当 $c = 0$ 时可以从 $\sum a_{n}$ 收敛推出 $\sum b_{n}$ 收敛，或从 $\sum b_{n}$ 发散推出 $\sum a_{n}$ 发散，当 $c = +\infty$ 时有相反的结论.
+
+比较判别法的极限形式表明, 研究级数 $\sum a_{n}$ 的通项所成的数列 $\{a_{n}\}$ 当 $n \to \infty$ 时的渐近性态往往是值得做的分析工作, 其中包括通项 $\{a_{n}\}$ 是否是无穷小量的初步观察, 如果不是, 则已经可以断定该级数发散. 对于上面 $0 < c < +\infty$ 的情况, 可以称为等价量判别法.
+</Method>
+
+<Method title="比较判别法的比值形式">
+设对于正项级数 $\sum a_{n}, \sum b_{n}$ 的通项当 $n$ 充分大时成立不等式
+
+$$
+\frac {a _ {n + 1}}{a _ {n}} \leqslant \frac {b _ {n + 1}}{b _ {n}},\tag{13.13}
+$$
+
+则结论 ($13.10$) 与 ($13.11$) 成立.
+</Method>
+
+在下一小节会看到, 从 $d'Alembert$ (达朗贝尔) 判别法开始的许多判别法都是在取定某个 $\sum b_{n}$ 之后从 ($13.13$) 导出的比较判别法的特殊形式.
+
+## $13.2.2$ 比较判别法的特殊形式
+
+上一小节中的比较判别法有一个共同点, 就是都需要有比较级数. 如何对于给定的级数去寻找合适的比较级数往往是一个难题 $^{①}$ .
+
+一种新的思维方法是“守株待兔”：取定比较级数以导出简单易用的判别法。例如，一般教科书中的 $Cauchy$ 根值判别法和 $d'Alembert$ 比值判别法就是如此。它们都是用几何级数作为比较级数。区别在于 $Cauchy$ 根值判别法是从 ($13.10$) 和 ($13.11$) 出发两边开 $n$ 次根得到，而 $d'Alembert$ 比值判别法则从比值形式 ($13.13$) 推出。由于教科书中都有它们的介绍和比较，此处从略。
+
+不难看出, 这样得到的每一种判别法的能力必定有限, 其适用范围为所取的比较级数所限定. 例如, $p$ 级数的敛散性就不可能用 $Cauchy$ 根值判别法或 $d'Alembert$ 比值判别法来进行判定. 利用数列收敛和发散的快慢概念, 就很容易理解这种现象. (参见 $2.7.1$ 小节关于无穷大量的“级别”概念, §$4.4$ 中关于无穷小量和无穷大量的比较, 以及 $8.7.1$ 小节中关于收敛速度的讨论.)
+
+具体来说, 采用 $p$ 级数作为比较级数就得到 $Raabe$ (拉比) 判别法, 采用 $\sum_{n=2}^{\infty} \frac{1}{n \ln^{p} n}$ 作为比较级数就得到 $Bertrand$ (贝特朗) 判别法和 $Gauss$ 判别法. 它们的证明都可以从 [18] 等书中找到, 此外还有许多更为细致的讨论和发展可以参考 [53] 和其中的文献.
+
+现在我们将上述几种判别法的使用方法列表如下. 这里要注意, 每种判别法都有多种不同形式, 为简明起见, 这里只列出较易使用的形式. 以下设 $\sum_{n=1}^{\infty} a_n$ 为正项级数. 表中第一列为判别法名称, 第二列为计算量, 第三列为用法.
+
+<Method title="$Cauchy$ 根值判别法">
+$\lim_{n\to \infty}\sqrt[n]{a_n} = c,$
+
+$c < 1$ 时级数收敛，
+
+$c > 1$ 时级数发散;
+</Method>
+
+<Method title="$d'Alembert$ 判别法">
+$\lim_{n\to \infty}\frac{a_{n + 1}}{a_n} = d,$
+
+$d < 1$ 时级数收敛，
+
+$d > 1$ 时级数发散;
+</Method>
+
+<Method title="$Raabe$ 判别法">
+
+$$
+\lim _ {n \to \infty} n \left(\frac {a _ {n}}{a _ {n + 1}} - 1\right) = r,
+$$
+
+$r > 1$ 时级数收敛，
+
+$r < 1$ 时级数发散;
+</Method>
+
+<Method title="$Bertrand$ 判别法">
+
+$$
+\lim _ {n \to \infty} \ln n \left[ n \left(\frac {a _ {n}}{a _ {n + 1}} - 1\right) - 1 \right] = b,
+$$
+
+$b > 1$ 时级数收敛，
+
+$b < 1$ 时级数发散;
+</Method>
+
+<Method title="$Gauss$ 判别法">
+
+$$
+\frac {a _ {n}}{a _ {n + 1}} = 1 + \frac {\mu}{n} + O \left(\frac {1}{n ^ {1 + \varepsilon}}\right), \varepsilon > 0,
+$$
+
+$\mu > 1$ 时级数收敛，
+
+$\mu \leqslant 1$ 时级数发散.
+</Method>
+
+<Note>
+注1 表中除 $Cauchy$ 根值判别法外，所列出的判别法都基于对比值 $a_{n + 1} / a_n$ （或 $a_{n} / a_{n + 1}$ )的分析，因此都可以称为比值判别法.在 $Gauss$ 判别法中的 $\mu = 1$ 时级数发散的结论可从 $Bertrand$ 判别法得到.此外，若再考虑
+
+$$
+\sum_ {n = 3} ^ {\infty} \frac {1}{n \ln n (\ln \ln n) ^ {p}}, \sum_ {n = 9} ^ {\infty} \frac {1}{n \ln n \ln \ln n (\ln \ln \ln n) ^ {p}}, \dots\tag{13.14}
+$$
+
+等比较级数, 就可以得到更为精细的判别法, 统称为 $Bertrand$ 判别法 (见 [65]).
+</Note>
+
+<Note>
+注2 容易发现本小节列举的所有判别法中，除了 $Cauchy$ 根值判别法之外，都只能用于 $\{a_{n}\}$ 为单调的情况，至少当 $n$ 充分大时必须单调，否则就不可能成功。在这个意义上可以说，它们都是通项单调减少的正项级数判别法。正因为如此，虽然 $Cauchy$ 根值判别法只是以几何级数为比较级数得到的判别法，能力有限，但是它的适用范围不能为表中任何其他判别法所完全覆盖。一个典型例子是以 $a_{n} = 2^{-n - (-1)^{n}}$ 为通项的级数 $\sum_{i=1}^{\infty}a_{n}$ ，其中
+
+$$
+\frac {a _ {n + 1}}{a _ {n}} = \left\{ \begin{array}{l l} \frac {1}{8}, & n \text {为奇数,} \\ 2, & n \text {为偶数.} \end{array} \right.
+$$
+
+由 $\lim_{n\to \infty}\sqrt[n]{a_n} = \frac{1}{2}$ 知可用 $Cauchy$ 根值判别法，但比值判别法都不行.
+</Note>
+
+<Note>
+注3 在这方面还应当提到各种形式的对数判别法. 这里只举出两种对数判别法的极限形式 (此外还有非极限形式和上、下极限形式):
+
+1. 若对正项级数 $\sum a_{n}$ 存在极限
+
+$$
+\lim _ {n \to \infty} \frac {\ln (1 / a _ {n})}{\ln n} = r ^ {\prime},\tag{13.15}
+$$
+
+则当 $r' > 1$ 时级数收敛, 而当 $r' < 1$ 时级数发散.
+
+2. 若对正项级数 $\sum a_{n}$ 存在极限
+
+$$
+\lim _ {n \rightarrow \infty} \frac {\ln [ 1 / (n a _ {n}) ]}{\ln \ln n} = b ^ {\prime},\tag{13.16}
+$$
+
+则当 $b' > 1$ 时级数收敛, 而当 $b' < 1$ 时级数发散.
+
+这两种判别法与 $Raabe$ 判别法和 $Bertrand$ 判别法的关系恰如 $Cauchy$ 根值判别法与 $d'Alembert$ 判别法那样, 即当后者有效时前者一定有效 (见 $13.2.5$ 小节题 $12$), 但反之不成立 (参见 [53]). 与根值判别法相同的是, 对数判别法不依赖于级数中的比值 $a_{n+1}/a_n$ , 因此对于通项不是单调的正项级数仍然可能有效.
+</Note>
+
+## $13.2.3$ 其他判别法
+
+对正项级数来说, 除了上面介绍的几个判别法之外, 其他判别法还有很多. 本小节中只列举其中的几种判别法, 它们都含有新的思想. 此外, 最后还讨论了比较级数中的一个理论问题.
+
+首先应当指出, 建立在广义积分基础上的 $Cauchy$ 积分判别法是非常有用的. 它不依赖于比较级数. 例如在 ($13.14$) 中的级数的敛散性都可以用它得到解决, 但是不能用前面的那些判别法来判定.
+
+<Knowledge title="命题 $13.2.1$（$Cauchy$ 积分判别法）">
+设 $f$ 在 $[1, +\infty)$ 上单调减少，则级数 $\sum_{n=1}^{\infty} f(n)$ 与无穷限广义积分 $\int_{1}^{+\infty} f(x) \, \mathrm{d}x$ 同敛散.
+
+<Note>
+注 积分判别法只是面积原理的一个应用 (见上册 $371$ 页的题 $10$), 证明从略. 希望初学者要学习这种面积比较方法, 它可以解决不少问题.
+</Note>
+</Knowledge>
+
+<Knowledge title="命题 $13.2.2$（$Cauchy$ 凝聚判别法）">
+设 $\{a_{n}\}$ 是单调减少的正数数列，则正项级数 $\sum_{n = 1}^{\infty}a_n$ 收敛的充分必要条件是：凝聚项级数
+
+$$
+\sum_ {n = 0} ^ {\infty} 2 ^ {n} a _ {2 ^ {n}} = a _ {1} + 2 a _ {2} + 4 a _ {4} + \dots + 2 ^ {n} a _ {2 ^ {n}} + \dots
+$$
+
+收敛.
+
+<Solution title="证明">
+由于该正项级数的通项单调减少, 因此不等式
+
+$$
+2 ^ {k - 1} a _ {2 ^ {k}} \leqslant a _ {2 ^ {k - 1} + 1} + a _ {2 ^ {k - 1} + 2} + \dots + a _ {2 ^ {k}} \leqslant 2 ^ {k - 1} a _ {2 ^ {k - 1}}
+$$
+
+对 $k \geqslant 1$ 成立. 注意不等式中间部分恰有 $2^{k-1}$ 项. 取 $k$ 从 $1$ 到 $n$ 并相加, 即可得到
+
+$$
+\frac {1}{2} \sum_ {k = 1} ^ {n} 2 ^ {k} a _ {2 ^ {k}} \leqslant a _ {2} + a _ {3} + \dots + a _ {2 ^ {n}} \leqslant \sum_ {k = 0} ^ {n - 1} 2 ^ {k} a _ {2 ^ {k}},
+$$
+
+可见原来的级数的部分和与凝聚项级数的部分和同时有界或无界.
+</Solution>
+
+<Note>
+注 这里也不需要比较级数, 建议读者对 $\sum_{n=1}^{\infty} \frac{1}{n^p}$ , $\sum_{n=2}^{\infty} \frac{1}{n \ln^p n}$ 和 ($13.14$) 中的级数用 $Cauchy$ 凝聚判别法一试.
+</Note>
+</Knowledge>
+
+讨论一个数列 $\{a_{n}\}$ 是否收敛于 $0$ 是数学分析中的基本问题之一，具有多方面的应用。无穷级数已经为此提供了一种方法，这就是研究级数 $\sum_{n = 1}^{\infty}a_n$ 是否收敛。若级数收敛，则就得到 $\lim_{n\to \infty}a_n = 0$ 。容易理解这个方法不会很有效，若级数发散就不能作出任何结论。但是对于单调数列，则有下面好得多的结果（参见《美国数学月刊》(1988)第 $95$ 卷 $942$ 页以及后面的例题 $13.4.2$ 中的第二个证明）。
+
+<Knowledge title="命题 $13.2.3$（$Sapagof$ 判别法）">
+设正数数列 $\{a_{n}\}$ 单调减少，则 $\lim_{n\to \infty}a_n = 0$ 的充分必要条件是正项级数 $\sum_{n = 1}^{\infty}\left(1 - \frac{a_{n + 1}}{a_n}\right)$ 发散.
+
+<Solution title="证明">
+将题中的级数记为 $\sum_{n=1}^{\infty}b_{n}$ ，其中 $b_{n}=1-\frac{a_{n+1}}{a_{n}}, n=1,2,\cdots$
+
+由于正数数列 $\{a_{n}\}$ 单调减少，因此有极限 $\lim_{n\to \infty}a_n = a$ 。若 $a > 0$ ，则 $b_{n}\leqslant \frac{a_{n} - a_{n + 1}}{a}$ 。由于 $\sum_{n = 1}^{\infty}(a_n - a_{n + 1}) = \lim_{n\to \infty}(a_1 - a_n) = a_1 - a,$ 可见 $\sum_{n = 1}^{\infty}b_n$ 收敛。若 $a = 0$ ，则有
+
+$$
+\sum_ {k = n + 1} ^ {n + p} b _ {k} = \sum_ {k = n + 1} ^ {n + p} \frac {a _ {k} - a _ {k + 1}}{a _ {k}} \geqslant \sum_ {k = n + 1} ^ {n + p} \frac {a _ {k} - a _ {k + 1}}{a _ {n + 1}} = 1 - \frac {a _ {n + p + 1}}{a _ {n + 1}}.
+$$
+
+对每个给定的 $n$ , 利用 $a_{n} \rightarrow 0$ 的条件, 总可以取到充分大的 $p$ , 使上式大于 $\frac{1}{2}$ . 由级数的 $Cauchy$ 收敛准则 (见 ($13.5$)) 可知级数 $\sum_{n=1}^{\infty} b_{n}$ 发散.
+</Solution>
+
+<Note>
+注1 本命题有几种等价形式(见[18]第二卷的 $375$ 小节之 $6$):
+
+(1) 设 $\{a_{n}\}$ 为单调增加的正数数列, 则该数列与级数 $\sum_{n=1}^{\infty}\left(1 - \frac{a_{n}}{a_{n+1}}\right)$ 同敛散 (这种形式在各种教科书中出现最多);
+
+(2) 若正项级数 $\sum_{n=1}^{\infty} a_n$ 的部分和数列为 $\{S_n\}$ , 则 $\sum_{n=1}^{\infty} a_n$ 与 $\sum_{n=1}^{\infty} \frac{a_n}{S_n}$ 同敛散.
+</Note>
+
+<Note>
+注2 应当指出, 在下一节的变号级数敛散性判别法中, 往往需要证明某个单调数列收敛于 $0$. 这时命题 $13.2.3$ 就是一个有用的工具. 这样就可能将变号级数的敛散性判别问题归结为某个正项级数的敛散性判别问题, 而关于后者的方法要丰富得多. 此外, 还可以看出, 如数列极限理论中的例题 $2.3.3$ (上册 $28$ 页) 这类经典性结果都可以看成为命题 $13.2.3$ 的特例.
+</Note>
+</Knowledge>
+
+<Knowledge title="命题 $13.2.4$（$Kummer$ 判别法）">
+(1) 正项级数 $\sum_{n = 1}^{\infty}a_n$ 收敛的充分必要条件是存在正数数列 $\{b_n\}$ 和正数 $\delta$ ，使得当 $n$ 充分大时有
+
+$$
+b _ {n} \cdot \frac {a _ {n}}{a _ {n + 1}} - b _ {n + 1} \geqslant \delta > 0;\tag{13.17}
+$$
+
+(2) 正项级数 $\sum_{n=1}^{\infty} a_n$ 发散的充分必要条件是存在发散的正项级数 $\sum_{n=1}^{\infty} \frac{1}{b_n}$ , 使得当 $n$ 充分大时有
+
+$$
+b _ {n} \cdot \frac {a _ {n}}{a _ {n + 1}} - b _ {n + 1} \leqslant 0.\tag{13.18}
+$$
+
+<Solution title="证明">
+(1) 先证充分性. 不妨设条件 ($13.17$) 已对于 $n \geqslant 1$ 成立. 将它改写为 $0 < \delta a_{n+1} \leqslant b_n a_n - b_{n+1} a_{n+1}$ , 可见正数数列 $\{b_n a_n\}$ 单调减少, 因此有估计:
+
+$$
+\sum_ {k = 1} ^ {n} a _ {k} \leqslant a _ {1} + \frac {1}{\delta} \sum_ {k = 1} ^ {n - 1} (b _ {k} a _ {k} - b _ {k + 1} a _ {k + 1}) \leqslant a _ {1} + \frac {1}{\delta} \cdot b _ {1} a _ {1},
+$$
+
+从而知级数 $\sum_{n=1}^{\infty} a_n$ 收敛.
+
+再证必要性. 在 $\sum_{n=1}^{\infty} a_n$ 收敛时记其余项为 $R_n, n \geqslant 1$ . 令 $b_n = \frac{R_n}{a_n}$ , 则就有
+
+$$
+b _ {n} \cdot \frac {a _ {n}}{a _ {n + 1}} - b _ {n + 1} = \frac {R _ {n}}{a _ {n + 1}} - \frac {R _ {n + 1}}{a _ {n + 1}} = \frac {R _ {n} - R _ {n + 1}}{a _ {n + 1}} = 1.
+$$
+
+因此取 $\delta = 1$ 即可.
+
+(2) 这时的充分性就是比较判别法的比值形式 (见 ($13.13$)). 再证必要性. 设 $\sum_{n=1}^{\infty} a_n$ 发散, 取 $b_n = \frac{S_n}{a_n}$ , 其中 $S_n$ 为级数的第 $n$ 个部分和. 这时 ($13.18$) 满足:
+
+$$
+b _ {n} \cdot \frac {a _ {n}}{a _ {n + 1}} - b _ {n + 1} = \frac {S _ {n} - S _ {n + 1}}{a _ {n + 1}} = - 1 < 0.
+$$
+
+从 $\frac{1}{b_n} = \frac{a_n}{S_n}$ 和命题 $13.2.3$（注 $1$ 之 ($2$))可知 $\sum_{n=1}^{\infty} \frac{1}{b_n}$ 发散.
+</Solution>
+
+<Note>
+注 1 值得注意: $Kummer$ 判别法中的 (1) 来自于正项级数收敛的充分必要条件是其部分和数列有上界, 而与比较判别法没有直接联系. (参见《美国数学月刊》(1995) 第 $102$ 卷 $817$-$818$ 页中的历史观点.)
+</Note>
+
+<Note>
+注2 采取不同的 $\{b_n\}$ , 就可以从 $Kummer$ 判别法得到上一小节的各种比值判别法(见[18]第二卷的 $371$ 小节). 关于 $Kummer$ 判别法的必要性结果取自《美国数学月刊》(1994)第 $101$ 卷 $450$-$452$ 页.
+</Note>
+</Knowledge>
+
+在上一小节中已经提到, 由于存在收敛 (发散) 速度不同的正项级数, 因此用特定的比较级数得到的比较判别法的能力总是有限制的. 现在我们证明, 对于比较判别法而言, 不论是为了判定级数收敛, 还是发散, 都不可能存在万能的比较级数.
+
+<Knowledge title="命题 $13.2.5$">
+(1) ($Du\ Bois$-$Reymond$ (杜布瓦-雷蒙) 定理) 对于一个给定的收敛正项级数 $\sum_{n=1}^{\infty} a_{n}$ ，一定存在一个收敛正项级数 $\sum_{n=1}^{\infty} b_{n}$ ，使得 $\lim_{n \to \infty} \frac{a_{n}}{b_{n}} = 0$ ;
+
+(2) ($Abel$ 定理) 对于一个给定的发散正项级数 $\sum_{n=1}^{\infty} a_n$ ，一定存在一个发散正项级数 $\sum_{n=1}^{\infty} b_n$ ，使得 $\lim_{n \to \infty} \frac{b_n}{a_n} = 0$ .
+
+<Solution title="证明">
+(1) 由正项级数 $\sum_{n=1}^{\infty} a_n$ 收敛知, 余项 $R_n$ 单调减少收敛于 $0$ . 令 $b_n = \sqrt{R_{n-1}} - \sqrt{R_n}$ , 其中记 $R_0 = \sum_{n=1}^{\infty} a_n$ . 从
+
+$$
+\frac {a _ {n}}{b _ {n}} = \frac {R _ {n - 1} - R _ {n}}{\sqrt {R _ {n - 1}} - \sqrt {R _ {n}}} = \sqrt {R _ {n - 1}} + \sqrt {R _ {n}} \rightarrow 0
+$$
+
+和 $\sum_{k=1}^{n} b_k = \sqrt{R_0} - \sqrt{R_k} \leqslant \sqrt{R_0}$ 可见 $\sum_{n=1}^{\infty} b_n$ 为满足要求的收敛级数.
+
+(2) 令 $b_{n} = \frac{a_{n}}{S_{n}}$ ，然后引用命题 $13.2.3$（注 $1$ 之 ($2$))即可.
+</Solution>
+
+<Note>
+注 利用上册 §$2.4$ 的 $Stolz$ 定理, 可以如下解释本题的结果. 对于 (1), 分别记 $\sum_{n=1}^{\infty} a_{n}$ 和 $\sum_{n=1}^{\infty} b_{n}$ 的余项为 $R_{n}$ 和 $R_{n}^{\prime}, n = 1, 2, \cdots$ , 则它们都是单调减少的无穷小量. 由条件 $b_{n} > 0$ 还知 $\{R_{n}^{\prime}\}$ 严格单调减少. 利用命题 $2.4.2$ ( $\frac{0}{0}$ 型的 $Stolz$ 定理), 可见有
+
+$$
+\lim _ {n \rightarrow \infty} \frac {R _ {n}}{R _ {n} ^ {\prime}} = \lim _ {n \rightarrow \infty} \frac {R _ {n} - R _ {n + 1}}{R _ {n} ^ {\prime} - R _ {n + 1} ^ {\prime}} = \lim _ {n \rightarrow \infty} \frac {a _ {n}}{b _ {n}} = 0,
+$$
+
+从而 $R_{n}=o(R_{n}^{\prime})$ . 这就是收敛级数 $\sum_{n=1}^{\infty}a_{n}$ 的收敛速度比 $\sum_{n=1}^{\infty}b_{n}$ 的收敛速度慢的严格表述.
+
+对于 (2)，若分别记 $\sum_{n=1}^{\infty} a_n$ 和 $\sum_{n=1}^{\infty} b_n$ 的部分和为 $S_n$ 和 $S_n'$ ， $n = 1, 2, \cdots$ ，则它们都是单调增加的正无穷大量，而且 $\{S_n\}$ 还是严格单调增加的。用命题 $2.4.3$ ( $\frac{*}{\infty}$ 型的 $Stolz$ 定理) 就得到
+
+$$
+S _ {n} ^ {\prime} = o (S _ {n}),
+$$
+
+也就是 $S_{n}^{\prime}\ll S_{n}$ .这是作为正无穷大量的 $S_{n}^{\prime}$ 的发散速度慢于 $S_{n}$ 的严格表述
+</Note>
+</Knowledge>
+
+## $13.2.4$ 例题
+
+先介绍对 $p$ 级数的敛散性证明, 它们与上册已有的方法不同. 其中第一个证明在方法论上很有价值.
+
+<Example title="例 $13.2.1$">
+讨论 $p$ 级数的敛散性.
+
+<Solution title="解1">
+对于 $p \leqslant 1$ 只需讨论 $p = 1$ , 即调和级数. 利用微分中值定理, 有
+
+$$
+\ln \left(1 + \frac {1}{n}\right) = \ln (n + 1) - \ln n = \frac {1}{n + \theta} < \frac {1}{n},
+$$
+
+其中 $0 < \theta < 1$ ，因此对调和级数的部分和有估计（参见上册 $43$ 页）：
+
+$$
+\sum_ {n = 1} ^ {N} \frac {1}{n} > \ln 2 + (\ln 3 - \ln 2) + \dots + [ \ln (N + 1) - \ln N ] = \ln (N + 1),
+$$
+
+可见级数发散. 对于 $p > 1$ 同样有
+
+$$
+\frac {1}{n ^ {p - 1}} - \frac {1}{(n + 1) ^ {p - 1}} = \frac {p - 1}{(n + \theta) ^ {p}} > \frac {p - 1}{(n + 1) ^ {p}},
+$$
+
+其中 $0 < \theta < 1$ ，因此有估计
+
+$$
+\begin{array}{r l} \sum_ {n = 1} ^ {N} \frac {1}{n ^ {p}} & < 1 + \frac {1}{p - 1} \left[ \left(1 - \frac {1}{2 ^ {p - 1}}\right) + \dots + \left(\frac {1}{(N - 1) ^ {p - 1}} - \frac {1}{N ^ {p - 1}}\right) \right] \\ & = 1 + \frac {1}{p - 1} \left(1 - \frac {1}{N ^ {p - 1}}\right) < 1 + \frac {1}{p - 1} = \frac {p}{p - 1}, \end{array}
+$$
+
+可见级数收敛.
+</Solution>
+
+<Solution title="解2">
+对于 $p \leqslant 1$ 只需证明 $p = 1$ 时调和级数发散. 用反证法. 若调和级数收敛, 其和为 $S$ , 则
+
+$$
+\begin{array}{r l} S & = \left(1 + \frac {1}{3} + \dots + \frac {1}{2 n - 1} + \dots\right) + \left(\frac {1}{2} + \frac {1}{4} + \dots + \frac {1}{2 n} + \dots\right) \\ & = \left(1 + \frac {1}{3} + \dots + \frac {1}{2 n - 1} + \dots\right) + \frac {1}{2} \left(1 + \frac {1}{2} + \dots + \frac {1}{n} + \dots\right) \\ & = \left(1 + \frac {1}{3} + \dots + \frac {1}{2 n - 1} + \dots\right) + \frac {S}{2}, \end{array}
+$$
+
+因此得到
+
+$$
+1 + \frac {1}{3} + \dots + \frac {1}{2 n - 1} + \dots = \frac {S}{2} = \frac {1}{2} + \frac {1}{4} + \dots + \frac {1}{2 n} + \dots .
+$$
+
+但从 $1 > \frac{1}{2}, \frac{1}{3} > \frac{1}{4}, \cdots, \frac{1}{2n-1} > \frac{1}{2n}, \cdots$ ，可见这不可能成立.
+
+再讨论 $p > 1$ ，这时级数的部分和数列 $\{S_n\}$ 满足条件 $S_{2N} < S_{2N + 1}$ 以及
+
+$$
+\begin{array}{r l} S _ {2 N + 1} & = 1 + \left(\frac {1}{2 ^ {p}} + \frac {1}{4 ^ {p}} + \dots + \frac {1}{(2 N) ^ {p}}\right) + \left(\frac {1}{3 ^ {p}} + \frac {1}{5 ^ {p}} + \dots + \frac {1}{(2 N + 1) ^ {p}}\right) \\ & < 1 + 2 \left(\frac {1}{2 ^ {p}} + \frac {1}{4 ^ {p}} + \dots + \frac {1}{(2 N) ^ {p}}\right) = 1 + 2 ^ {1 - p} \left(1 + \frac {1}{2 ^ {p}} + \dots + \frac {1}{N ^ {p}}\right) \\ & < 1 + 2 ^ {1 - p} S _ {2 N + 1}, \end{array}
+$$
+
+因此部分和数列 $\{S_{n}\}$ 以 $1/(1-2^{1-p})$ 为上界, 可见级数收敛.
+</Solution>
+
+<Note>
+注 证2见 $Math. Magazine$ (1979)第 $52$ 卷 $178$ 页.
+</Note>
+</Example>
+
+下面是利用 $p$ 级数为比较级数的几个例题.
+
+<Example title="例 $13.2.2$">
+讨论下列级数的敛散性:
+
+(1) $\sum_{n=1}^{\infty} \frac{1}{3^{\ln n}}$ ; (2) $\sum_{n=2}^{\infty} \frac{1}{(\ln n)^{\ln n}}$ ; (3) $\sum_{n=3}^{\infty} \frac{1}{(\ln n)^{\ln \ln n}}$ .
+
+<Solution title="解">
+只要知道对于任何两个正数 $a, b > 0$ 均成立
+
+$$
+a ^ {\ln b} = \left(\mathrm{e} ^ {\ln a}\right) ^ {\ln b} = \mathrm{e} ^ {\ln a \ln b} = \left(\mathrm{e} ^ {\ln b}\right) ^ {\ln a} = b ^ {\ln a},
+$$
+
+就不难解决前两题. 在题 (1) 中, 利用 $3^{\ln n} = n^{\ln 3}$ 和 $\ln 3 > 1$ , 可见这个级数本身就是 $p > 1$ 的 $p$ 级数, 因此收敛. 对于题 (2), 利用 $(\ln n)^{\ln n} = n^{\ln \ln n}$ 和当 $n$ 充分大时有 $n^{\ln \ln n} > n^2$ , 就可用 $\sum_{n=1}^{\infty} \frac{1}{n^2}$ 为比较级数而知其收敛. 类似地在题 (3) 中有 $(\ln n)^{\ln \ln n} = e^{(\ln \ln n)^2} < e^{\ln n} = n$ , 因此可从 $\sum_{n=1}^{\infty} \frac{1}{n}$ 的发散性知其发散.
+</Solution>
+</Example>
+
+在下面的例子中用等价量判别法 (当然也可用其他比较判别法).
+
+<Example title="例 $13.2.3$">
+讨论下列级数的敛散性:
+
+(1) $\sum_{n=1}^{\infty}\left[\frac{(2n-1)!!}{(2n)!!}\right]^k$ ; (2) $\sum_{n=1}^{\infty}n!\left(\frac{a}{n}\right)^n (a>0)$ ; (3) $\sum_{n=1}^{\infty}\left[\mathrm{e}-\left(1+\frac{1}{n}\right)^n\right]$ .
+
+<Solution title="解">
+(1) 利用关于阶乘的 $Wallis$ 公式知道有 $\frac{(2n)!!}{(2n - 1)!!} \sim \sqrt{\pi n}$ (即公式 ($11.29$)), 因此该级数的通项 $a_{n}$ 与级数 $\sum_{n=1}^{\infty} \frac{1}{(\pi n)^{k/2}}$ 的通项为等价无穷小量. 从而知道级数当 $k \leqslant 2$ 时发散, 而当 $k > 2$ 时收敛.
+
+(2) 根据 $Stirling$ 公式 ($11.32$), 可见成立
+
+$$
+a _ {n} = n! \left(\frac {a}{n}\right) ^ {n} \sim \left(\frac {a}{\mathrm{e}}\right) ^ {n} \sqrt {2 \pi n} = b _ {n}.
+$$
+
+若 $a \geqslant e$ ，则可看出数列 $\{b_n\}$ 不是无穷小量，因此级数 $\sum b_n$ 以及 $\sum a_n$ 均发散。否则，可以取 $r \in \left(\frac{a}{e}, 1\right)$ ，并看出
+
+$$
+\lim _ {n \rightarrow \infty} \frac {a _ {n}}{r ^ {n}} = 0,
+$$
+
+因此从几何级数 $\sum_{n=1}^{\infty} r^n (0 < r < 1)$ 收敛知 $\sum_{n=1}^{\infty} a_n$ 收敛.
+
+(3) 利用 $Taylor$ 公式即可得到
+
+$$
+\mathrm{e} - \left(1 + \frac {1}{n}\right) ^ {n} = \frac {\mathrm{e}}{2 n} + O \left(\frac {1}{n ^ {2}}\right)
+$$
+
+(见上册 $230$ 页例题 $8.1.4$ 之解 $2$)，因此知级数发散.
+</Solution>
+</Example>
+
+下面是应用 $Sapagof$ 判别法 (命题 $13.2.3$) 的一个典型例题.
+
+<Example title="例 $13.2.4$">
+问：在什么条件下数列 $\{a_{n}\}$ 为无穷小量，其中
+
+$$
+a _ {n} = \binom {\alpha} {n} = \frac {\alpha (\alpha - 1) \cdots (\alpha - n + 1)}{n !}, n = 1, 2, \dots .
+$$
+
+<Solution title="解">
+从定义可见, 若参数 $\alpha$ 为非负整数, 则数列至多只有前有限项不等于 $0$ , 因此是无穷小量. 否则, 只需讨论 $\{|a_n|\}$ . 从
+
+$$
+\frac {\left| a _ {n + 1} \right|}{\left| a _ {n} \right|} = \frac {n - \alpha}{n + 1} = 1 - \frac {\alpha + 1}{n + 1}
+$$
+
+可见当 $\alpha \leqslant -1$ 时有 $|a_{n + 1}|\geqslant |a_n|$ ，因此数列不可能趋于 $0$.
+
+当 $\alpha > -1$ 时 $\{|a_n|\}$ 当 $n$ 充分大时单调减少. 利用命题 $13.2.3$, 从
+
+$$
+1 - \frac {| a _ {n + 1} |}{| a _ {n} |} = \frac {\alpha + 1}{n + 1} \text {和级数} \sum_ {n = 1} ^ {\infty} \frac {\alpha + 1}{n + 1}
+$$
+
+发散可知 $\lim_{n\to\infty}a_{n}=0.$
+</Solution>
+</Example>
+
+下面是在例题 $13.2.1$ 中引进的微分中值定理方法的又一个应用.
+
+<Example title="例 $13.2.5$">
+设 $\sum_{n=1}^{\infty}a_{n}$ 为正项级数, $\{S_{n}\}$ 为其部分和数列, $p > 1$, 证明: 无论 $\sum_{n=1}^{\infty}a_{n}$ 收敛与否, 级数 $\sum_{n=1}^{\infty}\frac{a_{n}}{S_{n}^{p}}$ 总是收敛的.
+
+<Solution title="证明">
+这里的出发点是 $\frac{a_n}{S_n^p} = \frac{S_n - S_{n-1}}{S_n^p}$ . 设 $0 < a < b$ , 对函数 $x^{1-p}$ 在区间 $[a, b]$ 上用 $Lagrange$ 微分中值定理, 可知存在 $\xi \in (a, b)$ , 使成立
+
+$$
+\frac {1}{a ^ {p - 1}} - \frac {1}{b ^ {p - 1}} = \frac {(p - 1)}{\xi^ {p}} \cdot (b - a) > (p - 1) \cdot \frac {b - a}{b ^ {p}}.
+$$
+
+用 $a = S_{n - 1}, b = S_n$ 代入，得到不等式
+
+$$
+\frac {a _ {n}}{S _ {n} ^ {p}} = \frac {S _ {n} - S _ {n - 1}}{S _ {n} ^ {p}} < \frac {1}{p - 1} \left(\frac {1}{S _ {n - 1} ^ {p - 1}} - \frac {1}{S _ {n} ^ {p - 1}}\right).
+$$
+
+由此可以作出级数 $\sum_{n=1}^{\infty} \frac{a_n}{S_n^p}$ 的部分和数列的上界估计:
+
+$$
+\begin{array}{l} \sum_ {k = 1} ^ {n} \frac {a _ {k}}{S _ {k} ^ {p}} = \frac {1}{a _ {1} ^ {p - 1}} + \sum_ {k = 2} ^ {n} \frac {a _ {k}}{S _ {k} ^ {p}} < \frac {1}{a _ {1} ^ {p - 1}} + \frac {1}{p - 1} \sum_ {k = 2} ^ {n} \left(\frac {1}{S _ {k - 1} ^ {p - 1}} - \frac {1}{S _ {k} ^ {p - 1}}\right) \\ < \frac {1}{a _ {1} ^ {p - 1}} + \frac {1}{p - 1} \cdot \frac {1}{a _ {1} ^ {p - 1}} = \frac {p}{p - 1} \cdot \frac {1}{a _ {1} ^ {p - 1}}, \end{array}
+$$
+
+因此级数 $\sum_{n=1}^{\infty} \frac{a_n}{S_n^p}$ 收敛.
+</Solution>
+
+<Note>
+注 以上证明对于 $\sum_{n=1}^{\infty} a_n$ 收敛和发散情况都有效, 但可以看出, 若 $\sum_{n=1}^{\infty} a_n$ 收敛, 记其和为 $S$ , 则 $\frac{a_n}{S_n^p} \sim \frac{a_n}{S^p}$ , 因此本题的结论是平凡的.
+</Note>
+</Example>
+
+下一个例题也很有意义.
+
+<Example title="例 $13.2.6$">
+若正项级数 $\sum_{n=1}^{\infty}\frac{1}{a_{n}}$ 收敛, 证明: 级数 $\sum_{n=1}^{\infty}\frac{n}{a_{1}+a_{2}+\cdots+a_{n}}$ 也收敛.
+
+<Solution title="证明">
+从条件可见正数数列 $\{a_{n}\}$ 为正无穷大量. 以下分两步来做.
+
+(1) 若数列 $\{a_{n}\}$ 单调增加, 则有
+
+$$
+a _ {1} + a _ {2} + \dots + a _ {2 n - 1} \geqslant a _ {n} + a _ {n + 1} + \dots + a _ {2 n - 1} \geqslant n a _ {n},
+$$
+
+因此有不等式：
+
+$$
+\frac {2 n - 1}{a _ {1} + a _ {2} + \cdots + a _ {2 n - 1}} + \frac {2 n}{a _ {1} + a _ {2} + \cdots + a _ {2 n}} \leqslant \frac {2 n - 1}{n a _ {n}} + \frac {2 n}{n a _ {n}} < \frac {4}{a _ {n}},
+$$
+
+从而级数 $\sum_{n=1}^{\infty}\frac{n}{a_{1}+a_{2}+\cdots+a_{n}}$ 的部分和数列有上界, 因此收敛. 同时还得到
+
+$$
+\sum_ {n = 1} ^ {\infty} \frac {n}{a _ {1} + a _ {2} + \cdots + a _ {n}} \leqslant 4 \sum_ {n = 1} ^ {\infty} \frac {1}{a _ {n}}.\tag{13.19}
+$$
+
+(2) 对于一般情况, 将数列 $\{a_{n}\}$ 按照从小到大重排 $^{①}$ , 并将重排后的数列记为 $\{b_{n}\}$ . 根据收敛的正项级数在重排后仍收敛, 因此级数 $\sum_{n=1}^{\infty}\frac{1}{b_{n}}$ 收敛. 利用 (1) 知道级数 $\sum_{n=1}^{\infty}\frac{n}{b_{1}+b_{2}+\cdots+b_{n}}$ 收敛. 同时容易看出对每个 $n$ 成立不等式 $^{②}$
+
+$$
+b _ {1} + b _ {2} + \dots + b _ {n} \leqslant a _ {1} + a _ {2} + \dots + a _ {n},\tag{13.20}
+$$
+
+因此就有
+
+$$
+\frac {n}{a _ {1} + a _ {2} + \cdots + a _ {n}} \leqslant \frac {n}{b _ {1} + b _ {2} + \cdots + b _ {n}},
+$$
+
+于是从比较判别法就知道级数 $\sum_{n=1}^{\infty}\frac{n}{a_{1}+a_{2}+\cdots+a_{n}}$ 收敛.
+</Solution>
+
+<Note>
+注 从 $Knopp$ (克诺普) 的论文 ($Math. Zeitschr.$ (1929) 第 $30$ 卷 $387$-$413$ 页) 知道 ($13.19$) 右边的常数 $4$ 可以降低, 其最优值为 $2$.
+</Note>
+</Example>
+
+可以看出上题中第二个级数的第 $n$ 项是第一个级数的前 $n$ 项的调和平均值. 根据几何平均值$-$调和平均值不等式（见上册第 $8$ 页 $1.3.2$ 小节题 $3$），可见该题是以下著名不等式的一个推论.
+
+<Example title="例 $13.2.7$（$Carleman$（卡莱曼）不等式）">
+设 $\sum_{n=1}^{\infty} a_n$ 为收敛的正项级数，则成立
+
+$$
+\sum_ {n = 1} ^ {\infty} \sqrt [ n ]{a _ {1} a _ {2} \cdot \cdot \cdot a _ {n}} \leqslant \mathrm{e} \sum_ {n = 1} ^ {\infty} a _ {n},
+$$
+
+其中右边的系数 $\mathrm{e}$ 不能再改进.
+
+<Solution title="证明">
+对部分和估计如下 (其中利用的不等式 $\left(\frac{n + 1}{\mathrm{e}}\right)^n < n!$ 见上册 $46$ 页题 $7$):
+
+$$
+\begin{array}{r l} \sum_ {n = 1} ^ {N} \sqrt [ n ]{a _ {1} a _ {2} \cdots a _ {n}} & = \sum_ {n = 1} ^ {N} \frac {\sqrt [ n ]{(a _ {1}) (2 a _ {2}) \cdots (n a _ {n})}}{\sqrt [ n ]{n !}} \leqslant \sum_ {n = 1} ^ {N} \frac {a _ {1} + 2 a _ {2} + \cdots + n a _ {n}}{n \sqrt [ n ]{n !}} \\ & \leqslant \mathrm{e} \sum_ {n = 1} ^ {N} \frac {a _ {1} + 2 a _ {2} + \cdots + n a _ {n}}{n (n + 1)} = \mathrm{e} \sum_ {n = 1} ^ {N} \frac {1}{n (n + 1)} \sum_ {k = 1} ^ {n} k a _ {k} \\ & = \mathrm{e} \sum_ {k = 1} ^ {N} k a _ {k} \sum_ {n = k} ^ {N} \frac {1}{n (n + 1)} = \mathrm{e} \sum_ {k = 1} ^ {N} k a _ {k} \left(\frac {1}{k} - \frac {1}{N + 1}\right) \\ & \leqslant \mathrm{e} \sum_ {k = 1} ^ {N} a _ {k}, \end{array}
+$$
+
+然后令 $N \to \infty$ 即可得到 $Carleman$ 不等式. 最后, 对于每个 $N$ 构造一个数列: $a_{n} = 1/n, n = 1, 2, \cdots, N$ , 而 $a_{n} = 0, \forall n > N$ , 然后作出由 $\{a_{n}\}$ 得到的两个级数和之比, 令 $N \to \infty$ , 且用 $Stolz$ 定理和上册例题 $2.5.3$ 的结果, 就有
+
+$$
+\lim _ {N \rightarrow \infty} \frac {\sum_ {n = 1} ^ {N} \sqrt [ n ]{a _ {1} a _ {2} \cdots a _ {n}}}{\sum_ {n = 1} ^ {N} a _ {n}} = \lim _ {N \rightarrow \infty} \frac {N}{\sqrt [ N ]{N !}} = \mathrm{e}.
+$$
+
+这表明不等式右边的系数 $\mathrm{e}$ 不能再改进.
+</Solution>
+
+<Note>
+注1 在《数学译林》(2004)第 $4$ 期中的一文给出了 $Carleman$ 不等式的 $5$ 个证明.在上述证明中的二重求和的顺序交换也可以利用裂项法改写为
+
+$$
+\frac {1}{n (n + 1)} \sum_ {k = 1} ^ {n} k a _ {k} = \frac {1}{n} \sum_ {k = 1} ^ {n} k a _ {k} - \frac {1}{n + 1} \sum_ {k = 1} ^ {n + 1} k a _ {k} + a _ {n + 1},
+$$
+
+并对于 $n=1,2,\cdots,N$ 相加，就得到同样的结果：
+
+$$
+\sum_ {n = 1} ^ {N} \frac {1}{n (n + 1)} \sum_ {k = 1} ^ {n} k a _ {k} \leqslant a _ {1} + a _ {2} + \dots + a _ {N}.
+$$
+</Note>
+
+<Note>
+注 2 与此有关的还有 $Hardy$ (哈代) 不等式, 其中当 $p > 1$ 时为
+
+$$
+\sum_ {n = 1} ^ {\infty} \left(\frac {1}{n} \sum_ {k = 1} ^ {n} a _ {k} ^ {1 / p}\right) ^ {p} \leqslant \left(\frac {p}{p - 1}\right) ^ {p} \sum_ {n = 1} ^ {\infty} a _ {n}.
+$$
+
+令 $p \to +\infty$ 就导出 $Carleman$ 不等式.
+</Note>
+</Example>
+
+## $13.2.5$ 练习题
+
+1. 设正项级数 $\sum_{n=1}^{\infty}a_{n}$ 和 $\sum_{n=1}^{\infty}b_{n}$ 的通项为等价量: $a_{n} \sim b_{n}$ ，又记两个级数的部分和为 $S_{n}$ 和 $S_{n}^{\prime}$ ，余项为 $R_{n}$ 和 $R_{n}^{\prime}, n = 1, 2, \cdots$ ，证明：
+
+(1) 若两个级数均收敛, 则 $R_{n} \sim R_{n}^{\prime}$ ;
+
+(2) 若两个级数均发散, 则 $S_{n} \sim S_{n}^{\prime}$ .
+
+2. 设 $\sum a_{n}$ 为正项级数, 证明: 任意改变其中各项的顺序和加括号后得到的级数与原来的级数具有相同的敛散性, 且在收敛时级数的和不变. (这表明, 如果无限项求和时每项为非负数, 或至多只有有限项为负数, 则有限项求和时的结合律和交换律对无限项求和都依然成立.)
+
+3. 讨论下列各级数的敛散性：
+(1) $\sum_{n=1}^{\infty}\frac{1}{3\sqrt{n}};$ (2) $\sum_{n=1}^{\infty}\frac{1}{n^{1+\frac{1}{n}}};$ (3) $\sum_{n=1}^{\infty}\left[\frac{1}{n}-\ln\left(1+\frac{1}{n}\right)\right];$ (4) $\sum_{n=1}^{\infty}\frac{n^{n-1}}{(2n^{2}+n+1)^{\frac{n-1}{2}}};$ (5) $\sum_{n=2}^{\infty}\frac{n^{\ln n}}{(\ln n)^{n}};$ (6) $\sum_{n=1}^{\infty}\frac{\mathrm{e}^{-(1+\frac{1}{2}+\cdots+\frac{1}{n})}}{n^{p}};$ (7) $\sum_{n=1}^{\infty}\left(a^{\frac{1}{n}}-\frac{b^{\frac{1}{n}}+c^{\frac{1}{n}}}{2}\right)$ $(a,b,c>0);$ (8) $\sum_{n=1}^{\infty}\left(1-\frac{\ln n}{n}\right)^{n}.$
+
+4. 从例题 $13.2.6$ 和 $13.2.7$ 知道, 若从收敛正项级数 $\sum_{n=1}^{\infty} a_n$ 作出 $\{u_n\}$ , 其中 $u_n$ 为 $a_1, a_2, \cdots, a_n$ 的调和平均值或几何平均值, 则 $\sum_{n=1}^{\infty} u_n$ 收敛. 但是若 $u_n$ 为算术平均值, 则情况大不一样. 证明: 若正项级数 $\sum_{n=1}^{\infty} a_n$ 收敛, 则除了一种特殊情况之外, 级数 $\sum_{n=1}^{\infty} \frac{a_1 + a_2 + \cdots + a_n}{n}$ 必定发散.
+
+5. 试用 $Sapagof$ 判别法 (即命题 $13.2.3$) 或其他方法证明下列数列收敛于 $0$:
+(1) $\left\{\frac{(2n)!}{4^{n}(n!)^{2}}\right\}$ ; (2) $\left\{\frac{n^{n}}{e^{n}n!}\right\}$ ; (3) $\left\{\frac{n!}{(x+1)(x+2)\cdots(x+n)}\right\}(x>0).$
+
+6. 举出一个收敛的正项级数 $\sum a_{n}$ 的例子, 使它满足条件 $\varlimsup_{n\to \infty}na_n = 1$ .
+
+7. 已知正项级数 $\sum a_{n}$ 收敛, $p > 1$ , 证明: 级数 $\sum a_{n}^{p}$ 一定收敛. 又若去掉 $\sum a_{n}$ 为正项级数的条件, 结论是否还成立?
+
+8. 设数列 $\{a_{n}\}$ 单调减少收敛于 $0$，且 $b_{n}=a_{n}-2a_{n+1}+a_{n+2}\geqslant0, n=1,2,\cdots,$ 证明：级数 $\sum_{n=1}^{\infty}nb_{n}$ 收敛，且其和为 $a_{1}$ .
+
+9. 设对于每个正整数 $n$ 都有 $0 < a_{n} < a_{2n} + a_{2n+1}$ , 证明: 级数 $\sum_{n=1}^{\infty} a_{n}$ 发散.
+
+10. 设 $x > 0$, 证明: 级数 $\sum_{n=1}^{\infty}\frac{x^{n}}{(1+x)(1+x^{2})\cdots(1+x^{n})}$ 收敛.
+
+11. 设 $x > 0$ , 讨论级数
+
+$$
+\sum_ {n = 1} ^ {\infty} (2 - x) \left(2 - x ^ {\frac {1}{2}}\right) \left(2 - x ^ {\frac {1}{3}}\right) \dots \left(2 - x ^ {\frac {1}{n}}\right)
+$$
+
+的敛散性.
+
+12. 设 $\sum_{n=1}^{\infty} a_n$ 为正项级数, 证明:
+
+(1) 若在 $Raabe$ 判别法中的极限 $\lim_{n\to\infty}n\left(\frac{a_{n}}{a_{n+1}}-1\right)$ 存在, 则在对数判别法 ($13.15$) 中的极限 $\lim_{n\to\infty}\frac{\ln(1/a_{n})}{\ln n}$ 也存在, 且极限值相同;
+
+(2) 若在 $Bertrand$ 判别法中的极限 $\lim_{n\to\infty}\ln n\left[n\left(\frac{a_{n}}{a_{n+1}}-1\right)-1\right]$ 存在, 则在对数判别法 ($13.16$) 中的极限 $\lim_{n\to\infty}\frac{\ln[1/(na_{n})]}{\ln\ln n}$ 也存在, 且极限值相同.
+
+13. 设 $\sum_{n=1}^{\infty} a_n$ 为正项级数, $k$ 为一正整数, 如果 $\lim_{n \to \infty} \frac{a_{n+k}}{a_n} = l$ , 证明: $l < 1$ 时, $\sum_{n=1}^{\infty} a_n$ 收敛; $l > 1$ 时, $\sum_{n=1}^{\infty} a_n$ 发散.
+(本题如取 $k = 1$, 就是 $d'Alembert$ 判别法. 因此本题可看作为 $d'Alembert$ 判别法的一个推广.)
+
+14. ($Dini$ (迪尼)) 设正项级数 $\sum_{n=1}^{\infty} a_n$ 收敛, 其余项为 $R_n = \sum_{k=n+1}^{\infty} a_k$ , $n = 0, 1, \cdots$ . 证明: $\sum_{n=1}^{\infty} \frac{a_n}{R_{n-1}}$ 发散, 但对任意 $p > 0$ , $\sum_{n=1}^{\infty} \frac{a_n}{R_{n-1}^{1-p}}$ 收敛.
+
+15. 设 $0 < a_{1} < \frac{\pi}{2}$ , 然后用迭代公式 $a_{n} = \sin a_{n-1}$ 生成数列 $\{a_{n}\}$ , 讨论级数 $\sum_{n=1}^{\infty} a_{n}^{p}$ 的敛散性 (参考上册 $233$ 页的例题 $8.1.10$).

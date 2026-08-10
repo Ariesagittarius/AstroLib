@@ -4,19 +4,19 @@ import { unified } from '@astrojs/markdown-remark';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 
-// 引入我们的中央多图书合集配置文件
+// 导入多合集配置和我们的自然排序侧边栏生成器
 import { collections } from './src/config/collections.config.mjs';
+import { generateBookSidebar } from './src/utils/sidebar.mjs';
 
-// 动态构建两级深度嵌套侧边栏 (合集 -> 图书)
+// 根据中央图书配置，全自动生成自然排序的树状侧边栏
 const dynamicSidebar = collections.map(col => ({
   label: col.title,
-  collapsed: true, // 初始折叠合集
+  collapsed: true,
   items: col.books.map(book => ({
     label: book.title,
-    collapsed: true, // 初始折叠该合集下的图书
-    items: [
-      { autogenerate: { directory: `collections/${col.slug}/${book.slug}` } } // 解析对应物理嵌套目录
-    ]
+    collapsed: true,
+    // 调用生成器，就地读取目录并进行 1.1 -> 10.1 排序，取代鸡肋的默认 autogenerate
+    items: generateBookSidebar(`src/content/docs/collections/${col.slug}/${book.slug}`)
   }))
 }));
 
@@ -29,7 +29,7 @@ export default defineConfig({
   },
   integrations: [
     starlight({
-      title: 'MinerU + Astro',
+      title: '教辅数字化智能智库',
       social: [
         { 
           icon: 'github', 
@@ -39,7 +39,7 @@ export default defineConfig({
       ],
       components: {
         Sidebar: './src/components/SidebarOverride.astro',      // 左侧 LaTeX 公式渲染
-        PageSidebar: './src/components/PageSidebarOverride.astro' // 右侧多合集自适应大纲
+        PageSidebar: './src/components/PageSidebarOverride.astro' // 右侧多合集自适应大纲与卡片修补
       },
       sidebar: dynamicSidebar,
       customCss: [
@@ -53,12 +53,11 @@ export default defineConfig({
         '@': '/src',
       },
     },
-    // 核心新增：配置 Vite 6 开发服务器放行白名单，彻底解决穿透被 Block 的问题
     server: {
       allowedHosts: [
-        '.trycloudflare.com', // 放行 Cloudflare 穿透
-        '.vaiwan.com',        // 放行 钉钉穿透
-        '.localtunnel.me'     // 放行 Localtunnel 穿透
+        '.trycloudflare.com',
+        '.vaiwan.com',
+        '.localtunnel.me'
       ]
     }
   },

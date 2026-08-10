@@ -355,3 +355,142 @@
   animation: fig-flash-pulse 1s cubic-bezier(0.25, 1, 0.5, 1);
   color: var(--sl-color-text-accent, #3b82f6) !important;
 }
+
+/* ==========================================================================
+   双侧边栏拖拽调宽与折叠系统 (Interactive Sidebar Resizers)
+   ========================================================================== */
+
+/* 1. 默认右侧边栏宽度绑定与自适应计算 */
+@media (min-width: 72rem) {
+  .right-sidebar-container {
+    width: var(--right-sidebar-width, 18.75rem) !important;
+  }
+  .right-sidebar {
+    width: var(--right-sidebar-width, 18.75rem) !important;
+  }
+  .custom-page-sidebar {
+    width: calc(var(--right-sidebar-width, 18.75rem) - 1.5rem) !important;
+  }
+}
+
+/* 2. 当左/右侧边栏折叠时的平滑隐藏动画 */
+.collapsed-sidebar {
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  transition: visibility 0.2s, opacity 0.2s;
+}
+
+/* 3. 拖拽手柄条样式：透明热区，宽度 8px，方便鼠标抓取 */
+.resizer-handle {
+  position: fixed;
+  top: 3.5rem; /* 避开 Starlight 顶部导航条 */
+  bottom: 0;
+  width: 8px; 
+  cursor: col-resize;
+  z-index: 100;
+  background-color: transparent;
+  transition: background-color 0.15s, border 0.15s;
+  display: none; /* 移动端默认不展示 */
+}
+
+/* 桌面端按断点展示手柄 */
+@media (min-width: 50rem) {
+  .resizer-handle.left-handle {
+    display: block;
+    left: calc(var(--sl-sidebar-width) - 4px);
+  }
+}
+
+@media (min-width: 72rem) {
+  .resizer-handle.right-handle {
+    display: block;
+    right: calc(var(--right-sidebar-width, 18.75rem) - 4px);
+  }
+}
+
+/* 悬停或处于激活拖拽状态下的高亮发光蓝色细线效果 */
+.resizer-handle:hover, .resizer-handle.active {
+  background-color: rgba(59, 130, 246, 0.05);
+  border-left: 1px solid var(--sl-color-text-accent);
+  border-right: 1px solid var(--sl-color-text-accent);
+}
+
+/* 4. 极简 MD3 小药丸折叠按钮 */
+.resizer-toggle-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 38px;
+  background-color: var(--sl-color-bg, #ffffff);
+  border: 1px solid var(--sl-color-hairline, #e2e8f0);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: var(--sl-color-gray-3);
+  cursor: pointer;
+  opacity: 0; /* 默认完全隐藏，鼠标靠近手柄时才浮现 */
+  transition: opacity 0.15s, background-color 0.15s, color 0.15s;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+
+.resizer-handle:hover .resizer-toggle-btn {
+  opacity: 1;
+}
+
+.resizer-toggle-btn:hover {
+  background-color: var(--sl-color-text-accent);
+  color: #ffffff !important;
+  border-color: var(--sl-color-text-accent);
+}
+
+/* 5. 拖拽全局防护类：防止在拖动过程中意外选中页面文本 */
+.is-resizing {
+  user-select: none !important;
+  cursor: col-resize !important;
+}
+
+/* 拖拽全屏透明图层覆盖，防止拖动鼠标划过 iframe 时产生卡顿 */
+#resizer-iframe-cover {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  cursor: col-resize;
+}
+
+/* ==========================================================================
+   正文区域自适应扩宽与沉浸阅读系统 (Adaptive Content Expansion)
+   ========================================================================== */
+
+/* 1. 全局正文容器性能升级：默认最大限制宽度提升至 1080px */
+.sl-container {
+  max-width: 68rem !important; /* 默认极简升级 */
+  width: 100% !important;
+  /* 注入平滑缓动动画：当侧边栏折叠时，正文如流水般丝滑展开 */
+  transition: max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 2. 单侧折叠状态：当左侧栏或右侧栏单侧隐藏时，正文宽度自动拓宽至 1280px */
+body.left-sidebar-collapsed .sl-container,
+body.right-sidebar-collapsed .sl-container {
+  max-width: 80rem !important;
+}
+
+/* 3. 双侧折叠状态：当两边全部隐藏时，正文瞬间转入“超宽沉浸阅读模式”（最宽 1520px） */
+body.left-sidebar-collapsed.right-sidebar-collapsed .sl-container {
+  max-width: 95rem !important;
+}
+
+/* 针对正文区域整体页面版心的限制，防止在超宽带屏（如 2K, 4K）上发生排版撕裂 */
+.main-frame {
+  max-width: 120rem !important; /* 整体版心最宽限制在 1920px */
+  margin: 0 auto !important;
+}

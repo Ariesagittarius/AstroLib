@@ -1,0 +1,176 @@
+---
+title: '$3.4.5$ 练习题'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Solution from '@/components/Solution.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+
+<Example title="例题 $3.4.1$">
+设数列 $\{b_{n}\}$ 有界，令 $a_{n} = \frac{b_{1}}{1 \cdot 2} + \frac{b_{2}}{2 \cdot 3} + \cdots + \frac{b_{n}}{n(n+1)}$ ，$n \in N_{+}$，证明数列 $\{a_{n}\}$ 收敛。
+
+<Solution title="证明">
+取常数 $M > 0$ ，使得 $|b_n| \leqslant M, n \in \mathbf{N}_+$ 。然后对任意 $p \in \mathbf{N}_+$ 作估计：
+
+$$
+\begin{array}{r l} | a _ {n + p} - a _ {n} | & \leqslant M \left[ \frac {1}{(n + 1) (n + 2)} + \frac {1}{(n + 2) (n + 3)} + \dots + \frac {1}{(n + p) (n + p + 1)} \right] \\ & = M \left[ \left(\frac {1}{n + 1} - \frac {1}{n + 2}\right) + \dots + \left(\frac {1}{n + p} - \frac {1}{n + p + 1}\right) \right] \\ & = M \left(\frac {1}{n + 1} - \frac {1}{n + p + 1}\right) <   \frac {M}{n + 1}. \end{array}
+$$
+
+因此对 $\varepsilon > 0$ , 取 $N = [M / \varepsilon]$ , 就可使 $n > N$ 和 $p \in \mathbf{N}_{+}$ 时, 成立 $|a_{n+p} - a_n| < \varepsilon$ 。这样就证明了 $\{a_n\}$ 是基本数列。根据 $Cauchy$ 收敛准则知道 $\{a_n\}$ 收敛。
+</Solution>
+
+<Note>
+由于 $\{b_n\}$ 除了有界性之外没有任何其他已知性质, 因此 $\{a_n\}$ 谈不上有单调性, 从而第二章的主要方法, 即单调有界数列的收敛定理, 在这里完全失效。可见 $Cauchy$ 收敛准则是一个非常有力的工具。
+</Note>
+</Example>
+
+<Example title="例题 $3.4.2$">
+设 $S_{n} = 1 + \frac{1}{2} + \frac{1}{3} + \cdots + \frac{1}{n}, n \in N_{+}$ ，证明 $\{S_{n}\}$ 发散。
+
+<Solution title="证明">
+写出
+
+$$
+S _ {2 n} - S _ {n} = \frac {1}{n + 1} + \frac {1}{n + 2} + \dots + \frac {1}{2 n} \geqslant n \cdot \frac {1}{2 n} = \frac {1}{2},
+$$
+
+可见对 $\varepsilon = \frac{1}{2}$ 和任意 $N$ , 在 $n, m > N$ 时, 只要取 $m = 2n$ , 不等式 $|S_n - S_m| < \frac{1}{2}$ 就不可能成立。这表明数列 $\{S_n\}$ 不是基本数列, 因此发散。
+</Solution>
+</Example>
+
+<Example title="例题 $3.4.3$">
+证明数列 $\{\sin n\}$ 发散。
+
+<Solution title="证明">
+这个证明与例题 $2.2.7$ 中的 (以几何观察为基础的) 第一个证明类似。从那里的图 $2.2$ 可见, 对每个 $k \in \mathbf{N}_{+}$ , 可以找到正整数 $n_{k}^{\prime}$ 和 $n_{k}^{\prime \prime}$ , 使 $\sin n_{k}^{\prime} \geqslant \sqrt{2} / 2$ , $\sin n_{k}^{\prime \prime} \leqslant 0$ 。因此, $\sin n_{k}^{\prime} - \sin n_{k}^{\prime \prime} > 0.5$ 。由于 $n_{k}^{\prime}$ 和 $n_{k}^{\prime \prime}$ 可任意大, 因此 $\{\sin n\}$ 不可能是基本数列, 根据 $Cauchy$ 收敛准则知道它一定是发散数列。 □
+</Solution>
+</Example>
+
+<Method title="压缩映射原理">
+<Block title="压缩映射的定义">
+设函数 $f$ 在区间 $[a, b]$ 上定义, $f([a, b]) \subset [a, b]$ , 并存在一个常数 $k$ , 满足 $0 < k < 1$ , 使得对一切 $x, y \in [a, b]$ 成立不等式 $|f(x) - f(y)| \leqslant k|x - y|$ , 则称 $f$ 是 $[a, b]$ 上的一个压缩映射, 称常数 $k$ 为压缩常数。
+</Block>
+
+<Knowledge title="命题 $3.4.4$（压缩映射原理）">
+设 $f$ 是 $[a,b]$ 上的一个压缩映射，则
+(1) $f$ 在 $[a, b]$ 中存在唯一的不动点 $\xi = f(\xi)$ ;
+(2) 由任何初始值 $a_0 \in [a, b]$ 和递推公式 $a_{n+1} = f(a_n), n \in \mathbf{N}_+$ 生成的数列 $\{a_n\}$ 一定收敛于 $\xi$ ;
+(3) 成立估计式 $|a_{n} - \xi| \leqslant \frac{k}{1 - k} |a_{n} - a_{n - 1}|$ 和 $|a_{n} - \xi| \leqslant \frac{k^{n}}{1 - k} |a_{1} - a_{0}|$ (即事后估计与先验估计).
+
+<Solution title="证明">
+(注意在这个证明中不需要函数 $f$ 的连续性概念.) 由于 $f([a, b]) \subset [a, b]$ , 因此 $\{a_n\}$ 必在 $[a, b]$ 中。根据 $Cauchy$ 收敛准则估计
+
+$$
+\begin{array}{r l} & {| a _ {n} - a _ {n + p} | \leqslant k | a _ {n - 1} - a _ {n + p - 1} | \leqslant k ^ {2} | a _ {n - 2} - a _ {n + p - 2} |} \\ & {\quad \leqslant \dots \leqslant k ^ {n} | a _ {0} - a _ {p} | \leqslant k ^ {n} (b - a).} \end{array}
+$$
+
+可见对 $\varepsilon > 0$ ，只要取 $N = [\ln (\varepsilon / (b - a)) / \ln k]$ ，当 $n > N$ 和 $p \in \mathbf{N}_+$ 时，就有 $|a_n - a_{n+p}| < \varepsilon$ 。因此 $\{a_n\}$ 是基本数列，从而收敛。记其极限为 $\xi \in [a, b]$ 。为了证明这个 $\xi$ 是 $f$ 的不动点，需要研究第二个数列 $\{f(a_n)\}$ 。从不等式 $|f(a_n) - f(\xi)| \leqslant k |a_n - \xi|$ 和 $\lim_{n \to \infty} a_n = \xi$ 可见，数列 $\{f(a_n)\}$ 收敛于 $f(\xi)$ 。在 $a_{n + 1} = f(a_n)$ 两边令 $n\to \infty$ ，就得到 $\xi = f(\xi)$ 。因此 $\xi$ 是 $f$ 的不动点。
+
+如果 $f$ 在 $[a, b]$ 内还有不动点 $\eta$ , 即 $\eta = f(\eta)$ , 则就有 $|\xi - \eta| = |f(\xi) - f(\eta)| \leqslant k|\xi - \eta|$ 。由于 $0 < k < 1$ , 只能有 $\xi = \eta$ 。因此 $f$ 在 $[a, b]$ 内的不动点是唯一的。这样就证明了命题的 (1) 和 (2).
+
+命题之 (3) 的前一式可从估计式
+
+$$
+\left| a _ {n} - \xi \right| = \left| f \left(a _ {n - 1}\right) - f (\xi) \right| \leqslant k \left| a _ {n - 1} - \xi \right| \leqslant k \left(\left| a _ {n - 1} - a _ {n} \right| + \left| a _ {n} - \xi \right|\right)
+$$
+
+得到:
+
+$$
+\left| a _ {n} - \xi \right| \leqslant \frac {k}{1 - k} \left| a _ {n} - a _ {n - 1} \right|.
+$$
+
+又由上式出发, 利用 $|a_{j} - a_{j-1}| \leqslant k |a_{j-1} - a_{j-2}|$ 就可以如下得到 (3) 的后一式:
+
+$$
+\left| a _ {n} - \xi \right| \leqslant \frac {k ^ {2}}{1 - k} \left| a _ {n - 1} - a _ {n - 2} \right| \leqslant \dots \leqslant \frac {k ^ {n}}{1 - k} \left| a _ {1} - a _ {0} \right|.
+$$
+</Solution>
+
+<Note>
+在 (3) 中的两个不等式在实际计算中很有用处。前一个不等式可以从相继的两次计算估计当前误差, 称为事后估计; 后一个不等式比前一个要粗一些, 但可以用于在计算之前估计要迭代多少次才能达到所要的精度, 称为先验估计。
+</Note>
+</Knowledge>
+
+<Example title="例题 $3.4.4$">
+设 $a_1 = \sqrt{2}, a_{n + 1} = \sqrt{2 + a_n}, n\in \mathbf{N}_+$ .讨论数列 $\{a_{n}\}$ 的敛散性，若收敛则求出其极限。
+
+<Solution title="解">
+这时 $f(x) = \sqrt{2 + x}$ 。 取闭区间 $[0, 2]$ , 则可实现 $f([0, 2]) \subset [0, 2]$ 。 从
+
+$$
+| f (x) - f (y) | = | \sqrt {2 + x} - \sqrt {2 + y} | = \frac {| x - y |}{\sqrt {2 + x} + \sqrt {2 + y}}
+$$
+
+知道可取 $k = 1 / (2\sqrt{2})$ 为压缩常数。 于是数列 $\{a_{n}\}$ 的收敛性已为压缩映射原理所保证, 而且极限是 $f$ 在 $[0,2]$ 内的唯一不动点 $2$ 。
+</Solution>
+</Example>
+
+<Example title="例题 $3.4.5$">
+数列 $\{b_n\}$ 由 $b_{1} = 1$ 和 $b_{n + 1} = 1 + \frac{1}{b_n}$ $(n\in \mathbf{N}_+)$ 生成。 讨论数列 $\{b_n\}$ 的敛散性, 若收敛则求出其极限。
+
+<Solution title="解">
+这里的函数 $f(x) = 1 + \frac{1}{x}$ 。 观察
+
+$$
+| f (x) - f (y) | = \left| \frac {1}{x} - \frac {1}{y} \right| = \frac {| x - y |}{| x y |},
+$$
+
+并考虑如何选择区间． 这里要利用函数 $f$ 在 $x > 0$ 时单调减少，以及数列的前几项 $b_{1} = 1, b_{2} = 2, b_{3} = 1.5, \cdots$ ． 如果用以 $b_{1} = 1$ 和 $b_{2} = 2$ 为端点的闭区间 $[1,2]$ ，则可以实现 $f([1,2]) = [1.5,2] \subset [1,2]$ ． 但在这个区间 $[1,2]$ 上不能取到在 $0$ 和 $1$ 之间的压缩常数。 再尝试以 $b_{2} = 2$ 和 $b_{3} = 1.5$ 为端点的区间 $[1.5,2]$，发现有 $f([1.5,2]) \subset [1.5,2]$ ，同时可以估计出
+
+$$
+| f (x) - f (y) | = \frac {| x - y |}{| x y |} \leqslant \frac {1}{1 . 5 ^ {2}} | x - y | = \frac {4}{9} | x - y |, \forall x, y \in [ 1. 5, 2 ].
+$$
+
+由于数列 $\{b_n\}$ 从第二项起就进入 $[1.5,2]$ , 因此由压缩映射原理保证了它的收敛性。 极限就是 $f$ 在 $x > 0$ 中的唯一不动点 $b = (1 + \sqrt{5}) / 2$ 。
+</Solution>
+
+<Note>
+以上两个例题的解法都是去验证压缩映射原理的条件满足。 但实际上往往可以直接应用原理中的思想方法。 例如, 在例题 $3.4.5$ 中可以先证明从 $n = 2$ 起, $b_{n} \in [1.5, 2]$ 成立。 然后得到 (利用公式 $(2.17)$)
+
+$$
+\left| b _ {n + 2} - b \right| = \left| \frac {b _ {n} - b}{(b _ {n} + 1) (b + 1)} \right| \leqslant \frac {4}{2 5} | b _ {n} - b |,
+$$
+
+从而有 $|b_{2k} - b| \leqslant |b_2 - b| \cdot \left(\frac{4}{25}\right)^{k-1}$ , 即知道 $\{b_{2k}\}$ 收敛于 $b$ 。 同理可证 $\{b_{2k-1}\}$ 也收敛于 $b$ 。
+</Note>
+</Example>
+</Method>
+
+
+$1$. 满足以下条件的数列 $\{x_{n}\}$ 是否一定是基本数列？若回答“是”，请作出证明；若回答“不一定是”，请举出反例：
+
+&emsp;&emsp;(1) 对每个 $\varepsilon > 0$ , 存在 $N$ , 当 $n > N$ 时, 成立 $|x_{n} - x_{N}| < \varepsilon$ ; &emsp;(2) 对所有 $n, p \in \mathbf{N}_{+}$ , 成立不等式 $|x_{n+p} - x_n| \leqslant p / n$ ; &emsp;(3) 对所有 $n, p \in \mathbf{N}_{+}$ , 成立不等式 $|x_{n+p} - x_n| \leqslant p / n^2$ ; &emsp;(4) 对每个正整数 $p$ , 成立 $\lim_{n \to \infty} (x_n - x_{n+p}) = 0$ .
+
+$2$. 用对偶法则于数列收敛的 $Cauchy$ 收敛准则, 以正面方式写出数列发散的充分必要条件.
+
+$3$. 证明下列数列为基本数列, 因此都是收敛数列:
+
+$$
+a _ {n} = 1 + \frac {1}{2 !} + \frac {1}{3 !} + \dots + \frac {1}{n !}, n \in \mathbf {N} _ {+}; \tag {1}
+$$
+
+$$
+b _ {n} = 1 - \frac {1}{2} + \frac {1}{3} - \dots + (- 1) ^ {n - 1} \frac {1}{n}, n \in \mathbf {N} _ {+}; \tag {2}
+$$
+
+$$
+c _ {n} = \frac {\sin 2 x}{2 (2 + \sin 2 x)} + \frac {\sin 3 x}{3 (3 + \sin 3 x)} + \dots + \frac {\sin n x}{n (n + \sin n x)}, n \in \mathbf {N} _ {+}.
+$$
+
+$4$. 设 $a_{n} = \sin 1 + \frac{\sin 2}{2!} + \cdots + \frac{\sin n}{n!}, n \in N_{+}$ ，证明：
+
+(1) 数列 $\{a_{n}\}$ 有界, 但不单调; (2) $\{a_{n}\}$ 收敛.
+
+$5$. 设从某个数列 $\{a_{n}\}$ 定义 $x_{n} = \sum_{k=1}^{n} a_{k}, y_{n} = \sum_{k=1}^{n} |a_{k}|, n \in \mathbf{N}_{+}$ , 若数列 $\{y_{n}\}$ 收敛, 证明数列 $\{x_{n}\}$ 也收敛.
+(本题可以看成是上一题和例题 $3.4.1$ 的推广.)
+
+$6$. 设 $S_{n} = 1 + \frac{1}{2^{p}} + \frac{1}{3^{p}} + \cdots + \frac{1}{n^{p}}, n \in N_{+}$ ，其中 $p \leqslant 1$ ，证明 $\{S_{n}\}$ 发散.
+
+$7$. 天文学中的 $Kepler$ (开普勒) 方程 $x - q\sin x = a$ ( $0 < q < 1$ ) 是一个超越方程, 没有求根公式 (见 [15] 的 $22$ 和 $72$ 页). 求近似解的一个方法是通过迭代。取定 $x_{1}$ , 然后用递推公式 $x_{n+1} = q\sin x_{n} + a, n \in \mathbf{N}_{+}$ . 证明这个方法的正确性.
+
+(这个方程是 $Kepler$ 在 $1609$ 年左右研究行星运动规律时得到的方程。从天体力学的角度来分析可以肯定,对每个给定的 $a$ , 方程存在唯一解。这个解没有可用的显式表达式,但可以用近似方法求解。本题就是用迭代生成数列的方法求近似解。在 [14] 第二卷的 $452$ 小节有解的无穷级数表达式.)

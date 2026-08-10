@@ -38,12 +38,12 @@ export const collections = [
         }
       },
       {
-        id: 'math-geometry',
-        slug: 'math_geometry',
-        title: '???',
+        id: 'math-analysis',
+        slug: 'math_analysis',
+        title: '数学分析',
         description: '???',
         cover: 'https://images.unsplash.com/photo-1509228626012-67e33ae61292?auto=format&fit=crop&q=80&w=400',
-        entryPoint: '???',
+        entryPoint: '01_内容简介',
         trackClasses: ['.example-card', '.variant-card', '.summary-card'],
         modules: {
           '例': { emoji: '✍️', short: '例', aliases: ['例'], theme: 'chip-example' },

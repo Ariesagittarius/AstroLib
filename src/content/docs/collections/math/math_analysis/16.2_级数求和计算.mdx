@@ -1,0 +1,437 @@
+---
+title: '§ $16.2$ 级数求和计算'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Solution from '@/components/Solution.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+
+
+本节列举了级数求和的各种方法供读者参考. 其中级数和的概念是在通常意义下的. 关于 $Cesàro$ 求和概念见 $15.2.3$ 小节, 本节不再讨论.
+
+## $16.2.1$ 级数求和法
+
+对于收敛级数来说, 原则上已经可以通过数值计算来得到级数和的近似值. 但如果能够发现某个级数和 (的准确答案) 可以用已知常数经过简单运算得到, 则当然更好. 由 $Euler$ 解决的 $Basel$ 问题, 即求出
+
+$$
+1 + \frac {1}{4} + \frac {1}{9} + \dots + \frac {1}{n ^ {2}} + \dots = \frac {\pi^ {2}}{6},
+$$
+
+就是级数求和方面的一个光辉例子. 在得到这个答案之前, $Euler$ 已经计算出级数和的近似值 $1.644934\dots$ 直到 $20$ 位有效数字, 但仍然看不出级数和是什么特殊的常数. 当然没有人想到这里会出现圆周率 (参见例题 $13.4.3$ 后的注 $3$ 以及 [$16$] 的第 $3$ 章).
+
+从上册命题 $2.5.2$ 中的例子 $e = 1 + 1 + \frac{1}{2!} + \cdots + \frac{1}{n!} + \cdots$ 可以知道，一个收敛的数项级数（或函数项级数）的和（或和函数）未必能够用过去已经掌握的数或函数经过简单的运算表示出来。例如，直到现在为止对于 $p$ 级数的和
+
+$$
+\zeta (p) = 1 + \frac {1}{2 ^ {p}} + \dots + \frac {1}{n ^ {p}} + \dots ,
+$$
+
+当 $p$ 为奇数时是否会与 $p$ 为偶数时 $Euler$ 的结果 (见上册 $217$ 页 $(7.26)$ 和下面的例题 $16.2.3$) 有类似的表达式, 始终还只是个猜测. 目前最好的结果是在 $1978$ 年 $Apéry$ (阿佩里) 证明了 $\zeta(3)$ 为无理数 (见《美国数学月刊》($2001$) 第 $108$ 卷 $222-231$ 页).
+
+因此, 在本节只是根据经验列出求级数和的若干方法, 这里不可能有什么万能的方法.
+
+<Method title="方法一">
+以已知的数项级数或函数项级数展开式为基础的方法无疑是有用的.例如, 在一个幂级数展开式或 $Fourier$ 级数展开式中, 将变量用不同的特定值代入,就可以得到无穷多个数项级数的和, 或者用简单运算将所要研究的级数变换为已知级数等等. 当然这完全依赖于积累和经验.
+</Method>
+
+<Method title="方法二">
+如果能利用所谓裂项相消法(或连锁消去法)得到部分和的紧凑形式, 则级数问题就转化为数列或函数列的极限问题(参见上册$2.2.4$小节的题$3$).
+</Method>
+
+<Method title="方法三">
+这也可以看成是方法一的范围, 即用函数项级数的逐项积分或逐项微分方法将未知的级数转变为已知的级数. 这在幂级数中是最常用的方法, 但也可能解决其他类型的函数项级数求和计算.
+</Method>
+
+<Method title="方法四 ($Abel$ 方法)">
+这是以幂级数理论中的 $Abel$ 第二定理为基础的级数求和方法: 对于给定的收敛级数 $\sum_{n=1}^{\infty} a_n$ , 研究幂级数 $\sum_{n=1}^{\infty} a_n x^n$ , 它的收敛半径不会小于 $1$. 如果能够求出它的和函数 $S(x)$ , 则所求的
+
+$$
+S = \sum_ {n = 1} ^ {\infty} a _ {n} = \lim _ {x \rightarrow 1 ^ {-}} S (x) = S (1).
+$$
+</Method>
+
+## $16.2.2$ 例题
+
+<Example title="例题 $16.2.1$">
+求下列级数的和:
+
+$$
+\frac {1 !}{x + 1} + \frac {2 !}{(x + 1) (x + 2)} + \dots + \frac {n !}{(x + 1) (x + 2) \cdots (x + n)} + \dots .
+$$
+
+<Solution title="解 $1$ ($裂项相消法$)">
+易见 $x = 1$ 时级数发散. 对于 $x \neq 1$ 记级数通项为 $a_{n}$ ，从前后两项之间的关系式 $a_{n}(n + x) = na_{n-1} (a_{0} = 1)$ 出发得到
+
+$$
+(n + 1) a _ {n} + (x - 1) a _ {n} = n a _ {n - 1},
+$$
+
+可见于 $x \neq 1$ 时有
+
+$$
+a _ {n} = \frac {1}{x - 1} [ n a _ {n - 1} - (n + 1) a _ {n} ],
+$$
+
+从而可以得到级数的第 $n$ 个部分和为
+
+$$
+S _ {n} = \frac {1}{x - 1} - \frac {(n + 1) !}{(x - 1) (x + 1) \cdots (x + n)}, n = 1, 2, \dots .
+$$
+
+因此问题归结为上式右边第二项的敛散性．利用 $Sapagof$ 判别法 (命题 $13.2.3$) 或渐近公式 $(13.24)$ 知第二项当 $x < 1$ 时发散，而当 $x > 1$ 时收敛于 $0$．因此级数当 $x \leqslant 1$ 时发散，而当 $x > 1$ 时收敛于和 $1/(x - 1)$ .
+</Solution>
+
+<Note>
+用裂项相消法求和时一般不必先讨论级数的敛散性. 若要讨论本题中的级数的敛散性, 则用渐近公式 $(13.24)$ 即可. 当然也可用 $Raabe$ 判别法.
+</Note>
+
+<Solution title="解 $2$ ($逐项积分法$)">
+由敛散性讨论可知只要研究 $x > 1$ 的情况. 级数的通项 (差一个因子 $x$) 可以写为积分形式:
+
+$$
+\frac {n !}{x (x + 1) \cdots (x + n)} = \int_ {0} ^ {1} (1 - t) ^ {x - 1} t ^ {n} \mathrm{d} t.
+$$
+
+(这里虽然 $x$ 未必为正整数, 但上册 $326$ 页的分部积分计算仍有效. 实际上这都是 $23.3.1$ 小节中 $Beta$ 函数的特例.) 用逐项积分法计算如下:
+
+$$
+\begin{array}{r l} S (x) & = x \int_ {0} ^ {1} \sum_ {n = 1} ^ {\infty} (1 - t) ^ {x - 1} t ^ {n} \mathrm{d} t = x \int_ {0} ^ {1} (1 - t) ^ {x - 2} t \mathrm{d} t \\ & = \frac {x}{x - 1} \int_ {0} ^ {1} (1 - t) ^ {x - 1} \mathrm{d} t = \frac {1}{x - 1}. \end{array}
+$$
+
+其中逐项积分的合法性当 $x \geqslant 2$ 时可以用 $Dini$ 定理知积分号下的函数项级数 $\sum_{n=1}^{\infty}(1-t)^{x-1}t^n$ 一致收敛来解决, 但是当 $1 < x < 2$ 时 $\int_0^1 (1-t)^{x-2}t\mathrm{d}t$ 为收敛的瑕积分, 因此需要用命题 $16.1.1$ 的结论.
+</Solution>
+</Example>
+
+<Example title="例题 $16.2.2$ ($Euler$)">
+求级数 $1 + \frac{1}{4} + \frac{1}{9} + \cdots + \frac{1}{n^{2}} + \cdots$ 的和.
+
+这就是历史上的 $Basel$ 问题 [$16$, $17$]. $Euler$ 是求出本题答案的第一人. 他根据类比猜测出正弦函数的无穷乘积展开式 $(13.24)$. 将它改写为
+
+$$
+\frac {\sin x}{x} = \left(1 - \frac {x ^ {2}}{\pi^ {2}}\right) \left(1 - \frac {x ^ {2}}{2 ^ {2} \pi^ {2}}\right) \dots \left(1 - \frac {x ^ {2}}{n ^ {2} \pi^ {2}}\right) \dots ,
+$$
+
+其中左边当 $x = 0$ 时理解为其极限值 $1$，因此左边为
+
+$$
+1 - \frac {x ^ {2}}{6} + O (x ^ {4}) (x \rightarrow 0).
+$$
+
+$Euler$ 又将展开式和多项式的根与系数关系作类比, 看出右边应该是
+
+$$
+1 - \frac {x ^ {2}}{\pi^ {2}} \sum_ {n = 1} ^ {\infty} \frac {1}{n ^ {2}} + O (x ^ {4}) (x \rightarrow 0),
+$$
+
+比较两边的 $x^{2}$ 项的系数就知道所求的级数和为 $\frac{\pi^2}{6}$ . 下面我们将 $Euler$ 的方法严格化, 作为第一个解.
+
+<Solution title="解 $1$">
+在 $\frac{\sin x}{x}$ 的上述无穷乘积展开式中令 $y = x^2 / \pi^2$ ，然后讨论函数
+
+$$
+F (y) = \prod_ {n = 1} ^ {\infty} \left(1 - \frac {y}{n ^ {2}}\right).\tag{16.8}
+$$
+
+这时由于 $F(y)=1-y\pi^{2}/6+O(y^{2})$ ( $y\to0$ ), 因此只需要从 $(16.8)$ 右边的无穷乘积出发证明函数 $F$ 在 $y=0$ 处的导数 $F'(0)=-\sum_{n=1}^{\infty}\frac{1}{n^{2}}$ 即可.
+
+对函数 $F$ 在 $|y| < 1$ 范围内取对数，并求导得到
+
+$$
+\frac {F ^ {\prime} (y)}{F (y)} = \sum_ {n = 1} ^ {\infty} \frac {- \frac {1}{n ^ {2}}}{1 - \frac {y}{n ^ {2}}} = - \sum_ {n = 1} ^ {\infty} \frac {1}{n ^ {2} - y},
+$$
+
+其中右边逐项求导的合理性容易从 $Weierstrass$ 一致收敛性判别法得到验证，同时这也保证了 $F$ 的可微性．然后令 $y = 0$ 代入，利用 $F(0) = 1$ ，可见所求结果成立.因此有
+
+$$
+F (y) = 1 - y \sum_ {n = 1} ^ {\infty} \frac {1}{n ^ {2}} + o (y) (y \rightarrow 0),
+$$
+
+这样就知道有
+
+$$
+\prod_ {n = 1} ^ {\infty} \left(1 - \frac {x ^ {2}}{n ^ {2} \pi^ {2}}\right) = 1 - \frac {x ^ {2}}{\pi^ {2}} \sum_ {n = 1} ^ {\infty} \frac {1}{n ^ {2}} + o (x ^ {2}) (x \rightarrow 0),
+$$
+
+因此 $Euler$ 的方法是正确的.
+</Solution>
+
+<Note>
+在作代换 $y = x^{2} / \pi^{2}$ 时有 $y \geqslant 0$ ，但从$(16.8)$可见， $F$ 对于 $y < 0$ 仍有意义，因此上述计算是正确的。有兴趣的读者可以用 $Euler$ 公式 $\mathrm{e}^{\mathrm{i}\theta} = \cos \theta + \mathrm{i}\sin \theta$ 对此作出解释.
+</Note>
+
+<Solution title="解 $2$ (用反正弦函数的幂级数展开式)">
+先证明
+
+$$
+\sum_ {n = 1} ^ {\infty} \frac {1}{(2 n - 1) ^ {2}} = \frac {\pi^ {2}}{8}.\tag{16.9}
+$$
+
+写出函数 $\arcsin x$ 在 $[-1, 1]$ 的幂级数展开式
+
+$$
+\arcsin x = x + \sum_ {n = 1} ^ {\infty} \frac {(2 n - 1) ! !}{(2 n) ! !} \frac {x ^ {2 n + 1}}{2 n + 1},
+$$
+
+在其中令 $x = \sin t$ ，得到
+
+$$
+t = \sin t + \sum_ {n = 1} ^ {\infty} \frac {(2 n - 1) ! !}{(2 n + 1) (2 n) ! !} \sin^ {2 n + 1} t, - \frac {\pi}{2} \leqslant t \leqslant \frac {\pi}{2}.
+$$
+
+将上式两端对 $t$ 从 $0$ 到 $\frac{\pi}{2}$ 积分，并对右端逐项积分，得到
+
+$$
+\frac {\pi^ {2}}{8} = 1 + \sum_ {n = 1} ^ {\infty} \frac {(2 n - 1) ! !}{(2 n + 1) (2 n) ! !} \int_ {0} ^ {\pi / 2} \sin^ {2 n + 1} t \mathrm{d} t
+$$
+
+$$
+\begin{array}{l} = 1 + \sum_ {n = 1} ^ {\infty} \frac {(2 n - 1) ! !}{(2 n + 1) (2 n) ! !} \cdot \frac {(2 n) ! !}{(2 n + 1) ! !} \\ = 1 + \sum_ {n = 1} ^ {\infty} \frac {1}{(2 n + 1) ^ {2}} = \sum_ {n = 1} ^ {\infty} \frac {1}{(2 n - 1) ^ {2}}. \end{array}
+$$
+
+这就证明了$(16.9)$. 然后从
+
+$$
+S = \sum_ {n = 1} ^ {\infty} \frac {1}{n ^ {2}} = \sum_ {n = 1} ^ {\infty} \frac {1}{(2 n - 1) ^ {2}} + \sum_ {n = 1} ^ {\infty} \frac {1}{(2 n) ^ {2}} = \frac {\pi^ {2}}{8} + \frac {S}{4}
+$$
+
+即可解出 $S = \pi^{2}/6$ .
+</Solution>
+
+<Note>
+解 $2$ 也是 $Euler$ 找到的, 发表于 $1743$ 年(参见 [$16$]), 又见于《美国数学月刊》($1987$) 第 $94$ 卷 $662-663$ 页和该刊($1988$) 第 $95$ 卷 $331$ 页. 实际上这个思路也出现在 [$40$] 的第二章的习题 $41$ 中. 此外, 那里还指出从 $(\arcsin x)^2$ 的 $Maclaurin$ 级数展开式出发也可以达到目的.
+</Note>
+
+<Note>
+有很多函数的 $Fourier$ 级数展开式可用于此题.例如见例题 $15.2.2$,这里不再重复.
+</Note>
+
+</Example>
+
+<Example title="例题 $16.2.3$">
+证明：对于所有正整数 $n, p = 2n$ 的 $p$ 级数之和为
+
+$$
+s _ {2 n} = \sum_ {m = 1} ^ {\infty} \frac {1}{m ^ {2 n}} = \frac {\overline {{{{B}}}} _ {n}}{2} \cdot \frac {(2 \pi) ^ {2 n}}{(2 n) !},\tag{16.10}
+$$
+
+其中 $\overline{B}_n$ ( $n \geqslant 1$ ) 为 $Bernoulli$ 数. 前七个 $Bernoulli$ 数为 $\overline{B}_1 = \frac{1}{6}$ , $\overline{B}_2 = \frac{1}{30}$ , $\overline{B}_3 = \frac{1}{42}$ , $\overline{B}_4 = \frac{1}{30}$ , $\overline{B}_5 = \frac{5}{66}$ , $\overline{B}_6 = \frac{691}{2730}$ , $\overline{B}_7 = \frac{7}{6}$ (见上册 $7.2.3$ 小节).
+
+<Solution title="证明">
+从正弦函数的无穷乘积 (见例题 $13.4.3$)
+
+$$
+\sin x = x \left(1 - \frac {x ^ {2}}{\pi^ {2}}\right) \left(1 - \frac {x ^ {2}}{2 ^ {2} \pi^ {2}}\right) \dots = x \prod_ {n = 1} ^ {\infty} \left(1 - \frac {x ^ {2}}{n ^ {2} \pi^ {2}}\right)
+$$
+
+出发, 取绝对值后再取对数, 将无穷乘积转化为无穷级数:
+
+$$
+\ln | \sin x | = \ln | x | + \sum_ {n = 1} ^ {\infty} \ln \left| 1 - \frac {x ^ {2}}{n ^ {2} \pi^ {2}} \right|.
+$$
+
+对于 $x \neq k\pi (k \in \mathbf{Z})$ 的 $x$, 在上式两边求导, 得到 $^{①}$
+
+$$
+\cot x = \frac {1}{x} + \sum_ {n = 1} ^ {\infty} \frac {2 x}{x ^ {2} - n ^ {2} \pi^ {2}}.\tag{16.11}
+$$
+
+这里逐项求导的合理性不难用 $Weierstrass$ 一致收敛性判别法加以验证, 从略. 然后在 $|x| < \pi$ 时作以下运算:
+
+$$
+\begin{array}{l} x \cot x = 1 + 2 \sum_ {m = 1} ^ {\infty} \frac {x ^ {2}}{x ^ {2} - m ^ {2} \pi^ {2}} = 1 - 2 \sum_ {m = 1} ^ {\infty} \frac {\frac {x ^ {2}}{m ^ {2} \pi^ {2}}}{1 - \frac {x ^ {2}}{m ^ {2} \pi^ {2}}} \\ = 1 - 2 \sum_ {m = 1} ^ {\infty} \sum_ {n = 1} ^ {\infty} \left(\frac {x ^ {2}}{m ^ {2} \pi^ {2}}\right) ^ {n} = 1 - 2 \sum_ {n = 1} ^ {\infty} \sum_ {m = 1} ^ {\infty} \left(\frac {x ^ {2}}{m ^ {2} \pi^ {2}}\right) ^ {n} \\ = 1 - 2 \sum_ {n = 1} ^ {\infty} \frac {s _ {2 n}}{\pi^ {2 n}} x ^ {2 n}, | x | <   \pi , \end{array}
+$$
+
+其中 $s_{2n}=\sum_{m=1}^{\infty}\frac{1}{m^{2n}}$ 即是 $p=2n$ 时的 $p$ 级数的和 (在以上计算中对二重正项级数求和利用了第十三章第一组参考题 $9$).
+
+另一方面，从$(14.25)$已经得到公式
+
+$$
+x \cot x = 1 - \sum_ {n = 1} ^ {\infty} \frac {\overline {{{B}}} _ {n} 2 ^ {2 n}}{(2 n) !} x ^ {2 n}.\tag{16.12}
+$$
+
+根据幂级数展开式的惟一性 (命题 $14.4.1$) 就可以得到所要的结果.
+</Solution>
+
+<Note>
+由此可得到 $Bernoulli$ 数的几个重要性质. 首先是 $\overline{B}_n = (-1)^{n-1} B_{2n} > 0$ . 其次, 容易证明 $1 < s_{2n} < 2n / (2n - 1)$ (见例题 $13.2.1$), 因此由$(16.10)$和 $Stirling$ 公式可以得到 $Bernoulli$ 数的渐近公式:
+
+$$
+\overline {{{B}}} _ {n} \sim \frac {2 (2 n) !}{(2 \pi) ^ {2 n}} \sim 4 \sqrt {\pi n} \left(\frac {n}{\pi \mathrm{e}}\right) ^ {2 n}.\tag{16.13}
+$$
+
+这在确定例题 $14.4.2$ 中的几个幂级数的收敛半径时有用. 又从
+
+$$
+\sqrt {2 \pi n} \left(\frac {n}{\mathrm{e}}\right) ^ {n} <   n! <   \sqrt {2 \pi n} \left(\frac {n}{\mathrm{e}}\right) ^ {n} \mathrm{e} ^ {\frac {1}{1 2 n}}
+$$
+
+(见上册 $374$ 页题 $15$)可知，用$(16.13)$右边的渐近公式可以对于 $Bernoulli$ 数 $\overline{B}_n$ 给出相对误差很小的估计.最后，可由此看出在 $n > \pi \mathrm{e}\approx 8.54$ 之后 $Bernoulli$ 数 $\{\overline{B}_n\}$ 的增长非常快，虽然 $\overline{B}_7$ 刚超过 $1$，但 $\overline{B}_{13}$ 已经大于 $10^{6}$ .
+</Note>
+
+</Example>
+
+<Example title="例题 $16.2.4$">
+(1) 求 $Leibniz$ 型级数的和 $S = 1 - \frac{1}{2} + \cdots + \frac{(-1)^{n-1}}{n} + \cdots$ ;
+
+(2) 令 $a_{n} = 1 - \frac{1}{2} + \cdots + \frac{(-1)^{n-1}}{n} - \ln 2, n = 1, 2, \cdots$ ，求 $\sum_{n=1}^{\infty} a_{n}$ 的和.
+
+<Solution title="解">
+(1) 用 $Abel$ 方法. 根据 $Abel$ 第二定理, 有 $S = \lim_{x \to 1^{-}} S(x)$ , 其中
+
+$$
+S (x) = x - \frac {x ^ {2}}{2} + \dots + \frac {(- 1) ^ {n - 1} x ^ {n}}{n} + \dots .
+$$
+
+对上式右边的幂级数在 $(-1,1)$ 上逐项求导得到
+
+$$
+S ^ {\prime} (x) = 1 - x + \dots + (- 1) ^ {n - 1} x ^ {n - 1} + \dots = \frac {1}{1 + x},
+$$
+
+又利用 $S(0)=0$ ，因此可以求出
+
+$$
+S (x) = \int_ {0} ^ {x} \frac {1}{1 + t} \mathrm{d} t = \ln (1 + x), - 1 <   x <   1.
+$$
+
+从而得到
+
+$$
+S = \lim _ {x \rightarrow 1 ^ {-}} \ln (1 + x) = \ln 2.
+$$
+
+(2) 从 (1) 可见 $a_{n}$ 就是该级数的第 $n$ 个余项 (再乘以 $-1$ ), 因此可以得到 $a_{n} = \int_{0}^{1} \frac{(-1)^{n+1} x^{n}}{1 + x} \mathrm{d}x$ , 再用 $\sum \int = \int \sum$ 即可得到 $\sum_{n=1}^{\infty} a_{n} = \ln 2 - \frac{1}{2}$ .
+</Solution>
+
+<Note>
+过去已经知道 (1) 中的级数和, 但主要是通过 $Catalan$ 恒等式 (见上册 $55$ 页) 将问题转化为求数列 $\left\{\frac{1}{n+1} + \frac{1}{n+2} + \cdots + \frac{1}{2n}\right\}$ 的极限问题而解决的 (见上册例题 $11.4.1$ 的注). 因此过去的这种方法太特殊了, 不如本题的 $Abel$ 求和法可以解决不少级数求和问题.
+</Note>
+
+</Example>
+
+<Example title="例题 $16.2.5$">
+求三角级数 $\sum_{n=1}^{\infty} \frac{\cos nx}{n}$ 的和函数①.
+
+<Solution title="解">
+从函数项级数的敛散性判别法可以知道级数在 $x \neq 2k\pi (k \in \mathbf{Z})$ 时收敛，因此只需求出 $(0,2\pi)$ 上的和函数 $S(x)$ . 又从内闭一致收敛知 $S(x)$ 连续.
+
+以 $x$ 为参数，另行引入变量 $\alpha \in (-1,1)$ ，由 $Abel$ 第二定理有
+
+$$
+S (x) = \lim _ {\alpha \rightarrow 1 ^ {-}} f (\alpha),
+$$
+
+其中
+
+$$
+f (\alpha) = \sum_ {n = 1} ^ {\infty} \frac {\cos n x}{n} \alpha^ {n}.
+$$
+
+为简明起见在 $f(\alpha)$ 中没有指出与参数 $x$ 的依赖关系. 在 $(-1,1)$ 上将此幂级数对 $\alpha$ 逐项求导，并用 $Euler$ 公式计算如下：
+
+$$
+\begin{array}{r l} f ^ {\prime} (\alpha) & = \sum_ {n = 1} ^ {\infty} \alpha^ {n - 1} \cos n x = \mathrm{Re} \sum_ {n = 1} ^ {\infty} \alpha^ {n - 1} \mathrm{e} ^ {\mathrm{i} n x} \\ & = \mathrm{Re} \frac {\mathrm{e} ^ {\mathrm{i} x}}{1 - \alpha \mathrm{e} ^ {\mathrm{i} x}} = \frac {\cos x - \alpha}{1 - 2 \alpha \cos x + \alpha^ {2}}. \end{array}
+$$
+
+然后再利用 $f(0) = 0$ 求积得到
+
+$$
+f (\alpha) = - \frac {1}{2} \ln (1 - 2 \alpha \cos x + \alpha^ {2}), - 1 <   \alpha <   1.
+$$
+
+最后就有：
+
+$$
+S (x) = \lim _ {\alpha \rightarrow 1 ^ {-}} f (\alpha) = f (1) = - \frac {1}{2} \ln 2 (1 - \cos x) = - \ln 2 - \ln \left| \sin \frac {x}{2} \right|.
+$$
+</Solution>
+
+<Note>
+由所得的等式
+
+$$
+\ln \left| \sin \frac {x}{2} \right| = - \ln 2 - \sum_ {n = 1} ^ {\infty} \frac {\cos n x}{n}
+$$
+
+出发, 可以利用命题 $16.1.2$ 逐项积分, 或者利用 $Fourier$ 级数的逐项积分定理 (命题 $15.2.9$) 得到 $Euler$ 积分 (命题 $12.3.4$) 的值:
+
+$$
+\int_ {0} ^ {\pi / 2} \ln \sin x \mathrm{d} x = - \frac {\pi}{2} \ln 2,
+$$
+
+从而对该积分的计算提供了一种级数解法.
+</Note>
+
+</Example>
+
+<Example title="例题 $16.2.6$">
+证明:
+
+$$
+\pi = \sum_ {n = 0} ^ {\infty} \frac {1}{1 6 ^ {n}} \left(\frac {4}{8 n + 1} - \frac {2}{8 n + 4} - \frac {1}{8 n + 5} - \frac {1}{8 n + 6}\right).\tag{16.14}
+$$
+
+<Solution title="证明">
+利用逐项积分可知在 $k > 0$ 和 $0 < x < 1$ 时成立
+
+$$
+\begin{array}{r l} \int_ {0} ^ {x} \frac {t ^ {k - 1}}{1 - t ^ {8}} \mathrm{d} t & = \int_ {0} ^ {x} (t ^ {k - 1} + t ^ {k + 7} + \dots + t ^ {k - 1 + 8 n} + \dots) \mathrm{d} t \\ & = \frac {x ^ {k}}{k} + \frac {x ^ {k + 8}}{k + 8} + \dots + \frac {x ^ {k + 8 n}}{k + 8 n} + \dots . \end{array}
+$$
+
+令 $x = \sqrt{2} / 2$ 代入得到
+
+$$
+\int_ {0} ^ {\sqrt {2} / 2} \frac {t ^ {k - 1}}{1 - t ^ {8}} \mathrm{d} t = \frac {1}{2 ^ {k / 2}} \sum_ {n = 0} ^ {\infty} \frac {1}{1 6 ^ {n}} \cdot \frac {1}{8 n + k}.
+$$
+
+将这个结果与所求公式的右边比较, 可见已经得到右边的积分形式为:
+
+$$
+\int_ {0} ^ {\sqrt {2} / 2} \frac {4 \sqrt {2} - 8 x ^ {3} - 4 \sqrt {2} x ^ {4} - 8 x ^ {5}}{1 - x ^ {8}} \mathrm{d} x.
+$$
+
+这是一个有理函数的定积分, 不难按照标准方法计算出它的值等于 $\pi$ (已作为上册第十章的最后一个参考题).
+</Solution>
+
+<Note>
+利用这个公式可以快速计算圆周率在小数点后的任意指定位数上的单个数字, 而不必求出在该位之前的所有数字. 由于这与过去所有算法的思路 (例如 $8.7.1$ 小节中的刘徽-$Archimedes$ 算法和 $Salamin$-$Brent$ 算法) 不同, 因此有人称之为圆周率的后现代算法, 见 [$56$] 的 § $6.6$. 有兴趣的读者还可以参考 [$6$, $52$], 在后者的第二十章中附有为此编制的 $Mathematica$ 程序. 但是要指出, 这里的圆周率在小数点后是按 $16$ 进制展开的. 还不清楚是否存在与十进制对应的这类算法, 至少到现在还没有找到.
+</Note>
+
+</Example>
+
+## $16.2.3$ 练习题
+
+1. 设已知 $\sum_{n=1}^{\infty} (-1)^{n-1} a_n = A, \sum_{n=1}^{\infty} a_{2n-1} = B$ , 证明: $\sum_{n=1}^{\infty} a_n$ 收敛并求其和.
+
+2. 设 $P(x)=a_{0}+a_{1}x+\cdots+a_{m}x^{m}$ 为 $m$ 次多项式, 求级数 $\sum_{n=0}^{\infty}\frac{P(n)}{n!}$ 的和.
+
+3. 求 $1 - \frac{2^{3}}{1!} + \frac{3^{3}}{2!} - \frac{4^{3}}{3!} + \cdots$ 的和.
+
+4. 求下列级数和: (1) $\sum_{n=1}^{\infty} \arctan \frac{1}{2n^2}$ ; (2) $\sum_{n=1}^{\infty} \arctan \frac{2}{n^2}$ .
+
+5. 设 $a > 1$ , 求 $\sum_{n=0}^{\infty} \frac{2^n}{a^{2^n} + 1}$ 的和.
+
+6. 求 $1 + \frac{1}{3} - \frac{1}{5} - \frac{1}{7} + \frac{1}{9} + \frac{1}{11} - \cdots$ 的和.
+
+7. 求 $1 - \frac{1}{7} + \frac{1}{9} - \frac{1}{15} + \frac{1}{17} - \frac{1}{23} + \cdots$ 的和.
+
+8. 求 $1 - \frac{1}{4} + \frac{1}{7} - \frac{1}{10} + \cdots$ 的和.
+
+9. 设 $a_{n}=1+\frac{1}{2}+\cdots+\frac{1}{n}, n=1,2,\cdots$ ，求 $\sum_{n=1}^{\infty}\frac{a_{n}}{n(n+1)}$ 的和.
+
+10. 求 $\sum_{n=0}^{\infty}\left(\frac{1}{4n+1}+\frac{1}{4n+3}-\frac{1}{2n+2}\right)$ 的和.
+
+11. 求 $1 - \frac{1}{4} + \frac{1}{6} - \frac{1}{9} + \frac{1}{11} - \frac{1}{14} + \cdots$ 的和.
+
+12. 求 $\frac{x^{3}}{3!} + \frac{x^{9}}{9!} + \frac{x^{15}}{15!} + \cdots$ 的和函数
+
+13. 求 $\sum_{n=1}^{\infty} \frac{[(n-1)!]^2}{(2n)!}(2x)^{2n}$ 的和函数.
+
+14. 求 $\sum_{n=1}^{\infty} \frac{x^{n+1}}{(1 - x^n)(1 - x^{n+1})}$ 的和函数.
+
+15. 设 $\sum_{n=1}^{\infty}\frac{1}{a_{n}}$ 为发散的正项级数, $x > 0$, 求 $\sum_{n=1}^{\infty}\frac{a_{1}a_{2}\cdots a_{n}}{(a_{2}+x)(a_{3}+x)\cdots(a_{n+1}+x)}$ 的和函数.
+
+16. 设 $x > 1$，求 $\frac{x}{x + 1} + \frac{x^{2}}{(x + 1)(x^{2} + 1)} + \frac{x^{4}}{(x + 1)(x^{2} + 1)(x^{4} + 1)} + \cdots$ 的和函数.

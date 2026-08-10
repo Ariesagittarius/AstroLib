@@ -1,0 +1,222 @@
+---
+title: '§$20.3$ 变量代换问题'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Solution from '@/components/Solution.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+
+
+今后，例如在偏微分方程的求解过程中，经常需要对自变量或函数作变量代换，以求简化方程形式乃至求出方程的解。变量代换计算的关键是隐函数组或反函数组的求导。
+
+## $20.3.1$ 仅变换自变量的情形
+
+<Example title="例 $20.3.1$">
+在方程
+$$
+\left(\frac{\partial u}{\partial x}\right)^{2}+\left(\frac{\partial u}{\partial y}\right)^{2}=u
+$$
+中作极坐标变换 $x=r\cos\theta$, $y=r\sin\theta$，试求方程在变换后的形式。
+
+<Solution title="解 $1$">
+认为 $u(x,y)=u(r\cos\theta,r\sin\theta)$，则
+$$
+\begin{array}{l}
+u_r = u_x\cos\theta + u_y\sin\theta,\\
+u_\theta = r(-u_x\sin\theta + u_y\cos\theta).
+\end{array}
+$$
+解此方程组得
+$$
+u_x = \frac1r(r\cos\theta\,u_r - \sin\theta\,u_\theta),\qquad
+u_y = \frac1r(r\sin\theta\,u_r + \cos\theta\,u_\theta).
+$$
+代入原方程中得
+$$
+u_r^2 + \frac1{r^2}u_\theta^2 = u.
+$$
+</Solution>
+
+<Solution title="解 $2$">
+认为 $u(r,\theta)=u\bigl(\sqrt{x^2+y^2},\arctan\frac{y}{x}\bigr)$，则
+$$
+u_x = u_r\frac{x}{r} - u_\theta\frac{y}{r^2},\qquad
+u_y = u_r\frac{y}{r} + u_\theta\frac{x}{r^2}.
+$$
+于是 $u_x^2+u_y^2 = u_r^2+\frac1{r^2}u_\theta^2$，从而方程化为
+$$
+u_r^2 + \frac1{r^2}u_\theta^2 = u.
+$$
+</Solution>
+
+<Note>
+上述两种方法是自变量变换中通常使用的方法，具体用哪一种方法使运算简单，视具体情况而定。
+</Note>
+</Example>
+
+<Example title="例 $20.3.2$">
+通过代换 $x=uv$, $y=\frac12(u^2-v^2)$，变换方程
+$$
+\left(\frac{\partial z}{\partial x}\right)^2 + \left(\frac{\partial z}{\partial y}\right)^2 = \frac1{\sqrt{x^2+y^2}}.
+$$
+
+<Solution title="解">
+由链式法则
+$$
+z_u = v z_x + u z_y,\qquad z_v = u z_x - v z_y.
+$$
+两式平方后相加得
+$$
+z_u^2 + z_v^2 = (u^2+v^2)(z_x^2+z_y^2).
+$$
+于是
+$$
+z_x^2+z_y^2 = \frac1{u^2+v^2}(z_u^2+z_v^2).
+$$
+另一方面
+$$
+x^2+y^2 = \frac14(u^2+v^2)^2,
+$$
+代入原方程得
+$$
+z_u^2+z_v^2 = 2.
+$$
+</Solution>
+</Example>
+
+## $20.3.2$ 自变量与因变量同时变换的情形
+
+这种情况比只变换自变量的情况稍复杂些，它要多一个函数关系分析的步骤。
+
+<Example title="例 $20.3.3$">
+通过代换 $x=t$, $y=\dfrac{t}{1+tu}$, $z=\dfrac{t}{1+tv}$，试把方程
+$$
+x^2 z_x + y^2 z_y = z^2 \tag{20.17}
+$$
+变为以 $v$ 为因变量、$t,u$ 为自变量的形式。
+
+分析 题目的意思是有一个函数 $z=z(x,y)$ 满足方程 $(20.17)$，作自变量代换
+$$
+x=t,\quad y=\frac{t}{1+tu}\tag{20.18}
+$$
+以及因变量代换
+$$
+z=\frac{t}{1+tv}\tag{20.19}
+$$
+得到函数 $v=v(t,u)$。求 $v=v(t,u)$ 满足的方程。
+
+<Solution title="解 $1$">
+直接从关系式 $(20.19)$ 出发求 $z_x$ 和 $z_y$：
+$$
+\begin{aligned}
+z_x &= \Bigl(\frac{t}{1+tv}\Bigr)_t t_x + \Bigl(\frac{t}{1+tv}\Bigr)_v (v_t t_x + v_u u_x), \tag{20.20}\\[2mm]
+z_y &= \Bigl(\frac{t}{1+tv}\Bigr)_t t_y + \Bigl(\frac{t}{1+tv}\Bigr)_v (v_t t_y + v_u u_y). \tag{20.21}
+\end{aligned}
+$$
+由 $(20.18)$ 得
+$$
+t=x,\quad u=\frac1y-\frac1x.
+$$
+于是
+$$
+t_x=1,\quad t_y=0,\qquad u_x=\frac1{x^2},\quad u_y=-\frac1{y^2}.
+$$
+将它们代入 $(20.20)$、$(20.21)$，得到
+$$
+z_x = \Bigl(\frac{t}{1+tv}\Bigr)_t + \Bigl(\frac{t}{1+tv}\Bigr)_v \Bigl(v_t + \frac1{x^2}v_u\Bigr),\qquad
+z_y = -\Bigl(\frac{t}{1+tv}\Bigr)_v \frac1{y^2}v_u.
+$$
+将以上式子代入 $(20.17)$，得到
+$$
+x^2\Bigl[\Bigl(\frac{t}{1+tv}\Bigr)_t + \Bigl(\frac{t}{1+tv}\Bigr)_v v_t\Bigr] = z^2.
+$$
+整理得
+$$
+v_t = 0.
+$$
+</Solution>
+
+<Solution title="解 $2$">
+从 $(20.19)$ 中解出 $v$ 得
+$$
+v = \frac1z - \frac1t,
+$$
+于是
+$$
+v_t = -\frac1{z^2}(z_x x_t + z_y y_t) + \frac1{t^2},\tag{20.22}
+$$
+$$
+v_u = -\frac1{z^2}(z_x x_u + z_y y_u).\tag{20.23}
+$$
+由 $(20.18)$ 得
+$$
+x_t=1,\; x_u=0,\qquad y_t=\frac1{(1+tu)^2},\; y_u=-\frac{t^2}{(1+tu)^2}.
+$$
+将它们代入 $(20.22)$、$(20.23)$ 得
+$$
+v_t = -\frac1{z^2}\Bigl[z_x + \frac1{(1+tu)^2}z_y\Bigr] + \frac1{t^2},\qquad
+v_u = \frac1{z^2}\cdot\frac{t^2}{(1+tu)^2}z_y.
+$$
+由此解出 $z_x,z_y$，得
+$$
+z_x = z^2\Bigl(\frac1{t^2}-v_t\Bigr) - \frac{z^2}{t^2}v_u,\qquad
+z_y = \frac{z^2(1+tu)^2}{t^2}v_u.
+$$
+将它们代入原方程，得
+$$
+v_t = 0.
+$$
+</Solution>
+</Example>
+
+## $20.3.3$ 练习题
+
+1. 把方程 $(x-y)\dfrac{\partial z}{\partial x}+y\dfrac{\partial z}{\partial y}=0$ 变为 $x$ 作因变量，$y,z$ 为自变量的形式。
+
+2. 引用新函数 $r=\sqrt{x^2+y^2}$, $\varphi=\arctan\dfrac{y}{x}$ 变换微分式
+   $$
+   w = x\frac{\mathrm{d}^2y}{\mathrm{d}t^2} - y\frac{\mathrm{d}^2x}{\mathrm{d}t^2}.
+   $$
+
+3. 以 $\xi=x+y$, $\eta=x-y$ 为新自变量，变换方程 $\dfrac{\partial z}{\partial x}=\dfrac{\partial z}{\partial y}$。
+
+4. 取 $u=y+ze^{-x}$, $v=x+ze^{-y}$ 为新的自变量，变换微分式
+   $$
+   F = (z+\mathrm{e}^x)\frac{\partial z}{\partial x} + (z+\mathrm{e}^y)\frac{\partial z}{\partial y} - (z^2-\mathrm{e}^{x+y}).
+   $$
+
+5. 设 $u=x\mathrm{e}^z$, $v=y\mathrm{e}^z$, $w=z\mathrm{e}^z$，试以 $w$ 为新的因变量，$u,v$ 为新的自变量，变换方程 $\dfrac{\partial z}{\partial x}=\dfrac{\partial z}{\partial y}$。
+
+6. 以 $w$ 为新的因变量，$\xi,\eta,\zeta$ 为新的自变量，变换方程
+   $$
+   x\frac{\partial u}{\partial x} + y\frac{\partial u}{\partial y} + z\frac{\partial u}{\partial z} = u + \frac{xy}{z},
+   $$
+   其中 $\xi=\dfrac{x}{z}$, $\eta=\dfrac{y}{z}$, $\zeta=z$, $w=\dfrac{u}{z}$。
+
+7. 试求 $\dfrac{\partial^2u}{\partial x^2}+\dfrac{\partial^2u}{\partial y^2}+\dfrac{\partial^2u}{\partial z^2}=0$ 在球坐标下的形式。
+
+8. 以 $u=x+2y+2$, $v=x-y-1$ 为新的自变量，变换方程
+   $$
+   2\frac{\partial^2z}{\partial x^2} + \frac{\partial^2z}{\partial x\partial y} - \frac{\partial^2z}{\partial y^2} + \frac{\partial z}{\partial x} + \frac{\partial z}{\partial y} = 0.
+   $$
+
+9. 以 $w$ 为新的因变量，$u,v$ 为新的自变量，变换方程
+   $$
+   \frac{\partial^2z}{\partial x^2} - 2\frac{\partial^2z}{\partial x\partial y} + \Bigl(1+\frac{y}{x}\Bigr)\frac{\partial^2z}{\partial y^2} = 0,
+   $$
+   其中 $u=x$, $v=x+y$, $w=x+y+z$。
+
+10. 设 $xu=x^2+y^2$, $yv=x^2+y^2$，证明：$\dfrac{\partial(u,v)}{\partial(x,y)} = -\dfrac{uv}{xy}$。
+
+11. 若 $u(x,y,z)$, $v(x,y,z)$ 可微，证明：
+    $$
+    \frac{\partial(u,v)}{\partial(y,z)}\frac{\partial u}{\partial x} + \frac{\partial(u,v)}{\partial(z,x)}\frac{\partial u}{\partial y} + \frac{\partial(u,v)}{\partial(x,y)}\frac{\partial u}{\partial z} = 0.
+    $$
+
+12. 设 $u=xy$, $v=\dfrac{x}{y}$，试求 $\dfrac{\partial(u,v)}{\partial(x,y)}$, $\dfrac{\partial(x,y)}{\partial(u,v)}$。
+
+13. 设 $u=\dfrac{x}{r^2}$, $v=\dfrac{y}{r^2}$, $w=\dfrac{z}{r^2}$，其中 $r^2=x^2+y^2+z^2$，试求 $\dfrac{\partial(u,v,w)}{\partial(x,y,z)}$。

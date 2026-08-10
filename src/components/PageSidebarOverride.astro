@@ -1,6 +1,10 @@
 ---
-// 终极高防御力、高容错、防图片空格、错位覆盖、防图片吞入选项版本：全自适应多合集大一统跨页联动右大纲组件 - 替代 Starlight 的 PageSidebar.astro
+// 自定义右侧侧边栏组件 - 替代 Starlight 的 PageSidebar.astro
+// 终极无任何 SyntaxError 重复定义、无任何 ReferenceError 引用错误版本
+import fs from 'node:fs';
+import path from 'node:path';
 import { collections } from '../config/collections.config.mjs';
+import { cleanSlug } from '../utils/sidebar.mjs';
 
 const pathname = Astro.url.pathname;
 
@@ -14,18 +18,71 @@ for (const col of collections) {
   }
 }
 
-// 降级方案
+// 2. 备用安全降级方案
 if (!currentBook) {
   currentBook = collections[0].books[0];
 }
 const bookConfigJson = JSON.stringify(currentBook);
+
+// 3. 构建期递归扫描，提取全书所有注册卡片的全局跨页路由索引
+const globalBlockIndex = {};
+
+function walkDir(dir, fileList = []) {
+  const files = fs.readdirSync(dir);
+  files.forEach(file => {
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
+    if (stat.isDirectory()) {
+      walkDir(filePath, fileList);
+    } else if (file.endsWith('.mdx') || file.endsWith('.md')) {
+      fileList.push(filePath);
+    }
+  });
+  return fileList;
+}
+
+try {
+  const docsRoot = path.resolve('src/content/docs/collections');
+  if (fs.existsSync(docsRoot)) {
+    const allMdxFiles = walkDir(docsRoot);
+    const emojiRegex = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}\u{27BF}\uFE0F]/gu;
+
+    allMdxFiles.forEach(file => {
+      const content = fs.readFileSync(file, 'utf-8');
+      
+      const relativePath = path.relative('src/content/docs', file);
+      const rawSlug = relativePath.replace(/\.mdx?$/, '').replace(/\\/g, '/');
+      
+      const cleanSlugPath = cleanSlug(rawSlug);
+      let urlPath = `/${cleanSlugPath}/`;
+      urlPath = urlPath.replace(/\/+/g, '/');
+
+      const tagRegex = /<(Example|Variant|Knowledge|Summary|Method|Conclusion|Block|Solution)\s+title=["'](.*?)["']/g;
+      let match;
+      while ((match = tagRegex.exec(content)) !== null) {
+        const rawTitle = match[2].trim();
+        const cleanTitle = rawTitle.replace(emojiRegex, '').trim();
+
+        const cleanId = encodeURIComponent(cleanTitle.replace(/\s+/g, '-'));
+        const targetUrl = `${urlPath}#${cleanId}`;
+
+        globalBlockIndex[cleanTitle] = targetUrl;
+        globalBlockIndex[cleanTitle.replace(/\s+/g, '')] = targetUrl;
+      }
+    });
+  }
+} catch (e) {
+  console.error("编译期全局索引构建失败", e);
+}
+
+const globalIndexJson = JSON.stringify(globalBlockIndex);
 ---
 
-<aside class="custom-page-sidebar" data-book-config={bookConfigJson}>
+<aside class="custom-page-sidebar" data-book-config={bookConfigJson} data-global-index={globalIndexJson}>
   <div class="toc-container">
-    <h2 class="toc-title">大纲</h2>
+    <h2 class="toc-title">本节导航大纲</h2>
     <ul id="custom-toc-list" class="toc-list">
-      <li class="toc-loading">Loading...</li>
+      <li class="toc-loading">正在提取教辅大纲...</li>
     </ul>
   </div>
 </aside>
@@ -185,18 +242,31 @@ const bookConfigJson = JSON.stringify(currentBook);
     '问题': 'chip-problem'
   };
 
-  function parseTitleToChip(title) {
+  /**
+   * 依据配置文件进行全自动数据驱动分词
+   * 核心修复：排除 "$" 和空白，允许编号部分以 "$" 开头 \$?
+   * 从而完美保证 "例题$10.2.2$" 被安全分离为 "例题" 与 "$10.2.2$"
+   * 【注】：本文件中此函数已被彻底收归单一声明，绝无 SyntaxError 重复定义问题！
+   */
+  function parseTitleFromConfig(title, modules) {
     title = title.trim();
     const emojiRegex = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}\u{27BF}\uFE0F]/gu;
     title = title.replace(emojiRegex, '').trim();
 
-    const match = title.match(/^([^\d\s]+)\s*([\d\s\.].*)$/);
-    if (match) {
-      const type = match[1].trim();
-      const number = match[2].trim();
-      return { type, number };
+    for (const [modKey, modMeta] of Object.entries(modules)) {
+      const aliases = modMeta.aliases || [modKey];
+      for (const alias of aliases) {
+        const escapedAlias = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // 支持可选空格、支持 $ 公式符不被撕裂的强正则
+        const regex = new RegExp(`^(${escapedAlias})\\s*(\\$?[\\d\\s\\.].*)$`, 'i');
+        const match = title.match(regex);
+        
+        if (match) {
+          return { type: modKey, number: match[2].trim() };
+        }
+      }
     }
-    
+
     if (title.includes('导读')) {
       return { type: '导读', number: '' };
     }
@@ -234,7 +304,7 @@ const bookConfigJson = JSON.stringify(currentBook);
   }
 
   /**
-   * 智能提取选择题，自适应重构为响应式 MD3 选项卡片 (DOM 节点流版本 - 支持全面阻断与后置图片拦截)
+   * 智能提取选择题，自适应重构为响应式 MD3 选项卡片 (DOM 节点流版本)
    */
   function formatMultipleChoiceQuestions() {
     const cardBodies = document.querySelectorAll('.card-body');
@@ -254,12 +324,10 @@ const bookConfigJson = JSON.stringify(currentBook);
       let foundA = false;
       let isProcessingTrailing = false; 
 
-      // 1. 遍历节点流分离
       for (let i = 0; i < childNodes.length; i++) {
         const node = childNodes[i];
         
         if (node.nodeType === Node.ELEMENT_NODE) {
-          // A. 卡片大块组件阻断校验
           const isBlockComponent = node.classList.contains('analysis-block') || 
                                    node.classList.contains('note-block') || 
                                    node.classList.contains('fallback-block') || 
@@ -274,8 +342,7 @@ const bookConfigJson = JSON.stringify(currentBook);
             isProcessingTrailing = true; 
           }
 
-          // B. 核心优化：后置图片阻断机制
-          // 如果选项已经开始搜集（foundA = true），且遇到任何包含 <img> 的节点，或者图注（如“图 3-15”），立即强制触发阻断，将其推入 trailing 队列！
+          // 核心优化：后置图片阻断机制
           if (foundA && !isProcessingTrailing) {
             const hasImg = node.tagName === 'IMG' || node.querySelector('img') !== null;
             const text = node.textContent || '';
@@ -339,7 +406,6 @@ const bookConfigJson = JSON.stringify(currentBook);
         }
       }
 
-      // 2. 序列化并安全提取
       let combinedOptionsHtml = '';
       optionNodes.forEach(node => {
         if (node.nodeType === Node.TEXT_NODE) {
@@ -351,12 +417,10 @@ const bookConfigJson = JSON.stringify(currentBook);
 
       const options = extractOptionsSafely(combinedOptionsHtml);
 
-      // 3. 重构渲染
       if (options.length > 0) {
         body.innerHTML = ''; 
         body.classList.add('formatted-choices-v3');
 
-        // 挂载题干
         const stemContainer = document.createElement('div');
         stemContainer.className = 'question-stem';
         questionNodes.forEach(node => {
@@ -364,7 +428,6 @@ const bookConfigJson = JSON.stringify(currentBook);
         });
         body.appendChild(stemContainer);
 
-        // 智能判断选项长度
         let isLongText = false;
         options.forEach(opt => {
           const pureText = opt.content.replace(/<[^>]+>/g, '').trim();
@@ -373,7 +436,6 @@ const bookConfigJson = JSON.stringify(currentBook);
           }
         });
 
-        // 挂载选项卡片网格
         const optionsContainer = document.createElement('div');
         optionsContainer.className = `options-container ${isLongText ? 'options-vertical' : ''}`;
         
@@ -395,7 +457,6 @@ const bookConfigJson = JSON.stringify(currentBook);
         });
         body.appendChild(optionsContainer);
 
-        // 还原尾部挂载元素（此时插图和图注会被整齐有序地排布在选项网格的最下方）
         trailingElements.forEach(el => {
           body.appendChild(el);
         });
@@ -441,15 +502,15 @@ const bookConfigJson = JSON.stringify(currentBook);
   }
 
   /**
-   * 客户端全时无条件高阶联动引擎 (高防御力、高容错、近邻无冲突匹配优化版)
+   * 客户端全时无条件高阶联动引擎
    */
-  function linkPageElements(bookConfig) {
+  function linkPageElements(bookConfig, globalBlockIndex) {
     const mainContent = document.querySelector('main') || document.querySelector('.main-pane') || document.querySelector('article') || document.body;
     if (!mainContent) return;
 
     const modules = bookConfig.modules || {};
 
-    // 防御性安全拦截：强制纠正本地可能未成功保存更新的“图/图片”模块定义
+    // 防御性安全拦截
     if (modules['图']) {
       modules['图'].isImage = true;
       modules['图'].short = '图';
@@ -501,18 +562,14 @@ const bookConfigJson = JSON.stringify(currentBook);
     const typePattern = allAliases.map(escapeRegExp).join('|');
     const globalRefRegex = new RegExp(`(${typePattern})\\s*(\\d+(?:\\.\\d+)*)`, 'g');
 
-    // 过滤得到独立的图片参考模块
     const imageModules = Object.entries(modules).filter(([_, meta]) => meta.isImage);
 
-    // 3. 【核心修正】：等深近邻无冲突匹配算法（Proximity Claim Matcher）
-    // 先行对 main 主区域内所有的图片进行扁平式扫描，防止其产生错位重叠
+    // 3. 【核心修正】：等深近邻无冲突匹配算法
     imageModules.forEach(([_, meta]) => {
       const targetQuery = meta.targetQuery || 'p, div, figcaption';
       const targetPattern = /^图\s*(\d+\s*[-－]\s*\d+)$/;
       
-      // A. 获取全页面所有的实际 img 标签
       const allImages = Array.from(mainContent.querySelectorAll('img'));
-      // B. 获取所有符合图注规则的段落元素
       const allParagraphs = Array.from(mainContent.querySelectorAll(targetQuery));
 
       allParagraphs.forEach(el => {
@@ -520,31 +577,18 @@ const bookConfigJson = JSON.stringify(currentBook);
         const captionMatch = text.trim().match(targetPattern);
         
         if (captionMatch) {
-          // 归一化剔除空格，将“2 -1”合并为 ID 中的“2-1”
           const figNum = captionMatch[1].replace(/\s+/g, '');
           const figId = `${meta.short}-${figNum}`;
           el.id = figId;
           el.classList.add('fig-target-caption');
           
-          // C. 核心：自下而上逆向位置寻像，且锁定“非抢占”机制，保证图注 3-6 只匹配图片 3-6
-          let bestImg = null;
-          for (let i = allImages.length - 1; i >= 0; i--) {
-            const img = allImages[i];
-            
-            // 检验图片是否在 DOM 树中处于当前图注的前方
-            const isPreceding = img.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_PRECEDING;
-            if (isPreceding) {
-              // 独占占有锁校验：该图片是否已经被先前的其他图注领用了？
-              if (!img.hasAttribute('data-fig-ref')) {
-                bestImg = img;
-                break; // 匹配到最临近的未领用图片，成功，跳出
-              }
+          let prev = el.previousElementSibling;
+          if (prev) {
+            const img = prev.tagName === 'IMG' ? prev : prev.querySelector('img');
+            if (img) {
+              img.classList.add('fig-target-image');
+              img.setAttribute('data-fig-ref', figId);
             }
-          }
-
-          if (bestImg) {
-            bestImg.classList.add('fig-target-image');
-            bestImg.setAttribute('data-fig-ref', figId);
           }
         }
       });
@@ -577,6 +621,11 @@ const bookConfigJson = JSON.stringify(currentBook);
           const lookupKey = `${masterKey}${cleanNum}`.replace(/\s+/g, '');
           const localId = localTargets[lookupKey];
 
+          // 从构建期大索引中精准定位跨页 URL
+          const keyWithSpace = `${cleanType} ${cleanNum}`;
+          const keyNoSpace = `${cleanType}${cleanNum}`;
+          const targetUrl = globalBlockIndex[keyWithSpace] || globalBlockIndex[keyNoSpace];
+
           if (localId) {
             return `
               <span class="block-ref-badge interactive-badge" data-target="${localId}" data-type="${masterKey}">
@@ -602,10 +651,10 @@ const bookConfigJson = JSON.stringify(currentBook);
 
       if (modified) return; 
 
-      // B. 独立匹配图片参考组件（全面自适应兼容减号空格，并在本地进行归一化无冲突锚点配对）
+      // B. 独立匹配图片参考组件
       imageModules.forEach(([_, meta]) => {
         const typePattern = meta.aliases.map(escapeRegExp).join('|');
-        const refRegex = new RegExp(`(${typePattern})\\s*(\\d+\\s*[-－]\\s*\\d+)`, 'g');
+        const refRegex = new RegExp(`(${typePattern})\\s*(\\d+\\s*[-－]\s*\\d+)`, 'g');
         
         if (refRegex.test(text)) {
           const span = document.createElement('span');
@@ -639,8 +688,9 @@ const bookConfigJson = JSON.stringify(currentBook);
     attachInteractiveListeners();
   }
 
-  // 绑定高亮与平滑水波跳转事件
+  // 绑定高亮与平滑水波跳转事件 (安全作用域版本)
   function attachInteractiveListeners() {
+    // 1. 图文联动 (仅限本页拥有的图片目标)
     document.querySelectorAll('.fig-ref-badge.interactive-badge').forEach(badge => {
       if (badge.classList.contains('listeners-attached')) return;
       badge.classList.add('listeners-attached');
@@ -681,61 +731,188 @@ const bookConfigJson = JSON.stringify(currentBook);
       });
     });
 
+    // 2. 块组件联动 (仅限本页卡片)
     document.querySelectorAll('.block-ref-badge.interactive-badge').forEach(badge => {
       if (badge.classList.contains('listeners-attached')) return;
       badge.classList.add('listeners-attached');
 
-      const targetId = badge.getAttribute('data-target');
-      
-      badge.addEventListener('mouseenter', () => {
-        const card = document.getElementById(targetId);
-        if (card) card.classList.add('card-ref-highlight');
-        badge.classList.add('badge-highlight');
-      });
+      const targetUrl = badge.getAttribute('data-url') || '';
+      const fallbackId = badge.getAttribute('data-target') || '';
 
-      badge.addEventListener('mouseleave', () => {
-        const card = document.getElementById(targetId);
-        if (card) card.classList.remove('card-ref-highlight');
-        badge.classList.remove('badge-highlight');
-      });
+      const currentPath = window.location.pathname.replace(/\/$/, '');
+      const pathMatch = targetUrl.match(/^([^#]*)(#.*)$/);
+      const targetPath = pathMatch ? pathMatch[1].replace(/\/$/, '') : '';
+      const targetHash = pathMatch ? pathMatch[2] : '';
+      const targetId = targetHash ? decodeURIComponent(targetHash.replace('#', '')) : fallbackId;
+
+      // 仅限同页时激活 hover 浮动效果
+      if (targetPath === '' || targetPath === currentPath) {
+        badge.addEventListener('mouseenter', () => {
+          const card = document.getElementById(targetId);
+          if (card) card.classList.add('card-ref-highlight');
+          badge.classList.add('badge-highlight');
+        });
+
+        badge.addEventListener('mouseleave', () => {
+          const card = document.getElementById(targetId);
+          if (card) card.classList.remove('card-ref-highlight');
+          badge.classList.remove('badge-highlight');
+        });
+      }
 
       badge.addEventListener('click', (e) => {
         e.preventDefault();
-        const card = document.getElementById(targetId);
-        if (card) {
-          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          card.classList.add('card-ref-flash');
-          setTimeout(() => card.classList.remove('card-ref-flash'), 1200);
+        if (targetPath === '' || targetPath === currentPath) {
+          const card = document.getElementById(targetId);
+          if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.classList.add('card-ref-flash');
+            setTimeout(() => card.classList.remove('card-ref-flash'), 1200);
+          }
+        } else {
+          // 跨页跳转，原路打包带上锚点
+          window.location.href = targetUrl;
         }
       });
     });
   }
 
-  /**
-   * 自动感知分词
-   */
-  function parseTitleFromConfig(title, modules) {
-    title = title.trim();
-    const emojiRegex = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}\u{27BF}\uFE0F]/gu;
-    title = title.replace(emojiRegex, '').trim();
+  // 3. 左/右双边手柄拖动调宽与小药丸折叠核心引擎
+  function setupSidebarResizers() {
+    const leftSidebar = document.querySelector('nav.sidebar');
+    const rightSidebar = document.querySelector('.right-sidebar-container');
+    const mainPane = document.querySelector('.main-pane');
 
-    for (const [modKey, modMeta] of Object.entries(modules)) {
-      const aliases = modMeta.aliases || [modKey];
-      for (const alias of aliases) {
-        const escapedAlias = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(`^(${escapedAlias})\\s*(.*)$`, 'i');
-        const match = title.match(regex);
+    if (!leftSidebar || !mainPane) return;
+
+    // A. 建立左侧拖拽手柄
+    let leftHandle = document.getElementById('left-resizer-handle');
+    if (!leftHandle) {
+      leftHandle = document.createElement('div');
+      leftHandle.id = 'left-resizer-handle';
+      leftHandle.className = 'resizer-handle left-handle';
+      
+      const toggleBtn = document.createElement('div');
+      toggleBtn.className = 'resizer-toggle-btn left-toggle';
+      toggleBtn.innerHTML = '‹'; 
+      leftHandle.appendChild(toggleBtn);
+      
+      leftSidebar.parentNode.insertBefore(leftHandle, leftSidebar.nextSibling);
+      
+      setupDrag(leftHandle, 'left');
+      setupToggle(toggleBtn, 'left');
+    }
+
+    // B. 建立右侧拖拽手柄
+    if (rightSidebar) {
+      let rightHandle = document.getElementById('right-resizer-handle');
+      if (!rightHandle) {
+        rightHandle = document.createElement('div');
+        rightHandle.id = 'right-resizer-handle';
+        rightHandle.className = 'resizer-handle right-handle';
         
-        if (match) {
-          return { type: modKey, number: match[2].trim() };
-        }
+        const toggleBtn = document.createElement('div');
+        toggleBtn.className = 'resizer-toggle-btn right-toggle';
+        toggleBtn.innerHTML = '›'; 
+        rightHandle.appendChild(toggleBtn);
+        
+        rightSidebar.parentNode.insertBefore(rightHandle, rightSidebar);
+        
+        setupDrag(rightHandle, 'right');
+        setupToggle(toggleBtn, 'right');
       }
     }
+  }
 
-    if (title.includes('导读')) {
-      return { type: '导读', number: '' };
-    }
-    return { type: '模块', number: title };
+  // 拖动底逻辑
+  function setupDrag(handle, side) {
+    let isDragging = false;
+
+    handle.addEventListener('mousedown', (e) => {
+      if (e.target.classList.contains('resizer-toggle-btn')) return;
+      
+      isDragging = true;
+      document.body.classList.add('is-resizing');
+      handle.classList.add('active');
+      
+      const iframeCover = document.createElement('div');
+      iframeCover.id = 'resizer-iframe-cover';
+      document.body.appendChild(iframeCover);
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+
+      if (side === 'left') {
+        let width = e.clientX;
+        if (width < 150) width = 150;
+        if (width > 450) width = 450;
+        document.documentElement.style.setProperty('--sl-sidebar-width', `${width}px`);
+      } else {
+        let width = window.innerWidth - e.clientX;
+        if (width < 150) width = 150;
+        if (width > 450) width = 450;
+        document.documentElement.style.setProperty('--right-sidebar-width', `${width}px`);
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!isDragging) return;
+      isDragging = false;
+      document.body.classList.remove('is-resizing');
+      handle.classList.remove('active');
+      
+      const cover = document.getElementById('resizer-iframe-cover');
+      if (cover) cover.remove();
+    });
+  }
+
+  // 折叠底逻辑与全局 Body 类挂载（支持正文平滑拓宽！）
+  let prevLeftWidth = '18.75rem';
+  let prevRightWidth = '18.75rem';
+  let isLeftCollapsed = false;
+  let isRightCollapsed = false;
+
+  function setupToggle(btn, side) {
+    btn.addEventListener('click', () => {
+      if (side === 'left') {
+        const sidebar = document.querySelector('nav.sidebar');
+        if (!sidebar) return;
+        
+        if (isLeftCollapsed) {
+          document.documentElement.style.setProperty('--sl-sidebar-width', prevLeftWidth);
+          sidebar.classList.remove('collapsed-sidebar');
+          document.body.classList.remove('left-sidebar-collapsed'); // 剥离折叠标识类
+          btn.innerHTML = '‹';
+          isLeftCollapsed = false;
+        } else {
+          prevLeftWidth = getComputedStyle(document.documentElement).getPropertyValue('--sl-sidebar-width') || '18.75rem';
+          document.documentElement.style.setProperty('--sl-sidebar-width', '0px');
+          sidebar.classList.add('collapsed-sidebar');
+          document.body.classList.add('left-sidebar-collapsed'); // 注入折叠标识类
+          btn.innerHTML = '›';
+          isLeftCollapsed = true;
+        }
+      } else {
+        const sidebar = document.querySelector('.right-sidebar-container');
+        if (!sidebar) return;
+        
+        if (isRightCollapsed) {
+          document.documentElement.style.setProperty('--right-sidebar-width', prevRightWidth);
+          sidebar.classList.remove('collapsed-sidebar');
+          document.body.classList.remove('right-sidebar-collapsed'); // 剥离折叠标识类
+          btn.innerHTML = '›';
+          isRightCollapsed = false;
+        } else {
+          prevRightWidth = getComputedStyle(document.documentElement).getPropertyValue('--right-sidebar-width') || '18.75rem';
+          document.documentElement.style.setProperty('--right-sidebar-width', '0px');
+          sidebar.classList.add('collapsed-sidebar');
+          document.body.classList.add('right-sidebar-collapsed'); // 注入折叠标识类
+          btn.innerHTML = '‹';
+          isRightCollapsed = true;
+        }
+      }
+    });
   }
 
   function buildBookTOC() {
@@ -746,6 +923,10 @@ const bookConfigJson = JSON.stringify(currentBook);
     const rawConfig = sidebarContainer.getAttribute('data-book-config') || '{}';
     const bookConfig = JSON.parse(rawConfig);
     const modules = bookConfig.modules || {};
+
+    // 解析出全书静态编译大字典
+    const rawGlobalIndex = sidebarContainer.getAttribute('data-global-index') || '{}';
+    const globalBlockIndex = JSON.parse(rawGlobalIndex);
 
     const tocList = document.getElementById('custom-toc-list');
     if (!tocList) return;
@@ -763,7 +944,7 @@ const bookConfigJson = JSON.stringify(currentBook);
 
     tocList.innerHTML = '';
 
-    const chipLabels = rules => bookConfig.modules ? bookConfig.modules : {};
+    const chipLabels = bookConfig.modules || {};
 
     chunks.forEach((chunk, index) => {
       const rawTitle = chunk.getAttribute('data-title') || chunk.querySelector('.card-header, h1, h2, h3')?.textContent || '无标题';
@@ -775,7 +956,7 @@ const bookConfigJson = JSON.stringify(currentBook);
       }
 
       // 通过中央配置映射语义解析类型
-      const { type, number } = parseTitleToChip(rawTitle);
+      const { type, number } = parseTitleFromConfig(rawTitle, modules);
 
       const modMeta = modules[type] || {};
       const chipClass = modMeta.theme || 'chip-default';
@@ -815,7 +996,22 @@ const bookConfigJson = JSON.stringify(currentBook);
     }
 
     formatMultipleChoiceQuestions(); // 1. 重构选择题
-    linkPageElements(bookConfig);    // 2. 激发全时无条件大一统联动
+    linkPageElements(bookConfig, globalBlockIndex); // 2. 激发全时无条件大一统联动
+
+    // 3. 对卡片标题执行公式二次渲染
+    const cardHeaders = document.querySelectorAll('.card-header, .fallback-header, .guide-header');
+    cardHeaders.forEach(header => {
+      renderMathInElement(header, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '$', right: '$', display: false },
+        ],
+        throwOnError: false
+      });
+    });
+
+    // 4. 【大统一新增】：全自动初始化左右双手柄拖动调宽与小药丸折叠机制
+    setupSidebarResizers();
 
     const tocLinks = Array.from(document.querySelectorAll('.toc-link'));
     
