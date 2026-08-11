@@ -58,6 +58,34 @@ export const collections = [
             targetPattern: '^图\\\\s*(\\\\d+\\\\s*[-－]\\\\s*\\\\d+)$' 
           }
         }
+      },
+      {
+        id: 'engineering-analysis',
+        slug: 'engineering_analysis',
+        title: '工科数学分析基础（第三版）',
+        description: '王绵森、马知恩主编，高等教育出版社。上册（第 1—4 章）为一元函数微积分与常微分方程，下册（第 5—7 章）为多元函数微积分与无穷级数，含习题与答案。',
+        cover: '/covers/engineering_analysis.jpg',
+        entryPoint: '00_内容简介',
+        trackClasses: ['.example-card', '.knowledge-card', '.fallback-block'],
+        modules: {
+          '例': { emoji: '✍️', short: '例', aliases: ['例', '例题'], theme: 'chip-example' },
+          '例题': { emoji: '✍️', short: '例', aliases: ['例', '例题'], theme: 'chip-example' },
+          '定理': { emoji: '📐', short: '理', aliases: ['定理'], theme: 'chip-conclusion' },
+          '定义': { emoji: '📖', short: '定', aliases: ['定义'], theme: 'chip-knowledge' },
+          '性质': { emoji: '🔬', short: '性', aliases: ['性质'], theme: 'chip-knowledge' },
+          '推论': { emoji: '➡️', short: '推', aliases: ['推论'], theme: 'chip-conclusion' },
+          '引理': { emoji: '🧩', short: '引', aliases: ['引理'], theme: 'chip-conclusion' },
+          '命题': { emoji: '📌', short: '命', aliases: ['命题'], theme: 'chip-conclusion' },
+          '公理': { emoji: '📐', short: '公', aliases: ['公理'], theme: 'chip-conclusion' },
+          '图': {
+            short: '图',
+            aliases: ['图'],
+            theme: 'chip-default',
+            isImage: true,
+            targetQuery: 'p, div, figcaption',
+            targetPattern: '^图\\s*(\\d+\\s*[-－]\\s*\\d+)$'
+          }
+        }
       }
     ]
   },

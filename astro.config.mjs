@@ -24,7 +24,9 @@ export default defineConfig({
   markdown: {
     processor: unified({
       remarkPlugins: [remarkMath],
-      rehypePlugins: [rehypeKatex],
+      // output: 'html' 去掉 MathML 重复标记，公式页 HTML 体积约减半；
+      // strict/throwOnError 关闭保证 OCR 出的部分不严谨 LaTeX 不阻断构建。
+      rehypePlugins: [[rehypeKatex, { output: 'html', strict: false, throwOnError: false }]],
     }),
   },
   integrations: [

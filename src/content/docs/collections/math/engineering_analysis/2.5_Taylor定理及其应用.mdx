@@ -1,0 +1,591 @@
+---
+title: '2.5 Taylor 定理及其应用'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+
+用已知点的信息来表达未知点信息,用简单函数逼近(近似表示)复杂函数是数学中的重要思想方法.本节将要介绍的 Taylor 定理就是用高阶多项式来逼近具有足够可微性函数所得到的一个基本定理,它在理论研究和近似计算中有重要的应用.
+
+## 5.1 Taylor定理
+
+第三节中曾经指出,如果函数f在 $x_{0}$ 处可微,那么就可用微分来近似计算函数f在 $x_{0}$ 附近的值.也就是说,当 $|x-x_{0}|$ 很小时,可用线性函数(一次多项式)来近似表示 $f(x)$ ,即
+
+$$
+
+f (x) \approx f (x _ {0}) + f ^ {\prime} (x _ {0}) (x - x _ {0}).
+
+$$
+
+这个近似公式具有形式简单、计算方便的优点,但也存在着精度不高、计算误差仅是 $x-x_{0}$ 一次幂的高阶无穷小 $o(x-x_{0})$ 的缺陷.之所以有这样的缺陷,从几何上看,是由于这个近似公式是用曲线 $y=f(x)$ 上点 $(x_{0},f(x_{0}))$ 处的切线(直线)来代替该曲线得到的.为了改进该公式,我们自然想到用曲线来代替曲线.在曲线中,比较简单的是关于 $x-x_{0}$ 的高次多项式所表示的曲线,因为多项式也具有形式简单,计算方便(只用到加法和乘法运算)的优点.
+
+现在的问题是:能否找到一个适当的 $n(n>1)$ 次多项式
+
+$$
+
+P _ {n} (x) = a _ {0} + a _ {1} \left(x - x _ {0}\right) + a _ {2} \left(x - x _ {0}\right) ^ {2} + \dots + a _ {n} \left(x - x _ {0}\right) ^ {n}
+
+$$
+
+来逼近 $f(x)$ ，并使误差为 $(x-x_{0})^{n}$ 的高阶无穷小？如果能够找到，那么使等式
+
+$$
+
+f (x) = P _ {n} (x) + o \left(\left(x - x _ {0}\right) ^ {n}\right)\tag{5.1}
+
+$$
+
+成立的 $P_{n}(x)$ 与 $f(x)$ 应满足什么条件？上一节例 4.10 表明，对于指数函数 $f(x)=\mathrm{e}^{x}$ ，(5.1) 式成立（其中 $x_{0}=0$ ），并且 $P_{n}(x)$ 的系数
+
+$$
+
+a _ {k} = \frac {1}{k !} f ^ {(k)} (0) \qquad (k = 0, 1, 2, \dots , n).
+
+$$
+
+这启发我们,对更一般的函数f,如果在 $x_{0}$ 处n阶可微,并且 $P_{n}(x)$ 的系数
+
+$$
+
+a _ {k} = \frac {1}{k !} f ^ {(k)} (x _ {0}) \quad (k = 0, 1, 2, \dots , n),
+
+$$
+
+那么(5.1)式是否也能成立呢？下面的定理对这个问题作了肯定的回答。
+
+<Knowledge title="定理 5.1">
+(带 Peano 余项的 Taylor 定理) 设函数 f 在 $x_{0}$ 处 n 阶可微, 则
+
+$$
+
+f (x) = \sum_ {k = 0} ^ {n} \frac {f ^ {(k)} \left(x _ {0}\right)}{k !} \left(x - x _ {0}\right) ^ {k} + o \left(\left(x - x _ {0}\right) ^ {n}\right).\tag{5.2}
+
+$$
+
+<Solution title="证明">
+为了证明(5.2)式成立,我们令
+
+$$
+
+P _ {n} (x) = \sum_ {k = 0} ^ {n} \frac {f ^ {(k)} (x _ {0})}{k !} (x - x _ {0}) ^ {k},\tag{5.3}
+
+$$
+
+$R_{n}(x) = f(x) - P_{n}(x)$ （称为 $f(x)$ 的余项），
+
+那么, 只要证明 $R_{n}(x) = o((x - x_{0})^{n})$ 也就是 $\lim_{x \to x_{0}} \frac{R_{n}(x)}{(x - x_{0})^{n}} = 0$ 就行了. 由于 $f$ 在 $x_{0}$ 处 $n$ 阶可微, 所以 $f^{(n-1)}$ 在 $x_{0}$ 处可微. 根据定理 1.1 可知 $f^{(n-1)}$ 必在 $x_{0}$ 处连续, 再由连续的定义可知, $f$ 在 $x_{0}$ 的某邻域内 $n-1$ 阶可微. 因此, $R_{n}(x)$ 在此邻域内也 $n-1$ 阶可微, 并且注意: 舍弃余项 $o\left(\left(x-x_{0}\right)^{n}\right)$ ，(5.2) 式给出了用 n 次多项式（简单函数）逼近 n 阶可微函数（复杂函数） $f(x)$ 的一个基本定理，本质上是用 $f(x)$ 及其各阶导数在一点 $x_{0}$ 处的值（信息）来估算它在 $x_{0}$ 的一个小邻域 $U(x_{0})$ 内任一点处值（信息）的一个公式，体现了数学中的一种重要的科学思维方法.
+
+$$
+
+\left. \begin{array}{l} R _ {n} ^ {\prime} (x) = f ^ {\prime} (x) - \sum_ {k = 1} ^ {n} \frac {f ^ {(k)} \left(x _ {0}\right)}{(k - 1) !} \left(x - x _ {0}\right) ^ {k - 1}, \\ R _ {n} ^ {\prime \prime} (x) = f ^ {\prime \prime} (x) - \sum_ {k = 2} ^ {n} \frac {f ^ {(k)} \left(x _ {0}\right)}{(k - 2) !} \left(x - x _ {0}\right) ^ {k - 2}, \\ \dots \dots \\ R _ {n} ^ {(n - 1)} (x) = f ^ {(n - 1)} (x) - \left[ f ^ {(n - 1)} \left(x _ {0}\right) + f ^ {(n)} \left(x _ {0}\right) \left(x - x _ {0}\right) \right]. \end{array} \right\}\tag{5.4}
+
+$$
+
+故
+
+$$
+
+\lim _ {x \rightarrow x _ {0}} R _ {n} (x) = \lim _ {x \rightarrow x _ {0}} R _ {n} ^ {\prime} (x) = \dots = \lim _ {x \rightarrow x _ {0}} R _ {n} ^ {(n - 1)} (x) = 0.
+
+$$
+
+下面证明 $\lim_{x\to x_{0}}\frac{R_{n}(x)}{(x-x_{0})^{n}}=0.$ 对此式左端连续使用n-1次L'Hospital法则可得
+
+$$
+
+\lim _ {x \rightarrow x _ {0}} \frac {R _ {n} (x)}{(x - x _ {0}) ^ {n}} = \lim _ {x \rightarrow x _ {0}} \frac {R _ {n} ^ {\prime} (x)}{n (x - x _ {0}) ^ {n - 1}} = \dots = \frac {1}{n !} \lim _ {x \rightarrow x _ {0}} \frac {R _ {n} ^ {(n - 1)} (x)}{x - x _ {0}}.
+
+$$
+
+由于定理中仅假设 $f$ 在 $x_0$ 处 $n$ 阶可微，因而 $R_{n}(x)$ 也仅在 $x_0$ 处 $n$ 阶可微，故上式中右端的不定式不能再用L'Hospital法则，为了证明其值为0，需要另想办法.由(5.4)式中最后一个等式及导数的定义，易得
+</Solution>
+</Knowledge>
+
+<Note>
+为什么说:“故上式中右端的不定式不能再用 L'Hospital 法则”呢?
+
+$$
+
+\lim _ {x \to x _ {0}} \frac {R _ {n} ^ {(n - 1)} (x)}{x - x _ {0}} = \lim _ {x \to x _ {0}} \left[ \frac {f ^ {(n - 1)} (x) - f ^ {(n - 1)} (x _ {0})}{x - x _ {0}} - f ^ {(n)} (x _ {0}) \right] = 0,
+
+$$
+
+从而 $\lim_{x\to x_0}\frac{R_n(x)}{(x - x_0)^n} = 0$ ，即 $R_{n}(x) = o((x - x_{0})^{n})$
+
+称由(5.3)式所表示的多项式为函数f在 $x_{0}$ 处的n次Taylor多项式,其系数称为f在 $x_{0}$ 处的Taylor系数.称公式(5.2)为f在 $x_{0}$ 处的带Peano余项的Taylor公式, 而 $R_{n}(x) = o((x - x_{0})^{n})$ 称为 $f$ 的 Peano 余项, 它就是用 $n$ 次 Taylor 多项式 $P_{n}(x)$ 来近似计算 $f(x)$ 所产生的误差. 然而, 还应注意, 用这个余项来估计误差, 仅能说明误差是 $(x - x_{0})^{n}$ 的高阶无穷小, 还不能对误差的大小作具体的数值分析, 也不能说明用 $P_{n}(x)$ 来计算 $f(x)$ 的近似值达到怎样的精确度. 因而, 还需要研究余项 $R_{n}(x)$ 的更具体的表达式. 为此, 下面给出 Taylor 定理的另一表达形式.
+</Note>
+
+<Knowledge title="定理 5.2">
+（带Lagrange余项的Taylor定理）设函数 $f$ 在区间 $I$ 上 $n + 1$ 阶可导， $x_0 \in I$ ，则对任何 $x \in I$ ，在 $x$ 与 $x_0$ 之间（不含 $x_0$ 与 $x$ )至少存在一点 $\xi$ ，使
+
+$$
+
+f (x) = \sum_ {k = 0} ^ {n} \frac {f ^ {(k)} \left(x _ {0}\right)}{k !} \left(x - x _ {0}\right) ^ {k} + \frac {f ^ {(n + 1)} (\xi)}{(n + 1) !} \left(x - x _ {0}\right) ^ {n + 1}.\tag{5.5}
+
+$$
+
+<Solution title="证明">
+为了证明(5.5)式成立,只要证明
+
+$$
+
+R _ {n} (x) = f (x) - P _ {n} (x) = \frac {f ^ {(n + 1)} (\xi)}{(n + 1) !} (x - x _ {0}) ^ {n + 1},
+
+$$
+
+![](images/ab1869415134fb41e55587f39e1bdc60a47973b91cd3671942f32a8149ac47d1.jpg)
+
+或
+
+二维码2.5.1
+
+$$
+
+\frac {R _ {n} (x)}{(x - x _ {0}) ^ {n + 1}} = \frac {f ^ {(n + 1)} (\xi)}{(n + 1) !}.
+
+$$
+
+两种余项的Taylor 公式的异同点.
+
+令 $g(x) = (x - x_0)^{n + 1}$ ，则
+
+$$
+
+g (x _ {0}) = g ^ {\prime} (x _ {0}) = \dots = g ^ {(n)} (x _ {0}) = 0, g ^ {(n + 1)} (x _ {0}) = (n + 1)!.
+
+$$
+
+由余项 $R_{n}(x)$ 的表达式不难验证
+
+$$
+
+R _ {n} \left(x _ {0}\right) = R _ {n} ^ {\prime} \left(x _ {0}\right) = \dots = R _ {n} ^ {(n)} \left(x _ {0}\right) = 0, \quad R _ {n} ^ {(n + 1)} (x) = f ^ {(n + 1)} (x).
+
+$$
+
+在以 $x$ 与 $x_0$ 为端点的区间上对 $R_{n}(x)$ 与 $g(x)$ 应用Cauchy定理，得
+
+$$
+
+\frac {R _ {n} (x)}{g (x)} = \frac {R _ {n} (x) - R _ {n} (x _ {0})}{g (x) - g (x _ {0})} = \frac {R _ {n} ^ {\prime} (\xi_ {1})}{g ^ {\prime} (\xi_ {1})} \quad (\xi_ {1} \text {介于} x _ {0} \text {与} x \text {之间});
+
+$$
+
+在以 $x_0$ 与 $\xi_{1}$ 为端点的区间上对 $R_n'(x)$ 与 $g'(x)$ 应用Cauchy定理，又得
+
+$$
+
+\frac {R _ {n} (x)}{g (x)} = \frac {R _ {n} ^ {\prime} (\xi_ {1}) - R _ {n} ^ {\prime} (x _ {0})}{g ^ {\prime} (\xi_ {1}) - g ^ {\prime} (x _ {0})} = \frac {R _ {n} ^ {\prime \prime} (\xi_ {2})}{g ^ {\prime \prime} (\xi_ {2})} \quad (\xi_ {2} \text {介于} x _ {0} \text {与} \xi_ {1} \text {之间});
+
+$$
+
+上述步骤继续进行 $n+1$ 次, 不难得知.
+
+$$
+
+\begin{array}{r l} \frac {R _ {n} (x)}{g (x)} & = \frac {R _ {n} ^ {\prime} (\xi_ {1})}{g ^ {\prime} (\xi_ {1})} = \frac {R _ {n} ^ {\prime \prime} (\xi_ {2})}{g ^ {\prime \prime} (\xi_ {2})} = \dots = \frac {R _ {n} ^ {(n)} (\xi_ {n})}{g ^ {(n)} (\xi_ {n})} = \frac {R _ {n} ^ {(n)} (\xi_ {n}) - R _ {n} ^ {(n)} (x _ {0})}{g ^ {(n)} (\xi_ {n}) - g ^ {(n)} (x _ {0})} \\ & = \frac {R _ {n} ^ {(n + 1)} (\xi)}{g ^ {(n + 1)} (\xi)} = \frac {f ^ {(n + 1)} (\xi)}{(n + 1) !}, \end{array}
+
+$$
+
+其中 $\xi$ 介于 $x_{0}$ 与 $\xi_{n}$ 之间， $\xi_{n}$ 介于 $x_{0}$ 与 $\xi_{n-1}$ 之间， $\cdots, \xi_{1}$ 介于 $x_{0}$ 与 x 之间，因而 $\xi$ 也介于 $x_{0}$ 与 x （不含 $x_{0}$ 与 x）之间，从而定理得证.
+
+(5.5)式称为 $f$ 在 $x_0$ 的邻域内带Lagrange余项的 $n$ 阶Taylor公式，其中
+
+$$
+
+R _ {n} (x) = \frac {f ^ {(n + 1)} (\xi)}{(n + 1) !} (x - x _ {0}) ^ {n + 1}
+
+$$
+
+称为 Lagrange 余项,也可写成如下形式:
+
+$$
+
+R _ {n} (x) = \frac {f ^ {(n + 1)} [ x _ {0} + \theta (x - x _ {0}) ]}{(n + 1) !} (x - x _ {0}) ^ {n + 1}, \quad \theta \in (0, 1).
+
+$$
+
+在(5.5)式中取 n=0，就得到 Lagrange 公式。因此，带 Lagrange 余项的 Taylor 公式是 Lagrange 公式的推广。
+
+Lagrange 余项较之于 Peano 余项更便于对误差进行数值估计. 事实上, 如果 f 在区间 I 上 $n+1$ 阶可导, 并且存在常数 M>0, 使得 $\forall x \in I, |f^{(n+1)}(x)| \leqslant M$ , 那么
+
+$$
+
+\mid R _ {n} (x) \mid = \frac {\mid f ^ {(n + 1)} (\xi) \mid}{(n + 1) !} \mid x - x _ {0} \mid^ {n + 1} \leqslant \frac {M}{(n + 1) !} \mid x - x _ {0} \mid^ {n + 1}.
+
+$$
+
+又若 I 的左、右端点分别是有限值 a 与 b，则
+
+$$
+
+\mid R _ {n} (x) \mid \leqslant \frac {M}{(n + 1) !} (b - a) ^ {n + 1} \rightarrow 0 \quad (n \rightarrow \infty).
+
+$$
+
+这表明, 只要 $f^{(n+1)}(x)$ 在有限区间 I 上有界, 用 n 次 Taylor 多项式 $P_{n}(x)$ 来近似代替 $f(x)$ , 其绝对误差 $\left|R_{n}(x)\right|$ 随着 n 的增大可变得任意小, 从而可以选取适当的 n 使计算达到要求的任何精确度.
+</Solution>
+</Knowledge>
+
+## 5.2 几个初等函数的 Maclaurin 公式
+
+如果 $x_{0}=0$ ，那么公式(5.5)就变成
+
+$$
+
+f (x) = f (0) + f ^ {\prime} (0) x + \frac {f ^ {\prime \prime} (0)}{2 !} x ^ {2} + \dots + \frac {f ^ {(n)} (0)}{n !} x ^ {n} + \frac {f ^ {(n + 1)} (\theta x)}{(n + 1) !} x ^ {n + 1}, \quad \theta \in (0, 1),\tag{5.6}
+
+$$
+
+它常被称为 $f$ 的Maclaurin公式，是Taylor公式的一种常用的特殊情形
+
+下面,利用(5.6)式求出几个常用初等函数的 Maclaurin 公式.
+
+指数函数 $f(x)=\mathrm{e}^{x}$ 的 Maclaurin 公式 根据例 2.14 中的 n 阶导数公式(1)， $f^{(k)}(x)=\mathrm{e}^{x}\quad(k=0,1,2,\cdots,n)$ ，从而有 $f^{(k)}(0)=1$ ，代入(5.6)式便得
+
+$$
+
+\mathrm{e} ^ {x} = 1 + x + \frac {x ^ {2}}{2 !} + \dots + \frac {x ^ {n}}{n !} + \frac {x ^ {n + 1}}{(n + 1) !} \mathrm{e} ^ {\theta x}, \quad x \in (- \infty , + \infty), \theta \in (0, 1).\tag{5.7}
+
+$$
+
+正弦函数 $f(x)=\sin x$ 的 Maclaurin 公式 根据例 2.14 中的 n 阶导数公式(2)，
+
+$$
+
+f ^ {(k)} (x) = \sin \left(x + k \cdot \frac {\pi}{2}\right), \quad k = 0, 1, 2, \dots , n.
+
+$$
+
+从而有: 当 k=2m 时, $f^{(2m)}(0)=0$ ; 当 $k=2m+1$ 时, $f^{(2m+1)}(0)=(-1)^{m}$ , 代入公式 (5.6) 得
+
+$$
+
+\begin{array}{r l} \sin x & = x - \frac {x ^ {3}}{3 !} + \frac {x ^ {5}}{5 !} - \frac {x ^ {7}}{7 !} + \dots + (- 1) ^ {m - 1} \frac {x ^ {2 m - 1}}{(2 m - 1) !} + \\ & (- 1) ^ {m} \frac {\cos \theta x}{(2 m + 1) !} x ^ {2 m + 1}, \quad x \in (- \infty , + \infty), \theta \in (0, 1). \end{array}\tag{5.8}
+
+$$
+
+类似可得余弦函数 $f(x) = \cos x$ 的Maclaurin公式
+
+$$
+
+\begin{array}{r l} \cos x & = 1 - \frac {x ^ {2}}{2 !} + \frac {x ^ {4}}{4 !} - \frac {x ^ {6}}{6 !} + \dots + (- 1) ^ {m} \frac {x ^ {2 m}}{(2 m) !} + \\ & (- 1) ^ {m + 1} \frac {\cos \theta x}{(2 m + 2) !} x ^ {2 m + 2}, \quad x \in (- \infty , + \infty), \theta \in (0, 1). \end{array}\tag{5.9}
+
+$$
+
+对数函数 $f(x)=\ln(1+x)$ 的 Maclaurin 公式 根据例 2.14 中的 n 阶导数公式(5)，
+
+$$
+
+f ^ {(k)} (x) = (- 1) ^ {k - 1} \frac {(k - 1) !}{(1 + x) ^ {k}}, \quad k = 1, 2, \dots , n.
+
+$$
+
+从而有 $f^{(k)}(0)=(-1)^{k-1}(k-1)!$ ，代入公式(5.6)便得
+
+$$
+
+\begin{array}{r l} \ln (1 + x) & = x - \frac {x ^ {2}}{2} + \frac {x ^ {3}}{3} - \frac {x ^ {4}}{4} + \dots + (- 1) ^ {n - 1} \frac {x ^ {n}}{n} + \\ & (- 1) ^ {n} \frac {x ^ {n + 1}}{(n + 1) (1 + \theta x) ^ {n + 1}}, \quad x \in (- 1, + \infty), \theta \in (0, 1). \end{array}\tag{5.10}
+
+$$
+
+幂函数 $f(x)=(1+x)^{\alpha}$ ( $\alpha\in R$ ) 的 Maclaurin 公式 根据例 2.14 中的 n 阶导数公式(4)，
+
+$$
+
+f ^ {(k)} (x) = \alpha (\alpha - 1) \dots (\alpha - k + 1) (1 + x) ^ {\alpha - k}, \quad k = 0, 1, 2, \dots , n.
+
+$$
+
+从而有 $f^{(k)}(0)=\alpha(\alpha-1)\cdots(\alpha-k+1)$ ，代入公式(5.6)便得
+
+$$
+
+\begin{array}{r l} (1 + x) ^ {\alpha} & = 1 + \alpha x + \frac {\alpha (\alpha - 1)}{2 !} x ^ {2} + \dots + \frac {\alpha (\alpha - 1) \cdots (\alpha - n + 1)}{n !} x ^ {n} + \\ & \frac {\alpha (\alpha - 1) \cdots (\alpha - n)}{(n + 1) !} \frac {x ^ {n + 1}}{(1 + \theta x) ^ {n + 1 - \alpha}}, \quad x \in (- 1, + \infty), \theta \in (0, 1). \end{array}\tag{5.11}
+
+$$
+
+取 $\alpha = -1, \frac{1}{2}, -\frac{1}{2}$ 就得到三个常用幂函数的 Maclaurin 公式：
+
+$$
+
+\frac {1}{1 + x} = 1 - x + x ^ {2} - x ^ {3} + \dots + (- 1) ^ {n} x ^ {n} + (- 1) ^ {n + 1} \frac {x ^ {n + 1}}{(1 + \theta x) ^ {n + 2}},
+
+$$
+
+$$
+
+\sqrt {1 + x} = 1 + \frac {1}{2} x - \frac {1}{8} x ^ {2} + \dots + (- 1) ^ {n - 1} \frac {1 \cdot 3 \cdot \cdots \cdot (2 n - 3)}{2 \cdot 4 \cdot \cdots \cdot 2 n} x ^ {n} +
+
+$$
+
+$$
+
+(- 1) ^ {n} \frac {1 \cdot 3 \cdot \cdots \cdot (2 n - 1)}{2 \cdot 4 \cdot \cdots \cdot (2 n + 2)} \frac {x ^ {n + 1}}{(1 + \theta x) ^ {n + \frac {1}{2}}},
+
+$$
+
+$$
+
+\frac {1}{\sqrt {1 + x}} = 1 - \frac {1}{2} x + \frac {3}{8} x ^ {2} - \dots + (- 1) ^ {n} \frac {1 \cdot 3 \cdot \cdots \cdot (2 n - 1)}{2 \cdot 4 \cdot \cdots \cdot 2 n} x ^ {n} +
+
+$$
+
+$$
+
+(- 1) ^ {n + 1} \frac {1 \cdot 3 \cdot \cdots \cdot (2 n + 1)}{2 \cdot 4 \cdot \cdots \cdot (2 n + 2)} \frac {x ^ {n + 1}}{(1 + \theta x) ^ {n + \frac {3}{2}}}.
+
+$$
+
+仿照上面的方法,读者不难写出上述几个初等函数带 Peano 余项的 Maclaurin 公式.
+
+## 5.3 Taylor 公式的应用
+
+Taylor 公式有重要的理论意义和应用价值. 下面仅举例说明它在近似计算函数值、求极限和证明不等式方面的应用. 它在研究函数性态(极值的充分条件)方面的应用在第六节中再作说明.
+
+## 1. 近似计算函数值
+
+在近似计算函数值的时候,利用带 Lagrange 余项的 Taylor 公式较之利用微分精确度更高,适用的范围更广,而且可以估计误差.如果当 $n \to \infty$ 时, $R_{n}(x) \to 0$ , 那么可以把函数值计算到任何精度.
+
+<Example title="例 5.1">
+近似计算 e 的值, 并估计误差.
+
+<Solution title="解">
+在 $\mathrm{e}^x$ 的Taylor公式(5.7)中取 $x = 1$ ，得
+
+$$
+
+\mathrm{e} = 1 + 1 + \frac {1}{2 !} + \dots + \frac {1}{n !} + \frac {\mathrm{e} ^ {\theta}}{(n + 1) !}, \quad \theta \in (0, 1).
+
+$$
+
+由于 $\mathrm{e}^{\theta} < \mathrm{e} < 3$ ，故
+
+$$
+
+R _ {n} (1) = \frac {\mathrm{e} ^ {\theta}}{(n + 1) !} <   \frac {3}{(n + 1) !} \rightarrow 0 (n \rightarrow \infty).
+
+$$
+
+因此, 只要 n 取得充分大, 用近似公式
+
+$$
+
+\mathrm{e} \approx 2 + \frac {1}{2 !} + \dots + \frac {1}{n !}
+
+$$
+
+来计算 e 的近似值可以达到所需要的任何精度.例如,要使误差小于 $10^{-5}$ , 即要
+
+$$
+
+R _ {n} (1) <   \frac {3}{(n + 1) !} <   1 0 ^ {- 5},
+
+$$
+
+![](images/bccfe9ee4e44ddb50aa6adf6bbe2509cc5b8d41278b50c037c6144926d309078.jpg)  
+
+二维码2.5.2 Taylor定理的应用.
+
+只要取 $n = 8$ 就行了，因为 $R_{8}(1) < \frac{3}{9!} < 10^{-5}$ . 于是 $\mathbf{e}$ 的误差小于 $10^{-5}$ 的近似值为
+
+$$
+
+\mathrm{e} \approx 2 + \frac {1}{2 !} + \dots + \frac {1}{8 !} \approx 2. 7 1 8 2 8.
+
+$$
+
+\* 例5.2 求方程
+
+$$
+
+x ^ {5} + \varepsilon x - 3 2 = 0
+
+$$
+
+的一个近似实根,其中 $\varepsilon$ 是一个很小的实参数.
+
+根据本书习题 1.5(A) 第 14 题, 此方程至少有一个依赖于 $\varepsilon$ 的实根 $x = f(\varepsilon)$ . 由于五次方程没有精确的求根公式, 所以只能求根的近似表达式. 大家知道, 数学中的方程是实际问题的近似抽象. 但在实际问题中, 对参数 $\varepsilon$ 的测量总是有误差的, 因而方程根也会因之产生误差. 通常人们总希望参数的微小变化所引起的方程根的变化也很微小, 否则, 很难利用该方程对问题进行有效的研究. 假定由该方程所确定的隐函数 $x = f(\varepsilon)$ (即该方程的根) 是连续的, 而且具有足够的可微性. 利用 Taylor 公式 (5.6) 该方程的根就近似表示为 (仅取 $n = 2$ )
+
+$$
+
+x = f (\varepsilon) \approx f (0) + f ^ {\prime} (0) \varepsilon + \frac {f ^ {\prime \prime} (0)}{2 !} \varepsilon^ {2}.\tag{5.12}
+
+$$
+
+为确定上式右端的诸系数,在已知方程中取 $\varepsilon=0$ , 得 x=2, 故 $f(0)=2$ . 为求 $f'(0)$ 与 $f''(0)$ , 利用隐函数求导法对原方程两端关于 $\varepsilon$ 求导得
+
+$$
+
+5 x ^ {4} \frac {\mathrm{d} x}{\mathrm{d} \varepsilon} + \varepsilon \frac {\mathrm{d} x}{\mathrm{d} \varepsilon} + x = 0,\tag{5.13}
+
+$$
+
+从而有
+
+$$
+
+f ^ {\prime} (0) = \frac {\mathrm{d} x}{\mathrm{d} \varepsilon} \Bigg | _ {\varepsilon = 0} = - \frac {x}{5 x ^ {4} + \varepsilon} \Bigg | _ {\varepsilon = 0} = - \frac {1}{4 0}.
+
+$$
+
+再对方程(5.13)关于 $\varepsilon$ 求导得
+
+$$
+
+(5 x ^ {4} + \varepsilon) \frac {\mathrm{d} ^ {2} x}{\mathrm{d} \varepsilon^ {2}} + 2 0 x ^ {3} \left(\frac {\mathrm{d} x}{\mathrm{d} \varepsilon}\right) ^ {2} + 2 \frac {\mathrm{d} x}{\mathrm{d} \varepsilon} = 0,
+
+$$
+
+从而解得
+
+$$
+
+f ^ {\prime \prime} (0) = \frac {\mathrm{d} ^ {2} x}{\mathrm{d} \varepsilon^ {2}} \Bigg | _ {\varepsilon = 0} = - \frac {2 0 x ^ {3} \left(\frac {\mathrm{d} x}{\mathrm{d} \varepsilon}\right) ^ {2} + 2 \frac {\mathrm{d} x}{\mathrm{d} \varepsilon}}{5 x ^ {4} + \varepsilon} \Bigg | _ {\varepsilon = 0} = - \frac {1}{1 6 0 0}.
+
+$$
+
+于是得到所求方程实根的二阶近似表达式
+
+$$
+
+x \approx 2 - \frac {\varepsilon}{4 0} - \frac {\varepsilon^ {2}}{3 2 0 0}.
+
+$$
+
+根据实际问题的精度要求,还可以求出该方程更高阶的近似根的表达式.这种利用Taylor公式求方程的关于小参数 $\varepsilon$ 的近似根的方法就是所谓摄动法.
+</Solution>
+</Example>
+
+## 2. 求极限
+
+带 Peano 余项的 Taylor 公式也是求函数极限的一种常用方法.
+
+<Example title="例 5.3">
+求极限 $\lim_{x\to0}\frac{\sin x-x}{x^{3}}$ .
+
+$$
+
+\begin{array}{r l} \text {解} & \text {原式} = \lim _ {x \to 0} \frac {x - \frac {x ^ {3}}{3 !} + o (x ^ {4}) - x}{x ^ {3}} \\ & = \lim _ {x \to 0} \left[ - \frac {1}{3 !} + \frac {o (x ^ {4})}{x ^ {3}} \right] = - \frac {1}{6}. \end{array}
+
+$$
+</Example>
+
+<Note>
+在例 5.3 与例 5.4 中, 对分子利用 Taylor 公式时, 是根据什么确定 Taylor 公式的阶数的?
+</Note>
+
+<Example title="例 5.4">
+求 $\lim_{x\to 0}\frac{\cos x - \mathrm{e}^{-\frac{x^2}{2}}}{x^4}.$
+
+<Solution title="解">
+原式= $\lim_{x\to0}\frac{\left[1-\frac{x^{2}}{2!}+\frac{x^{4}}{4!}+o_{1}(x^{5})\right]-\left[1-\frac{x^{2}}{2}+\frac{1}{2!}\frac{x^{4}}{4}+o_{2}(x^{4})\right]}{x^{4}}$ $=\lim_{x\to0}\left[-\frac{1}{12}+\frac{o_{1}(x^{5})}{x^{4}}-\frac{o_{2}(x^{4})}{x^{4}}\right]=-\frac{1}{12}.$
+</Solution>
+</Example>
+
+## 3. 证明不等式
+
+<Example title="例 5.5">
+设 $f''(x)>0$ ，当 $x\to0$ 时， $f(x)$ 与 x 是等价无穷小。证明：当 $x\neq0$ 时， $f(x)>x$ 。
+
+<Solution title="证明">
+由于题中函数二阶可导,所以利用二阶 Taylor 公式来证明可能更方便(若用 Lagrange 定理,可能要用两次).取 $x_{0}=0$ ,由 Taylor 公式(5.5)得
+
+$$
+
+f (x) = f (0) + f ^ {\prime} (0) x + \frac {f ^ {\prime \prime} (\xi)}{2 !} x ^ {2} \quad (\xi \text {在} x \text {与} 0 \text {之间}).
+
+$$
+
+又已知当 $x \to 0$ 时, $f(x)$ 与 $x$ 是等价无穷小, 故又有 $f(x) = x + o(x)$ . 将 $f(x)$ 两个表达式比较可得 $f(0) = 0, f'(0) = 1$ , 所以
+
+$$
+
+f (x) = x + \frac {f ^ {\prime \prime} (\xi)}{2} x ^ {2}.
+
+$$
+
+又 $f''(x)>0$ ，因此当 $x\neq0$ 时有 $f(x)>x$ 。
+
+用同样的方法可证,若此例中 $f''(x)<0$ ,则有不等式 $f(x)<x$ .
+
+由例 5.5 及上面的结论容易得到下列不等式：
+
+$$
+
+\mathrm{e} ^ {x} > 1 + x (x \neq 0), \quad \sin x <   x (0 <   x \leqslant \pi);
+
+$$
+
+$\ln(1+x)<x(x>-1,x\neq0),\quad\arcsin x>x(-1<x<1,x\neq0)$ 等.
+</Solution>
+</Example>
+
+<Block title="习题2.5">
+(A)
+
+1. 设 $f(x) = 2x^{3} - x^{2} + x - 3$ ，写出它在 $x_0 = 1$ 处的三阶 Taylor 多项式.
+
+2. 写出下列函数的 Maclaurin 公式：
+
+(1) $f(x)=\frac{1}{1-x}$ ; (2) $f(x)=\ln(1-x)$ ;
+
+(3) $f(x)=\operatorname{ch}x;$ (4) $f(x)=\frac{1}{\sqrt{1-2x}}.$
+
+3. 求下列函数在指定点处带 Peano 余项的 Taylor 公式：
+
+(1) $f(x)=\frac{1}{x}, x_{0}=-1;$ (2) $f(x)=\ln x, x_{0}=1;$ (3) $f(x)=\mathrm{e}^{2x}, x_{0}=1;$ (4) $f(x)=\sin x, x_{0}=\frac{\pi}{4}.$
+
+4. 设 $f(x) = x^{2}\sin x$ , 求 $f^{(99)}(0)$ .
+
+5. 证明: 当 $0 < x \leqslant \frac{1}{2}$ 时, 按公式 $\mathrm{e}^{x} \approx 1 + x + \frac{x^{2}}{2} + \frac{x^{3}}{6}$ 计算 $\mathrm{e}^{x}$ 的近似值时所产生的误差小于 0.01, 并求 $\sqrt{\mathrm{e}}$ 的近似值, 使误差小于 0.01.
+
+6. 应用三阶 Taylor 公式求下列各数的近似值, 并估计误差:
+
+(1) $\sqrt[3]{30}$ ; (2) $\sin 18^{\circ}$ .
+
+7. 求下列极限：
+
+(1) $\lim_{x\to0}\frac{\mathrm{e}^{x}\sin x-x(1+x)}{x^{3}}$ ;
+
+(2) $\lim_{x\to+\infty}\left[\left(x^{3}-x^{2}+\frac{x}{2}\right)\mathrm{e}^{\frac{1}{x}}-\sqrt{x^{6}+1}\right]$ ;
+
+(3) $\lim_{x\to\infty}\left[x-x^{2}\ln\left(1+\frac{1}{x}\right)\right]$ ;
+
+(4) $\lim_{x\to0}\frac{\frac{x^{2}}{2}+1-\sqrt{1+x^{2}}}{x^{2}\sin x^{2}}$ .
+
+8. 设 $f(0) = 0, f'(0) = 1, f''(0) = 2$ ，求 $\lim_{x \to 0} \frac{f(x) - x}{x^2}$ .
+
+(B)
+
+1. 设函数 $f: [0,2] \to \mathbf{R}$ 在 $[0,2]$ 上二阶可导，并且满足 $|f(x)| \leqslant 1$ ， $|f''(x)| \leqslant 1$ ，证明：在 $[0,2]$ 上必有 $|f'(x)| \leqslant 2$ .
+
+2. 设 $f: R \rightarrow R$ 二阶可导，并且 $\left|f(x)\right| < k_{0}, \left|f''(x)\right| < k_{2}$ ，其中 $k_{0}, k_{2}$ 为常数.
+
+(1) 写出 $f(x+h)$ 与 $f(x-h)$ 的 Taylor 公式 (h>0);
+
+(2) 证明: $\forall h > 0, |f'(x)| \leqslant \frac{k_0}{h} + \frac{h}{2} k_2$ ;
+
+(3) 求 $\varphi(h)=\frac{k_{0}}{h}+\frac{h}{2}k_{2}$ 在 $(0,+\infty)$ 上的最小值；
+
+(4) 证明: $k_{1} \leqslant \sqrt{2k_{0}k_{2}}$ , 其中 $k_{1} = \sup_{x \in \mathbb{R}} |f'(x)|$ .
+
+3. 设 $f \in C^{(3)}[0,1]$ , $f(0) = 1$ , $f(1) = 2$ , $f' \left( \frac{1}{2} \right) = 0$ . 证明: 至少存在一点 $\xi \in (0,1)$ , 使 $|f'''(\xi)| \geqslant 24$ .
+
+4. 设函数 f 在 x=0 的某邻域内有二阶导数，且
+
+$$
+
+\lim _ {x \rightarrow 0} \left(1 + x + \frac {f (x)}{x}\right) ^ {\frac {1}{x}} = e ^ {3}.
+
+$$
+
+试求 $f(0)$ , $f'(0)$ , $f''(0)$ 及 $\lim_{x \to 0} \left(1 + \frac{f(x)}{x}\right)^{\frac{1}{x}}$ .
+</Block>

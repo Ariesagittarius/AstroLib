@@ -10,9 +10,11 @@ const pathname = Astro.url.pathname;
 
 // 1. 深度遍历两级结构，感知当前路由所属的图书及其 TOC 规则
 let currentBook = null;
+let currentCol = null;
 for (const col of collections) {
   const matchedBook = col.books.find(book => pathname.includes(`/collections/${col.slug}/${book.slug}/`));
   if (matchedBook) {
+    currentCol = col;
     currentBook = matchedBook;
     break;
   }
@@ -20,11 +22,13 @@ for (const col of collections) {
 
 // 2. 备用安全降级方案
 if (!currentBook) {
+  currentCol = collections[0];
   currentBook = collections[0].books[0];
 }
 const bookConfigJson = JSON.stringify(currentBook);
 
-// 3. 构建期递归扫描，提取全书所有注册卡片的全局跨页路由索引
+// 3. 构建期递归扫描，仅提取当前图书的全局跨页路由索引
+//（按书隔离可让单页 HTML 减少约 3-4 倍；跨书引用退化为静态徽章）
 const globalBlockIndex = {};
 
 function walkDir(dir, fileList = []) {
@@ -42,7 +46,7 @@ function walkDir(dir, fileList = []) {
 }
 
 try {
-  const docsRoot = path.resolve('src/content/docs/collections');
+  const docsRoot = path.resolve(`src/content/docs/collections/${currentCol.slug}/${currentBook.slug}`);
   if (fs.existsSync(docsRoot)) {
     const allMdxFiles = walkDir(docsRoot);
     const emojiRegex = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}\u{27BF}\uFE0F]/gu;
@@ -66,7 +70,6 @@ try {
         const cleanId = encodeURIComponent(cleanTitle.replace(/\s+/g, '-'));
         const targetUrl = `${urlPath}#${cleanId}`;
 
-        globalBlockIndex[cleanTitle] = targetUrl;
         globalBlockIndex[cleanTitle.replace(/\s+/g, '')] = targetUrl;
       }
     });
@@ -985,7 +988,7 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
 
     // 侧边栏公式二次渲染
     const sidebar = document.querySelector('.custom-page-sidebar');
-    if (sidebar) {
+    if (sidebar && sidebar.textContent.includes('$')) {
       renderMathInElement(sidebar, {
         delimiters: [
           { left: '$$', right: '$$', display: true },
@@ -1001,6 +1004,7 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     // 3. 对卡片标题执行公式二次渲染
     const cardHeaders = document.querySelectorAll('.card-header, .fallback-header, .guide-header');
     cardHeaders.forEach(header => {
+      if (!header.textContent.includes('$')) return;
       renderMathInElement(header, {
         delimiters: [
           { left: '$$', right: '$$', display: true },
@@ -1036,7 +1040,10 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
       });
     }
 
-    window.addEventListener('scroll', handleSpyScroll);
+    // 防止 SPA 多次导航后叠加滚动监听器
+    if (window.__slScrollSpy) window.removeEventListener('scroll', window.__slScrollSpy);
+    window.__slScrollSpy = handleSpyScroll;
+    window.addEventListener('scroll', window.__slScrollSpy);
     handleSpyScroll();
   }
 

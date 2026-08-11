@@ -2,6 +2,7 @@
 // 作用：递归扫描多合集图书目录，读取标题并执行高精度自然排序（Natural Sorting）与 Slug 净化
 import fs from 'node:fs';
 import path from 'node:path';
+import { slug as githubSlug } from 'github-slugger';
 
 /**
  * 原生自然排序辅助函数（确保 1.10 在 1.2 之后，1.1 在 10.1 之前）
@@ -11,21 +12,17 @@ export function naturalSort(a, b) {
 }
 
 /**
- * 路由净化器：
- * 1. 自动剥离各个路径段开头的排序前缀数字（如 18_1.3_ -> 1.3_），与 Starlight 底层生成规则同步
- * 2. 核心改进：根据 Starlight 路由特性，精准删除路径中所有的点 "."，但绝不改动下划线 "_"
+ * 路由净化器：与 Astro 内容集合的默认 slug 生成规则保持完全一致。
+ * Astro 的 glob loader 会对每个路径段调用 github-slugger（去掉标点/点、小写化、
+ * 空格转连字符、保留下划线），因此侧边栏链接必须复刻同一套转换，
+ * 否则链接与页面真实路由（如 2.5_... -> 25_自然对数的底-e-和-euler-常数-γ）不匹配而 404。
  */
 export function cleanSlug(slug) {
   return slug
     .split('/')
-    .map(segment => {
-      // 1. 先剥离物理排序数字前缀
-      let cleaned = segment.replace(/^\d+[_-]/, '');
-      // 2. 核心：删除所有点 "."，保留下划线 "_"
-      cleaned = cleaned.replace(/\./g, '');
-      return cleaned;
-    })
-    .join('/');
+    .map(segment => githubSlug(segment))
+    .join('/')
+    .normalize();
 }
 
 export function generateBookSidebar(directoryPath) {
