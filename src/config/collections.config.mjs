@@ -91,22 +91,29 @@ export const collections = [
   },
   {
     id: 'science',
-    slug: 'science', 
-    title: '???',
-    description: '???',
+    slug: 'science',
+    title: '物理',
+    description: '大学物理教材数字化',
     books: [
       {
-        id: 'biology-bank',
-        slug: 'biology_bank',
-        title: '???',
-        description: '???',
-        cover: 'https://images.unsplash.com/photo-1532187863486-abf9d39d66e8?auto=format&fit=crop&q=80&w=400',
-        entryPoint: '???',
-        trackClasses: ['.question-card', '.answer-card', '.concept-card'],
+        id: 'university-physics',
+        slug: 'university_physics',
+        title: '大学物理学（第七版）',
+        description: '赵近芳、王登龙主编，北京邮电大学出版社。上册（第 1—8 章）为力学基础、气体动理论和热力学；下册（第 9—17 章）为电磁学、波动光学和量子论。各章课后习题按题型分页，每题一个板块，部分章节附参考答案。',
+        cover: '/covers/university_physics.jpg',
+        entryPoint: '00_内容简介',
+        trackClasses: ['.example-card', '.knowledge-card', '.exercise-card'],
         modules: {
-          '题': { emoji: '📝', short: '题', aliases: ['题'], theme: 'chip-problem' },
-          '考点': { emoji: '💡', short: '考', aliases: ['考点', '考'], theme: 'chip-knowledge' },
-          '概念': { emoji: '🧬', short: '概', aliases: ['概念', '概'], theme: 'chip-example' }
+          '例': { emoji: '✍️', short: '例', aliases: ['例', '例题'], theme: 'chip-example' },
+          '例题': { emoji: '✍️', short: '例', aliases: ['例', '例题'], theme: 'chip-example' },
+          '定理': { emoji: '📐', short: '理', aliases: ['定理'], theme: 'chip-conclusion' },
+          '定义': { emoji: '📖', short: '定', aliases: ['定义'], theme: 'chip-knowledge' },
+          '性质': { emoji: '🔬', short: '性', aliases: ['性质'], theme: 'chip-knowledge' },
+          '推论': { emoji: '➡️', short: '推', aliases: ['推论'], theme: 'chip-conclusion' },
+          '引理': { emoji: '🧩', short: '引', aliases: ['引理'], theme: 'chip-conclusion' },
+          '命题': { emoji: '📌', short: '命', aliases: ['命题'], theme: 'chip-conclusion' },
+          '公理': { emoji: '📐', short: '公', aliases: ['公理'], theme: 'chip-conclusion' },
+          '习题': { emoji: '📝', short: '习', aliases: ['习题'], theme: 'chip-problem' }
         }
       }
     ]
