@@ -7,10 +7,13 @@
    -------------------------------------------------------------------------- */
 .katex-display {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto !important;
   overflow-y: hidden !important;
-  padding: 0.5rem 0;
+  padding: 0.45rem 0;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sl-color-gray-5, #cbd5e1) transparent;
 }
 .katex-display::-webkit-scrollbar {
   height: 4px;
@@ -23,19 +26,47 @@
   background-color: transparent;
 }
 
-/* 超长内联公式：在行内容器内横向滚动，不再撑破页面 */
+/* 关键修复：KaTeX 默认将公式在 .katex-display 中居中，一旦公式比容器宽，
+   左侧会被裁掉且无法滚动到（移动端尤为致命）。
+   这里让 .katex 子盒保持 block（保证溢出能被外层滚动容器感知），
+   宽度取 max-content 并配合 margin:auto 居中：
+   - 公式放得下时：盒子=公式宽度，自动居中，观感与原来一致；
+   - 公式放不下时：盒子被 max-width:100% 压到容器宽度，
+     内容贴左溢出，外层 overflow-x:auto 出现横向滚动，左右两端都能看全。 */
+.katex-display > .katex {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  margin-inline: auto;
+  text-align: left;
+}
+
+/* 行内公式：仅限制最大宽度，不轻易改动行内盒模型（99% 的短公式保持原生排版） */
 .katex {
+  max-width: 100%;
+}
+
+/* 长行内公式“胶囊”：由脚本只对真正超出行宽的行内公式套用，
+   使其变为可横向滚动的内联小盒子，常规公式排版完全不受影响 */
+.katex-scroll-capsule {
+  display: inline-block;
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
+  vertical-align: middle;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sl-color-gray-5, #cbd5e1) transparent;
 }
-
-.katex::-webkit-scrollbar {
-  height: 4px;
+.katex-scroll-capsule::-webkit-scrollbar {
+  height: 3px;
 }
-.katex::-webkit-scrollbar-thumb {
+.katex-scroll-capsule::-webkit-scrollbar-thumb {
   background-color: var(--sl-color-gray-5, #cbd5e1);
-  border-radius: 4px;
+  border-radius: 3px;
+}
+.katex-scroll-capsule::-webkit-scrollbar-track {
+  background-color: transparent;
 }
 
 
@@ -53,6 +84,7 @@
   gap: 0.75rem 1.5rem;
   margin-top: 1rem;
   margin-bottom: 0.5rem;
+  min-width: 0; /* 允许网格整体收缩，避免被长公式撑破卡片 */
 }
 
 .options-container.options-vertical {
@@ -70,6 +102,7 @@
   cursor: pointer;
   user-select: none;
   margin-top: 0 !important;
+  min-width: 0; /* 网格子项默认 min-width:auto，会被 nowrap 公式撑破，必须归零 */
 }
 
 .option-chip-wrapper:hover {
@@ -103,6 +136,7 @@
   color: var(--sl-color-text, #1e293b);
   font-weight: 400;
   line-height: 1.4;
+  min-width: 0; /* flex 子项允许收缩，长公式交由内部滚动接管 */
 }
 
 @media (max-width: 48rem) {
@@ -506,8 +540,21 @@ body.left-sidebar-collapsed.right-sidebar-collapsed .sl-container {
 
 /* 针对正文区域整体页面版心的限制，防止在超宽带屏（如 2K, 4K）上发生排版撕裂 */
 .main-frame {
+  width: 100%; /* 显式宽度：配合下方 margin:auto 在超宽屏居中，同时避免 margin:auto 关闭 flex 拉伸 */
   max-width: 120rem !important; /* 整体版心最宽限制在 1920px */
   margin: 0 auto !important;
+  /* 移动端根治性修复：.page 是纵向 flex，.main-frame 作为 flex 子项默认
+     min-width:auto，会被不可断行的公式/图片/表格撑到数百像素宽，
+     再被 html/body 的 overflow-x:clip 整体裁掉（右侧内容直接“消失”）。
+     归零后整列收缩到视口宽度，宽内容改由各自的滚动容器接管。 */
+  min-width: 0 !important;
+}
+
+/* 联动容器同步允许收缩，保证收缩链路畅通 */
+.main-pane,
+.sl-container,
+.sl-markdown-content {
+  min-width: 0;
 }
 
 /* ==========================================================================
@@ -519,9 +566,95 @@ table {
   max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sl-color-gray-5, #cbd5e1) transparent;
 }
 
-/* 兜底：任何残留超宽元素不再撑大布局视口 */
+/* ==========================================================================
+   移动端容器收缩链路：让每一个可能被撑破的盒都能缩回视口内
+   ========================================================================== */
+
+/* 卡片正文/标题、解析、思路分析等组件内容盒统一允许收缩，
+   内部的公式与表格各自横向滚动，不再把卡片撑破后又被 overflow:hidden 裁掉 */
+.card-body,
+.card-header,
+.solution-content,
+.analysis-content,
+.note-content,
+.fallback-content,
+.guide-content,
+.question-stem {
+  min-width: 0;
+}
+
+/* 移动端不展示自定义右侧大纲：该大纲仅保留给桌面端右侧栏使用。
+   移动端由 Starlight 自带的“本页目录”下拉条接管导航，
+   避免 272px 宽的大纲块挤在正文上方造成观感割裂 */
+@media (max-width: 71.999rem) {
+  .right-sidebar-container {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   移动端精致化：紧凑呼吸感 + 自适应字号
+   ========================================================================== */
+@media (max-width: 48rem) {
+  /* 正文左右留白略微加宽，贴合手机阅读手感 */
+  :root {
+    --sl-content-pad-x: 1.125rem;
+  }
+
+  /* 卡片组件：缩小边距与间距，减少移动端的“臃肿感” */
+  .example-card,
+  .variant-card,
+  .method-card,
+  .exercise-card,
+  .fallback-block,
+  .guide-block,
+  .knowledge-card,
+  .note-block,
+  .analysis-block {
+    margin: 1.25rem 0;
+  }
+  .card-body {
+    padding: 0.875rem;
+  }
+  .fallback-block,
+  .guide-block,
+  .note-block,
+  .analysis-block {
+    padding: 0.75rem 0.875rem;
+  }
+  .solution-content {
+    padding: 0.875rem;
+  }
+
+  /* 选择题：更紧凑的间距，双列/单列折行更自然 */
+  .question-stem {
+    margin-bottom: 0.875rem !important;
+  }
+  .options-container {
+    gap: 0.5rem 0.75rem;
+    margin-top: 0.75rem;
+  }
+  .option-chip-wrapper {
+    padding: 0.3rem 0.5rem;
+  }
+  .option-chip-content {
+    font-size: 0.85rem;
+  }
+
+  /* 行间公式：移动端略微缩小字号，让更多公式免于滚动，滚动时也更从容 */
+  .katex-display {
+    padding: 0.35rem 0;
+  }
+  .katex-display > .katex {
+    font-size: 1.05em;
+  }
+}
+
+/* 兜底：任何残留超宽元素不再撑大布局视口（配合上面的容器收缩，保证不裁内容） */
 html, body {
   overflow-x: clip;
 }

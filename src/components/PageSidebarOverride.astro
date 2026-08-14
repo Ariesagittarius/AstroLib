@@ -918,6 +918,63 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     });
   }
 
+  /**
+   * 计算一个元素的“可视最右缘”：
+   * 行内公式的 getBoundingClientRect() 不会包含溢出子盒，
+   * 而直接遍历子元素又会被 KaTeX 的 SVG 幽灵路径（超大几何但零尺寸）污染。
+   * 因此：SVG 视为原子盒（取它真实渲染的盒宽），其余子元素取各自真实盒宽的最大值。
+   */
+  function visibleContentRight(el) {
+    let max = el.getBoundingClientRect().right;
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_ELEMENT, {
+      acceptNode(node) {
+        // 注意：HTML 文档中 SVG 的 tagName 是小写 'svg'；必须整棵跳过，
+        // 否则 KaTeX 拉伸字符内部 400000 宽的幽灵路径会把结果污染成上万像素
+        if (node.namespaceURI === 'http://www.w3.org/2000/svg') return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    while (walker.nextNode()) {
+      const n = walker.currentNode;
+      const r = n.getBoundingClientRect();
+      if (r.width > 0 && r.right > max) max = r.right;
+    }
+    el.querySelectorAll('svg').forEach(svg => {
+      const r = svg.getBoundingClientRect();
+      if (r.width > 0 && r.right > max) max = r.right;
+    });
+    return max;
+  }
+
+  /**
+   * 长行内公式“胶囊化”（移动端友好）：
+   * 仅当某个行内公式的可视内容超出其所在正文容器的右边缘时，
+   * 才给它套上 .katex-scroll-capsule（可横向滚动的内联小盒子）。
+   * 其余 99% 正常排版的短公式完全保持原生行内排版，不被任何改动波及。
+   * 注：行间公式 $$...$$ 由 .katex-display 的 overflow-x:auto 自行接管，不在此列。
+   */
+  function tameOverflowingInlineMath() {
+    const main = document.querySelector('main');
+    if (!main) return;
+
+    const lineSelector = [
+      '.sl-markdown-content', '.card-body', '.card-header',
+      '.solution-content', '.analysis-content', '.note-content',
+      '.fallback-content', '.fallback-header', '.guide-content', '.guide-header',
+      '.question-stem', '.option-chip-content'
+    ].join(', ');
+
+    main.querySelectorAll('.katex:not(.katex-display .katex)').forEach((el) => {
+      if (el.classList.contains('katex-scroll-capsule')) return;
+      const line = el.closest(lineSelector);
+      if (!line) return;
+      // 公式可视内容右缘超出容器右缘 → 判定为“放不下的长公式”
+      if (visibleContentRight(el) > line.getBoundingClientRect().right + 1) {
+        el.classList.add('katex-scroll-capsule');
+      }
+    });
+  }
+
   function buildBookTOC() {
     const sidebarContainer = document.querySelector('.custom-page-sidebar');
     if (!sidebarContainer) return;
@@ -1016,6 +1073,12 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
 
     // 4. 【大统一新增】：全自动初始化左右双手柄拖动调宽与小药丸折叠机制
     setupSidebarResizers();
+
+    // 5. 长行内公式胶囊化：KaTeX 字形加载完成后宽度会变化，需再校准一次
+    tameOverflowingInlineMath();
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => tameOverflowingInlineMath());
+    }
 
     const tocLinks = Array.from(document.querySelectorAll('.toc-link'));
     

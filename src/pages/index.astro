@@ -37,22 +37,23 @@ import { cleanSlug } from '../utils/sidebar.mjs';
         display: flex;
         justify-content: center;
         min-height: 100vh;
+        overflow-x: clip; /* 兜底：任何超宽元素不撑破手机视口 */
       }
 
       .container {
         max-width: 1000px;
         width: 100%;
-        padding: 4rem 2rem;
+        padding: clamp(2.25rem, 8vw, 4rem) clamp(1.25rem, 6vw, 2rem);
         box-sizing: border-box;
       }
 
       header {
         text-align: center;
-        margin-bottom: 4rem;
+        margin-bottom: clamp(2.5rem, 9vw, 4rem);
       }
 
       h1 {
-        font-size: 2.5rem;
+        font-size: clamp(2rem, 7vw, 2.5rem);
         font-weight: 800;
         margin-bottom: 0.5rem;
         letter-spacing: -0.025em;
@@ -96,8 +97,9 @@ import { cleanSlug } from '../utils/sidebar.mjs';
       /* 图书卡片网格 */
       .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 2rem;
+        /* min(280px, 100%) 防止极小屏（<280px 内容区）时网格被 280px 下限撑破 */
+        grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+        gap: clamp(1.25rem, 4vw, 2rem);
       }
 
       .card {
@@ -161,6 +163,16 @@ import { cleanSlug } from '../utils/sidebar.mjs';
 
       .card:hover .action-btn {
         background-color: #2563eb;
+      }
+
+      /* 极小屏微调：封面更紧凑，卡片内边距收紧 */
+      @media (max-width: 30rem) {
+        .cover-img {
+          height: 150px;
+        }
+        .content {
+          padding: 1.25rem;
+        }
       }
     </style>
   </head>
