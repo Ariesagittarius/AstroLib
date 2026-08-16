@@ -1,7 +1,7 @@
 ---
 // 自定义右侧侧边栏组件 - 替代 Starlight 的 PageSidebar.astro
 // 终极无任何 SyntaxError 重复定义、无任何 ReferenceError 引用错误版本
-import fs from 'node:fs';
+import fs from 'node:fs'; // test
 import path from 'node:path';
 import { collections } from '../config/collections.config.mjs';
 import { cleanSlug } from '../utils/sidebar.mjs';
@@ -90,6 +90,37 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
   </div>
 </aside>
 
+<!-- 移动端大纲：悬浮按钮 + 遮罩 + 底部抽屉（脚本负责搬运到 <body>，桌面端隐藏） -->
+<button class="mobile-toc-fab" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-toc-drawer" aria-label="打开本节导航大纲">
+  <svg class="mobile-toc-fab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <line x1="8" y1="6" x2="21" y2="6" />
+    <line x1="8" y1="12" x2="21" y2="12" />
+    <line x1="8" y1="18" x2="21" y2="18" />
+    <line x1="3" y1="6" x2="3.01" y2="6" />
+    <line x1="3" y1="12" x2="3.01" y2="12" />
+    <line x1="3" y1="18" x2="3.01" y2="18" />
+  </svg>
+  <span class="mobile-toc-fab-label">大纲</span>
+</button>
+
+<div class="mobile-toc-backdrop" aria-hidden="true"></div>
+
+<aside class="mobile-toc-drawer" id="mobile-toc-drawer" role="dialog" aria-modal="true" aria-label="本节导航大纲" aria-hidden="true">
+  <div class="mobile-toc-grabber" aria-hidden="true"></div>
+  <div class="mobile-toc-header">
+    <h2 class="mobile-toc-title">本节导航大纲</h2>
+    <button class="mobile-toc-close" type="button" aria-label="关闭本节导航大纲">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <line x1="6" y1="6" x2="18" y2="18" />
+        <line x1="18" y1="6" x2="6" y2="18" />
+      </svg>
+    </button>
+  </div>
+  <ul id="mobile-toc-list" class="toc-list">
+    <li class="toc-loading">正在提取教辅大纲...</li>
+  </ul>
+</aside>
+
 <style>
   /* 1. 默认隐藏所有自定义大纲，防止在移动端正文中泄露 */
   .custom-page-sidebar {
@@ -174,6 +205,46 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     white-space: nowrap; 
   }
 
+    /* 标题型目录项：无 chip，保留完整标题，并与卡片视觉区分 */
+    :global(.toc-heading) {
+      gap: 0.35rem;
+      align-items: flex-start;
+      line-height: 1.35;
+      padding-top: 0.3rem;
+      padding-bottom: 0.3rem;
+    }
+
+    :global(.toc-heading-text) {
+      display: inline-block;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+
+    :global(.toc-level-2) {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--sl-color-white);
+    }
+
+    :global(.toc-level-3) {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--sl-color-gray-3);
+      padding-left: 1rem;
+    }
+
+    :global(.toc-level-4) {
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--sl-color-gray-4);
+      padding-left: 1.5rem;
+    }
+
+    :global(.toc-link:hover .toc-heading-text) {
+      color: var(--sl-color-text-accent);
+    }
+
+
   /* 悬浮与激活反馈 */
   :global(.toc-link:hover) {
     padding-left: 0.8rem;
@@ -192,6 +263,12 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     color: var(--sl-color-text-accent);
     font-weight: 600;
   }
+
+    :global(.toc-link.active .toc-heading-text) {
+      color: var(--sl-color-text-accent);
+      font-weight: 600;
+    }
+
 
   /* MD3 柔和调色盘 */
   :global(.chip-example) {
@@ -230,6 +307,8 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
 
 <script>
   import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
+  import { initFormulaActions } from '../scripts/formula-actions';
+
 
   const CHIP_CLASSES = {
     '例': 'chip-example',
@@ -523,7 +602,8 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     // 1. 【同页联动地图】
     const localTargets = {};
     const trackSelectors = bookConfig.trackClasses ? bookConfig.trackClasses.join(', ') : '.toc-chunk';
-    const chunks = Array.from(document.querySelectorAll(trackSelectors));
+    const localChunks = Array.from(document.querySelectorAll(trackSelectors));
+    const chunks = localChunks;
     
     chunks.forEach((chunk, index) => {
       const rawTitle = chunk.getAttribute('data-title') || chunk.querySelector('.card-header, h1, h2, h3')?.textContent || '';
@@ -780,6 +860,7 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     });
   }
 
+    /* [旧版双侧边栏拖拽逻辑已迁移至 src/scripts/sidebar-resizer.ts，以下保留仅为版本对照]
   // 3. 左/右双边手柄拖动调宽与小药丸折叠核心引擎
   function setupSidebarResizers() {
     const leftSidebar = document.querySelector('nav.sidebar');
@@ -917,6 +998,7 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
       }
     });
   }
+    */
 
   /**
    * 计算一个元素的“可视最右缘”：
@@ -975,7 +1057,80 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     });
   }
 
+  /**
+   * 移动端抽屉开关（以 <body> 上的 .mobile-toc-open 类为唯一状态源）。
+   * 浮层节点每次导航都会被重建，因此内部一律通过选择器现取，绝不缓存旧节点。
+   */
+  function setMobileTocOpen(open) {
+    document.body.classList.toggle('mobile-toc-open', open);
+    const fab = document.querySelector('.mobile-toc-fab');
+    const drawer = document.querySelector('.mobile-toc-drawer');
+    if (fab) fab.setAttribute('aria-expanded', String(open));
+    if (drawer) drawer.setAttribute('aria-hidden', String(!open));
+    if (open) {
+      // 抽屉打开时，让当前章节项保持在可视区内
+      const activeLink = drawer && drawer.querySelector('.toc-link.active');
+      if (activeLink) activeLink.scrollIntoView({ block: 'nearest' });
+      // 键盘用户：焦点移入抽屉的关闭按钮
+      const closeBtn = drawer && drawer.querySelector('.mobile-toc-close');
+      if (closeBtn && !window.matchMedia('(hover: none)').matches) closeBtn.focus();
+    }
+  }
+
+  /**
+   * 移动端大纲浮层装配：
+   * - 按钮 / 遮罩 / 抽屉最初位于右侧栏容器内，而该容器在移动端是 display:none，
+   *   这里统一搬运到 <body>，使它们在移动端真正可见；
+   * - SPA 切页后整个容器会被替换，因此每次调用先清理上一页残留的浮层再重新挂载。
+   */
+  function setupMobileTOC() {
+    // 1. 清理上一页残留在 <body> 的浮层，并复位全局状态
+    document.querySelectorAll('.mobile-toc-teleported').forEach((n) => n.remove());
+    document.body.classList.remove('mobile-toc-open');
+
+    // 2. 搬运当前页浮层（页面无大纲时三者都不存在，直接跳过）
+    const fab = document.querySelector('.mobile-toc-fab');
+    const backdrop = document.querySelector('.mobile-toc-backdrop');
+    const drawer = document.querySelector('.mobile-toc-drawer');
+    if (!fab || !backdrop || !drawer) return;
+
+    [fab, backdrop, drawer].forEach((n) => {
+      n.classList.add('mobile-toc-teleported');
+      document.body.appendChild(n);
+    });
+
+    // 3. 开关交互：按钮开合 / 遮罩点击关闭 / 关闭按钮关闭
+    fab.addEventListener('click', () => {
+      setMobileTocOpen(!document.body.classList.contains('mobile-toc-open'));
+    });
+    backdrop.addEventListener('click', () => setMobileTocOpen(false));
+    drawer.querySelector('.mobile-toc-close')?.addEventListener('click', () => setMobileTocOpen(false));
+
+    // 4. Escape 关闭（文档级监听只注册一次，内部实时查询当前浮层）
+    if (!window.__mobileTocKeyHandler) {
+      window.__mobileTocKeyHandler = (e) => {
+        if (e.key !== 'Escape' || !document.body.classList.contains('mobile-toc-open')) return;
+        setMobileTocOpen(false);
+        document.querySelector('.mobile-toc-fab')?.focus();
+      };
+      document.addEventListener('keydown', window.__mobileTocKeyHandler);
+    }
+
+    // 5. 下拉手势关闭：仅当抽屉自身滚动到顶时生效，避免干扰列表滚动
+    let dragStartY = 0;
+    drawer.addEventListener('pointerdown', (e) => {
+      dragStartY = e.clientY;
+    }, { passive: true });
+    drawer.addEventListener('pointermove', (e) => {
+      if (!document.body.classList.contains('mobile-toc-open')) return;
+      if (drawer.scrollTop <= 0 && e.clientY - dragStartY > 90) setMobileTocOpen(false);
+    }, { passive: true });
+  }
+
   function buildBookTOC() {
+    // 移动端浮层：清理上一页残留并搬运当前页按钮/抽屉到 <body>
+    setupMobileTOC();
+
     const sidebarContainer = document.querySelector('.custom-page-sidebar');
     if (!sidebarContainer) return;
 
@@ -990,29 +1145,58 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
 
     const tocList = document.getElementById('custom-toc-list');
     if (!tocList) return;
+    const mobileTocList = document.getElementById('mobile-toc-list');
 
     const trackSelectors = bookConfig.trackClasses && bookConfig.trackClasses.length > 0 
       ? bookConfig.trackClasses.join(', ') 
       : '.toc-chunk';
 
-    const chunks = Array.from(document.querySelectorAll(trackSelectors));
+    const contentRoot = document.querySelector('main .sl-markdown-content') || document.querySelector('.main-pane') || document.querySelector('main') || document.body;
+
+    // 同时抓取“卡片”与“正文标题”，并按它们在正文中的真实顺序合并
+    const cards = Array.from(contentRoot.querySelectorAll(trackSelectors));
+    const headings = Array.from(contentRoot.querySelectorAll('h2, h3, h4')).filter(
+      (heading) => !heading.closest(trackSelectors) && !heading.closest('.custom-page-sidebar')
+    );
+
+    const tocEntries = [
+      ...cards.map((el) => ({ kind: 'card', el })),
+      ...headings.map((el) => ({ kind: 'heading', el, level: Number(el.tagName.slice(1)) }))
+    ].sort((a, b) => {
+      const position = a.el.compareDocumentPosition(b.el);
+      if (position & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+      if (position & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+      return 0;
+    });
+
+    const chunks = tocEntries;
     
-    if (chunks.length === 0) {
-      tocList.innerHTML = '<li class="toc-loading">本节无知识点与题目分块</li>';
+    if (tocEntries.length === 0) {
+      const emptyHtml = '<li class="toc-loading">本节暂无大纲</li>';
+      tocList.innerHTML = emptyHtml;
+      if (mobileTocList) mobileTocList.innerHTML = emptyHtml;
       return;
     }
 
     tocList.innerHTML = '';
+    if (mobileTocList) mobileTocList.innerHTML = '';
 
-    const chipLabels = bookConfig.modules || {};
+    // 与 chunks 顺序一一对应的链接数组（桌面列表 + 移动端抽屉列表），供滚动高亮使用
+    const desktopLinks = [];
+    const mobileLinks = [];
 
-    chunks.forEach((chunk, index) => {
-      const rawTitle = chunk.getAttribute('data-title') || chunk.querySelector('.card-header, h1, h2, h3')?.textContent || '无标题';
+    // 单条目录项构建器：桌面与移动端各渲染一份，保持语义与样式一致
+    function makeTocEntry(chunk, index, targetList, links, isMobile) {
+      const el = chunk.el;
+      const isHeading = chunk.kind === 'heading';
+      const rawTitle = isHeading
+          ? (el.textContent || '').trim()
+          : el.getAttribute('data-title') || el.querySelector('.card-header, .fallback-header, .guide-header')?.textContent || '无标题';
       
-      let id = chunk.id;
+      let id = el.id;
       if (!id) {
-        id = `section-block-${index + 1}`;
-        chunk.id = id;
+        id = isHeading ? `heading-${index + 1}` : `section-block-${index + 1}`;
+        el.id = id;
       }
 
       // 通过中央配置映射语义解析类型
@@ -1026,8 +1210,18 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
       li.className = 'toc-item';
 
       const a = document.createElement('a');
-      a.href = `#${id}`;
+      a.href = `#${encodeURIComponent(id)}`;
       a.className = 'toc-link';
+
+      if (isHeading) {
+          a.classList.add('toc-heading', `toc-level-${chunk.level}`);
+
+          const headingText = document.createElement('span');
+          headingText.className = 'toc-heading-text';
+          headingText.textContent = rawTitle;
+
+          a.appendChild(headingText);
+        } else {
 
       const chipSpan = document.createElement('span');
       chipSpan.className = `toc-chip ${chipClass}`;
@@ -1039,14 +1233,47 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
 
       a.appendChild(chipSpan);
       a.appendChild(numSpan);
+        }
+
+      // 移动端抽屉：点选后先收起抽屉，再平滑跳转，避免抽屉遮挡阅读
+      if (isMobile) {
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          setMobileTocOpen(false);
+          history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, '', a.getAttribute('href'));
+          requestAnimationFrame(() => {
+            const target = document.getElementById(id);
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        });
+      }
+
       li.appendChild(a);
-      tocList.appendChild(li);
+      targetList.appendChild(li);
+      links.push(a);
+    }
+
+    chunks.forEach((chunk, index) => {
+      makeTocEntry(chunk, index, tocList, desktopLinks, false);
+      if (mobileTocList) makeTocEntry(chunk, index, mobileTocList, mobileLinks, true);
     });
 
     // 侧边栏公式二次渲染
     const sidebar = document.querySelector('.custom-page-sidebar');
     if (sidebar && sidebar.textContent.includes('$')) {
       renderMathInElement(sidebar, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '$', right: '$', display: false },
+        ],
+        throwOnError: false
+      });
+    }
+
+    // 移动端抽屉内的公式同样二次渲染
+    const mobileDrawer = document.querySelector('.mobile-toc-drawer');
+    if (mobileDrawer && mobileDrawer.textContent.includes('$')) {
+      renderMathInElement(mobileDrawer, {
         delimiters: [
           { left: '$$', right: '$$', display: true },
           { left: '$', right: '$', display: false },
@@ -1071,8 +1298,8 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
       });
     });
 
-    // 4. 【大统一新增】：全自动初始化左右双手柄拖动调宽与小药丸折叠机制
-    setupSidebarResizers();
+
+
 
     // 5. 长行内公式胶囊化：KaTeX 字形加载完成后宽度会变化，需再校准一次
     tameOverflowingInlineMath();
@@ -1080,27 +1307,29 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
       document.fonts.ready.then(() => tameOverflowingInlineMath());
     }
 
-    const tocLinks = Array.from(document.querySelectorAll('.toc-link'));
-    
+    let lastSpyIndex = -1;
+
     function handleSpyScroll() {
       let activeIndex = -1;
       const scrollPosition = window.scrollY + 120;
 
       chunks.forEach((chunk, index) => {
-        const rect = chunk.getBoundingClientRect();
+        const rect = chunk.el.getBoundingClientRect();
         const elementTop = rect.top + window.scrollY;
         if (scrollPosition >= elementTop) {
           activeIndex = index;
         }
       });
 
-      tocLinks.forEach((link, index) => {
-        if (index === activeIndex) {
-          link.classList.add('active');
-        } else {
-          link.classList.remove('active');
-        }
-      });
+      desktopLinks.forEach((link, index) => link.classList.toggle('active', index === activeIndex));
+      mobileLinks.forEach((link, index) => link.classList.toggle('active', index === activeIndex));
+
+      // 抽屉展开时，把当前章节项保持在可视区内（仅当高亮项变化时滚动，避免抖动）
+      if (document.body.classList.contains('mobile-toc-open') && activeIndex !== lastSpyIndex) {
+        const activeMobile = mobileLinks[activeIndex];
+        if (activeMobile) activeMobile.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+      lastSpyIndex = activeIndex;
     }
 
     // 防止 SPA 多次导航后叠加滚动监听器
@@ -1112,4 +1341,8 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
 
   buildBookTOC();
   document.addEventListener('astro:page-load', buildBookTOC);
+
+  // 文章正文公式操作：一键复制 LaTeX / 下载 SVG（SPA 导航后同样需要重新挂接）
+  initFormulaActions();
+  document.addEventListener('astro:page-load', initFormulaActions);
 </script>

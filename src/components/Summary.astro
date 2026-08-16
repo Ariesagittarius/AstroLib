@@ -1,15 +1,17 @@
 ---
-// 自定义右侧侧边栏组件 - 替代 Starlight 的 PageSidebar.astro
+const { title } = Astro.props;
+const cleanId = title ? title.trim().replace(/\s+/g, '-') : undefined;
 ---
 
-<aside class="custom-page-sidebar">
-  <div class="toc-container">
-    <h2 class="toc-title">大纲</h2>
-    <ul id="custom-toc-list" class="toc-list">
-      <li class="toc-loading">Loading...</li>
-    </ul>
-  </div>
-</aside>
+<div class="summary-card toc-chunk" data-title={title} id={cleanId}>
+  <div class="card-header">🏆 {title}</div>
+  <div class="card-body">
+    <slot />
+
+
+
+</div>
+</div>
 
 <style>
   /* 1. 默认隐藏所有自定义大纲，防止其在移动端/正文插槽中泄露 */
@@ -147,6 +149,35 @@
   }
 </style>
 
+<style>
+  .summary-card {
+    --card-border: #ef4444;
+    --card-header-bg: #fef2f2;
+    --card-header-fg: #991b1b;
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    overflow: hidden;
+  }
+  .card-header {
+    background-color: var(--card-header-bg);
+    color: var(--card-header-fg);
+    padding: 0.6rem 1rem;
+    font-weight: bold;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .card-body {
+    padding: 1rem;
+  }
+
+  /* 黑夜主题适配 */
+  :global(html[data-theme='dark']) .summary-card {
+    --card-border: #f87171;
+    --card-header-bg: rgba(239, 68, 68, 0.16);
+    --card-header-fg: #fca5a5;
+  }
+</style>
+
 <script>
   import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
 
@@ -211,7 +242,7 @@
       li.className = 'toc-item';
 
       const a = document.createElement('a');
-      a.href = `#${id}`;
+      a.href = `#${encodeURIComponent(id)}`;
       a.className = 'toc-link';
 
       const chipSpan = document.createElement('span');
@@ -266,6 +297,6 @@
     handleSpyScroll();
   }
 
-  buildBookTOC();
-  document.addEventListener('astro:page-load', buildBookTOC);
+  // Summary card component no longer manages the sidebar TOC.
+  // The real sidebar TOC is handled by PageSidebarOverride.astro.
 </script>

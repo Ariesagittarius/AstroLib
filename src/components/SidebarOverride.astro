@@ -2,6 +2,7 @@
 import SidebarPersister from '@astrojs/starlight/components/SidebarPersister.astro';
 import SidebarSublist from '@astrojs/starlight/components/SidebarSublist.astro';
 import MobileMenuFooter from 'virtual:starlight/components/MobileMenuFooter';
+import fs from 'node:fs';
 
 const { sidebar } = Astro.locals.starlightRoute;
 const pathname = Astro.url.pathname;
@@ -24,9 +25,26 @@ if (bookMatch) {
   }
   if (kept.length > 0) filteredSidebar = kept;
 }
+
+// 当前图书的 EPUB 下载链接（构建期检测 public/epub/<slug>.epub 是否存在）
+let epubHref = null;
+if (bookMatch) {
+  const epubPath = `public/epub/${bookMatch[2]}.epub`;
+  try {
+    if (fs.existsSync(epubPath)) epubHref = `/epub/${bookMatch[2]}.epub`;
+  } catch {
+    epubHref = null;
+  }
+}
 ---
 
 <!-- 1. 渲染过滤后的侧边栏结构 -->
+{epubHref && (
+  <div class="epub-download">
+    <a href={epubHref} download>📕 下载全书 EPUB</a>
+    <span class="epub-hint">离线阅读 · 公式已排版</span>
+  </div>
+)}
 <SidebarPersister>
   <SidebarSublist sublist={filteredSidebar} />
 </SidebarPersister>
@@ -35,11 +53,43 @@ if (bookMatch) {
   <MobileMenuFooter />
 </div>
 
+<style>
+  .epub-download {
+    margin: 0.75rem 0.9rem 0.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .epub-download a {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--sl-color-text-accent);
+    background-color: color-mix(in srgb, var(--sl-color-text-accent) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--sl-color-text-accent) 35%, transparent);
+    border-radius: 8px;
+    padding: 0.45rem 0.7rem;
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+  }
+  .epub-download a:hover {
+    background-color: color-mix(in srgb, var(--sl-color-text-accent) 18%, transparent);
+  }
+  .epub-hint {
+    font-size: 0.72rem;
+    color: var(--sl-color-gray-4);
+    padding-left: 0.2rem;
+  }
+</style>
+
 <!-- 2. 注入客户端脚本，同时渲染“侧边栏”与“页面大标题 (h1)”中的数学公式 -->
 <script>
   // @ts-ignore
   import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
   import 'katex/dist/katex.min.css';
+    import { initSidebarResizers } from '../scripts/sidebar-resizer';
 
   // 侧边栏公式只渲染一次：SPA 局部导航后侧边栏 DOM 并未变化，无需重复渲染
   let sidebarMathRendered = false;
@@ -70,10 +120,14 @@ if (bookMatch) {
   }
 
   // 页面初次加载时执行一次
+    initSidebarResizers();
   renderCustomMath();
 
   // 监听 Astro 页面过渡和加载事件，确保在路由切换后依然生效
-  document.addEventListener('astro:page-load', renderCustomMath);
+  document.addEventListener('astro:page-load', () => {
+    renderCustomMath();
+    initSidebarResizers();
+  });
 </script>
 
 <!-- 3. SPA 局部刷新导航：点击内部链接时只替换正文与右侧大纲，保留头部与左侧栏 -->

@@ -2,6 +2,16 @@
 
 import { collections } from '../config/collections.config.mjs';
 import { cleanSlug } from '../utils/sidebar.mjs';
+import fs from 'node:fs';
+
+// 构建期探测该书是否有已生成的 EPUB 下载文件
+function hasEpub(slug) {
+  try {
+    return fs.existsSync(`public/epub/${slug}.epub`);
+  } catch {
+    return false;
+  }
+}
 ---
 
 <html lang="zh-CN">
@@ -121,6 +131,14 @@ import { cleanSlug } from '../utils/sidebar.mjs';
         border-color: var(--md-primary);
       }
 
+      .card-main {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        text-decoration: none;
+        color: inherit;
+      }
+
       .cover-img {
         width: 100%;
         height: 180px;
@@ -129,7 +147,7 @@ import { cleanSlug } from '../utils/sidebar.mjs';
       }
 
       .content {
-        padding: 1.5rem;
+        padding: 1.5rem 1.5rem 0.75rem;
         display: flex;
         flex-direction: column;
         flex-grow: 1;
@@ -147,7 +165,14 @@ import { cleanSlug } from '../utils/sidebar.mjs';
         color: var(--md-text-muted);
         line-height: 1.5;
         flex-grow: 1;
-        margin: 0 0 1.5rem 0;
+        margin: 0;
+      }
+
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0 1.5rem 1.5rem;
       }
 
       .action-btn {
@@ -158,11 +183,29 @@ import { cleanSlug } from '../utils/sidebar.mjs';
         background-color: var(--md-primary);
         padding: 0.5rem 1rem;
         border-radius: 8px;
+        text-decoration: none;
         transition: background-color 0.15s ease;
+        white-space: nowrap;
       }
 
       .card:hover .action-btn {
         background-color: #2563eb;
+      }
+
+      .dl-btn {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--md-primary);
+        border: 1px solid var(--md-primary);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: background-color 0.15s ease;
+        white-space: nowrap;
+      }
+
+      .dl-btn:hover {
+        background-color: rgba(59, 130, 246, 0.1);
       }
 
       /* 极小屏微调：封面更紧凑，卡片内边距收紧 */
@@ -190,14 +233,21 @@ import { cleanSlug } from '../utils/sidebar.mjs';
           
           <div class="grid">
             {col.books.map(book => (
-              <a href={`/collections/${col.slug}/${book.slug}/${cleanSlug(book.entryPoint)}/`} class="card">
-                <div class="cover-img" style={`background-image: url(${book.cover});`}></div>
-                <div class="content">
-                  <h3 class="card-title">{book.title}</h3>
-                  <p class="desc">{book.description}</p>
-                  <div class="action-btn">开始学习 →</div>
+              <div class="card">
+                <a href={`/collections/${col.slug}/${book.slug}/${cleanSlug(book.entryPoint)}/`} class="card-main">
+                  <div class="cover-img" style={`background-image: url(${book.cover});`}></div>
+                  <div class="content">
+                    <h3 class="card-title">{book.title}</h3>
+                    <p class="desc">{book.description}</p>
+                  </div>
+                </a>
+                <div class="actions">
+                  <a href={`/collections/${col.slug}/${book.slug}/${cleanSlug(book.entryPoint)}/`} class="action-btn">开始学习 →</a>
+                  {hasEpub(book.slug) && (
+                    <a href={`/epub/${book.slug}.epub`} class="dl-btn" download>⬇ 下载 EPUB</a>
+                  )}
                 </div>
-              </a>
+              </div>
             ))}
           </div>
         </section>
