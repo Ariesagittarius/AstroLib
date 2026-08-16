@@ -53,6 +53,13 @@ export default defineConfig({
       },
       sidebar: dynamicSidebar,
       customCss: [
+        // KaTeX 基础样式必须先于 custom.css 加载：custom.css 里的
+        // “.katex-display > .katex > .katex-html > .tag { position: static }”
+        // 需要覆盖 KaTeX 默认的绝对定位（right:0），而两者同特异性、同层，
+        // 谁后加载谁生效。若 katex.min.css 意外晚于 custom.css（历史上曾因
+        // 移动端样式调整导致），公式末尾编号 (\tag) 会压回公式正文上。
+        // 两个入口放同一 customCss 数组即保证打包顺序恒定：katex 先、custom 后。
+        'katex/dist/katex.min.css',
         './src/styles/custom.css',
       ],
     }),

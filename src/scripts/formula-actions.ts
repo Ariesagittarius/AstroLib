@@ -49,6 +49,15 @@
  *    - 边框捕获从“只认下/上”扩展为四边 + background-color（支持
  *      \boxed、\fbox、\rule、\angl、\overline/\underline、\sout）。
  *
+ * 4) 公式末尾编号（\tag，如 (1)）重叠问题
+ *    - KaTeX 默认把 .tag 绝对定位（right:0）在 .katex-html 右缘；custom.css
+ *      把它改为流内定位（position:static + 0.75em），但该覆盖依赖样式表加载
+ *      顺序/级联层，一旦失效（历史上正是一次移动端样式调整后失效），编号会
+ *      压在公式末尾字符上；
+ *    - 导出前用内联样式（优先级最高）强制 .tag 流内定位，测量后立即还原，
+ *      导出几何不再依赖页面 CSS；画布宽度覆盖全部内容右缘，编号或超宽公式
+ *      不再被右侧裁切。
+ *
  * 对外接口（直接改变接口）：
  *   - exportFormula(source, 'svg' | 'png')：导出核心，返回是否成功；
  *   - exportFormulaSvg(source) / exportFormulaPng(source)：便捷封装；
@@ -477,6 +486,30 @@ async function buildFormulaSvg(source: HTMLElement): Promise<string | null> {
   // 1) 等字体就绪再测量（回退字体会量出错误尺寸/基线）
   await ensureFontsReady(target);
 
+  // 1.5) \tag 公式编号（如 (1)）定位修复：KaTeX 默认把 .tag 绝对定位（right:0）
+  // 在 .katex-html 右缘；custom.css 虽把它改为流内定位（position:static + 0.75em
+  // 间距），但该覆盖依赖样式表加载顺序 / 级联层，一旦失效（历史上正是一次移动端
+  // 样式调整后失效），编号会压在公式末尾字符上，导出图必然重叠。
+  // 这里在测量前用内联样式（优先级最高，不依赖任何样式表）强制 .tag 流内定位，
+  // 测量完成后立即还原，导出几何始终正确。测量是同步的（getBoundingClientRect
+  // 会强制同步重排），因此页面不会出现可见闪动。
+  const tagEls = Array.from(target.querySelectorAll<HTMLElement>('.tag'));
+  const savedTagStyles = tagEls.map((tag) => ({ tag, style: tag.getAttribute('style') }));
+  /** 还原 .tag 的内联样式（测量是同步的，还原后页面不留任何痕迹） */
+  const restoreTagStyles = (): void => {
+    for (const { tag, style } of savedTagStyles) {
+      if (style === null) tag.removeAttribute('style');
+      else tag.setAttribute('style', style);
+    }
+  };
+  for (const tag of tagEls) {
+    tag.style.position = 'static';
+    tag.style.marginLeft = '0.75em';
+    tag.style.whiteSpace = 'nowrap';
+    tag.style.right = 'auto';
+    tag.style.left = 'auto';
+  }
+
   const rootRect = target.getBoundingClientRect();
   let width = rootRect.width;
   let height = rootRect.height;
@@ -484,17 +517,24 @@ async function buildFormulaSvg(source: HTMLElement): Promise<string | null> {
     width = target.scrollWidth;
     height = target.scrollHeight;
   }
-  if (!(width > 0) || !(height > 0)) return null;
+  if (!(width > 0) || !(height > 0)) {
+    restoreTagStyles();
+    return null;
+  }
 
   const rootLeft = rootRect.left;
   const rootTop = rootRect.top;
 
   // 2) 单遍收集叶子数据（文本 / 边框 / 内嵌 svg），同时求最大字号
+  //    与内容右缘（contentRight）：公式超宽被 max-width:100% 压窄、或编号被
+  //    强制流内定位后溢出 .katex 盒子时，画布宽度必须覆盖全部内容，否则导出
+  //    图右侧会被裁掉（这也是超宽公式导出被裁的隐性来源）。
   const textLeaves: TextLeaf[] = [];
   const borderRects: BorderRect[] = [];
   const bgRects: Array<{ x: number; y: number; width: number; height: number; color: string }> = [];
   const svgParts: string[] = [];
   let maxFontSize = 0;
+  let contentRight = 0;
 
   // 2.1 文本叶节点 → <text>（基线按行内 .strut/.pstrut 精确推导）
   const walker = document.createTreeWalker(target, NodeFilter.SHOW_TEXT);
@@ -511,6 +551,7 @@ async function buildFormulaSvg(source: HTMLElement): Promise<string | null> {
     range.selectNodeContents(node);
     const r = range.getBoundingClientRect();
     if (r.width < 0.5 || r.height < 0.5) continue;
+    contentRight = Math.max(contentRight, r.right - rootLeft);
 
     const size = parseFloat(cs.fontSize) || 16;
     const family = cs.fontFamily; // 完整回退链（中文文本各端一致的关键）
@@ -558,6 +599,7 @@ async function buildFormulaSvg(source: HTMLElement): Promise<string | null> {
     const bg = cs.backgroundColor;
     if (!isTransparent(bg)) {
       bgRects.push({ x: r.left - rootLeft, y: r.top - rootTop, width: r.width, height: r.height, color: bg });
+      contentRight = Math.max(contentRight, r.right - rootLeft);
     }
 
     // 边框：只取“实线/虚线”有效边，直接按边框条几何落位（厚度 = 边框宽）
@@ -572,18 +614,22 @@ async function buildFormulaSvg(source: HTMLElement): Promise<string | null> {
     if (isVisible(borderWidths[0].w, borderWidths[0].style, borderWidths[0].color)) {
       const w = borderWidths[0].w;
       borderRects.push({ x: r.left - rootLeft, y: r.top - rootTop, width: r.width, height: w, color: borderWidths[0].color, dashed: borderWidths[0].style !== 'solid' });
+      contentRight = Math.max(contentRight, r.right - rootLeft);
     }
     if (isVisible(borderWidths[1].w, borderWidths[1].style, borderWidths[1].color)) {
       const w = borderWidths[1].w;
       borderRects.push({ x: r.left + r.width - w - rootLeft, y: r.top - rootTop, width: w, height: r.height, color: borderWidths[1].color, dashed: borderWidths[1].style !== 'solid' });
+      contentRight = Math.max(contentRight, r.right - rootLeft);
     }
     if (isVisible(borderWidths[2].w, borderWidths[2].style, borderWidths[2].color)) {
       const w = borderWidths[2].w;
       borderRects.push({ x: r.left - rootLeft, y: r.top + r.height - w - rootTop, width: r.width, height: w, color: borderWidths[2].color, dashed: borderWidths[2].style !== 'solid' });
+      contentRight = Math.max(contentRight, r.right - rootLeft);
     }
     if (isVisible(borderWidths[3].w, borderWidths[3].style, borderWidths[3].color)) {
       const w = borderWidths[3].w;
       borderRects.push({ x: r.left - rootLeft, y: r.top - rootTop, width: w, height: r.height, color: borderWidths[3].color, dashed: borderWidths[3].style !== 'solid' });
+      contentRight = Math.max(contentRight, r.right - rootLeft);
     }
   }
 
@@ -591,6 +637,7 @@ async function buildFormulaSvg(source: HTMLElement): Promise<string | null> {
   target.querySelectorAll('svg').forEach((svg) => {
     const r = svg.getBoundingClientRect();
     if (r.width <= 0 || r.height <= 0) return;
+    contentRight = Math.max(contentRight, r.right - rootLeft);
     const copy = svg.cloneNode(true) as SVGSVGElement;
     resolveSvgUse(copy);
     copy.removeAttribute('width');
@@ -614,10 +661,15 @@ async function buildFormulaSvg(source: HTMLElement): Promise<string | null> {
   const padTop = pad + 2;
   const padBottom = pad;
 
-  const W = width + padX * 2;
+  // 画布宽度覆盖 .katex 盒子与全部内容右缘：编号被强制流内定位后（或公式超宽
+  // 被 max-width:100% 压窄时）内容会超出盒子，若仍用盒子宽度，导出图右侧会被裁掉
+  const W = Math.max(width, contentRight) + padX * 2;
   const H = height + padTop + padBottom;
   const Ws = W.toFixed(2);
   const Hs = H.toFixed(2);
+
+  // 3.5) 测量完成，还原 .tag 内联样式（后续仅做字体收集与拼装，不再依赖它）
+  restoreTagStyles();
 
   // 4) 用到的字体族 → 内嵌 data URI 的 @font-face
   const used = usedFontFamilies(target);
