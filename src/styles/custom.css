@@ -706,7 +706,13 @@ html, body {
   position: relative;
 }
 
-/* 操作钮容器（复制 + 下载 SVG 两个小按钮） */
+/* 操作钮容器（复制 + 下载 SVG 两个小按钮）
+   注意：本容器任何状态下都不得有 transform —— 脚本会把二级菜单提升为
+   position:fixed 以逃逸公式块/卡片的 overflow 裁剪，而祖先上的任何
+   transform 都会让 fixed 退化为相对它定位，菜单会脱离按钮、渲染到错位处。
+   （悬停态选择器 .katex-display:hover .katex-actions 特异性 (0,3,0) 高于
+   .katex-actions.is-open，若悬停态带 transform 则 is-open 压不住，
+   因此所有状态统一只做透明度过渡，不做位移动画。） */
 .katex-actions {
   position: absolute;
   top: 0.3rem;
@@ -716,16 +722,14 @@ html, body {
   align-items: center;
   gap: 0.2rem;
   opacity: 0;
-  transform: translateY(-3px);
   pointer-events: none; /* 隐藏时绝不拦截公式区域的鼠标事件 */
-  transition: opacity 0.16s ease, transform 0.16s ease;
+  transition: opacity 0.16s ease;
 }
 
 /* 行间公式：悬停公式块即浮现 */
 .katex-display:hover .katex-actions,
 .katex-display:focus-within .katex-actions {
   opacity: 1;
-  transform: translateY(0);
   pointer-events: auto;
 }
 
@@ -738,29 +742,28 @@ html, body {
 .katex-copy-host .katex-actions {
   top: -1.9em;
   right: -0.45em;
+  /* 命中桥：按钮悬浮在公式行上方，鼠标从公式移向按钮会先短暂离开宿主
+     （宿主 :hover 立即失效、pointer-events 变 none，按钮在半路“消失”）。
+     下方留出一段透明 padding，把按钮容器自身的可命中区延伸到宿主内，
+     鼠标在这段间隙里仍算悬停在容器（宿主的后代）上，hover 不中断。 */
+  padding-bottom: 0.75em;
 }
 
 .katex-copy-host:hover .katex-actions,
 .katex-copy-host:focus-within .katex-actions {
   opacity: 1;
-  transform: translateY(0);
   pointer-events: auto;
 }
 
 /* 触屏点按浮现态（由脚本临时添加） */
 .katex-actions.is-visible {
   opacity: 1;
-  transform: translateY(0);
   pointer-events: auto;
 }
 
-/* 导出菜单展开态：即使鼠标离开/触屏无悬停，也保持操作钮与菜单可见可点。
-   transform 必须为 none：脚本会把菜单提升为 position:fixed 以逃逸公式块/卡片
-   的 overflow 裁剪，而祖先上的任何 transform 都会让 fixed 退化为相对它定位，
-   导致菜单仍被裁剪。 */
+/* 导出菜单展开态：即使鼠标离开/触屏无悬停，也保持操作钮与菜单可见可点 */
 .katex-actions.is-open {
   opacity: 1;
-  transform: none;
   pointer-events: auto;
 }
 

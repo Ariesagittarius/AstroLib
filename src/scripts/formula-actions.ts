@@ -435,20 +435,62 @@ function makeActions(): {
   return { wrap, copyBtn, triggerBtn, menu, svgItem, pngItem };
 }
 
+/** 还原菜单内联定位（is-open 期间菜单被提升为 fixed 以逃逸祖先 overflow 裁剪） */
+function resetMenuInlineStyles(menu: HTMLElement): void {
+  menu.style.position = '';
+  menu.style.top = '';
+  menu.style.left = '';
+  menu.style.right = '';
+}
+
+/**
+ * 把某个展开菜单按触发钮的视口坐标重新定位为 position:fixed：
+ * 行间公式块自身是 overflow-x:auto / overflow-y:hidden 的滚动容器（卡片也有
+ * overflow:hidden），默认的绝对定位下拉会被裁掉下半截，PNG 项根本点不到；
+ * fixed 的包含块是视口，可整体逃逸所有祖先的 overflow 裁剪（前提是祖先链上
+ * 无 transform，见 custom.css 中 .katex-actions 的注释）。空间不足时自动翻到
+ * 按钮上方；触发钮滚出视口则直接收起该菜单。
+ */
+function positionOpenMenu(wrap: HTMLElement): void {
+  const trigger = wrap.querySelector<HTMLElement>('.katex-download-btn');
+  const menu = wrap.querySelector<HTMLElement>('.katex-download-menu');
+  if (!trigger || !menu) return;
+
+  const rect = trigger.getBoundingClientRect();
+  // 触发钮完全滚出视口 → 收起菜单（fixed 定位已无意义）
+  if (rect.bottom < 0 || rect.top > window.innerHeight || rect.right < 0 || rect.left > window.innerWidth) {
+    wrap.classList.remove('is-open');
+    trigger.setAttribute('aria-expanded', 'false');
+    resetMenuInlineStyles(menu);
+    return;
+  }
+
+  const gap = 4;
+  const menuHeight = menu.offsetHeight || 80;
+  const viewportBottom = window.innerHeight - 8;
+  let top = rect.bottom + gap;
+  if (top + menuHeight > viewportBottom && rect.top - gap - menuHeight > 8) {
+    top = rect.top - gap - menuHeight; // 下方放不下则翻到上方
+  }
+  menu.style.position = 'fixed';
+  menu.style.top = Math.max(8, top) + 'px';
+  menu.style.left = rect.left + 'px';
+  menu.style.right = 'auto';
+}
+
+/** 重新定位页面上所有展开的导出菜单（滚动/缩放时跟随触发钮，避免错位） */
+function repositionOpenMenus(): void {
+  document.querySelectorAll<HTMLElement>('.katex-actions.is-open').forEach(positionOpenMenu);
+}
+
 /** 关闭页面上所有打开的导出菜单 */
 function closeAllMenus(): void {
   document.querySelectorAll<HTMLElement>('.katex-actions.is-open').forEach((wrap) => {
     wrap.classList.remove('is-open');
     const trigger = wrap.querySelector<HTMLElement>('.katex-download-btn');
     trigger?.setAttribute('aria-expanded', 'false');
-    // 还原菜单内联定位（is-open 期间菜单被提升为 fixed 以逃逸祖先 overflow 裁剪）
     const menu = wrap.querySelector<HTMLElement>('.katex-download-menu');
-    if (menu) {
-      menu.style.position = '';
-      menu.style.top = '';
-      menu.style.left = '';
-      menu.style.right = '';
-    }
+    if (menu) resetMenuInlineStyles(menu);
   });
 }
 
@@ -486,36 +528,10 @@ function wireActions(
     wrap.classList.toggle('is-open', open);
     triggerBtn.setAttribute('aria-expanded', String(open));
     if (open) {
-      positionMenu();
+      positionOpenMenu(wrap);
     } else {
-      menu.style.position = '';
-      menu.style.top = '';
-      menu.style.left = '';
-      menu.style.right = '';
+      resetMenuInlineStyles(menu);
     }
-  };
-
-  /**
-   * 打开时把菜单提升为 position:fixed 并按触发钮的视口坐标定位：
-   * 行间公式块自身是 overflow-x:auto / overflow-y:hidden 的滚动容器（卡片也有
-   * overflow:hidden），默认的绝对定位下拉会被裁掉下半截，PNG 项根本点不到。
-   * fixed 的包含块是视口，可整体逃逸所有祖先的 overflow 裁剪；配合
-   * .katex-actions.is-open { transform:none }（transform 会让 fixed 退化为
-   * 相对该元素定位），菜单得以完整显示。空间不足时自动翻转到按钮上方。
-   */
-  const positionMenu = (): void => {
-    const rect = triggerBtn.getBoundingClientRect();
-    const gap = 4;
-    const menuHeight = menu.offsetHeight || 80;
-    const viewportBottom = window.innerHeight - 8;
-    let top = rect.bottom + gap;
-    if (top + menuHeight > viewportBottom && rect.top - gap - menuHeight > 8) {
-      top = rect.top - gap - menuHeight; // 下方放不下则翻到上方
-    }
-    menu.style.position = 'fixed';
-    menu.style.top = Math.max(8, top) + 'px';
-    menu.style.left = rect.left + 'px';
-    menu.style.right = 'auto';
   };
 
   copyBtn.addEventListener('click', async (event) => {
@@ -609,15 +625,17 @@ export function initFormulaActions(): void {
   const roots = Array.from(content.querySelectorAll<HTMLElement>('[data-latex]'));
   for (const root of roots) setupFormula(root);
 
-  // 全局关闭逻辑只绑定一次（SPA 导航复用）：点外部 / Esc / 滚动 / 缩放 关闭所有菜单
-  // （菜单展开时为 fixed 定位，页面滚动后按钮与菜单会错位，滚动即关闭最稳妥）
+  // 全局关闭逻辑只绑定一次（SPA 导航复用）：点外部 / Esc 关闭所有菜单；
+  // 滚动 / 缩放时菜单跟随触发钮重新定位（按钮滚出视口则由 positionOpenMenu 收起）。
+  // 注意：这里用重新定位而非直接关闭 —— 真实点击会触发按钮聚焦滚动，若滚动即关，
+  // 菜单会在打开的瞬间被自己关掉（“点不上”）。
   if (!menuDocBound) {
     menuDocBound = true;
     document.addEventListener('click', closeAllMenus);
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') closeAllMenus();
     });
-    window.addEventListener('scroll', closeAllMenus, { passive: true, capture: true });
-    window.addEventListener('resize', closeAllMenus);
+    window.addEventListener('scroll', repositionOpenMenus, { passive: true, capture: true });
+    window.addEventListener('resize', repositionOpenMenus);
   }
 }
