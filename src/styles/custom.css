@@ -41,6 +41,18 @@
   text-align: left;
 }
 
+/* 公式末尾编号（\tag）修复：KaTeX 默认把编号绝对定位（right:0）在 .katex-html
+   右缘，而 .katex 盒子只取公式自身宽度（max-content），于是编号永远压在公式
+   末尾字符上；公式一旦比容器宽被压窄，重叠就更严重。
+   这里把编号改为流内定位：紧跟公式末尾（留 0.75em 间距），
+   - 公式放得下时：公式+编号整体居中，编号不再叠字；
+   - 公式放不下时：编号随公式一起横向滚动，永不与公式重叠。 */
+.katex-display > .katex > .katex-html > .tag {
+  position: static;
+  margin-left: 0.75em;
+  white-space: nowrap;
+}
+
 /* 行内公式：仅限制最大宽度，不轻易改动行内盒模型（99% 的短公式保持原生排版） */
 .katex {
   max-width: 100%;
