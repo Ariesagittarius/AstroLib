@@ -1,0 +1,717 @@
+---
+title: '5.3 对角化'
+---
+
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Note from '@/components/Note.astro';
+import Solution from '@/components/Solution.astro';
+import Block from '@/components/Block.astro';
+
+在很多情况下，从分解式 $A = PDP^{-1}$ （其中 $D$ 是对角矩阵），我们能够了解到有关矩阵 $A$ 的特征值和特征向量的信息。本节，我们利用分解式在 $k$ 较大时能快速计算 $A^k$ ，这是线性代数中某些应用的基本思想。稍后，在5.6节和5.7节，分解式被用来分析（解耦）动力系统。
+
+下面的例题表明对角矩阵的幂很容易计算.
+
+<Example title="例 1">
+若 $D = \begin{bmatrix} 5 & 0 \\ 0 & 3 \end{bmatrix}$ , 则 $D^2 = \begin{bmatrix} 5 & 0 \\ 0 & 3 \end{bmatrix} \begin{bmatrix} 5 & 0 \\ 0 & 3 \end{bmatrix} = \begin{bmatrix} 5^2 & 0 \\ 0 & 3^2 \end{bmatrix}$
+
+$$
+
+D ^ {3} = D D ^ {2} = \left[ \begin{array}{l l} 5 & 0 \\ 0 & 3 \end{array} \right] \left[ \begin{array}{l l} 5 ^ {2} & 0 \\ 0 & 3 ^ {2} \end{array} \right] = \left[ \begin{array}{l l} 5 ^ {3} & 0 \\ 0 & 3 ^ {3} \end{array} \right]
+
+$$
+
+一般有
+
+$$
+
+\text {对} k \geqslant 1, D ^ {k} = \left[ \begin{array}{l l} {5 ^ {k}} & {0} \\ {0} & {3 ^ {k}} \end{array} \right]
+
+$$
+
+若 $A = PDP^{-1}$ ，其中 $P$ 为可逆矩阵， $D$ 为对角矩阵，那么 $A^k$ 的计算也很简单，见下例.例2设 $A = \left[ \begin{array}{ll}7 & 2\\ -4 & 1 \end{array} \right]$ ，给定 $A = PDP^{-1}$ ，其中 $P = \left[ \begin{array}{ll}1 & 1\\ -1 & -2 \end{array} \right],D = \left[ \begin{array}{ll}5 & 0\\ 0 & 3 \end{array} \right]$ ，计算 $A^k$
+
+<Solution title="解">
+由 $2 \times 2$ 矩阵的逆矩阵的标准公式得
+
+$$
+
+P ^ {- 1} = \left[ \begin{array}{c c} 2 & 1 \\ - 1 & - 1 \end{array} \right]
+
+$$
+
+然后，结合矩阵乘法，得
+
+$$
+
+\begin{array}{r l} A ^ {2} & = (P D P ^ {- 1}) (P D P ^ {- 1}) = P D \underbrace {(P ^ {- 1} P)} _ {I} D P ^ {- 1} = P D D P ^ {- 1} \\ & = P D ^ {2} P ^ {- 1} = \left[ \begin{array}{l l} 1 & 1 \\ - 1 & - 2 \end{array} \right] \left[ \begin{array}{l l} 5 ^ {2} & 0 \\ 0 & 3 ^ {2} \end{array} \right] \left[ \begin{array}{l l} 2 & 1 \\ - 1 & - 1 \end{array} \right] \end{array}
+
+$$
+
+同理，
+
+$$
+
+A ^ {3} = (P D P ^ {- 1}) A ^ {2} = \underbrace {(P D P ^ {- 1}) P} _ {I} D ^ {2} P ^ {- 1} = P D D ^ {2} P ^ {- 1} = P D ^ {3} P ^ {- 1}
+
+$$
+
+一般对 $k \geqslant 1$ ，有
+
+$$
+
+\begin{array}{r l} A ^ {k} & = P D ^ {k} P ^ {- 1} = \left[ \begin{array}{c c} 1 & 1 \\ - 1 & - 2 \end{array} \right] \left[ \begin{array}{c c} 5 ^ {k} & 0 \\ 0 & 3 ^ {k} \end{array} \right] \left[ \begin{array}{c c} 2 & 1 \\ - 1 & - 1 \end{array} \right] \\ & = \left[ \begin{array}{c c} 2 \cdot 5 ^ {k} - 3 ^ {k} & 5 ^ {k} - 3 ^ {k} \\ 2 \cdot 3 ^ {k} - 2 \cdot 5 ^ {k} & 2 \cdot 3 ^ {k} - 5 ^ {k} \end{array} \right] \end{array}
+
+$$
+
+如果方阵 A 相似于对角矩阵，即存在可逆矩阵 P 和对角矩阵 D，有 $A = PDP^{-1}$ ，则称 A 可对角化。下一个定理给出了可对角化矩阵的特征，并告诉我们如何去建立合适的分解式。
+</Solution>
+</Example>
+
+<Knowledge title="定理 5">
+（对角化定理）
+
+$n \times n$ 矩阵 A 可对角化的充分必要条件是 A 有 n 个线性无关的特征向量.
+
+事实上， $A=PDP^{-1}$ ，D为对角矩阵的充分必要条件是P的列向量是A的n个线性无关的特征向量。此时，D的主对角线上的元素分别是A的对应于P中特征向量的特征值。
+
+换句话说， $A$ 可对角化的充分必要条件是有足够的特征向量形成 $\mathbb{R}^n$ 的基，我们称这样的基为特征向量基.
+
+<Solution title="证明">
+首先看到，若 P 是列为 $v_{1}, \cdots, v_{n}$ 的任一 $n \times n$ 矩阵，D 是对角线元素为 $\lambda_{1}, \cdots, \lambda_{n}$ 的对角矩阵，那么
+
+$$
+
+A P = A [ \boldsymbol {v} _ {1} \quad \boldsymbol {v} _ {2} \quad \dots \quad \boldsymbol {v} _ {n} ] = [ A \boldsymbol {v} _ {1} \quad A \boldsymbol {v} _ {2} \quad \dots \quad A \boldsymbol {v} _ {n} ]\tag{1}
+
+$$
+
+而
+
+$$
+
+P D = P \left[ \begin{array}{c c c c} {\lambda_ {1}} & {0} & {\dots} & {0} \\ {0} & {\lambda_ {2}} & {\dots} & {0} \\ {\vdots} & {\vdots} & & {\vdots} \\ {0} & {0} & {\dots} & {\lambda_ {n}} \end{array} \right] = \left[ \begin{array}{l l l l} {\lambda_ {1} \pmb {v} _ {1}} & {\lambda_ {2} \pmb {v} _ {2}} & {\dots} & {\lambda_ {n} \pmb {v} _ {n}} \end{array} \right]\tag{2}
+
+$$
+
+现假设 A 可对角化且 $A = PDP^{-1}$ ，用 P 右乘等式两边，则有 AP = PD。此时，由（1）和（2）得 $\left[Av_{1} Av_{2} \cdots Av_{n}\right] = \left[\lambda_{1}v_{1} \lambda_{2}v_{2} \cdots \lambda_{n}v_{n}\right]$ (3)
+
+由列相等，有
+
+$$
+
+A \boldsymbol {v} _ {1} = \lambda_ {1} \boldsymbol {v} _ {1}, A \boldsymbol {v} _ {2} = \lambda_ {2} \boldsymbol {v} _ {2}, \dots , A \boldsymbol {v} _ {n} = \lambda_ {n} \boldsymbol {v} _ {n}\tag{4}
+
+$$
+
+因为 P 可逆，故 P 的列 $v_{1}, \cdots, v_{n}$ 必定线性无关。同样，因为这些 $v_{1}, \cdots, v_{n}$ 非零，故（4）表示 $\lambda_{1}, \cdots, \lambda_{n}$ 是特征值， $v_{1}, \cdots, v_{n}$ 是相应的特征向量。这就证明了定理中第一、第二和随后的第三个命题的必要性。
+
+最后，给定任意 n 个特征向量 $v_{1}, \cdots, v_{n}$ ，用它们作为矩阵 P 的列，并用相应的特征值来构造矩阵 D，由（1）～（3），等式 AP = PD 成立而不需要特征向量有任何条件。若特征向量是线性无关的，则 P 是可逆的（由可逆矩阵定理），由 AP = PD 可推出 $A = PDP^{-1}$ 。
+
+矩阵的对角化
+</Solution>
+</Knowledge>
+
+<Example title="例 3">
+可能的话，将下面矩阵对角化：
+
+$$
+
+A = \left[ \begin{array}{c c c} 1 & 3 & 3 \\ - 3 & - 5 & - 3 \\ 3 & 3 & 1 \end{array} \right]
+
+$$
+
+即求可逆矩阵 P 和对角矩阵 D，使得 $A = PDP^{-1}$ .
+
+<Solution title="解">
+对角化工作可分为 4 步来完成.
+
+第 1 步 求出 A 的特征值. 在 5.2 节曾提到，在矩阵的规模大于 $2 \times 2$ 时，可借用计算机求特征值，为避免分心，本书将会提供这一步的内容. 现在的特征方程是一个 3 次多项式，可分解为：
+
+$$
+
+\begin{array}{r l} 0 = \det (A - \lambda I) & = - \lambda^ {3} - 3 \lambda^ {2} + 4 \\ & = - (\lambda - 1) (\lambda + 2) ^ {2} \end{array}
+
+$$
+
+特征值是 $\lambda=1$ 和 $\lambda=-2$ .
+
+第2步 求 $A$ 的3个线性无关的特征向量. 因为 $A$ 是 $3 \times 3$ 矩阵, 故需要3个向量. 这一步很关键, 如果找不到这3个向量, 那么由定理5, $A$ 就不能对角化. 用5.1节的方法可求出每一特征空间的基:
+
+$$
+
+\boldsymbol {v} _ {1} = \left[ \begin{array}{c} 1 \\ - 1 \\ 1 \end{array} \right]
+
+$$
+
+对于 $\lambda = 1$ 的基是：
+
+对于 $\lambda = -2$ 的基是： $v_{2} = \begin{bmatrix} -1 \\ 1 \\ 0 \end{bmatrix}$ 和 $v_{3} = \begin{bmatrix} -1 \\ 0 \\ 1 \end{bmatrix}$
+
+可以验证 $\{v_{1}, v_{2}, v_{3}\}$ 是线性无关的.
+
+第3步 用第2步得到的向量构造矩阵 $P$ 。向量的次序不重要，用第2步选择的次序，形成
+
+$$
+
+p = \left[ \begin{array}{l l l} \boldsymbol {v} _ {1} & \boldsymbol {v} _ {2} & \boldsymbol {v} _ {3} \end{array} \right] = \left[ \begin{array}{r r r} 1 & - 1 & - 1 \\ - 1 & 1 & 0 \\ 1 & 0 & 1 \end{array} \right]
+
+$$
+
+第4步 用对应的特征值构造矩阵 $D$ 。构造 $D$ 时，特征值的次序必须和矩阵 $P$ 的列选择的特征向量的次序一致。对应于 $\lambda = -2$ 的特征向量有2个，特征值 $\lambda = -2$ 要出现2次：
+
+$$
+
+D = \left[ \begin{array}{c c c} 1 & 0 & 0 \\ 0 & - 2 & 0 \\ 0 & 0 & - 2 \end{array} \right]
+
+$$
+
+验证所找的 P 和 D 是否正确是一个好的习惯，为避免计算 $P^{-1}$ ，可简单验证 AP = PD，这等价于当 P 可逆时 $A = PDP^{-1}$ 。（但必须确认 P 是可逆的！）计算
+
+$$
+
+A P = \left[ \begin{array}{r r r} 1 & 3 & 3 \\ - 3 & - 5 & - 3 \\ 3 & 3 & 1 \end{array} \right] \left[ \begin{array}{r r r} 1 & - 1 & - 1 \\ - 1 & 1 & 0 \\ 1 & 0 & 1 \end{array} \right] = \left[ \begin{array}{r r r} 1 & 2 & 2 \\ - 1 & - 2 & 0 \\ 1 & 0 & - 2 \end{array} \right]
+
+$$
+
+$$
+
+P D = \left[ \begin{array}{r r r} 1 & - 1 & - 1 \\ - 1 & 1 & 0 \\ 1 & 0 & 1 \end{array} \right] \left[ \begin{array}{r r r} 1 & 0 & 0 \\ 0 & - 2 & 0 \\ 0 & 0 & - 2 \end{array} \right] = \left[ \begin{array}{r r r} 1 & 2 & 2 \\ - 1 & - 2 & 0 \\ 1 & 0 & - 2 \end{array} \right]
+
+$$
+</Solution>
+</Example>
+
+<Example title="例 4">
+试着将下面的矩阵 $A$ 对角化：
+
+$$
+
+A = \left[ \begin{array}{c c c} 2 & 4 & 3 \\ - 4 & - 6 & - 3 \\ 3 & 3 & 1 \end{array} \right]
+
+$$
+
+<Solution title="解">
+$A$ 的特征方程与例3的完全一样：
+
+$$
+
+0 = \det (A - \lambda I) = - \lambda^ {3} - 3 \lambda^ {2} + 4 = - (\lambda - 1) (\lambda + 2) ^ {2}
+
+$$
+
+特征值是 $\lambda = 1$ 和 $\lambda = -2$ 。但当我们找特征向量时，发现每一特征空间仅是一维的：
+
+对于 $\lambda=1$ 的特征向量： $v_{1}=\begin{bmatrix}1\\ -1\\ 1\end{bmatrix}$
+
+对于 $\lambda = -2$ 的特征向量： $v_{2} = \begin{bmatrix} -1 \\ 1 \\ 0 \end{bmatrix}$
+
+没有其他的特征向量了， $A$ 的每个特征向量都是 $\pmb{\nu}_{1}$ 或 $\pmb{\nu}_{2}$ 的倍数．因此不可能利用 $A$ 的特征向量
+
+来构造出 $\mathbb{R}^3$ 的基. 由定理5， $A$ 不能对角化
+
+以下定理为矩阵可对角化提供了充分条件.
+</Solution>
+</Example>
+
+<Knowledge title="定理 6">
+有 $n$ 个相异特征值的 $n \times n$ 矩阵可对角化.
+
+<Solution title="证明">
+设 $v_{1},\cdots,v_{n}$ 是矩阵 A 对应于 n 个相异特征值的特征向量，由 5.1 节定理 2， $\{v_{1},\cdots,v_{n}\}$ 是线性无关的，因此，由定理 5，A 可对角化.
+
+不过， $n \times n$ 矩阵并不是必须有 n 个相异特征值才可对角化。例 3 的 $3 \times 3$ 矩阵尽管只有 2 个相异的特征值，但它是可对角化的。
+</Solution>
+</Knowledge>
+
+<Example title="例 5">
+确定下列矩阵能否对角化：
+
+$$
+
+A = \left[ \begin{array}{c c c} 5 & - 8 & 1 \\ 0 & 0 & 7 \\ 0 & 0 & - 2 \end{array} \right]
+
+$$
+
+<Solution title="解">
+很容易判断矩阵 A 可对角化. 因为 A 是 $3 \times 3$ 的三角矩阵, 其特征值显然是 5, 0 和 -2, 有三个相异的特征值, 故 A 可对角化.
+</Solution>
+</Example>
+
+## 特征值不都相异的矩阵
+
+如果 $n \times n$ 矩阵 A 有 n 个相异的特征值及相应的特征向量 $v_{1}, \cdots, v_{n}$ ，若记 $P = [v_{1} \cdots v_{n}]$ ，那么由定理 2，P 的列是线性无关的，自然 P 是可逆的。当 A 可对角化，但 A 相异的特征值的个数少于 n 时，我们仍可以用以下定理给出的方法来构造可逆矩阵 $P^{\ominus}$ 。
+
+<Knowledge title="定理 7">
+设 A 是 $n \times n$ 矩阵，其相异的特征值是 $\lambda_{1}, \ldots, \lambda_{p}$ .
+
+a. 对于 $1 \leqslant k \leqslant p, \lambda_{k}$ 的特征空间的维数小于或等于 $\lambda_{k}$ 的代数重数.
+
+b. 矩阵 A 可对角化的充分必要条件是所有不同特征空间的维数之和为 n，即（i）特征多项式可完全分解为线性因子，（ii）每个 $\lambda_{k}$ 的特征空间的维数等于 $\lambda_{k}$ 的代数重数。
+
+c. 若 A 可对角化， $B_{k}$ 是对应于 $\lambda_{k}$ 的特征空间的基，则集合 $B_{1}, \cdots, B_{p}$ 中所有向量的集合是 $R^{n}$ 的特征向量基.
+</Knowledge>
+
+<Example title="例 6">
+试着将下列矩阵对角化.
+
+$$
+
+A = \left[ \begin{array}{c c c c} 5 & 0 & 0 & 0 \\ 0 & 5 & 0 & 0 \\ 1 & 4 & - 3 & 0 \\ - 1 & - 2 & 0 & - 3 \end{array} \right]
+
+$$
+
+<Solution title="解">
+$A$ 是三角矩阵，特征值是 $\lambda = 5$ 和 $\lambda = -3$ ，重数都是2.利用5.1节的方法，我们求出每个特征空间的基.
+
+对应 $\lambda = 5$ 的基：
+
+$$
+
+\boldsymbol {v} _ {1} = \left[ \begin{array}{c} - 8 \\ 4 \\ 1 \\ 0 \end{array} \right], \quad \boldsymbol {v} _ {2} = \left[ \begin{array}{c} - 1 6 \\ 4 \\ 0 \\ 1 \end{array} \right]
+
+$$
+
+对应 $\lambda = -3$ 的基： $v_{3} = \begin{bmatrix} 0 \\ 0 \\ 1 \\ 0 \end{bmatrix}$ ， $v_{4} = \begin{bmatrix} 0 \\ 0 \\ 0 \\ 1 \end{bmatrix}$
+
+由定理7，向量集合 $\{\pmb{v}_1,\dots ,\pmb{v}_4\}$ 是线性无关的，故 $P = [\pmb{v}_1\quad \dots \quad \pmb{v}_4]$ 是可逆的，且有 $A = PDP^{-1}$ ，其中
+
+$$
+
+P = \left[ \begin{array}{c c c c} - 8 & - 1 6 & 0 & 0 \\ 4 & 4 & 0 & 0 \\ 1 & 0 & 1 & 0 \\ 0 & 1 & 0 & 1 \end{array} \right], D = \left[ \begin{array}{c c c c} 5 & 0 & 0 & 0 \\ 0 & 5 & 0 & 0 \\ 0 & 0 & - 3 & 0 \\ 0 & 0 & 0 & - 3 \end{array} \right]
+
+$$
+</Solution>
+</Example>
+
+<Block title="练习题">
+
+
+1. $A=\begin{bmatrix}4 & -3 \\ 2 & -1\end{bmatrix}$ ，计算 $A^{8}$ .
+
+
+
+2. 设 $A = \begin{bmatrix} -3 & 12 \\ -2 & 7 \end{bmatrix}, \nu_{1} = \begin{bmatrix} 3 \\ 1 \end{bmatrix}, \nu_{2} = \begin{bmatrix} 2 \\ 1 \end{bmatrix}$ ，若已知 $\pmb{\nu}_{1}$ 和 $\pmb{\nu}_{2}$ 是 $A$ 的特征向量，将 $A$ 对角化.
+
+
+
+3. 设 $4 \times 4$ 矩阵 $A$ 的特征值是 5, 3 和 -2，并且已知对应于 $\lambda = 3$ 的特征空间是二维的，你能否判断 $A$ 是可对角化的？
+
+
+</Block>
+
+<Block title="习题5.3">
+
+
+在习题 1 和习题 2 中，设 $A = PDP^{-1}$ ，计算 $A^{4}$ .
+
+
+
+1. $P=\begin{bmatrix}5 & 7 \\ 2 & 3\end{bmatrix}, D=\begin{bmatrix}2 & 0 \\ 0 & 1\end{bmatrix}$
+
+
+
+5.
+
+
+
+$$
+
+\left[ \begin{array}{c c c} 2 & 2 & 1 \\ 1 & 3 & 1 \\ 1 & 2 & 2 \end{array} \right]
+
+$$
+
+
+
+$$
+
+P = \left[ \begin{array}{c c} 2 & - 3 \\ - 3 & 5 \end{array} \right], D = \left[ \begin{array}{c c} 1 & 0 \\ 0 & \frac {1}{2} \end{array} \right]
+
+$$
+
+
+
+在习题 3 和习题 4 中, 利用分解式 $A = PDP^{-1}$ , 计算 $A^{k}$ , k 为正整数.
+
+
+
+3.
+
+
+
+$$
+
+\left[ \begin{array}{c c} a & 0 \\ 3 (a - b) & b \end{array} \right] = \left[ \begin{array}{l l} 1 & 0 \\ 3 & 1 \end{array} \right] \left[ \begin{array}{l l} a & 0 \\ 0 & b \end{array} \right] \left[ \begin{array}{l l} 1 & 0 \\ - 3 & 1 \end{array} \right]
+
+$$
+
+
+
+4.
+
+
+
+$$
+
+\left[ \begin{array}{c c} - 2 & 1 2 \\ - 1 & 5 \end{array} \right] = \left[ \begin{array}{c c} 3 & 4 \\ 1 & 1 \end{array} \right] \left[ \begin{array}{c c} 2 & 0 \\ 0 & 1 \end{array} \right] \left[ \begin{array}{c c} - 1 & 4 \\ 1 & - 3 \end{array} \right]
+
+$$
+
+
+
+6.
+
+
+
+在习题5和习题6中，矩阵 $A$ 被分解为 $PDP^{-1}$ ，利用对角化定理求 $A$ 的特征值和每个特征空间的基.
+
+
+
+$$
+
+= \left[ \begin{array}{c c c} 1 & 1 & 2 \\ 1 & 0 & - 1 \\ 1 & - 1 & 0 \end{array} \right] \left[ \begin{array}{c c c} 5 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \end{array} \right] \left[ \begin{array}{c c c} \frac {1}{4} & \frac {1}{2} & \frac {1}{4} \\ \frac {1}{4} & \frac {1}{2} & - \frac {3}{4} \\ \frac {1}{4} & - \frac {1}{2} & \frac {1}{4} \end{array} \right]
+
+$$
+
+
+
+$$
+
+\left[ \begin{array}{c c c} 4 & 0 & - 2 \\ 2 & 5 & 4 \\ 0 & 0 & 5 \end{array} \right] = \left[ \begin{array}{c c c} - 2 & 0 & - 1 \\ 0 & 1 & 2 \\ 1 & 0 & 0 \end{array} \right] \left[ \begin{array}{c c c} 5 & 0 & 0 \\ 0 & 5 & 0 \\ 0 & 0 & 4 \end{array} \right] \left[ \begin{array}{c c c} 0 & 0 & 1 \\ 2 & 1 & 4 \\ - 1 & 0 & - 2 \end{array} \right]
+
+$$
+
+
+
+试着将习题 7\~20 的矩阵对角化. 习题 11\~16 的特征值如下所示:
+
+
+
+(11) $\lambda=1,2,3$ ; (12) $\lambda=2,8$ ; (13) $\lambda=5,1$ ;
+
+
+
+(14) $\lambda=5,4$ ; (15) $\lambda=3,1$ ; (16) $\lambda=2,1$ . 对于习题 18，一个特征值是 $\lambda=5$ ，对应的特征向量为 $(-2,1,2)$ .
+
+
+
+7.
+
+
+
+$$
+
+\left[ \begin{array}{c c} 1 & 0 \\ 6 & - 1 \end{array} \right]
+
+$$
+
+
+
+8.
+
+
+
+$$
+
+\left[ \begin{array}{c c} 5 & 1 \\ 0 & 5 \end{array} \right]
+
+$$
+
+
+
+9.
+
+
+
+$$
+
+\left[ \begin{array}{c c} 3 & - 1 \\ 1 & 5 \end{array} \right]
+
+$$
+
+
+
+10.
+
+
+
+$$
+
+\left[ \begin{array}{c c} 2 & 3 \\ 4 & 1 \end{array} \right]
+
+$$
+
+
+
+11.
+
+
+
+$$
+
+\left[ \begin{array}{c c c} - 1 & 4 & - 2 \\ - 3 & 4 & 0 \\ - 3 & 1 & 3 \end{array} \right]
+
+$$
+
+
+
+12.
+
+
+
+$$
+
+\left[ \begin{array}{c c c} 4 & 2 & 2 \\ 2 & 4 & 2 \\ 2 & 2 & 4 \end{array} \right]
+
+$$
+
+
+
+13.
+
+
+
+$$
+
+\left[ \begin{array}{r r r} 2 & 2 & - 1 \\ 1 & 3 & - 1 \\ - 1 & - 2 & 2 \end{array} \right]
+
+$$
+
+
+
+14.
+
+
+
+$$
+
+\left[ \begin{array}{c c c} 4 & 0 & - 2 \\ 2 & 5 & 4 \\ 0 & 0 & 5 \end{array} \right]
+
+$$
+
+
+
+15.
+
+
+
+$$
+
+\left[ \begin{array}{r r r} 7 & 4 & 1 6 \\ 2 & 5 & 8 \\ - 2 & - 2 & - 5 \end{array} \right]
+
+$$
+
+
+
+16.
+
+
+
+$$
+
+\left[ \begin{array}{r r r} 0 & - 4 & - 6 \\ - 1 & 0 & - 3 \\ 1 & 2 & 5 \end{array} \right]
+
+$$
+
+
+
+17.
+
+
+
+$$
+
+\left[ \begin{array}{c c c} 4 & 0 & 0 \\ 1 & 4 & 0 \\ 0 & 0 & 5 \end{array} \right]
+
+$$
+
+
+
+18.
+
+
+
+$$
+
+\left[ \begin{array}{c c c} - 7 & - 1 6 & 4 \\ 6 & 1 3 & - 2 \\ 1 2 & 1 6 & 1 \end{array} \right]
+
+$$
+
+
+
+19.
+
+
+
+$$
+
+\left[ \begin{array}{c c c c} 5 & - 3 & 0 & 9 \\ 0 & 3 & 1 & - 2 \\ 0 & 0 & 2 & 0 \\ 0 & 0 & 0 & 2 \end{array} \right]
+
+$$
+
+
+
+20.
+
+
+
+$$
+
+\left[ \begin{array}{c c c c} 4 & 0 & 0 & 0 \\ 0 & 4 & 0 & 0 \\ 0 & 0 & 2 & 0 \\ 1 & 0 & 0 & 2 \end{array} \right]
+
+$$
+
+
+
+在习题21和习题22中，A,B,P和D是 $n \times n$ 矩阵，标出每个命题的真假，证明你的答案（在做这些习题之前先仔细研读定理5和定理6及本节的例子）.
+
+
+
+21. a. 若存在矩阵 $D$ 和可逆矩阵 $P$ 使得 $A = PDP^{-1}$ 成立，则 $A$ 可对角化.
+
+
+
+b. 若 $\mathbb{R}^n$ 有 $A$ 的特征向量基，则 $A$ 可对角化.
+
+
+
+c. A 可对角化的充分必要条件是 A 有 n 个特征值（算上重数）.
+
+
+
+d. 若 A 可对角化，则 A 是可逆的.
+
+
+
+22. a. 若 A 有 n 个特征向量，则 A 可对角化.
+
+b. 若 A 可对角化，则 A 有 n 个相异的特征值.
+
+c. 若 AP = PD, D 为对角矩阵，那么 P 的非零列必定是 A 的特征向量.
+
+
+
+d. 若 A 可逆，则 A 可对角化.
+
+
+
+23. $5 \times 5$ 矩阵 A 有 2 个特征值，一个特征空间是三维的，另一个特征空间是二维的。A 可对角化否？为什么？
+
+
+
+24. $3 \times 3$ 矩阵 A 有 2 个特征值，每个特征空间是一维的，A 可对角化否？为什么？
+
+
+
+25. $4 \times 4$ 矩阵 $A$ 有3个特征值，有一个特征空间为一维，其他特征空间之一是二维的。 $A$ 是否可对角化？说明理由。
+
+
+
+26. $7 \times 7$ 矩阵 A 有 3 个特征值，一个特征空间是二维的，其他特征空间之一是三维的，A 是否不可对角化？说明理由.
+
+
+
+27. 证明：若 $A$ 可对角化且可逆，则 $A^{-1}$ 亦可对角化.
+
+
+
+28. 证明: 若 A 有 n 个线性无关的特征向量, 则 $A^{T}$ 也有 n 个线性无关的特征向量. (提示: 用对角化定理.)
+
+
+
+29. 分解式 $A = PDP^{-1}$ 不是唯一的，用例2的矩阵 $A$ 来证实这一事实. 若 $D_{1} = \begin{bmatrix} 3 & 0 \\ 0 & 5 \end{bmatrix}$ ，利用例2的结果求矩阵 $P_{1}$ ，使得 $A = P_{1}D_{1}P_{1}^{-1}$ .
+
+
+
+30. 对例 2 的 A 和 D，求不等于 P 的可逆矩阵 $P_{2}$ ，使得 $A = P_{2} DP_{2}^{-1}$ .
+
+
+
+31. 构造一个非零的 $2 \times 2$ 可逆但不可对角化的矩阵.
+
+
+
+32. 构造一个不是对角阵的 $2 \times 2$ 可对角化但不可逆的矩阵.
+
+
+
+[M]将习题33\~36的矩阵对角化，先用矩阵程序的特征值命令求特征值，然后用5.1节的方法找出特征空间的基.
+
+
+
+33.
+
+
+
+$$
+
+\left[ \begin{array}{r r r r} 6 & 4 & 0 & 9 \\ - 3 & 0 & 1 & 6 \\ - 1 & - 2 & 1 & 0 \\ - 4 & 4 & 0 & 7 \end{array} \right]
+
+$$
+
+
+
+34.
+
+
+
+$$
+
+\left[ \begin{array}{c c c c} 0 & 1 3 & 8 & 4 \\ 4 & 9 & 8 & 4 \\ 8 & 6 & 1 2 & 8 \\ 0 & 5 & 0 & - 4 \end{array} \right]
+
+$$
+
+
+
+35.
+
+
+
+$$
+
+\left[ \begin{array}{r r r r r} 1 1 & - 6 & 4 & - 1 0 & - 4 \\ - 3 & 5 & - 2 & 4 & 1 \\ - 8 & 1 2 & - 3 & 1 2 & 4 \\ 1 & 6 & - 2 & 3 & - 1 \\ 8 & - 1 8 & 8 & - 1 4 & - 1 \end{array} \right]
+
+$$
+
+
+
+$$
+
+\left[ \begin{array}{c c c c c} 4 & 4 & 2 & 3 & - 2 \\ 0 & 1 & - 2 & - 2 & 2 \\ 6 & 1 2 & 1 1 & 2 & - 4 \\ 9 & 2 0 & 1 0 & 1 0 & - 6 \\ 1 5 & 2 8 & 1 4 & 5 & - 3 \end{array} \right]
+
+$$
+
+
+</Block>
+
+<Block title="练习题答案">
+
+
+1. $\operatorname{det}(A - \lambda I) = \lambda^2 - 3\lambda + 2 = (\lambda - 2)(\lambda - 1)$ ，特征值是2和1，对应的特征向量是 $v_1 = \begin{bmatrix} 3 \\ 2 \end{bmatrix}$ 和 $v_2 = \begin{bmatrix} 1 \\ 1 \end{bmatrix}$ ，然后构造 $P = \begin{bmatrix} 3 & 1 \\ 2 & 1 \end{bmatrix}, D = \begin{bmatrix} 2 & 0 \\ 0 & 1 \end{bmatrix}, P^{-1} = \begin{bmatrix} 1 & -1 \\ -2 & 3 \end{bmatrix}$ . 由 $A = PDP^{-1}$ ，得
+
+
+
+$$
+
+A ^ {8} = P D ^ {8} P ^ {- 1} = \left[ \begin{array}{l l} 3 & 1 \\ 2 & 1 \end{array} \right] \left[ \begin{array}{l l} 2 ^ {8} & 0 \\ 0 & 1 ^ {8} \end{array} \right] \left[ \begin{array}{c c} 1 & - 1 \\ - 2 & 3 \end{array} \right] = \left[ \begin{array}{l l} 3 & 1 \\ 2 & 1 \end{array} \right] \left[ \begin{array}{l l} 2 5 6 & 0 \\ 0 & 1 \end{array} \right] \left[ \begin{array}{c c} 1 & - 1 \\ - 2 & 3 \end{array} \right] = \left[ \begin{array}{l l} 7 6 6 & - 7 6 5 \\ 5 1 0 & - 5 0 9 \end{array} \right]
+
+$$
+
+
+
+2. 计算 $A\pmb{v}_1 = \begin{bmatrix} -3 & 12 \\ -2 & 7 \end{bmatrix} \begin{bmatrix} 3 \\ 1 \end{bmatrix} = \begin{bmatrix} 3 \\ 1 \end{bmatrix} = 1 \cdot \pmb{v}_1, A\pmb{v}_2 = \begin{bmatrix} -3 & 12 \\ -2 & 7 \end{bmatrix} \begin{bmatrix} 2 \\ 1 \end{bmatrix} = \begin{bmatrix} 6 \\ 3 \end{bmatrix} = 3 \cdot \pmb{v}_2$
+
+
+
+显然， $v_{1}$ 和 $v_{2}$ 分别是特征值 1 和 3 对应的特征向量，因此 $A = PDP^{-1}$ ，其中
+
+
+
+$P = \begin{bmatrix} 3 & 2 \\ 1 & 1 \end{bmatrix}$ 和 $D = \begin{bmatrix} 1 & 0 \\ 0 & 3 \end{bmatrix}$
+
+
+
+3. A 可对角化，对应于 $\lambda=3$ 的特征空间有一个基 $\{v_{1},v_{2}\}$ . 此外，对应于 $\lambda=5$ 和 $\lambda=-2$ 至少有一个特征向量，记为 $v_{3}$ 和 $v_{4}$ ，则由定理 2 和 5.1 节中的练习题 3， $\{v_{1},\cdots,v_{4}\}$ 是线性无关的. 由定理 7（b），A 可对角化. 因为向量全属于 $R^{4}$ ， $R^{4}$ 的基包含的线性无关向量的个数不超过 4，故对应于 $\lambda=5$ 和 $\lambda=-2$ 的特征空间都是一维的.
+
+
+</Block>

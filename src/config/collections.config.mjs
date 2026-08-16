@@ -86,6 +86,34 @@ export const collections = [
             targetPattern: '^图\\s*(\\d+\\s*[-－]\\s*\\d+)$'
           }
         }
+      },
+      {
+        id: 'linear-algebra',
+        slug: 'linear_algebra',
+        title: '线性代数及其应用（原书第5版）',
+        description: '[美] David C. Lay、Steven R. Lay、Judi J. McDonald 著，刘深泉等译，机械工业出版社（华章数学译丛）。全书 8 章：线性方程组、矩阵代数、行列式、向量空间、特征值与特征向量、正交性和最小二乘法、对称矩阵和二次型、向量空间的几何学，另含附录、术语表与奇数习题答案。',
+        cover: '/covers/linear_algebra.jpg',
+        entryPoint: '00_内容简介',
+        trackClasses: ['.example-card', '.knowledge-card', '.note-block', '.fallback-block'],
+        modules: {
+          '例': { emoji: '✍️', short: '例', aliases: ['例', '例题'], theme: 'chip-example' },
+          '例题': { emoji: '✍️', short: '例', aliases: ['例', '例题'], theme: 'chip-example' },
+          '定理': { emoji: '📐', short: '理', aliases: ['定理'], theme: 'chip-conclusion' },
+          '定义': { emoji: '📖', short: '定', aliases: ['定义'], theme: 'chip-knowledge' },
+          '性质': { emoji: '🔬', short: '性', aliases: ['性质'], theme: 'chip-knowledge' },
+          '推论': { emoji: '➡️', short: '推', aliases: ['推论'], theme: 'chip-conclusion' },
+          '引理': { emoji: '🧩', short: '引', aliases: ['引理'], theme: 'chip-conclusion' },
+          '命题': { emoji: '📌', short: '命', aliases: ['命题'], theme: 'chip-conclusion' },
+          '公理': { emoji: '📐', short: '公', aliases: ['公理'], theme: 'chip-conclusion' },
+          '图': {
+            short: '图',
+            aliases: ['图'],
+            theme: 'chip-default',
+            isImage: true,
+            targetQuery: 'p, div, figcaption',
+            targetPattern: '^图\\s*(\\d+\\s*[-－]\\s*\\d+)$'
+          }
+        }
       }
     ]
   },
