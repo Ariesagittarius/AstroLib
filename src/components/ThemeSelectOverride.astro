@@ -1,0 +1,133 @@
+---
+// VitePress 风格主题切换器（覆盖 Starlight 默认的 ThemeSelect 下拉 pill）
+// 视觉：纯 sun/moon 图标按钮（对照 VitePress VPSwitchAppearance / VPNavBarAppearance）
+// 交互：点击在 亮 ↔ 暗 之间循环切换（VitePress toggle-appearance 行为）
+// 存储：沿用 Starlight 的 localStorage 键 'starlight-theme'，与既有偏好兼容
+//       （auto 时跟随系统，图标显示当前有效主题；点击后写入显式 light/dark）
+// 注意：Starlight ThemeProvider.updatePickers() 对无 <select> 的 picker 是安全 no-op，
+//       组件自行管理图标与 data-theme，无需依赖它。
+---
+
+<starlight-theme-select class="vp-theme-switch">
+  <button type="button" class="vp-appearance" aria-label="切换亮/暗主题" title="切换亮/暗主题">
+    <svg class="vp-icon vp-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+    </svg>
+    <svg class="vp-icon vp-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  </button>
+</starlight-theme-select>
+
+<style>
+  .vp-theme-switch {
+    display: flex;
+    align-items: center;
+  }
+
+  /* VitePress VPSwitchAppearance：40px 圆形、无边框、hover 品牌 soft 底 + 文字变白 */
+  .vp-appearance {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+    color: var(--sl-color-gray-2);
+    transition: color 0.25s, background-color 0.25s;
+  }
+  .vp-appearance:hover,
+  .vp-appearance:focus-visible {
+    color: var(--sl-color-white);
+    background-color: var(--sl-color-gray-6);
+  }
+
+  .vp-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    display: none;
+  }
+  /* 图标反映当前有效主题：dark 显示月亮，light 显示太阳 */
+  .vp-theme-switch.is-dark .vp-moon {
+    display: block;
+  }
+  .vp-theme-switch:not(.is-dark) .vp-sun {
+    display: block;
+  }
+</style>
+
+<script>
+  type Theme = 'auto' | 'dark' | 'light';
+
+  /** Key in `localStorage` to store color theme preference at. */
+  const storageKey = 'starlight-theme';
+
+  /** Get a typesafe theme string from any JS value (unknown values are coerced to `'auto'`). */
+  const parseTheme = (theme: unknown): Theme =>
+    theme === 'auto' || theme === 'dark' || theme === 'light' ? theme : 'auto';
+
+  /** Load the user’s preference from `localStorage`. */
+  const loadTheme = (): Theme =>
+    parseTheme(typeof localStorage !== 'undefined' && localStorage.getItem(storageKey));
+
+  /** Store the user’s preference in `localStorage`. */
+  function storeTheme(theme: Theme): void {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(storageKey, theme === 'light' || theme === 'dark' ? theme : '');
+    }
+  }
+
+  /** Get the preferred system color scheme. */
+  const getPreferredColorScheme = (): Theme =>
+    matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+
+  /** Apply theme to the document (mirrors Starlight ThemeProvider). */
+  function applyTheme(theme: Theme): void {
+    document.documentElement.dataset.theme = theme === 'auto' ? getPreferredColorScheme() : theme;
+  }
+
+  /** Effective theme: `auto` resolves to the system scheme. */
+  const effectiveTheme = (): Theme => {
+    const stored = loadTheme();
+    return stored === 'auto' ? getPreferredColorScheme() : stored;
+  };
+
+  class VpThemeSwitch extends HTMLElement {
+    connectedCallback() {
+      // 挂载即同步（含 SPA 导航后重新插入的场景）
+      applyTheme(loadTheme());
+      this.syncIcon();
+      if (this.dataset.bound) return;
+      this.dataset.bound = '1';
+
+      this.querySelector('button')?.addEventListener('click', () => {
+        const next: Theme = effectiveTheme() === 'dark' ? 'light' : 'dark';
+        storeTheme(next);
+        applyTheme(next);
+        this.syncIcon();
+      });
+    }
+
+    syncIcon() {
+      this.classList.toggle('is-dark', effectiveTheme() === 'dark');
+    }
+  }
+
+  customElements.define('starlight-theme-select', VpThemeSwitch);
+
+  // 系统配色变化时，auto 用户跟随切换（全局只注册一次）
+  if (!window.__vpThemeSysListener) {
+    window.__vpThemeSysListener = true;
+    matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+      if (loadTheme() === 'auto') {
+        applyTheme('auto');
+        document.querySelectorAll('starlight-theme-select').forEach((el) => el.syncIcon());
+      }
+    });
+  }
+</script>

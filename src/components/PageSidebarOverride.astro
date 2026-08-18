@@ -619,6 +619,34 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
       modules['图'].theme = 'chip-default';
     }
 
+    // 0. 【方案 B】构建期徽章下沉短路：正文 HTML 已由 rehype-cross-ref 在构建期
+    //    生成好全部引用徽章并注入 data-xref-built 标记，SPA 切换时零文本扫描，
+    //    只做三件轻量工作后直接挂事件：
+    //      ① <Solution> 组件渲染不带 id，按文档序补 sol-ref-block-N（与构建期编号一致）；
+    //      ② 构建期无全局索引，跨页引用只能生成 static-badge，此处查全局索引补
+    //         data-url 并升级为 interactive，保持跨页跳转能力（不扫描文本节点）；
+    //      ③ 对 interactive 徽章挂接联动事件。
+    if (mainContent.querySelector('[data-xref-built]')) {
+      const solDetails = Array.from(document.querySelectorAll('.solution-details'));
+      solDetails.forEach((sol, idx) => {
+        if (!sol.id) sol.id = `sol-ref-block-${idx + 1}`;
+      });
+
+      mainContent.querySelectorAll('.block-ref-badge.static-badge').forEach((badge) => {
+        const text = (badge.querySelector('.block-text')?.textContent || '').trim();
+        if (!text) return;
+        const targetUrl = globalBlockIndex[text];
+        if (targetUrl) {
+          badge.classList.remove('static-badge');
+          badge.classList.add('interactive-badge');
+          badge.setAttribute('data-url', targetUrl);
+        }
+      });
+
+      attachInteractiveListeners();
+      return;
+    }
+
     // 1. 【同页联动地图】
     const localTargets = {};
     const trackSelectors = bookConfig.trackClasses ? bookConfig.trackClasses.join(', ') : '.toc-chunk';
@@ -732,6 +760,14 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
           if (localId) {
             return `
               <span class="block-ref-badge interactive-badge" data-target="${localId}" data-type="${masterKey}">
+                <span class="block-icon">${emoji}</span>
+                <span class="block-text">${fullMatchedText}</span>
+              </span>
+            `.trim().replace(/\n\s*/g, '');
+          } else if (targetUrl) {
+            // 跨页引用：带上构建期索引中的目标 URL（含锚点），点击跳转对应页面卡片
+            return `
+              <span class="block-ref-badge interactive-badge" data-url="${targetUrl}" data-type="${masterKey}">
                 <span class="block-icon">${emoji}</span>
                 <span class="block-text">${fullMatchedText}</span>
               </span>
@@ -1197,7 +1233,29 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     });
 
     const chunks = tocEntries;
-    
+
+    // —— 锚点 id 归一化：给所有目录项分配唯一、稳定的 id ——
+    // 原逻辑直接复用卡片 id（由标题拼出，可能含 $()=% 等字符）与标题 slug；
+    // 同页重复 id（如多个同标题卡片）会让多个大纲条目指向同一元素，
+    // 点击时全部跳到第一个目标，造成“跳转异常”。这里统一去重：
+    // 首项保留原 id（跨页引用按“标题转-”规则命中它），重复项追加 -2/-3 后缀。
+    const seenTocIds = new Set();
+    chunks.forEach((chunk, index) => {
+      const el = chunk.el;
+      let base = (el.id || '').trim().replace(/\s+/g, '-');
+      if (!base) {
+        base = chunk.kind === 'heading'
+          ? `toc-heading-${index + 1}`
+          : (el.getAttribute('data-title') || el.querySelector('.card-header, .fallback-header, .guide-header')?.textContent || '').trim().replace(/\s+/g, '-') || `toc-card-${index + 1}`;
+      }
+      let finalId = base;
+      let n = 2;
+      while (seenTocIds.has(finalId)) finalId = `${base}-${n++}`;
+      seenTocIds.add(finalId);
+      el.id = finalId;
+      chunk._tocId = finalId;
+    });
+
     if (tocEntries.length === 0) {
       const emptyHtml = '<li class="toc-loading">本节暂无大纲</li>';
       tocList.innerHTML = emptyHtml;
@@ -1220,11 +1278,9 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
           ? (el.textContent || '').trim()
           : el.getAttribute('data-title') || el.querySelector('.card-header, .fallback-header, .guide-header')?.textContent || '无标题';
       
-      let id = el.id;
-      if (!id) {
-        id = isHeading ? `heading-${index + 1}` : `section-block-${index + 1}`;
-        el.id = id;
-      }
+      // 锚点 id 已在 buildBookTOC 中统一归一化并去重（chunk._tocId）
+      const id = chunk._tocId || el.id;
+      if (!el.id) el.id = id;
 
       // 通过中央配置映射语义解析类型
       const { type, number } = parseTitleFromConfig(rawTitle, modules);
@@ -1264,18 +1320,22 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
           a.appendChild(numSpan);
         }
 
-      // 移动端抽屉：点选后先收起抽屉，再平滑跳转，避免抽屉遮挡阅读
-      if (isMobile) {
-        a.addEventListener('click', (e) => {
-          e.preventDefault();
-          setMobileTocOpen(false);
-          history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, '', a.getAttribute('href'));
-          requestAnimationFrame(() => {
-            const target = document.getElementById(id);
-            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          });
-        });
-      }
+      // 统一点击跳转（桌面 + 移动端一致，替代浏览器原生 hash 跳转）：
+      // 1. 平滑滚动到目标，并补偿固定导航栏高度，避免目标被 header 遮挡；
+      // 2. 用 replaceState 更新 hash（不新增历史记录），防止后退时触发
+      //    SPA 整页重载导致页面闪跳、滚动丢失的“异常跳转”。
+      a.addEventListener('click', (e) => {
+        // 中键 / Ctrl / Shift / Alt 点击：交给浏览器默认行为（新标签打开等）
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        if (isMobile) setMobileTocOpen(false);
+        const target = document.getElementById(id);
+        if (!target) return;
+        const navH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sl-nav-height')) || 56;
+        const top = target.getBoundingClientRect().top + window.scrollY - navH - 16;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+        history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, '', `#${encodeURIComponent(id)}`);
+      });
 
       li.appendChild(a);
       targetList.appendChild(li);

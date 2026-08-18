@@ -9,6 +9,9 @@ import { collections } from './src/config/collections.config.mjs';
 import { generateBookSidebar } from './src/utils/sidebar.mjs';
 // 公式源码回填插件：让每个 KaTeX 公式携带 data-latex 原始源码（供前端一键复制）
 import { rehypeKatexAnnotate, rehypeKatexPromote } from './src/utils/rehype-katex-source.mjs';
+// 构建期引用徽章下沉插件（方案 B）：把“例题 1.74 / 图 3-48 → badge”的匹配逻辑
+// 从客户端 SPA 切换时扫描下沉到构建期，客户端切换零扫描（详见 docs/文章切换性能优化交接文档）
+import { rehypeCrossRef } from './src/utils/rehype-cross-ref.mjs';
 
 // 根据中央图书配置，全自动生成自然排序的树状侧边栏
 const dynamicSidebar = collections.map(col => ({
@@ -34,6 +37,8 @@ export default defineConfig({
         rehypeKatexAnnotate,
         [rehypeKatex, { output: 'html', strict: false, throwOnError: false }],
         rehypeKatexPromote,
+        // 方案 B：构建期徽章下沉，须在 KaTeX 相关插件之后执行（依赖公式结构已定型）
+        [rehypeCrossRef, { collections }],
       ],
     }),
   },
@@ -49,7 +54,8 @@ export default defineConfig({
       ],
       components: {
         Sidebar: './src/components/SidebarOverride.astro',      // 左侧 LaTeX 公式渲染
-        PageSidebar: './src/components/PageSidebarOverride.astro' // 右侧多合集自适应大纲与卡片修补
+        PageSidebar: './src/components/PageSidebarOverride.astro', // 右侧多合集自适应大纲与卡片修补
+        ThemeSelect: './src/components/ThemeSelectOverride.astro', // VitePress 纯图标主题切换按钮
       },
       sidebar: dynamicSidebar,
       customCss: [

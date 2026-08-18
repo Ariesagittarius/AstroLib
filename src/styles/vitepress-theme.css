@@ -115,12 +115,9 @@
    5. 顶栏与左侧边栏 — VitePress 排版对齐（VPNavBar / VPSidebar 规范）
    -------------------------------------------------------------------------- */
 
-/* 5.1 顶栏：高度恒 4rem、站名 1rem/600、左右留白（VitePress VPNavBar） */
+/* 5.1 顶栏：高度恒 4rem、站名 1rem/600（VitePress VPNavBar；左右留白由区块 9 统一） */
 :root {
   --sl-nav-height: 4rem;
-}
-.header {
-  padding-inline: 1.5rem 2rem !important;
 }
 .site-title {
   font-size: 1rem !important;
@@ -384,3 +381,212 @@
 :root[data-theme='dark'] .sl-markdown-content .knowledge-card { background-color: rgba(96, 165, 250, 0.12) !important; }
 :root[data-theme='dark'] .sl-markdown-content .note-block { background-color: rgba(251, 191, 36, 0.12) !important; }
 :root[data-theme='dark'] .sl-markdown-content .analysis-block { background-color: rgba(167, 139, 250, 0.12) !important; }
+
+/* --------------------------------------------------------------------------
+   8. 右侧大纲 — 完全复刻 VitePress 官网 outline（VPDocAsideOutline / VPDocOutlineItem）
+      - 分割线动态不到底：隐藏 Starlight 容器全高分割线，改为大纲内容自身的
+        border-left（高度随内容，底部留空）
+      - 指示器：2px 品牌色 outline-marker 跟随滚动高亮项（JS 更新 top）
+      - 字号：13px（0.8125rem，官网容器字号）、行高 2.2857143
+      - 卡片项渲染为纯文字「例题 3.2」（见 PageSidebarOverride.astro）
+   -------------------------------------------------------------------------- */
+
+/* 8.0 隐藏 Starlight 右侧栏容器的全高分割线（fixed 100vh 那条），
+       改由大纲自身 border-left 承担，实现「分割线不到底」 */
+.right-sidebar {
+  border-inline-start: none !important;
+}
+
+/* 8.1 大纲容器：官网 .content 结构 —— border-left 随内容高度 + 1rem 左内边距 */
+.right-sidebar .custom-page-sidebar,
+.right-sidebar-container .custom-page-sidebar,
+.right-sidebar-panel .custom-page-sidebar {
+  position: relative !important;             /* marker 定位上下文 */
+  top: 4rem !important;                      /* 与顶栏底部对齐（左右侧栏顶部一致） */
+  max-height: calc(100vh - 4rem) !important; /* 覆盖组件内 6rem 上限 */
+  padding: 0 0 2rem 1rem !important;         /* 官网 .content: padding-left 1rem */
+  border-left: 1px solid var(--sl-color-hairline) !important;
+  font-size: 0.8125rem !important;           /* 官网 .content 容器字号 13px */
+}
+
+/* 8.2 outline-marker：2px 品牌色指示条，跟随当前高亮项移动 */
+.custom-page-sidebar .outline-marker {
+  position: absolute;
+  top: 2rem;
+  left: -1px;
+  z-index: 0;
+  opacity: 0;
+  width: 2px;
+  border-radius: 2px;
+  height: 1.125rem;                          /* 18px */
+  background-color: var(--sl-color-text-accent) !important;
+  transition:
+    top 0.25s cubic-bezier(0, 1, 0.5, 1),
+    opacity 0.25s;
+  pointer-events: none;
+}
+
+/* 8.3 标题：按用户要求移除「本节导航大纲」，大纲内容直接贴容器顶部 */
+.custom-page-sidebar .toc-title {
+  display: none !important;
+}
+
+/* 8.4 列表：行距交给 line-height，不再用 gap 撑开（含移动端抽屉） */
+.custom-page-sidebar .toc-list,
+.mobile-toc-drawer .toc-list {
+  gap: 0 !important;
+}
+
+/* 8.5 目录链接：flex 横排（标签 + 编号）、13px/400 次级色、无边框无位移 */
+.custom-page-sidebar .toc-link,
+.mobile-toc-drawer .toc-link {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  border-left: none !important;
+  padding: 0 !important;
+  font-size: 0.8125rem !important;
+  font-weight: 400 !important;
+  line-height: 1.9 !important;
+  color: var(--sl-color-gray-2) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  transition: color 0.25s !important;
+}
+.custom-page-sidebar .toc-link:hover,
+.custom-page-sidebar .toc-link:focus-visible,
+.mobile-toc-drawer .toc-link:hover,
+.mobile-toc-drawer .toc-link:focus-visible {
+  color: var(--sl-color-text-accent) !important;
+}
+
+/* 8.6 当前项：品牌色 + 600，无背景无边框（VitePress 大纲高亮） */
+.custom-page-sidebar .toc-link.active,
+.custom-page-sidebar .toc-link.active:hover,
+.mobile-toc-drawer .toc-link.active,
+.mobile-toc-drawer .toc-link.active:hover {
+  color: var(--sl-color-text-accent) !important;
+  font-weight: 600 !important;
+  background-color: transparent !important;
+  border-left: none !important;
+  border-radius: 0 !important;
+}
+
+/* 8.7 标题型目录项与层级：字号字重统一，缩进表达层级 */
+.custom-page-sidebar .toc-heading,
+.mobile-toc-drawer .toc-heading {
+  gap: 0 !important;
+  line-height: 1.9 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+.custom-page-sidebar .toc-heading-text,
+.mobile-toc-drawer .toc-heading-text {
+  display: block !important;
+  flex: 1 !important;                          /* flex 容器内占满，保证 ellipsis 生效 */
+  min-width: 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.custom-page-sidebar .toc-level-2,
+.mobile-toc-drawer .toc-level-2 {
+  font-size: 0.8125rem !important;
+  font-weight: 400 !important;
+  color: var(--sl-color-gray-2) !important;
+}
+.custom-page-sidebar .toc-level-3,
+.mobile-toc-drawer .toc-level-3 {
+  font-size: 0.8125rem !important;
+  font-weight: 400 !important;
+  color: var(--sl-color-gray-2) !important;
+  padding-left: 1rem !important;
+}
+.custom-page-sidebar .toc-level-4,
+.mobile-toc-drawer .toc-level-4 {
+  font-size: 0.8125rem !important;
+  font-weight: 400 !important;
+  color: var(--sl-color-gray-2) !important;
+  padding-left: 1.5rem !important;
+}
+
+/* 8.8 模块项标签：中性灰 —— 透明底 + 1px 灰度边框 + 灰字（类似正文「图 2.5」
+       小标签，不抢眼但有指示作用）；统一压过旧彩色 chip-example 等 */
+.custom-page-sidebar .toc-chip,
+.mobile-toc-drawer .toc-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  background-color: transparent !important;                 /* 无颜色 */
+  border: 1px solid var(--sl-color-gray-5) !important;      /* 灰度边框 */
+  color: var(--sl-color-gray-3) !important;                 /* 灰度文字 */
+  font-size: 0.625rem !important;                           /* 10px 小 chip */
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
+  padding: 0 0.3rem !important;
+  border-radius: 3px !important;
+  letter-spacing: 0.01em !important;
+}
+.custom-page-sidebar .toc-number,
+.mobile-toc-drawer .toc-number {
+  font-size: 0.75rem !important;                            /* 12px 编号 */
+  font-weight: 400 !important;
+  color: var(--sl-color-gray-2) !important;
+  white-space: nowrap !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+/* 当前项：标签边框/文字随链接变品牌色，强化指示作用 */
+.custom-page-sidebar .toc-link.active .toc-chip,
+.mobile-toc-drawer .toc-link.active .toc-chip {
+  border-color: var(--sl-color-text-accent) !important;
+  color: var(--sl-color-text-accent) !important;
+}
+.custom-page-sidebar .toc-link.active .toc-number,
+.mobile-toc-drawer .toc-link.active .toc-number {
+  color: var(--sl-color-text-accent) !important;
+}
+
+/* --------------------------------------------------------------------------
+   9. 顶栏 — VitePress VPNavBar 化：收紧宽度与组件间距，对齐官网
+      （内边距 1.5rem、动作组间距 8px、无 social 分隔线、社交图标 20px；
+        主题切换器见 ThemeSelectOverride.astro 独立组件）
+   -------------------------------------------------------------------------- */
+.header {
+  padding-inline: 1.5rem !important;
+}
+
+/* 右侧动作组：官网 8px 间距，去掉 Starlight 的 social 分隔线 */
+.right-group {
+  gap: 0.5rem !important;
+}
+.social-icons::after {
+  display: none !important;
+}
+
+/* 社交图标：官网 20px（Starlight 默认 1em≈16px 偏小），点击区收紧 */
+.social-icons a {
+  padding: 0.25em !important;
+  margin: -0.25em !important;
+  transition: color 0.25s !important;
+}
+.social-icons svg {
+  font-size: 1.25rem !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}
+
+/* 站名：hover 变品牌色（VitePress VPNavBarTitle） */
+.site-title:hover,
+.site-title:focus-visible {
+  color: var(--sl-color-text-accent) !important;
+}
+
+/* 社交图标：hover 变品牌色（VitePress VPNavBarSocialLinks） */
+.social-icons a:hover,
+.social-icons a:focus-visible {
+  color: var(--sl-color-text-accent) !important;
+}
