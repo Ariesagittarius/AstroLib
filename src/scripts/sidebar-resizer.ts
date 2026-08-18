@@ -13,7 +13,7 @@ type Side = 'left' | 'right';
 const STORAGE_KEY = 'starlight:sidebar-resizer';
 const LEFT_VAR = '--sl-sidebar-width';
 const RIGHT_VAR = '--right-sidebar-width';
-const DEFAULT_WIDTH = '18.75rem';
+const DEFAULT_WIDTH = '17rem';
 const MIN_WIDTH = 240;
 const MAX_WIDTH = 480;
 

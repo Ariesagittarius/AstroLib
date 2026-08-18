@@ -61,6 +61,9 @@ export default defineConfig({
         // 两个入口放同一 customCss 数组即保证打包顺序恒定：katex 先、custom 后。
         'katex/dist/katex.min.css',
         './src/styles/custom.css',
+        // VitePress 风格覆盖层：把 Starlight 变量映射为 VitePress 色板。
+        // 必须位于 custom.css 之后（优先级最高），删除即可整体回退。
+        './src/styles/vitepress-theme.css',
       ],
     }),
   ],

@@ -1,5 +1,4 @@
 ---
-
 import { collections } from '../config/collections.config.mjs';
 import { cleanSlug } from '../utils/sidebar.mjs';
 import fs from 'node:fs';
@@ -18,240 +17,287 @@ function hasEpub(slug) {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MinerU + Astro</title>
+    <title>教辅数字化智能智库</title>
     <style>
+      /* ===== VitePress 色板（与内容页 vitepress-theme.css 保持一致） ===== */
       :root {
-        --md-primary: #3b82f6;
-        --md-bg: #f8fafc;
-        --md-card-bg: #ffffff;
-        --md-text: #0f172a;
-        --md-text-muted: #64748b;
-        --md-border: #e2e8f0;
+        --vp-bg: #ffffff;
+        --vp-bg-alt: #f6f6f7;
+        --vp-bg-soft: #f6f6f7;
+        --vp-divider: #e2e2e3;
+        --vp-text-1: #3c3c43;
+        --vp-text-2: #67676c;
+        --vp-text-3: #929295;
+        --vp-brand-1: #3451b2;
+        --vp-brand-2: #3a5ccc;
+        --vp-brand-3: #5672cd;
+        --vp-brand-soft: rgba(100, 108, 255, 0.14);
       }
-
       @media (prefers-color-scheme: dark) {
         :root {
-          --md-bg: #0f172a;
-          --md-card-bg: #1e293b;
-          --md-text: #f8fafc;
-          --md-text-muted: #94a3b8;
-          --md-border: #334155;
+          --vp-bg: #1b1b1f;
+          --vp-bg-alt: #161618;
+          --vp-bg-soft: #202127;
+          --vp-divider: #2e2e32;
+          --vp-text-1: #dfdfd6;
+          --vp-text-2: #98989f;
+          --vp-text-3: #6a6a71;
+          --vp-brand-1: #a8b1ff;
+          --vp-brand-2: #5c73e7;
+          --vp-brand-3: #3e63dd;
+          --vp-brand-soft: rgba(100, 108, 255, 0.16);
         }
       }
 
+      * {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
-        font-family: system-ui, -apple-system, sans-serif;
-        background-color: var(--md-bg);
-        color: var(--md-text);
-        display: flex;
-        justify-content: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+          'Hiragino Sans GB', 'Microsoft YaHei', sans-serif, 'Apple Color Emoji',
+          'Segoe UI Emoji';
+        background-color: var(--vp-bg);
+        color: var(--vp-text-1);
+        -webkit-font-smoothing: antialiased;
         min-height: 100vh;
         overflow-x: clip; /* 兜底：任何超宽元素不撑破手机视口 */
       }
-
-      .container {
-        max-width: 1000px;
-        width: 100%;
-        padding: clamp(2.25rem, 8vw, 4rem) clamp(1.25rem, 6vw, 2rem);
-        box-sizing: border-box;
+      a {
+        color: inherit;
       }
 
-      header {
+      /* ===== Hero（VitePress VPHomeHero 风格） ===== */
+      .vp-home {
+        max-width: 1152px;
+        margin: 0 auto;
+        padding: 0 24px 64px;
+      }
+      .vp-hero {
         text-align: center;
-        margin-bottom: clamp(2.5rem, 9vw, 4rem);
+        padding: 88px 0 56px;
       }
-
-      h1 {
-        font-size: clamp(2rem, 7vw, 2.5rem);
-        font-weight: 800;
-        margin-bottom: 0.5rem;
-        letter-spacing: -0.025em;
-      }
-
-      .subtitle {
-        color: var(--md-text-muted);
-        font-size: 1.1rem;
-      }
-
-      /* 合集板块区 */
-      .collection-section {
-        margin-bottom: 4rem;
-      }
-
-      .collection-title {
-        font-size: 1.5rem;
+      .hero-name {
+        margin: 0;
+        font-size: clamp(2.25rem, 6vw, 3.5rem);
         font-weight: 700;
-        margin-bottom: 0.5rem;
-        letter-spacing: -0.015em;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        background: linear-gradient(120deg, var(--vp-brand-1) 30%, #8a6ff0);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero-tagline {
+        margin: 20px auto 0;
+        max-width: 576px;
+        font-size: 1.15rem;
+        line-height: 1.75;
+        color: var(--vp-text-2);
+      }
+      .hero-actions {
         display: flex;
-        align-items: center;
-        gap: 0.5rem;
+        justify-content: center;
+        gap: 16px;
+        margin-top: 36px;
+        flex-wrap: wrap;
       }
-
-      .collection-title::before {
-        content: "";
+      .vp-btn {
         display: inline-block;
-        width: 4px;
-        height: 1.5rem;
-        background-color: var(--md-primary);
-        border-radius: 4px;
+        padding: 0 22px;
+        line-height: 40px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        border-radius: 20px;
+        text-decoration: none;
+        transition: background-color 0.25s, color 0.25s, border-color 0.25s;
+        white-space: nowrap;
+      }
+      .vp-btn.brand {
+        background-color: var(--vp-brand-3);
+        color: #ffffff;
+      }
+      .vp-btn.brand:hover {
+        background-color: var(--vp-brand-2);
+      }
+      .vp-btn.alt {
+        color: var(--vp-text-1);
+        border: 1px solid var(--vp-divider);
+        background-color: var(--vp-bg);
+      }
+      .vp-btn.alt:hover {
+        border-color: var(--vp-text-3);
+        color: var(--vp-brand-1);
+      }
+      @media (prefers-color-scheme: dark) {
+        .vp-btn.brand {
+          color: #1b1b1f; /* VitePress 暗色 brand 按钮反色文字 */
+        }
       }
 
+      /* ===== 合集板块 ===== */
+      .collection-section {
+        margin: 48px 0;
+      }
+      .collection-head {
+        margin-bottom: 20px;
+      }
+      .collection-title {
+        margin: 0 0 8px;
+        font-size: 1.5rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
       .collection-desc {
-        color: var(--md-text-muted);
+        margin: 0;
+        color: var(--vp-text-2);
         font-size: 0.95rem;
-        margin: 0 0 1.5rem 0;
       }
 
-      /* 图书卡片网格 */
+      /* ===== 图书卡片（VitePress VPFeature 风格） ===== */
       .grid {
         display: grid;
-        /* min(280px, 100%) 防止极小屏（<280px 内容区）时网格被 280px 下限撑破 */
-        grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
-        gap: clamp(1.25rem, 4vw, 2rem);
+        /* min(300px, 100%) 防止极小屏（<300px 内容区）时网格被下限撑破 */
+        grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+        gap: 20px;
       }
-
-      .card {
-        background-color: var(--md-card-bg);
-        border: 1px solid var(--md-border);
-        border-radius: 16px;
+      .vp-feature {
+        display: flex;
+        flex-direction: column;
+        background-color: var(--vp-bg-soft);
+        border: 1px solid var(--vp-bg-soft);
+        border-radius: 12px;
         overflow: hidden;
-        text-decoration: none;
-        color: inherit;
-        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+        transition: border-color 0.25s, background-color 0.25s,
+          transform 0.25s, box-shadow 0.25s;
+      }
+      .vp-feature:hover {
+        border-color: var(--vp-divider);
+        background-color: var(--vp-bg);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      }
+      .feature-main {
         display: flex;
         flex-direction: column;
-        height: 100%;
-      }
-
-      .card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.15);
-        border-color: var(--md-primary);
-      }
-
-      .card-main {
-        display: flex;
-        flex-direction: column;
-        flex-grow: 1;
         text-decoration: none;
         color: inherit;
       }
-
       .cover-img {
         width: 100%;
-        height: 180px;
+        height: 170px;
         background-size: cover;
         background-position: center;
       }
-
-      .content {
-        padding: 1.5rem 1.5rem 0.75rem;
+      .feature-body {
+        padding: 20px 22px 14px;
         display: flex;
         flex-direction: column;
         flex-grow: 1;
       }
-
-      .card-title {
-        font-size: 1.15rem;
-        font-weight: 700;
-        margin: 0 0 0.5rem 0;
+      .feature-title {
+        margin: 0 0 8px;
+        font-size: 1.05rem;
+        font-weight: 600;
         line-height: 1.4;
       }
-
-      .desc {
-        font-size: 0.9rem;
-        color: var(--md-text-muted);
-        line-height: 1.5;
-        flex-grow: 1;
+      .feature-desc {
         margin: 0;
+        font-size: 0.875rem;
+        line-height: 1.65;
+        color: var(--vp-text-2);
+        flex-grow: 1;
       }
-
-      .actions {
+      .feature-actions {
         display: flex;
         align-items: center;
-        gap: 0.6rem;
-        padding: 0 1.5rem 1.5rem;
+        gap: 14px;
+        padding: 0 22px 18px;
+        flex-wrap: wrap;
       }
-
-      .action-btn {
-        align-self: flex-start;
-        font-size: 0.85rem;
+      .feature-link {
+        font-size: 0.875rem;
         font-weight: 600;
-        color: #ffffff;
-        background-color: var(--md-primary);
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
+        color: var(--vp-brand-1);
         text-decoration: none;
-        transition: background-color 0.15s ease;
-        white-space: nowrap;
       }
-
-      .card:hover .action-btn {
-        background-color: #2563eb;
+      .feature-link:hover {
+        color: var(--vp-brand-2);
       }
-
-      .dl-btn {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--md-primary);
-        border: 1px solid var(--md-primary);
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
+      .feature-epub {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--vp-text-2);
+        border: 1px solid var(--vp-divider);
+        padding: 3px 12px;
+        border-radius: 999px;
         text-decoration: none;
-        transition: background-color 0.15s ease;
-        white-space: nowrap;
+        transition: border-color 0.25s, color 0.25s;
+      }
+      .feature-epub:hover {
+        border-color: var(--vp-brand-1);
+        color: var(--vp-brand-1);
       }
 
-      .dl-btn:hover {
-        background-color: rgba(59, 130, 246, 0.1);
-      }
-
-      /* 极小屏微调：封面更紧凑，卡片内边距收紧 */
       @media (max-width: 30rem) {
+        .vp-hero {
+          padding: 64px 0 40px;
+        }
         .cover-img {
           height: 150px;
-        }
-        .content {
-          padding: 1.25rem;
         }
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <header>
-        <h1>MinerU + Astro</h1>
-        <p class="subtitle">Ariesagittarius</p>
-      </header>
+    <div class="vp-home">
+      <!-- Hero -->
+      <div class="vp-hero">
+        <h1 class="hero-name">教辅数字化智能智库</h1>
+        <p class="hero-tagline">数学 · 物理教辅书籍数字化 · KaTeX 公式排版 · 卡片化知识分块 · 离线 EPUB 下载</p>
+        <div class="hero-actions">
+          <a class="vp-btn brand" href="#collections">开始阅读 →</a>
+          <a class="vp-btn alt" href="#collections">浏览全部书目</a>
+        </div>
+      </div>
 
-      {collections.map(col => (
-        <section class="collection-section">
-          <h2 class="collection-title">{col.title}</h2>
-          <p class="collection-desc">{col.description}</p>
-          
-          <div class="grid">
-            {col.books.map(book => (
-              <div class="card">
-                <a href={`/collections/${col.slug}/${book.slug}/${cleanSlug(book.entryPoint)}/`} class="card-main">
-                  <div class="cover-img" style={`background-image: url(${book.cover});`}></div>
-                  <div class="content">
-                    <h3 class="card-title">{book.title}</h3>
-                    <p class="desc">{book.description}</p>
+      <!-- 合集板块 -->
+      <div id="collections">
+        {collections.map(col => (
+          <section class="collection-section">
+            <div class="collection-head">
+              <h2 class="collection-title">{col.title}</h2>
+              <p class="collection-desc">{col.description}</p>
+            </div>
+
+            <div class="grid">
+              {col.books.map(book => (
+                <div class="vp-feature">
+                  <a
+                    href={`/collections/${col.slug}/${book.slug}/${cleanSlug(book.entryPoint)}/`}
+                    class="feature-main"
+                  >
+                    <div class="cover-img" style={`background-image: url(${book.cover});`}></div>
+                    <div class="feature-body">
+                      <h3 class="feature-title">{book.title}</h3>
+                      <p class="feature-desc">{book.description}</p>
+                    </div>
+                  </a>
+                  <div class="feature-actions">
+                    <a
+                      href={`/collections/${col.slug}/${book.slug}/${cleanSlug(book.entryPoint)}/`}
+                      class="feature-link"
+                    >开始学习 →</a>
+                    {hasEpub(book.slug) && (
+                      <a href={`/epub/${book.slug}.epub`} class="feature-epub" download>⬇ 下载 EPUB</a>
+                    )}
                   </div>
-                </a>
-                <div class="actions">
-                  <a href={`/collections/${col.slug}/${book.slug}/${cleanSlug(book.entryPoint)}/`} class="action-btn">开始学习 →</a>
-                  {hasEpub(book.slug) && (
-                    <a href={`/epub/${book.slug}.epub`} class="dl-btn" download>⬇ 下载 EPUB</a>
-                  )}
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      ))}
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
     </div>
   </body>
 </html>
