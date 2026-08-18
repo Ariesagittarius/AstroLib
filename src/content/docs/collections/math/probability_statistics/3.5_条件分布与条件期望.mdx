@@ -1,0 +1,823 @@
+---
+title: '3.5 条件分布与条件期望'
+---
+
+import Example from '@/components/Example.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Solution from '@/components/Solution.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+
+二维随机变量 $(X,Y)$ 之间主要表现为独立与相依两类关系.由于在许多问题中有关的随机变量取值往往是彼此有影响的,这就使得条件分布成为研究变量之间的相依关系的一个有力工具.
+
+## 3.5.1 条件分布
+
+对二维随机变量 $(X,Y)$ 而言，所谓随机变量 $X$ 的条件分布，就是在给定 $Y$ 取某个值的条件下 $X$ 的分布。譬如，记 $X$ 为人的体重， $Y$ 为人的身高，则 $X$ 与 $Y$ 之间一般有相依关系。现在如果限定 $Y = 1.7(\mathrm{m})$ ，在这个条件下，体重 $X$ 的分布显然与 $X$ 的无条件分布（无此限制下体重的分布）会有很大的不同。本节将给出条件分布的定义，以便进一步在条件分布的基础上给出条件期望的概念。
+
+## 一、离散随机变量的条件分布
+
+设二维离散随机变量 $(X,Y)$ 的联合分布列为
+
+$$
+
+p _ {i j} = P (X = x _ {i}, Y = y _ {j}), \quad i = 1, 2, \dots , \quad j = 1, 2, \dots .
+
+$$
+
+仿照条件概率的定义,我们很容易地给出如下离散随机变量的条件分布列.
+
+<Knowledge title="定义 3.5.1">
+对一切使 $P(Y = y_{j}) = p_{\cdot j} = \sum_{i = 1}^{\infty}p_{ij} > 0$ 的 $y_{j}$ ，称
+
+$$
+
+p _ {i | j} = P (X = x _ {i} \mid Y = y _ {j}) = \frac {P (X = x _ {i} , Y = y _ {j})}{P (Y = y _ {j})} = \frac {p _ {i j}}{p _ {\cdot j}}, \quad i = 1, 2, \dots\tag{3.5.1}
+
+$$
+
+为给定 $Y=y_{j}$ 条件下 X 的条件分布列.
+
+同理,对一切使 $P(X = x_{i}) = p_{i} = \sum_{j=1}^{\infty} p_{ij} > 0$ 的 $x_{i}$ ，称
+
+$$
+
+p _ {j \mid i} = P (Y = y _ {j} \mid X = x _ {i}) = \frac {P (X = x _ {i} , Y = y _ {j})}{P (X = x _ {i})} = \frac {p _ {i j}}{p _ {i}}, \quad j = 1, 2, \dots\tag{3.5.2}
+
+$$
+
+为给定 $X = x_{i}$ 条件下 Y 的条件分布列.
+
+有了条件分布列,我们就可以给出离散随机变量的条件分布函数.
+</Knowledge>
+
+<Knowledge title="定义 3.5.2">
+给定 $Y = y_{j}$ 条件下 $X$ 的条件分布函数为
+
+$$
+
+F (x \mid y _ {j}) = \sum_ {x _ {i} \leqslant x} P (X = x _ {i} \mid Y = y _ {j}) = \sum_ {x _ {i} \leqslant x} p _ {i | j},\tag{3.5.3}
+
+$$
+
+给定 $X = x_{i}$ 条件下 $Y$ 的条件分布函数为
+
+$$
+
+F (y \mid x _ {i}) = \sum_ {y _ {j} \leqslant y} P (Y = y _ {j} \mid X = x _ {i}) = \sum_ {y _ {j} \leqslant y} p _ {j | i}.\tag{3.5.4}
+
+$$
+</Knowledge>
+
+<Example title="例 3.5.1">
+设二维离散随机变量 $(X,Y)$ 的联合分布列为
+
+<table><tr><td rowspan="2">X</td><td colspan="3">Y</td><td rowspan="2"> $p_{i}$ .</td></tr><tr><td>1</td><td>2</td><td>3</td></tr><tr><td>1</td><td>0.1</td><td>0.3</td><td>0.2</td><td>0.6</td></tr><tr><td>2</td><td>0.2</td><td>0.05</td><td>0.15</td><td>0.4</td></tr><tr><td> $p_{\cdot j}$ </td><td>0.3</td><td>0.35</td><td>0.35</td><td>1.0</td></tr></table>
+
+因为 $P(X = 1) = p_{1.} = 0.6$ ，所以用第一行各元素分别除以0.6，就可得给定 $X = 1$ 下， $Y$ 的条件分布列为
+
+<table><tr><td>Y|X=1</td><td>1</td><td>2</td><td>3</td></tr><tr><td>P</td><td>1/6</td><td>1/2</td><td>1/3</td></tr></table>
+
+用第二行各元素分别除以0.4,就可得给定 $X = 2$ 下， $Y$ 的条件分布列为
+
+<table><tr><td>Y|X=2</td><td>1</td><td>2</td><td>3</td></tr><tr><td>P</td><td>1/2</td><td>1/8</td><td>3/8</td></tr></table>
+
+用第一列各元素分别除以 0.3, 就可得给定 Y=1 下, X 的条件分布列为
+
+<table><tr><td>X|Y=1</td><td>1</td><td>2</td></tr><tr><td>P</td><td>1/3</td><td>2/3</td></tr></table>
+
+用第二列各元素分别除以0.35，就可得给定 $Y = 2$ 下， $X$ 的条件分布列为
+
+<table><tr><td>X|Y=2</td><td>1</td><td>2</td></tr><tr><td>P</td><td>6/7</td><td>1/7</td></tr></table>
+
+用第三列各元素分别除以 0.35, 就可得给定 Y=3 下, X 的条件分布列为
+
+<table><tr><td>X|Y=3</td><td>1</td><td>2</td></tr><tr><td>P</td><td>4/7</td><td>3/7</td></tr></table>
+
+从这个例子看出,二维联合分布列只有一个,而条件分布列有5个.若X与Y的取值更多,则条件分布也更多.每个条件分布都从一个侧面描述了一种状态下的特定分布.可见条件分布的内容丰富,其应用也更广.
+</Example>
+
+<Example title="例 3.5.2">
+设随机变量 X 与 Y 相互独立, 且 $X \sim P(\lambda_{1})$ , $Y \sim P(\lambda_{2})$ . 在已知 $X + Y = n$ 的条件下, 求 X 的条件分布.
+
+<Solution title="解">
+因为独立泊松变量的和仍为泊松变量, 即 $X + Y \sim P(\lambda_{1} + \lambda_{2})$ , 所以
+
+$$
+
+\begin{array}{r l} P (X = k \mid X + Y = n) & = \frac {P (X = k , X + Y = n)}{P (X + Y = n)} \\ & = \frac {P (X = k) P (Y = n - k)}{P (X + Y = n)} \\ & = \frac {\frac {\lambda_ {1} ^ {k}}{k !} \mathrm{e} ^ {- \lambda_ {1}} \cdot \frac {\lambda_ {2} ^ {n - k}}{(n - k) !} \mathrm{e} ^ {- \lambda_ {2}}}{\frac {(\lambda_ {1} + \lambda_ {2}) ^ {n}}{n !} \mathrm{e} ^ {- (\lambda_ {1} + \lambda_ {2})}} \\ & = \frac {n !}{k ! (n - k) !} \frac {\lambda_ {1} ^ {k} \lambda_ {2} ^ {n - k}}{(\lambda_ {1} + \lambda_ {2}) ^ {n}} \\ & = \binom {n} {k} \left(\frac {\lambda_ {1}}{\lambda_ {1} + \lambda_ {2}}\right) ^ {k} \left(\frac {\lambda_ {2}}{\lambda_ {1} + \lambda_ {2}}\right) ^ {n - k}, \quad k = 0, 1, \dots , n. \end{array}
+
+$$
+
+即在 $X + Y = n$ 的条件下， $X$ 服从二项分布 $b(n,p)$ ，其中 $p = \lambda_1 / (\lambda_1 + \lambda_2)$ .
+</Solution>
+</Example>
+
+<Example title="例 3.5.3">
+设在一段时间内进入某一商店的顾客人数 X 服从泊松分布 $P(\lambda)$ ，每个顾客购买某种物品的概率为 p，并且各个顾客是否购买该种物品相互独立，求进入商店的顾客购买这种物品的人数 Y 的分布列.
+
+<Solution title="解">
+由题意知
+
+$$
+
+P (X = m) = \frac {\lambda^ {m}}{m !} \mathrm{e} ^ {- \lambda}, \quad m = 0, 1, 2, \dots .
+
+$$
+
+在进入商店的人数 $X = m$ 的条件下，购买某种物品的人数 $Y$ 的条件分布为二项分布 $b(m,p)$ ，即
+
+$$
+
+P (Y = k \mid X = m) = \binom {m} {k} p ^ {k} (1 - p) ^ {m - k}, \quad k = 0, 1, 2, \dots , m.
+
+$$
+
+由全概率公式有
+
+$$
+
+\begin{array}{r l} P (Y = k) & = \sum_ {m = k} ^ {\infty} P (X = m) P (Y = k \mid X = m) \\ & = \sum_ {m = k} ^ {\infty} \frac {\lambda^ {m}}{m !} \mathrm{e} ^ {- \lambda} \cdot \frac {m !}{k ! (m - k) !} p ^ {k} (1 - p) ^ {m - k} \\ & = \mathrm{e} ^ {- \lambda} \sum_ {m = k} ^ {\infty} \frac {\lambda^ {m}}{k ! (m - k) !} p ^ {k} (1 - p) ^ {m - k} \end{array}
+
+$$
+
+$$
+
+\begin{array}{l} = \mathrm{e} ^ {- \lambda} \frac {(\lambda p) ^ {k}}{k !} \sum_ {m = k} ^ {\infty} \frac {[ (1 - p) \lambda ] ^ {m - k}}{(m - k) !} \\ = \frac {(\lambda p) ^ {k}}{k !} \mathrm{e} ^ {- \lambda} \mathrm{e} ^ {\lambda (1 - p)} \\ = \frac {(\lambda p) ^ {k}}{k !} \mathrm{e} ^ {- \lambda p}, \quad k = 0, 1, 2, \dots . \end{array}
+
+$$
+
+即 Y 服从参数为 $\lambda p$ 的泊松分布.
+
+这个例子告诉我们:在直接寻求 Y 的分布有困难时,有时借助条件分布可把困难克服.
+</Solution>
+</Example>
+
+## 二、连续随机变量的条件分布
+
+设二维连续随机变量 $(X,Y)$ 的联合密度函数为 $p(x,y)$ ，边际密度函数为 $p_{X}(x),p_{Y}(y)$ .
+
+在离散随机变量场合, 其条件分布函数为 $P(X \leqslant x \mid Y = y)$ . 但是, 因为连续随机变量取某个值的概率为零, 即 $P(Y = y) = 0$ , 所以无法用条件概率直接计算 $P(X \leqslant x \mid Y = y)$ , 一个很自然的想法是: 将 $P(X \leqslant x \mid Y = y)$ 看成是 $h \to 0$ 时 $P(X \leqslant x \mid y \leqslant Y \leqslant y + h)$ 的极限, 即
+
+$$
+
+\begin{array}{r l}P (X \leqslant x \mid Y = y)&= \lim _ {h \rightarrow 0} P (X \leqslant x \mid y \leqslant Y \leqslant y + h)\\&= \lim _ {h \rightarrow 0} \frac {P (X \leqslant x , y \leqslant Y \leqslant y + h)}{P (y \leqslant Y \leqslant y + h)}\\&= \lim _ {h \rightarrow 0} \frac {\int_ {- \infty} ^ {x} \int_ {y} ^ {y + h} p (u , v) \mathrm{d} v \mathrm{d} u}{\int_ {y} ^ {y + h} p _ {Y} (v) \mathrm{d} v}\\&= \lim _ {h \rightarrow 0} \frac {\int_ {- \infty} ^ {x} \left\{\frac {1}{h} \int_ {y} ^ {y + h} p (u , v) \mathrm{d} v \right\} \mathrm{d} u}{\frac {1}{h} \int_ {y} ^ {y + h} p _ {Y} (v) \mathrm{d} v},\end{array}
+
+$$
+
+当 $p_{Y}(y), p(x, y)$ 在 $y$ 处连续时，由积分中值定理可得
+
+$$
+
+\lim _ {h \to 0} \frac {1}{h} \int_ {y} ^ {y + h} p _ {Y} (v) \mathrm{d} v = p _ {Y} (y),
+
+$$
+
+$$
+
+\lim _ {h \to 0} \frac {1}{h} \int_ {y} ^ {y + h} p (u, v) \mathrm{d} v = p (u, y).
+
+$$
+
+所以
+
+$$
+
+P (X \leqslant x \mid Y = y) = \int_ {- \infty} ^ {x} \frac {p (u , y)}{p _ {Y} (y)} \mathrm{d} u.
+
+$$
+
+上式左端就是在 $Y = y$ 条件下 $X$ 的条件分布函数, 可记为 $F(x|y)$ . 再由密度函数定义知, 上式右端的被积函数不是别的, 正是在 $Y = y$ 条件下 $X$ 的条件密度函数, 它可记为 $p(x|y)$ . 至此, 连续随机变量的条件分布函数与条件密度函数可定义如下.
+
+<Knowledge title="定义 3.5.3">
+对一切使 $p_{Y}(y) > 0$ 的 $y$ , 给定 $Y = y$ 条件下 $X$ 的条件分布函数和条件密度函数分别为
+
+$$
+
+F (x \mid y) = \int_ {- \infty} ^ {x} \frac {p (u , y)}{p _ {Y} (y)} \mathrm{d} u,\tag{3.5.5}
+
+$$
+
+$$
+
+p (x \mid y) = \frac {p (x , y)}{p _ {Y} (y)}.\tag{3.5.6}
+
+$$
+
+同理对一切使 $p_X(x) > 0$ 的 $x$ , 给定 $X = x$ 条件下 $Y$ 的条件分布函数和条件密度函数分别为
+
+$$
+
+F (y \mid x) = \int_ {- \infty} ^ {y} \frac {p (x , v)}{p _ {X} (x)} \mathrm{d} v,\tag{3.5.7}
+
+$$
+
+$$
+
+p (y \mid x) = \frac {p (x , y)}{p _ {x} (x)}.\tag{3.5.8}
+
+$$
+
+要注意:无论条件分布函数 $F(x \mid y)$ ，还是条件密度函数 $p(x \mid y)$ ，它们还是条件 Y = y 的函数，不同的条件（如 $Y = y_{1}$ 和 $Y = y_{2}$ ）下，其分布函数 $F(x \mid y_{1})$ 和 $F(x \mid y_{2})$ 是不同的，条件密度函数 $p(x \mid y_{1})$ 和 $p(x \mid y_{2})$ 也是不同的。由此可见，条件分布（密度）函数 $F(x \mid y)(p(x \mid y))$ 表示一簇分布（密度）函数。对 $F(y \mid x)$ 和 $p(y \mid x)$ 也可作出类似的认识，这些都可以从下面例子中具体看出。
+</Knowledge>
+
+<Example title="例 3.5.4">
+设 $(X,Y)$ 服从二维正态分布 $N(\mu_{1},\mu_{2},\sigma_{1}^{2},\sigma_{2}^{2},\rho)$ ，由边际分布知 X 服从正态分布 $N(\mu_{1},\sigma_{1}^{2})$ ，Y 服从正态分布 $N(\mu_{2},\sigma_{2}^{2})$ 。现在来求条件分布。根据(3.5.6)式得
+
+$$
+
+\begin{array}{l} p (x \mid y) = \frac {p (x , y)}{p _ {Y} (y)} \\ = \frac {\frac {1}{2 \pi \sigma_ {1} \sigma_ {2} \sqrt {1 - \rho^ {2}}} \exp \left\{- \frac {1}{2 (1 - \rho^ {2})} \left[ \frac {(x - \mu_ {1}) ^ {2}}{\sigma_ {1} ^ {2}} - 2 \rho \frac {(x - \mu_ {1}) (y - \mu_ {2})}{\sigma_ {1} \sigma_ {2}} + \frac {(y - \mu_ {2}) ^ {2}}{\sigma_ {2} ^ {2}} \right] \right\}}{\frac {1}{\sqrt {2 \pi} \sigma_ {2}} \exp \left\{- \frac {(y - \mu_ {2}) ^ {2}}{2 \sigma_ {2} ^ {2}} \right\}} \\ = \frac {1}{\sqrt {2 \pi} \sigma_ {1} \sqrt {1 - \rho^ {2}}} \exp \left\{- \frac {1}{2 \sigma_ {1} ^ {2} (1 - \rho^ {2})} \left[ x - (\mu_ {1} + \rho \frac {\sigma_ {1}}{\sigma_ {2}} (y - \mu_ {2})) \right] ^ {2} \right\}, \end{array}
+
+$$
+
+这正是正态密度函数,其均值 $\mu_{3}$ 和方差 $\sigma_{3}^{2}$ 分别为
+
+$$
+
+\mu_ {3} = \mu_ {1} + \rho \frac {\sigma_ {1}}{\sigma_ {2}} (y - \mu_ {2}), \qquad \sigma_ {3} ^ {2} = \sigma_ {1} ^ {2} (1 - \rho^ {2}).
+
+$$
+
+类似可得,在给定 X=x 的条件下,Y 的条件分布仍为正态分布 $N(\mu_{4},\sigma_{4}^{2})$ , 其均值和方差分别为
+
+$$
+
+\mu_ {4} = \mu_ {2} + \rho \frac {\sigma_ {2}}{\sigma_ {1}} (x - \mu_ {1}), \quad \sigma_ {4} ^ {2} = \sigma_ {2} ^ {2} (1 - \rho^ {2}).
+
+$$
+
+由此也可以看出:二维正态分布的边际分布和条件分布都是一维正态分布,这是正态分布的一个重要性质.
+</Example>
+
+<Example title="例 3.5.5">
+设二维随机变量 $(X,Y)$ 服从 $G=\left\{(x,y)\mid x^{2}+y^{2}\leqslant1\right\}$ 上的均匀分布,试求
+
+给定 Y=y 条件下 X 的条件密度函数 $p(x|y)$ .
+
+<Solution title="解">
+因为
+
+$$
+
+p (x, y) = \left\{ \begin{array}{l l} \frac {1}{\pi}, & x ^ {2} + y ^ {2} \leqslant 1, \\ 0, & \text {其他}. \end{array} \right.
+
+$$
+
+由此得 $Y$ 的边际密度函数为
+
+$$
+
+p _ {Y} (y) = \left\{ \begin{array}{l l} \frac {2}{\pi} \sqrt {1 - y ^ {2}}, & - 1 \leqslant y \leqslant 1, \\ 0, & \text {其他}. \end{array} \right.
+
+$$
+
+所以当-1&lt;y&lt;1时,有
+
+$$
+
+\begin{array}{r l} p (x \mid y) & = \frac {p (x , y)}{p _ {Y} (y)} \\ & = \left\{ \begin{array}{l l} \frac {1 / \pi}{(2 / \pi) \sqrt {1 - y ^ {2}}} = \frac {1}{2 \sqrt {1 - y ^ {2}}}, & - \sqrt {1 - y ^ {2}} \leqslant x \leqslant \sqrt {1 - y ^ {2}}, \\ 0, & \text {其他}. \end{array} \right. \end{array}
+
+$$
+
+将 y=0 和 y=0.5 分别代入上式可得(两个均匀分布)
+
+$$
+
+p (x \mid y = 0) = \left\{ \begin{array}{l l} \frac {1}{2}, & - 1 \leqslant x \leqslant 1, \\ 0, & \text {其他}, \end{array} \right.
+
+$$
+
+$$
+
+p (x \mid y = 0. 5) = \left\{ \begin{array}{l l} \frac {1}{\sqrt {3}}, & - \frac {\sqrt {3}}{2} \leqslant x \leqslant \frac {\sqrt {3}}{2}, \\ 0, & \text {其他}. \end{array} \right.
+
+$$
+
+进一步有: 当 -1&lt;y&lt;1 时, 给定 Y=y 条件下, X 服从 $(- \sqrt{1-y^{2}}, \sqrt{1-y^{2}})$ 上的均匀分布. 同理有: 当 -1&lt;x&lt;1 时, 给定 X=x 条件下, Y 服从 $(- \sqrt{1-x^{2}}, \sqrt{1-x^{2}})$ 上的均匀分布.
+</Solution>
+</Example>
+
+## 三、连续场合的全概率公式和贝叶斯公式
+
+有了条件分布密度函数的概念,我们可以给出连续随机变量场合的全概率公式和贝叶斯公式.将(3.5.6)式和(3.5.8)式改写为
+
+$$
+
+p (x, y) = p _ {x} (x) p (y \mid x),\tag{3.5.9}
+
+$$
+
+$$
+
+p (x, y) = p _ {Y} (y) p (x \mid y).\tag{3.5.10}
+
+$$
+
+再对 $p(x,y)$ 求边际密度函数, 就得全概率公式的密度函数形式:
+
+$$
+
+p _ {Y} (y) = \int_ {- \infty} ^ {\infty} p _ {X} (x) p (y | x) \mathrm{d} x,\tag{3.5.11}
+
+$$
+
+$$
+
+p _ {X} (x) = \int_ {- \infty} ^ {\infty} p _ {Y} (y) p (x \mid y) \mathrm{d} y.\tag{3.5.12}
+
+$$
+
+将(3.5.9)式代入(3.5.6)式的分子，(3.5.11)式代入(3.5.6)式的分母，就得贝叶斯公式的密度函数形式：
+
+$$
+
+p (x \mid y) = \frac {p _ {X} (x) p (y \mid x)}{\int_ {- \infty} ^ {\infty} p _ {X} (x) p (y \mid x) \mathrm{d} x},\tag{3.5.13}
+
+$$
+
+或
+
+$$
+
+p (y \mid x) = \frac {p _ {Y} (y) p (x \mid y)}{\int_ {- \infty} ^ {\infty} p _ {Y} (y) p (x \mid y) \mathrm{d} y}.\tag{3.5.14}
+
+$$
+
+<Note>
+,虽然由边际分布无法得到联合分布,但(3.5.9)式和(3.5.10)式说明,由边际分布和条件分布就可以得到联合分布.
+</Note>
+
+<Example title="例 3.5.6">
+设随机变量 $X \sim N(\mu, \sigma_{1}^{2})$ ，在 X = x 下 Y 的条件分布为 $N(x, \sigma_{2}^{2})$ 。试求 Y 的（无条件）密度函数 $p_{Y}(y)$ 。
+
+<Solution title="解">
+由题意知
+
+$$
+
+\begin{array}{l} p _ {x} (x) = \frac {1}{\sqrt {2 \pi} \sigma_ {1}} \exp \left\{- \frac {(x - \mu) ^ {2}}{2 \sigma_ {1} ^ {2}} \right\}, \\ p (y \mid x) = \frac {1}{\sqrt {2 \pi} \sigma_ {2}} \exp \left\{- \frac {(y - x) ^ {2}}{2 \sigma_ {2} ^ {2}} \right\}, \end{array}
+
+$$
+
+所以由(3.5.11)式得
+
+$$
+
+\begin{array}{r l} p _ {Y} (y) & = \int_ {- \infty} ^ {\infty} p _ {X} (x) p (y | x) \mathrm{d} x \\ & = \frac {1}{2 \pi \sigma_ {1} \sigma_ {2}} \int_ {- \infty} ^ {\infty} \exp \left\{- \frac {(x - \mu) ^ {2}}{2 \sigma_ {1} ^ {2}} - \frac {(y - x) ^ {2}}{2 \sigma_ {2} ^ {2}} \right\} \mathrm{d} x \\ & = \frac {1}{2 \pi \sigma_ {1} \sigma_ {2}} \int_ {- \infty} ^ {\infty} \exp \left\{- \frac {1}{2} \left[ \left(\frac {1}{\sigma_ {1} ^ {2}} + \frac {1}{\sigma_ {2} ^ {2}}\right) x ^ {2} - 2 \left(\frac {y}{\sigma_ {2} ^ {2}} + \frac {\mu}{\sigma_ {1} ^ {2}}\right) x + \frac {y ^ {2}}{\sigma_ {2} ^ {2}} + \frac {\mu^ {2}}{\sigma_ {1} ^ {2}} \right] \right\} \mathrm{d} x. \end{array}
+
+$$
+
+记 $c = \frac{\sigma_1^2\sigma_2^2}{\sigma_1^2 + \sigma_2^2}$ ，则上式化成
+
+$$
+
+\begin{array}{r l} p _ {Y} (y) & = \frac {1}{2 \pi \sigma_ {1} \sigma_ {2}} \int_ {- \infty} ^ {\infty} \exp \left\{- \frac {1}{2} c ^ {- 1} \left[ x - c \left(\frac {\mu}{\sigma_ {1} ^ {2}} + \frac {y}{\sigma_ {2} ^ {2}}\right) \right] ^ {2} - \frac {1}{2} \frac {(y - \mu) ^ {2}}{\sigma_ {1} ^ {2} + \sigma_ {2} ^ {2}} \right\} d x \\ & = \frac {1}{2 \pi \sigma_ {1} \sigma_ {2}} \sqrt {2 \pi c} \exp \left\{- \frac {(y - \mu) ^ {2}}{2 (\sigma_ {1} ^ {2} + \sigma_ {2} ^ {2})} \right\} = \frac {1}{\sqrt {2 \pi} \sqrt {\sigma_ {1} ^ {2} + \sigma_ {2} ^ {2}}} \exp \left\{- \frac {(y - \mu) ^ {2}}{2 (\sigma_ {1} ^ {2} + \sigma_ {2} ^ {2})} \right\}. \end{array}
+
+$$
+
+这表明 Y 仍服从正态分布 $N(\mu, \sigma_{1}^{2} + \sigma_{2}^{2})$ .
+</Solution>
+</Example>
+
+## 3.5.2 条件数学期望
+
+条件分布的数学期望称为条件数学期望,它的定义如下.
+
+<Knowledge title="定义 3.5.4">
+条件分布的数学期望(若存在)称为条件期望,其定义如下:
+
+$$
+
+E (X \mid Y = y) = \left\{ \begin{array}{l l} { \sum_ {i} x _ {i} P (X = x _ {i} \mid Y = y),} & {(X, Y) \text {为二维离散随机变量},} \\ { \int_ {- \infty} ^ {\infty} x p (x \mid y) \mathrm{d} x,} & {(X, Y) \text {为二维连续随机变量}.} \end{array} \right.\tag{3.5.15}
+
+$$
+
+$$
+
+E (  Y \mid   X = x) = \left\{ \begin{array}{l l} { \sum_ {j} y _ {j} P (  Y = y _ {j} \mid   X = x)  ,} & {(X, Y)   \text {为二维离散随机变量},} \\ { \int_ {- \infty} ^ {\infty} y p (  y \mid   x)   \mathrm{d} y  ,} & {(X, Y)   \text {为二维连续随机变量}.} \end{array} \right.\tag{3.5.16}
+
+$$
+</Knowledge>
+
+<Note>
+条件期望 $E(X|Y=y)$ 是 y 的函数,它与无条件期望 $E(X)$ 的区别,不仅在于计算公式上,而且在于其含义上.譬如,X 表示中国成年人的身高,则 $E(X)$ 表示中国成年人的平均身高.若用 Y 表示中国成年人的足长(脚趾到脚跟的长度),则 $E(X|Y=y)$ 表示足长为 y 的中国成年人的平均身高,我国公安部门研究获得
+
+$$
+
+E (X \mid Y = y) = 6. 8 7 6 y.
+
+$$
+
+这个公式对公安部门破案起着重要的作用,例如,测得案犯留下的足印长为25.3 cm,则由此公式可推算出此案犯身高约174 cm.
+
+其实以上公式的得出并不复杂,一般认为人的身高和足长 $(X,Y)$ 可以当作一个二维正态变量来处理,即 $(X,Y)$ 服从二维正态分布 $N(\mu_{1},\mu_{2},\sigma_{1}^{2},\sigma_{2}^{2},\rho)$ .由例3.5.4知,在给定Y=y的条件下,X服从一维正态分布
+
+$$
+
+N (\mu_ {1} + \rho \frac {\sigma_ {1}}{\sigma_ {2}} (y - \mu_ {2}), \sigma_ {1} ^ {2} (1 - \rho^ {2})).
+
+$$
+
+由此得
+
+$$
+
+E (X \mid Y = y) = \mu_ {1} + \rho \frac {\sigma_ {1}}{\sigma_ {2}} (y - \mu_ {2}),
+
+$$
+
+这是 y 的线性函数. 再用统计的方法(后面第六章的内容), 从大量实际数据中得出 $\mu_{1}$ , $\mu_{2}$ , $\sigma_{1}$ , $\sigma_{2}$ , $\rho$ 的估计后, 就可得以上公式.
+
+因为条件期望是条件分布的数学期望,所以它具有数学期望的一切性质,例如
+
+$$
+
+E \left(a _ {1} X _ {1} + a _ {2} X _ {2} \mid Y = y\right) = a _ {1} E \left(X _ {1} \mid Y = y\right) + a _ {2} E \left(X _ {2} \mid Y = y\right).
+
+$$
+
+其他性质在此不一一列举,读者可以自行写出.
+
+我们特别要强调的是: $E(X \mid Y = y)$ 是 $y$ 的函数, 对 $y$ 的不同取值, 条件期望 $E(X \mid Y = y)$ 的取值也在变化. 为此我们可以记
+
+$$
+
+g (y) = E (X \mid Y = y).
+
+$$
+
+进一步还可以将条件期望看成是随机变量 $Y$ 的函数，记为 $E(X|Y) = g(Y)$ ，而将 $E(X|Y = y)$ 看成是 $Y = y$ 时 $E(X|Y)$ 的一个取值，由此看出： $E(X|Y)$ 本身也是一个随机变量.
+
+引进 $E(X|Y)$ 不仅使我们前面所定义的 $E(X|Y = y)$ 得到了统一的处理，而且可以得到更深刻的结果.
+</Note>
+
+<Knowledge title="定理 3.5.1">
+(重期望公式) 设 $(X,Y)$ 是二维随机变量,且 $E(X)$ 存在,则
+
+$$
+
+E (X) = E (E (X \mid Y)).\tag{3.5.17}
+
+$$
+
+<Solution title="证明">
+在此仅对连续场合进行证明,而离散场合可类似证明.设二维连续随机变量 $(X,Y)$ 的联合密度函数为 $p(x,y)$ .记 $g(y) = E(X|Y = y)$ ,则 $g(Y) = E(X|Y)$ .由此利用 $p(x,y) = p(x|y)p_Y(y)$ ,可得
+
+$$
+
+E (X) = \int_ {- \infty} ^ {\infty} \int_ {- \infty} ^ {\infty} x p (x, y) \mathrm{d} x \mathrm{d} y = \int_ {- \infty} ^ {\infty} \int_ {- \infty} ^ {\infty} x p (x | y) p _ {Y} (y) \mathrm{d} x \mathrm{d} y
+
+$$
+
+$$
+
+= \int_ {- \infty} ^ {\infty} \left\{\int_ {- \infty} ^ {\infty} x p (x | y) \mathrm{d} x \right\} p _ {Y} (y) \mathrm{d} y.
+
+$$
+
+其中花括号中的积分不是别的,正是条件期望 $E(X|Y=y)$ , 所以
+
+$$
+
+E (X) = \int_ {- \infty} ^ {\infty} E (X \mid Y = y) p _ {Y} (y) \mathrm{d} y = \int_ {- \infty} ^ {\infty} g (y) p _ {Y} (y) \mathrm{d} y = E (g (Y)) = E (E (X \mid Y)).
+
+$$
+
+这就证明了(3.5.17)式.
+
+重期望公式是概率论中较为深刻的一个结论, 它在实际中很有用. 譬如, 要求在一个取值于很大范围上的指标 $X$ 的均值 $E(X)$ , 这时会遇到计算上的各种困难. 为此, 我们换一种思维方式, 去找一个与 $X$ 有关的量 $Y$ , 用 $Y$ 的不同取值把大范围划分成若干个小区域, 先在小区域上求 $X$ 的平均, 再对此类平均求加权平均, 即可得大范围上 $X$ 的平均 $E(X)$ . 如要求全校学生的平均身高, 可先求出每个班级学生的平均身高, 然后再对各班级的平均身高作加权平均, 其权重就是班级人数在全校学生中所占的比例.
+
+重期望公式的具体使用如下：
+
+(1) 如果 Y 是一个离散随机变量, 则 (3.5.17) 式成为
+
+$$
+
+E (X) = \sum_ {j} E (X \mid Y = y _ {j}) P (Y = y _ {j}).\tag{3.5.18}
+
+$$
+
+(2) 如果 Y 是一个连续随机变量, 则 (3.5.17) 式成为
+
+$$
+
+E (X) = \int_ {- \infty} ^ {\infty} E (X \mid Y = y) p _ {Y} (y) \mathrm{d} y.\tag{3.5.19}
+
+$$
+</Solution>
+</Knowledge>
+
+<Example title="例 3.5.7">
+一矿工被困在有三个门的矿井里.第一个门通一坑道,沿此坑道走3小时可到达安全区;第二个门通一坑道,沿此坑道走5小时又回到原处;第三个门通一坑道,沿此坑道走7小时也回到原处.假定此矿工总是等可能地在三个门中选择一个,试求他平均要用多少时间才能到达安全区.
+
+<Solution title="解">
+设该矿工需要 X 小时到达安全区, 则 X 的可能取值为
+
+$$
+
+3, 5 + 3, 7 + 3, 5 + 5 + 3, 5 + 7 + 3, 7 + 7 + 3, \dots ,
+
+$$
+
+要写出 $X$ 的分布列是困难的, 所以无法直接求 $E(X)$ . 为此记 $Y$ 表示第一次所选的门, $\{Y = i\}$ 就是选择第 $i$ 个门. 由题设知
+
+$$
+
+P (Y = 1) = P (Y = 2) = P (Y = 3) = \frac {1}{3}.
+
+$$
+
+因为选第一个门后 3 小时可到达安全区, 所以 $E(X \mid Y = 1) = 3$ .
+
+又因为选第二个门后 5 小时回到原处, 所以 $E(X \mid Y = 2) = 5 + E(X)$ .
+
+又因为选第三个门后7小时也回到原处,所以 $E(X|Y=3)=7+E(X)$ .
+
+综上所述,由(3.5.18)式得
+
+$$
+
+E (X) = \frac {1}{3} [ 3 + 5 + E (X) + 7 + E (X) ] = 5 + \frac {2}{3} E (X),
+
+$$
+
+得 $E(X)=15$ ，即该矿工平均要 15 小时才能到达安全区。
+
+上例的解题方法带有某种普遍性,请读者从下例中再体会一下这种方法.
+</Solution>
+</Example>
+
+<Example title="例 3.5.8">
+口袋中有编号为 $1,2,\cdots,n$ 的 n 个球，从中任取 1 球。若取到 1 号球，则得 1 分，且停止摸球；若取到 i 号球 ( $i \geqslant 2$ )，则得 i 分，且将此球放回，重新摸球。如此下去，试求得到的平均总分数。
+
+<Solution title="解">
+记 X 为得到的总分数, Y 为第一次取到的球的号码. 则
+
+$$
+
+P (Y = 1) = P (Y = 2) = \dots = P (Y = n) = \frac {1}{n}.
+
+$$
+
+又因为 $E(X|Y = 1) = 1$ ，而当 $i\geqslant 2$ 时， $E(X|Y = i) = i + E(X)$ .所以
+
+$$
+
+E (X) = \sum_ {i = 1} ^ {n} E (X \mid Y = i) P (Y = i) = \frac {1}{n} [ 1 + 2 + \dots + n + (n - 1) E (X) ].
+
+$$
+
+由此解得
+
+$$
+
+E (X) = \frac {n (n + 1)}{2}.
+
+$$
+</Solution>
+</Example>
+
+<Example title="例 3.5.9">
+设电力公司每月可以供应某工厂的电力 X 服从 (10,30) (单位: $10^{4}$ kW) 上的均匀分布, 而该工厂每月实际需要的电力 Y 服从 (10,20) (单位: $10^{4}$ kW) 上的均匀分布. 如果工厂能从电力公司得到足够的电力, 则每 $10^{4}$ kW 电可以创造 30 万元的利润, 若工厂从电力公司得不到足够的电力, 则不足部分由工厂通过其他途径解决, 由其他途径得到的电力每 $10^{4}$ kW 电只有 10 万元的利润. 试求该厂每个月的平均利润.
+
+<Solution title="解">
+从题意知,每月供应电力 $X \sim U(10,30)$ , 而工厂实际需要电力 $Y \sim U(10,20)$ . 若设工厂每个月的利润为 Z 万元, 则按题意可得
+
+$$
+
+Z = \left\{ \begin{array}{l l} 3 0 Y, & \text {当} Y \leqslant X, \\ 3 0 X + 1 0 (Y - X), & \text {当} Y > X. \end{array} \right.
+
+$$
+
+在 $X = x$ 给定时， $Z$ 仅是 $Y$ 的函数，于是当 $10 \leqslant x < 20$ 时， $Z$ 的条件期望为
+
+$$
+
+\begin{array}{r l} E (Z \mid X = x) & = \int_ {1 0} ^ {x} 3 0 y p _ {Y} (y) \mathrm{d} y + \int_ {x} ^ {2 0} (1 0 y + 2 0 x) p _ {Y} (y) \mathrm{d} y \\ & = \int_ {1 0} ^ {x} 3 0 y \frac {1}{1 0} \mathrm{d} y + \int_ {x} ^ {2 0} (1 0 y + 2 0 x) \frac {1}{1 0} \mathrm{d} y \\ & = \frac {3}{2} (x ^ {2} - 1 0 0) + \frac {1}{2} (2 0 ^ {2} - x ^ {2}) + 2 x (2 0 - x) \\ & = 5 0 + 4 0 x - x ^ {2}. \end{array}
+
+$$
+
+当 $20 \leqslant x \leqslant 30$ 时, $Z$ 的条件期望为
+
+$$
+
+E (Z \mid X = x) = \int_ {1 0} ^ {2 0} 3 0 y p _ {Y} (y) \mathrm{d} y = \int_ {1 0} ^ {2 0} 3 0 y \frac {1}{1 0} \mathrm{d} y = 4 5 0.
+
+$$
+
+然后用 $X$ 的分布对条件期望 $E(Z|X = x)$ 再作一次平均，即得
+
+$$
+
+\begin{array}{r l} E (Z) & = E (E (Z \mid X)) \\ & = \int_ {1 0} ^ {2 0} E (Z \mid X = x) p _ {X} (x) \mathrm{d} x + \int_ {2 0} ^ {3 0} E (Z \mid X = x) p _ {X} (x) \mathrm{d} x \\ & = \frac {1}{2 0} \int_ {1 0} ^ {2 0} (5 0 + 4 0 x - x ^ {2}) \mathrm{d} x + \frac {1}{2 0} \int_ {2 0} ^ {3 0} 4 5 0 \mathrm{d} x \\ & = 2 5 + 3 0 0 - \frac {7 0 0}{6} + 2 2 5 \approx 4 3 3. \end{array}
+
+$$
+
+所以该厂每月的平均利润为 433 万元.
+</Solution>
+</Example>
+
+<Example title="例 3.5.10">
+(随机个随机变量和的数学期望) 设 $X_{1}, X_{2}, \cdots$ 为一列独立同分布的随机变量, 随机变量 N 只取正整数值, 且 N 与 $\{X_{n}\}$ 独立, 证明
+
+$$
+
+E \Big (\sum_ {i = 1} ^ {N} X _ {i} \Big) = E (X _ {1}) E (N).
+
+$$
+
+<Solution title="证明">
+由定理3.5.1知
+
+$$
+
+\begin{array}{r l} E \Big (\sum_ {i = 1} ^ {N} X _ {i} \Big) & = E \Big [ E \Big (\sum_ {i = 1} ^ {N} X _ {i} \mid N \Big) \Big ] = \sum_ {n = 1} ^ {\infty} E \Big (\sum_ {i = 1} ^ {N} X _ {i} \mid N = n \Big) P (N = n) \\ & = \sum_ {n = 1} ^ {\infty} E \Big (\sum_ {i = 1} ^ {n} X _ {i} \Big) P (N = n) = \sum_ {n = 1} ^ {\infty} n E (X _ {1}) P (N = n) \\ & = E (X _ {1}) \sum_ {n = 1} ^ {\infty} n P (N = n) = E (X _ {1}) E (N). \end{array}
+
+$$
+
+得证.
+
+利用此题的结论,我们可以解很多实际问题,下面列举几个:
+
+（1）设一天内到达某商场的顾客数 N 是仅取非负整数值的随机变量，且 $E(N)=35\ 000$ . 又设进入此商场的第 i 个顾客的购物金额为 $X_{i}$ ，可以认为诸 $X_{i}$ 是独立同分布的随机变量，且 $E(X_{i})=82$ （元）. 假设 N 与 $X_{i}$ 相互独立是合理的，则此商场一天的平均营业额为
+
+$$
+
+E \Big (\sum_ {i = 1} ^ {N} X _ {i} \Big) = E (X _ {1}) E (N) = 8 2 \times 3 5   0 0 0 = 2 8 7 (\text {万元}).
+
+$$
+
+（2）一只昆虫一次产卵数 N 服从参数为 $\lambda$ 的泊松分布，每个卵能成活的概率是 p，可设 $X_{i}$ 服从 0-1 分布，而 $\{X_{i}=1\}$ 表示第 i 个卵成活，则一只昆虫一次产卵后的平均成活卵数为
+
+$$
+
+E \left(\sum_ {i = 1} ^ {N} X _ {i}\right) = E (X _ {1}) E (N) = \lambda p.
+
+$$
+</Solution>
+</Example>
+
+<Block title="习题3.5">
+1. 以 $X$ 记某医院一天内诞生婴儿的个数, 以 $Y$ 记其中男婴的个数. 设 $X$ 与 $Y$ 的联合分布列为
+
+$$
+
+P (X = n, Y = m) = \frac {\mathrm{e} ^ {- 1 4} (7 . 1 4) ^ {m} (6 . 8 6) ^ {n - m}}{m ! (n - m) !}, \quad m = 0, 1, \dots , n, \quad n = 0, 1, 2, \dots .
+
+$$
+
+试求条件分布列 $P(Y=m|X=n)$ .
+
+2. 一射手单发命中目标的概率为 $p (0 < p < 1)$ , 射击进行到命中目标两次为止. 设 $X$ 为第一次命中目标所需的射击次数, $Y$ 为总共进行的射击次数, 求 $(X, Y)$ 的联合分布和条件分布.
+
+3. 已知 $(X, Y)$ 的联合分布列如下：
+
+$$
+
+P (X = 1, Y = 1) = P (X = 2, Y = 1) = \frac {1}{8},
+
+$$
+
+$$
+
+P (X = 1, Y = 2) = \frac {1}{4}, P (X = 2, Y = 2) = \frac {1}{2}.
+
+$$
+
+试求：
+
+(1) 已知 Y=i 的条件下, X 的条件分布列, i=1,2;
+
+(2) X 与 Y 是否独立?
+
+4. 设随机变量 X 与 Y 独立同分布, 试在以下情况下求 $P(X=k|X+Y=m)$ :
+
+(1) X 与 Y 都服从参数为 p 的几何分布；
+
+(2) X 与 Y 都服从参数为 $(n, p)$ 的二项分布.
+
+5. 设二维连续随机变量 $(X, Y)$ 的联合密度函数为
+
+$$
+
+p \left(  x  , y  \right)   =   \left\{ \begin{array}{l l} {3 x  ,} & {0   <     x   <     1  , \quad 0   <     y   <     x  ,} \\ {0  ,} & {\text {其他}.} \end{array} \right.
+
+$$
+
+试求条件密度函数 $p(y|x)$ .
+
+6. 设二维连续随机变量 $(X, Y)$ 的联合密度函数为
+
+$$
+
+p \left(  x, y  \right)   =   \left\{ \begin{array}{l l} {1  ,} & {\mid   y \mid <     x  , \quad 0 <     x <     1  ,} \\ {0  ,} & {\text {其他}.} \end{array} \right.
+
+$$
+
+求条件密度函数 $p(x \mid y)$ .
+
+7. 设二维连续随机变量 $(X, Y)$ 的联合密度函数为
+
+$$
+
+p \left(  x  , y  \right)   =   \left\{ \begin{array}{l l} { \frac {2 1}{4} x ^ {2} y  ,} & {x ^ {2} \leqslant y \leqslant 1  ,} \\ {0  ,} & {\text {其他}.} \end{array} \right.
+
+$$
+
+求条件概率 $P(Y \geqslant 0.75 \mid X = 0.5)$ .
+
+8. 已知随机变量 $Y$ 的密度函数为
+
+$$
+
+p _ {Y} (y) = \left\{ \begin{array}{l l} 5 y ^ {4}, & 0 <   y <   1, \\ 0, & \text {其他}. \end{array} \right.
+
+$$
+
+在给定 $Y = y$ 条件下，随机变量 $X$ 的条件密度函数为
+
+$$
+
+p \left(  x   |   y  \right) = \left\{ \begin{array}{l l} { \frac {3 x ^ {2}}{y ^ {3}},} & {0 <   x <   y <   1,} \\ {0,} & {\text {其他}.} \end{array} \right.
+
+$$
+
+求概率 $P(X>0.5)$ .
+
+9. 设随机变量 $X$ 服从 $(1,2)$ 上的均匀分布，在 $X = x$ 的条件下，随机变量 $Y$ 的条件分布是参数为 $x$ 的指数分布，证明： $XY$ 服从参数为 1 的指数分布.
+
+10. 设二维离散随机变量 $(X, Y)$ 的联合分布列为
+
+<table><tr><td rowspan="2">X</td><td colspan="4">Y</td></tr><tr><td>0</td><td>1</td><td>2</td><td>3</td></tr><tr><td>0</td><td>0</td><td>0.01</td><td>0.01</td><td>0.01</td></tr><tr><td>1</td><td>0.01</td><td>0.02</td><td>0.03</td><td>0.02</td></tr><tr><td>2</td><td>0.03</td><td>0.04</td><td>0.05</td><td>0.04</td></tr><tr><td>3</td><td>0.05</td><td>0.05</td><td>0.05</td><td>0.06</td></tr><tr><td>4</td><td>0.07</td><td>0.06</td><td>0.05</td><td>0.06</td></tr><tr><td>5</td><td>0.09</td><td>0.08</td><td>0.06</td><td>0.05</td></tr></table>
+
+试求 $E(X|Y=2)$ 和 $E(Y|X=0)$ .
+
+11. 设随机变量 X 与 Y 相互独立, 分别服从参数为 $\lambda_{1}$ 和 $\lambda_{2}$ 的泊松分布, 试求 $E(X|X+Y=n)$ .
+
+12. 设二维连续随机变量 $(X, Y)$ 的联合密度函数为
+
+$$
+
+p \left(  x  , y  \right)   =   \left\{    \begin{array}{l l} {x   +   y  ,} & {0   <     x  , y   <     1  ,} \\ {0  ,} & {\text {其他}.} \end{array} \right.
+
+$$
+
+试求 $E(X \mid Y = 0.5)$ .
+
+13. 设二维连续随机变量 $(X, Y)$ 的联合密度函数为
+
+$$
+
+p (x, y) = \left\{ \begin{array}{l l} 2 4 (1 - x) y, & 0 <   y <   x <   1, \\ 0, & \text {其他}. \end{array} \right.
+
+$$
+
+试在 0&lt;y&lt;1 时, 求 $E(X|Y=y)$ .
+
+14. 设 $E(Y), E(h(Y))$ 存在，试证 $E(h(Y) | Y) = h(Y)$ .
+
+15. 设以下所涉及的数学期望均存在, 试证:
+
+(1) $E(g(X)Y|X) = g(X)E(Y|X)$ ;
+
+(2) $E(XY) = E(XE(Y|X))$
+
+(3) $\operatorname{Cov}(X, E(Y|X)) = \operatorname{Cov}(X, Y)$ .
+
+16. 设随机变量 $X$ 与 $Y$ 独立同分布, 都服从参数为 $\lambda$ 的指数分布. 令
+
+$$
+
+Z = \left\{ \begin{array}{l l} 3 X + 1, & X \geqslant Y, \\ 6 Y, & X <   Y. \end{array} \right.
+
+$$
+
+求 $E(Z)$
+
+17. 设随机变量 $X \sim N(\mu, 1), Y \sim N(0, 1)$ ，且 $X$ 与 $Y$ 相互独立，令
+
+$$
+
+I = \left\{ \begin{array}{l l} 1, & Y <   X, \\ 0, & X \leqslant Y. \end{array} \right.
+
+$$
+
+试证明：
+
+(1) $E(I|X = x) = \Phi (x)$ ;
+
+(2) $E(\Phi (X)) = P(Y <   X)$
+
+(3) $E(\Phi(X)) = \Phi(\mu/\sqrt{2})$ .
+
+(提示:X-Y的分布是什么?)
+
+18. 设 $X_{1}, X_{2}, \cdots$ 为独立同分布的随机变量序列，且方差存在。随机变量 $N$ 只取正整数值， $\operatorname{Var}(N)$ 存在，且 $N$ 与 $\{X_{n}\}$ 独立。证明
+
+$$
+
+\operatorname{Var} \left(\sum_ {i = 1} ^ {N} X _ {i}\right) = \operatorname{Var} (N) \left[ E (X _ {1}) \right] ^ {2} + E (N) \operatorname{Var} (X _ {1}).
+
+$$
+
+![](images/cdc0e88a14b1fd4243630f0e678ae36be2a14077658e048af3a5e5c794edf784.jpg)
+</Block>

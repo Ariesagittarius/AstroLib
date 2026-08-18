@@ -1,0 +1,289 @@
+---
+title: '6.1 点估计的概念与无偏性'
+---
+
+import Example from '@/components/Example.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Solution from '@/components/Solution.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+
+## 第6章 参数估计
+
+在上一章中,我们主要讲述了几个常用统计量的抽样分布及充分统计量.我们回想一下,引进统计量的目的在于对感兴趣的问题进行统计推断,而在实际中,我们感兴趣的问题多是与分布族中的未知参数有关的.从本章开始,我们将讨论参数的估计和检验问题.本章将介绍参数的估计问题.
+
+这里参数是指如下三类未知参数：
+
+\- 分布中所含的未知参数 $\theta$ . 如: 二点分布 $b(1, p)$ 中的概率 $p$ , 正态分布 $N(\mu, \sigma^2)$ 中的 $\mu$ 和 $\sigma^2$ .
+
+\- 分布中所含的未知参数 $\theta$ 的函数. 如: 服从正态分布 $N(\mu, \sigma^2)$ 的变量 $X$ 不超过某给定值 $a$ 的概率 $P(X \leqslant a) = \Phi\left(\frac{a - \mu}{\sigma}\right)$ 是未知参数 $\mu, \sigma$ 的函数; 单位产品的缺陷数 $X$ 通常服从泊松分布 $P(\lambda)$ , 则单位产品合格 (无缺陷) 的概率 $P(X = 0) = e^{-\lambda}$ 是未知参数 $\lambda$ 的函数.
+
+\- 分布的各种特征数也都是未知参数. 如: 均值 $E(X)$ , 方差 $\operatorname{Var}(X)$ , 分布中位数等.
+
+一般场合, 常用 $\theta$ 表示参数, 参数 $\theta$ 所有可能取值组成的集合称为参数空间, 常用 $\Theta$ 表示. 参数估计问题就是根据样本构造适当的统计量对上述各种未知参数作出估计.
+
+参数估计的形式有两种:点估计与区间估计.这里我们从点估计开始.
+
+## 6.1.1 点估计及无偏性
+
+<Knowledge title="定义 6.1.1">
+设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自总体的一个样本，用于估计未知参数 $\theta$ 的统计量 $\hat{\theta} = \hat{\theta}(x_{1}, x_{2}, \cdots, x_{n})$ 称为 $\theta$ 的估计量，或称为 $\theta$ 的点估计，简称估计.
+
+在这里如何构造统计量 $\hat{\theta}$ 并没有明确的规定, 只要它满足一定的合理性即可. 最常见的合理性要求是所谓的无偏性.
+</Knowledge>
+
+<Knowledge title="定义 6.1.2">
+设 $\hat{\theta}=\hat{\theta}(x_{1},x_{2},\cdots,x_{n})$ 是 $\theta$ 的一个估计， $\theta$ 的参数空间为 $\Theta$ ，若对任意
+
+的 $\theta \in \Theta$ ，有
+
+$$
+
+E _ {\theta} (\hat {\theta}) = \theta ,\tag{6.1.1}
+
+$$
+
+则称 $\hat{\theta}$ 是 $\theta$ 的无偏估计, 否则称为有偏估计.
+
+无偏性要求可以改写为 $E_{\theta}(\hat{\theta} - \theta) = 0$ ，这表示无偏估计没有系统偏差。当我们使用 $\hat{\theta}$ 估计 $\theta$ 时，由于样本的随机性， $\hat{\theta}$ 与 $\theta$ 总是有偏差的，这种偏差时而（对某些样本观测值）为正，时而（对另一些样本观测值）为负，时而大，时而小。无偏性表示，把这些偏差平均起来其值为 0，这就是无偏估计的含义。而若估计不具有无偏性，则无论使用多少次，其平均也会与参数真值有一定的距离，这个距离就是系统误差。
+</Knowledge>
+
+<Example title="例 6.1.1">
+对任一总体而言, 样本均值是总体均值的无偏估计. 当总体 k 阶矩存在时, 样本 k 阶原点矩 $a_{k}$ 是总体 k 阶原点矩 $\mu_{k}$ 的无偏估计. 但对 k 阶中心矩则不一样, 譬如, 样本方差 $s_{n}^{2}$ 就不是总体方差 $\sigma^{2}$ 的无偏估计, 因由定理 5.3.2 可得
+
+$$
+
+E (s _ {n} ^ {2}) = \frac {n - 1}{n} \sigma^ {2}.
+
+$$
+
+对此,有如下两点说明:
+
+（1）当样本量趋于无穷时，有 $E(s_n^2) \to \sigma^2$ ，我们称 $s_n^2$ 为 $\sigma^2$ 的渐近无偏估计，这表明当样本量较大时， $s_n^2$ 可近似看作 $\sigma^2$ 的无偏估计。
+
+(2) 若对 $s_{n}^{2}$ 作如下修正：
+
+$$
+
+s ^ {2} = \frac {n s _ {n} ^ {2}}{n - 1} = \frac {1}{n - 1} \sum_ {i = 1} ^ {n} (x _ {i} - \bar {x}) ^ {2},\tag{6.1.2}
+
+$$
+
+则 $s^2$ 是总体方差的无偏估计. 这种简单的修正方法在一些场合常被采用. (6.1.2) 式定义的 $s^2$ 也称为样本方差, 它比 $s_n^2$ 更常用. 这是因为在 $n \geqslant 2$ 时, $s_n^2 < s^2$ , 因此用 $s_n^2$ 估计 $\sigma^2$ 有偏小的倾向, 特别在小样本场合要使用 $s^2$ 估计 $\sigma^2$ .
+
+无偏性不具有不变性. 即若 $\hat{\theta}$ 是 $\theta$ 的无偏估计, 一般而言, 其函数 $g(\hat{\theta})$ 不是 $g(\theta)$ 的无偏估计, 除非 $g(\theta)$ 是 $\theta$ 的线性函数. 譬如, $s^2$ 是 $\sigma^2$ 的无偏估计, 但 $s$ 不是 $\sigma$ 的无偏估计. 下面我们以正态分布为例加以说明.
+</Example>
+
+<Example title="例 6.1.2">
+设总体为 $N(\mu, \sigma^{2})$ , $x_{1}, x_{2}, \cdots, x_{n}$ 是样本, 我们已经指出 $s^{2}$ 是 $\sigma^{2}$ 的无偏估计. 下面来考察 s 是否是 $\sigma$ 的无偏估计. 由定理 5.4.1 知, $Y = \frac{(n-1)s^{2}}{\sigma^{2}} \sim \chi^{2}(n-1)$ , 其密度函数为
+
+$$
+
+p (y) = \frac {1}{2 ^ {\frac {n - 1}{2}} \Gamma \left(\frac {n - 1}{2}\right)} y ^ {\frac {n - 1}{2} - 1} e ^ {- \frac {y}{2}}, \quad y > 0.
+
+$$
+
+从而
+
+$$
+
+E (Y ^ {1 / 2}) = \int_ {0} ^ {\infty} y ^ {1 / 2} p (y) \mathrm{d} y = \frac {1}{2 ^ {\frac {n - 1}{2}} \Gamma \left(\frac {n - 1}{2}\right)} \int_ {0} ^ {\infty} y ^ {\frac {n}{2} - 1} \mathrm{e} ^ {- \frac {y}{2}} \mathrm{d} y
+
+$$
+
+$$
+
+= \frac {2 ^ {\frac {n}{2}} \Gamma \left(\frac {n}{2}\right)}{2 ^ {\frac {n - 1}{2}} \Gamma \left(\frac {n - 1}{2}\right)} = \sqrt {2} \frac {\Gamma \left(\frac {n}{2}\right)}{\Gamma \left(\frac {n - 1}{2}\right)}.
+
+$$
+
+由此,我们有
+
+$$
+
+E (s) = \frac {\sigma}{\sqrt {n - 1}} E (Y ^ {1 / 2}) = \sqrt {\frac {2}{n - 1}} \cdot \frac {\Gamma (n / 2)}{\Gamma ((n - 1) / 2)} \cdot \sigma \equiv \frac {\sigma}{c _ {n}}.
+
+$$
+
+这说明 $s$ 不是 $\sigma$ 的无偏估计，利用修正技术可得 $c_{n} \cdot s$ 是 $\sigma$ 的无偏估计，其中 $c_{n} = \sqrt{\frac{n - 1}{2}} \cdot \frac{\Gamma((n - 1) / 2)}{\Gamma(n / 2)}$ 是修偏系数，表6.1.1给出了 $c_{n}$ 的部分取值。可以证明，当 $n \to \infty$ 时有 $c_{n} \to 1$ ，这说明 $s$ 是 $\sigma$ 的渐近无偏估计，从而在样本容量较大时，不经修正的 $s$ 也是 $\sigma$ 的一个很好的估计。
+
+表 6.1.1 正态标准差的修偏系数表
+
+<table><tr><td> $n$ </td><td> $c_n$ </td><td> $n$ </td><td> $c_n$ </td><td> $n$ </td><td> $c_n$ </td><td> $n$ </td><td> $c_n$ </td><td> $n$ </td><td> $c_n$ </td></tr><tr><td></td><td></td><td>7</td><td>1.042 4</td><td>13</td><td>1.021 0</td><td>19</td><td>1.014 0</td><td>25</td><td>1.010 5</td></tr><tr><td>2</td><td>1.253 3</td><td>8</td><td>1.036 2</td><td>14</td><td>1.019 4</td><td>20</td><td>1.013 2</td><td>26</td><td>1.010 0</td></tr><tr><td>3</td><td>1.128 4</td><td>9</td><td>1.031 7</td><td>15</td><td>1.018 0</td><td>21</td><td>1.012 6</td><td>27</td><td>1.009 7</td></tr><tr><td>4</td><td>1.085 4</td><td>10</td><td>1.028 1</td><td>16</td><td>1.016 8</td><td>22</td><td>1.012 0</td><td>28</td><td>1.009 3</td></tr><tr><td>5</td><td>1.063 8</td><td>11</td><td>1.025 3</td><td>17</td><td>1.015 7</td><td>23</td><td>1.011 4</td><td>29</td><td>1.009 0</td></tr><tr><td>6</td><td>1.050 9</td><td>12</td><td>1.023 0</td><td>18</td><td>1.014 8</td><td>24</td><td>1.010 9</td><td>30</td><td>1.008 7</td></tr></table>
+
+大偏差通常被视为估计的一种不足,有人提出了多种缩小偏差的方法.下面的刀切法就是由 Quenouille 于 1949 年和 1956 年提出的,而正式命名则由图基(Tukey)于 1958 年给出.
+</Example>
+
+<Example title="例 6.1.3">
+(刀切法, jackknife) 设 $T(x)$ 是基于样本 $x = (x_{1}, x_{2}, \cdots, x_{n})$ 的关于参数 $g(\theta)$ 的估计量，且满足 $E_{\theta}(T(x)) = g(\theta) + O\left(\frac{1}{n}\right)$ . 如以 $x_{(-i)}$ 表示从样本中删去 $x_{i}$ 后的向量，则 $T(x)$ 的刀切统计量定义为
+
+$$
+
+T _ {J} (\textbf {x}) = n T (\textbf {x}) - \frac {n - 1}{n} \sum_ {i = 1} ^ {n} T (\textbf {x} _ {(- i)}).\tag{6.1.3}
+
+$$
+
+可以证明:由(6.1.3)式定义的刀切统计量具有如下性质:
+
+$$
+
+E _ {\theta} (T _ {J} (\boldsymbol {x})) = g (\theta) + O \left(\frac {1}{n ^ {2}}\right),
+
+$$
+
+并且其方差不会增大.
+
+譬如,设总体为 $b(1,\theta)$ , $x_{1}$ , $x_{2}$ , $\cdots$ , $x_{n}$ 是其样本, 又设 $g(\theta)=\theta^{2}$ , 则 $T(x)=\bar{x}^{2}$ 是 $g(\theta)$ 的一个估计, 且
+
+$$
+
+E (T (\boldsymbol {x})) = \theta^ {2} + \frac {\theta (1 - \theta)}{n} = g (\theta) + O \left(\frac {1}{n}\right).
+
+$$
+
+下面应用刀切法,注意到
+
+$$
+
+T (\textbf {x} _ {(- i)}) = \left(\frac {\sum_ {j = 1} ^ {n} x _ {j} - x _ {i}}{n - 1}\right) ^ {2} = \frac {n ^ {2} \overline {{{x}}} ^ {2} + x _ {i} ^ {2} - 2 n x _ {i} \overline {{{x}}}}{(n - 1) ^ {2}},
+
+$$
+
+于是
+
+$$
+
+T _ {J} (\boldsymbol {x}) = n \overline {{x}} ^ {2} - \frac {n - 1}{n} \sum_ {i = 1} ^ {n} \frac {n ^ {2} \overline {{x}} ^ {2} + x _ {i} ^ {2} - 2 n x _ {i} \overline {{x}}}{(n - 1) ^ {2}} = \frac {n \overline {{x}} ^ {2}}{n - 1} - \frac {\sum_ {i = 1} ^ {n} x _ {i} ^ {2}}{n (n - 1)}.
+
+$$
+
+可以验证 $ET_{j}(\pmb{x}) = g(\theta)$ . 关于刀切法的详细介绍, 有兴趣的读者可参考 Efron 的专著 [20].
+
+并不是所有的参数都存在无偏估计, 当参数存在无偏估计时, 我们称该参数是可估的, 否则称它是不可估的. 下面是一个参数不可估的例子.
+</Example>
+
+<Example title="例 6.1.4">
+设总体为二点分布 $b(1,p)$ , $0<p<1, x_{1}, x_{2}, \cdots, x_{n}$ 是样本, 我们说明参数 $\theta=1/p$ 是不可估的.
+
+首先, $T=x_{1}+x_{2}+\cdots+x_{n}$ 是充分统计量, $T\sim b(n,p)$ .若有一个 $\hat{\theta}=\hat{\theta}(t)$ 是 $\theta$ 的无偏估计,则有
+
+$$
+
+E _ {\theta} (\hat {\theta}) = \sum_ {i = 1} ^ {n} \binom {n} {i} \hat {\theta} (i) p ^ {i} (1 - p) ^ {n - i} = \frac {1}{p}
+
+$$
+
+或
+
+$$
+
+\sum_ {i = 1} ^ {n} \binom {n} {i} \hat {\theta} (i) p ^ {i + 1} (1 - p) ^ {n - i} - 1 = 0, \quad 0 <   p <   1.
+
+$$
+
+这是 $p$ 的 $n + 1$ 次方程, 最多有 $n + 1$ 个实根, 要使它对 $(0,1)$ 中所有的 $p$ 都成立是不可能的, 故参数 $\theta = 1 / p$ 是不可估的.
+
+其次, 若有某个 $h(x_{1}, x_{2}, \cdots, x_{n})$ 是 $\theta$ 的无偏估计, 则令 $\widetilde{\theta} = E(h(x_{1}, x_{2}, \cdots, x_{n}) / T)$ , 由重期望公式知 $E_{p}(\widetilde{\theta}) = E_{p}(E(h(x_{1}, x_{2}, \cdots, x_{n}) / T)) = E_{p}(h(x_{1}, x_{2}, \cdots, x_{n})) = \theta$ , 这说明 $\widetilde{\theta}(T)$ 是 $\theta$ 的无偏估计, 由前述, 这是不可能的.
+</Example>
+
+## 6.1.2 有效性
+
+当参数可估时,其无偏估计可以有很多,如何在无偏估计中进行选择?直观的想法是希望该估计围绕参数真值的波动越小越好,波动大小可以用方差来衡量,因此人们常用无偏估计的方差的大小作为度量无偏估计优劣的标准,这就是有效性.
+
+<Knowledge title="定义 6.1.3">
+设 $\hat{\theta}_{1}, \hat{\theta}_{2}$ 是 $\theta$ 的两个无偏估计, 如果对任意的 $\theta \in \Theta$ 有
+
+$$
+
+\operatorname{Var} (\hat {\theta} _ {1}) \leqslant \operatorname{Var} (\hat {\theta} _ {2}),
+
+$$
+
+且至少有一个 $\theta \in \Theta$ 使得上述不等号严格成立，则称 $\hat{\theta}_1$ 比 $\hat{\theta}_2$ 有效.
+</Knowledge>
+
+<Example title="例 6.1.5">
+设 $x_{1}, x_{2}, \cdots, x_{n}$ 是取自某总体的样本，记总体均值为 $\mu$ ，总体方差为 $\sigma^{2}$
+
+则 $\hat{\mu}_1 = x_1, \hat{\mu}_2 = \overline{x}$ 都是 $\pmb{\mu}$ 的无偏估计，但
+
+$$
+
+\operatorname{Var} (\hat {\mu} _ {1}) = \sigma^ {2}, \quad \operatorname{Var} (\hat {\mu} _ {2}) = \sigma^ {2} / n.
+
+$$
+
+显然, 只要 $n > 1, \hat{\mu}_{2}$ 比 $\hat{\mu}_{1}$ 有效. 这表明, 用全部数据的平均估计总体均值要比只使用部分数据更有效.
+</Example>
+
+<Example title="例 6.1.6">
+设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自均匀总体 $U(0, \theta)$ 的样本，人们常用最大观测值 $x_{(n)}$ 来估计 $\theta$ （参见例 6.3.5），由于 $E(x_{(n)}) = \frac{n}{n+1}\theta$ ，所以 $x_{(n)}$ 不是 $\theta$ 的无偏估计，但它是 $\theta$ 的渐近无偏估计。经过修偏后可以得到 $\theta$ 的一个无偏估计 $\hat{\theta}_{1} = \frac{n+1}{n}x_{(n)}$ 。且
+
+$$
+
+\operatorname{Var} (\hat {\theta} _ {1}) = \left(\frac {n + 1}{n}\right) ^ {2} \operatorname{Var} (x _ {(n)}) = \left(\frac {n + 1}{n}\right) ^ {2} \frac {n}{(n + 1) ^ {2} (n + 2)} \theta^ {2} = \frac {\theta^ {2}}{n (n + 2)}.
+
+$$
+
+另一方面,由于总体均值为 $\theta/2$ , 人们也可以使用样本均值估计总体均值(见 6.2 节),于是可得到 $\theta$ 的另一个无偏估计 $\hat{\theta}_{2}=2\bar{x}$ ,且
+
+$$
+
+\operatorname{Var} (\hat {\theta} _ {2}) = 4 \operatorname{Var} (\overline {{{x}}}) = \frac {4}{n} \operatorname{Var} (X) = \frac {4}{n} \cdot \frac {\theta^ {2}}{1 2} = \frac {\theta^ {2}}{3 n},
+
+$$
+
+两项比较知道, 当 n>1 时, $\hat{\theta}_{1}$ 比 $\hat{\theta}_{2}$ 有效.
+</Example>
+
+<Block title="习题6.1">
+1. 设 $x_{1}, x_{2}, x_{3}$ 是取自某总体容量为 3 的样本, 试证下列统计量都是该总体均值 $\mu$ 的无偏估计, 在方差存在时指出哪一个估计的有效性最差.
+
+(1) $\hat{\mu}_{1} = \frac{1}{2} x_{1} + \frac{1}{3} x_{2} + \frac{1}{6} x_{3}$ ;
+
+(2) $\hat{\mu}_2 = \frac{1}{3} x_1 + \frac{1}{3} x_2 + \frac{1}{3} x_3$ ;
+
+(3) $\hat{\mu}_{3} = \frac{1}{6} x_{1} + \frac{1}{6} x_{2} + \frac{2}{3} x_{3}$ .
+
+2. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自 $Exp(\lambda)$ 的样本，已知 $\bar{x}$ 为 $1/\lambda$ 的无偏估计，试说明 $1/\bar{x}$ 是否为 $\lambda$ 的无偏估计.
+
+3. 设 $\hat{\theta}$ 是参数 $\theta$ 的无偏估计, 且有 $\operatorname{Var}(\hat{\theta}) > 0$ , 试证 $(\hat{\theta})^2$ 不是 $\theta^2$ 的无偏估计.
+
+4. 设总体 $X \sim N(\mu, \sigma^2), x_1, x_2, \dots, x_n$ 是来自该总体的一个样本. 试确定常数 $c$ 使 $c \sum_{i=1}^{n-1} (x_{i+1} - x_i)^2$ 为 $\sigma^2$ 的无偏估计.
+
+5. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自下列总体的简单样本，
+
+$$
+
+p \left(x, \theta\right) = \left\{ \begin{array}{l l} 1, \theta - \frac {1}{2} \leqslant x \leqslant \theta + \frac {1}{2}, & - \infty <   \theta <   \infty , \\ 0, \text {其他}, \end{array} \right.
+
+$$
+
+证明样本均值 $\overline{x}$ 及 $\frac{1}{2} (x_{(1)} + x_{(n)})$ 都是 $\theta$ 的无偏估计，问何者更有效？
+
+6. 设 $x_{1}, x_{2}, x_{3}$ 服从均匀分布 $U(0, \theta)$ ，试证 $\frac{4}{3} x_{(3)}$ 及 $4x_{(1)}$ 都是 $\theta$ 的无偏估计，哪个更有效？
+
+7. 设从均值为 $\mu$ ，方差为 $\sigma^2 > 0$ 的总体中分别抽取容量为 $n_1$ 和 $n_2$ 的两独立样本， $\overline{x}_1$ 和 $\overline{x}_2$ 分别是这两个样本的均值。试证，对于任意常数 $a, b (a + b = 1)$ ， $Y = a\overline{x}_1 + b\overline{x}_2$ 都是 $\mu$ 的无偏估计，并确定常数 $a, b$ 使 $\operatorname{Var}(Y)$ 达到最小。
+
+8. 设总体 X 的均值为 $\mu$ ，方差为 $\sigma^{2}, x_{1}, x_{2}, \cdots, x_{n}$ 是来自该总体的一个样本， $T(x_{1}, x_{2}, \cdots, x_{n})$ 为 $\mu$ 的任一线性无偏估计量。证明： $\bar{x}$ 与 T 的相关系数为 $\sqrt{\operatorname{Var}(\bar{x}) / \operatorname{Var}(T)}$ 。
+
+9. 设有 k 台仪器, 已知用第 i 台仪器测量的标准差为 $\sigma_{i}(i=1,2,\cdots,k)$ . 用这些仪器独立地对某一物理量 $\theta$ 各观察一次, 分别得到 $x_{1}, x_{2}, \cdots, x_{k}$ , 设仪器都没有系统偏差. 问 $a_{1}, a_{2}, \cdots, a_{k}$ 应取何值, 方能使 $\hat{\theta} = \sum_{i=1}^{k} a_{i} x_{i}$ 成为 $\theta$ 的无偏估计, 且方差达到最小?
+
+10. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自 $N(\theta, 1)$ 的样本，证明 $g(\theta) = |\theta|$ 没有无偏估计（提示：利用 $g(\theta)$ 在 $\theta = 0$ 处不可导）.
+
+11. 设总体 X 服从正态分布 $N(\mu, \sigma^{2})$ , $x_{1}, x_{2}, \cdots, x_{n}$ 为来自总体 X 的样本, 为了得到标准差 $\sigma$ 的估计量, 考虑统计量:
+
+$$
+
+y _ {1} = \frac {1}{n} \sum_ {i = 1} ^ {n} | x _ {i} - \bar {x} |, \bar {x} = \frac {1}{n} \sum_ {i = 1} ^ {n} x _ {i}, n \geqslant 2,
+
+$$
+
+$$
+
+y _ {2} = \frac {1}{n (n - 1)} \sum_ {i = 1} ^ {n} \sum_ {j = 1} ^ {n} | x _ {i} - x _ {j} |, n \geqslant 2,
+
+$$
+
+求常数 $C_1$ 与 $C_2$ , 使得 $C_1y_1$ 与 $C_2y_2$ 都是 $\sigma$ 的无偏估计.
+</Block>

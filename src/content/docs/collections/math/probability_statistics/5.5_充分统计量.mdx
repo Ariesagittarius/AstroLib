@@ -1,0 +1,373 @@
+---
+title: '5.5 充分统计量'
+---
+
+import Example from '@/components/Example.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Solution from '@/components/Solution.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+
+## 5.5.1 充分性的概念
+
+构造统计量就是对样本进行加工,去粗取精,简化样本,便于统计推断.但在加工过程中是否会丢失样本中关于感兴趣问题的信息？如果某个统计量包含了样本中关于感兴趣问题的所有信息，则这个统计量对将来的统计推断会非常有用，这就是充分统计量的直观含义，它是费希尔于1922年正式提出的，而其思想则源于他与天文学家埃丁顿（Eddington）的有关估计标准差的争论中。设 $x_{1},x_{2},\cdots,x_{n}$ 为来自 $N(\mu,\sigma^{2})$ 的独立同分布样本，现要估计 $\sigma$ 。费希尔主张用样本标准差s，而埃丁顿则主张用如下的平均绝对偏差
+
+$$
+
+d = \sqrt {\frac {\pi}{2}} \frac {1}{n} \sum_ {i = 1} ^ {n} | x _ {i} - \bar {x} |.\tag{5.5.1}
+
+$$
+
+费希尔认为“在 s 中包含了样本中有关 $\sigma$ 的全部信息, 而 d 则否”, 换句话说, s 是充分统计量, 而 d 不是, 故应选用 s.
+
+在给出充分统计量的严格定义之前,我们先看一个例子.
+
+<Example title="例 5.5.1">
+为研究某个运动员的打靶命中率 $\theta$ ，我们对该运动员进行测试，观测其 10 次打靶结果，发现除第 3、6 次未命中外，其余 8 次都命中。这样的观测结果包含了两种信息：
+
+(1) 打靶 10 次命中 8 次；
+
+(2) 2 次不命中分别出现在第 3 次和第 6 次打靶上.
+
+第二种信息(序号)对了解该运动员的命中率是没有什么帮助的:设想我们对该运动员的观测结果是第1、2次未命中,其余都命中,虽然样本观测值是不一样的,但它们提供的关于命中率 $\theta$ 的信息是一样的.因此,在大多数实际问题中,试验编号信息常常对了解总体或其参数是无关紧要的.
+
+一般地,设我们对该运动员进行 n 次观测,得到 $x_{1}, x_{2}, \cdots, x_{n}$ , 每个 $x_{i}$ 取值非 0 即 1, 命中为 1, 不命中为 0, 令 $T = x_{1} + x_{2} + \cdots + x_{n}$ , T 为观测到的命中次数, 在这种场合仅仅记录、使用 T 不会丢失任何与命中率 $\theta$ 有关的信息, 统计上将这种“样本加工不损失信息”称为“充分性”.
+
+上面我们直观地给出了关于“充分性”的叙述,接下来我们从概率层面对之进行分析.我们知道,样本 $X=(x_{1},x_{2},\cdots,x_{n})$ 有一个样本联合分布 $F_{\theta}(X)$ , 这个分布包含了样本中一切有关 $\theta$ 的信息.统计量 $T=T(x_{1},x_{2},\cdots,x_{n})$ 也有一个抽样分布 $F_{\theta}^{T}(t)$ , 当我们期望用统计量 T 代替原始样本 X 并且不损失任何有关 $\theta$ 的信息时,也就是期望抽样分布 $F_{\theta}^{T}(t)$ 像 $F_{\theta}(X)$ 一样概括了有关 $\theta$ 的一切信息.换言之,我们考察在统计量 T 的取值为 t 的情况下样本 X 的条件分布 $F_{\theta}(X|T=t)$ , 可能有两种情况:
+
+\- $F_{\theta}(X \mid T = t)$ 依赖于参数 $\theta$ ，此条件分布仍含有 $\theta$ 的信息.
+
+\- $F_{\theta}(X \mid T = t)$ 不依赖于参数 $\theta$ ，此条件分布已不含 $\theta$ 的信息.
+
+后者表明,条件“T=t”的出现使得从样本联合分布 $F_{\theta}(X)$ 到条件分布 $F_{\theta}(X|T=t)$ ,有关 $\theta$ 的信息消失了,这说明有关 $\theta$ 的信息都含在统计量T之中.当已知统计量T的取值之后,也就知道了样本中关于 $\theta$ 的所有信息,这正是统计量具有充分性的含义.
+</Example>
+
+<Example title="例 5.5.2">
+设总体为二点分布 $b(1,\theta)$ , $X_{1}$ , $X_{2}$ , $\cdots$ , $X_{n}$ 为样本, 令 $T=X_{1}+X_{2}+\cdots+X_{n}$ , 则在给定 T 的取值后, 对任意的一组 $x_{1}, x_{2}, \cdots, x_{n} \left( \sum_{i=1}^{n} x_{i} = t \right)$ , 有
+
+$$
+
+\begin{array}{l} P \left(X _ {1} = x _ {1}, X _ {2} = x _ {2}, \dots , X _ {n} = x _ {n} \mid T = t\right) \\ = \frac {P \left(X _ {1} = x _ {1} , X _ {2} = x _ {2} , \cdots , X _ {n - 1} = x _ {n - 1} , X _ {n} = t - \sum_ {i = 1} ^ {n - 1} x _ {i}\right)}{P \left(\sum_ {i = 1} ^ {n} X _ {i} = t\right)} \\ = \frac {\prod_ {i = 1} ^ {n - 1} P \left(X _ {i} = x _ {i}\right) \cdot P \left(X _ {n} = t - \sum_ {i = 1} ^ {n - 1} x _ {i}\right)}{\binom {n} {t} \theta^ {t} (1 - \theta) ^ {n - t}} \\ = \frac {\prod_ {i = 1} ^ {n - 1} \theta^ {x _ {i}} (1 - \theta) ^ {1 - x _ {i}} \cdot \theta^ {t - \sum_ {i = 1} ^ {n - 1} x _ {i}} (1 - \theta) ^ {1 - t + \sum_ {i = 1} ^ {n - 1} x _ {i}}}{\binom {n} {t} \theta^ {t} (1 - \theta) ^ {n - t}} \\ = \frac {\theta^ {t} (1 - \theta) ^ {n - t}}{\binom {n} {t} \theta^ {t} (1 - \theta) ^ {n - t}} = \frac {1}{\binom {n} {t}}, \end{array}
+
+$$
+
+该条件分布与 $\theta$ 无关. 若令 $S = X_{1} + X_{2} (n > 2)$ ，由于 S 只是用了前面两个样本观测值，显然没有包含样本中所有关于 $\theta$ 的信息，在给定 S 的取值 S = s 后，对任意的一组 $x_{1}, x_{2}, \cdots, x_{n} (x_{1} + x_{2} = s)$ ，有
+
+$$
+
+\begin{array}{r l} & P (X _ {1} = x _ {1}, X _ {2} = x _ {2}, \dots , X _ {n} = x _ {n} \mid S = s) \\ & = \frac {P (X _ {1} = x _ {1} , X _ {2} = s - x _ {1} , X _ {3} = x _ {3} , \cdots , X _ {n} = x _ {n})}{P (X _ {1} + X _ {2} = s)} \\ & = \frac {\theta^ {s + \sum_ {i = 3} ^ {n} x _ {i}} (1 - \theta) ^ {n - s - \sum_ {i = 3} ^ {n} x _ {i}}}{\binom {2} {s} \theta^ {s} (1 - \theta) ^ {2 - s}} = \frac {\theta^ {\sum_ {i = 3} ^ {n} x _ {i}} (1 - \theta) ^ {n - 2 - \sum_ {i = 3} ^ {n} x _ {i}}}{\binom {2} {s}}, \end{array}
+
+$$
+
+这个分布依赖于未知参数 $\theta$ ，这说明样本中有关 $\theta$ 的信息没有完全包含在统计量 S 中.
+
+从上例可以直观地看出,用条件分布与未知参数无关来表示统计量不损失样本中有价值的信息是妥当的.由此可给出充分统计量的定义.
+</Example>
+
+<Knowledge title="定义 5.5.1">
+设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自某个总体的样本，总体分布函数为 $F(x; \theta)$ ，统计量 $T = T(x_{1}, x_{2}, \cdots, x_{n})$ 称为 $\theta$ 的充分统计量，如果在给定 T 的取值后， $x_{1}, x_{2}, \cdots, x_{n}$ 的条件分布与 $\theta$ 无关.
+</Knowledge>
+
+<Knowledge title="定义 5.5.1">
+中的未知参数 $\theta$ 可以是一维的, 也可以是多维的. 应用中条件分布可用条件分布列或条件密度函数来表示.
+</Knowledge>
+
+<Example title="例 5.5.3">
+设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自 $N(\mu, 1)$ 的样本， $T = \bar{x}$ ，则 $T \sim N(\mu, 1/n)$ ，作变换
+
+$$
+
+x _ {1} = x _ {1}, \quad x _ {2} = x _ {2}, \quad \dots , \quad x _ {n - 1} = x _ {n - 1}, \quad t = \overline {{{{x}}}}.
+
+$$
+
+其雅可比行列式为 n，故 $x_{1}, x_{2}, \cdots, x_{n-1}, t$ 的联合密度函数为
+
+$$
+
+p \left(x _ {1}, x _ {2}, \dots , x _ {n - 1}, t; \mu\right) = n (2 \pi) ^ {- n / 2} \exp \left\{- \frac {1}{2} \left[ \sum_ {i = 1} ^ {n - 1} \left(x _ {i} - \mu\right) ^ {2} + \left(n t - \sum_ {i = 1} ^ {n - 1} x _ {i} - \mu\right) ^ {2} \right] \right\}
+
+$$
+
+$$
+
+\begin{array}{l} = n (2 \pi) ^ {- n / 2} \exp \left\{- \frac {1}{2} \left[ \sum_ {i = 1} ^ {n - 1} x _ {i} ^ {2} + n \mu^ {2} + (n t) ^ {2} + \left(\sum_ {i = 1} ^ {n - 1} x _ {i}\right) ^ {2} - 2 n t \mu - 2 n t \sum_ {i = 1} ^ {n - 1} x _ {i} \right] \right\} \\ = n (2 \pi) ^ {- n / 2} \exp \left\{- \frac {1}{2} \left[ n (t - \mu) ^ {2} + \sum_ {i = 1} ^ {n - 1} x _ {i} ^ {2} + \left(\sum_ {i = 1} ^ {n - 1} x _ {i} - n t\right) ^ {2} - n t ^ {2} \right] \right\}, \end{array}
+
+$$
+
+从而条件密度函数 $p_{\mu}(x_{1}, x_{2}, \cdots, x_{n-1} \mid T = t)$ 为
+
+$$
+
+\begin{array}{r l} & p _ {\mu} (x _ {1}, x _ {2}, \dots , x _ {n - 1} \mid T = t) = \frac {p _ {\mu} (x _ {1} , x _ {2} , \cdots , x _ {n - 1} , t)}{p _ {\mu} (t)} \\ & = \frac {n (2 \pi) ^ {- n / 2} \exp \left\{- \frac {1}{2} \left[ n (t - \mu) ^ {2} + \sum_ {i = 1} ^ {n - 1} x _ {i} ^ {2} + \left(\sum_ {i = 1} ^ {n - 1} x _ {i} - n t\right) ^ {2} - n t ^ {2} \right] \right\}}{(2 \pi / n) ^ {- 1 / 2} \exp \left\{- \frac {n}{2} (t - \mu) ^ {2} \right\}} \\ & = \sqrt {n} (2 \pi) ^ {- (n - 1) / 2} \exp \left\{- \frac {1}{2} \left[ \sum_ {i = 1} ^ {n - 1} x _ {i} ^ {2} + \left(\sum_ {i = 1} ^ {n - 1} x _ {i} - n t\right) ^ {2} - n t ^ {2} \right] \right\}, \end{array}
+
+$$
+
+该分布与 $\mu$ 无关, 这说明 $\bar{x}$ 是 $\mu$ 的充分统计量.
+</Example>
+
+## 5.5.2 因子分解定理
+
+在统计学中有一个基本原则: 在充分统计量存在的场合, 任何统计推断都可以基于充分统计量进行, 这可以简化统计推断的程序, 通常将该原则称为充分性原则. 然而在一般场合直接由定义 5.5.1 出发验证一个统计量是充分的是困难的, 因为条件分布的计算通常不那么容易. 幸运的是, 我们有一个简单的办法判断一个统计量是否充分, 这就是下面的因子分解定理, 它由统计学家奈曼 (Neyman) 给出. 为简便起见, 我们引入一个在两种分布类型通用的概念——概率函数. $f(x)$ 称为随机变量 $X$ 的概率函数: 在连续场合, $f(x)$ 表示 $X$ 的概率密度函数; 在离散场合, $f(x)$ 表示 $X$ 的概率分布列.
+
+<Knowledge title="定理 5.5.1">
+设总体概率函数为 $f(x;\theta)$ , $x_{1}$ , $x_{2}$ , $\cdots$ , $x_{n}$ 为样本，则 $T = T(x_{1}, x_{2}, \cdots, x_{n})$ (T 可以是一维的，也可以是多维的) 为充分统计量的充分必要条件是：存在两个函数 $g(t, \theta)$ 和 $h(x_{1}, x_{2}, \cdots, x_{n})$ 使得对任意的 $\theta$ 和任一组观测值 $x_{1}, x_{2}, \cdots, x_{n}$ ，有
+
+$$
+
+f \left(x _ {1}, x _ {2}, \dots , x _ {n}; \theta\right) = g \left(T \left(x _ {1}, x _ {2}, \dots , x _ {n}\right), \theta\right) h \left(x _ {1}, x _ {2}, \dots , x _ {n}\right),\tag{5.5.2}
+
+$$
+
+其中 $g(t,\theta)$ 是通过统计量 T 的取值而依赖于样本的.
+
+<Solution title="证明">
+一般性结果的证明超出本课程范围,此处我们将给出离散随机变量下的证明,此时, $f(x_{1},x_{2},\cdots,x_{n};\theta)=P(X_{1}=x_{1},X_{2}=x_{2},\cdots,X_{n}=x_{n};\theta)$ .
+
+先证必要性.设 T 是充分统计量,则在 T=t 下, $P(X_{1}=x_{1},X_{2}=x_{2},\cdots,X_{n}=x_{n}\mid T=t)$ 与 $\theta$ 无关,记为 $h(x_{1},x_{2},\cdots,x_{n})$ 或 $h(X)$ ,令 $A(t)=\{X\mid T(X)=t\}$ ,当 $X\in A(t)$ 时有
+
+$$
+
+\{T = t \} \supset \left\{X _ {1} = x _ {1}, X _ {2} = x _ {2}, \dots , X _ {n} = x _ {n} \right\},
+
+$$
+
+故
+
+$$
+
+\begin{array}{r l} P (X _ {1} = x _ {1}, X _ {2} = x _ {2}, \dots , X _ {n} = x _ {n}; \theta) & = P (X _ {1} = x _ {1}, X _ {2} = x _ {2}, \dots , X _ {n} = x _ {n}, T = t; \theta) \\ & = P (X _ {1} = x _ {1}, X _ {2} = x _ {2}, \dots , X _ {n} = x _ {n} | T = t) P (T = t; \theta) \\ & = h (x _ {1}, x _ {2}, \dots , x _ {n}) g (t, \theta), \end{array}
+
+$$
+
+其中 $g(t,\theta)=P(T=t;\theta)$ ，而 $h(X)=P(X_{1}=x_{1},X_{2}=x_{2},\cdots,X_{n}=x_{n}\mid T=t)$ 与 $\theta$ 无关，必要性得证.
+
+对充分性,由于
+
+$$
+
+\begin{array}{r l} P (T = t; \theta) & = \sum_ {\{(x _ {1}, x _ {2}, \dots , x _ {n}): T (x _ {1}, x _ {2}, \dots , x _ {n}) = t \}} P (X _ {1} = x _ {1}, X _ {2} = x _ {2}, \dots , X _ {n} = x _ {n}; \theta) \\ & = \sum_ {\{(x _ {1}, x _ {2}, \dots , x _ {n}): T (x _ {1}, x _ {2}, \dots , x _ {n}) = t \}} g (t, \theta) h (x _ {1}, x _ {2}, \dots , x _ {n}), \end{array}
+
+$$
+
+对任给 $X=(x_{1},x_{2},\cdots,x_{n})$ 和 t，满足 $X\in A(t)$ ，有
+
+$$
+
+\begin{array}{r l} & P (X _ {1} = x _ {1}, X _ {2} = x _ {2}, \dots , X _ {n} = x _ {n} \mid T = t) \\ & = \frac {P (X _ {1} = x _ {1} , X _ {2} = x _ {2} , \cdots , X _ {n} = x _ {n} , T = t ; \theta)}{P (T = t ; \theta)} \\ & = \frac {P (X _ {1} = x _ {1} , X _ {2} = x _ {2} , \cdots , X _ {n} = x _ {n} ; \theta)}{P (T = t ; \theta)} \\ & = \frac {g (t , \theta) h (x _ {1} , x _ {2} , \cdots , x _ {n})}{g (t , \theta) \sum_ {\{(y _ {1} , y _ {2} , \cdots , y _ {n}): T (y _ {1} , y _ {2} , \cdots , y _ {n}) = t \}} h (y _ {1} , y _ {2} , \cdots , y _ {n})} \\ & = \frac {h (x _ {1} , x _ {2} , \cdots , x _ {n})}{\sum_ {\{(y _ {1} , y _ {2} , \cdots , y _ {n}): T (y _ {1} , y _ {2} , \cdots , y _ {n}) = t \}} h (y _ {1} , y _ {2} , \cdots , y _ {n})}, \end{array}
+
+$$
+
+该分布与 $\theta$ 无关, 这证明了充分性.
+</Solution>
+</Knowledge>
+
+<Example title="例 5.5.4">
+设 $x_{1}, x_{2}, \cdots, x_{n}$ 是取自总体 $U(0, \theta)$ 的样本，即总体的密度函数为
+
+$$
+
+p (x; \theta) = \left\{ \begin{array}{l l} 1 / \theta , & 0 <   x <   \theta , \\ 0, & \text {其他}. \end{array} \right.
+
+$$
+
+于是样本的联合密度函数为
+
+$$
+
+p (x _ {1}; \theta) p (x _ {2}; \theta) \dots p (x _ {n}; \theta) = \left\{ \begin{array}{l l} (1 / \theta) ^ {n}, & 0 <   \min \{x _ {i} \} \leqslant \max \{x _ {i} \} <   \theta , \\ 0, & \text {其他}. \end{array} \right.
+
+$$
+
+由于诸 $x_{i} > 0$ ，所以我们可将上式改写为
+
+$$
+
+p \left(x _ {1}; \theta\right) p \left(x _ {2}; \theta\right) \dots p \left(x _ {n}; \theta\right) = (1 / \theta) ^ {n} I _ {\{x _ {(n)} <   \theta \}},
+
+$$
+
+取 $T = x_{(n)}$ ，并令 $g(t, \theta) = (1 / \theta)^n I_{\{t < \theta\}}$ ， $h(X) = 1$ ，由因子分解定理知 $T = x_{(n)}$ 是 $\theta$ 的充分统计量.
+</Example>
+
+<Example title="例 5.5.5">
+设 $x_{1}, x_{2}, \cdots, x_{n}$ 是取自总体 $N(\mu, \sigma^{2})$ 的样本， $\theta = (\mu, \sigma^{2})$ 是未知的，则联合密度函数为
+
+$$
+
+\begin{array}{r l} p (x _ {1}, x _ {2}, \dots , x _ {n}; \theta) & = (2 \pi \sigma^ {2}) ^ {- n / 2} \exp \left\{- \frac {1}{2 \sigma^ {2}} \sum_ {i = 1} ^ {n} (x _ {i} - \mu) ^ {2} \right\} \\ & = (2 \pi \sigma^ {2}) ^ {- n / 2} \exp \left\{- \frac {n \mu^ {2}}{2 \sigma^ {2}} \right\} \exp \left\{- \frac {1}{2 \sigma^ {2}} \left(\sum_ {i = 1} ^ {n} x _ {i} ^ {2} - 2 \mu \sum_ {i = 1} ^ {n} x _ {i}\right) \right\}, \end{array}
+
+$$
+
+取 $t_1 = \sum_{i=1}^{n} x_i, t_2 = \sum_{i=1}^{n} x_i^2$ , 并令
+
+$$
+
+g \left(t _ {1}, t _ {2}, \theta\right) = \left(2 \pi \sigma^ {2}\right) ^ {- n / 2} \exp \left\{- \frac {n \mu^ {2}}{2 \sigma^ {2}} \right\} \exp \left\{- \frac {1}{2 \sigma^ {2}} \left(t _ {2} - 2 \mu t _ {1}\right) \right\}, h (X) = 1,
+
+$$
+
+则由因子分解定理, $T=(t_{1},t_{2})=\left(\sum_{i=1}^{n}x_{i},\sum_{i=1}^{n}x_{i}^{2}\right)$ 是充分统计量.进一步,我们指出这个统计量与 $(\bar{x},s^{2})$ 是一一对应的,所以,正态总体下常用的 $(\bar{x},s^{2})$ 是 $\theta=(\mu,\sigma^{2})$ 的充分统计量.事实上,本例中不难看出有如下分解:
+
+$$
+
+p \left(x _ {1}, x _ {2}, \dots , x _ {n}; \theta\right) = (2 \pi \sigma^ {2}) ^ {- n / 2} \exp \left\{- \frac {n (\bar {x} - \mu) ^ {2} + (n - 1) s ^ {2}}{2 \sigma^ {2}} \right\}
+
+$$
+
+更一般地,有如下命题.
+</Example>
+
+<Knowledge title="定理 5.5.2">
+若统计量 T 是充分统计量, 存在某个函数 $h(\cdot)$ , 使得 T 可以表示为 $t = h(s)$ , 则统计量 S 也是充分统计量.
+
+<Solution title="证明">
+由于 T 是充分统计量,由因子分解定理,有如下分解
+
+$$
+
+p \left(x _ {1}, x _ {2}, \dots , x _ {n}; \theta\right) = g \left(T \left(x _ {1}, x _ {2}, \dots , x _ {n}\right), \theta\right) h \left(x _ {1}, x _ {2}, \dots , x _ {n}\right).
+
+$$
+
+由于 $t = h(s)$ ，于是上式变为
+
+$$
+
+p \left(x _ {1}, x _ {2}, \dots , x _ {n}; \theta\right) = g ^ {*} \left(S \left(x _ {1}, x _ {2}, \dots , x _ {n}\right), \theta\right) h \left(x _ {1}, x _ {2}, \dots , x _ {n}\right),
+
+$$
+
+其中 $g_{(\cdot ;\theta)}^{*} = g(h(\cdot ;\theta))$ ，这说明统计量 $S$ 也是充分统计量.
+</Solution>
+</Knowledge>
+
+<Block title="习题5.5">
+1. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自几何分布
+
+$$
+
+P (X = x) = \theta (1 - \theta) ^ {x}, \quad x = 0, 1, 2, \dots
+
+$$
+
+的样本,证明 $T = \sum_{i=1}^{n} x_{i}$ 是充分统计量.
+
+2. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自泊松分布 $P(\lambda)$ 的一个样本，证明 $T = \sum_{i=1}^{n} x_{i}$ 是充分统计量.
+
+3. 设总体为如下离散分布：
+
+<table><tr><td>x</td><td> $a_{1}$ </td><td> $a_{2}$ </td><td>...</td><td> $a_{k}$ </td></tr><tr><td>p</td><td> $p_{1}$ </td><td> $p_{2}$ </td><td>...</td><td> $p_{k}$ </td></tr></table>
+
+$x_{1},x_{2},\cdots,x_{n}$ 是来自该总体的样本，
+
+(1) 证明次序统计量 $(x_{(1)}, x_{(2)}, \cdots, x_{(n)})$ 是充分统计量；
+
+(2) 以 $n_j$ 表示 $x_1, x_2, \cdots, x_n$ 中等于 $a_j$ 的个数，证明 $(n_1, n_2, \cdots, n_k)$ 是充分统计量.
+
+4. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自正态分布 $N(\mu, 1)$ 的样本，证明 $T = \sum_{i=1}^{n} x_{i}$ 是充分统计量.
+
+5. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自
+
+$$
+
+p (x; \theta) = \theta \cdot x ^ {\theta - 1}, \quad 0 <   x <   1, \theta > 0
+
+$$
+
+的样本,试给出一个充分统计量.
+
+6. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自韦布尔分布
+
+$$
+
+p (x; \theta) = m x ^ {m - 1} \theta^ {- m} \mathrm{e} ^ {- (x / \theta) ^ {m}}, \quad x > 0, \theta > 0
+
+$$
+
+的样本 $(m > 0$ 已知），试给出一个充分统计量.
+
+7. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自帕雷托 (Pareto) 分布
+
+$$
+
+p (x; \theta) = \theta \cdot a ^ {\theta} x ^ {- (\theta + 1)}, \quad x > a, \theta > 0
+
+$$
+
+的样本 $(a>0$ 已知 $)$ ，试给出一个充分统计量.
+
+8. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自拉普拉斯 (Laplace) 分布
+
+$$
+
+p (x; \theta) = \frac {1}{2 \theta} \mathrm{e} ^ {- | x | / \theta}, \quad \theta > 0
+
+$$
+
+的样本,试给出一个充分统计量.
+
+9. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 独立同分布， $x_{1}$ 服从以下分布，求相应的充分统计量：
+
+(1) 负二项分布 $x_{1} \sim p(x_{1}; \theta) = \begin{pmatrix} x_{1} + r - 1 \\ r - 1 \end{pmatrix} \theta'(1 - \theta)^{x_{1}}, x_{1} = 0, 1, 2, \cdots, r$ 已知；
+
+(2) 离散均匀分布 $x_{1} \sim p(x_{1}; m) = \frac{1}{m}, x_{1} = 1, 2, \cdots, m, m$ 未知；
+
+(3) 对数正态分布 $x_{1} \sim p(x_{1}; \mu, \sigma) = \frac{1}{\sqrt{2\pi}\sigma x_{1}} \exp \left\{-\frac{1}{2\sigma^{2}} (\ln x_{1} - \mu)^{2}\right\}, x_{1} > 0;$
+
+(4) 瑞利 (Rayleigh) 分布 $x_{1} \sim p(x_{1}; \lambda) = 2\lambda x_{1} \mathrm{e}^{-\lambda x_{1}^{2}} \cdot I_{|x_{1} \geqslant 0|}$ .
+
+10. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自正态分布 $N(\mu, \sigma^{2})$ 的样本.
+
+(1) 在 $\mu$ 已知时给出 $\sigma^{2}$ 的一个充分统计量；
+
+(2) 在 $\sigma^{2}$ 已知时给出 $\mu$ 的一个充分统计量.
+
+11. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自均匀分布 $U(\theta_{1}, \theta_{2})$ 的样本，试给出一个充分统计量.
+
+12. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自均匀分布 $U(\theta, 2\theta), \theta > 0$ 的样本，试给出充分统计量.
+
+13. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自伽马分布族 $\{Ga(\alpha, \lambda) | \alpha > 0, \lambda > 0\}$ 的一个样本，寻求 $(\alpha, \lambda)$ 的充分统计量.
+
+14. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自贝塔分布族 $\{Be(a, b) \mid a > 0, b > 0\}$ 的一个样本，寻求 $(a, b)$ 的充分统计量.
+
+15. 若 $x=(x_{1},x_{2},\cdots,x_{n})$ 为从分布族 $f(x,\theta)=C(\theta)\exp\left\{\sum_{i=1}^{k}Q_{i}(\theta)T_{i}(x)\right\}h(x)$ 中抽取的简单样
+
+本，试证 $T(x)=\left(\sum_{j=1}^{n}T_{1}(x_{j}),\sum_{j=1}^{n}T_{2}(x_{j}),\cdots,\sum_{j=1}^{n}T_{k}(x_{j})\right)$ 为充分统计量.
+
+16. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自正态总体 $N(\mu, \sigma_{1}^{2})$ 的样本， $y_{1}, y_{2}, \cdots, y_{m}$ 是来自另一正态总体 $N(\mu, \sigma_{2}^{2})$ 的样本，这两个样本相互独立，试给出 $(\mu, \sigma_{1}^{2}, \sigma_{2}^{2})$ 的充分统计量.
+
+17. 设 $\begin{pmatrix} x_{i} \\ y_{i} \end{pmatrix}, i=1,2,\cdots,n$ 是来自正态分布族
+
+$$
+
+\left\{N \left(\binom {\theta_ {1}} {\theta_ {2}}, \left( \begin{array}{c c} \sigma_ {1} ^ {2} & \rho \sigma_ {1} \sigma_ {2} \\ \rho \sigma_ {1} \sigma_ {2} & \sigma_ {2} ^ {2} \end{array} \right)\right), - \infty <   \theta_ {1}, \theta_ {2} <   \infty , \sigma_ {1}, \sigma_ {2} > 0, | \rho | \leqslant 1 \right\}
+
+$$
+
+的一个二维样本，寻求 $(\theta_{1},\sigma_{1},\theta_{2},\sigma_{2},\rho)$ 的充分统计量.
+
+18. 设二维随机变量 $X=\begin{pmatrix}X_{1}\\X_{2}\end{pmatrix}$ 服从二元正态分布, 其均值向量为零向量, 协方差阵为
+
+$$
+
+\left( \begin{array}{c c} \sigma^ {2} + r ^ {2} & \sigma^ {2} - r ^ {2} \\ \sigma^ {2} - r ^ {2} & \sigma^ {2} + r ^ {2} \end{array} \right), \sigma > 0, r > 0.
+
+$$
+
+证明:二维统计量 $T=(\left(x_{1}+x_{2}\right)^{2},\left(x_{1}-x_{2}\right)^{2})$ 是该二元正态分布族的充分统计量.
+
+19. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自两参数指数分布
+
+$$
+
+p (x; \theta , \mu) = \frac {1}{\theta} \mathrm{e} ^ {- (x - \mu) / \theta}, x > \mu , \theta > 0
+
+$$
+
+的样本,证明 $(\bar{x},x_{(1)})$ 是充分统计量.
+
+20. 设随机变量 $Y_{i} \sim N(\beta_{0} + \beta_{1} x_{i}, \sigma^{2})$ , $i = 1, 2, \cdots, n$ ，诸 $Y_{i}$ 独立， $x_{1}, x_{2}, \cdots, x_{n}$ 是已知常数，证明 $\left(\sum_{i=1}^{n} Y_{i}, \sum_{i=1}^{n} x_{i} Y_{i}, \sum_{i=1}^{n} Y_{i}^{2}\right)$ 是充分统计量.
+
+![](images/aec3653f9d2970ac7000aae9eb2e9337a8a0592d549886ea45d7fcc6d04bb363.jpg)
+</Block>

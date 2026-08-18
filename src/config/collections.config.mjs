@@ -114,6 +114,34 @@ export const collections = [
             targetPattern: '^图\\s*(\\d+\\s*[-－]\\s*\\d+)$'
           }
         }
+      },
+      {
+        id: 'probability-statistics',
+        slug: 'probability_statistics',
+        title: '概率论与数理统计教程（第三版）',
+        description: '茆诗松、程依明、濮晓龙编著，高等教育出版社。全书八章：前四章为概率论部分（随机事件与概率、随机变量及其分布、多维随机变量及其分布、大数定律与中心极限定理），后四章为数理统计部分（统计量及其分布、参数估计、假设检验、方差分析与回归分析）。每节末附分节习题，书末附统计用表（附表1—14）与习题参考答案。',
+        cover: '/covers/probability_statistics.jpg',
+        entryPoint: '00_内容简介',
+        trackClasses: ['.example-card', '.knowledge-card', '.note-block', '.fallback-block'],
+        modules: {
+          '例': { emoji: '✍️', short: '例', aliases: ['例', '例题'], theme: 'chip-example' },
+          '例题': { emoji: '✍️', short: '例', aliases: ['例', '例题'], theme: 'chip-example' },
+          '定理': { emoji: '📐', short: '理', aliases: ['定理'], theme: 'chip-conclusion' },
+          '定义': { emoji: '📖', short: '定', aliases: ['定义'], theme: 'chip-knowledge' },
+          '性质': { emoji: '🔬', short: '性', aliases: ['性质'], theme: 'chip-knowledge' },
+          '推论': { emoji: '➡️', short: '推', aliases: ['推论'], theme: 'chip-conclusion' },
+          '引理': { emoji: '🧩', short: '引', aliases: ['引理'], theme: 'chip-conclusion' },
+          '命题': { emoji: '📌', short: '命', aliases: ['命题'], theme: 'chip-conclusion' },
+          '公理': { emoji: '📐', short: '公', aliases: ['公理'], theme: 'chip-conclusion' },
+          '图': {
+            short: '图',
+            aliases: ['图'],
+            theme: 'chip-default',
+            isImage: true,
+            targetQuery: 'p, div, figcaption',
+            targetPattern: '^图\\s*(\\d+\\s*[-－]\\s*\\d+)$'
+          }
+        }
       }
     ]
   },

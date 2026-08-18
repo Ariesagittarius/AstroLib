@@ -1,0 +1,283 @@
+---
+title: '8.2 多重比较'
+---
+
+import Example from '@/components/Example.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Solution from '@/components/Solution.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+
+## 8.2.1 水平均值差的置信区间
+
+如果方差分析的结果是因子 A 显著, 则等于说有充分理由认为因子 A 各水平的效应不全相同, 但这并不是说它们中一定没有相同的. 就指定的一对水平 $A_{i}$ 与 $A_{j}$ , 我们可通过求 $\mu_{i}-\mu_{j}$ 的区间估计来进行比较, 方法如下: 由 (8.1.27) 式可以推出
+
+$$
+
+\overline {{y}} _ {i.} - \overline {{y}} _ {j.} \sim N \left(\mu_ {i} - \mu_ {j}, \left(\frac {1}{m _ {i}} + \frac {1}{m _ {j}}\right) \sigma^ {2}\right),
+
+$$
+
+而定理8.1.2指出 $S_{e} / \sigma^{2}\sim \chi^{2}(f_{e})$ ，且两者独立，故
+
+$$
+
+\frac {(\bar {y} _ {i .} - \bar {y} _ {j .}) - (\mu_ {i} - \mu_ {j})}{\sqrt {\left(\frac {1}{m _ {i}} + \frac {1}{m _ {j}}\right) \frac {S _ {e}}{f _ {e}}}} \sim t (f _ {e}).
+
+$$
+
+由此给出 $\mu_{i}-\mu_{j}$ 的置信水平为 $1-\alpha$ 的置信区间为
+
+$$
+
+\left[ \bar {y} _ {i.} - \bar {y} _ {j.} \pm \sqrt {\left(\frac {1}{m _ {i}} + \frac {1}{m _ {j}}\right)} \hat {\sigma} \cdot t _ {1 - \frac {\alpha}{2}} (f _ {e}) \right],\tag{8.2.1}
+
+$$
+
+其中 $\hat{\sigma}^2 = S_e / f_e$ 是 $\sigma^2$ 的无偏估计. 根据置信区间与双侧假设检验间的对应关系 (§7.2.2) 知: (8.2.1) 式给出的置信区间就是两正态均值差的检验问题:
+
+$$
+
+H _ {0}: \mu_ {i} - \mu_ {j} = 0 \quad \mathrm{vs} \quad H _ {1}: \mu_ {i} - \mu_ {j} \neq 0
+
+$$
+
+的接受域 $\overline{W}$ . 若该置信区间含有 0, 则可认为 $\mu_{i}$ 与 $\mu_{j}$ 间无显著差异; 若该区间不含有 0, 则认为 $\mu_{i}$ 与 $\mu_{j}$ 间有显著差异. 具体见下面例子.
+
+<Example title="例 8.2.1">
+在例 8.1.2 中, 我们已知饲料因子是显著的, 此处 $m_{1}=m_{2}=m_{3}=8, f_{e}=21$ ,$\hat{\sigma} = \sqrt{1343.61} = 36.66$ ，若取 $\alpha = 0.05$ ，则 $t_{1 - \alpha /2}(f_e) = t_{0.975}(21) = 2.0796,\sqrt{\frac{1}{8} + \frac{1}{8}}$ · $t_{0.975}(21)\hat{\sigma} = 38.12$ ，于是可算出3对均值差的置信区间为
+
+$$
+
+\begin{array}{l l} {\mu_ {1} - \mu_ {2}:} & {[ - 4 8. 8 8 \pm 3 8. 1 2 ] = [ - 8 7, - 1 0. 7 6 ],} \\ {\mu_ {1} - \mu_ {3}:} & {[ - 2 0 \pm 3 8. 1 2 ] = [ - 5 8. 1 2, 1 8. 1 2 ],} \\ {\mu_ {2} - \mu_ {3}:} & {[ 2 8. 8 8 \pm 3 8. 1 2 ] = [ - 9. 2 4, 6 7 ].} \end{array}
+
+$$
+
+这三个置信区间中只有 $\mu_{1} - \mu_{2}$ 的置信区间不含有0，故 $\mu_{1}$ 与 $\mu_{2}$ 间有显著差别，其他 $\mu_{1}$ 与 $\mu_{3}$ 或 $\mu_{2}$ 与 $\mu_{3}$ 间均无显著差别.
+
+我们看到，(8.2.1)式给出的置信区间与第六章中的两样本的 $t$ 区间基本一致，区别在于这里 $\sigma^2$ 的估计使用了全部样本而不仅仅是 $A_{i}, A_{j}$ 两个水平下的观测值.
+</Example>
+
+## 8.2.2 多重比较问题
+
+这里遇到一个新的问题,对每一组 $(i,j)$ ,(8.2.1)式给出的区间的置信水平都是1- $\alpha$ ,但对多个这样的区间,要求其同时成立,其联合置信水平就不再是1- $\alpha$ 了.譬如,设 $E_{1},E_{2},\cdots,E_{k}$ 是k个随机事件,且有 $P(E_{i})=1-\alpha,i=1,2,\cdots,k$ ,则其同时发生的概率
+
+$$
+
+P \Big (\bigcap_ {i = 1} ^ {k} E _ {i} \Big) = 1 - P \Big (\bigcup_ {i = 1} ^ {k} \overline {{{E}}} _ {i} \Big) \geqslant 1 - \sum_ {i = 1} ^ {k} P (\overline {{{E}}} _ {i}) = 1 - k \alpha ,
+
+$$
+
+这说明它们同时发生的概率可能比 $1 - \alpha$ 小很多.为了使它们同时发生的概率不低于 $1-\alpha$ ，一个办法是把每个事件发生的概率提高到 $1 - \alpha /k.$ 比如，如果我们同时考虑所有的 $k = r(r - 1) / 2$ 组水平均值差 $\mu_{i} - \mu_{j}$ 的置信区间，则在(8.2.1)式中将 $t_{1 - \alpha /2}(f_e)$ 替换为 $t_{1 - \alpha /(2k)}(f_e)$ 即可.这将导致每个置信区间过长，联合置信区间的精度很差，一般人们不采用这种方法，而是采用我们下面介绍的多重比较来解决上述问题
+
+在方差分析中,如果经过 F 检验拒绝原假设,表明因子 A 是显著的,即 r 个水平对应的水平均值不全相等,此时,我们还需要进一步确认哪些水平均值间是确有差异的,哪些水平均值间无显著差异.
+
+在 $r(r>2)$ 个水平均值中同时比较任意两个水平均值间有无明显差异的问题称为多重比较,多重比较即要以显著性水平 $\alpha$ 同时检验如下 $r(r-1)/2$ 个假设:
+
+$$
+
+H _ {0} ^ {i j}: \mu_ {i} = \mu_ {j}, \quad 1 \leqslant i <   j \leqslant r.\tag{8.2.2}
+
+$$
+
+直观地看, 当 $H_{0}^{ij}$ 成立时, $\left|\bar{y}_{i}\right| - \bar{y}_{j}$ . 不应过大, 过大就应拒绝 $H_{0}^{ij}$ , 故在同时考察 $\binom{r}{2}$ 个假设 $H_{0}^{ij}$ 时, 诸 $H_{0}^{ij}$ 中至少有一个不成立就构成多重比较的拒绝域. 因此, 关于假设 (8.2.2) 的拒绝域应有如下形式
+
+$$
+
+W = \bigcup_ {1 \leqslant i <   j \leqslant r} \left\{\mid \bar {y} _ {i.} - \bar {y} _ {j.} \mid \geqslant c _ {i j} \right\},
+
+$$
+
+诸临界值 $c_{ij}$ 应在(8.2.2)成立时由 $P(W) = \alpha$ 确定.下面分重复数相等和不等分别介绍临界值的确定.
+
+## 8.2.3 重复数相等场合的 T 法
+
+在重复数相等时，由对称性自然可以要求诸 $c_{ij}$ 相等，记为 $c.$ 记 $\hat{\sigma}^2 = S_e / f_e$ ，则由给定
+
+条件不难有
+
+$$
+
+t _ {i} = \frac {\overline {{{y}}} _ {i .} - \mu_ {i}}{\hat {\sigma} / \sqrt {m}} \sim t (f _ {e}),
+
+$$
+
+于是当假设(8.2.2)成立时, $\mu_{1}=\mu_{2}=\cdots=\mu_{r}=\mu$ ,故有
+
+$$
+
+\begin{array}{l} P (W) = P \left(\bigcup_ {1 \leqslant i <   j \leqslant r} \left\{\mid \bar {y} _ {i.} - \bar {y} _ {j.} \mid \geqslant c \right\}\right) \\ = 1 - P \left(\bigcap_ {1 \leqslant i <   j \leqslant r} \left\{\mid \bar {y} _ {i.} - \bar {y} _ {j.} \mid <   c \right\}\right) \\ = 1 - P (\max _ {1 \leqslant i <   j \leqslant r} \mid \bar {y} _ {i.} - \bar {y} _ {j.} \mid <   c) \\ = P (\max _ {1 \leqslant i <   j \leqslant r} \mid \bar {y} _ {i.} - \bar {y} _ {j.} \mid \geqslant c) \\ = P \left(\max _ {1 \leqslant i <   j \leqslant r} \left| \frac {\left(\bar {y} _ {i .} - \mu\right) - \left(\bar {y} _ {j .} - \mu\right)}{\hat {\sigma} / \sqrt {m}} \right| \geqslant \frac {c}{\hat {\sigma} / \sqrt {m}}\right) \\ = P \left(\max _ {i} \frac {\left(\bar {y} _ {i .} - \mu\right)}{\hat {\sigma} / \sqrt {m}} - \min _ {j} \frac {\left(\bar {y} _ {j .} - \mu\right)}{\hat {\sigma} / \sqrt {m}} \geqslant \frac {c}{\hat {\sigma} / \sqrt {m}}\right). \end{array}
+
+$$
+
+这里 $q(r, f_e) = \max_i \frac{(\bar{y}_i - \mu)}{\hat{\sigma} / \sqrt{m}} - \min_j \frac{(\bar{y}_j - \mu)}{\hat{\sigma} / \sqrt{m}}$ 一般称为 $t$ 化极差统计量，这是因为它的结构类似于 $t$ 统计量. $q(r, f_e)$ 的分布不易导出，但知它的分布只与自由度 $f_e$ 和水平数 $r$ 有关，而与参数 $\mu, \sigma^2$ 无关，也与 $m$ 无关，该分布可由随机模拟方法得到，方法如下（不妨设 $\mu = 0, \sigma^2 = 1, m = 1$ ）：对给定的 $r$ 和 $f_e$ .
+
+（1）从标准正态分布 $N(0,1)$ 产生 r 个随机数 $x_{1}, x_{2}, \cdots, x_{r}$ ，将该 r 个随机数按从小到大排序得到 $x_{(1)}$ 和 $x_{(r)}$ ;
+
+(2) 从自由度为 $f_{e}$ 的 $\chi^{2}$ 分布 $\chi^{2}(f_{e})$ 产生一个随机数 y;
+
+(3) 计算 $q=(x_{(r)}-x_{(1)})/\sqrt{y}$ ;
+
+（4）重复(1)到(3) $N$ （例如 $10^{4}$ 或 $10^{5}$ )次，即得 $q(r,f_e)$ 的 $N$ 个观测值，由此可获得 $q(r,f_e)$ 的各种分位数.于是，由
+
+$$
+
+P (W) = P (q (r, f _ {e}) \geqslant \sqrt {m} c / \hat {\sigma}) = \alpha\tag{8.2.3}
+
+$$
+
+可以得出
+
+$$
+
+c = q _ {1 - \alpha} (r, f _ {e}) \hat {\sigma} / \sqrt {m},\tag{8.2.4}
+
+$$
+
+其中 $q_{1 - \alpha}(r,f_e)$ 表示 $q(r,f_e)$ 的 $1 - \alpha$ 分位数，其值在附表8中给出.
+
+至此，可将重复数相同时多重比较的步骤总结如下：对给定的显著性水平 $\alpha$ ，查 $t$ 化极差统计量的分位数 $q_{1 - \alpha}(r,f)$ 表，计算 $c = q_{1 - \alpha}(r,f_e)\hat{\sigma} /\sqrt{m}$ ，比较诸 $|\overline{y}_i, - \overline{y}_j|$ 与 $c$ 的大小，若
+
+$$
+
+\mid \bar {y} _ {i.} - \bar {y} _ {j.} \mid \geqslant c,
+
+$$
+
+则认为水平 $A_{i}$ 与水平 $A_{j}$ 间有显著差异, 反之, 则认为水平 $A_{i}$ 与水平 $A_{j}$ 间无明显差别. 这一方法最早由图基(Tukey)提出, 因此称为 T 法.
+
+<Example title="例 8.2.2">
+我们已在例 8.1.2 中指出饲料因子是显著的, 下面进行多重比较. 若取
+
+$\alpha = 0.05$ ，则查表知 $q_{1 - 0.05}(3,21) = 3.57$ ，而 $\hat{\sigma} = 36.66.$ 所以 $c = 3.57\times 36.66 / \sqrt{8} = 46.27.$
+
+$\left|\bar{y}_{1},-\bar{y}_{2}\right|=1\ 024.25-1\ 073.13|=48.88>46.27$ ，认为 $\mu_{1}$ 与 $\mu_{2}$ 有显著差别；
+
+$\left|\bar{y}_{1}.-\bar{y}_{3}\right|=1024.25-1044.25|=20<46.27$ ，认为 $\mu_{1}$ 与 $\mu_{3}$ 无显著差别；
+
+$\left|\bar{y}_{2}.\ -\bar{y}_{3}.\ \right|=\left|1\ 073.13-1\ 044.25\right|=28.88<46.27$ ，认为 $\mu_{2}$ 与 $\mu_{3}$ 无显著差别.
+
+由此可见, $\mu_{1}$ 与 $\mu_{2}$ 之间有显著差别,而它们与 $\mu_{3}$ 之间都无显著差异,即以鱼粉为主的饲料与以槐米粉为主的饲料在鸡的增重方面有明显差异,但以苜蓿粉为主的饲料与另两种饲料间无显著差异.
+</Example>
+
+## 8.2.4 重复数不等场合的S法
+
+在重复数不等时,沿用上面的记号,我们有
+
+$$
+
+\frac {(\bar {y} _ {i \cdot} - \bar {y} _ {j \cdot}) - (\mu_ {i} - \mu_ {j})}{\sqrt {\frac {1}{m _ {i}} + \frac {1}{m _ {j}}}   \hat {\sigma}} \sim t (f _ {e})  ,
+
+$$
+
+在假设(8.2.2)成立时, $\mu_{1}=\mu_{2}=\cdots=\mu_{r}=\mu$ ,于是有
+
+$$
+
+t _ {i j} = \frac {(\overline {{{{y}}}} _ {i \cdot} - \overline {{{{y}}}} _ {j \cdot})}{\sqrt {\frac {1}{m _ {i}} + \frac {1}{m _ {j}}}   \hat {\sigma}}   \sim   t (f _ {e}) \quad \text {或} \quad F _ {i j} = \frac {(\overline {{{{y}}}} _ {i \cdot} - \overline {{{{y}}}} _ {j \cdot}) ^ {2}}{\left(\frac {1}{m _ {i}} + \frac {1}{m _ {j}}\right) \hat {\sigma} ^ {2}}   \sim   F (  1, f _ {e}  )  ,
+
+$$
+
+从而可以要求 $c_{ij} = c\sqrt{\frac{1}{m_i} + \frac{1}{m_j}}$ ，类似于重复数相等时的推导，有
+
+$$
+
+\begin{array}{r l} P (W) & = P \left(\bigcup_ {1 \leqslant i <   j \leqslant r} \left\{\mid \bar {y} _ {i.} - \bar {y} _ {j.} \mid \geqslant c \sqrt {\frac {1}{m _ {i}} + \frac {1}{m _ {j}}} \right\}\right) \\ & = P \left(\max _ {1 \leqslant i <   j \leqslant r} \frac {\mid \bar {y} _ {i .} - \bar {y} _ {j .} \mid}{\sqrt {\frac {1}{m _ {i}} + \frac {1}{m _ {j}}}   \hat {\sigma}} \geqslant \frac {c}{\hat {\sigma}}\right) \\ & = P \left(\max _ {1 \leqslant i <   j \leqslant r} \frac {\left(\bar {y} _ {i .} - \bar {y} _ {j .}\right) ^ {2}}{\left(\frac {1}{m _ {i}} + \frac {1}{m _ {j}}\right)   \hat {\sigma} ^ {2}} \geqslant \frac {c ^ {2}}{\hat {\sigma} ^ {2}}\right) \\ & = P (\max _ {1 \leqslant i <   j \leqslant r} F _ {i j} \geqslant (c /   \hat {\sigma}) ^ {2}). \end{array}
+
+$$
+
+可以证明， $\frac{\max\limits_{1\leqslant i<j\leqslant r}F_{ij}}{r-1}\sim F(r-1,f_{e})$ ，从而由 $P(W)=\alpha$ 可推出 $\left(\frac{c}{\hat{\sigma}}\right)^{2}=(r-1)F_{1-\alpha}(r-1,f_{e})$ ，亦即
+
+$$
+
+c _ {i j} = \sqrt {(r - 1) F _ {1 - \alpha} (r - 1 , f _ {e}) \left(\frac {1}{m _ {i}} + \frac {1}{m _ {j}}\right) \hat {\sigma} ^ {2}}.
+
+$$
+
+<Example title="例 8.2.3">
+在例 8.1.4 中, 我们已指出包装方式对食品销量有显著影响, 此处 r=4, $f_{e}=6, \hat{\sigma}^{2}=7.67$ , 若取 $\alpha=0.05$ , 则 $F_{0.95}(3,6)=4.76$ . 注意到 $m_{1}=m_{4}=2, m_{2}=m_{3}=3$ , 故
+
+$$
+
+c _ {1 2} = c _ {1 3} = c _ {2 4} = c _ {3 4} = \sqrt {3 \times 4 . 7 6 \times \left(\frac {1}{2} + \frac {1}{3}\right) \times 7 . 6 7} = 9. 6,
+
+$$
+
+$$
+
+c _ {1 4} = \sqrt {3 \times 4 . 7 6 \times \left(\frac {1}{2} + \frac {1}{2}\right) \times 7 . 6 7} = 1 0. 5,
+
+$$
+
+$$
+
+c _ {2 3} = \sqrt {3 \times 4 . 7 6 \times \left(\frac {1}{3} + \frac {1}{3}\right) \times 7 . 6 7} = 8. 5.
+
+$$
+
+由于
+
+$$
+
+\mid \overline {{y}} _ {1.} - \overline {{y}} _ {2.} \mid = 2 <   c _ {1 2},
+
+$$
+
+$$
+
+\mid \overline {{y}} _ {1.} - \overline {{y}} _ {3.} \mid = 4 <   c _ {1 3},
+
+$$
+
+$$
+
+\mid \overline {{y}} _ {1.} - \overline {{y}} _ {4.} \mid = 1 2 > c _ {1 4},
+
+$$
+
+$$
+
+\mid \overline {{y}} _ {2}. - \overline {{y}} _ {3}. \mid = 6 <   c _ {2 3},
+
+$$
+
+$$
+
+\mid \bar {y} _ {2.} - \bar {y} _ {4.} \mid = 1 4 > c _ {2 4},
+
+$$
+
+$$
+
+\mid \bar {y} _ {3.} - \bar {y} _ {4.} \mid = 8 <   c _ {3 4},
+
+$$
+
+这说明 $A_{1}, A_{2}, A_{3}$ 间无显著差异, $A_{1}, A_{2}$ 与 $A_{4}$ 有显著差异, 但 $A_{4}$ 与 $A_{3}$ 的差异尚未达到显著水平. 综合上述, 包装 $A_{4}$ 销售量最佳.
+</Example>
+
+<Block title="习题8.2">
+1. 采用习题8.1中第7题的数据，对三种储藏方法的平均含水率在 $\alpha = 0.05$ 下作多重比较.
+
+2. 采用习题8.1中第8题的数据, 对五种推销方法在 $\alpha = 0.05$ 下作多重比较.
+
+3. 有七种人造纤维, 每种抽 4 根测其强度, 得每种纤维的平均强度及标准差如下:
+
+<table><tr><td>i</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td></tr><tr><td> $\overline{y}_{i}$ </td><td>6.3</td><td>6.2</td><td>6.7</td><td>6.8</td><td>6.5</td><td>7.0</td><td>7.1</td></tr><tr><td> $s_{i}$ </td><td>0.81</td><td>0.92</td><td>1.22</td><td>0.74</td><td>0.88</td><td>0.58</td><td>1.05</td></tr></table>
+
+假定各种纤维的强度服从等方差的正态分布.
+
+(1) 试问七种纤维强度间有无显著差异？（取 $\alpha=0.05$ ）
+
+（2）若各种纤维的强度间无显著差异，则给出平均强度的置信水平为0.95的置信区间；若各种纤维的强度间有显著差异，请进一步在 $\alpha = 0.05$ 下进行多重比较，并指出哪种纤维的平均强度最大，同时给出该种纤维平均强度的置信水平为0.95的置信区间.
+
+4. 一位经济学家对生产电子计算机设备的企业收集了在一年内生产力提高指数（用0到100内的数表示），并按过去三年间在科研和开发上的平均花费分为三类：
+
+$A_{1}$ : 花费少， $A_{2}$ : 花费中等， $A_{3}$ : 花费多.
+
+生产力提高的指数如下表所示：
+
+<table><tr><td>水平</td><td colspan="12">生产力提高指数</td></tr><tr><td> $A_{1}$ </td><td>7.6</td><td>8.2</td><td>6.8</td><td>5.8</td><td>6.9</td><td>6.6</td><td>6.3</td><td>7.7</td><td>6.0</td><td></td><td></td><td></td></tr><tr><td> $A_{2}$ </td><td>6.7</td><td>8.1</td><td>9.4</td><td>8.6</td><td>7.8</td><td>7.7</td><td>8.9</td><td>7.9</td><td>8.3</td><td>8.7</td><td>7.1</td><td>8.4</td></tr><tr><td> $A_{3}$ </td><td>8.5</td><td>9.7</td><td>10.1</td><td>7.8</td><td>9.6</td><td>9.5</td><td></td><td></td><td></td><td></td><td></td><td></td></tr></table>
+
+请列出方差分析表,并进行多重比较(取 $\alpha=0.05$ ).
+</Block>

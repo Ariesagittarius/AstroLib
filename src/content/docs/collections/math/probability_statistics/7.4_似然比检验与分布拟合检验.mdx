@@ -1,0 +1,635 @@
+---
+title: '7.4 似然比检验与分布拟合检验'
+---
+
+import Example from '@/components/Example.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Solution from '@/components/Solution.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+
+## 7.4.1 似然比检验的思想
+
+我们在前几节讲述的内容均是关于费希尔提出的显著性检验,类似于在估计中存在着多种估计一样,在假设检验中,也有多种检验方法,如奈曼和 E.皮尔逊于 1928 年提出的似然比检验,它是一种应用较广的检验方法,在假设检验中的地位有如 MLE 在点估计中的地位.
+
+<Knowledge title="定义 7.4.1">
+设 $x_{1}, x_{2}, \cdots, x_{n}$ 为来自密度函数为 $p(x; \theta), \theta \in \Theta$ 的总体的样本，考虑如下检验问题：
+
+$$
+
+H _ {0}: \theta \in \Theta_ {0} \quad \text { vs } \quad H _ {1}: \theta \in \Theta_ {1} = \Theta - \Theta_ {0}.\tag{7.4.1}
+
+$$
+
+令
+
+$$
+
+\Lambda (x _ {1}, x _ {2}, \dots , x _ {n}) = \frac {\sup _ {\theta \in \Theta} p (x _ {1} , x _ {2} , \cdots , x _ {n} ; \theta)}{\sup _ {\theta \in \Theta_ {0}} p (x _ {1} , x _ {2} , \cdots , x _ {n} ; \theta)},\tag{7.4.2}
+
+$$
+
+则我们称统计量 $\Lambda(x_{1},x_{2},\cdots,x_{n})$ 为假设(7.4.1)的似然比（likelihood ratio），有时也称之为广义似然比.
+
+(7.4.2)式的 $\Lambda(x_{1},x_{2},\cdots,x_{n})$ 也可以写成如下形式：
+
+$$
+
+\Lambda (x _ {1}, x _ {2}, \dots , x _ {n}) = \frac {p (x _ {1} , x _ {2} , \cdots , x _ {n} ; \hat {\theta})}{p (x _ {1} , x _ {2} , \cdots , x _ {n} ; \hat {\theta} _ {0})},\tag{7.4.3}
+
+$$
+
+其中 $\hat{\theta}$ 表示在全参数空间 $\Theta$ 上 $\theta$ 的最大似然估计， $\hat{\theta}_{0}$ 表示在子参数空间 $\Theta_{0}$ 上 $\theta$ 的最大似然估计。也就是说， $\Lambda(x_{1},x_{2},\cdots,x_{n})$ 的分子表示没有假设时的似然函数最大值，分母表示在原假设成立条件下的似然函数最大值，不难看出，如果 $\Lambda(x_{1},x_{2},\cdots,x_{n})$ 的值很大，则说明 $\theta\in\Theta_{0}$ 的可能性要比 $\theta\in\Theta_{1}$ 的可能性小，于是，我们有理由认为 $H_{0}$ 不成立。这样，我们有如下的似然比检验。
+</Knowledge>
+
+<Knowledge title="定义 7.4.2">
+当采用(7.4.3)式的似然比统计量 $\Lambda(x_{1}, x_{2}, \cdots, x_{n})$ 作为检验问题
+
+(7.4.1)的检验统计量,且取其拒绝域为 $W=\left\{\Lambda\left(x_{1},x_{2},\cdots,x_{n}\right)\geqslant c\right\}$ ，其中临界值 c 满足
+
+$$
+
+P _ {\theta} (\Lambda (x _ {1}, x _ {2}, \dots , x _ {n}) \geqslant c) \leqslant \alpha , \quad \forall \theta \in \Theta_ {0},\tag{7.4.4}
+
+$$
+
+则称此检验为显著性水平 $\alpha$ 的似然比检验（likelihood ratio test），简记为LRT.
+
+我们前面讲过的许多检验也可从似然比检验得到解释.
+</Knowledge>
+
+<Example title="例 7.4.1">
+设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自正态总体 $N(\mu, \sigma^{2})$ 的样本, $\mu, \sigma^{2}$ 均未知. 试求检验问题
+
+$$
+
+H _ {0}: \mu = \mu_ {0} \quad \mathrm{vs} \quad H _ {1}: \mu \neq \mu_ {0}
+
+$$
+
+的显著性水平为 $\alpha$ 的似然比检验.
+
+<Solution title="解">
+记 $\theta=(\mu,\sigma^{2})$ ，样本联合密度函数为
+
+$$
+
+p \left(x _ {1}, x _ {2}, \dots , x _ {n}; \theta\right) = \left(2 \pi \sigma^ {2}\right) ^ {- \frac {n}{2}} \exp \left\{- \frac {1}{2 \sigma^ {2}} \sum_ {i = 1} ^ {n} \left(x _ {i} - \mu\right) ^ {2} \right\},
+
+$$
+
+两个参数空间分别为
+
+$$
+
+\Theta_ {0} = \left\{\left(\mu_ {0}, \sigma^ {2}\right) \mid \sigma^ {2} > 0 \right\}, \quad \Theta = \left\{\left(\mu , \sigma^ {2}\right) \mid \mu \in \mathbf {R}, \sigma^ {2} > 0 \right\}.
+
+$$
+
+利用微分法,我们容易求得在 $\Theta$ 上 $\hat{\mu}=\bar{x},\hat{\sigma}^{2}=\frac{1}{n}\sum_{i=1}^{n}(x_{i}-\bar{x})^{2}$ 分别为 $\mu$ 与 $\sigma^{2}$ 的 MLE,
+
+在 $\Theta_{0}$ 上 $\frac{1}{n}\sum_{i=1}^{n}(x_{i}-\mu_{0})^{2}$ 是 $\sigma^{2}$ 的 MLE,代回各自似然函数后,可得
+
+$$
+
+\sup _ {\theta \in \Theta_ {0}} p (x _ {1}, x _ {2}, \dots , x _ {n}; \theta) = \left[ 2 \pi \frac {1}{n} \sum_ {i = 1} ^ {n} (x _ {i} - \mu_ {0}) ^ {2} \right] ^ {- n / 2} \mathrm{e} ^ {- n / 2},
+
+$$
+
+$$
+
+\sup _ {\theta \in \Theta} p (x _ {1}, x _ {2}, \dots , x _ {n}; \theta) = \left[ 2 \pi \frac {1}{n} \sum_ {i = 1} ^ {n} (x _ {i} - \bar {x}) ^ {2} \right] ^ {- n / 2} \mathrm{e} ^ {- n / 2},
+
+$$
+
+于是,其似然比统计量为
+
+$$
+
+\begin{array}{r l} \Lambda (x _ {1}, x _ {2}, \dots , x _ {n}) & = \frac {\sup _ {\theta \in \Theta} p (x _ {1} , x _ {2} , \cdots , x _ {n} ; \theta)}{\sup _ {\theta \in \Theta_ {0}} p (x _ {1} , x _ {2} , \cdots , x _ {n} ; \theta)} = \left(\frac {\sum_ {i = 1} ^ {n} (x _ {i} - \mu_ {0}) ^ {2}}{\sum_ {i = 1} ^ {n} (x _ {i} - \bar {x}) ^ {2}}\right) ^ {n / 2} \\ & = \left(\frac {\sum_ {i = 1} ^ {n} (x _ {i} - \bar {x}) ^ {2} + n (\bar {x} - \mu_ {0}) ^ {2}}{\sum_ {i = 1} ^ {n} (x _ {i} - \bar {x}) ^ {2}}\right) ^ {n / 2} = \left(1 + \frac {t ^ {2}}{n - 1}\right) ^ {n / 2}, \end{array}
+
+$$
+
+其中 $t = \frac{\sqrt{n}(\overline{x} - \mu_0)}{s}$ 就是7.2节中的 $t$ 检验统计量.
+
+从上式可知,此时的似然比统计量 $\Lambda$ 是传统的 t 统计量平方的严增函数,于是,两个检验统计量的拒绝域有如下等价关系:
+
+$$
+
+\{\Lambda (x _ {1}, x _ {2}, \dots , x _ {n}) \geqslant c \} \Leftrightarrow \{\mid t \mid \geqslant d \},
+
+$$
+
+且由 t 的分位数可定出 $\Lambda$ 的分位数.
+
+又因为当 $H_0$ 成立时， $t \sim t(n - 1)$ ，若我们取 $d = t_{1 - \alpha / 2}(n - 1)$ ，则用 $c = \left[1 + \frac{d^2}{n - 1}\right]^{n / 2}$ 就可控制用 $\Lambda$ 犯第一类错误的概率不超过 $\alpha$ 。由此可见，此时的似然比检验与我们前面讲
+
+过的双侧 t 检验完全等价.
+
+似然比检验是寻找检验统计量的一种思路,它有很好的统计思想,由于本课程范围所限,我们不做更多的讲解,我们只是介绍该方法的思想,并指出如下事实:似然比检验有一个统一的检验统计量,遗憾的是该似然比检验统计量在一般场合至今尚没有统一的精确分布形式,但在很一般的条件下有一个统一的渐近分布[4](对数似然比检验统计量的2倍近似服从 $\chi^{2}$ 分布,其自由度为其独立参数个数),这为似然比检验的广泛使用奠定了基础.
+</Solution>
+</Example>
+
+## 7.4.2 分类数据的 $\chi^2$ 拟合优度检验
+
+在前面我们讨论的检验问题都是在总体分布形式已知的前提下对分布的参数建立假设并进行检验,它们都属于参数假设检验问题.下面我们对总体分布的形式建立假设并进行检验,这一类检验问题统称为分布的拟合检验,它们是一类非参数检验问题.
+
+我们从一个在生物学中很有名的例子开始.
+
+<Example title="例 7.4.2">
+在 19 世纪, 孟德尔 (Mendel) 按颜色与形状把豌豆分为四类: 黄圆、绿圆、黄皱和绿皱. 孟德尔根据遗传学原理判断这四类的比例应为 9:3:3:1. 为做验证, 孟德尔在一次豌豆实验中收获了 n=556 个豌豆, 其中这四类豌豆的个数分别为 315, 108, 101, 32. 该数据是否与孟德尔提出的比例吻合?
+
+这一例子是属于分类数据的检验问题,它的一般情形为:根据某项指标,总体被分成 r 类: $A_{1},A_{2},\cdots,A_{r}$ .此时我们最关心的是关于各类元素在总体中所占的比率的假设
+
+$$
+
+H _ {0}: A _ {i} \text {   所占的比率是   } p _ {i 0}, \quad i = 1, 2, \dots , r,\tag{7.4.5}
+
+$$
+
+其中 $p_{i0}$ 已知，满足 $\sum_{i=1}^{n} p_{i0} = 1$ 。记 $x_{1}, x_{2}, \cdots, x_{n}$ 为从此总体抽出的样本，且以 $n_{i}$ 记这 n 个样本中属于 $A_{i}$ 的样本个数。由于当 $H_{0}$ 成立时，在 n 个样本中属于 $A_{i}$ 类的“理论个数”或“期望个数”为 $np_{i0}$ ，而我们实际观测到的值为 $n_{i}$ ，故当 $H_{0}$ 成立时， $n_{i}$ 与 $np_{i0}$ 应相差不大。于是，K.皮尔逊提出用统计量
+
+$$
+
+\chi^ {2} = \sum_ {i = 1} ^ {r} \frac {\left(n _ {i} - n p _ {i 0}\right) ^ {2}}{n p _ {i 0}}\tag{7.4.6}
+
+$$
+
+来衡量“理论个数”与实际个数间的差异.
+
+在(7.4.6)式中, 分子 $(n_{i}-np_{i0})^{2}$ 是实际观测数与期望观测数的偏差的平方, 而 $\frac{(n_{i}-np_{i0})^{2}}{np_{i0}}$ 可以看成是 $(n_{i}-np_{i0})^{2}$ 的规范化, 所以(7.4.6)式提供了实际观测数与期望观测数接近程度的一个度量, 当 $H_{0}$ 为真时, 它的值应该比较小, 所以, 其拒绝域为 $\{\chi^{2}\geqslant c\}$ , 其中c为待定的临界值.
+
+为了控制上述检验的第一类错误,我们必须知道此检验统计量在原假设成立下的分布,为此,K.皮尔逊证明了如下定理:
+</Example>
+
+<Knowledge title="定理 7.4.1">
+在前述各项假定下, 在 $H_{0}$ 成立时, 对(7.4.6)式的检验统计量有
+
+$$
+
+\chi^ {2} \xrightarrow {L} \chi^ {2} (r - 1).
+
+$$
+
+此定理的证明比较复杂,我们仅对最简单的 r=2 给出证明.当 r=2 时, $n_{1}\sim b(n$ ,
+
+$p_{10}$ ，且 $p_{10} + p_{20} = 1, n_{1} + n_{2} = n, n_{1} - np_{10} = (n - n_{2}) - n (1 - p_{20}) = np_{20} - n_{2}$ ，故
+
+$$
+
+\chi^ {2} = \frac {\left(n _ {1} - n p _ {1 0}\right) ^ {2}}{n p _ {1 0}} + \frac {\left(n _ {2} - n p _ {2 0}\right) ^ {2}}{n p _ {2 0}} = \frac {\left(n _ {1} - n p _ {1 0}\right) ^ {2}}{n p _ {1 0} p _ {2 0}}.
+
+$$
+
+而由中心极限定理可知，
+
+$$
+
+\frac {n _ {1} - n p _ {1 0}}{\sqrt {n p _ {1 0} p _ {2 0}}} \xrightarrow {L} N (0, 1),
+
+$$
+
+故 $\chi^2\xrightarrow{L}\chi^2 (1)$ .一般场合的证明此处从略.
+
+根据定理 7.4.1, 对于假设 (7.4.5), 我们可以采取如下的显著性水平近似为 $\alpha$ 的显著性检验: 检验统计量如 (7.4.6) 所示, 拒绝域为
+
+$$
+
+W = \left\{\chi^ {2} \geqslant \chi_ {1 - \alpha} ^ {2} (r - 1) \right\}.
+
+$$
+
+这就是 K. 皮尔逊提出的最早的一个检验方法, 通常称之为皮尔逊 $\chi^{2}$ 拟合优度检验.
+
+对于例 7.4.2 中的数据, 我们可以做如下的 $\chi^{2}$ 拟合优度检验. 注意到, 此时
+
+$$
+
+r = 4, \quad n = 5 5 6, \quad n _ {1} = 3 1 5, \quad n _ {2} = 1 0 8, \quad n _ {3} = 1 0 1, \quad n _ {4} = 3 2,
+
+$$
+
+待检验的假设为
+
+$$
+
+H _ {0}: p _ {1 0} = \frac {9}{1 6}, \quad p _ {2 0} = \frac {3}{1 6}, \quad p _ {3 0} = \frac {3}{1 6}, \quad p _ {4 0} = \frac {1}{1 6}.
+
+$$
+
+由于 $np_{10} = 312.75, np_{20} = np_{30} = 104.25, np_{40} = 34.75$ ，故
+
+$$
+
+\chi^ {2} = \frac {(3 1 5 - 3 1 2 . 7 5) ^ {2}}{3 1 2 . 7 5} + \frac {(1 0 8 - 1 0 4 . 2 5) ^ {2}}{1 0 4 . 2 5} + \frac {(1 0 1 - 1 0 4 . 2 5) ^ {2}}{1 0 4 . 2 5} + \frac {(3 2 - 3 4 . 7 5) ^ {2}}{3 4 . 7 5} = 0. 4 7.
+
+$$
+
+若取显著性水平 $\alpha = 0.05$ ，则 $\chi_{0.95}^2 (3) = 7.8147 > 0.47$ ，故没有理由拒绝 $H_0$ ，即认为孟德尔的结论是可接受的.
+
+该检验的近似 $p$ 值也是可以计算的，为 $p = P\{\chi^2 \geqslant 0.47\} = 0.9254$ ，其中 $\chi^2$ 表示服从 $\chi^2(3)$ 分布的随机变量。从 $p$ 值还可以清楚地看出，这批数据与孟德尔的理论吻合得很好。
+
+顺便指出,在此场合,我们也可从似然比检验得到上述皮尔逊 $\chi^{2}$ 拟合优度检验统计量.事实上,此时样本联合分布为
+
+$$
+
+P _ {\theta} (X _ {1} = x _ {1}, X _ {2} = x _ {2}, \dots , X _ {n} = x _ {n}) = p _ {1} ^ {n _ {1}} p _ {2} ^ {n _ {2}} \dots p _ {r} ^ {n _ {r}} = \prod_ {i = 1} ^ {r} p _ {i} ^ {n _ {i}},
+
+$$
+
+由此可求得
+
+$$
+
+\sup _ {\theta \in \Theta} P _ {\theta} (X _ {1} = x _ {1}, X _ {2} = x _ {2}, \dots , X _ {n} = x _ {n}) = \prod_ {i = 1} ^ {r} \left(\frac {n _ {i}}{n}\right) ^ {n _ {i}},
+
+$$
+
+$$
+
+\sup _ {\theta \in \Theta_ {0}} P _ {\theta} (X _ {1} = x _ {1}, X _ {2} = x _ {2}, \dots , X _ {n} = x _ {n}) = \prod_ {i = 1} ^ {r} p _ {i 0} ^ {n _ {i}},
+
+$$
+
+于是,其似然比统计量为
+
+$$
+
+\Lambda \left(x _ {1}, x _ {2}, \dots , x _ {n}\right) = \prod_ {i = 1} ^ {r} \left(\frac {n _ {i}}{n p _ {i 0}}\right) ^ {n _ {i}}.
+
+$$
+
+另外，由于
+
+$$
+
+\begin{array}{r l} & {\ln \Lambda (x _ {1}, x _ {2}, \dots , x _ {n})} \\ & {= \sum_ {i = 1} ^ {r} n _ {i} \ln \frac {n _ {i}}{n p _ {i 0}} = \sum_ {i = 1} ^ {r} [ n p _ {i 0} + (n _ {i} - n p _ {i 0}) ] \ln \left(1 + \frac {n _ {i} - n p _ {i 0}}{n p _ {i 0}}\right)} \\ & {= \sum_ {i = 1} ^ {r} [ n p _ {i 0} + (n _ {i} - n p _ {i 0}) ] \left\{\frac {n _ {i} - n p _ {i 0}}{n p _ {i 0}} - \frac {1}{2} \left(\frac {n _ {i} - n p _ {i 0}}{n p _ {i 0}}\right) ^ {2} + o (n ^ {- 2}) \right\}} \\ & {\approx \frac {1}{2} \sum_ {i = 1} ^ {r} \frac {(n _ {i} - n p _ {i 0}) ^ {2}}{n p _ {i 0}} + o (n ^ {- 1}),} \end{array}
+
+$$
+
+所以，
+
+$$
+
+2 \ln \Lambda (x _ {1}, x _ {2}, \dots , x _ {n}) \approx \sum_ {i = 1} ^ {r} \frac {(n _ {i} - n p _ {i 0}) ^ {2}}{n p _ {i 0}},
+
+$$
+
+由单调性,此处似然比检验与皮尔逊引进的 $\chi^{2}$ 拟合优度检验等价.
+
+关于皮尔逊统计量的进一步应用,有下面几点值得注意:
+
+（1）在上面的讨论中，我们假定第 $i$ 类 $A_{i}$ 出现的概率为 $p_{i0}$ 都是已知的，但是，在实际问题中，有时诸 $p_{i0}$ 还依赖于 $k$ 个未知参数，而这 $k$ 个未知参数需要利用样本来估计，这种情况下，K.皮尔逊建立的定理7.4.1不再成立.不过，1924年费希尔证明了，在同样的条件下，可以先用最大似然估计方法估计出这 $k$ 个未知参数，然后再算出 $p_{i0}$ 的估计值 $\hat{p}_i (i = 1, 2, \dots, r)$ .这时，类似于(7.4.6)式的统计量
+
+$$
+
+\chi^ {2} = \sum_ {i = 1} ^ {r} \frac {\left(n _ {i} - n \hat {p} _ {i}\right) ^ {2}}{n \hat {p} _ {i}},\tag{7.4.7}
+
+$$
+
+当 $n \to \infty$ 时, 还是渐近服从 $\chi^{2}$ 分布, 不过自由度为 r-k-1.
+
+(2) 无论是(7.4.6)式还是(7.4.7)式, 因为用的是渐近分布, 所以, 对样本大小 $n$ 有一定要求. 因此, 这种 $\chi^2$ 检验法主要用于大样本场合. 这一要求体现在实际应用中, 一般要求各类的观测数均不小于 5 , 因此, 往往需要把一些相邻的类合并达到要求.
+
+（3）上述拟合优度检验就是在大样本场合的多项分布检验，但对其他分布亦可提供一种分布检验方法.
+</Knowledge>
+
+## 7.4.3 分布的 $\chi^2$ 拟合优度检验
+
+设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自总体 $F(x)$ 的样本, 有时, 需要检验的原假设是
+
+$$
+
+H _ {0}: F (x) = F _ {0} (x),
+
+$$
+
+其中 $F_{0}(x)$ 称为理论分布, 它可以是一个完全已知的分布, 也可以是一个仅依赖于有限个实参数且分布形式已知的分布函数. 这个分布检验问题就是检验观测数据是否与理论分布相符合. 在样本容量较大时, 这类问题可以用 $\chi^{2}$ 拟合优度检验来解决.
+
+这类问题可以分以下两种情况来讨论.
+
+## 一、总体 $X$ 为离散分布
+
+设总体 X 为取有限或可列个值 $a_{1}, a_{2}, \cdots$ 的离散随机变量，我们把相邻的某些 $a_{i}$ 合并为一类，使得 $a_{1}, a_{2}, \cdots$ 被分为有限个类 $A_{1}, A_{2}, \cdots, A_{r}$ ，并使得样本观测值 $x_{1}, x_{2}, \cdots, x_{n}$ 落入每一个 $A_{i}$ 内的个数 $n_{i}$ 不小于 5。记 $P(X \in A_{i}) = p_{i} (i = 1, 2, \cdots, r)$ ，那么，假设 $H_{0}$ ：总体分布 $F(x) = F_{0}(x)$ 就转化为如下假设：
+
+$H_{0}:A_{i}$ 所占的比例为 $p_{i}(i=1,2,\cdots,r)$ .
+
+这样,离散分布的拟合检验与前述分类数据的检验问题就完全一样了.
+
+<Example title="例 7.4.3">
+我们来考察卢瑟福实验的数据. 表 7.4.1 中数据, 是卢瑟福以 7.5 s 为时间单位所做的 2608 次观察得到的数据, 观测的是一枚放射性 $\alpha$ 物质在单位时间内放射的质点数.
+
+表 7.4.1 卢瑟福实验数据
+
+<table><tr><td>质点数 $k$ </td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td></tr><tr><td>观察数 $n_{k}$ </td><td>57</td><td>203</td><td>383</td><td>525</td><td>532</td><td>408</td><td>273</td><td>139</td><td>45</td><td>27</td><td>10</td><td>4</td><td>2</td><td>0</td><td>0</td></tr></table>
+
+现在要求检验假设
+
+$H_{0}:7.5\ s$ 中放射出的 $\alpha$ 质点数服从泊松分布 $P(\lambda)$ .
+
+<Solution title="解">
+首先估计泊松分布参数 $\lambda$ ，由最大似然估计法知道 $\hat{\lambda} = \bar{x}$ ，即
+
+$$
+
+\hat {\lambda} = \frac {1}{n} \sum_ {k = 1} ^ {n} x _ {i} = \frac {\sum_ {k = 0} ^ {1 4} k n _ {k}}{\sum_ {k = 0} ^ {1 4} n _ {k}} = \frac {0 \times 5 7 + 1 \times 2 0 3 + \cdots + 1 4 \times 0}{5 7 + 2 0 3 + \cdots + 0} = \frac {1 0 0 9 4}{2 6 0 8} = 3. 8 7.
+
+$$
+
+其次,计算泊松分布的概率的估计值
+
+$$
+
+\hat {p} _ {k} = \frac {\hat {\lambda} ^ {k}}{k !} \mathrm{e} ^ {- \hat {\lambda}}, \quad k = 0, 1, 2, \dots .
+
+$$
+
+为了满足每一类出现的样本观测次数不小于5,我们把 $k\geqslant11$ 作为一类,记为第12类,并将计算结果列在表7.4.2中.由表7.4.2可以看到检验统计量的值为
+
+$$
+
+\chi^ {2} = \sum_ {i = 1} ^ {1 2} \frac {\left(n _ {i} - n \hat {p} _ {i}\right) ^ {2}}{n \hat {p} _ {i}} = 1 2. 8 9 6 7.
+
+$$
+
+此处分布自由度为 $12 - 1 - 1 = 10$ ，对 $\alpha = 0.05$ ，查表得临界值 $\chi_{0.95}^2 (10) = 18.3070$ ，拒绝域为 $W = \{\chi^2\geqslant 18.3070\}$ ，观察结果的 $\chi^2$ 不落在拒绝域，因此不能拒绝 $H_0$ ，可以认为该放射性物质在长度为7.5秒的时间里放射出的 $\alpha$ 质点数与泊松分布吻合.使用Excel可以计算出此处检验的 $p$ 值是0.2295.
+
+表 7.4.2 例 7.4.3 的分布拟合检验计算过程
+
+<table><tr><td>序号i</td><td>质点数</td><td>观测数ni</td><td>概率估计 $\hat{p}_{i}$ </td><td>期望观测数n $\hat{p}_{i}$ </td><td> $(n_{i}-n\hat{p}_{i})^{2}/n\hat{p}_{i}$ </td></tr><tr><td>1</td><td>0</td><td>57</td><td>0.020 9</td><td>54.5</td><td>0.114 7</td></tr><tr><td>2</td><td>1</td><td>203</td><td>0.080 7</td><td>210.5</td><td>0.267 2</td></tr><tr><td>3</td><td>2</td><td>383</td><td>0.156 2</td><td>407.4</td><td>1.461 4</td></tr><tr><td>4</td><td>3</td><td>525</td><td>0.201 5</td><td>525.5</td><td>0.000 5</td></tr><tr><td>5</td><td>4</td><td>532</td><td>0.195</td><td>508.6</td><td>1.076 6</td></tr><tr><td>6</td><td>5</td><td>408</td><td>0.150 9</td><td>393.5</td><td>0.534 3</td></tr><tr><td>7</td><td>6</td><td>273</td><td>0.097 3</td><td>253.8</td><td>1.452 5</td></tr><tr><td>8</td><td>7</td><td>139</td><td>0.053 8</td><td>140.3</td><td>0.012</td></tr><tr><td>9</td><td>8</td><td>45</td><td>0.026</td><td>67.8</td><td>7.667 3</td></tr><tr><td>10</td><td>9</td><td>27</td><td>0.011 2</td><td>29.2</td><td>0.165 8</td></tr><tr><td>11</td><td>10</td><td>10</td><td>0.004 3</td><td>11.2</td><td>0.128 6</td></tr><tr><td>12</td><td>≥11</td><td>6</td><td>0.002 2</td><td>5.7</td><td>0.015 8</td></tr><tr><td>总和</td><td></td><td>2 608</td><td>1</td><td>2 608</td><td>12.896 7</td></tr></table>
+
+续表
+</Solution>
+</Example>
+
+## 二、总体 $X$ 为连续分布
+
+设总体 X 为连续随机变量, 分布函数为 $F_{0}(x)$ , 这种情况略为复杂一些. 一般采用下列方法: 选 r-1 个实数 $a_{1}<a_{2}<\cdots<a_{r-1}$ , 将实数族分为 r 个区间
+
+$$
+
+(- \infty , a _ {1} ], (a _ {1}, a _ {2} ], \dots , (a _ {r - 1}, \infty),
+
+$$
+
+当观测值落入第 $i$ 个区间内, 就把它看作属于第 $i$ 类, 因此, 这 $r$ 个区间就相当于 $r$ 个类. 在 $H_0$ 为真时, 记
+
+$$
+
+p _ {i} = P (a _ {i - 1} <   X \leqslant a _ {i}) = F _ {0} (a _ {i}) - F _ {0} (a _ {i - 1}), \quad i = 1, 2, \dots , r,
+
+$$
+
+其中 $a_{0}=-\infty, a_{r}=\infty$ ，以 $n_{i}$ 表示样本的观测值 $x_{1}, x_{2}, \cdots, x_{n}$ 落入区间 $(a_{i-1}, a_{i}]$ 内的个数 $(i=1,2,\cdots,r)$ ，接下来的做法就与总体只取有限个值的情况一样了，具体看下面例子.
+
+<Example title="例 7.4.4">
+某工厂生产一种滚珠, 现随机地抽取了 50 件产品, 测得其直径(单位: mm)为
+
+<table><tr><td>15.0</td><td>15.8</td><td>15.2</td><td>15.1</td><td>15.9</td><td>14.7</td><td>14.8</td><td>15.5</td><td>15.6</td><td>15.3</td></tr><tr><td>15.0</td><td>15.6</td><td>15.7</td><td>15.8</td><td>14.5</td><td>15.1</td><td>15.3</td><td>14.9</td><td>14.9</td><td>15.2</td></tr><tr><td>15.9</td><td>15.0</td><td>15.3</td><td>15.6</td><td>15.1</td><td>14.9</td><td>14.2</td><td>14.6</td><td>15.8</td><td>15.2</td></tr><tr><td>15.2</td><td>15.0</td><td>14.9</td><td>14.8</td><td>15.1</td><td>15.5</td><td>15.5</td><td>15.1</td><td>15.1</td><td>15.0</td></tr><tr><td>15.3</td><td>14.7</td><td>14.5</td><td>15.5</td><td>15.0</td><td>14.7</td><td>14.6</td><td>14.2</td><td>14.2</td><td>14.5</td></tr></table>
+
+问滚珠直径是否服从正态分布？
+
+<Solution title="解">
+设滚珠直径为 X, 其分布函数为 $F(x)$ , 现假设为
+
+$$
+
+H _ {0}: F (x) = \Phi \left(\frac {x - \mu}{\sigma}\right).
+
+$$
+
+对于此问题,我们首先由数据求得 $\mu,\sigma^{2}$ 的 MLE 为 $\hat{\mu}=15.1,\hat{\sigma}^{2}=0.4379^{2}$ . 根据数据特点并考虑到各组观测值个数不低于 5, 我们取分点为
+
+$$
+
+a _ {0} = - \infty , \quad a _ {1} = 1 4. 5 5, \quad a _ {2} = 1 4. 9 5, \quad a _ {3} = 1 5. 3 5, \quad a _ {4} = 1 5. 7 5, \quad a _ {5} = \infty ,
+
+$$
+
+由此把数据分为 5 组, 各组数据个数分别为
+
+$$
+
+n _ {1} = 6, \quad n _ {2} = 1 1, \quad n _ {3} = 2 0, \quad n _ {4} = 8, \quad n _ {5} = 5,
+
+$$
+
+再利用公式
+
+$$
+
+\hat {p} _ {i} = \Phi \left(\frac {a _ {i} - 1 5 . 1}{0 . 4 3 7 9}\right) - \Phi \left(\frac {a _ {i - 1} - 1 5 . 1}{0 . 4 3 7 9}\right), \quad i = 1, 2, 3, 4, 5
+
+$$
+
+求得
+
+$$
+
+\hat {p} _ {1} = 0. 1 0 4 5 5 9, \quad \hat {p} _ {2} = 0. 2 6 1 4 1 2, \quad \hat {p} _ {3} = 0. 3 4 9 9 9 8, \quad \hat {p} _ {4} = 0. 2 1 5 1 7 4, \quad \hat {p} _ {5} = 0. 0 6 8 8 5 7.
+
+$$
+
+仿例 7.4.3, 计算过程如下表所示:
+
+<table><tr><td>组号</td><td>观测数  $n_{k}$ </td><td>概率估计 $\hat{p}_{k}$ </td><td>期望观测数  $n\hat{p}_{k}$ </td><td> $\frac{(n_{k}-n\hat{p}_{k})^{2}}{n\hat{p}_{k}}$ </td></tr><tr><td>1</td><td>6</td><td>0.104 559</td><td>5.228 0</td><td>0.114 0</td></tr><tr><td>2</td><td>11</td><td>0.261 412</td><td>13.070 6</td><td>0.328 0</td></tr><tr><td>3</td><td>20</td><td>0.349 998</td><td>17.499 9</td><td>0.357 2</td></tr><tr><td>4</td><td>8</td><td>0.215 174</td><td>10.758 7</td><td>0.707 4</td></tr><tr><td>5</td><td>5</td><td>0.068 857</td><td>3.442 9</td><td>0.704 3</td></tr><tr><td>总和</td><td>50</td><td>1</td><td>50</td><td>2.210 9</td></tr></table>
+
+这里分布自由度为 5-2-1=2，若取显著性水平 $\alpha=0.05$ ，则 $\chi_{0.95}^{2}(2)=5.991\ 5>2.210\ 9$ ，故不能拒绝 $H_{0}$ .
+
+虽然上述的 $\chi^2$ 拟合优度检验可以用来检验一般的分布假设, 但通过上面的分析不难看出, 此时我们检验的假设仅为
+
+$$
+
+H _ {0}: p _ {i} = P (a _ {i - 1} <   X \leqslant a _ {i}) = F _ {0} (a _ {i}) - F _ {0} (a _ {i - 1}), \quad i = 1, 2, \dots , r.
+
+$$
+
+两者是有着一定区别的,因为不同的分点可能会得到不同的结果(至少不同的分点计算出来的诸 $p_{i}$ 值是不一样的),由此,对连续分布的这种拟合优度检验处理要慎重,如果对检验的结论有所怀疑时可用不同的分组进行尝试,由于显著性检验看重拒绝,只要有一组分组得到拒绝的结论即当引起重视.
+</Solution>
+</Example>
+
+## 7.4.4 列联表的独立性检验
+
+下面我们分析按两个或多个特征分类的频数数据,这种数据通常称为交叉分类数据,它们一般都以表格的形式给出,称为列联表.例如,在考察色盲与性别有无关联时,随机抽取1000人按性别(男或女)及色觉(正常或色盲)两个属性分类,得到如下二维列联表,又称 $2\times2$ 表或四格表.
+
+<table><tr><td rowspan="2">性别</td><td colspan="2">视觉</td></tr><tr><td>正常</td><td>色盲</td></tr><tr><td>男</td><td>535</td><td>65</td></tr><tr><td>女</td><td>382</td><td>18</td></tr></table>
+
+一般, 若总体中的个体可按两个属性 $A$ 与 $B$ 分类, $A$ 有 $r$ 个类 $A_{1}, A_{2}, \cdots, A_{r}, B$ 有 $c$ 个类 $B_{1}, B_{2}, \cdots, B_{c}$ , 从总体中抽取容量大小为 $n$ 的样本, 设其中有 $n_{ij}$ 个个体既属于类 $A_{i}$ 又属于类 $B_{j}, n_{ij}$ 称为频数, 将 $r \times c$ 个 $n_{ij}$ 排列为一个 $r$ 行 $c$ 列的二维列联表, 简称 $r \times c$ 列联表 (表7.4.3).
+
+表 7.4.3 $r \times  c$ 列联表
+
+<table><tr><td rowspan="2">A</td><td colspan="5">B</td><td rowspan="2">行和</td></tr><tr><td>1</td><td> $\cdots$ </td><td>j</td><td> $\cdots$ </td><td>c</td></tr><tr><td>1</td><td> $n_{11}$ </td><td> $\cdots$ </td><td> $n_{1j}$ </td><td> $\cdots$ </td><td> $n_{1c}$ </td><td> $n_{1.}$ </td></tr><tr><td> $\vdots$ </td><td> $\vdots$ </td><td></td><td> $\vdots$ </td><td></td><td> $\vdots$ </td><td> $\vdots$ </td></tr><tr><td>i</td><td> $n_{i1}$ </td><td> $\cdots$ </td><td> $n_{ij}$ </td><td> $\cdots$ </td><td> $n_{ic}$ </td><td> $n_{i.}$ </td></tr><tr><td> $\vdots$ </td><td> $\vdots$ </td><td></td><td> $\vdots$ </td><td></td><td> $\vdots$ </td><td> $\vdots$ </td></tr><tr><td>r</td><td> $n_{r1}$ </td><td> $\cdots$ </td><td> $n_{rj}$ </td><td> $\cdots$ </td><td> $n_{rc}$ </td><td> $n_{r.}$ </td></tr><tr><td>列和</td><td> $n_{.1}$ </td><td> $\cdots$ </td><td> $n_{.j}$ </td><td> $\cdots$ </td><td> $n_{.c}$ </td><td>n</td></tr></table>
+
+若所考虑的属性多于两个,也可按类似的方式作出列联表,称为多维列联表.本节只限于讨论二维列联表,列联表分析在应用统计,特别在医学、生物学及社会科学中,有着广泛的应用.
+
+列联表分析的基本问题是,考察各属性之间有无关联,即判别两属性是否独立.如在前例中,问题是:色盲与其性别是否有关?在 $r\times c$ 列联表中,若以 $p_{i}$ , $p_{j}$ 和 $p_{ij}$ 分别表示总体中的个体仅属于 $A_{i}$ ,仅属于 $B_{j}$ 和同时属于 $A_{i}$ 与 $B_{j}$ 的概率,可得一个二维离散分布表(表7.4.4),则“A,B两属性独立”的假设可以表述为
+
+$$
+
+H _ {0}: p _ {i j} = p _ {i}. p _ {. j}, \quad i = 1, 2, \dots , r, j = 1, 2, \dots , c.
+
+$$
+
+表 7.4.4 二维离散分布表
+
+<table><tr><td rowspan="2">A</td><td colspan="5">B</td><td rowspan="2">行和</td></tr><tr><td>1</td><td> $\cdots$ </td><td>j</td><td> $\cdots$ </td><td>c</td></tr><tr><td>1</td><td> $p_{11}$ </td><td> $\cdots$ </td><td> $p_{1j}$ </td><td> $\cdots$ </td><td> $p_{1c}$ </td><td> $p_{1.}$ </td></tr><tr><td> $\vdots$ </td><td> $\vdots$ </td><td></td><td> $\vdots$ </td><td></td><td> $\vdots$ </td><td> $\vdots$ </td></tr><tr><td>i</td><td> $p_{i1}$ </td><td> $\cdots$ </td><td> $p_{ij}$ </td><td> $\cdots$ </td><td> $p_{ic}$ </td><td> $p_{i.}$ </td></tr><tr><td> $\vdots$ </td><td> $\vdots$ </td><td></td><td> $\vdots$ </td><td></td><td> $\vdots$ </td><td> $\vdots$ </td></tr><tr><td>r</td><td> $p_{r1}$ </td><td> $\cdots$ </td><td> $p_{rj}$ </td><td> $\cdots$ </td><td> $p_{rc}$ </td><td> $p_{r.}$ </td></tr><tr><td>列和</td><td> $p_{\cdot 1}$ </td><td> $\cdots$ </td><td> $p_{\cdot j}$ </td><td> $\cdots$ </td><td> $p_{\cdot c}$ </td><td>1</td></tr></table>
+
+这就变为上一小节中诸 $p_{ij}$ 不完全已知时的分布拟合检验. 这里诸 $p_{ij}$ 共有 rc 个参数, 在原假设 $H_{0}$ 成立时, 这 rc 个参数 $p_{ij}$ 由 $r + c$ 个参数 $p_{1\cdot}, \cdots, p_{r\cdot}$ 和 $p_{\cdot1}, \cdots, p_{\cdot c}$ 决定. 在这后 $r + c$ 个参数中存在两个约束条件: $\sum_{i=1}^{r} p_{i\cdot} = 1, \sum_{j=1}^{c} p_{\cdot j} = 1$ , 所以, 此时 $p_{ij}$ 实际上由 $r + c - 2$ 个独立参数所确定. 据此, 检验统计量为
+
+$$
+
+\chi^ {2} = \sum_ {i = 1} ^ {r} \sum_ {j = 1} ^ {c} \frac {\left(n _ {i j} - n \hat {p} _ {i j}\right) ^ {2}}{n \hat {p} _ {i j}},
+
+$$
+
+在原假设 $H_0$ 成立时上式近似服从自由度为 $rc - (r + c - 2) - 1 = (r - 1)(c - 1)$ 的 $\chi^2$ 分布. 其中诸 $\hat{p}_{ij}$ 是在 $H_0$ 成立下得到的 $p_{ij}$ 的最大似然估计, 其表达式为
+
+$$
+
+\hat {p} _ {i j} = \hat {p} _ {i}. \hat {p} _ {. j} = \frac {n _ {i .}}{n} \cdot \frac {n _ {. j}}{n},
+
+$$
+
+对给定的显著性水平 $\alpha$ （ $0 < \alpha < 1$ ），检验的拒绝域为 $W = \{\chi^2 \geqslant \chi_{1 - \alpha}^2 ((r - 1)(c - 1))\}$ .
+
+<Example title="例 7.4.5">
+为研究儿童智力发展与营养的关系, 某研究机构调查了 1436 名儿童,
+
+得到如表 7.4.5 的数据,试在显著性水平 0.05 下判断智力发展与营养有无关系.
+
+表 7.4.5 儿童智力与营养的调查数据
+
+<table><tr><td rowspan="2"></td><td colspan="4">智商</td><td rowspan="2">合计</td></tr><tr><td>&lt;80</td><td>80～89</td><td>90～99</td><td> $\geqslant$ 100</td></tr><tr><td>营养良好</td><td>367</td><td>342</td><td>266</td><td>329</td><td>1 304</td></tr><tr><td>营养不良</td><td>56</td><td>40</td><td>20</td><td>16</td><td>132</td></tr><tr><td>合计</td><td>423</td><td>382</td><td>286</td><td>345</td><td>1 436</td></tr></table>
+
+<Solution title="解">
+用 A 表示营养状况, 它有两个水平: $A_{1}$ 表示营养良好, $A_{2}$ 表示营养不良; B 表示儿童智商, 它有四个水平, $B_{1}, B_{2}, B_{3}, B_{4}$ 分别表示表中四种情况. 沿用前面的记号, 首先建立假设 $H_{0}$ : 营养状况与智商无关联, 即 A 与 B 是独立的. 统计表示如下:
+
+$$
+
+H _ {0}: p _ {i j} = p _ {i}. p _ {. j}, \quad i = 1, 2, j = 1, 2, 3, 4.
+
+$$
+
+在原假设 $H_0$ 成立下，我们可以计算诸参数的最大似然估计值，
+
+$$
+
+\hat {p} _ {1.} = 1 3 0 4 / 1 4 3 6 = 0. 9 0 8 1, \quad \hat {p} _ {2.} = 1 3 2 / 1 4 3 6 = 0. 0 9 1 9,
+
+$$
+
+$$
+
+\hat {p} _ {\cdot 1} = 4 2 3 / 1 4 3 6 = 0. 2 9 4 6, \quad \hat {p} _ {\cdot 2} = 3 8 2 / 1 4 3 6 = 0. 2 6 6 0,
+
+$$
+
+$$
+
+\hat {p} _ {. 3} = 2 8 6 / 1 4 3 6 = 0. 1 9 9 2, \quad \hat {p} _ {. 4} = 3 4 5 / 1 4 3 6 = 0. 2 4 0 3,
+
+$$
+
+进而可给出诸 $n\hat{p}_{ij} = n\hat{p}_{i}.\hat{p}_{.j}$ ，如
+
+$$
+
+n \hat {p} _ {1 1} = 1 4 3 6 \times 0. 9 0 8 1 \times 0. 2 9 4 6 = 3 8 4. 1 6 7 7,
+
+$$
+
+其他结果见表7.4.6.
+
+表 7.4.6 诸 $n\hat{p}_{ij}$ 的计算结果
+
+<table><tr><td></td><td>&lt;80</td><td>80～89</td><td>90～99</td><td> $\geqslant$ 100</td><td> $\hat{p}_{i}$ .</td></tr><tr><td>营养良好</td><td>384.167 7</td><td>346.872 4</td><td>259.763 1</td><td>313.358 8</td><td>0.908 1</td></tr><tr><td>营养不良</td><td>38.877 9</td><td>35.103 6</td><td>26.288 1</td><td>31.712 0</td><td>0.091 9</td></tr><tr><td> $\hat{p}_{\cdot j}$ </td><td>0.294 6</td><td>0.266 0</td><td>0.199 2</td><td>0.240 3</td><td></td></tr></table>
+
+由表 7.4.5 和表 7.4.6 可以计算检验统计量的值
+
+$$
+
+\chi^ {2} = \frac {(3 6 7 - 3 8 4 . 1 6 7 7) ^ {2}}{3 8 4 . 1 6 7 7} + \frac {(3 4 2 - 3 4 6 . 8 7 2 4) ^ {2}}{3 4 6 . 8 7 2 4} + \dots + \frac {(1 6 - 3 1 . 7 1 2 0) ^ {2}}{3 1 . 7 1 2 0} = 1 9. 2 7 8 5
+
+$$
+
+此处 $r = 2, c = 4, (r - 1)(c - 1) = 3$ ，若取 $\alpha = 0.05$ ，查表有 $\chi_{0.95}^2(3) = 7.8147$ ，由于 $19.2785 > 7.8147$ ，故拒绝原假设，认为营养状况对智商有影响。本例中检验的 $p$ 值为 $0.0002$ ，拒绝 $H_0$ 的依据较为充足。
+</Solution>
+</Example>
+
+<Block title="习题7.4">
+1. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 为来自 $b(1, p)$ 的样本，试求假设 $H_{0}: p = p_{0} \quad \text{vs} \quad H_{1}: p \neq p_{0}$ 的似然比检验.
+
+2. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 为来自 $N(\mu, \sigma^{2})$ 的样本，试求假设 $H_{0}: \sigma^{2} = \sigma_{0}^{2} \quad vs \quad H_{1}: \sigma^{2} \neq \sigma_{0}^{2}$ 的似然比检验.
+
+3. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 为来自指数分布 $Exp(\lambda_{1})$ 的样本， $y_{1}, y_{2}, \cdots, y_{m}$ 为来自指数分布 $Exp(\lambda_{2})$ 的样
+
+本，且两组样本独立，其中 $\lambda_{1},\lambda_{2}$ 是未知的正参数.
+
+(1) 求假设 $H_{0}:\lambda_{1}=\lambda_{2}$ vs $H_{1}:\lambda_{1}\neq\lambda_{2}$ 的似然比检验；
+
+(2) 证明上述检验法的拒绝域仅依赖于比值 $\sum_{i=1}^{n} x_{i} / \sum_{i=1}^{m} y_{i}$ ;
+
+(3) 求统计量 $\sum_{i=1}^{n} x_{i} / \sum_{i=1}^{m} y_{i}$ 在原假设成立下的分布.
+
+4. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 为来自正态总体 $N(\mu, \sigma^{2})$ 的 i.i.d. 样本，其中 $\mu, \sigma^{2}$ 未知。证明关于假设 $H_{0}: \mu \leqslant \mu_{0}$ vs $H_{1}: \mu > \mu_{0}$ 的单侧 t 检验是似然比检验（显著性水平 $\alpha < 1/2$ ）。
+
+5. 按孟德尔遗传规律, 让开淡红花的豌豆随机交配, 子代可区分为红花、淡红花和白花三类, 且其比例是 $1:2:1$ , 为了验证这个理论, 观察一次实验, 得到红花、淡红花和白花的豌豆株数分别为 26, 66, 28, 这些数据与孟德尔定律是否一致 $(\alpha = 0.05)$ ?
+
+6. 掷一颗骰子 60 次, 结果如下:
+
+<table><tr><td>点数</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td></tr><tr><td>次数</td><td>7</td><td>8</td><td>12</td><td>11</td><td>9</td><td>13</td></tr></table>
+
+试在显著性水平为 0.05 下检验这颗骰子是否均匀.
+
+7. 检查了一本书的 100 页, 记录各页中的印刷错误的个数, 其结果如下:
+
+<table><tr><td>错误个数</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td> $\geqslant 6$ </td></tr><tr><td>页数</td><td>35</td><td>40</td><td>19</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></table>
+
+问能否认为一页的印刷错误个数服从泊松分布(取 $\alpha=0.05$ )？
+
+8. 某建筑工地每天发生事故数现场记录如下：
+
+<table><tr><td>一天发生的事故数</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td> $\geqslant 6$ </td><td>合计</td></tr><tr><td>天数</td><td>102</td><td>59</td><td>30</td><td>8</td><td>0</td><td>1</td><td>0</td><td>200</td></tr></table>
+
+试在显著性水平 $\alpha=0.05$ 下检验这批数据是否服从泊松分布.
+
+9. 在一批灯泡中抽取 300 只作寿命试验, 其结果如下:
+
+<table><tr><td>寿命(h)</td><td>&lt;100</td><td>[100,200)</td><td>[200,300)</td><td>≥300</td></tr><tr><td>灯泡数</td><td>121</td><td>78</td><td>43</td><td>58</td></tr></table>
+
+在显著性水平为 0.05 下能否认为灯泡寿命服从指数分布 $Exp(0.005)$ ?
+
+10. 下表是上海 1875 年到 1955 年的 81 年间, 根据其中 63 年观察到的一年中 (5 月到 9 月) 下暴雨次数的整理资料
+
+<table><tr><td>i</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td> $\geqslant 9$ </td></tr><tr><td> $n_i$ </td><td>4</td><td>8</td><td>14</td><td>19</td><td>10</td><td>4</td><td>2</td><td>1</td><td>1</td><td>0</td></tr></table>
+
+试检验一年中暴雨次数是否服从泊松分布 $(\alpha=0.05)$ .
+
+11. 某种配偶的后代按体格的属性分为三类, 各类的数目分别是 10, 53, 46. 按照某种遗传模型其频率之比应为 $p^2: 2p(1-p): (1-p)^2$ , 问数据与模型是否相符 $(\alpha = 0.05)$ ?
+
+12. 设按有无特性 $A$ 与 $B$ 将 $n$ 个样品分成四类, 组成 $2 \times 2$ 列联表:
+
+<table><tr><td></td><td>B</td><td> $\overline{B}$ </td><td>合计</td></tr><tr><td>A</td><td>a</td><td>b</td><td>a+b</td></tr><tr><td> $\overline{A}$ </td><td>c</td><td>d</td><td>c+d</td></tr><tr><td>合计</td><td>a+c</td><td>b+d</td><td>n</td></tr></table>
+
+其中 $n = a + b + c + d$ ，试证明此时列联表独立性检验的 $\chi^2$ 统计量可以表示成
+
+$$
+
+\chi^ {2} = \frac {n (a d - b c) ^ {2}}{(a + b) (c + d) (a + c) (b + d)}.
+
+$$
+
+13. 在研究某种新措施对猪白痢的防治效果问题时,获得了如下数据:
+
+<table><tr><td></td><td>存活数</td><td>死亡数</td><td>合计</td><td>死亡率</td></tr><tr><td>对照</td><td>114</td><td>36</td><td>150</td><td>24%</td></tr><tr><td>新措施</td><td>132</td><td>18</td><td>150</td><td>12%</td></tr><tr><td>合计</td><td>246</td><td>54</td><td>300</td><td>18%</td></tr></table>
+
+试问新措施对防治该种疾病是否有显著疗效( $\alpha=0.05$ )？
+
+14. 某单位调查了 520 名中年以上的脑力劳动者, 其中 136 人有高血压史, 另外 384 人则无. 在有高血压史的 136 人中, 经诊断为冠心病及可疑者的有 48 人, 在无高血压史的 384 人中, 经诊断为冠心病及可疑者的有 36 人. 从这个资料, 对高血压与冠心病有无关系作检验 (取 $\alpha = 0.01$ ).
+
+15. 一项是否应提高小学生的计算机课程的比例的调查结果如下：
+
+<table><tr><td>年龄</td><td>同意</td><td>不同意</td><td>不知道</td></tr><tr><td>55岁以上</td><td>32</td><td>28</td><td>14</td></tr><tr><td>36～55岁</td><td>44</td><td>21</td><td>17</td></tr><tr><td>15～35岁</td><td>47</td><td>12</td><td>13</td></tr></table>
+
+问年龄因素是否影响了对问题的回答 $(\alpha = 0.05)$ ？
+</Block>

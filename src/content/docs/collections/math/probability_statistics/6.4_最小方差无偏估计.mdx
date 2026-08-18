@@ -1,0 +1,505 @@
+---
+title: '6.4 最小方差无偏估计'
+---
+
+import Example from '@/components/Example.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Solution from '@/components/Solution.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+
+我们已经看到,寻求点估计有各种不同的方法,为了在不同的点估计间进行比较选择,就必须对各种点估计的好坏给出评价标准.统计学中给出了众多的估计量评价标准,对同一估计量使用不同的评价标准可能会得到完全不同的结论,因此,在评价某一个估计好坏时首先要说明是在哪一个标准下,否则所论好坏则毫无意义.
+
+## 6.4.1 均方误差
+
+相合性和渐近正态性是在大样本场合下评价估计好坏的两个重要标准,在样本量不是很大时,人们更加倾向于使用一些基于小样本的评价标准,此时,对无偏估计常使用方差,对有偏估计常使用均方误差.
+
+一般而言,在样本量一定时,评价一个点估计的好坏使用的度量指标总是点估计值 $\hat{\theta}$ 与参数真值 $\theta$ 的距离的函数,最常用的函数是距离的平方.由于 $\hat{\theta}$ 具有随机性,可以对该函数求期望,这就是下式给出的均方误差
+
+$$
+
+\mathbf {M S E} (\hat {\boldsymbol {\theta}}) = E (\hat {\boldsymbol {\theta}} - \boldsymbol {\theta}) ^ {2}.\tag{6.4.1}
+
+$$
+
+均方误差是评价点估计的最一般的标准.自然,我们希望估计的均方误差越小越好.注意到
+
+$$
+
+\begin{array}{r l} \mathrm{MSE} (\hat {\theta}) & = E [ (\hat {\theta} - E (\hat {\theta})) + (E (\hat {\theta}) - \theta) ] ^ {2} \\ & = E (\hat {\theta} - E (\hat {\theta})) ^ {2} + (E (\hat {\theta}) - \theta) ^ {2} + 2 E [ (\hat {\theta} - E (\hat {\theta})) (E (\hat {\theta}) - \theta) ] \\ & = \mathrm{Var} (\hat {\theta}) + (E (\hat {\theta}) - \theta) ^ {2}. \end{array}
+
+$$
+
+因此, 均方误差由点估计的方差与偏差 $|E(\hat{\theta}) - \theta|$ 的平方两部分组成. 如果 $\hat{\theta}$ 是 $\theta$ 的无偏估计, 则 $\mathrm{MSE}(\hat{\theta}) = \mathrm{Var}(\hat{\theta})$ , 此时用均方误差评价点估计与用方差是完全一样的, 这也说明了用方差考察无偏估计有效性是合理的. 当 $\hat{\theta}$ 不是 $\theta$ 的无偏估计时, 就要看其均方误差 $\mathrm{MSE}(\hat{\theta})$ , 即不仅要看其方差大小, 还要看其偏差大小. 下面的例子说明在均方误差的含义下有些有偏估计优于无偏估计.
+
+<Example title="例 6.4.1">
+在例 6.1.6 中我们曾指出: 对均匀总体 $U(0, \theta)$ ，由 $\theta$ 的最大似然估计得
+
+到的无偏估计是 $\hat{\theta} = (n + 1)x_{(n)} / n$ ，它的均方误差
+
+$$
+
+\mathrm{MSE} (\hat {\theta}) = \mathrm{Var} (\hat {\theta}) = \frac {\theta^ {2}}{n (n + 2)}.
+
+$$
+
+现我们考虑 $\theta$ 的形如 $\hat{\theta}_{\alpha} = \alpha \cdot x_{(n)}$ 的估计，其均方误差为
+
+$$
+
+\begin{array}{r l} \mathrm{MSE} (\hat {\theta} _ {\alpha}) & = \mathrm{Var} (\alpha \cdot x _ {(n)}) + (\alpha E x _ {(n)} - \theta) ^ {2} \\ & = \alpha^ {2} \mathrm{Var} (x _ {(n)}) + \left(\alpha \frac {n}{n + 1} \theta - \theta\right) ^ {2} \\ & = \alpha^ {2} \frac {n}{(n + 1) ^ {2} (n + 2)} \theta^ {2} + \left(\frac {n \cdot \alpha}{n + 1} - 1\right) ^ {2} \theta^ {2}. \end{array}
+
+$$
+
+用求导的方法不难求出当 $\alpha_0 = \frac{n + 2}{n + 1}$ 时上述均方误差达到最小，且 $\mathrm{MSE}\left(\frac{n + 2}{n + 1} x_{(n)}\right) = \frac{\theta^2}{(n + 1)^2}$ ，这表明， $\hat{\theta}_0 = \frac{n + 2}{n + 1} x_{(n)}$ 虽是 $\theta$ 的有偏估计，但在 $n \geqslant 2$ 时其均方误差 $\mathrm{MSE}(\hat{\theta}_0) = \frac{\theta^2}{(n + 1)^2} < \frac{\theta^2}{n(n + 2)} = \mathrm{MSE}(\hat{\theta})$ 。所以在均方误差的标准下，有偏估计 $\hat{\theta}_0$ 优于无偏估计 $\hat{\theta}$ 。
+</Example>
+
+<Knowledge title="定义 6.4.1">
+设有样本 $x_{1}, x_{2}, \cdots, x_{n}$ ，对待估参数 $\theta$ ，设有一个估计类，称 $\hat{\theta}(x_{1}, x_{2}, \cdots, x_{n})$ 是该估计类中 $\theta$ 的一致最小均方误差估计，如果对该估计类中另外任意一个 $\theta$ 的估计 $\widetilde{\theta}$ ，在参数空间 $\Theta$ 上都有
+
+$$
+
+\mathrm{MSE} _ {\theta} (\hat {\theta}) \leqslant \mathrm{MSE} _ {\theta} (\widetilde {\theta}).\tag{6.4.2}
+
+$$
+
+一致最小均方误差估计通常是在一个确定的估计类中进行的,正如例6.4.1所示,在例6.4.1中我们把估计限制在 $x_{(n)}$ 的倍数中.若不对估计加以限制(即考虑所有可能的估计),则一致最小均方误差估计是不存在的,从而没有意义.事实上,若 $\hat{\theta}$ 是 $\theta$ 的所有估计中的一致最小均方误差估计,取定任一个 $\theta_{0}\in\Theta$ ,令 $\tilde{\theta}\equiv\theta_{0}$ ,它是 $\theta$ 的一个有特别倾向的估计,且 $\mathrm{MSE}_{\theta_{0}}(\tilde{\theta})=0$ ,于是要求一致最小均方误差估计 $\hat{\theta}$ 在 $\theta_{0}$ 处也有 $\mathrm{MSE}_{\theta_{0}}(\hat{\theta})=0$ ,由 $\theta_{0}$ 的任意性,这意味着 $\mathrm{MSE}_{\theta}(\hat{\theta})$ 处处为0,这显然是做不到的.
+
+既然一致最小均方误差估计一般都不存在,人们通常就对估计提一些合理性要求,前述无偏性就是一个最常见的合理性要求.
+</Knowledge>
+
+## 6.4.2 一致最小方差无偏估计
+
+我们已经指出,均方误差由点估计的方差与偏差的平方两部分组成.当要求 $\hat{\theta}$ 是 $\theta$ 的无偏估计时,均方误差就简化为估计的方差,此时一致最小均方误差估计即为一致最小方差无偏估计.它的一般定义如下:
+
+<Knowledge title="定义 6.4.2">
+对参数估计问题, 设 $\hat{\theta}$ 是 $\theta$ 的一个无偏估计, 如果对另外任意一个 $\theta$ 的无偏估计 $\tilde{\theta}$ , 在参数空间 $\Theta$ 上都有
+
+$$
+
+\operatorname{Var} _ {\theta} (\hat {\theta}) \leqslant \operatorname{Var} _ {\theta} (\widetilde {\theta}),
+
+$$
+
+则称 $\hat{\theta}$ 是 $\theta$ 的一致最小方差无偏估计, 简记为 UMVUE.
+
+关于 UMVUE, 有如下一个判断准则.
+</Knowledge>
+
+<Knowledge title="定理 6.4.1">
+设 $X=(x_{1},x_{2},\cdots,x_{n})$ 是来自某总体的一个样本, $\hat{\theta}=\hat{\theta}(X)$ 是 $\theta$ 的一个无偏估计, $\mathrm{Var}(\hat{\theta})<\infty$ . 则 $\hat{\theta}$ 是 $\theta$ 的 UMVUE 的充要条件是, 对任意一个满足 $E(\varphi(X))=0$ 和 $\mathrm{Var}(\varphi(X))<\infty$ 的 $\varphi(X)$ , 都有
+
+$$
+
+\operatorname{Cov} _ {\theta} (\hat {\theta}, \varphi) = 0, \quad \forall \theta \in \Theta .
+
+$$
+
+这个定理表明: $\theta$ 的 UMVUE 必与任一零的无偏估计不相关, 反之亦然, 这是 UMVUE 的重要特征.
+
+<Solution title="证明">
+先证充分性. 对 $\theta$ 的任意一个无偏估计 $\widetilde{\theta}$ , 令 $\varphi = \widetilde{\theta} - \hat{\theta}$ , 则
+
+$$
+
+E (\varphi) = E (\widetilde {\theta}) - E (\hat {\theta}) = 0.
+
+$$
+
+于是
+
+$$
+
+\operatorname{Var} (\widetilde {\theta}) = E (\widetilde {\theta} - \theta) ^ {2} = E [ (\widetilde {\theta} - \hat {\theta}) + (\hat {\theta} - \theta) ] ^ {2} = E (\varphi^ {2}) + \operatorname{Var} (\hat {\theta}) + 2 \operatorname{Cov} (\varphi , \hat {\theta}) \geqslant \operatorname{Var} (\hat {\theta}).
+
+$$
+
+这表明 $\hat{\theta}$ 在 $\theta$ 的无偏估计类中方差一致最小.
+
+采用反证法证必要性. 设 $\hat{\theta}$ 是 $\theta$ 的 UMVUE, $\varphi(X)$ 满足 $E_{\theta}(\varphi(X)) = 0$ , $\operatorname{Var}_{\theta}(\varphi(X)) < \infty$ , 倘若在参数空间 $\Theta$ 中有一个 $\theta_0$ 使得 $\operatorname{Cov}_{\theta_0}(\hat{\theta}, \varphi(X)) \stackrel{\Delta}{=} a \neq 0$ , 取 $b = -\frac{a}{\operatorname{Var}_{\theta_0}(\varphi(X))} \neq 0$ , 则
+
+$$
+
+b ^ {2} \mathrm{Var} _ {\theta_ {0}} (\varphi (X)) + 2 a b = b (- a + 2 a) = - \frac {a ^ {2}}{\mathrm{Var} _ {\theta_ {0}} (\varphi (X))} <   0
+
+$$
+
+令 $\widetilde{\theta} = \widehat{\theta} + b\varphi(X)$ , 则 $E_{\theta}(\widetilde{\theta}) = E_{\theta}(\widehat{\theta}) + bE_{\theta}(\varphi(X)) = \theta$ , 这说明 $\widetilde{\theta}$ 也是 $\theta$ 的无偏估计, 但其方差
+
+$$
+
+\begin{array}{r l} \mathrm{Var} _ {\theta_ {0}} (\widetilde {\boldsymbol {\theta}}) & = E _ {\theta_ {0}} (\hat {\boldsymbol {\theta}} + b \varphi (\boldsymbol {X}) - \boldsymbol {\theta}) ^ {2} = E _ {\theta_ {0}} (\hat {\boldsymbol {\theta}} - \boldsymbol {\theta}) ^ {2} + b ^ {2} E _ {\theta_ {0}} (\varphi (\boldsymbol {X}) ^ {2}) + 2 b E _ {\theta_ {0}} ((\hat {\boldsymbol {\theta}} - \boldsymbol {\theta}) \varphi (\boldsymbol {X})) \\ & = \mathrm{Var} _ {\theta_ {0}} (\hat {\boldsymbol {\theta}}) + b ^ {2} \mathrm{Var} _ {\theta_ {0}} (\varphi (\boldsymbol {X})) + 2 a b <   \mathrm{Var} _ {\theta_ {0}} (\hat {\boldsymbol {\theta}}), \end{array}
+
+$$
+
+这与 $\hat{\theta}$ 是 $\theta$ 的UMVUE矛盾, 这就证明了对参数空间 $\Theta$ 中任意的 $\theta$ 都有 $\operatorname{Cov}_{\theta}(\hat{\theta}, \varphi(X)) = 0$ . 定理得证.
+</Solution>
+</Knowledge>
+
+<Example title="例 6.4.2">
+设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自指数分布 $Exp(1/\theta)$ 的样本，则根据因子分解定理可知， $T = x_{1} + x_{2} + \cdots + x_{n}$ 是 $\theta$ 的充分统计量，由于 $E(T) = n\theta$ ，所以 $\bar{x} = T/n$ 是 $\theta$ 的无偏估计。设 $\varphi = \varphi(x_{1}, x_{2}, \cdots, x_{n})$ 是 0 的任一无偏估计，则
+
+$$
+
+E (\varphi (x _ {1}, \dots , x _ {n})) = \int_ {0} ^ {\infty} \dots \int_ {0} ^ {\infty} \varphi (x _ {1}, \dots , x _ {n}) \cdot \prod_ {i = 1} ^ {n} \left\{\frac {1}{\theta} \cdot e ^ {- x _ {i} / \theta} \right\} d x _ {1} \dots d x _ {n} = 0,
+
+$$
+
+即
+
+$$
+
+\int_ {0} ^ {\infty} \dots \int_ {0} ^ {\infty} \varphi (x _ {1}, \dots , x _ {n}) \cdot e ^ {- (x _ {1} + \dots + x _ {n}) / \theta} d x _ {1} \dots d x _ {n} = 0,
+
+$$
+
+两端对 $\theta$ 求导，得
+
+$$
+
+\int_ {0} ^ {\infty} \dots \int_ {0} ^ {\infty} \frac {n \overline {{{x}}}}{\theta^ {2}} \varphi (x _ {1}, \dots , x _ {n}) \cdot e ^ {- (x _ {1} + \dots + x _ {n}) / \theta} d x _ {1} \dots d x _ {n} = 0.
+
+$$
+
+这说明 $E(\overline{x} \cdot \varphi) = 0$ ，从而
+
+$$
+
+\operatorname{Cov} (\overline {{{x}}}, \varphi) = E (\overline {{{x}}} \cdot \varphi) - E (\overline {{{x}}}) \cdot E (\varphi) = 0.
+
+$$
+
+由定理 6.4.1, $\bar{x}$ 是 $\theta$ 的 UMVUE.
+</Example>
+
+## 6.4.3 充分性原则
+
+我们在例6.1.6中比较了均匀分布 $U(0,\theta)$ 的两个无偏估计 $\hat{\theta}_1 = \frac{n + 1}{n} x_{(n)}$ 与 $\hat{\theta}_2 = 2\overline{x}$ 的优劣，注意到较好的那个无偏估计是充分统计量的函数，这不是偶然的，事实上，若充分统计量和UMVUE存在，则UMVUE一定可以表示为充分统计量的函数.下面我们介绍这方面的有关结论.
+
+<Knowledge title="定理 6.4.2">
+设总体概率函数是 $p(x;\theta)$ , $x_{1}$ , $x_{2}$ , $\cdots$ , $x_{n}$ 是其样本, $T = T(x_{1}, x_{2}, \cdots, x_{n})$ 是 $\theta$ 的充分统计量, 则对 $\theta$ 的任一无偏估计 $\hat{\theta} = \hat{\theta}(x_{1}, x_{2}, \cdots, x_{n})$ , 令 $\widetilde{\theta} = E(\hat{\theta} | T)$ , 则 $\widetilde{\theta}$ 也是 $\theta$ 的无偏估计, 且
+
+$$
+
+\operatorname{Var} (\widetilde {\theta}) \leqslant \operatorname{Var} (\hat {\theta}).
+
+$$
+
+<Solution title="证明">
+由于 $T = T(x_{1}, x_{2}, \cdots, x_{n})$ 是充分统计量，故而 $\widetilde{\theta} = E(\hat{\theta} | T)$ 与 $\theta$ 无关，因此它也是 $\theta$ 的一个估计（统计量），根据重期望公式，有
+
+$$
+
+E (\widetilde {\theta}) = E [ E (\hat {\theta} | T) ] = E (\hat {\theta}) = \theta ,
+
+$$
+
+故 $\widetilde{\theta}$ 是 $\theta$ 的无偏估计.再考察其方差
+
+$$
+
+\operatorname{Var} (\hat {\theta}) = E [ (\hat {\theta} - \widetilde {\theta}) + (\widetilde {\theta} - \theta) ] ^ {2} = E (\hat {\theta} - \widetilde {\theta}) ^ {2} + E (\widetilde {\theta} - \theta) ^ {2} + 2 E [ (\hat {\theta} - \widetilde {\theta}) (\widetilde {\theta} - \theta) ],
+
+$$
+
+由于
+
+$$
+
+E \left[ (\hat {\theta} - \widetilde {\theta}) (\widetilde {\theta} - \theta) \right] = E \left\{E \left[ (\hat {\theta} - \widetilde {\theta}) (\widetilde {\theta} - \theta) | T ] \right. \right\} = E \left\{\left(\widetilde {\theta} - \theta\right) E \left[ (\hat {\theta} - \widetilde {\theta}) | T ] \right. \right\} = 0,
+
+$$
+
+由此即有
+
+$$
+
+\operatorname{Var} (\hat {\theta}) = E (\hat {\theta} - \widetilde {\theta}) ^ {2} + \operatorname{Var} (\widetilde {\theta}),
+
+$$
+
+由于上式右端第一项非负,这就证明了第二个结论.
+</Solution>
+</Knowledge>
+
+<Knowledge title="定理 6.4.2">
+说明, 如果无偏估计不是充分统计量的函数, 则将之对充分统计量求条件期望可以得到一个新的无偏估计, 该估计的方差比原来的估计的方差要小, 从而降低了无偏估计的方差. 换言之, 考虑 $\theta$ 的估计问题只需要在基于充分统计量的函数中进行即可, 该说法对所有的统计推断问题都是成立的, 这便是所谓的充分性原则.
+</Knowledge>
+
+<Example title="例 6.4.3">
+设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自 $b(1, p)$ 的样本，则 $\bar{x}$ （或 $T = n \bar{x}$ ）是 p 的充分统计量。为估计 $\theta = p^{2}$ ，可令
+
+$$
+
+\hat {\theta} _ {1} = \left\{ \begin{array}{l l} 1, & x _ {1} = 1, x _ {2} = 1, \\ 0, & \text {其他}. \end{array} \right.
+
+$$
+
+由于
+
+$$
+
+E (\hat {\theta} _ {1}) = P (x _ {1} = 1, x _ {2} = 1) = p \cdot p = \theta ,
+
+$$
+
+所以 $\hat{\theta}_{1}$ 是 $\theta$ 的无偏估计. 这个估计并不好, 它只使用了两个观测值, 但便于我们用定理 6.4.2 对之加以改进: 求 $\hat{\theta}_{1}$ 关于充分统计量 $T = \sum_{i=1}^{n} x_{i}$ 的条件期望, 过程如下.
+
+$$
+
+\begin{array}{r l} \hat {\theta} & = E (\hat {\theta} _ {1} \mid T = t) = P (\hat {\theta} _ {1} = 1 \mid T = t) = \frac {P (x _ {1} = 1 , x _ {2} = 1 , T = t)}{P (T = t)} \\ & = \frac {P (x _ {1} = 1 , x _ {2} = 1 , \sum_ {i = 3} ^ {n} x _ {i} = t - 2)}{P (T = t)} = \frac {p \cdot p \cdot \binom {n - 2} {t - 2} p ^ {t - 2} (1 - p) ^ {n - t}}{\binom {n} {t} p ^ {t} (1 - p) ^ {n - t}} \\ & = \binom {n - 2} {t - 2} / \binom {n} {t} = \frac {t (t - 1)}{n (n - 1)}, \end{array}
+
+$$
+
+其中 $t = \sum_{i=1}^{n} x_i$ . 可以验证, $\hat{\theta}$ 是 $\theta$ 的无偏估计, 且 $\operatorname{Var}(\hat{\theta}) < \operatorname{Var}(\hat{\theta}_1)$ .
+</Example>
+
+## 6.4.4 克拉默-拉奥不等式
+
+我们在定理 6.3.1 中已指出, 最大似然估计的渐近方差主要由费希尔信息量 $I(\theta)$ 决定. 本节先介绍 $I(\theta)$ , 然后讲述克拉默-拉奥 (Cramer-Rao) 不等式, 有时它可用来判断 UMVUE.
+
+<Knowledge title="定义 6.4.3">
+设总体的概率函数 $p(x;\theta)$ , $\theta \in \Theta$ 满足下列条件：
+
+(1) 参数空间 $\Theta$ 是直线上的一个开区间；
+
+(2) 支撑 $S=\{x:p(x;\theta)>0\}$ 与 $\theta$ 无关；
+
+(3) 导数 $\frac{\partial}{\partial\theta} p(x;\theta)$ 对一切 $\theta \in \Theta$ 都存在；
+
+(4) 对 $p(x;\theta)$ ，积分与微分运算可交换次序，即
+
+$$
+
+\frac {\partial}{\partial \theta} \int_ {- \infty} ^ {\infty} p (x; \theta) \mathrm{d} x = \int_ {- \infty} ^ {\infty} \frac {\partial}{\partial \theta} p (x; \theta) \mathrm{d} x;
+
+$$
+
+(5) 期望 $E\left[\frac{\partial}{\partial\theta}\ln p(x;\theta)\right]^{2}$ 存在，
+
+$$
+
+I (\theta) = E \left[ \frac {\partial}{\partial \theta} \ln p (x; \theta) \right] ^ {2}\tag{6.4.3}
+
+$$
+
+为总体分布的费希尔信息量.
+
+费希尔信息量是统计学中一个基本概念,很多的统计结果都与费希尔信息量有关.如最大似然估计的渐近方差,无偏估计的方差的下界等都与费希尔信息量 $I(\theta)$ 有关. $I(\theta)$ 的种种性质显示,“ $I(\theta)$ 越大”可被解释为总体分布中包含未知参数 $\theta$ 的信息越多.
+</Knowledge>
+
+<Example title="例 6.4.4">
+设总体为泊松分布 $P(\lambda)$ ，其分布列为
+
+$$
+
+p (x; \lambda) = \frac {\lambda^ {x}}{x !} \mathrm{e} ^ {- \lambda}, \quad x = 0, 1, \dots ,
+
+$$
+
+可以验证定义 6.4.3 的条件满足,且
+
+$$
+
+\ln p (x; \lambda) = x \ln \lambda - \lambda - \ln (x!),
+
+$$
+
+$$
+
+\frac {\partial}{\partial \lambda} \ln p (x; \lambda) = \frac {x}{\lambda} - 1.
+
+$$
+
+于是
+
+$$
+
+I (\lambda) = E \left(\frac {x - \lambda}{\lambda}\right) ^ {2} = \frac {1}{\lambda}.
+
+$$
+</Example>
+
+<Example title="例 6.4.5">
+设总体为指数分布, 其密度函数为
+
+$$
+
+p (x; \theta) = \frac {1}{\theta} \exp \left\{- \frac {x}{\theta} \right\}, x > 0, \theta > 0.
+
+$$
+
+可以验证定义 6.4.3 的条件满足,且
+
+$$
+
+\frac {\partial}{\partial \theta} \ln p (x; \theta) = - \frac {1}{\theta} + \frac {x}{\theta^ {2}} = \frac {x - \theta}{\theta^ {2}},
+
+$$
+
+于是
+
+$$
+
+I (\theta) = E \left(\frac {x - \theta}{\theta^ {2}}\right) ^ {2} = \frac {\operatorname{Var} (x)}{\theta^ {4}} = \frac {1}{\theta^ {2}},
+
+$$
+</Example>
+
+<Knowledge title="定理 6.4.3">
+(克拉默-拉奥不等式) 设总体分布 $p(x;\theta)$ 满足定义 6.4.3 的条件, $x_{1}, x_{2}, \cdots, x_{n}$ 是来自该总体的样本, $T = T(x_{1}, x_{2}, \cdots, x_{n})$ 是 $g(\theta)$ 的任一个无偏估计, $g'(\theta) = \frac{\partial g(\theta)}{\partial \theta}$ 存在, 且对 $\Theta$ 中一切 $\theta$ , 对
+
+$$
+
+g (\theta) = \int_ {- \infty} ^ {\infty} \dots \int_ {- \infty} ^ {\infty} T (x _ {1}, \dots , x _ {n}) \prod_ {i = 1} ^ {n} p (x _ {i}; \theta) \mathrm{d} x _ {1} \dots \mathrm{d} x _ {n}
+
+$$
+
+的微商可在积分号下进行,即
+
+$$
+
+\begin{array}{r l} g ^ {\prime} (\theta) & = \int_ {- \infty} ^ {\infty} \dots \int_ {- \infty} ^ {\infty} T (x _ {1}, \dots , x _ {n}) \frac {\partial}{\partial \theta} \Big (\prod_ {i = 1} ^ {n} p (x _ {i}; \theta) \Big) \mathrm{d} x _ {1} \dots \mathrm{d} x _ {n} \\ & = \int_ {- \infty} ^ {\infty} \dots \int_ {- \infty} ^ {\infty} T (x _ {1}, \dots , x _ {n}) \left[ \frac {\partial}{\partial \theta} \ln \prod_ {i = 1} ^ {n} p (x _ {i}; \theta) \right] \prod_ {i = 1} ^ {n} p (x _ {i}; \theta) \mathrm{d} x _ {1} \dots \mathrm{d} x _ {n}. \end{array}\tag{6.4.4}
+
+$$
+
+对离散总体,则将上述积分改为求和符号后,等式仍然成立.则有
+
+$$
+
+\operatorname{Var} (T) \geqslant [ g ^ {\prime} (\theta) ] ^ {2} / (n I (\theta)).\tag{6.4.5}
+
+$$
+
+(6.4.5)称为克拉默-拉奥(C-R)不等式, $\left[g^{\prime}(\theta)\right]^{2}/(nI(\theta))$ 称为 $g(\theta)$ 的无偏估计的方差的 C-R 下界, 简称 $g(\theta)$ 的 C-R 下界. 特别, 对 $\theta$ 的无偏估计 $\hat{\theta}$ , 有 $\operatorname{Var}(\hat{\theta}) \geqslant (nI(\theta))^{-1}$ .
+
+<Solution title="证明">
+以连续总体为例加以证明.由 $\int_{-\infty}^{\infty} p(x_i; \theta) \, \mathrm{d}x_i = 1, i = 1, 2, \dots, n$ , 两边对 $\theta$ 求导, 由于积分与微分可交换次序, 于是有
+
+$$
+
+0 = \int_ {- \infty} ^ {\infty} \frac {\partial}{\partial \theta} p (x _ {i}; \theta) \mathrm{d} x _ {i} = \int_ {- \infty} ^ {\infty} \left[ \frac {\partial}{\partial \theta} \ln p (x _ {i}; \theta) \right] p (x _ {i}; \theta) \mathrm{d} x _ {i} = E \left[ \frac {\partial}{\partial \theta} \ln p (x _ {i}; \theta) \right],
+
+$$
+
+记 $Z = \frac{\partial}{\partial\theta}\ln \prod_{i = 1}^{n}p(x_i;\theta) = \sum_{i = 1}^{n}\frac{\partial}{\partial\theta}\ln p(x_i;\theta)$ ，则 $E(Z) = \sum_{i = 1}^{n}E\left[\frac{\partial}{\partial\theta}\ln p(x_i;\theta)\right] = 0$ ，从而
+
+$$
+
+E (Z ^ {2}) = \operatorname{Var} (Z) = \sum_ {i = 1} ^ {n} \operatorname{Var} \left(\frac {\partial}{\partial \theta} \ln p (x _ {i}; \theta)\right) = \sum_ {i = 1} ^ {n} E \left[ \frac {\partial}{\partial \theta} \ln p (x _ {i}; \theta) \right] ^ {2} = n I (\theta)
+
+$$
+
+又由（6.4.4）， $g^{\prime}(\theta) = E(TZ) = E((T - g(\theta))Z)$ ，据施瓦茨不等式，有
+
+$$
+
+\left[ g ^ {\prime} (\theta) \right] ^ {2} \leqslant E \left[ (T - g (\theta)) ^ {2} \right] E (Z ^ {2}) = \operatorname{Var} (T) \operatorname{Var} (Z),
+
+$$
+
+由此，(6.4.5)得证.关于离散总体可类似证明.
+</Solution>
+</Knowledge>
+
+<Note>
+,如果(6.4.5)中等号成立,则称 $T=T(x_{1},x_{2},\cdots,x_{n})$ 是 $g(\theta)$ 的有效估计,有效估计一定是 UMVUE.
+</Note>
+
+<Example title="例 6.4.6">
+设总体分布列为 $p(x;\theta)=\theta^{x}(1-\theta)^{1-x}, x=0,1$ ，它满足定义 6.4.3 的所有条件，可以算得该分布的费希尔信息量为 $I(\theta)=\frac{1}{\theta(1-\theta)}$ ，若 $x_{1}, x_{2}, \cdots, x_{n}$ 是该总体的样本，则 $\theta$ 的 C-R 下界为 $(nI(\theta))^{-1}=\theta(1-\theta)/n$ 。大家知道 $\overline{x}=\frac{1}{n}\sum_{i=1}^{n}x_{i}$ 是 $\theta$ 的无偏估计，且其方差等于 $\theta(1-\theta)/n$ ，故 $\overline{x}$ 的方差达到了 C-R 下界，所以， $\overline{x}$ 是 $\theta$ 的有效估计，它也是 $\theta$ 的 UMVUE。
+</Example>
+
+<Example title="例 6.4.7">
+设总体为指数分布 $Exp(1/\theta)$ ，它满足定义 6.4.3 的所有条件，例 6.4.5 中已经算出该分布的费希尔信息量为 $I(\theta)=\theta^{-2}$ ，若 $x_{1}, x_{2}, \cdots, x_{n}$ 是样本，则 $\theta$ 的 C-R 下界为 $(nI(\theta))^{-1}=\theta^{2}/n$ 。而 $\overline{x}=\frac{1}{n}\sum_{i=1}^{n}x_{i}$ 是 $\theta$ 的无偏估计，且其方差等于 $\theta^{2}/n$ ，达到了 C-R 下界，所以， $\overline{x}$ 是 $\theta$ 的有效估计，它也是 $\theta$ 的 UMVUE。
+
+应该指出,能达到 C-R 下界的无偏估计(如上两例)并不多.大多数场合无偏估计都达不到其 C-R 下界,下面是一个这样的例子.
+</Example>
+
+<Example title="例 6.4.8">
+设总体为正态分布 $N(0, \sigma^{2})$ ，它满足定义 6.4.3 的所有条件，下面计算它的费希尔信息量。由于 $p(x; \sigma^{2}) = (2\pi\sigma^{2})^{-1/2} \exp\left\{-\frac{x^{2}}{2\sigma^{2}}\right\}$ ，注意到 $x^{2}/\sigma^{2} \sim \chi^{2}(1)$ ，故
+
+$$
+
+I (\sigma^ {2}) = E \left[ \frac {\partial}{\partial \sigma^ {2}} \ln p (x; \sigma^ {2}) \right] ^ {2} = E \left(\frac {x ^ {2}}{2 \sigma^ {4}} - \frac {1}{2 \sigma^ {2}}\right) ^ {2} = \frac {1}{4 \sigma^ {4}} \mathrm{Var} \left(\frac {x ^ {2}}{\sigma^ {2}}\right) = \frac {1}{2 \sigma^ {4}}.
+
+$$
+
+若 $x_{1}, x_{2}, \cdots, x_{n}$ 是样本，则 $\sigma^{2}$ 的无偏估计的 C-R 下界为 $\frac{2\sigma^{4}}{n}$ ，而 $\hat{\sigma}^{2} = \frac{1}{n} \sum_{i=1}^{n} x_{i}^{2}$ 是 $\sigma^{2}$ 的无偏估计，其方差达到了 C-R 下界，故 $\hat{\sigma}^{2}$ 是 $\sigma^{2}$ 的 UMVUE。另一方面，令 $\sigma = g(\sigma^{2}) =$
+
+$\sqrt{\sigma^{2}}$ , 则 $\sigma$ 的 C-R 下界为
+
+$$
+
+\frac {\left[ g ^ {\prime} \left(\sigma^ {2}\right) \right] ^ {2}}{n I \left(\sigma^ {2}\right)} = \frac {\left[ 1 / (2 \sigma) \right] ^ {2}}{n / (2 \sigma^ {4})} = \frac {\sigma^ {2}}{2 n},
+
+$$
+
+$\sigma$ 的无偏估计(参见例6.1.2)为
+
+$$
+
+\hat {\sigma} = \sqrt {\frac {n}{2}} \cdot \frac {\Gamma ((n - 1) / 2)}{\Gamma (n / 2)} \sqrt {\frac {1}{n} \sum_ {i = 1} ^ {n} x _ {i} ^ {2}}.
+
+$$
+
+可以证明,这是 $\sigma$ 的 UMVUE,且其方差大于 C-R 下界.这表明所有 $\sigma$ 的无偏估计的方差都大于其 C-R 下界.
+</Example>
+
+<Block title="习题6.4">
+1. 设总体概率函数是 $p(x;\theta)$ , $x_{1}$ , $x_{2}$ , $\cdots$ , $x_{n}$ 是其样本, $T=T(x_{1},x_{2},\cdots,x_{n})$ 是 $\theta$ 的充分统计量, 则对 $g(\theta)$ 的任一估计 $\hat{g}$ , 令 $\hat{g}=E(\hat{g}\mid T)$ , 证明: $\mathrm{MSE}(\hat{g})\leqslant\mathrm{MSE}(\hat{g})$ . 这说明, 在均方误差准则下, 人们只需要考虑基于充分统计量的估计.
+
+2. 设 $T_{1}, T_{2}$ 分别是 $\theta_{1}, \theta_{2}$ 的 UMVUE, 证明: 对任意的 (非零) 常数 $a, b, aT_{1} + bT_{2}$ 是 $a\theta_{1} + b\theta_{2}$ 的 UMVUE.
+
+3. 设 $T$ 是 $g(\theta)$ 的 UMVUE, $\hat{g}$ 是 $g(\theta)$ 的无偏估计, 证明, 若 $\operatorname{Var}(\hat{g}) < \infty$ , 则 $\operatorname{Cov}(T, \hat{g}) \geqslant 0$ .
+
+4. 设总体 $X \sim N(\mu, \sigma^{2})$ , $x_{1}, x_{2}, \cdots, x_{n}$ 为样本，证明， $\bar{x} = \frac{1}{n} \sum_{i=1}^{n} x_{i}, s^{2} = \frac{1}{n-1} \sum_{i=1}^{n} (x_{i} - \bar{x})^{2}$ 分别为 $\mu, \sigma^{2}$ 的 UMVUE.
+
+5. 设总体 $p(x; \theta)$ 的费希尔信息量存在, 若二阶导数 $\frac{\partial^2}{\partial \theta^2} p(x; \theta)$ 对一切的 $\theta \in \Theta$ 存在, 证明费希尔信息量
+
+$$
+
+I (\theta) = - E \left(\frac {\partial^ {2}}{\partial \theta^ {2}} \ln p (x; \theta)\right).
+
+$$
+
+6. 设总体密度函数为 $p(x;\theta)=\theta x^{\theta-1},0<x<1,\theta>0,x_{1},x_{2},\cdots,x_{n}$ 是样本.
+
+(1) 求 $g(\theta)=1/\theta$ 的最大似然估计；
+
+(2) 求 $g(\theta)$ 的有效估计.
+
+7. 设总体密度函数为 $p(x; \theta) = \frac{2\theta}{x^3} \mathrm{e}^{-\theta / x^2}, x > 0, \theta > 0$ ，求 $\theta$ 的费希尔信息量 $I(\theta)$ .
+
+8. 设总体密度函数为 $p(x;\theta)=\theta c^{\theta}x^{-(\theta+1)}$ , x>c, c>0 已知, $\theta>0$ , 求 $\theta$ 的费希尔信息量 $I(\theta)$ .
+
+9. 设总体分布列为 $P(X=x)=(x-1)\theta^{2}(1-\theta)^{x-2}, x=2,3,\cdots,0<\theta<1$ ，求 $\theta$ 的费希尔信息量 $I(\theta)$
+
+10. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 是来自 $Ga(\alpha, \lambda)$ 的样本， $\alpha > 0$ 已知，试证明， $\bar{x}/\alpha$ 是 $g(\lambda) = 1/\lambda$ 的有效估计，从而也是 UMVUE.
+
+11. 设 $x_{1}, x_{2}, \cdots, x_{m}$ i.i.d. \~ $N(a, \sigma^{2})$ , $y_{1}, y_{2}, \cdots, y_{n}$ i.i.d. \~ $N(a, 2\sigma^{2})$ ，求 a 和 $\sigma^{2}$ 的 UMVUE.
+
+12. 设 $x_{1}, x_{2}, \cdots, x_{n}$ i.i.d. \~N( $\mu, 1$ )，求 $\mu^{2}$ 的 UMVUE. 证明此 UMVUE 达不到 C-R 不等式的下界，即它不是有效估计.
+
+13. 对泊松分布 $P(\theta)$ .
+
+(1) 求 $I\left(\frac{1}{\theta}\right)$ ;
+
+(2) 找一个函数 $g(\cdot)$ ，使 $g(\theta)$ 的费希尔信息量与 $\theta$ 无关.
+
+14. 设 $x_{1}, x_{2}, \cdots, x_{n}$ 为独立同分布变量, $0 < \theta < 1$ ,
+
+$$
+
+P (x _ {1} = - 1) = \frac {1 - \theta}{2}, \quad P (x _ {1} = 0) = \frac {1}{2}, \quad P (x _ {1} = 1) = \frac {\theta}{2}.
+
+$$
+
+(1) 求 $\theta$ 的 MLE $\hat{\theta}_{1}$ 并问 $\hat{\theta}_{1}$ 是否是无偏的；
+
+(2) 求 $\theta$ 的矩估计 $\hat{\theta}_{2}$ ;
+
+(3) 计算 $\theta$ 的无偏估计的方差的 C-R 下界.
+
+15. 设总体 $X \sim Exp(1/\theta)$ , $x_{1}, x_{2}, \cdots, x_{n}$ 是样本, $\theta$ 的矩估计和最大似然估计都是 $\bar{x}$ , 它也是 $\theta$ 的相合估计和无偏估计, 试证明在均方误差准则下存在优于 $\bar{x}$ 的估计 (提示: 考虑 $\hat{\theta}_{a} = a \bar{x}$ , 找均方误差最小者).
+</Block>

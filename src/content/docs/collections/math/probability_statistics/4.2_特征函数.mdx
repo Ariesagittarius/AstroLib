@@ -1,0 +1,815 @@
+---
+title: '4.2 特征函数'
+---
+
+import Example from '@/components/Example.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Solution from '@/components/Solution.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+
+设 $p(x)$ 是随机变量 $X$ 的密度函数, 则 $p(x)$ 的傅里叶 (Fourier) 变换是
+
+$$
+
+\varphi (t) = \int_ {- \infty} ^ {\infty} \mathrm{e} ^ {\mathrm{i} t x} p (x) \mathrm{d} x,
+
+$$
+
+其中 $i=\sqrt{-1}$ 是虚数单位.由数学期望的概念知, $\varphi(t)$ 恰好是 $E(e^{itX})$ .这就是本节要讨论的特征函数,它是处理许多概率论问题的有力工具.它能把寻求独立随机变量和的分布的卷积运算(积分运算)转换成乘法运算,还能把求分布的各阶原点矩(积分运算)转换成微分运算,特别地,它能把寻求随机变量序列的极限分布转换成一般的函数极限问题.下面从特征函数的定义开始介绍它们.
+
+## 4.2.1 特征函数的定义
+
+先介绍一下复随机变量的概念.
+
+特征函数除考虑取实数值的随机变量外, 还要考虑取复数值的随机变量, 后者简称为复随机变量. 复随机变量定义为 $Z = Z(w) = X(w) + \mathrm{i}Y(w)$ , 其中 $X(w)$ 与 $Y(w)$ 是定义在 $\Omega$ 上的实随机变量. 而 $\overline{Z}(w) = X(w) - \mathrm{i}Y(w)$ 称为 $Z(w)$ 的复共轭随机变量. 复随机变量 $Z = X + \mathrm{i}Y$ 的模 $|Z|$ 定义为 $\sqrt{X^{2} + Y^{2}}$ , 或 $|Z|^{2} = X^{2} + Y^{2}$ , 且 $Z\overline{Z} = X^{2} + Y^{2} = |Z|^{2}$ .
+
+与随机变量有关的一些概念和定义,一般都可类似地移到复随机变量场合.例如,若随机变量 X 与 Y 的数学期望 $E(X)$ 与 $E(Y)$ 都存在,则复随机变量 $Z=X+iY$ 的数学期望定义为 $E(Z)=E(X)+iE(Y)$ . 又如复随机变量 $Z_{1}=X_{1}+iY_{1}$ 与 $Z_{2}=X_{2}+iY_{2}$ 相互独立当且仅当 $(X_{1},Y_{1})$ 与 $(X_{2},Y_{2})$ 相互独立 $((X_{1},Y_{1},X_{2},Y_{2})$ 的联合分布 $F_{X_{1},Y_{1},X_{2},Y_{2}}(x_{1},y_{1},x_{2},y_{2})$ 等于其边际分布 $F_{X_{1},Y_{1}}(x_{1},y_{1})$ 和 $F_{X_{2},Y_{2}}(x_{2},y_{2})$ 的乘积). 在欧拉公式 $e^{iX}=\cos X+i\sin X$ 中若 X 是实随机变量, 则 $E(e^{iX})=E(\cos X)+iE(\sin X)$ , 其模 $|e^{iX}|=\sqrt{\cos^{2}X+\sin^{2}X}=1$ . 若 X 与 Y 独立, 则 $e^{iX}$ 与 $e^{iY}$ 也独立.
+
+下面我们给出特征函数的定义.
+
+<Knowledge title="定义 4.2.1">
+设 X 是一个随机变量, 称
+
+$$
+
+\varphi (t) = E \left(\mathrm{e} ^ {\mathrm{i} t X}\right), \qquad - \infty <   t <   \infty ,\tag{4.2.1}
+
+$$
+
+为 X 的特征函数.
+
+因为 $\left|e^{itX}\right|=1$ , 所以 $E(e^{itX})$ 总是存在的, 即任一随机变量的特征函数总是存在的. 当离散随机变量 X 的分布列为 $p_{k}=P(X=x_{k}), k=1,2,\cdots$ , 则 X 的特征函数为
+
+$$
+
+\varphi (t) = \sum_ {k = 1} ^ {\infty} \mathrm{e} ^ {\mathrm{i} t x _ {k}} p _ {k}, \quad - \infty <   t <   \infty .\tag{4.2.2}
+
+$$
+
+当连续随机变量 $X$ 的密度函数为 $p(x)$ ，则 $X$ 的特征函数为
+
+$$
+
+\varphi (t) = \int_ {- \infty} ^ {\infty} \mathrm{e} ^ {\mathrm{i} t x} p (x) \mathrm{d} x, \qquad - \infty <   t <   \infty .\tag{4.2.3}
+
+$$
+
+与随机变量的数学期望、方差及各阶矩一样，特征函数只依赖于随机变量的分布，分布相同则特征函数也相同，所以我们也常称为某分布的特征函数.
+</Knowledge>
+
+<Example title="例 4.2.1">
+常用分布的特征函数(一)
+
+(1) 单点分布 $P(X=a)=1$ , 其特征函数为
+
+$$
+
+\varphi (t) = \mathrm{e} ^ {\mathrm{i} t a}.
+
+$$
+
+(2) 0-1 分布 $P(X = x) = p^{x}(1 - p)^{1 - x}, x = 0, 1$ ，其特征函数为
+
+$$
+
+\varphi (t) = p \mathrm{e} ^ {\mathrm{i} t} + q, \qquad \text { 其中 }   q = 1 - p.
+
+$$
+
+(3) 泊松分布 $P(\lambda)$ $P(X=k)=\frac{\lambda^{k}}{k!}e^{-\lambda}, k=0,1,\cdots,$ 其特征函数为
+
+$$
+
+\varphi (t) = \sum_ {k = 0} ^ {\infty} \mathrm{e} ^ {\mathrm{i} k t} \frac {\lambda^ {k}}{k !} \mathrm{e} ^ {- \lambda} = \mathrm{e} ^ {- \lambda} \mathrm{e} ^ {\lambda \mathrm{e} ^ {\mathrm{i} t}} = \mathrm{e} ^ {\lambda (\mathrm{e} ^ {\mathrm{i} t} - 1)}.
+
+$$
+
+(4) 均匀分布 $U(a,b)$ 因为密度函数为
+
+$$
+
+p (x) = \left\{ \begin{array}{l l} \frac {1}{b - a}, & a <   x <   b, \\ 0, & \text {其他}, \end{array} \right.
+
+$$
+
+所以其特征函数为
+
+$$
+
+\varphi (t) = \int_ {a} ^ {b} \frac {\mathrm{e} ^ {\mathrm{i} t x}}{b - a} \mathrm{d} x = \frac {\mathrm{e} ^ {\mathrm{i} b t} - \mathrm{e} ^ {\mathrm{i} a t}}{\mathrm{i} t (b - a)}.
+
+$$
+
+(5) 标准正态分布 $N(0,1)$ 因为密度函数为
+
+$$
+
+p (x) = \frac {1}{\sqrt {2 \pi}} \mathrm{e} ^ {- \frac {x ^ {2}}{2}}, \quad - \infty <   x <   \infty ,
+
+$$
+
+所以其特征函数为
+
+$$
+
+\varphi (t) = \frac {1}{\sqrt {2 \pi}} \int_ {- \infty} ^ {\infty} \mathrm{e} ^ {\mathrm{i} t x} \mathrm{e} ^ {- \frac {x ^ {2}}{2}} \mathrm{d} x = \frac {1}{\sqrt {2 \pi}} \int_ {- \infty} ^ {\infty} \sum_ {n = 0} ^ {\infty} \frac {(\mathrm{i} t x) ^ {n}}{n !} \mathrm{e} ^ {- \frac {x ^ {2}}{2}} \mathrm{d} x = \sum_ {n = 0} ^ {\infty} \frac {(\mathrm{i} t) ^ {n}}{n !} \left[ \frac {1}{\sqrt {2 \pi}} \int_ {- \infty} ^ {\infty} x ^ {n} \mathrm{e} ^ {- \frac {x ^ {2}}{2}} \mathrm{d} x \right],
+
+$$
+
+上式中方括号内正是标准正态分布的 $n$ 阶矩 $E(X^n)$ . 当 $n$ 为奇数时 $E(X^n) = 0$ ; 当 $n$ 为偶数时, 如 $n = 2m$ 时,
+
+$$
+
+E (X ^ {n}) = E (X ^ {2 m}) = (2 m - 1)!! = \frac {(2 m) !}{2 ^ {m} \cdot m !},
+
+$$
+
+代回原式,可得标准正态分布的特征函数
+
+$$
+
+\varphi (t) = \sum_ {m = 0} ^ {\infty} \frac {(\mathrm{i} t) ^ {2 m}}{(2 m) !} \cdot \frac {(2 m) !}{2 ^ {m} \cdot m !} = \sum_ {m = 0} ^ {\infty} \left(- \frac {t ^ {2}}{2}\right) ^ {m} \frac {1}{m !} = \mathrm{e} ^ {- \frac {t ^ {2}}{2}}
+
+$$
+
+有了标准正态分布的特征函数,再利用下节给出的特征函数的性质,就很容易得到一般正态分布 $N(\mu,\sigma^{2})$ 的特征函数,见例 4.2.2.
+
+(6) 指数分布 $Exp(\lambda)$ 因为密度函数为
+
+$$
+
+p (x) = \left\{ \begin{array}{l l} \lambda \mathrm{e} ^ {- \lambda x}, & x \geqslant 0, \\ 0, & x <   0, \end{array} \right.
+
+$$
+
+所以其特征函数为
+
+$$
+
+\begin{array}{r l} \varphi (t) & = \int_ {0} ^ {\infty} \mathrm{e} ^ {\mathrm{i} t x} \lambda \mathrm{e} ^ {- \lambda x} \mathrm{d} x = \lambda \left[ \int_ {0} ^ {\infty} \cos (t x) \mathrm{e} ^ {- \lambda x} \mathrm{d} x + \mathrm{i} \int_ {0} ^ {\infty} \sin (t x) \mathrm{e} ^ {- \lambda x} \mathrm{d} x \right] \\ & = \lambda \left(\frac {\lambda}{\lambda^ {2} + t ^ {2}} + \mathrm{i} \frac {t}{\lambda^ {2} + t ^ {2}}\right) = \left(1 - \frac {\mathrm{i} t}{\lambda}\right) ^ {- 1}. \end{array}
+
+$$
+
+以上积分中用到了复变函数中的欧拉公式 $e^{itx} = \cos(tx) + i \sin(tx)$ .
+</Example>
+
+## 4.2.2 特征函数的性质
+
+现在我们来研究特征函数的一些性质,其中 $\varphi_{X}(t)$ 表示 X 的特征函数,其他类似.
+
+<Knowledge title="性质 4.2.1">
+$|\varphi (t)|\leqslant \varphi (0) = 1.$
+
+(4.2.4)
+</Knowledge>
+
+<Knowledge title="性质 4.2.2">
+$\varphi(-t)=\varphi(t)$ ，其中 $\varphi(t)$ 表示 $\varphi(t)$ 的共轭.
+
+(4.2.5)
+</Knowledge>
+
+<Knowledge title="性质 4.2.3">
+若 $Y = aX + b$ ，其中 a, b 是常数，则
+
+$$
+
+\varphi_ {Y} (t) = \mathrm{e} ^ {\mathrm{i} b t} \varphi_ {X} (a t).\tag{4.2.6}
+
+$$
+</Knowledge>
+
+<Knowledge title="性质 4.2.4">
+独立随机变量和的特征函数为每个随机变量的特征函数的积, 即设 X 与 Y 相互独立, 则
+
+$$
+
+\varphi_ {X + Y} (t) = \varphi_ {X} (t) \varphi_ {Y} (t).\tag{4.2.7}
+
+$$
+</Knowledge>
+
+<Knowledge title="性质 4.2.5">
+若 $E(X^{l})$ 存在, 则 X 的特征函数 $\varphi(t)$ 可 l 次求导, 且对 $1 \leqslant k \leqslant l$ , 有
+
+$$
+
+\varphi^ {(k)} (0) = \mathrm{i} ^ {k} E (X ^ {k}).\tag{4.2.8}
+
+$$
+
+上式提供了一条求随机变量的各阶矩的途径,特别可用下式去求数学期望和方差.
+
+$$
+
+E (X) = \frac {\varphi^ {\prime} (0)}{\mathrm{i}}, \qquad \operatorname{Var} (X) = - \varphi^ {\prime \prime} (0) + (\varphi^ {\prime} (0)) ^ {2}.\tag{4.2.9}
+
+$$
+
+<Solution title="证明">
+在此我们仅对连续场合进行证明,而在离散场合的证明是类似的.
+
+$$
+
+(1) \mid \varphi (t) \mid = \left| \int_ {- \infty} ^ {\infty} \mathrm{e} ^ {\mathrm{i} t x} p (x) \mathrm{d} x \right| \leqslant \int_ {- \infty} ^ {\infty} \mid \mathrm{e} ^ {\mathrm{i} t x} \mid p (x) \mathrm{d} x = \int_ {- \infty} ^ {\infty} p (x) \mathrm{d} x = \varphi (0) = 1.
+
+$$
+
+(2) $\varphi(-t) = \int_{-\infty}^{\infty} \mathrm{e}^{-\mathrm{i}tx} p(x) \, \mathrm{d}x = \int_{-\infty}^{\infty} \mathrm{e}^{\mathrm{i}tx} p(x) \, \mathrm{d}x = \overline{\varphi(t)}.$
+
+(3) $\varphi_{Y}(t) = E\left(\mathrm{e}^{\mathrm{i}t(aX + b)}\right) = \mathrm{e}^{\mathrm{i}bt}E\left(\mathrm{e}^{\mathrm{i}atX}\right) = \mathrm{e}^{\mathrm{i}bt}\varphi_{X}(at).$
+
+(4) 因为 X 与 Y 相互独立, 所以 $e^{itX}$ 与 $e^{itY}$ 也是独立的, 从而有
+
+$$
+
+E \left(\mathrm{e} ^ {\mathrm{i} t (X + Y)}\right) = E \left(\mathrm{e} ^ {\mathrm{i} t X} \mathrm{e} ^ {\mathrm{i} t Y}\right) = E \left(\mathrm{e} ^ {\mathrm{i} t X}\right) E \left(\mathrm{e} ^ {\mathrm{i} t Y}\right) = \varphi_ {X} (t) \cdot \varphi_ {Y} (t).
+
+$$
+
+(5) 因为 $E(X^{l})$ 存在, 也就是
+
+$$
+
+\int_ {- \infty} ^ {\infty} | x | ^ {l} p (x) \mathrm{d} x <   \infty ,
+
+$$
+
+于是含参变量 $t$ 的广义积分 $\int_{-\infty}^{\infty}\mathrm{e}^{\mathrm{i}tx}p(x)\mathrm{d}x$ 可以对 $t$ 求导 $l$ 次，于是对 $0\leqslant k\leqslant l$ ，有
+
+$$
+
+\varphi^ {(k)} (t) = \int_ {- \infty} ^ {\infty} \mathrm{i} ^ {k} x ^ {k} \mathrm{e} ^ {\mathrm{i} t x} p (x) \mathrm{d} x = \mathrm{i} ^ {k} E (X ^ {k} \mathrm{e} ^ {\mathrm{i} t X}),
+
+$$
+
+令 $t = 0$ 即得
+
+$$
+
+\varphi^ {(k)} (0) = \mathrm{i} ^ {k} E (X ^ {k}).
+
+$$
+
+至此上述 5 条性质全部得证.
+
+下例是利用性质 4.2.3 和性质 4.2.4 来求另一些常用分布的特征函数.
+</Solution>
+</Knowledge>
+
+<Example title="例 4.2.2">
+常用分布的特征函数(二)
+
+（1）二项分布 $b(n,p)$ 设随机变量 $Y \sim b(n,p)$ ，则 $Y = X_{1} + X_{2} + \cdots + X_{n}$ ，其中诸 $X_{i}$ 是相互独立同分布的随机变量，且 $X_{i} \sim b(1,p)$ 。由例 4.2.1(2) 知
+
+$$
+
+\varphi_ {X _ {i}} (t) = p \mathrm{e} ^ {\mathrm{i} t} + q.
+
+$$
+
+所以由独立随机变量和的特征函数为特征函数的积,得
+
+$$
+
+\varphi_ {Y} (t) = \left(p e ^ {i t} + q\right) ^ {n}.
+
+$$
+
+（2）正态分布 $N(\mu, \sigma^2)$ 设随机变量 $Y \sim N(\mu, \sigma^2)$ ，则 $X = (Y - \mu) / \sigma \sim N(0, 1)$ . 由例4.2.1知
+
+$$
+
+\varphi_ {X} (t) = \mathrm{e} ^ {- \frac {t ^ {2}}{2}}.
+
+$$
+
+所以由 $Y = \sigma X + \mu$ 和性质4.2.3得
+
+$$
+
+\varphi_ {Y} (t) = \varphi_ {\sigma X + \mu} (t) = \mathrm{e} ^ {\mathrm{i} \mu t} \varphi_ {X} (\sigma t) = \exp \left\{\mathrm{i} \mu t - \frac {\sigma^ {2} t ^ {2}}{2} \right\}.
+
+$$
+
+（3）伽马分布 $Ga(n,\lambda)$ 设随机变量 $Y \sim Ga(n,\lambda)$ ，则 $Y = X_{1} + X_{2} + \cdots + X_{n}$ ，其中 $X_{i}$ 独立同分布，且 $X_{i} \sim Exp(\lambda)$ 。由例 4.2.1 知
+
+$$
+
+\varphi_ {X _ {i}} (t) = \left(1 - \frac {\mathrm{i} t}{\lambda}\right) ^ {- 1}.
+
+$$
+
+所以由独立随机变量和的特征函数为特征函数的积,得
+
+$$
+
+\varphi_ {Y} (t) = \left(\varphi_ {X _ {1}} (t)\right) ^ {n} = \left(1 - \frac {\mathrm{i} t}{\lambda}\right) ^ {- n}.
+
+$$
+
+进一步, 当 $\alpha$ 为任一正实数时, 我们可得 $Ga(\alpha, \lambda)$ 分布的特征函数为
+
+$$
+
+\varphi (t) = \left(1 - \frac {\mathrm{i} t}{\lambda}\right) ^ {- \alpha}.
+
+$$
+
+(4) $\chi^2(n)$ 分布 因为 $\chi^2(n) = Ga(n/2, 1/2)$ , 所以 $\chi^2(n)$ 分布的特征函数为
+
+$$
+
+\varphi (t) = (1 - 2 \mathrm{i} t) ^ {- n / 2}.
+
+$$
+
+上述常用分布的特征函数汇总在表 4.2.1 中.
+
+表 4.2.1 常用分布的特征函数
+
+<table><tr><td>分 布</td><td>分布列 $p_k$ 或分布密度 $p(x)$ </td><td>特征函数 $\varphi(t)$ </td></tr><tr><td>单点分布</td><td> $P(X=a)=1.$ </td><td> $e^{ita}$ </td></tr><tr><td>0-1分布</td><td> $p_k=p^k q^{1-k},q=1-p,k=0,1.$ </td><td> $pe^{it}+q$ </td></tr><tr><td>二项分布 $b(n,p)$ </td><td> $p_k=\binom{n}{k} p^k q^{n-k},\quad k=0,1,\cdots,n.$ </td><td> $(pe^{it}+q)^n$ </td></tr><tr><td>泊松分布 $P(\lambda)$ </td><td> $p_k=\frac{\lambda^k}{k!} e^{-\lambda},\quad k=0,1,\cdots.$ </td><td> $e^{\lambda(e^{it}-1)}$ </td></tr><tr><td>几何分布 $Ge(p)$ </td><td> $p_k=pq^{k-1},\quad k=1,2,\cdots.$ </td><td> $p/(1-qe^{it})$ </td></tr><tr><td>负二项分布 $Nb(r,p)$ </td><td> $p_k=\binom{k-1}{r-1} p^r q^{k-r},\quad k=r,r+1,\cdots.$ </td><td> $\left(\frac{p}{1-qe^{it}}\right)^r$ </td></tr><tr><td>均匀分布 $U(a,b)$ </td><td> $p(x)=\frac{1}{b-a},\quad a<xb.$ </td><td> $\frac{e^{ibt}-e^{iat}}{it(b-a)}$ </td></tr><tr><td>正态分布 $N(\mu,\sigma^2)$ </td><td> $p(x)=\frac{1}{\sqrt{2\pi}\sigma}\exp\left\{-\frac{(x-\mu)^2}{2\sigma^2}\right\}.$ </td><td> $\exp\left(i\mu t-\frac{\sigma^2t^2}{2}\right)$ </td></tr><tr><td>指数分布 $Exp(\lambda)$ </td><td> $p(x)=\lambda e^{-\lambda x},\quad x\geqslant 0.$ </td><td> $\left(1-\frac{it}{\lambda}\right)^{-1}$ </td></tr><tr><td>伽马分布 $Ga(\alpha,\lambda)$ </td><td> $p(x)=\frac{\lambda^\alpha}{\Gamma(\alpha)}x^{\alpha-1}e^{-\lambda x},\quad x\geqslant 0.$ </td><td> $\left(1-\frac{it}{\lambda}\right)^{-\alpha}$ </td></tr><tr><td> $\chi^2(n)$ 分布</td><td> $p(x)=\frac{x^{n/2-1}e^{-x/2}}{\Gamma(n/2)2^{n/2}},\quad x\geqslant 0.$ </td><td> $(1-2it)^{-n/2}$ </td></tr><tr><td>贝塔分布 $Be(a,b)$ </td><td> $p(x)=\frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}x^{a-1}(1-x)^{b-1},\quad 0<xb<1$ </td><td> $\frac{\Gamma(a+b)}{\Gamma(a)}\sum_{k=0}^{\infty}\frac{(it)^k\Gamma(a+k)}{k!\Gamma(a+b+k)\Gamma(k+1)}$ </td></tr><tr><td>柯西分布 $Cau(0,1)$ </td><td> $p(x)=\frac{1}{\pi(1+x^2)},\quad -\infty<xb<\infty$ </td><td> $e^{-|t|$ </td></tr></table>
+
+下例是利用性质 4.2.5 来求分布的数学期望和方差.  
+</Example>
+
+<Example title="例 4.2.3">
+利用特征函数的方法求伽马分布 $Ga(\alpha,\lambda)$ 的数学期望和方差.
+
+<Solution title="解">
+因为伽马分布 $Ga(\alpha, \lambda)$ 的特征函数及其一、二阶导数为
+
+$$
+
+\varphi (t) = \left(1 - \frac {\mathrm{i} t}{\lambda}\right) ^ {- \alpha},
+
+$$
+
+$$
+
+\varphi^ {\prime} (t) = \frac {\alpha \mathrm{i}}{\lambda} \left(1 - \frac {\mathrm{i} t}{\lambda}\right) ^ {- \alpha - 1}, \quad \varphi^ {\prime} (0) = \frac {\alpha \mathrm{i}}{\lambda},
+
+$$
+
+$$
+
+\varphi^ {\prime \prime} (t) = \frac {\alpha (\alpha + 1) \mathrm{i} ^ {2}}{\lambda^ {2}} \left(1 - \frac {\mathrm{i} t}{\lambda}\right) ^ {- \alpha - 2}, \quad \varphi^ {\prime \prime} (0) = - \frac {\alpha (\alpha + 1)}{\lambda^ {2}},
+
+$$
+
+所以由(4.2.9)式得
+
+$$
+
+\begin{array}{r l} E (X) & = \frac {\varphi^ {\prime} (0)}{\mathrm{i}} = \frac {\alpha}{\lambda}, \\ \operatorname{Var} (X) & = - \varphi^ {\prime \prime} (0) + (\varphi^ {\prime} (0)) ^ {2} = \frac {\alpha (\alpha + 1)}{\lambda^ {2}} + \left(\frac {\alpha \mathrm{i}}{\lambda}\right) ^ {2} \\ & = \frac {\alpha (\alpha + 1)}{\lambda^ {2}} - \frac {\alpha^ {2}}{\lambda^ {2}} = \frac {\alpha}{\lambda^ {2}}. \end{array}
+
+$$
+
+特征函数还有以下一些优良性质.
+</Solution>
+</Example>
+
+<Knowledge title="定理 4.2.1">
+(一致连续性) 随机变量 X 的特征函数 $\varphi(t)$ 在 $(-∞,∞)$ 上一致连续.
+
+<Solution title="证明">
+设 X 是连续随机变量(离散随机变量的证明是类似的), 其密度函数为 $p(x)$ , 则对任意实数 t, h 和正数 a > 0, 有
+
+$$
+
+\begin{array}{r l} \left| \varphi (t + h) - \varphi (t) \right| & = \left| \int_ {- \infty} ^ {\infty} (\mathrm{e} ^ {\mathrm{i} h x} - 1) \mathrm{e} ^ {\mathrm{i} t x} p (x) \mathrm{d} x \right| \\ & \leqslant \int_ {- \infty} ^ {\infty} | \mathrm{e} ^ {\mathrm{i} h x} - 1 | p (x) \mathrm{d} x \\ & \leqslant \int_ {- a} ^ {a} | \mathrm{e} ^ {\mathrm{i} h x} - 1 | p (x) \mathrm{d} x + 2 \int_ {| x | \geqslant a} p (x) \mathrm{d} x. \end{array}
+
+$$
+
+对任意的 $\varepsilon > 0$ ，先取定一个充分大的 $a$ ，使得
+
+$$
+
+2 \int_ {| x | \geqslant a} p (x) \mathrm{d} x <   \frac {\varepsilon}{2},
+
+$$
+
+然后对任意的 $x \in [-a, a]$ ，只要取 $\delta = \frac{\varepsilon}{2a}$ ，则当 $|h| < \delta$ 时，便有
+
+$$
+
+\left| \mathrm{e} ^ {\mathrm{i} h x} - 1 \right| = \left| \mathrm{e} ^ {\frac {h}{\mathrm{i} ^ {2} x}} \left(\mathrm{e} ^ {\frac {h}{\mathrm{i} ^ {2} x}} - \mathrm{e} ^ {- \mathrm{i} \frac {h}{2} x}\right) \right| = 2 \left| \sin \frac {h x}{2} \right| \leqslant 2 \left| \frac {h x}{2} \right| \leqslant h a <   \frac {\varepsilon}{2}.
+
+$$
+
+从而对所有的 $t \in (-\infty, \infty)$ , 有
+
+$$
+
+\left| \varphi (t + h) - \varphi (t) \right| <   \int_ {- a} ^ {a} \frac {\varepsilon}{2} p (x) \mathrm{d} x + \frac {\varepsilon}{2} \leqslant \varepsilon ,
+
+$$
+
+即 $\varphi(t)$ 在 $(-∞,∞)$ 上一致连续.
+</Solution>
+</Knowledge>
+
+<Knowledge title="定理 4.2.2">
+(非负定性) 随机变量 X 的特征函数 $\varphi(t)$ 是非负定的, 即对任意正整数 n 及 n 个实数 $t_{1}, t_{2}, \cdots, t_{n}$ 和 n 个复数 $z_{1}, z_{2}, \cdots, z_{n}$ , 有
+
+$$
+
+\sum_ {k = 1} ^ {n} \sum_ {j = 1} ^ {n} \varphi (t _ {k} - t _ {j}) z _ {k} \overline {{z _ {j}}} \geqslant 0.\tag{4.2.10}
+
+$$
+
+<Solution title="证明">
+仍设 $X$ 是连续随机变量（离散随机变量的证明是类似的），其密度函数为 $p(x)$ ，则有
+
+$$
+
+\begin{array}{r l} \sum_ {k = 1} ^ {n} \sum_ {j = 1} ^ {n} \varphi (t _ {k} - t _ {j}) z _ {k} \overline {{z _ {j}}} & = \sum_ {k = 1} ^ {n} \sum_ {j = 1} ^ {n} z _ {k} \overline {{z _ {j}}} \int_ {- \infty} ^ {\infty} \mathrm{e} ^ {\mathrm{i} (t _ {k} - t _ {j}) x} p (x) \mathrm{d} x \\ & = \int_ {- \infty} ^ {\infty} \sum_ {k = 1} ^ {n} \sum_ {j = 1} ^ {n} z _ {k} \overline {{z _ {j}}} \mathrm{e} ^ {\mathrm{i} (t _ {k} - t _ {j}) x} p (x) \mathrm{d} x \\ & = \int_ {- \infty} ^ {\infty} \left(\sum_ {k = 1} ^ {n} z _ {k} \mathrm{e} ^ {\mathrm{i} t _ {k} x}\right) \left(\sum_ {j = 1} ^ {n} \overline {{z _ {j}}} \mathrm{e} ^ {- \mathrm{i} t _ {j} x}\right) p (x) \mathrm{d} x \end{array}
+
+$$
+
+$$
+
+= \int_ {- \infty} ^ {\infty} \left| \sum_ {k = 1} ^ {n} z _ {k} \mathrm{e} ^ {\mathrm{i} t _ {k} x} \right| ^ {2} p (x) \mathrm{d} x \geqslant 0.
+
+$$
+
+这就证明了(4.2.10)式.
+</Solution>
+</Knowledge>
+
+## 4.2.3 特征函数唯一决定分布函数
+
+由特征函数的定义可知,随机变量的分布唯一地确定了它的特征函数.前面的讨论实际上都是从随机变量的分布出发,讨论特征函数及其性质.要注意的是:如果两个分布的数学期望、方差及各阶矩都相等,也无法证明此两个分布相等.但特征函数却不同,它有着比数学期望、方差及各阶矩更优良的性质:即特征函数完全决定了分布,也就是说,两个分布函数相等当且仅当它们所对应的特征函数相等.下面来讨论这个问题.
+
+<Knowledge title="定理 4.2.3">
+(逆转公式) 设 $F(x)$ 和 $\varphi(t)$ 分别为随机变量 X 的分布函数和特征函数, 则对 $F(x)$ 的任意两个连续点 $x_{1}<x_{2}$ , 有
+
+$$
+
+F (x _ {2}) - F (x _ {1}) = \lim _ {T \rightarrow \infty} \frac {1}{2 \pi} \int_ {- T} ^ {T} \frac {\mathrm{e} ^ {- \mathrm{i} t x _ {1}} - \mathrm{e} ^ {- \mathrm{i} t x _ {2}}}{\mathrm{i} t} \varphi (t) \mathrm{d} t.\tag{4.2.11}
+
+$$
+
+<Solution title="证明">
+设 $X$ 是连续随机变量（离散随机变量的证明是类似的），其密度函数为 $p(x)$ . 记
+
+$$
+
+J _ {T} = \frac {1}{2 \pi} \int_ {- T} ^ {T} \frac {\mathrm{e} ^ {- \mathrm{i} t x _ {1}} - \mathrm{e} ^ {- \mathrm{i} t x _ {2}}}{\mathrm{i} t} \varphi (t) \mathrm{d} t = \frac {1}{2 \pi} \int_ {- T} ^ {T} \left[ \int_ {- \infty} ^ {\infty} \frac {\mathrm{e} ^ {- \mathrm{i} t x _ {1}} - \mathrm{e} ^ {- \mathrm{i} t x _ {2}}}{\mathrm{i} t} \mathrm{e} ^ {\mathrm{i} t x} p (x) \mathrm{d} x \right] \mathrm{d} t.
+
+$$
+
+对任意的实数 a, 有
+
+$$
+
+\left| \mathrm{e} ^ {\mathrm{i} a} - 1 \right| \leqslant | a |,
+
+$$
+
+事实上,对 $a \geqslant 0$ 有
+
+$$
+
+\mid \mathrm{e} ^ {\mathrm{i} a} - 1 \mid = \left| \int_ {0} ^ {a} \mathrm{e} ^ {\mathrm{i} x} \mathrm{d} x \right| \leqslant \int_ {0} ^ {a} \mid \mathrm{e} ^ {\mathrm{i} x} \mid \mathrm{d} x = a,
+
+$$
+
+对 $a < 0$ 有
+
+$$
+
+\left| \mathrm{e} ^ {\mathrm{i} a} - 1 \right| = \left| \mathrm{e} ^ {\mathrm{i} a} \left(\mathrm{e} ^ {\mathrm{i} | a |} - 1\right) \right| = \left| \mathrm{e} ^ {\mathrm{i} | a |} - 1 \right| \leqslant | a |.
+
+$$
+
+因此
+
+$$
+
+\left| \frac {\mathrm{e} ^ {- \mathrm{i} t x _ {1}} - \mathrm{e} ^ {- \mathrm{i} t x _ {2}}}{\mathrm{i} t} \mathrm{e} ^ {\mathrm{i} t x} \right| \leqslant x _ {2} - x _ {1},
+
+$$
+
+即 $J_{T}$ 中被积函数有界，所以可以交换积分次序，从而得
+
+$$
+
+\begin{array}{r l} J _ {T} & = \frac {1}{2 \pi} \int_ {- \infty} ^ {\infty} \left[ \int_ {- T} ^ {T} \frac {\mathrm{e} ^ {- \mathrm{i} t x _ {1}} - \mathrm{e} ^ {- \mathrm{i} t x _ {2}}}{\mathrm{i} t} \mathrm{e} ^ {\mathrm{i} t x} \mathrm{d} t \right] p (x) \mathrm{d} x \\ & = \frac {1}{2 \pi} \int_ {- \infty} ^ {\infty} \left[ \int_ {0} ^ {T} \frac {\mathrm{e} ^ {\mathrm{i} t (x - x _ {1})} - \mathrm{e} ^ {- \mathrm{i} t (x - x _ {1})} - \mathrm{e} ^ {\mathrm{i} t (x - x _ {2})} + \mathrm{e} ^ {- \mathrm{i} t (x - x _ {2})}}{\mathrm{i} t} \mathrm{d} t \right] p (x) \mathrm{d} x \\ & = \frac {1}{\pi} \int_ {- \infty} ^ {\infty} \left[ \int_ {0} ^ {T} \left(\frac {\sin t (x - x _ {1})}{t} - \frac {\sin t (x - x _ {2})}{t}\right) \mathrm{d} t \right] p (x) \mathrm{d} x. \end{array}
+
+$$
+
+又记
+
+$$
+
+g (T, x, x _ {1}, x _ {2}) = \frac {1}{\pi} \int_ {0} ^ {T} \left[ \frac {\sin t (x - x _ {1})}{t} - \frac {\sin t (x - x _ {2})}{t} \right] \mathrm{d} t,
+
+$$
+
+则由数学分析中的狄利克雷(Dirichlet)积分
+
+$$
+
+D (a) = \frac {1}{\pi} \int_ {0} ^ {\infty} \frac {\sin a t}{t} \mathrm{d} t = \left\{ \begin{array}{l l} \frac {1}{2}, & a > 0, \\ 0, & a = 0, \\ - \frac {1}{2}, & a <   0. \end{array} \right.
+
+$$
+
+知
+
+$$
+
+\lim _ {T \rightarrow \infty} g (T, x, x _ {1}, x _ {2}) = D (x - x _ {1}) - D (x - x _ {2}).
+
+$$
+
+分别考察 $x$ 在区间 $(x_{1}, x_{2})$ 的端点及内外时相应狄利克雷积分的值即可得
+
+$$
+
+\lim _ {T \to \infty} g (  T, x, x _ {1}, x _ {2}  ) = \left\{ \begin{array}{l l} {{0  ,}} & {{x <   x _ {1}   \text {或}   x > x _ {2}}} \\ {{ \frac {1}{2}  ,}} & {{x = x _ {1}   \text {或}   x = x _ {2}  ,}} \\ {{1  ,}} & {{x _ {1} <   x <   x _ {2}  ,}} \end{array} \right.
+
+$$
+
+且 $|g(T,x,x_1,x_2)|$ 有界，从而可以把积分号与极限号交换，故有
+
+$$
+
+\lim _ {T \to \infty} J _ {T} = \int_ {- \infty} ^ {\infty} \lim _ {T \to \infty} g (T, x, x _ {1}, x _ {2}) p (x) \mathrm{d} x = \int_ {x _ {1}} ^ {x _ {2}} p (x) \mathrm{d} x = F (x _ {2}) - F (x _ {1}).
+
+$$
+
+定理得证.
+</Solution>
+</Knowledge>
+
+<Knowledge title="定理 4.2.4">
+(唯一性定理) 随机变量的分布函数由其特征函数唯一决定.
+
+<Solution title="证明">
+对 $F(x)$ 的每一个连续点 $x$ , 当 $y$ 沿着 $F(x)$ 的连续点趋于 $-\infty$ 时, 由逆转公式得
+
+$$
+
+F (x) = \lim _ {y \to - \infty} \lim _ {T \to \infty} \frac {1}{2 \pi} \int_ {- T} ^ {T} \frac {\mathrm{e} ^ {- \mathrm{i} t y} - \mathrm{e} ^ {- \mathrm{i} t x}}{\mathrm{i} t} \varphi (t) \mathrm{d} t,
+
+$$
+
+而分布函数由其连续点上的值唯一决定,故结论成立.
+
+特别, 当 X 为连续随机变量, 有下述更强的结果.
+</Solution>
+</Knowledge>
+
+<Knowledge title="定理 4.2.5">
+若 X 为连续随机变量, 其密度函数为 $p(x)$ , 特征函数为 $\varphi(t)$ . 如果 $\int_{-\infty}^{\infty} |\varphi(t)| \, dt < \infty$ , 则
+
+$$
+
+p (x) = \frac {1}{2 \pi} \int_ {- \infty} ^ {\infty} \mathrm{e} ^ {- \mathrm{i} t x} \varphi (t) \mathrm{d} t.\tag{4.2.12}
+
+$$
+
+<Solution title="证明">
+记 $X$ 的分布函数为 $F(x)$ , 由逆转公式知
+
+$$
+
+p (x) = \lim _ {\Delta x \rightarrow 0} \frac {F (x + \Delta x) - F (x)}{\Delta x} = \lim _ {\Delta x \rightarrow 0} \frac {1}{2 \pi} \int_ {- \infty} ^ {\infty} \frac {\mathrm{e} ^ {- \mathrm{i} t x} - \mathrm{e} ^ {- \mathrm{i} t (x + \Delta x)}}{\mathrm{i} t \cdot \Delta x} \varphi (t) \mathrm{d} t.
+
+$$
+
+再次利用不等式 $|\mathrm{e}^{\mathrm{i}a} - 1| \leqslant |a|$ ，就有
+
+$$
+
+\left| \frac {\mathrm{e} ^ {- \mathrm{i} t x} - \mathrm{e} ^ {- \mathrm{i} t (x + \Delta x)}}{\mathrm{i} t \cdot \Delta x} \right| \leqslant 1.
+
+$$
+
+又因为 $\int_{-\infty}^{\infty}\left|\varphi (t)\right|\mathrm{d}t <   \infty$ ，所以可以交换极限号和积分号，即
+
+$$
+
+p (x) = \frac {1}{2 \pi} \int_ {- \infty} ^ {\infty} \lim _ {\Delta x \rightarrow 0} \frac {\mathrm{e} ^ {- \mathrm{i} t x} - \mathrm{e} ^ {- \mathrm{i} t (x + \Delta x)}}{\mathrm{i} t \cdot \Delta x} \varphi (t) \mathrm{d} t = \frac {1}{2 \pi} \int_ {- \infty} ^ {\infty} \mathrm{e} ^ {- \mathrm{i} t x} \varphi (t) \mathrm{d} t.
+
+$$
+
+定理得证.
+
+(4.2.12)式在数学分析中也称为傅里叶逆变换,所以(4.2.3)式和(4.2.12)式实质上是一对互逆的变换:
+
+$$
+
+\varphi (t) = \int_ {- \infty} ^ {\infty} \mathrm{e} ^ {\mathrm{i} t x} p (x) \mathrm{d} x,
+
+$$
+
+$$
+
+p (x) = \frac {1}{2 \pi} \int_ {- \infty} ^ {\infty} \mathrm{e} ^ {- \mathrm{i} t x} \varphi (t) \mathrm{d} t.
+
+$$
+
+即特征函数是密度函数的傅里叶变换,而密度函数是特征函数的傅里叶逆变换.
+
+在此着重指出:在概率论中,独立随机变量和的问题占有“中心”地位,用卷积公式去处理独立随机变量和的问题相当复杂,而引入了特征函数可以很方便地用特征函数相乘求得独立随机变量和的特征函数,再由唯一性定理,从独立随机变量和的特征函数来识别独立随机变量和的分布.由此大大简化了处理独立随机变量和的难度.读者可从下例中体会出这一点.
+</Solution>
+</Knowledge>
+
+<Example title="例 4.2.4">
+在 3.3 节中, 我们用卷积公式通过复杂的计算证明了二项分布、泊松分布、伽马分布和 $\chi^{2}$ 分布的可加性. 现在用特征函数方法(性质 4.2.4 和唯一性定理)可以很方便地证明正态分布的可加性.
+
+设随机变量 $X \sim N(\mu_1, \sigma_1^2), Y \sim N(\mu_2, \sigma_2^2)$ ，且 $X$ 与 $Y$ 独立，其特征函数分别为
+
+$$
+
+\varphi_ {X} (t) = \mathrm{e} ^ {\mathrm{i} t \mu_ {1} - \frac {\sigma_ {1} ^ {2} t ^ {2}}{2}}, \quad \varphi_ {Y} (t) = \mathrm{e} ^ {\mathrm{i} t \mu_ {2} - \frac {\sigma_ {2} ^ {2} t ^ {2}}{2}},
+
+$$
+
+所以由性质 4.2.4 得
+
+$$
+
+\varphi_ {X + Y} (t) = \varphi_ {X} (t) \cdot \varphi_ {Y} (t) = e ^ {i t (\mu_ {1} + \mu_ {2}) - \frac {\left(\sigma_ {1} ^ {2} + \sigma_ {2} ^ {2}\right) t ^ {2}}{2}}.
+
+$$
+
+这正是 $N(\mu_1 + \mu_2, \sigma_1^2 + \sigma_2^2)$ 的特征函数，再由特征函数的唯一性定理，即知
+
+$$
+
+X + Y \sim N (\mu_ {1} + \cdot \mu_ {2}, \sigma_ {1} ^ {2} + \sigma_ {2} ^ {2}).
+
+$$
+
+同理可证: 若 $X_{j}$ 相互独立, 且 $X_{j} \sim N(\mu_{j}, \sigma_{j}^{2}), j = 1, 2, \cdots, n$ , 则
+
+$$
+
+\sum_ {j = 1} ^ {n} X _ {j} \sim N \left(\sum_ {j = 1} ^ {n} \mu_ {j}, \sum_ {j = 1} ^ {n} \sigma_ {j} ^ {2}\right).
+
+$$
+</Example>
+
+<Example title="例 4.2.5">
+已知连续随机变量的特征函数如下,求其分布:
+
+(1) $\varphi_{1}(t) = \mathrm{e}^{-|t|}$ ; (2) $\varphi_{2}(t) = \frac{\sin at}{at}$ .
+
+<Solution title="解">
+（1）由逆转公式(4.2.12)可知其密度函数为
+
+$$
+
+\begin{array}{r l} p (x) & = \frac {1}{2 \pi} \int_ {- \infty} ^ {\infty} \mathrm{e} ^ {- \mathrm{i} x t} \cdot \mathrm{e} ^ {- | t |} \mathrm{d} t \\ & = \frac {1}{2 \pi} \int_ {0} ^ {\infty} \mathrm{e} ^ {- (1 + \mathrm{i} x) t} \mathrm{d} t + \frac {1}{2 \pi} \int_ {- \infty} ^ {0} \mathrm{e} ^ {(1 - \mathrm{i} x) t} \mathrm{d} t \\ & = \frac {1}{2 \pi} \left(\frac {1}{1 + \mathrm{i} x} + \frac {1}{1 - \mathrm{i} x}\right) = \frac {1}{\pi (1 + x ^ {2})}. \end{array}
+
+$$
+
+这是柯西分布,所以特征函数 $\varphi_{1}(t)=\mathrm{e}^{-|t|}$ 对应的是柯西分布.
+
+(2) $\varphi_{2}(t)=\frac{\sin at}{at}$ 是均匀分布 $U(-a,a)$ 的特征函数, 由唯一性定理知, 该特征函数
+
+对应的分布不是别的, 只能是均匀分布 $U(-a, a)$ .
+
+下面的定理指出:分布函数序列的弱收敛性与相应的特征函数序列的点点收敛性是等价的.
+</Solution>
+</Example>
+
+<Knowledge title="定理 4.2.6">
+分布函数序列 $\{F_n(x)\}$ 弱收敛于分布函数 $F(x)$ 的充要条件是 $\{F_n(x)\}$ 的特征函数序列 $\{\varphi_n(t)\}$ 收敛于 $F(x)$ 的特征函数 $\varphi(t)$ .
+
+这个定理的证明只涉及数学分析的一些结果,且证明比较冗长(参阅文献[1]),在此就不介绍了.通常把以上定理称为特征函数的连续性定理,因为它表明分布函数与特征函数的一一对应关系有连续性.
+</Knowledge>
+
+<Example title="例 4.2.6">
+若 $X_{\lambda}$ 服从参数为 $\lambda$ 的泊松分布, 证明:
+
+$$
+
+\lim _ {\lambda \rightarrow \infty} P \left(\frac {X _ {\lambda} - \lambda}{\sqrt {\lambda}} \leqslant x\right) = \frac {1}{\sqrt {2 \pi}} \int_ {- \infty} ^ {x} \mathrm{e} ^ {- \frac {t ^ {2}}{2}} \mathrm{d} t.
+
+$$
+
+<Solution title="证明">
+已知 $X_{\lambda}$ 的特征函数为 $\varphi_{\lambda}(t) = \exp \{\lambda (\mathrm{e}^{\mathrm{i}t} - 1)\}$ ，故 $Y_{\lambda} = \frac{X_{\lambda} - \lambda}{\sqrt{\lambda}}$ 的特征函数为
+
+$$
+
+g _ {\lambda} (t) = \varphi_ {\lambda} \left(\frac {t}{\sqrt {\lambda}}\right) \exp \{- \mathrm{i} \sqrt {\lambda} t \} = \exp \left\{\lambda \left(\mathrm{e} ^ {\mathrm{i} \frac {t}{\sqrt {\lambda}}} - 1\right) - \mathrm{i} \sqrt {\lambda} t \right\}.
+
+$$
+
+对任意的 $t$ ，有
+
+$$
+
+\exp \left\{\mathrm{i} \frac {t}{\sqrt {\lambda}} \right\} = 1 + \frac {\mathrm{i} t}{\sqrt {\lambda}} - \frac {t ^ {2}}{2 ! \lambda} + o \left(\frac {1}{\lambda}\right),
+
+$$
+
+于是
+
+$$
+
+\lambda \left(\mathrm{e} ^ \frac {\mathrm{i} \frac {t}{\sqrt {\lambda}}} - 1\right) - \mathrm{i} \sqrt {\lambda} t = - \frac {t ^ {2}}{2} + \lambda \cdot o \left(\frac {1}{\lambda}\right)\rightarrow - \frac {t ^ {2}}{2}, \quad \lambda \rightarrow \infty .
+
+$$
+
+从而有
+
+$$
+
+\lim _ {\lambda \rightarrow \infty} g _ {\lambda} (t) = \mathrm{e} ^ {- t ^ {2} / 2},
+
+$$
+
+而 $e^{-t^{2/2}}$ 正是标准正态分布 $N(0,1)$ 的特征函数，由定理 4.2.6 即知结论成立.
+</Solution>
+</Example>
+
+<Block title="习题4.2">
+1. 设离散随机变量 X 的分布列如下, 试求 X 的特征函数.
+
+<table><tr><td>X</td><td>0</td><td>1</td><td>2</td><td>3</td></tr><tr><td>P</td><td>0.4</td><td>0.3</td><td>0.2</td><td>0.1</td></tr></table>
+
+2. 设离散随机变量 $X$ 服从几何分布
+
+$$
+
+P (X = k) = (1 - p) ^ {k - 1} p, \qquad k = 1, 2, \dots .
+
+$$
+
+试求 X 的特征函数, 并以此求 $E(X)$ 和 $\mathrm{Var}(X)$ .
+
+3. 设离散随机变量 X 服从帕斯卡分布
+
+$$
+
+P (X = k) = \binom {k - 1} {r - 1} p ^ {r} (1 - p) ^ {k - r}, \quad k = r, r + 1, \dots .
+
+$$
+
+试求 X 的特征函数.
+
+4. 求下列分布函数的特征函数，并由特征函数求其数学期望和方差：
+
+$$
+
+(1) F _ {1} (x) = \frac {a}{2} \int_ {- \infty} ^ {x} \mathrm{e} ^ {- a | t |} \mathrm{d} t \quad (a > 0);
+
+$$
+
+(2) $F_{2}(x) = \frac{a}{\pi}\int_{-\infty}^{x}\frac{1}{t^{2} + a^{2}}\mathrm{d}t$ （ $a > 0$ ）.
+
+5. 设随机变量 $X \sim N(\mu, \sigma^2)$ , 试用特征函数的方法求 $X$ 的 3 阶及 4 阶中心矩.
+
+6. 试用特征函数的方法证明二项分布的可加性: 若随机变量 $X \sim b(n, p), Y \sim b(m, p)$ , 且 $X$ 与 $Y$ 独立, 则 $X + Y \sim b(n + m, p)$ .
+
+7. 试用特征函数的方法证明泊松分布的可加性: 若随机变量 $X \sim P(\lambda_1), Y \sim P(\lambda_2)$ , 且 $X$ 与 $Y$ 独立, 则 $X + Y \sim P(\lambda_1 + \lambda_2)$ .
+
+8. 试用特征函数的方法证明伽马分布的可加性: 若随机变量 $X \sim Ga(\alpha_1, \lambda), Y \sim Ga(\alpha_2, \lambda)$ , 且 $X$ 与 $Y$ 独立, 则 $X + Y \sim Ga(\alpha_1 + \alpha_2, \lambda)$ .
+
+9. 试用特征函数的方法证明 $\chi^2$ 分布的可加性: 若随机变量 $X \sim \chi^2(n), Y \sim \chi^2(m)$ , 且 $X$ 与 $Y$ 独立, 则 $X + Y \sim \chi^2(n + m)$ .
+
+10. 设随机变量 $X_{i}$ 独立同分布，且 $X_{i} \sim Exp(\lambda), i = 1, 2, \cdots, n.$ 试用特征函数的方法证明：
+
+$$
+
+Y _ {n} = \sum_ {i = 1} ^ {n} X _ {i} \sim G a (n, \lambda).
+
+$$
+
+11. 设连续随机变量 X 服从柯西分布, 密度函数如下:
+
+$$
+
+p (x) = \frac {1}{\pi} \cdot \frac {\lambda}{\lambda^ {2} + (x - \mu) ^ {2}}, \quad - \infty <   x <   \infty ,
+
+$$
+
+其中参数 $\lambda>0,-\infty<\mu<\infty$ ，常记为 $X\sim\mathrm{Cau}(\lambda,\mu)$ .
+
+(1) 试证 X 的特征函数为 $\exp\left\{i\mu t-\lambda\mid t\right\}$ ，且利用此结果证明柯西分布的可加性；
+
+(2) 当 $\mu=0,\lambda=1$ 时，记 Y=X，试证 $\varphi_{X+Y}(t)=\varphi_{X}(t)\cdot\varphi_{Y}(t)$ ，但是 X 与 Y 不独立；
+
+(3) 若 $X_{1}, X_{2}, \cdots, X_{n}$ 相互独立，且服从同一柯西分布，试证： $\frac{1}{n}(X_{1} + X_{2} + \cdots + X_{n})$ 与 $X_{1}$ 同分布.
+
+12. 设连续随机变量 $X$ 的密度函数为 $p(x)$ , 试证: $p(x)$ 关于原点对称的充要条件是它的特征函数是实的偶函数.
+
+13. 设随机变量 $X_{1}, X_{2}, \cdots, X_{n}$ 独立同分布，且都服从 $N(\mu, \sigma^{2})$ 分布，试求 $\overline{X} = \frac{1}{n} \sum_{i=1}^{n} X_{i}$ 的分布.
+
+14. 利用特征函数方法证明如下的泊松定理: 设有一列二项分布 $\{b(k,n,p_{n})\}$ ，若 $\lim_{n\to\infty}np_{n}=\lambda$ ，则
+
+$$
+
+\lim _ {n \to \infty} b (k, n, p _ {n}) = \frac {\lambda^ {k}}{k !} \mathrm{e} ^ {- \lambda}, \quad k = 0, 1, 2, \dots .
+
+$$
+
+15. 设随机变量 $X \sim Ga(\alpha, \lambda)$ , 证明: 当 $\alpha \to \infty$ 时, 随机变量 $(\lambda X - \alpha) / \sqrt{\alpha}$ 按分布收敛于标准正态变量.
+</Block>
