@@ -82,6 +82,8 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
 ---
 
 <aside class="custom-page-sidebar" data-book-config={bookConfigJson} data-global-index={globalIndexJson}>
+  <!-- VitePress outline-marker：跟随滚动高亮项的 2px 品牌色指示条（JS 更新 top） -->
+  <div class="outline-marker" aria-hidden="true"></div>
   <div class="toc-container">
     <h2 class="toc-title">本节导航大纲</h2>
     <ul id="custom-toc-list" class="toc-list">
@@ -548,8 +550,11 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
 
   /**
    * 极智纯文本树遍历器 (TreeWalker) - 包含模块头部隔离保护
+   * 分片异步版：把整页文本节点分批处理（requestIdleCallback/setTimeout），
+   * 避免一次性同步扫描数万节点阻塞主线程（SPA 切换卡顿来源之一）。
+   * 全部处理完成后调用 done()。
    */
-  function walkTextNodes(root, callback) {
+  function walkTextNodes(root, callback, done) {
     const walker = document.createTreeWalker(
       root,
       NodeFilter.SHOW_TEXT,
@@ -577,10 +582,25 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     while (walker.nextNode()) {
       nodes.push(walker.currentNode);
     }
-    
-    for (let i = nodes.length - 1; i >= 0; i--) {
-      callback(nodes[i]);
+
+    // 倒序分批处理（保持与原同步版相同的处理顺序）
+    const BATCH = 120;
+    let i = nodes.length;
+    const schedule = window.requestIdleCallback
+      ? (fn) => window.requestIdleCallback(fn, { timeout: 40 })
+      : (fn) => window.setTimeout(fn, 0);
+    function nextBatch() {
+      const end = Math.max(0, i - BATCH);
+      for (; i > end; i--) {
+        callback(nodes[i - 1]);
+      }
+      if (i > 0) {
+        schedule(nextBatch);
+      } else if (typeof done === 'function') {
+        done();
+      }
     }
+    nextBatch();
   }
 
   /**
@@ -677,7 +697,7 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
       });
     });
 
-    // 4. 开始无损纯文本节点扫描
+    // 4. 开始无损纯文本节点扫描（分片异步：正文先渲染，徽章后台分批补齐）
     walkTextNodes(mainContent, (node) => {
       let text = node.textContent || '';
       let modified = false;
@@ -765,10 +785,10 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
           node.parentNode.replaceChild(span, node);
         }
       });
+    }, () => {
+      // 5. 扫描全部完成后，对可交互的徽章绑定监听事件
+      attachInteractiveListeners();
     });
-
-    // 5. 对可交互的徽章绑定监听事件
-    attachInteractiveListeners();
   }
 
   // 绑定高亮与平滑水波跳转事件 (安全作用域版本)
@@ -1039,6 +1059,11 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     const main = document.querySelector('main');
     if (!main) return;
 
+    // 性能优化：桌面宽屏不需要“长行内公式胶囊化”（该功能本是移动端友好设计）。
+    // 此前该函数会对每页上千个行内公式逐个 getBoundingClientRect（强制同步布局），
+    // 且每次 SPA 切换执行两遍，是切换卡顿的最大来源；桌面端直接短路，零成本。
+    if (!window.matchMedia('(max-width: 1024px)').matches) return;
+
     const lineSelector = [
       '.sl-markdown-content', '.card-body', '.card-header',
       '.solution-content', '.analysis-content', '.note-content',
@@ -1146,6 +1171,8 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     const tocList = document.getElementById('custom-toc-list');
     if (!tocList) return;
     const mobileTocList = document.getElementById('mobile-toc-list');
+    // VitePress outline-marker 指示条（位于大纲容器内，随高亮项移动）
+    const marker = tocList.closest('.custom-page-sidebar')?.querySelector('.outline-marker');
 
     const trackSelectors = bookConfig.trackClasses && bookConfig.trackClasses.length > 0 
       ? bookConfig.trackClasses.join(', ') 
@@ -1222,17 +1249,19 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
 
           a.appendChild(headingText);
         } else {
+          // 模块项：中性小标签「例」+ 编号「3.2」
+          //（类似正文「图 2.5」fig-ref-badge 样式，不抢眼但有指示作用；视觉统一由
+          //  vitepress-theme.css 8.8 覆盖为中性，彩色 chip-example 等不再生效）
+          const chipSpan = document.createElement('span');
+          chipSpan.className = `toc-chip ${chipClass}`;
+          chipSpan.textContent = labelText;
 
-      const chipSpan = document.createElement('span');
-      chipSpan.className = `toc-chip ${chipClass}`;
-      chipSpan.textContent = labelText;
+          const numSpan = document.createElement('span');
+          numSpan.className = 'toc-number';
+          numSpan.textContent = number;
 
-      const numSpan = document.createElement('span');
-      numSpan.className = 'toc-number';
-      numSpan.textContent = number;
-
-      a.appendChild(chipSpan);
-      a.appendChild(numSpan);
+          a.appendChild(chipSpan);
+          a.appendChild(numSpan);
         }
 
       // 移动端抽屉：点选后先收起抽屉，再平滑跳转，避免抽屉遮挡阅读
@@ -1301,10 +1330,14 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
 
 
 
-    // 5. 长行内公式胶囊化：KaTeX 字形加载完成后宽度会变化，需再校准一次
+    // 5. 长行内公式胶囊化：KaTeX 字形加载完成后宽度会变化，需再校准一次。
+    // 桌面宽屏在函数内已短路（零成本）；移动端延迟到空闲时段再校准，避免阻塞首帧。
     tameOverflowingInlineMath();
     if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => tameOverflowingInlineMath());
+      document.fonts.ready.then(() => {
+        const schedule = window.requestIdleCallback || ((fn) => window.setTimeout(fn, 60));
+        schedule(() => tameOverflowingInlineMath(), { timeout: 200 });
+      });
     }
 
     let lastSpyIndex = -1;
@@ -1323,6 +1356,17 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
 
       desktopLinks.forEach((link, index) => link.classList.toggle('active', index === activeIndex));
       mobileLinks.forEach((link, index) => link.classList.toggle('active', index === activeIndex));
+
+      // VitePress outline-marker：2px 品牌色指示条跟随当前高亮项移动（官方 useActiveAnchor 行为）
+      if (marker) {
+        const activeLink = activeIndex >= 0 ? desktopLinks[activeIndex] : null;
+        if (activeLink) {
+          marker.style.top = `${activeLink.offsetTop}px`;
+          marker.style.opacity = '1';
+        } else {
+          marker.style.opacity = '0';
+        }
+      }
 
       // 抽屉展开时，把当前章节项保持在可视区内（仅当高亮项变化时滚动，避免抖动）
       if (document.body.classList.contains('mobile-toc-open') && activeIndex !== lastSpyIndex) {

@@ -1079,13 +1079,38 @@ function setupFormula(root: HTMLElement): void {
 /**
  * 初始化文章正文公式操作。幂等：已处理过的公式会被跳过；
  * 页面无正文（首页 / 打印页 / 侧边栏）时自动空转。
+ *
+ * 性能优化：公式数量较多时改用 IntersectionObserver 惰性挂接——
+ * 只为进入视口（及附近 480px）的公式创建操作钮，避免 SPA 切换时
+ * 一次性为整页上千个公式做 DOM 包装（切换卡顿的来源之一）。
+ * 会话级 observer 复用（SPA 多次导航不重复创建）。
  */
 let menuDocBound = false;
 export function initFormulaActions(): void {
   const content = document.querySelector<HTMLElement>('main .sl-markdown-content');
   if (!content) return;
   const roots = Array.from(content.querySelectorAll<HTMLElement>('[data-latex]'));
-  for (const root of roots) setupFormula(root);
+
+  const win = window as unknown as { __formulaIO?: IntersectionObserver };
+  const useLazy = typeof IntersectionObserver === 'function' && roots.length > 48;
+  if (useLazy) {
+    if (!win.__formulaIO) {
+      win.__formulaIO = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const root = entry.target as HTMLElement;
+            setupFormula(root);
+            win.__formulaIO?.unobserve(root);
+          }
+        }
+      }, { rootMargin: '480px 0px' });
+    }
+    for (const root of roots) {
+      if (!root.dataset.katexCopyReady) win.__formulaIO.observe(root);
+    }
+  } else {
+    for (const root of roots) setupFormula(root);
+  }
 
   // 全局关闭逻辑只绑定一次（SPA 导航复用）：点外部 / Esc 关闭所有菜单；
   // 滚动 / 缩放时菜单跟随触发钮重新定位（按钮滚出视口则由 positionOpenMenu 收起）。

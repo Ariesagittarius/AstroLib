@@ -278,18 +278,35 @@ if (bookMatch) {
       });
     });
 
-    // 悬停左侧栏链接时预取（短延迟去抖），点击时几乎瞬时完成替换
+    // 悬停导航链接时预取（短延迟去抖）：左侧栏 + 页脚翻页链接。
+    // 预取命中后点击时几乎瞬时完成替换（缓存上限 CACHE_MAX 内）。
     let prefetchTimer = 0;
+    function isPrefetchable(a) {
+      return !!a.closest('nav.sidebar, .sidebar, .pagination-links, footer');
+    }
     document.addEventListener('pointerover', (e) => {
       const target = e.target;
       if (!(target instanceof Element)) return;
       const a = target.closest('a[href]');
-      if (!a || !isNavLink(a) || !a.closest('nav.sidebar, .sidebar')) return;
+      if (!a || !isNavLink(a) || !isPrefetchable(a)) return;
       const url = new URL(a.href, location.href);
       if (normPath(url.pathname) === normPath(location.pathname)) return;
       clearTimeout(prefetchTimer);
-      prefetchTimer = setTimeout(() => fetchPage(url).catch(() => {}), 120);
+      prefetchTimer = setTimeout(() => fetchPage(url).catch(() => {}), 50);
     });
+
+    // 按下鼠标（点击之前）立即拉取目标页：把“网络 + 解析”提前到点击前，
+    // 点击发生时 loadPage 直接命中缓存，进一步压缩切换等待。
+    document.addEventListener('pointerdown', (e) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const a = target.closest('a[href]');
+      if (!a || !isNavLink(a)) return;
+      const url = new URL(a.href, location.href);
+      if (normPath(url.pathname) === normPath(location.pathname)) return;
+      clearTimeout(prefetchTimer);
+      fetchPage(url).catch(() => {});
+    }, { passive: true });
 
     // 浏览器前进/后退
     window.addEventListener('popstate', () => {
