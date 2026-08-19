@@ -3,8 +3,12 @@
 // 终极无任何 SyntaxError 重复定义、无任何 ReferenceError 引用错误版本
 import fs from 'node:fs'; // test
 import path from 'node:path';
-import { collections } from '../config/collections.config.mjs';
+import { collections, siteConfig } from '../config/collections.config.mjs';
 import { cleanSlug } from '../utils/sidebar.mjs';
+
+// 引用联动模式：'interactive'（默认，可点击/跨页联动）| 'static'（统一静态 chip）。
+// static 模式下不构建/输出跨页索引，客户端也零引用建立开销（页面 HTML 更小、切换最快）。
+const refsMode = siteConfig.refs === 'static' ? 'static' : 'interactive';
 
 const pathname = Astro.url.pathname;
 
@@ -29,6 +33,8 @@ const bookConfigJson = JSON.stringify(currentBook);
 
 // 3. 构建期递归扫描，仅提取当前图书的全局跨页路由索引
 //（按书隔离可让单页 HTML 减少约 3-4 倍；跨书引用退化为静态徽章）
+// 索引值为“相对图书根目录的路径#锚点”的紧凑编码（客户端用当前页的图书根前缀
+// 拼回完整 URL），相比完整 URL 每条约省一半以上字节；static 模式下完全跳过。
 const globalBlockIndex = {};
 
 function walkDir(dir, fileList = []) {
@@ -45,43 +51,44 @@ function walkDir(dir, fileList = []) {
   return fileList;
 }
 
-try {
-  const docsRoot = path.resolve(`src/content/docs/collections/${currentCol.slug}/${currentBook.slug}`);
-  if (fs.existsSync(docsRoot)) {
-    const allMdxFiles = walkDir(docsRoot);
-    const emojiRegex = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}\u{27BF}\uFE0F]/gu;
+let globalIndexJson = '{}';
+if (refsMode === 'interactive') {
+  try {
+    const docsRoot = path.resolve(`src/content/docs/collections/${currentCol.slug}/${currentBook.slug}`);
+    if (fs.existsSync(docsRoot)) {
+      const bookRoot = `/collections/${currentCol.slug}/${currentBook.slug}/`;
+      const allMdxFiles = walkDir(docsRoot);
+      const emojiRegex = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}\u{27BF}\uFE0F]/gu;
 
-    allMdxFiles.forEach(file => {
-      const content = fs.readFileSync(file, 'utf-8');
-      
-      const relativePath = path.relative('src/content/docs', file);
-      const rawSlug = relativePath.replace(/\.mdx?$/, '').replace(/\\/g, '/');
-      
-      const cleanSlugPath = cleanSlug(rawSlug);
-      let urlPath = `/${cleanSlugPath}/`;
-      urlPath = urlPath.replace(/\/+/g, '/');
+      allMdxFiles.forEach(file => {
+        const content = fs.readFileSync(file, 'utf-8');
 
-      const tagRegex = /<(Example|Variant|Knowledge|Summary|Method|Conclusion|Block|Exercise|Solution)\s+title=["'](.*?)["']/g;
-      let match;
-      while ((match = tagRegex.exec(content)) !== null) {
-        const rawTitle = match[2].trim();
-        const cleanTitle = rawTitle.replace(emojiRegex, '').trim();
+        const relativePath = path.relative('src/content/docs', file);
+        const rawSlug = relativePath.replace(/\.mdx?$/, '').replace(/\\/g, '/');
 
-        const cleanId = encodeURIComponent(cleanTitle.replace(/\s+/g, '-'));
-        const targetUrl = `${urlPath}#${cleanId}`;
+        const cleanSlugPath = cleanSlug(rawSlug);
+        let urlPath = `/${cleanSlugPath}/`;
+        urlPath = urlPath.replace(/\/+/g, '/');
 
-        globalBlockIndex[cleanTitle.replace(/\s+/g, '')] = targetUrl;
-      }
-    });
+        const tagRegex = /<(Example|Variant|Knowledge|Summary|Method|Conclusion|Block|Exercise|Solution)\s+title=["'](.*?)["']/g;
+        let match;
+        while ((match = tagRegex.exec(content)) !== null) {
+          const rawTitle = match[2].trim();
+          const cleanTitle = rawTitle.replace(emojiRegex, '').trim();
+
+          const cleanId = encodeURIComponent(cleanTitle.replace(/\s+/g, '-'));
+          globalBlockIndex[cleanTitle.replace(/\s+/g, '')] = urlPath.slice(bookRoot.length) + '#' + cleanId;
+        }
+      });
+    }
+    globalIndexJson = JSON.stringify(globalBlockIndex);
+  } catch (e) {
+    console.error("编译期全局索引构建失败", e);
   }
-} catch (e) {
-  console.error("编译期全局索引构建失败", e);
 }
-
-const globalIndexJson = JSON.stringify(globalBlockIndex);
 ---
 
-<aside class="custom-page-sidebar" data-book-config={bookConfigJson} data-global-index={globalIndexJson}>
+<aside class="custom-page-sidebar" data-book-key={`${currentCol.slug}/${currentBook.slug}`} data-refs-mode={refsMode} data-book-config={bookConfigJson} data-global-index={globalIndexJson}>
   <!-- VitePress outline-marker：跟随滚动高亮项的 2px 品牌色指示条（JS 更新 top） -->
   <div class="outline-marker" aria-hidden="true"></div>
   <div class="toc-container">
@@ -310,6 +317,44 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
 <script>
   import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
   import { initFormulaActions } from '../scripts/formula-actions';
+
+  // —— 引用联动模式（构建期 siteConfig.refs 注入，'interactive' | 'static'）——
+  // 配置与跨页索引按书缓存，避免每次 SPA 切换重复 JSON.parse
+  //（static 模式下索引为空字符串，直接跳过全部引用建立开销）
+  const bookConfigCache = new Map();
+  const globalIndexCache = new Map();
+
+  function getBookConfig(aside) {
+    const key = aside?.getAttribute('data-book-key') || '';
+    if (bookConfigCache.has(key)) return bookConfigCache.get(key);
+    const cfg = JSON.parse(aside?.getAttribute('data-book-config') || '{}');
+    bookConfigCache.set(key, cfg);
+    return cfg;
+  }
+
+  function getGlobalIndex(aside) {
+    const key = aside?.getAttribute('data-book-key') || '';
+    if (globalIndexCache.has(key)) return globalIndexCache.get(key);
+    const raw = aside?.getAttribute('data-global-index') || '{}';
+    const idx = raw === '{}' ? {} : JSON.parse(raw);
+    globalIndexCache.set(key, idx);
+    return idx;
+  }
+
+  // 紧凑索引值 = “相对图书根目录的路径#锚点”，这里用当前页的图书根前缀拼回完整 URL
+  function resolveIndexUrl(rel) {
+    const m = location.pathname.match(/^(\/collections\/[^/]+\/[^/]+\/)/);
+    return (m ? m[1] : '') + rel;
+  }
+
+  // 大纲/抽屉公式二次渲染共用参数（与正文 auto-render 一致）
+  const katexConfig = {
+    delimiters: [
+      { left: '$$', right: '$$', display: true },
+      { left: '$', right: '$', display: false },
+    ],
+    throwOnError: false
+  };
 
 
   const CHIP_CLASSES = {
@@ -605,8 +650,13 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
 
   /**
    * 客户端全时无条件高阶联动引擎
+   * @param refsMode 'interactive' | 'static'：static 时统一静态 chip，零引用建立
    */
-  function linkPageElements(bookConfig, globalBlockIndex) {
+  function linkPageElements(bookConfig, globalBlockIndex, refsMode) {
+    // 【静态 chip 模式】构建期已把全部引用生成为静态徽章（rehype-cross-ref 强制），
+    // 这里不做任何升级 / 挂事件 / 补 id —— 引用建立的切换开销直接归零。
+    if (refsMode === 'static') return;
+
     const mainContent = document.querySelector('main') || document.querySelector('.main-pane') || document.querySelector('article') || document.body;
     if (!mainContent) return;
 
@@ -639,7 +689,7 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
         if (targetUrl) {
           badge.classList.remove('static-badge');
           badge.classList.add('interactive-badge');
-          badge.setAttribute('data-url', targetUrl);
+          badge.setAttribute('data-url', resolveIndexUrl(targetUrl));
         }
       });
 
@@ -752,10 +802,11 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
           const lookupKey = `${masterKey}${cleanNum}`.replace(/\s+/g, '');
           const localId = localTargets[lookupKey];
 
-          // 从构建期大索引中精准定位跨页 URL
+          // 从构建期大索引中精准定位跨页 URL（紧凑相对路径 → 完整 URL）
           const keyWithSpace = `${cleanType} ${cleanNum}`;
           const keyNoSpace = `${cleanType}${cleanNum}`;
-          const targetUrl = globalBlockIndex[keyWithSpace] || globalBlockIndex[keyNoSpace];
+          const relUrl = globalBlockIndex[keyWithSpace] || globalBlockIndex[keyNoSpace];
+          const targetUrl = relUrl ? resolveIndexUrl(relUrl) : '';
 
           if (localId) {
             return `
@@ -1188,21 +1239,13 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     }, { passive: true });
   }
 
-  function buildBookTOC() {
+  function buildBookTOC(sidebarContainer, bookConfig, globalBlockIndex) {
     // 移动端浮层：清理上一页残留并搬运当前页按钮/抽屉到 <body>
     setupMobileTOC();
 
-    const sidebarContainer = document.querySelector('.custom-page-sidebar');
     if (!sidebarContainer) return;
 
-    // 解析出整本书的配置
-    const rawConfig = sidebarContainer.getAttribute('data-book-config') || '{}';
-    const bookConfig = JSON.parse(rawConfig);
     const modules = bookConfig.modules || {};
-
-    // 解析出全书静态编译大字典
-    const rawGlobalIndex = sidebarContainer.getAttribute('data-global-index') || '{}';
-    const globalBlockIndex = JSON.parse(rawGlobalIndex);
 
     const tocList = document.getElementById('custom-toc-list');
     if (!tocList) return;
@@ -1216,21 +1259,20 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
 
     const contentRoot = document.querySelector('main .sl-markdown-content') || document.querySelector('.main-pane') || document.querySelector('main') || document.body;
 
-    // 同时抓取“卡片”与“正文标题”，并按它们在正文中的真实顺序合并
-    const cards = Array.from(contentRoot.querySelectorAll(trackSelectors));
-    const headings = Array.from(contentRoot.querySelectorAll('h2, h3, h4')).filter(
-      (heading) => !heading.closest(trackSelectors) && !heading.closest('.custom-page-sidebar')
-    );
-
-    const tocEntries = [
-      ...cards.map((el) => ({ kind: 'card', el })),
-      ...headings.map((el) => ({ kind: 'heading', el, level: Number(el.tagName.slice(1)) }))
-    ].sort((a, b) => {
-      const position = a.el.compareDocumentPosition(b.el);
-      if (position & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
-      if (position & Node.DOCUMENT_POSITION_PRECEDING) return 1;
-      return 0;
-    });
+    // 同时抓取“卡片”与“正文标题”：单次 querySelectorAll 天然按文档序返回，
+    // 取代原来的 compareDocumentPosition 排序（O(n log n) 的 DOM 遍历比较）
+    const trackList = trackSelectors.split(',').map((s) => s.trim()).filter(Boolean);
+    const tocEntries = [];
+    for (const el of Array.from(contentRoot.querySelectorAll([...trackList, 'h2', 'h3', 'h4'].join(', ')))) {
+      if (el.matches('h2, h3, h4')) {
+        // 卡片内部的标题不算独立大纲项
+        if (!el.closest(trackSelectors) && !el.closest('.custom-page-sidebar')) {
+          tocEntries.push({ kind: 'heading', el, level: Number(el.tagName.slice(1)) });
+        }
+      } else {
+        tocEntries.push({ kind: 'card', el });
+      }
+    }
 
     const chunks = tocEntries;
 
@@ -1347,58 +1389,9 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
       if (mobileTocList) makeTocEntry(chunk, index, mobileTocList, mobileLinks, true);
     });
 
-    // 侧边栏公式二次渲染
-    const sidebar = document.querySelector('.custom-page-sidebar');
-    if (sidebar && sidebar.textContent.includes('$')) {
-      renderMathInElement(sidebar, {
-        delimiters: [
-          { left: '$$', right: '$$', display: true },
-          { left: '$', right: '$', display: false },
-        ],
-        throwOnError: false
-      });
-    }
-
-    // 移动端抽屉内的公式同样二次渲染
-    const mobileDrawer = document.querySelector('.mobile-toc-drawer');
-    if (mobileDrawer && mobileDrawer.textContent.includes('$')) {
-      renderMathInElement(mobileDrawer, {
-        delimiters: [
-          { left: '$$', right: '$$', display: true },
-          { left: '$', right: '$', display: false },
-        ],
-        throwOnError: false
-      });
-    }
-
-    formatMultipleChoiceQuestions(); // 1. 重构选择题
-    linkPageElements(bookConfig, globalBlockIndex); // 2. 激发全时无条件大一统联动
-
-    // 3. 对卡片标题执行公式二次渲染
-    const cardHeaders = document.querySelectorAll('.card-header, .fallback-header, .guide-header');
-    cardHeaders.forEach(header => {
-      if (!header.textContent.includes('$')) return;
-      renderMathInElement(header, {
-        delimiters: [
-          { left: '$$', right: '$$', display: true },
-          { left: '$', right: '$', display: false },
-        ],
-        throwOnError: false
-      });
-    });
-
-
-
-
-    // 5. 长行内公式胶囊化：KaTeX 字形加载完成后宽度会变化，需再校准一次。
-    // 桌面宽屏在函数内已短路（零成本）；移动端延迟到空闲时段再校准，避免阻塞首帧。
-    tameOverflowingInlineMath();
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => {
-        const schedule = window.requestIdleCallback || ((fn) => window.setTimeout(fn, 60));
-        schedule(() => tameOverflowingInlineMath(), { timeout: 200 });
-      });
-    }
+    // 注：侧边栏/抽屉公式二次渲染、引用联动挂接、公式操作钮扫描、移动端长公式
+    // 胶囊化等非关键工作已移出本函数，改由 onPageLoad 的空闲时段统一执行
+    // （正文先绘制，增强后补 —— 见文件底部 onPageLoad）。
 
     let lastSpyIndex = -1;
 
@@ -1443,10 +1436,61 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     handleSpyScroll();
   }
 
-  buildBookTOC();
-  document.addEventListener('astro:page-load', buildBookTOC);
+  // 大纲/抽屉公式二次渲染（TOC 数字可能含 $...$；卡片标题公式已在构建期渲染，
+  // 这里只处理大纲文本，且放到空闲时段执行）
+  function renderSidebarMath() {
+    const sidebar = document.querySelector('.custom-page-sidebar');
+    if (sidebar && sidebar.textContent.includes('$')) {
+      renderMathInElement(sidebar, katexConfig);
+    }
+    const mobileDrawer = document.querySelector('.mobile-toc-drawer');
+    if (mobileDrawer && mobileDrawer.textContent.includes('$')) {
+      renderMathInElement(mobileDrawer, katexConfig);
+    }
+  }
 
-  // 文章正文公式操作：一键复制 LaTeX / 下载 SVG（SPA 导航后同样需要重新挂接）
-  initFormulaActions();
-  document.addEventListener('astro:page-load', initFormulaActions);
+  // 移动端长行内公式胶囊化（桌面在函数内短路；KaTeX 字形就绪后再校准一次）
+  function tameInlineMathWhenReady() {
+    tameOverflowingInlineMath();
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        const schedule = window.requestIdleCallback || ((fn) => window.setTimeout(fn, 60));
+        schedule(() => tameOverflowingInlineMath(), { timeout: 200 });
+      });
+    }
+  }
+
+  /**
+   * 每次导航（初次加载 + SPA 切换）的统一入口，按“正文先绘制、增强后补”分阶段执行：
+   *   阶段 0（同步）：仅正文必需的轻量处理（选择题重构）；
+   *   阶段 1（下一帧）：右侧大纲构建 + 滚动高亮 + 移动端浮层；
+   *   阶段 2（空闲时段）：引用联动挂接、公式操作钮扫描、大纲公式二次渲染、
+   *                      移动端长公式胶囊化。
+   * 把原来阻塞首帧的同步长链拆开，让新文章内容立即可见（VitePress 式体验）。
+   */
+  function onPageLoad() {
+    // 阶段 0（同步，正文必需）
+    formatMultipleChoiceQuestions();
+
+    const aside = document.querySelector('.custom-page-sidebar');
+    const refsMode = aside?.getAttribute('data-refs-mode') || 'interactive';
+
+    const raf = window.requestAnimationFrame || ((fn) => window.setTimeout(fn, 16));
+    raf(() => {
+      const bookConfig = getBookConfig(aside);
+      const globalBlockIndex = getGlobalIndex(aside);
+      buildBookTOC(aside, bookConfig, globalBlockIndex);
+
+      const idle = window.requestIdleCallback || ((fn) => window.setTimeout(fn, 150));
+      idle(() => {
+        linkPageElements(bookConfig, globalBlockIndex, refsMode);
+        initFormulaActions();
+        renderSidebarMath();
+        tameInlineMathWhenReady();
+      }, { timeout: 400 });
+    });
+  }
+
+  onPageLoad();
+  document.addEventListener('astro:page-load', onPageLoad);
 </script>

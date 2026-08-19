@@ -184,7 +184,7 @@ function makeFigBadge(figText, targetId) {
  * 顺序与客户端一致：块引用优先，命中后不再匹配图片引用。
  */
 function replaceTextNode(value, ctx) {
-  const { blockRefRegex, figRegex, modules, localTargets, figIdSet } = ctx;
+  const { blockRefRegex, figRegex, modules, localTargets, figIdSet, forceStatic } = ctx;
 
   // A. 块引用匹配（例题/定理/…）
   let m;
@@ -208,7 +208,8 @@ function replaceTextNode(value, ctx) {
     const lookupKey = `${masterKey}${matchedNum}`.replace(/\s+/g, '');
     const localId = localTargets[lookupKey];
     if (m.index > last) parts.push({ type: 'text', value: value.slice(last, m.index) });
-    parts.push(makeBlockBadge(masterKey, emoji, `${matchedType}${matchedNum}`, localId));
+    // refs:'static' 模式下强制静态 chip（不带 data-target，不做同页联动）
+    parts.push(makeBlockBadge(masterKey, emoji, `${matchedType}${matchedNum}`, forceStatic ? null : localId));
     last = m.index + m[0].length;
   }
   if (found) {
@@ -225,7 +226,7 @@ function replaceTextNode(value, ctx) {
     const figId = `图-${figNum}`;
     const localFig = figIdSet.has(figId);
     if (m.index > last) parts.push({ type: 'text', value: value.slice(last, m.index) });
-    parts.push(makeFigBadge(matchedNum, localFig ? figId : null));
+    parts.push(makeFigBadge(matchedNum, forceStatic ? null : (localFig ? figId : null)));
     last = m.index + m[0].length;
   }
   if (found) {
@@ -241,10 +242,13 @@ function replaceTextNode(value, ctx) {
  * ------------------------------------------------------------------ */
 
 /**
- * @param {{ collections?: Array }} options 传入 collections 配置
+ * @param {{ collections?: Array, refs?: 'interactive' | 'static' }} options
+ *        collections 传入 collections 配置；refs 取 siteConfig.refs，
+ *        'static' 时所有引用徽章强制为静态 chip（同页联动一并关闭）。
  */
 export function rehypeCrossRef(options = {}) {
-  const { collections } = options;
+  const { collections, refs = 'interactive' } = options;
+  const forceStatic = refs === 'static';
   return (tree, file) => {
     const bookKey = resolveBookKey(file);
     const book = findBook(collections, bookKey);
@@ -369,7 +373,7 @@ export function rehypeCrossRef(options = {}) {
       const value = node.value;
       if (!value || !value.trim()) return;
       const replaced = replaceTextNode(value, {
-        blockRefRegex, figRegex, modules, localTargets, figIdSet,
+        blockRefRegex, figRegex, modules, localTargets, figIdSet, forceStatic,
       });
       if (replaced) jobs.push({ parent, index, children: replaced });
     });

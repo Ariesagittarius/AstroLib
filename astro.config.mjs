@@ -5,7 +5,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 
 // 导入多合集配置和我们的自然排序侧边栏生成器
-import { collections } from './src/config/collections.config.mjs';
+import { collections, siteConfig } from './src/config/collections.config.mjs';
 import { generateBookSidebar } from './src/utils/sidebar.mjs';
 // 公式源码回填插件：让每个 KaTeX 公式携带 data-latex 原始源码（供前端一键复制）
 import { rehypeKatexAnnotate, rehypeKatexPromote } from './src/utils/rehype-katex-source.mjs';
@@ -37,8 +37,9 @@ export default defineConfig({
         rehypeKatexAnnotate,
         [rehypeKatex, { output: 'html', strict: false, throwOnError: false }],
         rehypeKatexPromote,
-        // 方案 B：构建期徽章下沉，须在 KaTeX 相关插件之后执行（依赖公式结构已定型）
-        [rehypeCrossRef, { collections }],
+        // 方案 B：构建期徽章下沉，须在 KaTeX 相关插件之后执行（依赖公式结构已定型）。
+        // refs 传 siteConfig.refs：'static' 时强制全部静态 chip（关闭同页联动）
+        [rehypeCrossRef, { collections, refs: siteConfig.refs }],
       ],
     }),
   },
