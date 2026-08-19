@@ -57,6 +57,7 @@ export default defineConfig({
         Sidebar: './src/components/SidebarOverride.astro',      // 左侧 LaTeX 公式渲染
         PageSidebar: './src/components/PageSidebarOverride.astro', // 右侧多合集自适应大纲与卡片修补
         ThemeSelect: './src/components/ThemeSelectOverride.astro', // VitePress 纯图标主题切换按钮
+        Pagination: './src/components/PaginationOverride.astro', // 文章底部翻页 → VitePress pager 结构
       },
       sidebar: dynamicSidebar,
       customCss: [
