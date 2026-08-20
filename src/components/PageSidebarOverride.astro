@@ -99,36 +99,28 @@ if (refsMode === 'interactive') {
   </div>
 </aside>
 
-<!-- 移动端大纲：悬浮按钮 + 遮罩 + 底部抽屉（脚本负责搬运到 <body>，桌面端隐藏） -->
-<button class="mobile-toc-fab" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-toc-drawer" aria-label="打开本节导航大纲">
-  <svg class="mobile-toc-fab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <line x1="8" y1="6" x2="21" y2="6" />
-    <line x1="8" y1="12" x2="21" y2="12" />
-    <line x1="8" y1="18" x2="21" y2="18" />
-    <line x1="3" y1="6" x2="3.01" y2="6" />
-    <line x1="3" y1="12" x2="3.01" y2="12" />
-    <line x1="3" y1="18" x2="3.01" y2="18" />
-  </svg>
-  <span class="mobile-toc-fab-label">大纲</span>
-</button>
-
-<div class="mobile-toc-backdrop" aria-hidden="true"></div>
-
-<aside class="mobile-toc-drawer" id="mobile-toc-drawer" role="dialog" aria-modal="true" aria-label="本节导航大纲" aria-hidden="true">
-  <div class="mobile-toc-grabber" aria-hidden="true"></div>
-  <div class="mobile-toc-header">
-    <h2 class="mobile-toc-title">本节导航大纲</h2>
-    <button class="mobile-toc-close" type="button" aria-label="关闭本节导航大纲">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-        <line x1="6" y1="6" x2="18" y2="18" />
-        <line x1="18" y1="6" x2="6" y2="18" />
+<!-- 移动端本地导航 VPLocalNav（VitePress 移植：顶部 sticky 条 + 大纲 popup 下拉面板；
+     脚本负责搬运到 <header> 之后，≥80rem 桌面端隐藏，详见 src/styles/vitepress-theme.css 区块 11） -->
+<div class="vp-local-nav" data-vp-local-nav>
+  <div class="vp-local-nav-container">
+    <button class="vp-local-nav-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="vp-local-nav-panel" aria-label="本页大纲">
+      <span class="vp-local-nav-label">本页大纲</span>
+      <svg class="vp-local-nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9 18l6-6-6-6" />
       </svg>
     </button>
+    <div class="vp-local-nav-items" id="vp-local-nav-panel" aria-hidden="true">
+      <div class="vp-local-nav-header">
+        <a class="vp-local-nav-top-link" href="#">返回顶部</a>
+      </div>
+      <div class="vp-local-nav-outline">
+        <ul id="vp-local-nav-toc-list" class="toc-list">
+          <li class="toc-loading">正在提取教辅大纲...</li>
+        </ul>
+      </div>
+    </div>
   </div>
-  <ul id="mobile-toc-list" class="toc-list">
-    <li class="toc-loading">正在提取教辅大纲...</li>
-  </ul>
-</aside>
+</div>
 
 <style>
   /* 1. 默认隐藏所有自定义大纲，防止在移动端正文中泄露 */
@@ -1170,78 +1162,96 @@ if (refsMode === 'interactive') {
   }
 
   /**
-   * 移动端抽屉开关（以 <body> 上的 .mobile-toc-open 类为唯一状态源）。
-   * 浮层节点每次导航都会被重建，因此内部一律通过选择器现取，绝不缓存旧节点。
+   * 移动端大纲 popup 开关（以 <body> 上的 .mobile-toc-open 类为唯一状态源；
+   * 该类同时驱动 custom.css 的 body 滚动锁）。
+   * 导航条每次 SPA 切换都会被重建，因此内部一律通过选择器现取，绝不缓存旧节点。
    */
   function setMobileTocOpen(open) {
     document.body.classList.toggle('mobile-toc-open', open);
-    const fab = document.querySelector('.mobile-toc-fab');
-    const drawer = document.querySelector('.mobile-toc-drawer');
-    if (fab) fab.setAttribute('aria-expanded', String(open));
-    if (drawer) drawer.setAttribute('aria-hidden', String(!open));
+    const nav = document.querySelector('.vp-local-nav');
+    if (!nav) return;
+    const btn = nav.querySelector('.vp-local-nav-btn');
+    const items = nav.querySelector('.vp-local-nav-items');
+    if (btn) btn.setAttribute('aria-expanded', String(open));
+    if (items) items.setAttribute('aria-hidden', String(!open));
     if (open) {
-      // 抽屉打开时，让当前章节项保持在可视区内
-      const activeLink = drawer && drawer.querySelector('.toc-link.active');
+      // 面板展开时，让当前章节项保持在可视区内
+      const activeLink = items && items.querySelector('.toc-link.active');
       if (activeLink) activeLink.scrollIntoView({ block: 'nearest' });
-      // 键盘用户：焦点移入抽屉的关闭按钮
-      const closeBtn = drawer && drawer.querySelector('.mobile-toc-close');
-      if (closeBtn && !window.matchMedia('(hover: none)').matches) closeBtn.focus();
     }
   }
 
   /**
-   * 移动端大纲浮层装配：
-   * - 按钮 / 遮罩 / 抽屉最初位于右侧栏容器内，而该容器在移动端是 display:none，
-   *   这里统一搬运到 <body>，使它们在移动端真正可见；
-   * - SPA 切页后整个容器会被替换，因此每次调用先清理上一页残留的浮层再重新挂载。
+   * 移动端本地导航 VPLocalNav 装配（VitePress 移植）：
+   * - 导航条最初位于右侧栏容器内，而该容器在移动端是 display:none，
+   *   这里搬运到 <header> 之后（对应 VitePress 中 VPLocalNav 位于 VPNavBar 之后）；
+   * - 交互对齐 VPLocalNavOutlineDropdown：按钮开合、点击外部关闭、Escape 关闭、
+   *   面板内「返回顶部」平滑滚顶、--vp-vh 控制面板最大高度；
+   * - SPA 切页后整个容器会被替换，因此每次调用先清理上一页残留再重新挂载。
    */
-  function setupMobileTOC() {
-    // 1. 清理上一页残留在 <body> 的浮层，并复位全局状态
-    document.querySelectorAll('.mobile-toc-teleported').forEach((n) => n.remove());
+  function setupVPLocalNav() {
+    // 1. 清理上一页残留的导航条与全局状态（含文档级点击监听，避免闭包泄漏）
+    document.querySelectorAll('.vp-local-nav.vp-local-nav-teleported').forEach((n) => n.remove());
     document.body.classList.remove('mobile-toc-open');
+    document.body.classList.remove('vp-local-nav-active');
+    if (window.__vpLocalNavClickHandler) {
+      document.removeEventListener('click', window.__vpLocalNavClickHandler);
+      window.__vpLocalNavClickHandler = null;
+    }
 
-    // 2. 搬运当前页浮层（页面无大纲时三者都不存在，直接跳过）
-    const fab = document.querySelector('.mobile-toc-fab');
-    const backdrop = document.querySelector('.mobile-toc-backdrop');
-    const drawer = document.querySelector('.mobile-toc-drawer');
-    if (!fab || !backdrop || !drawer) return;
+    // 2. 搬运当前页导航条到 <header> 之后（页面无大纲时节点不存在，直接跳过）
+    const nav = document.querySelector('.vp-local-nav');
+    if (!nav) return;
+    const header = document.querySelector('.header');
+    nav.classList.add('vp-local-nav-teleported');
+    if (header && header.nextElementSibling !== nav) header.after(nav);
+    document.body.classList.add('vp-local-nav-active');
 
-    [fab, backdrop, drawer].forEach((n) => {
-      n.classList.add('mobile-toc-teleported');
-      document.body.appendChild(n);
-    });
+    const btn = nav.querySelector('.vp-local-nav-btn');
+    const items = nav.querySelector('.vp-local-nav-items');
+    if (!btn || !items) return;
 
-    // 3. 开关交互：按钮开合 / 遮罩点击关闭 / 关闭按钮关闭
-    fab.addEventListener('click', () => {
+    // 3. 大纲按钮：开合 + 计算面板可见高度（VitePress：vh = innerHeight + min(scrollY - navHeight, 0)）；
+    //    无大纲时按钮退化为「返回顶部」（buildBookTOC 会给按钮加 .return-top）
+    const navHeight = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sl-nav-height')) || 64;
+    btn.addEventListener('click', () => {
+      if (btn.classList.contains('return-top')) {
+        window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        return;
+      }
+      const vh = window.innerHeight + Math.min(window.scrollY - navHeight, 0);
+      nav.style.setProperty('--vp-vh', vh + 'px');
       setMobileTocOpen(!document.body.classList.contains('mobile-toc-open'));
     });
-    backdrop.addEventListener('click', () => setMobileTocOpen(false));
-    drawer.querySelector('.mobile-toc-close')?.addEventListener('click', () => setMobileTocOpen(false));
 
-    // 4. Escape 关闭（文档级监听只注册一次，内部实时查询当前浮层）
+    // 4. 点击面板外任意位置关闭（VPLocalNavOutlineDropdown closeOnClickOutside）
+    window.__vpLocalNavClickHandler = (e) => {
+      if (!document.body.classList.contains('mobile-toc-open')) return;
+      if (!nav.contains(e.target)) setMobileTocOpen(false);
+    };
+    document.addEventListener('click', window.__vpLocalNavClickHandler);
+
+    // 5. Escape 关闭（文档级监听只注册一次，内部实时查询当前导航条）
     if (!window.__mobileTocKeyHandler) {
       window.__mobileTocKeyHandler = (e) => {
         if (e.key !== 'Escape' || !document.body.classList.contains('mobile-toc-open')) return;
         setMobileTocOpen(false);
-        document.querySelector('.mobile-toc-fab')?.focus();
+        document.querySelector('.vp-local-nav-btn')?.focus();
       };
       document.addEventListener('keydown', window.__mobileTocKeyHandler);
     }
 
-    // 5. 下拉手势关闭：仅当抽屉自身滚动到顶时生效，避免干扰列表滚动
-    let dragStartY = 0;
-    drawer.addEventListener('pointerdown', (e) => {
-      dragStartY = e.clientY;
-    }, { passive: true });
-    drawer.addEventListener('pointermove', (e) => {
-      if (!document.body.classList.contains('mobile-toc-open')) return;
-      if (drawer.scrollTop <= 0 && e.clientY - dragStartY > 90) setMobileTocOpen(false);
-    }, { passive: true });
+    // 6. 面板内「返回顶部」链接：平滑滚顶并关闭
+    nav.querySelector('.vp-local-nav-top-link')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      setMobileTocOpen(false);
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    });
   }
 
   function buildBookTOC(sidebarContainer, bookConfig, globalBlockIndex) {
-    // 移动端浮层：清理上一页残留并搬运当前页按钮/抽屉到 <body>
-    setupMobileTOC();
+    // 移动端本地导航：清理上一页残留并搬运当前页导航条到 <header> 之后
+    setupVPLocalNav();
 
     if (!sidebarContainer) return;
 
@@ -1249,7 +1259,7 @@ if (refsMode === 'interactive') {
 
     const tocList = document.getElementById('custom-toc-list');
     if (!tocList) return;
-    const mobileTocList = document.getElementById('mobile-toc-list');
+    const mobileTocList = document.getElementById('vp-local-nav-toc-list');
     // VitePress outline-marker 指示条（位于大纲容器内，随高亮项移动）
     const marker = tocList.closest('.custom-page-sidebar')?.querySelector('.outline-marker');
 
@@ -1302,6 +1312,14 @@ if (refsMode === 'interactive') {
       const emptyHtml = '<li class="toc-loading">本节暂无大纲</li>';
       tocList.innerHTML = emptyHtml;
       if (mobileTocList) mobileTocList.innerHTML = emptyHtml;
+      // VitePress：无大纲时大纲按钮退化为「返回顶部」（点击直接平滑滚顶，不弹面板）
+      const navBtn = document.querySelector('.vp-local-nav-btn');
+      if (navBtn) {
+        navBtn.classList.add('return-top');
+        navBtn.setAttribute('aria-label', '返回顶部');
+        const label = navBtn.querySelector('.vp-local-nav-label');
+        if (label) label.textContent = '返回顶部';
+      }
       return;
     }
 
@@ -1363,7 +1381,9 @@ if (refsMode === 'interactive') {
         }
 
       // 统一点击跳转（桌面 + 移动端一致，替代浏览器原生 hash 跳转）：
-      // 1. 平滑滚动到目标，并补偿固定导航栏高度，避免目标被 header 遮挡；
+      // 1. 平滑滚动到目标，并补偿固定导航栏与移动端本地导航条高度
+      //    （--sl-mobile-toc-height 在 body.vp-local-nav-active 时 = local nav 高），
+      //    避免目标被 header / sticky 大纲条遮挡；
       // 2. 用 replaceState 更新 hash（不新增历史记录），防止后退时触发
       //    SPA 整页重载导致页面闪跳、滚动丢失的“异常跳转”。
       a.addEventListener('click', (e) => {
@@ -1373,8 +1393,10 @@ if (refsMode === 'interactive') {
         if (isMobile) setMobileTocOpen(false);
         const target = document.getElementById(id);
         if (!target) return;
-        const navH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sl-nav-height')) || 56;
-        const top = target.getBoundingClientRect().top + window.scrollY - navH - 16;
+        const rootStyle = getComputedStyle(document.documentElement);
+        const navH = parseFloat(rootStyle.getPropertyValue('--sl-nav-height')) || 56;
+        const tocH = parseFloat(rootStyle.getPropertyValue('--sl-mobile-toc-height')) || 0;
+        const top = target.getBoundingClientRect().top + window.scrollY - navH - tocH - 16;
         window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
         history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, '', `#${encodeURIComponent(id)}`);
       });
@@ -1443,9 +1465,9 @@ if (refsMode === 'interactive') {
     if (sidebar && sidebar.textContent.includes('$')) {
       renderMathInElement(sidebar, katexConfig);
     }
-    const mobileDrawer = document.querySelector('.mobile-toc-drawer');
-    if (mobileDrawer && mobileDrawer.textContent.includes('$')) {
-      renderMathInElement(mobileDrawer, katexConfig);
+    const mobileNav = document.querySelector('.vp-local-nav');
+    if (mobileNav && mobileNav.textContent.includes('$')) {
+      renderMathInElement(mobileNav, katexConfig);
     }
   }
 

@@ -431,15 +431,15 @@
   display: none !important;
 }
 
-/* 8.4 列表：行距交给 line-height，不再用 gap 撑开（含移动端抽屉） */
+/* 8.4 列表：行距交给 line-height，不再用 gap 撑开（含移动端 popup 面板） */
 .custom-page-sidebar .toc-list,
-.mobile-toc-drawer .toc-list {
+.vp-local-nav .toc-list {
   gap: 0 !important;
 }
 
 /* 8.5 目录链接：flex 横排（标签 + 编号）、13px/400 次级色、无边框无位移 */
 .custom-page-sidebar .toc-link,
-.mobile-toc-drawer .toc-link {
+.vp-local-nav .toc-link {
   display: flex !important;
   align-items: center !important;
   gap: 0.4rem !important;
@@ -456,16 +456,16 @@
 }
 .custom-page-sidebar .toc-link:hover,
 .custom-page-sidebar .toc-link:focus-visible,
-.mobile-toc-drawer .toc-link:hover,
-.mobile-toc-drawer .toc-link:focus-visible {
+.vp-local-nav .toc-link:hover,
+.vp-local-nav .toc-link:focus-visible {
   color: var(--sl-color-text-accent) !important;
 }
 
 /* 8.6 当前项：品牌色 + 600，无背景无边框（VitePress 大纲高亮） */
 .custom-page-sidebar .toc-link.active,
 .custom-page-sidebar .toc-link.active:hover,
-.mobile-toc-drawer .toc-link.active,
-.mobile-toc-drawer .toc-link.active:hover {
+.vp-local-nav .toc-link.active,
+.vp-local-nav .toc-link.active:hover {
   color: var(--sl-color-text-accent) !important;
   font-weight: 600 !important;
   background-color: transparent !important;
@@ -475,14 +475,14 @@
 
 /* 8.7 标题型目录项与层级：字号字重统一，缩进表达层级 */
 .custom-page-sidebar .toc-heading,
-.mobile-toc-drawer .toc-heading {
+.vp-local-nav .toc-heading {
   gap: 0 !important;
   line-height: 1.9 !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
 }
 .custom-page-sidebar .toc-heading-text,
-.mobile-toc-drawer .toc-heading-text {
+.vp-local-nav .toc-heading-text {
   display: block !important;
   flex: 1 !important;                          /* flex 容器内占满，保证 ellipsis 生效 */
   min-width: 0 !important;
@@ -491,20 +491,20 @@
   text-overflow: ellipsis !important;
 }
 .custom-page-sidebar .toc-level-2,
-.mobile-toc-drawer .toc-level-2 {
+.vp-local-nav .toc-level-2 {
   font-size: 0.8125rem !important;
   font-weight: 400 !important;
   color: var(--sl-color-gray-2) !important;
 }
 .custom-page-sidebar .toc-level-3,
-.mobile-toc-drawer .toc-level-3 {
+.vp-local-nav .toc-level-3 {
   font-size: 0.8125rem !important;
   font-weight: 400 !important;
   color: var(--sl-color-gray-2) !important;
   padding-left: 1rem !important;
 }
 .custom-page-sidebar .toc-level-4,
-.mobile-toc-drawer .toc-level-4 {
+.vp-local-nav .toc-level-4 {
   font-size: 0.8125rem !important;
   font-weight: 400 !important;
   color: var(--sl-color-gray-2) !important;
@@ -514,7 +514,7 @@
 /* 8.8 模块项标签：中性灰 —— 透明底 + 1px 灰度边框 + 灰字（类似正文「图 2.5」
        小标签，不抢眼但有指示作用）；统一压过旧彩色 chip-example 等 */
 .custom-page-sidebar .toc-chip,
-.mobile-toc-drawer .toc-chip {
+.vp-local-nav .toc-chip {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -530,7 +530,7 @@
   letter-spacing: 0.01em !important;
 }
 .custom-page-sidebar .toc-number,
-.mobile-toc-drawer .toc-number {
+.vp-local-nav .toc-number {
   font-size: 0.75rem !important;                            /* 12px 编号 */
   font-weight: 400 !important;
   color: var(--sl-color-gray-2) !important;
@@ -541,12 +541,12 @@
 }
 /* 当前项：标签边框/文字随链接变品牌色，强化指示作用 */
 .custom-page-sidebar .toc-link.active .toc-chip,
-.mobile-toc-drawer .toc-link.active .toc-chip {
+.vp-local-nav .toc-link.active .toc-chip {
   border-color: var(--sl-color-text-accent) !important;
   color: var(--sl-color-text-accent) !important;
 }
 .custom-page-sidebar .toc-link.active .toc-number,
-.mobile-toc-drawer .toc-link.active .toc-number {
+.vp-local-nav .toc-link.active .toc-number {
   color: var(--sl-color-text-accent) !important;
 }
 
@@ -649,4 +649,150 @@
   font-weight: 500;
   color: var(--sl-color-accent);
   transition: color 0.25s;
+}
+
+/* --------------------------------------------------------------------------
+   11. 移动端本地导航 VPLocalNav — VitePress 移植观感
+   结构（顶部 sticky 条 + popup 大纲面板）、断点、滚动锁等“功能样式”
+   在 custom.css 移动端区块；本区块负责 VitePress 视觉：条排版、大纲按钮、
+   popup 面板、面板内大纲项（对齐 VPDocOutlineItem）、flyout 过渡。
+   对照源码：task/theme/theme-default/components/VPLocalNav.vue、
+   VPLocalNavOutlineDropdown.vue、VPDocOutlineItem.vue
+   -------------------------------------------------------------------------- */
+
+/* 11.1 条本体：底部分割线（VPLocalNav border-bottom: 1px solid gutter） */
+.vp-local-nav {
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+
+/* 11.2 条容器：按钮靠右（VitePress .container 为 space-between，本站左侧无
+       Menu 按钮，故右对齐） */
+.vp-local-nav-container {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* 11.3 大纲按钮：0.75rem/500 次级色 + chevron（展开旋转 90°，同 vpi-chevron-right） */
+.vp-local-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.75rem 1.5rem 0.6875rem;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 2;
+  color: var(--sl-color-gray-2);
+  cursor: pointer;
+  transition: color 0.5s;
+  -webkit-tap-highlight-color: transparent;
+}
+.vp-local-nav-btn:hover,
+.vp-local-nav-btn[aria-expanded='true'] {
+  color: var(--sl-color-white);
+  transition: color 0.25s;
+}
+.vp-local-nav-caret {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+  transition: transform 0.25s;
+}
+.vp-local-nav-btn[aria-expanded='true'] .vp-local-nav-caret {
+  transform: rotate(90deg);
+}
+/* 无大纲时按钮退化为「返回顶部」：隐藏 chevron（JS 加 .return-top） */
+.vp-local-nav-btn.return-top .vp-local-nav-caret {
+  display: none;
+}
+@media (min-width: 48rem) {
+  .vp-local-nav-btn {
+    padding: 0.75rem 2rem 0.6875rem;
+  }
+}
+
+/* 平板段（本项目左侧栏 ≥50rem 显示，对齐 VitePress ≥60rem 的 padding-left 语义） */
+@media (min-width: 50rem) {
+  .vp-local-nav {
+    padding-left: var(--sl-sidebar-width);
+  }
+}
+
+/* 11.4 popup 面板：absolute 定位于 sticky 的 .vp-local-nav（VitePress .items），
+       圆角 0.5rem、1px 边框、shadow-3；gap:1px + gutter 底色实现分隔线；
+       最大高度受 --vp-vh 约束（JS 按视口与滚动计算，VPLocalNavOutlineDropdown） */
+.vp-local-nav-items {
+  position: absolute;
+  top: 2.5rem;
+  right: 1rem;
+  left: 1rem;
+  display: grid;
+  gap: 1px;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.5rem;
+  background-color: var(--sl-color-gray-5);
+  max-height: calc(var(--vp-vh, 100vh) - 5.375rem);
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  box-shadow: var(--sl-shadow-lg);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-1rem);
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out, visibility 0.2s;
+  pointer-events: none;
+}
+body.mobile-toc-open .vp-local-nav-items {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+@media (min-width: 50rem) {
+  .vp-local-nav-items {
+    right: auto;
+    left: calc(var(--sl-sidebar-width) + 2rem);
+    width: 20rem;
+  }
+}
+
+/* 11.5 面板头部「返回顶部」：bg-soft + 品牌色 500（VPLocalNavOutlineDropdown .top-link） */
+.vp-local-nav-header {
+  background-color: var(--sl-color-gray-6);
+}
+.vp-local-nav-top-link {
+  display: block;
+  padding: 0 1rem;
+  line-height: 3.4285714;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--sl-color-text-accent);
+  text-decoration: none;
+}
+.vp-local-nav-top-link:hover {
+  color: var(--sl-color-text-accent);
+}
+
+/* 11.6 面板内大纲：bg-soft + 上下 0.5rem；列表项对齐 VPDocOutlineItem
+       （0.875rem / 行高 2.2857143 / 次级色 / 超长省略；覆盖上方 8.5 的 13px/1.9） */
+.vp-local-nav-outline {
+  padding: 0.5rem 0;
+  background-color: var(--sl-color-gray-6);
+}
+.vp-local-nav-outline .toc-list {
+  padding: 0 1rem;
+}
+.vp-local-nav .toc-link,
+.vp-local-nav .toc-heading {
+  line-height: 2.2857143 !important;
+  font-size: 0.875rem !important;
+}
+
+/* 11.7 减弱动效偏好：popup 瞬间出现 */
+@media (prefers-reduced-motion: reduce) {
+  .vp-local-nav-items {
+    transition: none;
+  }
 }

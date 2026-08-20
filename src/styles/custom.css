@@ -1,10 +1,11 @@
 /* ==========================================================================
-   教辅数字化智库：全套精调 UI 样式表 (Consolidated Styles)
+   UI 样式表
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
    1. 数学公式排版优化：让行间公式在超出边界时支持横向滚动，防止溢出或截断
    -------------------------------------------------------------------------- */
+
 .katex-display {
   width: 100%;
   max-width: 100%;
@@ -1043,213 +1044,80 @@ html, body {
 :root[data-theme='dark'] .chip-default { color: #cbd5e1; }
 
 /* ==========================================================================
-   移动端：右侧大纲的悬浮按钮 + 底部抽屉形态
-   （右侧栏容器在移动端为 display:none，抽屉由脚本搬运到 <body> 后可见）
+   移动端：右侧大纲的 VitePress 本地导航条（VPLocalNav 移植）
+   结构：顶部 sticky 条（fixed header 下方）+ 大纲 popup 下拉面板。
+   本段只放“功能样式”（占位高度/断点/滚动锁/打印隐藏）；
+   VitePress 视觉细节（按钮文字、面板阴影圆角、过渡动画）见 vitepress-theme.css 区块 11。
    ========================================================================== */
 
-/* 移动端不再为“本页目录”预留顶部空条：
-   抽屉是悬浮覆盖层、不占版面，去掉 Starlight 残留的 3rem 空白（“固定在页面最上方”的观感来源） */
+/* 本地导航条占位高度：供 Starlight scroll-padding-top 锚点补偿使用（值 = 条高
+   0.75 + 0.6875 padding + 12px×2 行高 + 1px 底边 ≈ 2.94rem）。仅在导航条实际
+   挂载（body.vp-local-nav-active）时生效；无导航条页面保持 0 占位。
+   断点与右侧栏显示断点对齐：≥72rem 右侧栏可见（Starlight 布局），local nav 隐藏，
+   无需补偿。 */
 @media (max-width: 71.999rem) {
-  :root {
+  body.vp-local-nav-active {
+    --sl-mobile-toc-height: 2.9375rem;
+  }
+}
+@media (min-width: 72rem) {
+  body.vp-local-nav-active {
     --sl-mobile-toc-height: 0rem;
   }
 }
 
-/* 抽屉展开时锁定背景滚动 */
+/* 本地导航条以 margin-top 占掉了 fixed header 的 4rem 占位，main-frame 不再需要
+   calc(nav + toc) 顶部 padding，否则正文上方会多出 4rem 空白；≥72rem 导航条
+   display:none 不占流，恢复 Starlight 默认 padding。 */
+@media (max-width: 71.999rem) {
+  body.vp-local-nav-active .main-frame {
+    padding-top: 0 !important;
+  }
+}
+@media (min-width: 72rem) {
+  body.vp-local-nav-active .main-frame {
+    padding-top: calc(var(--sl-nav-height) + var(--sl-mobile-toc-height)) !important;
+  }
+}
+
+/* 面板展开时锁定背景滚动（popup 打开时防止滚动穿透） */
 body.mobile-toc-open {
   overflow: hidden;
 }
 
 /* 默认全部隐藏：桌面端永不出现，也防止任何布局残留 */
-.mobile-toc-fab,
-.mobile-toc-backdrop,
-.mobile-toc-drawer {
+.vp-local-nav {
   display: none;
 }
 
+@media (max-width: 71.999rem) {
+  /* 本地导航条：sticky 于 fixed header（--sl-nav-height）下方，全宽；
+     z-index 低于 header(--sl-z-index-navbar:10)、高于正文，popup 面板随之盖住正文 */
+  .vp-local-nav {
+    display: block;
+    position: sticky;
+    top: var(--sl-nav-height);
+    z-index: 9;
+    margin-top: var(--sl-nav-height); /* 补偿 fixed header 占位：初始位置落在 header 下方 */
+    width: 100%;
+    background-color: var(--sl-color-bg-nav, var(--sl-color-bg));
+  }
+}
+
 @media (min-width: 72rem) {
-  .mobile-toc-fab,
-  .mobile-toc-backdrop,
-  .mobile-toc-drawer {
+  .vp-local-nav {
     display: none !important;
   }
 }
 
-@media (max-width: 71.999rem) {
-  /* 悬浮“大纲”按钮 */
-  .mobile-toc-fab {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    position: fixed;
-    right: 1rem;
-    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
-    z-index: 45;
-    padding: 0.55rem 0.95rem;
-    border: 1px solid var(--sl-color-hairline);
-    border-radius: 999px;
-    background-color: var(--sl-color-bg-nav, var(--sl-color-bg));
-    color: var(--sl-color-white);
-    font-family: inherit;
-    font-size: 0.85rem;
-    font-weight: 600;
-    line-height: 1;
-    cursor: pointer;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
-    transition: transform 0.18s ease, opacity 0.18s ease, background-color 0.18s ease;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .mobile-toc-fab:active {
-    transform: scale(0.94);
-  }
-  .mobile-toc-fab-icon {
-    width: 1.05rem;
-    height: 1.05rem;
-    flex-shrink: 0;
-  }
-
-  /* 抽屉展开时按钮淡出隐藏，避免被抽屉遮挡或喧宾夺主 */
-  body.mobile-toc-open .mobile-toc-fab {
-    opacity: 0;
-    transform: translateY(0.4rem) scale(0.9);
-    pointer-events: none;
-  }
-
-  /* 左侧菜单全屏展开时，按钮一并让位 */
-  html[data-mobile-menu-expanded] .mobile-toc-fab,
-  body[data-mobile-menu-expanded] .mobile-toc-fab {
-    opacity: 0;
-    transform: translateY(0.4rem);
-    pointer-events: none;
-  }
-
-  /* 半透明遮罩 */
-  .mobile-toc-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-    background-color: var(--sl-color-backdrop-overlay, rgba(0, 0, 0, 0.45));
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.22s ease, visibility 0.22s;
-  }
-  body.mobile-toc-open .mobile-toc-backdrop {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  /* 底部抽屉：上滑展开，列表独立滚动 */
-  .mobile-toc-drawer {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 50;
-    max-height: min(76vh, 38rem);
-    display: flex;
-    flex-direction: column;
-    background-color: var(--sl-color-bg-nav, var(--sl-color-bg));
-    border-radius: 1rem 1rem 0 0;
-    border-top: 1px solid var(--sl-color-hairline);
-    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.28);
-    padding: 0.4rem 1.1rem calc(1rem + env(safe-area-inset-bottom, 0px));
-    transform: translateY(105%);
-    visibility: hidden;
-    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), visibility 0.28s;
-    touch-action: pan-y;
-  }
-  body.mobile-toc-open .mobile-toc-drawer {
-    transform: translateY(0);
-    visibility: visible;
-  }
-
-  /* 顶部的下拉手势把手 */
-  .mobile-toc-grabber {
-    width: 2.5rem;
-    height: 0.28rem;
-    margin: 0.15rem auto 0.6rem;
-    border-radius: 999px;
-    background-color: var(--sl-color-gray-4, #94a3b8);
-    flex-shrink: 0;
-  }
-
-  .mobile-toc-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.15rem 0 0.6rem;
-    border-bottom: 1px solid var(--sl-color-hairline-light);
-    margin-bottom: 0.75rem;
-    flex-shrink: 0;
-  }
-  .mobile-toc-title {
-    margin: 0;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--sl-color-white);
-    letter-spacing: 0.04em;
-  }
-  .mobile-toc-close {
-    appearance: none;
-    -webkit-appearance: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.9rem;
-    height: 1.9rem;
-    padding: 0;
-    border: 1px solid var(--sl-color-hairline);
-    border-radius: 50%;
-    background-color: transparent;
-    color: var(--sl-color-gray-3);
-    cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease;
-  }
-  .mobile-toc-close:hover,
-  .mobile-toc-close:focus-visible {
-    background-color: var(--sl-color-gray-6);
-    color: var(--sl-color-white);
-  }
-  .mobile-toc-close svg {
-    width: 0.95rem;
-    height: 0.95rem;
-  }
-
-  /* 抽屉内的目录列表：更宽松的点击热区与字号，列表自身滚动 */
-  .mobile-toc-drawer .toc-list {
-    overflow-y: auto;
-    padding: 0 0.2rem 0.4rem;
-    gap: 0.35rem;
-    min-height: 0;
-    overscroll-behavior: contain;
-  }
-  .mobile-toc-drawer .toc-link {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    font-size: 0.92rem;
-  }
-  .mobile-toc-drawer .toc-number {
-    font-size: 0.9rem;
-  }
-  .mobile-toc-drawer .toc-chip {
-    font-size: 0.7rem;
-  }
+/* 左侧移动菜单全屏展开时，本地导航条让位（保留占位、仅不可见，避免盖住菜单） */
+html[data-mobile-menu-expanded] .vp-local-nav {
+  visibility: hidden;
 }
 
-/* 减弱动效偏好：抽屉过渡改为瞬间完成 */
-@media (prefers-reduced-motion: reduce) {
-  .mobile-toc-drawer,
-  .mobile-toc-backdrop {
-    transition: none;
-  }
-}
-
-/* 打印 / PDF 导出时不渲染移动端浮层 */
+/* 打印 / PDF 导出时不渲染本地导航条 */
 @media print {
-  .mobile-toc-fab,
-  .mobile-toc-backdrop,
-  .mobile-toc-drawer {
+  .vp-local-nav {
     display: none !important;
   }
 }

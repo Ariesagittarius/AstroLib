@@ -23,6 +23,9 @@
 | `src/pages/index.astro` | 全量重写 | VitePress Hero + Feature 图书卡片，内置亮/暗色板 |
 | `src/scripts/sidebar-resizer.ts` | `DEFAULT_WIDTH` 18.75rem→17rem | 否则拖拽引擎会覆盖回 300px |
 | 11 个卡片组件 `.astro` | 标题去除 emoji 前缀 | Example/Variant/Exercise/Method/Summary/Knowledge/Note/Analysis/Guide/Block/Solution |
+| `src/components/PageSidebarOverride.astro` | 移动端大纲形态重写 | 底部抽屉（FAB+遮罩+drawer）→ VitePress VPLocalNav 顶部 sticky 条 + popup 大纲面板（详见区块 11） |
+| `src/styles/custom.css` | 移动端功能样式替换 | 旧 FAB/遮罩/抽屉样式块 → `vp-local-nav` 断点/滚动锁/占位高度 |
+| `src/styles/vitepress-theme.css` | 新增区块 11 + 8 区块作用域迁移 | VPLocalNav VitePress 观感（按钮/面板/大纲项/过渡）；`.mobile-toc-drawer .toc-*` 作用域改 `.vp-local-nav .toc-*` |
 
 ### vitepress-theme.css 区块结构
 
@@ -66,11 +69,11 @@
 4. **顶栏毛玻璃**：`backdrop-filter` 半透明是生态常见定制，VitePress 官方默认纯色。用户未提异议，保留。
 5. **右侧大纲（PageSidebarOverride）未 VitePress 化**：toc 项仍为旧样式（左侧 2px 高亮条 + chip 色块）。如需统一可下一步处理。
 6. **Summary.astro 是历史遗留坏组件**（无 `<slot />`，内容不渲染），本次仅去 emoji + 样式覆盖，未修复（不在本任务范围）。
-7. **移动端**：侧栏抽屉/移动菜单沿用 Starlight 结构，仅高度随 4rem 变化；未做 VitePress 移动端抽屉（`width: 100vw - 4rem`）改造。
+7. **移动端大纲已 VitePress 化**：右侧大纲在移动端由 VPLocalNav 顶部 sticky 条 + 大纲 popup 面板承载（对照 `VPLocalNav.vue` / `VPLocalNavOutlineDropdown.vue` / `VPDocOutlineItem.vue` 移植）。断点对齐项目右侧栏：<72rem 显示 local nav（右侧栏隐藏），≥72rem 右侧栏显示、local nav 隐藏。左侧抽屉菜单仍沿用 Starlight 结构（local nav 在左菜单展开时 `visibility: hidden` 让位）。
 
 ## 七、建议后续（可选，非必须）
 
-- 右侧大纲 VitePress 化（对照 `VPLocalNav` / outline 排版）
+- ~~右侧大纲 VitePress 化~~（已完成：桌面端见区块 8，移动端 VPLocalNav 见区块 11）
 - 顶栏加"返回首页"链接或面包屑（VitePress 站点头部常见）
 - 修复 Summary.astro 或废弃（skill 已记录）
 - 首页 Hero 可加图书封面轮播/搜索入口
