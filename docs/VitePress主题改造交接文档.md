@@ -4,6 +4,17 @@
 > 提交：`e898c0e 修改组件风格为VitePress`（已推送 origin/main，工作树干净）
 > 交接对象：后续继续本主题或相关工作的 agent
 
+## 〇、进度更新（移动端大纲 VPLocalNav 化，已完成）
+
+> 日期：紧随 e898c0e 之后的本阶段
+> 提交：`069f38b 移动端右侧大纲改造为 VitePress VPLocalNav 风格`、`f25e1ff 在线精修工具 + refs static`（均已推送 origin/main）
+> 验证：astro dev 下 CSS 与章节页编译 200 无错；移动端断点/交互逻辑已实现，浏览器端视觉效果由用户验收
+
+- 右侧大纲**移动端**形态从"底部抽屉（FAB+遮罩+drawer）"改为 VitePress VPLocalNav 顶部 sticky 条 + popup 大纲面板（见区块 11）
+- **桌面端**右侧大纲的 VitePress 化（区块 8）在上一阶段已完成，本阶段补齐移动端，右侧大纲现已全端 VitePress 化
+- 断点对齐项目右侧栏：<72rem 显示 local nav（右侧栏隐藏），≥72rem 右侧栏显示、local nav 隐藏
+- 同一批推送还包含之前会话遗留的未提交工作：在线可视化精修工具（dev-only）、`refs` 切换 static（详见 `docs/精修工具交接.md`）
+
 ## 一、任务概述
 
 将本站（Astro 7 + Starlight 0.41 数学教辅数字化文档站）从 Starlight 默认观感改造为 **VitePress 官方主题视觉与排版**。已交付：
@@ -36,6 +47,10 @@
 5. **侧栏**：宽 17rem、无右边框、padding 1.5rem 6rem、链接 14px/500/行高 1.714、hover 仅变色、当前项品牌色+600、分组标题 14px/700、嵌套 1rem 缩进
 6. **正文排版**：h2 顶部细分隔线、链接下划线、引用 2px 左边框、表格全边框+隔行、行内代码品牌色胶囊、pre 圆角
 7. **卡片 custom-block 化**：无边框、soft 背景（亮 8%/暗 12% 透明度）、字号 0.875rem、行高 1.7142857、标题 600 中性色
+8. **右侧大纲（桌面端）**：outline-marker 2px 品牌色指示条跟随高亮项、13px/行高 2.2857143、中性灰 chip 标签（对照 `VPDocAsideOutline` / `VPDocOutlineItem`）
+9. **顶栏 VPNavBar 化**：内边距 1.5rem、动作组间距 8px、社交图标 20px、站名 hover 品牌色（顶栏高度见区块 4）
+10. **翻页 VPDocFooter 化**：pager 卡片式、desc 小字 + 品牌色章节标题
+11. **移动端本地导航 VPLocalNav**：顶部 sticky 条 + 大纲 popup 面板（对照 `VPLocalNav.vue` / `VPLocalNavOutlineDropdown.vue` / `VPDocOutlineItem.vue` 移植；功能样式在 custom.css 移动端区块，视觉覆盖在本区块）
 
 ## 三、关键技术决策（勿轻易回退）
 
@@ -67,7 +82,7 @@
 2. **首页与内容页主题机制不同**：首页 `prefers-color-scheme`，内容页 `data-theme` 切换器——两套色板值相同（VitePress 官方值），但机制独立。
 3. **卡片内公式随容器 14px 缩小**（VitePress custom-block 特性）：若觉公式偏小，可对 `.card-body .katex` 单独放大，当前未处理。
 4. **顶栏毛玻璃**：`backdrop-filter` 半透明是生态常见定制，VitePress 官方默认纯色。用户未提异议，保留。
-5. **右侧大纲（PageSidebarOverride）未 VitePress 化**：toc 项仍为旧样式（左侧 2px 高亮条 + chip 色块）。如需统一可下一步处理。
+5. **右侧大纲已全部 VitePress 化**：桌面端见区块 8（outline-marker + 中性 chip），移动端见区块 11（VPLocalNav popup）。早期"左侧 2px 高亮条 + 彩色 chip"样式已废弃，不再生效。
 6. **Summary.astro 是历史遗留坏组件**（无 `<slot />`，内容不渲染），本次仅去 emoji + 样式覆盖，未修复（不在本任务范围）。
 7. **移动端大纲已 VitePress 化**：右侧大纲在移动端由 VPLocalNav 顶部 sticky 条 + 大纲 popup 面板承载（对照 `VPLocalNav.vue` / `VPLocalNavOutlineDropdown.vue` / `VPDocOutlineItem.vue` 移植）。断点对齐项目右侧栏：<72rem 显示 local nav（右侧栏隐藏），≥72rem 右侧栏显示、local nav 隐藏。左侧抽屉菜单仍沿用 Starlight 结构（local nav 在左菜单展开时 `visibility: hidden` 让位）。
 
