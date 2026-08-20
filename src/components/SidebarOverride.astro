@@ -210,6 +210,17 @@ if (bookMatch) {
       if (btn && document.body.hasAttribute('data-mobile-menu-expanded')) btn.click();
     }
 
+    // 移动端左侧抽屉：点击抽屉外区域（遮罩/正文）关闭 —— VitePress VPBackdrop 行为。
+    // 打开抽屉时按钮自身的 click 会先冒泡到这里（target 命中按钮则跳过）；
+    // btn.click() 同步关闭后再冒泡时 body 已无展开标记，直接返回，无死循环。
+    document.addEventListener('click', (e) => {
+      if (!document.body.hasAttribute('data-mobile-menu-expanded')) return;
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest('starlight-menu-button') || target.closest('.sidebar-pane')) return;
+      closeMobileMenu();
+    });
+
     async function loadPage(url, { restoreScroll = false } = {}) {
       const token = ++navToken;
       const doc = await fetchPage(url);

@@ -652,33 +652,26 @@
 }
 
 /* --------------------------------------------------------------------------
-   11. 移动端本地导航 VPLocalNav — VitePress 移植观感
-   结构（顶部 sticky 条 + popup 大纲面板）、断点、滚动锁等“功能样式”
-   在 custom.css 移动端区块；本区块负责 VitePress 视觉：条排版、大纲按钮、
-   popup 面板、面板内大纲项（对齐 VPDocOutlineItem）、flyout 过渡。
+   11. 移动端本地导航 — VitePress 移植观感
+   结构：大纲按钮并入固定顶栏（header）右侧（JS 搬运进 .right-group，
+   custom.css 移动端区块负责断点/显示切换），popup 大纲面板从按钮下方弹出。
+   本区块负责 VitePress 视觉：大纲按钮、popup 面板、面板内大纲项
+   （对齐 VPDocOutlineItem）、flyout 过渡。
    对照源码：task/theme/theme-default/components/VPLocalNav.vue、
    VPLocalNavOutlineDropdown.vue、VPDocOutlineItem.vue
    -------------------------------------------------------------------------- */
 
-/* 11.1 条本体：底部分割线（VPLocalNav border-bottom: 1px solid gutter） */
-.vp-local-nav {
-  border-bottom: 1px solid var(--sl-color-hairline);
-}
-
-/* 11.2 条容器：按钮靠右（VitePress .container 为 space-between，本站左侧无
-       Menu 按钮，故右对齐） */
+/* 11.1 大纲按钮：0.75rem/500 次级色 + chevron（展开旋转 90°，同 vpi-chevron-right）；
+       位于顶栏内，左右内边距收紧、垂直居中交给 flex（.vp-local-nav / container） */
 .vp-local-nav-container {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
 }
-
-/* 11.3 大纲按钮：0.75rem/500 次级色 + chevron（展开旋转 90°，同 vpi-chevron-right） */
 .vp-local-nav-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.125rem;
-  padding: 0.75rem 1.5rem 0.6875rem;
+  padding: 0 0.875rem;
   border: none;
   background: transparent;
   font-family: inherit;
@@ -708,33 +701,22 @@
 .vp-local-nav-btn.return-top .vp-local-nav-caret {
   display: none;
 }
-@media (min-width: 48rem) {
-  .vp-local-nav-btn {
-    padding: 0.75rem 2rem 0.6875rem;
-  }
-}
 
-/* 平板段（本项目左侧栏 ≥50rem 显示，对齐 VitePress ≥60rem 的 padding-left 语义） */
-@media (min-width: 50rem) {
-  .vp-local-nav {
-    padding-left: var(--sl-sidebar-width);
-  }
-}
-
-/* 11.4 popup 面板：absolute 定位于 sticky 的 .vp-local-nav（VitePress .items），
+/* 11.2 popup 面板：absolute 定位于顶栏内按钮下方（VitePress .items），
        圆角 0.5rem、1px 边框、shadow-3；gap:1px + gutter 底色实现分隔线；
        最大高度受 --vp-vh 约束（JS 按视口与滚动计算，VPLocalNavOutlineDropdown） */
 .vp-local-nav-items {
   position: absolute;
-  top: 2.5rem;
-  right: 1rem;
-  left: 1rem;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  left: auto;
   display: grid;
   gap: 1px;
   border: 1px solid var(--sl-color-hairline);
   border-radius: 0.5rem;
   background-color: var(--sl-color-gray-5);
-  max-height: calc(var(--vp-vh, 100vh) - 5.375rem);
+  width: min(20rem, calc(100vw - 2rem));
+  max-height: calc(var(--vp-vh, 100vh) - 4.5rem);
   overflow: hidden auto;
   overscroll-behavior: contain;
   box-shadow: var(--sl-shadow-lg);
@@ -749,13 +731,6 @@ body.mobile-toc-open .vp-local-nav-items {
   visibility: visible;
   transform: translateY(0);
   pointer-events: auto;
-}
-@media (min-width: 50rem) {
-  .vp-local-nav-items {
-    right: auto;
-    left: calc(var(--sl-sidebar-width) + 2rem);
-    width: 20rem;
-  }
 }
 
 /* 11.5 面板头部「返回顶部」：bg-soft + 品牌色 500（VPLocalNavOutlineDropdown .top-link） */
@@ -794,5 +769,41 @@ body.mobile-toc-open .vp-local-nav-items {
 @media (prefers-reduced-motion: reduce) {
   .vp-local-nav-items {
     transition: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   12. 移动端左侧栏 VitePress 侧滑抽屉 + 顶栏菜单按钮 — VPSidebar / VPNavBarHamburger 观感
+   功能样式（断点/transform/遮罩/按钮定位）在 custom.css 移动端区块；
+   本区块只负责 VitePress 视觉：抽屉内边距与滚动条、菜单按钮图标。
+   对照源码：task/theme/theme-default/components/VPSidebar.vue、
+   VPNavBarHamburger.vue
+   -------------------------------------------------------------------------- */
+@media (max-width: 49.999rem) {
+  /* 站名让位：header 左侧留出菜单按钮空间（按钮占 0.75–3.25rem）。
+     本文件晚于 custom.css 加载，同优先级下覆盖区块 9 的 padding-inline: 1.5rem */
+  .header {
+    padding-inline-start: 3.5rem !important;
+  }
+
+  /* 抽屉内边距对齐 VPSidebar（2rem 2rem 6rem），顶部从 header 下缘开始无需再让位 */
+  .sidebar-pane .sidebar-content {
+    padding: 2rem 2rem 6rem !important;
+  }
+
+  /* 抽屉滚动条：VitePress 细滚动条观感 */
+  .sidebar-pane::-webkit-scrollbar {
+    width: 0.25rem;
+  }
+  .sidebar-pane::-webkit-scrollbar-thumb {
+    background-color: var(--sl-color-gray-5);
+    border-radius: 0.25rem;
+  }
+
+  /* 菜单按钮图标：bars/close 同 VitePress 汉堡图标尺寸（1.25rem），
+     颜色随 --sl-color-white（= vp-text-1，亮暗自适应） */
+  starlight-menu-button button svg {
+    width: 1.25rem;
+    height: 1.25rem;
   }
 }

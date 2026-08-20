@@ -1182,9 +1182,10 @@ if (refsMode === 'interactive') {
   }
 
   /**
-   * 移动端本地导航 VPLocalNav 装配（VitePress 移植）：
+   * 移动端本地导航 VPLocalNav 装配（VitePress 移植，顶栏入口版）：
    * - 导航条最初位于右侧栏容器内，而该容器在移动端是 display:none，
-   *   这里搬运到 <header> 之后（对应 VitePress 中 VPLocalNav 位于 VPNavBar 之后）；
+   *   这里搬运进固定顶栏（header）的右侧动作区 .right-group —— 大纲入口
+   *   “并入顶栏右侧而不是单开一格”（对应 VitePress VPNavBar 右侧动作区）；
    * - 交互对齐 VPLocalNavOutlineDropdown：按钮开合、点击外部关闭、Escape 关闭、
    *   面板内「返回顶部」平滑滚顶、--vp-vh 控制面板最大高度；
    * - SPA 切页后整个容器会被替换，因此每次调用先清理上一页残留再重新挂载。
@@ -1199,12 +1200,17 @@ if (refsMode === 'interactive') {
       window.__vpLocalNavClickHandler = null;
     }
 
-    // 2. 搬运当前页导航条到 <header> 之后（页面无大纲时节点不存在，直接跳过）
+    // 2. 搬运当前页导航条进顶栏右侧 .right-group（页面无大纲时节点不存在，直接跳过）
     const nav = document.querySelector('.vp-local-nav');
     if (!nav) return;
     const header = document.querySelector('.header');
+    const rightGroup = header?.querySelector('.right-group');
     nav.classList.add('vp-local-nav-teleported');
-    if (header && header.nextElementSibling !== nav) header.after(nav);
+    if (rightGroup) {
+      if (rightGroup.firstElementChild !== nav) rightGroup.prepend(nav);
+    } else if (header && header.lastElementChild !== nav) {
+      header.append(nav);
+    }
     document.body.classList.add('vp-local-nav-active');
 
     const btn = nav.querySelector('.vp-local-nav-btn');

@@ -4,6 +4,34 @@
 > 提交：`e898c0e 修改组件风格为VitePress`（已推送 origin/main，工作树干净）
 > 交接对象：后续继续本主题或相关工作的 agent
 
+## 〇〇、进度更新（移动端顶栏一体化 + 左侧栏 VitePress 侧滑抽屉，已完成）
+
+> 日期：紧随 069f38b 之后的本阶段
+> 验证：astro dev 下章节页（数学分析/大学物理）编译 200 无错，CSS/JS 均注入；浏览器端交互由用户验收
+> 提交：**未提交**（等待用户决定是否 git push）
+
+- **左侧栏入口挪到顶栏左侧**：Starlight 的 `starlight-menu-button` 原是固定在顶栏**右侧**的浮动圆钮，现改为 fixed 顶栏**左侧**的透明汉堡按钮（bars/close 图标，hover 圆角 soft 底），站名右侧让位 3.5rem
+- **右侧大纲入口并入顶栏右侧**：原「顶部 sticky 条 + popup 面板」形态废弃——大纲按钮由 JS 搬运进顶栏右侧 `.right-group`（与社交/主题并列），popup 面板从按钮下方弹出；`--sl-mobile-toc-height` 归零（不再占一行）
+- **左侧栏改为 VitePress 侧滑抽屉**：`.sidebar-pane` 由 Starlight 默认「header 下缘到屏幕底的全宽上下抽屉」改为 `translateX(-100%) → 0` 左侧滑入窄面板（宽 `calc(100vw - 4rem)` / max 20rem，对照 `VPSidebar.vue`），配合 `::before` 遮罩（VPBackdrop 语义）；关闭 = 汉堡按钮（变 X）或点击遮罩
+- 对照源码：`task/theme/theme-default/components/VPSidebar.vue`、`VPNavBarHamburger.vue`、`VPLocalNavOutlineDropdown.vue`
+
+### 改动文件
+
+| 文件 | 改动 |
+| --- | --- |
+| `src/styles/custom.css` | 重写移动端区块：删旧 sticky 条占位/补偿逻辑；hamburger 定位到顶栏左侧；抽屉 transform + 遮罩；`.right-group` 纯移动端强制显示为只含大纲按钮；`--sl-mobile-toc-height: 0rem` |
+| `src/styles/vitepress-theme.css` | 区块 11 改造：按钮/面板适配顶栏内（`top: calc(100% + 0.5rem)`、`right: 0`、`width: min(20rem, …)`）；**新增区块 12**：移动端站名让位、抽屉内边距/滚动条、菜单按钮图标尺寸 |
+| `src/components/PageSidebarOverride.astro` | `setupVPLocalNav` 搬运目标：`header.after(nav)` → `rightGroup.prepend(nav)` |
+| `src/components/SidebarOverride.astro` | SPA 脚本新增「点击遮罩/抽屉外关闭」（VitePress VPBackdrop 行为） |
+
+### 关键点（勿回退）
+
+1. **修正坏选择器**：`data-mobile-menu-expanded` 由 Starlight 加在 **`<body>`** 上，原 `html[data-mobile-menu-expanded] .vp-local-nav` 永不匹配（"左菜单展开时 local nav 让位"从未生效），已改为 `body[...]`，让位逻辑现在真正工作
+2. **断点**：<50rem 抽屉+汉堡+顶栏大纲按钮；50–72rem 左侧栏固定显示、社交/主题/大纲按钮并列顶栏右侧；≥72rem 大纲按钮隐藏（右侧栏固定显示）
+3. **抽屉从 header 下缘开始**（`inset-block: nav-height 0`），顶栏与汉堡始终可见可关（z-index 遮罩 4 < 抽屉 5 < 顶栏 10）；VitePress 官方是全高抽屉，本站在此有意取舍
+4. **级联顺序**：站名让位 `.header { padding-inline-start: 3.5rem }` 必须写在 vitepress-theme.css（后加载），否则被区块 9 的 `padding-inline: 1.5rem` 覆盖
+5. 打印/PDF：vp-local-nav 与 sidebar 打印隐藏逻辑保留
+
 ## 〇、进度更新（移动端大纲 VPLocalNav 化，已完成）
 
 > 日期：紧随 e898c0e 之后的本阶段
