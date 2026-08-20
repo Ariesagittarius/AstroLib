@@ -12,6 +12,16 @@ import { rehypeKatexAnnotate, rehypeKatexPromote } from './src/utils/rehype-kate
 // 构建期引用徽章下沉插件（方案 B）：把“例题 1.74 / 图 3-48 → badge”的匹配逻辑
 // 从客户端 SPA 切换时扫描下沉到构建期，客户端切换零扫描（详见 docs/文章切换性能优化交接文档）
 import { rehypeCrossRef } from './src/utils/rehype-cross-ref.mjs';
+// 在线可视化精修工具：源码位置注入（仅 dev 启用，见 M1 设计）
+import rehypeEditorAnnotate from './src/utils/rehype-editor-annotate.mjs';
+// 在线可视化精修工具：/__edit__/* 写回端点（Vite dev server 插件，仅 dev 启用）。
+// 不用 Astro middleware：dev 下 /__edit__/* 会匹配到 prerendered 路由，Astro 构造
+// Request 时清空 query、丢弃 body（见 dev-server-plugin.mjs 头部说明）。
+import devEditServerPlugin from './src/utils/mdx-editor/dev-server-plugin.mjs';
+
+// 是否 dev 模式（astro dev）：编辑注入与写回端点仅在开发服务器启用，
+// 生产构建（astro build / preview）不注入 data-src-*，零污染。
+const IS_DEV = process.argv.includes('dev');
 
 // 根据中央图书配置，全自动生成自然排序的树状侧边栏
 const dynamicSidebar = collections.map(col => ({
@@ -40,6 +50,8 @@ export default defineConfig({
         // 方案 B：构建期徽章下沉，须在 KaTeX 相关插件之后执行（依赖公式结构已定型）。
         // refs 传 siteConfig.refs：'static' 时强制全部静态 chip（关闭同页联动）
         [rehypeCrossRef, { collections, refs: siteConfig.refs }],
+        // 可视化精修：源码位置注入（仅 dev；生产构建不启用，避免输出额外属性）
+        ...(IS_DEV ? [rehypeEditorAnnotate] : []),
       ],
     }),
   },
@@ -58,6 +70,7 @@ export default defineConfig({
         PageSidebar: './src/components/PageSidebarOverride.astro', // 右侧多合集自适应大纲与卡片修补
         ThemeSelect: './src/components/ThemeSelectOverride.astro', // VitePress 纯图标主题切换按钮
         Pagination: './src/components/PaginationOverride.astro', // 文章底部翻页 → VitePress pager 结构
+        Footer: './src/components/FooterOverride.astro', // 底部：原翻页/编辑链接 + 在线精修工具壳（仅 dev）
       },
       sidebar: dynamicSidebar,
       customCss: [
@@ -76,6 +89,10 @@ export default defineConfig({
     }),
   ],
   vite: {
+    plugins: [
+      // 精修工具写回端点：仅 dev 注册（生产构建不加载，零污染）
+      ...(IS_DEV ? [devEditServerPlugin()] : []),
+    ],
     resolve: {
       alias: {
         '@': '/src',

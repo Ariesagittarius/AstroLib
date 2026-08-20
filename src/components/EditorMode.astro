@@ -1,0 +1,475 @@
+---
+// 在线可视化精修工具 · 服务端壳（M2 + M3）
+// 仅 dev 渲染（import.meta.env.DEV），生产构建输出为空，零污染。
+// 挂载：由 FooterOverride.astro 在页面底部引入（SPA 导航不替换 footer，脚本只执行一次）。
+// UI 元素由 src/utils/editor.ts 动态创建，本组件只负责样式与脚本入口。
+// 样式遵循 VitePress 视觉语言（品牌绿 #42b883 / #3eaf7c、细边框、轻阴影、少 emoji）。
+const isDev = import.meta.env.DEV;
+---
+
+{
+  isDev && (
+    <>
+      <div id="dsh-editor-root" aria-label="在线精修工具（开发模式）"></div>
+
+      <style is:global>
+        /* ===== 在线精修工具 UI（仅 dev 输出；VitePress 风格） ===== */
+        :root {
+          --dsh-brand: #42b883;
+          --dsh-brand-2: #3eaf7c;
+          --dsh-brand-soft: rgba(66, 184, 131, 0.12);
+          --dsh-bg: #ffffff;
+          --dsh-bg-soft: #f6f6f7;
+          --dsh-text-1: #3b434e;
+          --dsh-text-2: #6a7280;
+          --dsh-border: #e2e2e3;
+          --dsh-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.06);
+        }
+        html[data-theme='dark'] {
+          --dsh-brand: #3eaf7c;
+          --dsh-brand-2: #5cb386;
+          --dsh-brand-soft: rgba(62, 175, 124, 0.16);
+          --dsh-bg: #1e1e20;
+          --dsh-bg-soft: #252529;
+          --dsh-text-1: #adbac7;
+          --dsh-text-2: #8b949e;
+          --dsh-border: #3e3e42;
+          --dsh-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        #dsh-editor-root {
+          position: fixed;
+          inset: 0;
+          z-index: 2147483000;
+          pointer-events: none;
+          font-family: var(--vp-font-family-base, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', sans-serif);
+        }
+        #dsh-editor-root * {
+          box-sizing: border-box;
+          /* pointer-events 可继承：root 设为 none（空白区域点击穿透，不挡页面浏览），
+             这里必须对所有 UI 子元素显式恢复 auto，否则点击会穿透到页面元素上 */
+          pointer-events: auto;
+        }
+        #dsh-editor-root button {
+          font: inherit;
+        }
+
+        /* 编辑模式下正文块可点 */
+        body.dsh-edit-mode main [data-src-line] {
+          cursor: pointer;
+        }
+
+        /* 块高亮（outline 不占布局） */
+        .dsh-block-hover {
+          outline: 2px dashed var(--dsh-brand) !important;
+          outline-offset: 2px !important;
+        }
+        .dsh-block-selected {
+          outline: 2px solid var(--dsh-brand) !important;
+          outline-offset: 2px !important;
+          background-color: var(--dsh-brand-soft) !important;
+        }
+        /* 草稿已修改标记（含组件的块无法即时预览时使用；尽力预览的块同样标记） */
+        .dsh-dirty {
+          position: relative;
+          outline: 2px solid var(--dsh-brand) !important;
+          outline-offset: 2px !important;
+          background-color: var(--dsh-brand-soft) !important;
+        }
+        .dsh-dirty::after {
+          content: '已修改';
+          position: absolute;
+          top: -1px;
+          right: -1px;
+          font-size: 10px;
+          line-height: 1;
+          padding: 2px 6px;
+          color: #fff;
+          background: var(--dsh-brand);
+          border-radius: 0 0 0 4px;
+        }
+
+        /* hover 类型徽标 */
+        .dsh-badge {
+          position: fixed;
+          padding: 2px 8px;
+          font-size: 11px;
+          line-height: 1.6;
+          border-radius: 4px;
+          background: var(--dsh-brand);
+          color: #fff;
+          pointer-events: none !important;
+          white-space: nowrap;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+          z-index: 1;
+        }
+
+        /* 浮动工具栏 */
+        .dsh-toolbar {
+          position: fixed;
+          display: flex;
+          align-items: center;
+          gap: 2px;
+          padding: 4px 6px;
+          background: var(--dsh-bg);
+          color: var(--dsh-text-1);
+          border: 1px solid var(--dsh-border);
+          border-radius: 8px;
+          box-shadow: var(--dsh-shadow);
+          z-index: 2;
+          max-width: calc(100vw - 16px);
+          flex-wrap: wrap;
+        }
+        .dsh-toolbar button {
+          border: 1px solid transparent;
+          background: transparent;
+          color: var(--dsh-text-1);
+          padding: 3px 8px;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 12px;
+          white-space: nowrap;
+        }
+        .dsh-toolbar button:hover:not(:disabled) {
+          background: var(--dsh-brand-soft);
+          color: var(--dsh-brand-2);
+        }
+        .dsh-toolbar button:disabled {
+          opacity: 0.35;
+          cursor: not-allowed;
+        }
+        .dsh-toolbar-info {
+          font-size: 11px;
+          color: var(--dsh-text-2);
+          margin-right: 4px;
+          white-space: nowrap;
+        }
+
+        /* 顶部面板（VitePress 工具栏风格） */
+        .dsh-panel {
+          position: fixed;
+          top: 12px;
+          right: 12px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 10px;
+          background: var(--dsh-bg);
+          color: var(--dsh-text-1);
+          border: 1px solid var(--dsh-border);
+          border-radius: 8px;
+          box-shadow: var(--dsh-shadow);
+          z-index: 3;
+          max-width: min(72vw, 620px);
+        }
+        .dsh-panel-title {
+          font-weight: 700;
+          font-size: 13px;
+          white-space: nowrap;
+        }
+        .dsh-panel-title-dirty {
+          color: var(--dsh-brand-2);
+        }
+        .dsh-panel-file {
+          font-size: 11px;
+          color: var(--dsh-text-2);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          direction: rtl;
+          text-align: left;
+          max-width: 220px;
+        }
+        .dsh-panel button {
+          border: 1px solid var(--dsh-border);
+          background: transparent;
+          color: var(--dsh-text-1);
+          padding: 3px 9px;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 12px;
+          white-space: nowrap;
+        }
+        .dsh-panel button:hover:not(:disabled) {
+          border-color: var(--dsh-brand);
+          color: var(--dsh-brand-2);
+        }
+        .dsh-panel button:disabled {
+          opacity: 0.45;
+          cursor: not-allowed;
+        }
+        .dsh-panel .dsh-panel-save {
+          border-color: var(--dsh-brand);
+          color: var(--dsh-brand-2);
+          font-weight: 600;
+        }
+        .dsh-panel .dsh-panel-save-dirty {
+          background: var(--dsh-brand);
+          color: #fff;
+        }
+        .dsh-panel .dsh-panel-save-dirty:hover:not(:disabled) {
+          background: var(--dsh-brand-2);
+          color: #fff;
+        }
+
+        /* 弹窗 */
+        .dsh-modal {
+          position: fixed;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(0, 0, 0, 0.35);
+          z-index: 4;
+        }
+        .dsh-modal-box {
+          width: min(90vw, 720px);
+          max-height: 84vh;
+          display: flex;
+          flex-direction: column;
+          background: var(--dsh-bg);
+          color: var(--dsh-text-1);
+          border: 1px solid var(--dsh-border);
+          border-radius: 8px;
+          box-shadow: var(--dsh-shadow);
+          overflow: hidden;
+        }
+        .dsh-modal-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 14px;
+          font-weight: 700;
+          font-size: 14px;
+          border-bottom: 1px solid var(--dsh-border);
+        }
+        .dsh-modal-close {
+          border: none;
+          background: none;
+          font-size: 16px;
+          cursor: pointer;
+          color: var(--dsh-text-2);
+          padding: 2px 8px;
+          border-radius: 6px;
+          line-height: 1;
+        }
+        .dsh-modal-close:hover {
+          background: var(--dsh-bg-soft);
+        }
+        .dsh-modal-body {
+          padding: 12px 14px;
+          overflow: auto;
+        }
+        .dsh-modal-textarea {
+          width: 100%;
+          min-height: 220px;
+          font-family: var(--vp-font-family-mono, ui-monospace, SFMono-Regular, Consolas, monospace);
+          font-size: 13px;
+          line-height: 1.6;
+          border: 1px solid var(--dsh-border);
+          border-radius: 6px;
+          padding: 10px;
+          resize: vertical;
+          background: var(--dsh-bg-soft);
+          color: var(--dsh-text-1);
+        }
+        .dsh-modal-input,
+        .dsh-modal-select {
+          width: 100%;
+          padding: 7px 10px;
+          border: 1px solid var(--dsh-border);
+          border-radius: 6px;
+          font-size: 13px;
+          background: var(--dsh-bg);
+          color: var(--dsh-text-1);
+        }
+        .dsh-modal-input:focus,
+        .dsh-modal-select:focus,
+        .dsh-modal-textarea:focus {
+          outline: none;
+          border-color: var(--dsh-brand);
+          box-shadow: 0 0 0 2px var(--dsh-brand-soft);
+        }
+        .dsh-modal-field {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 10px;
+        }
+        .dsh-modal-field-last {
+          margin: 10px 0 0;
+          padding-top: 10px;
+          border-top: 1px dashed var(--dsh-border);
+        }
+        .dsh-modal-field .dsh-modal-save {
+          border: 1px solid var(--dsh-brand);
+          background: var(--dsh-brand);
+          color: #fff;
+          border-radius: 6px;
+          padding: 6px 14px;
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 600;
+          flex-shrink: 0;
+        }
+        .dsh-modal-field .dsh-modal-save:hover {
+          background: var(--dsh-brand-2);
+        }
+        .dsh-modal-label {
+          font-size: 12px;
+          color: var(--dsh-text-2);
+          width: 70px;
+          flex-shrink: 0;
+        }
+        .dsh-modal-hint {
+          font-size: 12px;
+          color: var(--dsh-text-2);
+          margin-bottom: 8px;
+          line-height: 1.6;
+        }
+        .dsh-modal-foot {
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+          padding: 10px 14px;
+          border-top: 1px solid var(--dsh-border);
+        }
+        .dsh-modal-foot button {
+          padding: 5px 16px;
+          border-radius: 6px;
+          border: 1px solid var(--dsh-border);
+          background: transparent;
+          color: var(--dsh-text-1);
+          cursor: pointer;
+          font-size: 13px;
+        }
+        .dsh-modal-foot button:hover {
+          border-color: var(--dsh-brand);
+          color: var(--dsh-brand-2);
+        }
+        .dsh-modal-foot .dsh-modal-save {
+          background: var(--dsh-brand);
+          border-color: var(--dsh-brand);
+          color: #fff;
+          font-weight: 600;
+        }
+        .dsh-modal-foot .dsh-modal-save:hover {
+          background: var(--dsh-brand-2);
+          color: #fff;
+        }
+
+        /* 卡片选择列表（移入卡片） */
+        .dsh-card-pick {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          max-height: 44vh;
+          overflow: auto;
+          margin-bottom: 4px;
+        }
+        .dsh-card-pick-item {
+          display: flex;
+          align-items: baseline;
+          gap: 8px;
+          width: 100%;
+          text-align: left;
+          padding: 6px 10px;
+          border: 1px solid transparent;
+          border-radius: 6px;
+          background: transparent;
+          color: var(--dsh-text-1);
+          cursor: pointer;
+          font-size: 12px;
+          line-height: 1.5;
+        }
+        .dsh-card-pick-item:hover {
+          background: var(--dsh-brand-soft);
+          border-color: var(--dsh-brand);
+        }
+        .dsh-card-pick-line {
+          font-family: var(--vp-font-family-mono, ui-monospace, Consolas, monospace);
+          color: var(--dsh-brand-2);
+          font-weight: 600;
+          flex-shrink: 0;
+        }
+        .dsh-card-pick-preview {
+          color: var(--dsh-text-2);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          flex: 1;
+        }
+
+        /* wrap 预览占位卡片 */
+        .dsh-preview-card {
+          border: 1px dashed var(--dsh-brand);
+          border-radius: 8px;
+          margin: 1.5rem 0;
+          overflow: hidden;
+          background: var(--dsh-brand-soft);
+        }
+        .dsh-preview-card-title {
+          padding: 0.5rem 1rem;
+          font-weight: 700;
+          font-size: 14px;
+          color: var(--dsh-brand-2);
+          border-bottom: 1px dashed var(--dsh-brand);
+        }
+        .dsh-preview-card-body {
+          padding: 0.8rem 1rem;
+        }
+
+        /* 日志 */
+        .dsh-log-list {
+          font-size: 12px;
+          line-height: 1.9;
+          max-height: 50vh;
+          overflow: auto;
+        }
+        .dsh-log-item {
+          border-bottom: 1px dashed var(--dsh-border);
+          padding: 4px 2px;
+          font-family: var(--vp-font-family-mono, ui-monospace, Consolas, monospace);
+          color: var(--dsh-text-1);
+        }
+
+        /* toast */
+        .dsh-toast-box {
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          z-index: 5;
+        }
+        .dsh-toast {
+          padding: 9px 14px;
+          background: var(--dsh-bg);
+          color: var(--dsh-text-1);
+          border: 1px solid var(--dsh-border);
+          border-left: 3px solid var(--dsh-brand);
+          border-radius: 6px;
+          font-size: 13px;
+          box-shadow: var(--dsh-shadow);
+          max-width: 420px;
+          transition: opacity 0.3s;
+          pointer-events: none; /* 普通提示不拦截点击 */
+        }
+        .dsh-toast-click {
+          cursor: pointer;
+          text-decoration: underline;
+          pointer-events: auto; /* 可点击的提示（如手动刷新）恢复拦截 */
+        }
+        .dsh-toast-out {
+          opacity: 0;
+        }
+      </style>
+
+      <script>
+        import { initEditor } from '../utils/editor';
+        initEditor();
+      </script>
+    </>
+  )
+}

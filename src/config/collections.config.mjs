@@ -11,7 +11,7 @@
  * 注意：修改后需重新构建部署才生效（Vercel 由 git push 触发）。
  */
 export const siteConfig = {
-  refs: 'interactive',
+  refs: 'static',
 };
 
 export const collections = [
