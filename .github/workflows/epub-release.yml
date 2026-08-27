@@ -1,0 +1,76 @@
+name: Build and Release EPUBs
+
+on:
+  push:
+    paths:
+      - 'src/content/docs/collections/**'
+      - 'src/config/**'
+      - 'scripts/epub/**'
+      - 'scripts/generate-epub.mjs'
+      - '.github/workflows/epub-release.yml'
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-epubs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate EPUBs
+        run: npm run epub
+
+      - name: Upload EPUB artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: astrolib-epubs
+          path: public/epub/*.epub
+          if-no-files-found: error
+
+      - name: Release EPUBs to GitHub Releases (latest)
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: latest
+          name: "AstroLib Digital Textbooks EPUB Release (latest)"
+          body: |
+            ## AstroLib Digital Textbooks EPUB Package
+
+            This release provides the compiled EPUB3 distributions for the mathematics and physics collections:
+            * High-resolution KaTeX mathematical typesetting
+            * Embedded illustrations and technical schematics
+            * Compatibility with standard EPUB3 readers
+
+            *Generated automatically via GitHub Actions.*
+          files: public/epub/*.epub
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release EPUBs for Version Tag
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          name: "AstroLib Release ${{ github.ref_name }}"
+          files: public/epub/*.epub
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
