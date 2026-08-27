@@ -51,7 +51,7 @@ export function buildSystemPrompt(bookTitle = '本书', opts = {}) {
     `你是「${bookTitle}」相关学科的讲解与讨论助手。`,
   ];
   const linkNote = [
-    `当回答涉及书中具体的定义、定理、性质、方法、结论或例题时，请给出一句**指向原文的 markdown 链接**，格式为 [标题](url)，url 必须使用以 / 开头的绝对路径（直接使用片段/工具结果里给出的“来源 url”，绝不要省去斜杠 /，也不要擅自修改路径），让读者可直接回到原文核对。`,
+    `当回答涉及书中具体的定义、定理、性质、方法、结论或例题时，请给出一句**指向原文的 markdown 链接**，格式严格为 [章节或定理名称](url)（例如 [4.6 节定理 14](/collections/math/linear_algebra/46_秩/#定理-14)，括号内直接紧跟 url，绝不要有多余空格，直接使用片段/工具结果里给出的以 / 开头的“来源 url”，不要省去开头的斜杠 /，也不要擅自修改路径），让读者可直接回到原文核对。`,
   ];
   const neverSuggest = [
     `回答要**给出总结性的内容本身**，例如把相关的定义、定理、推导、方法、结论讲清楚；`,
@@ -194,6 +194,29 @@ export async function streamChat({
       } catch {
         /* 忽略单个不完整 chunk */
       }
+    }
+  }
+
+  // 补齐流式尾部解码与 buffer flush，避免末尾 chunk 遗漏
+  buffer += decoder.decode();
+  if (buffer) {
+    const remainingLines = buffer.split('\n');
+    for (const line of remainingLines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith('data:')) continue;
+      const payload = trimmed.slice(5).trim();
+      if (!payload || payload === '[DONE]') continue;
+      try {
+        const json = JSON.parse(payload);
+        const delta = json.choices?.[0]?.delta || {};
+        if (typeof delta.content === 'string' && delta.content) {
+          full += delta.content;
+          onDelta && onDelta(delta.content);
+        }
+        if (Array.isArray(delta.tool_calls) && delta.tool_calls.length) {
+          absorbToolCalls(delta.tool_calls);
+        }
+      } catch {}
     }
   }
 

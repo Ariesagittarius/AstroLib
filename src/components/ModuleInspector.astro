@@ -360,18 +360,19 @@ const isDev = import.meta.env.DEV;
     border-radius: 6px;
     background: var(--insp-bg-soft);
     color: var(--insp-text-1);
-    transition: border-color 0.2s, background-color 0.2s;
+    transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s, box-shadow 0.2s;
   }
   .insp-search-input:focus {
     outline: none;
     border-color: var(--insp-brand);
     background: var(--insp-bg);
+    box-shadow: 0 0 0 2px var(--insp-brand-soft);
   }
   .insp-search-clear {
     position: absolute;
     right: 6px;
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     border: none;
     background: transparent;
     color: var(--insp-text-3);
@@ -381,6 +382,15 @@ const isDev = import.meta.env.DEV;
     align-items: center;
     justify-content: center;
     padding: 0;
+    opacity: 0;
+    transform: scale(0.7);
+    pointer-events: none;
+    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s, color 0.15s;
+  }
+  .insp-search-clear.visible {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
   }
   .insp-search-clear svg {
     width: 12px;
@@ -404,6 +414,7 @@ const isDev = import.meta.env.DEV;
     background: var(--insp-bg-soft);
     color: var(--insp-text-1);
     cursor: pointer;
+    transition: border-color 0.2s;
   }
   .insp-chapter-select:focus {
     outline: none;
@@ -451,6 +462,7 @@ const isDev = import.meta.env.DEV;
     background: var(--insp-bg-soft);
     border: 1px solid var(--insp-border);
     color: var(--insp-text-3);
+    transition: background-color 0.18s, color 0.18s, transform 0.18s;
   }
   .insp-tab.active .insp-tab-count {
     background: var(--insp-brand-soft);
@@ -462,6 +474,15 @@ const isDev = import.meta.env.DEV;
     background: rgba(239, 68, 68, 0.1);
     border-color: rgba(239, 68, 68, 0.25);
     color: #ef4444 !important;
+  }
+
+  @keyframes insp-badge-bump {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.18); }
+    100% { transform: scale(1); }
+  }
+  .insp-tab-count.insp-bump {
+    animation: insp-badge-bump 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   /* 类型筛选 Chips */
@@ -487,7 +508,7 @@ const isDev = import.meta.env.DEV;
     background: var(--insp-bg-soft);
     color: var(--insp-text-2);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .insp-chip:hover {
     border-color: var(--insp-brand);
@@ -498,6 +519,9 @@ const isDev = import.meta.env.DEV;
     border-color: var(--insp-brand);
     color: var(--insp-brand);
     font-weight: 600;
+  }
+  .insp-chip.insp-chip-empty {
+    opacity: 0.38;
   }
   .insp-chip-count {
     font-size: 10px;
@@ -520,13 +544,60 @@ const isDev = import.meta.env.DEV;
   .insp-items-count-hint {
     font-size: 11px;
     color: var(--insp-text-3);
-    margin-bottom: 2px;
+    margin-bottom: 3px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .insp-count-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .insp-count-highlight {
+    font-weight: 600;
+    color: var(--insp-brand);
+  }
+  .insp-count-total-hint {
+    color: var(--insp-text-3);
+    font-size: 10.5px;
+  }
+  .insp-status-badge {
+    font-size: 9.5px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--insp-brand-soft);
+    color: var(--insp-brand);
+    border: 1px solid var(--insp-border);
+    white-space: nowrap;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .insp-count-book-tag {
+    font-size: 10.5px;
+    color: var(--insp-text-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 45%;
   }
 
-  /* 卡片条目 */
+  /* 卡片进场与动效 */
+  @keyframes insp-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .insp-item-row {
     background: var(--insp-bg);
     border: 1px solid var(--insp-border);
@@ -537,11 +608,22 @@ const isDev = import.meta.env.DEV;
     gap: 6px;
     cursor: pointer;
     transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+    animation: insp-fade-in 0.16s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   }
   .insp-item-row:hover {
     border-color: var(--insp-brand);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     transform: translateY(-1px);
+  }
+
+  /* 搜索关键词高亮 */
+  .insp-search-match {
+    background: var(--insp-brand-soft);
+    color: var(--insp-brand);
+    border-radius: 3px;
+    padding: 0 2px;
+    margin: 0 0.5px;
+    font-weight: 600;
   }
 
   .insp-item-top {
@@ -778,6 +860,7 @@ const isDev = import.meta.env.DEV;
     flex-direction: column;
     align-items: center;
     gap: 6px;
+    animation: insp-fade-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   }
   .insp-empty-svg {
     width: 32px;

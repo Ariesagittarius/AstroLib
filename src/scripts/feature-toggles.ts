@@ -36,6 +36,7 @@ import {
 } from './site-themes';
 
 import { DEFAULT_SITE_THEME } from '../config/themes.config.mjs';
+import { enableFormulaActions, disableFormulaActions } from './formula/ui';
 
 /** 运行时开关存储键 */
 const STORAGE_KEY = 'starlight-features';
@@ -144,6 +145,15 @@ function applyCrossRef(): void {
   root.classList.toggle('dsh-crossref-off', !enabled);
 }
 
+/** 应用公式操作与图片导出开关（关闭时完全卸载 DOM 还原原生排版） */
+function applyFormulaActions(): void {
+  if (isEnabled('formulaActions')) {
+    enableFormulaActions();
+  } else {
+    disableFormulaActions();
+  }
+}
+
 /** 应用到页面：显隐 [data-feature] 元素 + 字体 + 引用联动 + 编辑器放行 + 广播 */
 export function apply(): void {
   if (meta.length === 0) return;
@@ -161,6 +171,7 @@ export function apply(): void {
   applyFont();
   applyCrossRef();
   applyEditorAllowed();
+  applyFormulaActions();
   document.dispatchEvent(new CustomEvent('dsh:feature-change'));
 }
 
@@ -427,13 +438,15 @@ class StarlightFeatureToggles extends HTMLElement {
     root.querySelectorAll<HTMLButtonElement>('[data-action="reset-defaults"]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         resetToggles();
       });
     });
 
     // 模块巡检一键打开按钮：点击时先关闭设置面板，让巡检抽屉无遮挡打开
     root.querySelectorAll<HTMLButtonElement>('[data-inspector-trigger]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
         this.closePanel();
       });
     });
@@ -444,6 +457,7 @@ class StarlightFeatureToggles extends HTMLElement {
     root.querySelectorAll<HTMLButtonElement>('.ft-font-btn').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         const setting = btn.getAttribute('data-font-setting');
         const val = btn.getAttribute('data-font-val');
         const current = loadFontPref();
@@ -463,6 +477,7 @@ class StarlightFeatureToggles extends HTMLElement {
     root.querySelectorAll<HTMLButtonElement>('.ft-theme-chip').forEach((chip) => {
       chip.addEventListener('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         const targetTheme = parseSiteTheme(chip.getAttribute('data-site-theme-val'));
         setSiteTheme(targetTheme);
         syncAllThemeChips();

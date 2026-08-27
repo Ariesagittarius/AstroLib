@@ -99,6 +99,18 @@ const featureDefs = {
     ui: false,
   }),
 
+  // 公式操作与导出：正文公式快捷复制 LaTeX 源码与导出高清 SVG/PNG 图片
+  formulaActions: defineFeature({
+    id: 'formulaActions',
+    cat: 'reader',
+    label: '公式操作与导出',
+    desc: '正文公式快捷复制 LaTeX 源码与一键导出高清 SVG/PNG 图片',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+    requires: ['katex'],
+  }),
+
   // 主题切换：亮/暗主题切换 + UI 风格主题切换（VitePress / Starlight）
   theme: defineFeature({
     id: 'theme',
@@ -225,13 +237,30 @@ const featureDefs = {
       retrieval: 'keyword',            // 'keyword' | 'hybrid'（预留向量增强）
       topK: 8,                         // 每次送入生成的片段上限（成本控制）
       maxContextChars: 6000,           // 上下文总字符上限（成本硬约束）
-      maxAnswerTokens: 1200,           // 回答最大 token
+      maxAnswerTokens: 4096,           // 回答最大 token（默认 4096，保障长公式与矩阵推导不截断）
       defaultModel: 'deepseek-v4-flash',            // 默认模型（对应 models[i].id）
       endpoint: 'https://api.deepseek.com/v1/chat/completions', // 无专属端点的兜底
       models: [                        // 可选模型：id 会作为 API 的 model 字段，endpoint 可覆盖
         { id: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash', endpoint: 'https://api.deepseek.com/v1/chat/completions' },
         { id: 'gpt-4o-mini', label: 'GPT-4o mini', endpoint: 'https://api.openai.com/v1/chat/completions' },
       ],
+    },
+  }),
+
+  // 读者勘误反馈系统：按 Alt+F 选段发起 GitHub 勘误 Issue（支持 Serverless Bot 静默代发与 URL 预填直达）
+  feedback: defineFeature({
+    id: 'feedback',
+    cat: 'reader',
+    label: '读者勘误反馈',
+    desc: '读者按 Alt+F 或点击按钮选段提交结构化 GitHub 勘误 Issue',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+    config: {
+      githubRepo: 'Ariesagittarius/AstroLib',
+      issueLabels: ['errata', 'community-feedback'],
+      shortcutKey: 'Alt+f',
+      botEndpoint: 'https://astrolib-feedback-bot.2477252192.workers.dev', // Serverless Bot API 端点
     },
   }),
 };

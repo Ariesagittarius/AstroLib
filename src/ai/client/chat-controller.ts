@@ -24,8 +24,15 @@ function lsGetJson(k: string, d: any): any { try { return JSON.parse(localStorag
 function lsSet(k: string, v: string): void { try { localStorage.setItem(k, v); } catch {} }
 
 function decorateFootnotes(html: string, decorate = true): string {
-  if (!decorate) return html || '';
-  return (html || '').replace(/\[(\d+)\]/g, (_m, n) => `<a class="cite-ref" href="#ai-cite-${n}">[${n}]</a>`);
+  if (!decorate || !html) return html || '';
+  const protectedBlocks: string[] = [];
+  // 保护 pre, code, a 标签，以及包含数学公式的标签与 HTML 属性，避免数学公式下标被误换为链接
+  let safe = html.replace(/(<(?:pre|code|a|p\s+class="md-math")[^>]*>[\s\S]*?<\/(?:pre|code|a|p)>|<[^>]+>)/gi, (m) => {
+    protectedBlocks.push(m);
+    return `___FN_PROT_${protectedBlocks.length - 1}___`;
+  });
+  safe = safe.replace(/\[(\d+)\]/g, (_m, n) => `<a class="cite-ref" href="#ai-cite-${n}">[${n}]</a>`);
+  return safe.replace(/___FN_PROT_(\d+)___/g, (_m, i) => protectedBlocks[Number(i)] || '');
 }
 
 function toolSummary(name: string, out: any = {}): string {
@@ -106,6 +113,10 @@ function safeLink(url: string): string {
   u = u.replace(/&amp;/g, '&');
   if (/^javascript:/i.test(u) || /^data:/i.test(u) || /^vbscript:/i.test(u)) return '';
 
+  // 剔除可能被误捕获的尾部标点（如右括号、句号、分号等）
+  u = u.replace(/[),.，。；;!?！？、]+$/, '').trim();
+  if (!u) return '';
+
   const origin = typeof location !== 'undefined' ? location.origin : '';
   const mCol = u.match(/(?:https?:)?\/\/[^\/]*collections\/(.+)$/i) || u.match(/^\/?collections\/(.+)$/i);
   let pathAndHash = '';
@@ -154,22 +165,30 @@ function renderInline(s: string, openNew = true): string {
   const rel = openNew ? 'rel="noopener"' : '';
   const placeholders: string[] = [];
 
-  // 1. Markdown 链接 [text](url) -> 转换为 <a> 标签并暂存占位符（避免被步 2 裸 URL 正则二次替换）
-  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, text, url) => {
+  // 1. Markdown 链接 [text](url "title") 或 [text]( <url> )
+  // 兼容括号内首尾空白、换行、尖括号包围及可选引号 title
+  s = s.replace(/\[([^\]\n]+)\]\(\s*<?([^)\s>]+)>?(?:\s+["'][^"']*["'])?\s*\)/g, (_m, text, url) => {
     const href = safeLink(url);
     if (!href) return esc(`[${text}](${url})`);
-    const tag = `<a href="${href}" target="${target}" ${rel}>${text}</a>`;
+    let innerText = text;
+    innerText = innerText.replace(/`([^`]+)`/g, '<code>$1</code>');
+    innerText = innerText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    innerText = innerText.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+    innerText = innerText.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+    const tag = `<a href="${href}" target="${target}" ${rel}>${innerText}</a>`;
     placeholders.push(tag);
     return `___LINK_PLACEHOLDER_${placeholders.length - 1}___`;
   });
 
   // 2. 裸路径/各类畸形 collections 链接（含 https://collections/...、//collections/...、/collections/...）
   s = s.replace(/(^|[^\w"'/=])((?:https?:)?\/\/[^\s<>"']*collections\/[^\s<>"']+|\/?collections\/[^\s<>"']+)/gi, (fullMatch, prefix, rawUrl) => {
-    const href = safeLink(rawUrl);
+    let cleanUrl = rawUrl.replace(/[),.，。；;!?！？、]+$/, '');
+    const trailing = rawUrl.slice(cleanUrl.length);
+    const href = safeLink(cleanUrl);
     if (!href) return fullMatch;
-    const tag = `<a href="${href}" target="${target}" ${rel}>${rawUrl}</a>`;
+    const tag = `<a href="${href}" target="${target}" ${rel}>${cleanUrl}</a>`;
     placeholders.push(tag);
-    return `${prefix}___LINK_PLACEHOLDER_${placeholders.length - 1}___`;
+    return `${prefix}___LINK_PLACEHOLDER_${placeholders.length - 1}___${trailing}`;
   });
 
   // 3. 行内基础 Markdown 格式
@@ -190,7 +209,7 @@ function mdToHtml(md: string, openNew = true): string {
   const out: string[] = [];
   let i = 0;
   const inline = (t: string) => renderInline(t, openNew);
-  const BLOCK_START = /^(#{1,6})\s|^\s*>\s|^\s*[-*+]\s|^\s*\d+[.)]\s|^\s*\$\$\s*$|^\s*(?:```+|~~~+)/;
+  const BLOCK_START = /^(#{1,6})\s|^\s*>\s|^\s*[-*+]\s|^\s*\d+[.)]\s|^\s*\$\$\s*$|^\s*\$\$.*|^\s*(?:```+|~~~+)/;
 
   while (i < lines.length) {
     const line = lines[i];
@@ -205,12 +224,28 @@ function mdToHtml(md: string, openNew = true): string {
       out.push(`<pre><code>${buf.join('\n')}</code></pre>`);
       continue;
     }
-    if (/^\s*\$\$\s*$/.test(line)) {
-      const buf = [line];
+    // $$ 数学块（支持单行与多行，含流式截断未闭合 $$ 的自动兜底闭合）
+    if (/^\s*\$\$/.test(line)) {
+      const buf = [line.trim()];
+      if (/^\s*\$\$.*\$\$\s*$/.test(line) && line.trim().length > 4) {
+        out.push(`<p class="md-math">${buf[0]}</p>`);
+        i++;
+        continue;
+      }
       i++;
-      while (i < lines.length && !/^\s*\$\$\s*$/.test(lines[i])) { buf.push(lines[i]); i++; }
-      if (i < lines.length) { buf.push(lines[i]); i++; }
-      out.push(`<p class="md-math">${buf.map((x) => x.replace(/\s+/g, ' ').trim()).filter(Boolean).join('\n')}</p>`);
+      while (i < lines.length && !/\$\$\s*$/.test(lines[i])) {
+        buf.push(lines[i]);
+        i++;
+      }
+      if (i < lines.length) {
+        buf.push(lines[i].trim());
+        i++;
+      } else {
+        if (!buf[buf.length - 1].endsWith('$$')) {
+          buf[buf.length - 1] += ' $$';
+        }
+      }
+      out.push(`<p class="md-math">${buf.join('\n')}</p>`);
       continue;
     }
     const h = line.match(/^(#{1,6})\s+(.*)$/);
@@ -369,7 +404,7 @@ export class AIAskElement extends HTMLElement {
 
     if (topkInput) topkInput.value = lsGet(TOPK_STORE, String(cfg.topK ?? 8));
     if (maxctxInput) maxctxInput.value = lsGet(MAXCTX_STORE, String(cfg.maxContextChars ?? 6000));
-    if (maxtokInput) maxtokInput.value = lsGet(MAXTOK_STORE, String(cfg.maxAnswerTokens ?? 1200));
+    if (maxtokInput) maxtokInput.value = lsGet(MAXTOK_STORE, String(cfg.maxAnswerTokens ?? 4096));
 
     if (modelSelect) {
       modelSelect.addEventListener('change', () => {
@@ -792,10 +827,13 @@ export class AIAskElement extends HTMLElement {
     if (!this._tabsList) return;
     const threads = (this._threads || []).slice().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
     this._tabsList.innerHTML = '';
+    let activeTabEl: HTMLElement | null = null;
     for (const t of threads) {
+      const isActive = !!(this._activeThread && this._activeThread.id === t.id);
       const tab = document.createElement('div');
-      tab.className = 'ask-tab' + (this._activeThread && this._activeThread.id === t.id ? ' ask-tab-active' : '');
+      tab.className = 'ask-tab' + (isActive ? ' ask-tab-active' : '');
       tab.dataset.id = t.id;
+      if (isActive) activeTabEl = tab;
       const title = document.createElement('span');
       title.className = 'ask-tab-title';
       title.textContent = (t.title || '新会话').slice(0, 18);
@@ -814,6 +852,9 @@ export class AIAskElement extends HTMLElement {
         this._loadThreadById(t.id);
       });
       this._tabsList.appendChild(tab);
+    }
+    if (activeTabEl) {
+      try { (activeTabEl as HTMLElement).scrollIntoView({ inline: 'nearest', behavior: 'smooth' }); } catch {}
     }
   }
 
@@ -873,7 +914,7 @@ export class AIAskElement extends HTMLElement {
     const maxtok = this.querySelector('.ask-maxtok') as HTMLInputElement | null;
     const topK = Math.min(20, Math.max(1, num(topk, cfg.topK ?? 8)));
     const maxContextChars = num(maxctx, cfg.maxContextChars ?? 6000);
-    const maxAnswerTokens = num(maxtok, cfg.maxAnswerTokens ?? 1200);
+    const maxAnswerTokens = num(maxtok, cfg.maxAnswerTokens ?? 4096);
     return {
       topK,
       maxContextChars: maxContextChars === -1 ? -1 : Math.max(500, maxContextChars),
@@ -998,7 +1039,7 @@ export class AIAskElement extends HTMLElement {
       type.textContent = `${i + 1}·${h.chunk.type || '正文'}`;
       const t = document.createElement('span');
       t.className = 'ask-source-title';
-      t.textContent = h.chunk.title || h.chunk.url;
+      t.textContent = h.chunk.title || `${h.chunk.type || '正文'}（第 ${i + 1} 条）`;
       head.appendChild(type);
       head.appendChild(t);
       a.appendChild(head);

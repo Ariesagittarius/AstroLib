@@ -35,6 +35,7 @@ export interface ModuleItem {
   url: string;
   snippet: string;
   suspiciousReasons: string[];
+  _searchIndex?: string;
 }
 
 export interface DuplicateGroup {
@@ -116,6 +117,7 @@ class ModuleInspectorController {
   private scanData: ScanResult | null = null;
   private loading = false;
   private error: string | null = null;
+  private renderRafId = 0;
 
   init() {
     this.rootEl = document.getElementById('dsh-inspector-root');
@@ -233,18 +235,40 @@ class ModuleInspectorController {
       }
     });
 
-    // 检索输入
+    // 检索输入与清空（微任务/rAF 调度 + 实时计数联动）
     const searchInput = this.rootEl.querySelector<HTMLInputElement>('.insp-search-input');
+    const searchClear = this.rootEl.querySelector<HTMLButtonElement>('.insp-search-clear');
+
+    const updateClearVisibility = () => {
+      if (searchClear) {
+        searchClear.classList.toggle('visible', !!this.searchQuery);
+      }
+    };
+
     searchInput?.addEventListener('input', () => {
-      this.searchQuery = searchInput.value.trim().toLowerCase();
-      this.renderList();
+      const val = searchInput.value.trim().toLowerCase();
+      if (this.searchQuery === val) return;
+      this.searchQuery = val;
+      updateClearVisibility();
+
+      cancelAnimationFrame(this.renderRafId);
+      this.renderRafId = requestAnimationFrame(() => {
+        this.renderList();
+        this.updateDynamicCounts();
+      });
     });
 
     // 检索清除
-    this.rootEl.querySelector('.insp-search-clear')?.addEventListener('click', () => {
-      if (searchInput) searchInput.value = '';
+    searchClear?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (searchInput) {
+        searchInput.value = '';
+        searchInput.focus();
+      }
       this.searchQuery = '';
+      updateClearVisibility();
       this.renderList();
+      this.updateDynamicCounts();
     });
 
     // Tab 切换
@@ -256,6 +280,7 @@ class ModuleInspectorController {
           this.rootEl?.querySelectorAll('.insp-tab').forEach((b) => b.classList.remove('active'));
           tabBtn.classList.add('active');
           this.renderList();
+          this.updateDynamicCounts();
         }
       });
     });
@@ -265,6 +290,7 @@ class ModuleInspectorController {
     chapterSelect?.addEventListener('change', () => {
       this.selectedChapter = chapterSelect.value;
       this.renderList();
+      this.updateDynamicCounts();
     });
 
     // 事件代理：列表内部操作（跳转 / 复制 / 编辑）
@@ -381,6 +407,17 @@ class ModuleInspectorController {
       }
 
       this.scanData = await res.json();
+
+      // 预编译扁平化全文搜索索引（提升打字过滤性能为 O(1) 单次匹配）
+      if (this.scanData) {
+        for (const m of this.scanData.modules) {
+          m._searchIndex = `${m.cleanTitle} ${m.rawTitle} ${m.snippet || ''} ${m.chapterTitle} ${m.typeLabel} ${m.kind} ${m.code || ''} ${m.filename} ${m.line}`.toLowerCase();
+        }
+        for (const m of this.scanData.suspiciousItems || []) {
+          m._searchIndex = `${m.cleanTitle} ${m.rawTitle} ${m.snippet || ''} ${m.chapterTitle} ${m.typeLabel} ${m.kind} ${m.code || ''} ${m.filename} ${m.line}`.toLowerCase();
+        }
+      }
+
       this.renderAll();
     } catch (err: unknown) {
       this.error = (err as Error)?.message || String(err);
@@ -435,31 +472,125 @@ class ModuleInspectorController {
       titleEl.textContent = `模块速查 · ${this.scanData.bookTitle || this.scanData.bookSlug}`;
     }
 
-    // 2. 更新 Tab 徽章数字
-    this.updateTabBadge('all', this.scanData.totalModules);
-    this.updateTabBadge('same_chapter_dups', this.scanData.stats.sameChapterDupsCount);
-    this.updateTabBadge('all_dups', this.scanData.stats.allDupsCount);
-    this.updateTabBadge('suspicious', this.scanData.stats.suspiciousCount);
-
-    // 3. 渲染类型过滤标签
+    // 2. 渲染类型过滤标签
     this.renderKindFilterChips();
 
-    // 4. 渲染章节下拉选项
+    // 3. 渲染章节下拉选项
     this.renderChapterOptions();
 
-    // 5. 渲染主体列表
+    // 4. 渲染主体列表
     this.renderList();
+
+    // 5. 动态计算并更新所有 Tab 与 Chip 计数
+    this.updateDynamicCounts();
   }
 
   private updateTabBadge(tab: string, count: number) {
     const badge = this.rootEl?.querySelector(`.insp-tab[data-tab="${tab}"] .insp-tab-count`);
     if (badge) {
-      badge.textContent = String(count);
+      const prev = badge.textContent;
+      const next = String(count);
+      if (prev !== next) {
+        badge.textContent = next;
+        badge.classList.remove('insp-bump');
+        void badge.offsetWidth;
+        badge.classList.add('insp-bump');
+      }
       badge.classList.toggle('has-items', count > 0);
       if (tab === 'same_chapter_dups' || tab === 'suspicious') {
         badge.classList.toggle('danger', count > 0);
       }
     }
+  }
+
+  private updateDynamicCounts() {
+    if (!this.scanData) return;
+
+    const allFiltered = this.filterItems(this.scanData.modules);
+    const suspiciousFiltered = this.filterItems(this.scanData.suspiciousItems || []);
+    const isFiltering = !!this.searchQuery || this.selectedChapter !== 'all' || this.selectedKind !== 'all';
+
+    // 更新 Tab 徽章数字
+    this.updateTabBadge('all', isFiltering ? allFiltered.length : this.scanData.totalModules);
+    this.updateTabBadge('same_chapter_dups', isFiltering ? this.getFilteredSameChapterDupsCount() : this.scanData.stats.sameChapterDupsCount);
+    this.updateTabBadge('all_dups', isFiltering ? this.getFilteredAllDupsCount() : this.scanData.stats.allDupsCount);
+    this.updateTabBadge('suspicious', isFiltering ? suspiciousFiltered.length : this.scanData.stats.suspiciousCount);
+
+    // 动态更新类型 Chips 计数
+    this.updateDynamicKindChips();
+  }
+
+  private updateDynamicKindChips() {
+    if (!this.scanData) return;
+    const container = this.rootEl?.querySelector('.insp-kind-chips');
+    if (!container) return;
+
+    const q = this.searchQuery;
+    const chapter = this.selectedChapter;
+    const countByKind: Record<string, number> = {};
+    let totalMatched = 0;
+
+    for (const m of this.scanData.modules) {
+      if (chapter !== 'all' && m.chapterSlug !== chapter) continue;
+      if (q) {
+        const idx = (m as ModuleItem & { _searchIndex?: string })._searchIndex;
+        if (idx && !idx.includes(q)) continue;
+      }
+      totalMatched++;
+      countByKind[m.kind] = (countByKind[m.kind] || 0) + 1;
+    }
+
+    container.querySelectorAll<HTMLButtonElement>('.insp-chip').forEach((chip) => {
+      const kind = chip.getAttribute('data-kind');
+      const countEl = chip.querySelector('.insp-chip-count');
+      if (!kind || !countEl) return;
+
+      const cnt = kind === 'all' ? totalMatched : (countByKind[kind] || 0);
+      countEl.textContent = String(cnt);
+      chip.classList.toggle('insp-chip-empty', cnt === 0);
+    });
+  }
+
+  private getFilteredSameChapterDupsCount(): number {
+    if (!this.scanData) return 0;
+    let groups = this.scanData.sameChapterDuplicates;
+    if (this.selectedChapter !== 'all') {
+      groups = groups.filter((g) => g.chapterSlug === this.selectedChapter);
+    }
+    if (this.selectedKind !== 'all') {
+      groups = groups
+        .map((g) => ({ ...g, items: g.items.filter((i) => i.kind === this.selectedKind) }))
+        .filter((g) => g.items.length > 1);
+    }
+    if (this.searchQuery) {
+      const q = this.searchQuery;
+      groups = groups.filter(
+        (g) =>
+          g.title.toLowerCase().includes(q) ||
+          (g.chapterTitle && g.chapterTitle.toLowerCase().includes(q)) ||
+          g.items.some((i) => (i.snippet || '').toLowerCase().includes(q))
+      );
+    }
+    return groups.length;
+  }
+
+  private getFilteredAllDupsCount(): number {
+    if (!this.scanData) return 0;
+    let groups = this.scanData.allDuplicates;
+    if (this.selectedKind !== 'all') {
+      groups = groups
+        .map((g) => ({ ...g, items: g.items.filter((i) => i.kind === this.selectedKind) }))
+        .filter((g) => g.items.length > 1);
+    }
+    if (this.searchQuery) {
+      const q = this.searchQuery;
+      groups = groups.filter(
+        (g) =>
+          g.title.toLowerCase().includes(q) ||
+          g.items.some((i) => (i.snippet || '').toLowerCase().includes(q) || (i.chapterTitle || '').toLowerCase().includes(q))
+      );
+    }
+    return groups.length;
   }
 
   private renderKindFilterChips() {
@@ -484,6 +615,7 @@ class ModuleInspectorController {
         container.querySelectorAll('.insp-chip').forEach((c) => c.classList.remove('active'));
         chip.classList.add('active');
         this.renderList();
+        this.updateDynamicCounts();
       });
     });
   }
@@ -505,28 +637,31 @@ class ModuleInspectorController {
   }
 
   private filterItems(items: ModuleItem[]): ModuleItem[] {
+    const q = this.searchQuery;
+    const kind = this.selectedKind;
+    const chapter = this.selectedChapter;
+
     return items.filter((item) => {
       // 类型过滤
-      if (this.selectedKind !== 'all' && item.kind !== this.selectedKind) {
+      if (kind !== 'all' && item.kind !== kind) {
         return false;
       }
       // 章节过滤
-      if (this.selectedChapter !== 'all' && item.chapterSlug !== this.selectedChapter) {
+      if (chapter !== 'all' && item.chapterSlug !== chapter) {
         return false;
       }
-      // 检索词过滤
-      if (this.searchQuery) {
-        const q = this.searchQuery;
-        const inTitle = item.cleanTitle.toLowerCase().includes(q) || item.rawTitle.toLowerCase().includes(q);
-        const inSnippet = item.snippet.toLowerCase().includes(q);
-        const inChapter = item.chapterTitle.toLowerCase().includes(q);
-        const inType =
-          item.typeLabel.toLowerCase().includes(q) ||
-          item.kind.toLowerCase().includes(q) ||
-          item.code.toLowerCase().includes(q);
-        const inLine = String(item.line) === q;
-        if (!inTitle && !inSnippet && !inChapter && !inType && !inLine) {
-          return false;
+      // 检索词过滤（直接使用预编译索引，极速单次比对）
+      if (q) {
+        const index = (item as ModuleItem & { _searchIndex?: string })._searchIndex;
+        if (index) {
+          if (!index.includes(q)) return false;
+        } else {
+          const inTitle = item.cleanTitle.toLowerCase().includes(q) || item.rawTitle.toLowerCase().includes(q);
+          const inSnippet = (item.snippet || '').toLowerCase().includes(q);
+          const inChapter = item.chapterTitle.toLowerCase().includes(q);
+          const inType = item.typeLabel.toLowerCase().includes(q) || item.kind.toLowerCase().includes(q);
+          const inLine = String(item.line) === q;
+          if (!inTitle && !inSnippet && !inChapter && !inType && !inLine) return false;
         }
       }
       return true;
@@ -550,6 +685,21 @@ class ModuleInspectorController {
     }
   }
 
+  /** XSS 安全的关键词高亮 */
+  private highlightText(text: string, query: string): string {
+    if (!text || !query) return this.escapeHtml(text);
+    const escapedQ = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const parts = text.split(new RegExp(`(${escapedQ})`, 'gi'));
+    return parts
+      .map((part) => {
+        if (part.toLowerCase() === query.toLowerCase()) {
+          return `<mark class="insp-search-match">${this.escapeHtml(part)}</mark>`;
+        }
+        return this.escapeHtml(part);
+      })
+      .join('');
+  }
+
   private renderFlatModuleList(listEl: Element, items: ModuleItem[], emptyText: string, showReasons = false) {
     if (!items.length) {
       const isReviewMode = this.activeTab === 'suspicious';
@@ -563,13 +713,28 @@ class ModuleInspectorController {
             }
           </svg>
           <div class="insp-empty-title">${emptyText}</div>
-          <div class="insp-empty-desc">${isReviewMode ? '全书各模块标题与正文结构校验通过' : '请尝试调整检索关键词或切换章节筛选'}</div>
+          <div class="insp-empty-desc">${isReviewMode ? '全书各模块标题与正文结构校验通过' : '请尝试调整检索关键词或切换章节/分类筛选'}</div>
         </div>
       `;
       return;
     }
 
-    let html = `<div class="insp-items-count-hint"><span>已展示 ${items.length} 个条目</span><span>${this.scanData?.bookTitle || ''}</span></div>`;
+    const total = this.scanData?.totalModules || 0;
+    const isFiltered = !!this.searchQuery || this.selectedChapter !== 'all' || this.selectedKind !== 'all';
+
+    let filterPills = '';
+    if (this.searchQuery) {
+      filterPills += `<span class="insp-status-badge">“${this.escapeHtml(this.searchQuery)}”</span>`;
+    }
+    if (this.selectedKind !== 'all') {
+      filterPills += `<span class="insp-status-badge">${this.escapeHtml(KIND_LABEL_MAP[this.selectedKind] || this.selectedKind)}</span>`;
+    }
+
+    const countHtml = isFiltered
+      ? `<div class="insp-count-status"><span class="insp-count-highlight">已筛选 <strong>${items.length}</strong> 个</span><span class="insp-count-total-hint">共 ${total} 个模块</span>${filterPills}</div>`
+      : `<div class="insp-count-status"><span class="insp-count-normal">全书共 <strong>${total}</strong> 个模块</span></div>`;
+
+    let html = `<div class="insp-items-count-hint">${countHtml}<span class="insp-count-book-tag">${this.escapeHtml(this.scanData?.bookTitle || '')}</span></div>`;
     for (const item of items) {
       html += this.renderItemCardHtml(item, showReasons);
     }
@@ -594,8 +759,8 @@ class ModuleInspectorController {
       groups = groups.filter(
         (g) =>
           g.title.toLowerCase().includes(q) ||
-          g.chapterTitle?.toLowerCase().includes(q) ||
-          g.items.some((i) => i.snippet.toLowerCase().includes(q))
+          (g.chapterTitle && g.chapterTitle.toLowerCase().includes(q)) ||
+          g.items.some((i) => (i.snippet || '').toLowerCase().includes(q))
       );
     }
 
@@ -613,7 +778,7 @@ class ModuleInspectorController {
       return;
     }
 
-    let html = `<div class="insp-items-count-hint"><span>检出 ${groups.length} 组同章冲突条目</span><span>建议优先核对序号</span></div>`;
+    let html = `<div class="insp-items-count-hint"><div class="insp-count-status"><span class="insp-count-highlight">检出 <strong>${groups.length}</strong> 组同章冲突</span></div><span>建议核对序号</span></div>`;
     for (const group of groups) {
       html += `
         <div class="insp-dup-group">
@@ -624,7 +789,7 @@ class ModuleInspectorController {
                 <line x1="12" y1="9" x2="12" y2="13"></line>
                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
               </svg>
-              <span class="insp-dup-title-text">${this.escapeHtml(group.title)}</span>
+              <span class="insp-dup-title-text">${this.highlightText(group.title, this.searchQuery)}</span>
               <span class="insp-dup-count-chip">${group.count} 处重复</span>
             </div>
             <div class="insp-dup-chapter">${this.escapeHtml(group.chapterTitle || group.filename || '')}</div>
@@ -652,7 +817,7 @@ class ModuleInspectorController {
       groups = groups.filter(
         (g) =>
           g.title.toLowerCase().includes(q) ||
-          g.items.some((i) => i.snippet.toLowerCase().includes(q) || i.chapterTitle.toLowerCase().includes(q))
+          g.items.some((i) => (i.snippet || '').toLowerCase().includes(q) || (i.chapterTitle || '').toLowerCase().includes(q))
       );
     }
 
@@ -670,7 +835,7 @@ class ModuleInspectorController {
       return;
     }
 
-    let html = `<div class="insp-items-count-hint"><span>全书聚合 ${groups.length} 组同名条目</span><span>跨章节索引</span></div>`;
+    let html = `<div class="insp-items-count-hint"><div class="insp-count-status"><span class="insp-count-highlight">全书聚合 <strong>${groups.length}</strong> 组同名条目</span></div><span>跨章节索引</span></div>`;
     for (const group of groups) {
       html += `
         <div class="insp-dup-group">
@@ -681,7 +846,7 @@ class ModuleInspectorController {
                 <polyline points="2 17 12 22 22 17"></polyline>
                 <polyline points="2 12 12 17 22 12"></polyline>
               </svg>
-              <span class="insp-dup-title-text">${this.escapeHtml(group.title)}</span>
+              <span class="insp-dup-title-text">${this.highlightText(group.title, this.searchQuery)}</span>
               <span class="insp-dup-count-chip" style="color: var(--insp-brand); background: var(--insp-brand-soft); border-color: transparent;">${group.count} 次引用</span>
               <span class="insp-dup-chapters-chip">跨 ${group.chaptersCount || 1} 章节</span>
             </div>
@@ -716,6 +881,9 @@ class ModuleInspectorController {
         </button>`
       : '';
 
+    const highlightedTitle = this.highlightText(item.cleanTitle, this.searchQuery);
+    const highlightedSnippet = this.highlightText(item.snippet || '（无正文描述）', this.searchQuery);
+
     return `
       <div class="insp-item-row" data-url="${this.escapeHtml(item.url)}" data-chapter-url="${this.escapeHtml(item.chapterUrl)}" data-anchor="${this.escapeHtml(item.anchorId)}" data-line="${item.line}" data-file="${this.escapeHtml(item.file)}">
         <div class="insp-item-top">
@@ -724,7 +892,7 @@ class ModuleInspectorController {
               <span class="insp-badge-code">${item.code || 'BLK'}</span>
               <span class="insp-badge-label">${item.typeLabel || item.tagName}</span>
             </span>
-            <span class="insp-item-title">${this.escapeHtml(item.cleanTitle)}</span>
+            <span class="insp-item-title">${highlightedTitle}</span>
           </div>
           <div class="insp-item-actions">
             <button type="button" class="insp-action-btn" data-action="copy" data-location="${this.escapeHtml(item.file)}:${item.line}" title="复制坐标 ${this.escapeHtml(item.filename)}:L${item.line}">
@@ -748,7 +916,7 @@ class ModuleInspectorController {
           </div>
         </div>
         ${reasonsHtml}
-        <div class="insp-item-snippet">${this.escapeHtml(item.snippet || '（无正文描述）')}</div>
+        <div class="insp-item-snippet">${highlightedSnippet}</div>
         <div class="insp-item-meta">
           <span class="insp-meta-chapter" title="${this.escapeHtml(item.chapterTitle)}">
             <svg class="insp-meta-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

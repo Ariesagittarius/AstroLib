@@ -124,8 +124,8 @@ if (features.crossRef.enabled) {
   // refs 取 features.crossRef.config.refs：'static' 时强制全部静态 chip（关闭同页联动）
   rehypePlugins.push([rehypeCrossRef, { collections, refs: crossRefRefs() }]);
 }
-if (isEffective('editor')) {
-  // 可视化精修：源码位置注入（仅 dev；生产构建不启用，避免输出额外属性）
+if (isEffective('editor') || isEffective('feedback')) {
+  // 源码位置注入（用于在线精修与读者段落级勘误定位）
   rehypePlugins.push(rehypeEditorAnnotate);
 }
 if (features.mermaid.enabled) {
@@ -147,10 +147,11 @@ if (features.katex.enabled) customCss.push('katex/dist/katex.min.css');
 customCss.push('./src/styles/custom.css');
 if (features.theme.enabled) customCss.push('./src/styles/vitepress-theme.css');
 if (features.fonts.enabled) {
-  // 自托管思源 webfont 由 registry 引入（index.css 含全部 unicode-range 切片）。
+  // 自托管思源 webfont 与 Plus Jakarta Sans 品牌英文字体由 registry 引入（index.css 含全部 unicode-range 切片）。
   // 默认系统档位浏览器不会下载任何 woff2（未 use 的 @font-face 不请求），零下载。
   customCss.push('@fontsource-variable/noto-sans-sc/index.css');
   customCss.push('@fontsource-variable/noto-serif-sc/index.css');
+  customCss.push('@fontsource-variable/plus-jakarta-sans/index.css');
   customCss.push('./src/styles/fonts.css');
 }
 

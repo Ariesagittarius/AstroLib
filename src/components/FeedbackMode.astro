@@ -1,0 +1,472 @@
+---
+// 读者勘误反馈系统 · 服务端组件 (FeedbackMode)
+// 挂载点：由 FooterOverride.astro 在全站底部引入，SPA 导航下仅执行一次。
+// 样式完全遵循 VitePress 视觉语言（Indigo 蓝紫重音、精细灰阶边框与软阴影）。
+import { features } from '../config/features.config.mjs';
+
+const feedbackFeature = features.feedback || {};
+if (!feedbackFeature.enabled) return;
+
+const config = feedbackFeature.config || {};
+const configJson = JSON.stringify(config);
+---
+
+<div id="sl-feedback-anchor" data-feedback-config={configJson}></div>
+
+<style is:global>
+  /* ==========================================================================
+     读者勘误系统 UI 规范 (VitePress 主题风格)
+     ========================================================================== */
+
+  #sl-feedback-root {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483500;
+    pointer-events: none;
+    font-family: var(--sl-font, system-ui, -apple-system, sans-serif);
+  }
+
+  #sl-feedback-root * {
+    box-sizing: border-box;
+    pointer-events: auto;
+  }
+
+  #sl-feedback-root button,
+  #sl-feedback-root input,
+  #sl-feedback-root select,
+  #sl-feedback-root textarea {
+    font: inherit;
+  }
+
+  /* 勘误模式激活状态下正文段落交互 */
+  body.sl-feedback-active main [data-src-line] {
+    cursor: crosshair !important;
+  }
+
+  /* 段落悬浮框选样式（VitePress 品牌色） */
+  .sl-fb-hover {
+    outline: 2px dashed var(--sl-color-accent, #3451b2) !important;
+    outline-offset: 3px !important;
+    background-color: var(--sl-color-accent-low, rgba(100, 108, 255, 0.12)) !important;
+    border-radius: 4px;
+    transition: outline 0.12s ease, background-color 0.12s ease;
+  }
+
+  /* 悬浮元素元数据徽标 */
+  .sl-fb-badge {
+    position: fixed;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--sl-font-mono, ui-monospace, Consolas, monospace);
+    line-height: 1.4;
+    border-radius: 4px;
+    background: var(--sl-color-accent, #3451b2);
+    color: var(--sl-color-text-invert, #ffffff);
+    pointer-events: none !important;
+    white-space: nowrap;
+    box-shadow: var(--sl-shadow-md);
+    z-index: 2147483510;
+  }
+
+  /* 顶部全局提示条 (Banner) */
+  .sl-fb-banner {
+    position: fixed;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2147483520;
+    max-width: min(92vw, 680px);
+    animation: slFbSlideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes slFbSlideDown {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -10px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+
+  .sl-fb-banner-inner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: var(--sl-color-bg-nav, var(--sl-color-bg, #ffffff));
+    color: var(--sl-color-white, #3c3c43);
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    border-left: 3px solid var(--sl-color-accent, #3451b2);
+    border-radius: 8px;
+    box-shadow: var(--sl-shadow-md);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .sl-fb-banner-icon {
+    display: flex;
+    align-items: center;
+    color: var(--sl-color-accent, #3451b2);
+    flex-shrink: 0;
+  }
+
+  .sl-fb-banner-text {
+    flex: 1;
+    font-weight: 500;
+  }
+
+  .sl-fb-banner-text kbd {
+    padding: 1px 5px;
+    font-size: 11px;
+    font-family: var(--sl-font-mono, monospace);
+    background: var(--sl-color-gray-6, #f6f6f7);
+    border: 1px solid var(--sl-color-gray-5, #e2e2e3);
+    border-radius: 4px;
+    color: var(--sl-color-gray-1, #3c3c43);
+  }
+
+  .sl-fb-banner-close {
+    border: none;
+    background: transparent;
+    color: var(--sl-color-gray-3, #929295);
+    font-size: 14px;
+    padding: 2px 6px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+
+  .sl-fb-banner-close:hover {
+    color: var(--sl-color-white, #3c3c43);
+    background: var(--sl-color-gray-6, #f6f6f7);
+  }
+
+  /* 勘误提交模态弹窗 (Modal) */
+  .sl-fb-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 2147483530;
+    padding: 16px;
+  }
+
+  .sl-fb-modal-box {
+    width: 100%;
+    max-width: 680px;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--sl-color-bg, #ffffff);
+    color: var(--sl-color-white, #3c3c43);
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    border-radius: 10px;
+    box-shadow: var(--sl-shadow-lg);
+    overflow: hidden;
+    animation: slFbModalPop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes slFbModalPop {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .sl-fb-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--sl-color-hairline, #e2e2e3);
+    background: var(--sl-color-bg-sidebar, #f6f6f7);
+  }
+
+  .sl-fb-modal-title-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .sl-fb-modal-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sl-color-white, #3c3c43);
+  }
+
+  .sl-fb-modal-meta {
+    font-size: 12px;
+    color: var(--sl-color-accent, #3451b2);
+    font-family: var(--sl-font-mono, monospace);
+    font-weight: 500;
+  }
+
+  .sl-fb-modal-close {
+    border: none;
+    background: none;
+    font-size: 15px;
+    color: var(--sl-color-gray-3, #929295);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .sl-fb-modal-close:hover {
+    background: var(--sl-color-gray-5, #e2e2e3);
+    color: var(--sl-color-white, #3c3c43);
+  }
+
+  .sl-fb-modal-body {
+    padding: 16px 18px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sl-fb-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .sl-fb-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sl-color-gray-2, #67676c);
+  }
+
+  .sl-fb-req {
+    color: #ef4444;
+  }
+
+  .sl-fb-location-tag {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--sl-color-gray-6, #f6f6f7);
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .sl-fb-location-tag code {
+    font-family: var(--sl-font-mono, monospace);
+    color: var(--sl-color-white, #3c3c43);
+  }
+
+  .sl-fb-kind-chip {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--sl-color-accent-low, rgba(100, 108, 255, 0.12));
+    color: var(--sl-color-accent, #3451b2);
+  }
+
+  .sl-fb-input,
+  .sl-fb-select,
+  .sl-fb-textarea {
+    width: 100%;
+    padding: 7px 10px;
+    font-size: 13px;
+    color: var(--sl-color-white, #3c3c43);
+    background: var(--sl-color-bg, #ffffff);
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    border-radius: 6px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .sl-fb-input:focus,
+  .sl-fb-select:focus,
+  .sl-fb-textarea:focus {
+    outline: none;
+    border-color: var(--sl-color-accent, #3451b2);
+    box-shadow: 0 0 0 2px var(--sl-color-accent-low, rgba(100, 108, 255, 0.16));
+  }
+
+  .sl-fb-input-error {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+  }
+
+  .sl-fb-excerpt {
+    font-family: var(--sl-font-mono, monospace);
+    font-size: 12px;
+    min-height: 60px;
+    max-height: 120px;
+    background: var(--sl-color-gray-6, #f6f6f7);
+    color: var(--sl-color-gray-2, #67676c);
+    resize: vertical;
+  }
+
+  .sl-fb-desc-input {
+    min-height: 80px;
+    resize: vertical;
+  }
+
+  /* 状态信息条 */
+  .sl-fb-status-msg {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .sl-fb-status-loading {
+    background: var(--sl-color-gray-6, #f6f6f7);
+    color: var(--sl-color-gray-2, #67676c);
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+  }
+
+  .sl-fb-status-success {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+  }
+
+  .sl-fb-status-success a {
+    color: #10b981;
+    text-decoration: underline;
+    font-weight: 600;
+  }
+
+  .sl-fb-status-warn {
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+  }
+
+  .sl-fb-status-warn a {
+    color: #d97706;
+    text-decoration: underline;
+    font-weight: 600;
+  }
+
+  .sl-fb-status-error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+  }
+
+  /* 弹窗底部操作栏 */
+  .sl-fb-modal-foot {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--sl-color-hairline, #e2e2e3);
+    background: var(--sl-color-bg-sidebar, #f6f6f7);
+    flex-wrap: wrap;
+  }
+
+  .sl-fb-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 13px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+
+  .sl-fb-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .sl-fb-btn-aux {
+    background: transparent;
+    border-color: var(--sl-color-hairline, #e2e2e3);
+    color: var(--sl-color-gray-2, #67676c);
+    margin-right: auto;
+  }
+
+  .sl-fb-btn-aux:hover:not(:disabled) {
+    background: var(--sl-color-gray-6, #f6f6f7);
+    color: var(--sl-color-white, #3c3c43);
+  }
+
+  .sl-fb-btn-sec {
+    background: transparent;
+    border-color: var(--sl-color-hairline, #e2e2e3);
+    color: var(--sl-color-white, #3c3c43);
+  }
+
+  .sl-fb-btn-sec:hover:not(:disabled) {
+    border-color: var(--sl-color-accent, #3451b2);
+    color: var(--sl-color-accent, #3451b2);
+  }
+
+  .sl-fb-btn-primary {
+    background: var(--sl-color-accent, #3451b2);
+    border-color: var(--sl-color-accent, #3451b2);
+    color: var(--sl-color-text-invert, #ffffff);
+    font-weight: 600;
+  }
+
+  .sl-fb-btn-primary:hover:not(:disabled) {
+    opacity: 0.9;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Toast 提示容器 */
+  .sl-fb-toast-box {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 2147483540;
+  }
+
+  .sl-fb-toast {
+    padding: 8px 14px;
+    background: var(--sl-color-bg, #ffffff);
+    color: var(--sl-color-white, #3c3c43);
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    border-left: 3px solid var(--sl-color-accent, #3451b2);
+    border-radius: 6px;
+    font-size: 13px;
+    box-shadow: var(--sl-shadow-md);
+    max-width: 400px;
+    transition: opacity 0.25s ease;
+  }
+
+  .sl-fb-toast-fade {
+    opacity: 0;
+  }
+</style>
+
+<script>
+  import { initFeedback } from '../utils/feedback/feedback-controller';
+
+  const anchor = document.getElementById('sl-feedback-anchor');
+  let config = {};
+  if (anchor) {
+    try {
+      config = JSON.parse(anchor.getAttribute('data-feedback-config') || '{}');
+    } catch {
+      // Fallback
+    }
+  }
+
+  initFeedback(config);
+</script>
