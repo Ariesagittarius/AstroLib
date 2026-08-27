@@ -1,0 +1,45 @@
+---
+title: 项目开发文档
+description: AstroLib (my-astro-site) 理科教辅与教材数字化文献库开发指南、架构说明与组件规范。
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+# AstroLib 开发者技术文档
+
+本系统基于 Astro 7 与 Starlight 框架构建，专为初高中及大学本科理科（数学、物理等）教材与教辅提供数字化整理、高质量 KaTeX 公式排版、结构化章节大纲及离线 EPUB 导出支持。
+
+本文档集阐明系统的整体架构设计、配置管理规范、内容撰写标准及相关开发运维工具的使用说明。
+
+---
+
+## 模块导航
+
+<CardGrid grid={2}>
+  <Card title="快速入门">
+    阐述系统总体技术栈选型、开发环境配置要求、服务运行命令及项目文件架构。
+    [查看快速入门](/dev/getting-started/overview/)
+  </Card>
+  <Card title="核心架构与配置">
+    说明中央图书配置系统 collections.config.mjs 与全站 Feature Registry 功能开关体系。
+    [查看核心架构](/dev/architecture/collections-config/)
+  </Card>
+  <Card title="内容撰写与组件规范">
+    规范 KaTeX 数学公式语法标准、构建期源码注入机制及 11 种结构化教辅卡片组件使用规范。
+    [查看撰写规范](/dev/authoring/mdx-guide/)
+  </Card>
+  <Card title="导入与导出流程">
+    介绍 MinerU OCR 识别产物转 MDX 章节的标准流程以及全书 EPUB 静态生成打包管线。
+    [查看流程说明](/dev/workflow/import-book/)
+  </Card>
+</CardGrid>
+
+---
+
+## 核心开发约束
+
+> [!IMPORTANT]
+> 1. **中央配置单源原则**：`src/config/collections.config.mjs` 为全站图书、合集及卡片模块主题的唯一配置源。严禁向已废弃的 `books.config.mjs` 写入业务逻辑。
+> 2. **功能开关控制约束**：功能插件受 `src/config/features.config.mjs` 统一调度。当关闭某项功能时，相关 CSS、插件及代码必须实现零打包残留。
+> 3. **Clean Slug 路由规范**：所有指向章节的链接生成均须经过 `cleanSlug()` 处理，禁止硬编码原始文件名。
+> 4. **后台开发服务规范**：启动开发服务器统一采用 `astro dev --background`，并通过 PID 锁文件控制运行状态。

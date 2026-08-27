@@ -1,0 +1,33 @@
+---
+title: EPUB 导出管线
+description: Markdown 章节全书打包导出为离线 ePub3 文件的管线说明。
+---
+
+# EPUB 导出管线
+
+AstroLib 提供了全书转换为离线 `.epub` 电子书文件的构建管线，支持读者在电子阅读设备上离线阅读。
+
+---
+
+## 运行机制
+
+1. **功能使能与下载解析**：
+   - 受 `features.config.mjs` 中 `features.epub.enabled` 控制。
+   - **本地模式**：若构建目录存在 `public/epub/<book-slug>.epub`，优先链接到本地静态文件 `/epub/<book-slug>.epub`。
+   - **生产解耦模式（推荐）**：Web 站部署（如 Vercel）无需在每次构建时耗时重复生成 EPUB，未探测到本地文件时会自动回退至 GitHub Releases 托管地址（`https://github.com/Ariesagittarius/AstroLib/releases/latest/download/<slug>.epub`）。
+
+2. **下载入口注入**：
+   - 当 EPUB 功能启用且探测到本地文件或配置了 Release 链接时，`SidebarOverride.astro`、`library.astro` 及首页将自动渲染下载按钮。
+
+3. **打包生成与 CI/CD**：
+   - **本地生成全书 EPUB**：
+     ```bash
+     npm run epub
+     # 或 node scripts/generate-epub.mjs
+     ```
+   - **本地仅生成单本书籍**：
+     ```bash
+     node scripts/generate-epub.mjs --only university_physics
+     ```
+   - **GitHub Actions 自动化发布**：
+     - 当书籍 MDX、配置或 EPUB 脚本推送至 `main` 或打 Release Tag 时，工作流 `.github/workflows/epub-release.yml` 自动运行 `npm run epub` 并将产物发布更新至 GitHub Releases 的 `latest` 标签下，实现 Web 部署与大文件资产导出的优雅解耦。

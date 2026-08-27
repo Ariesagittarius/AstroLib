@@ -1,0 +1,31 @@
+---
+title: MinerU OCR 到 MDX 导入
+description: MinerU OCR 识别产物转化为平台 MDX 章节的标准流程说明。
+---
+
+# MinerU OCR 到 MDX 导入
+
+将纸质或 PDF 教材通过 MinerU OCR 识别转换为 AstroLib 规范的 MDX 章节，须遵循 `import-book` 工作流标准。
+
+---
+
+## 导入操作标准流程
+
+1. **OCR 识别产物准备**：
+   将 MinerU OCR 识别产物目录（形如 `<书名>.pdf-<hash>/`，内含 `full.md` 及关联图片）存放至根目录 `task/` 路径下。
+
+2. **章节拆分与归载**：
+   - 依据卷、章、节目录树将 `full.md` 拆分为独立的 MDX 文件。
+   - 文件采用规范命名，如 `1.1-章节标题.mdx`，确保自然的编号排序。
+
+3. **保存至目标 Collections 目录**：
+   目标文件路径标准为：`src/content/docs/collections/<collection-slug>/<book-slug>/`。
+
+4. **语义化卡片组件封装**：
+   将文本中的例题、练习、知识点段落转换为 `<Example>`、`<Knowledge>`、`<Solution>` 等结构化卡片包覆。
+
+5. **注册中央图书配置**：
+   在 `src/config/collections.config.mjs` 中添加该图书信息（包含 slug、title、author、entryPoint 等属性）。
+
+6. **校验**：
+   运行 `node scripts/scan-mdx.mjs src/content/docs/collections/<collection-slug>/<book-slug>` 确认编译通过。

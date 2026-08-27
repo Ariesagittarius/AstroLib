@@ -1,0 +1,82 @@
+---
+title: 环境准备与命令
+description: 开发环境搭建要求、项目依赖安装与开发服务器运维规范。
+---
+
+# 环境准备与命令
+
+本文档说明开发环境配置标准以及开发服务器的生命周期管理规范。
+
+---
+
+## 环境要求
+
+- **Node.js 运行环境**: `^18.18.0` 或 `>=20.0.0`
+- **包管理器**: `npm`
+- **支持操作系统**: Windows / macOS / Linux
+
+### 安装项目依赖
+
+在项目根目录下执行：
+
+```bash
+npm install
+```
+
+---
+
+## 开发服务器生命周期管理
+
+按照项目开发规范，本地开发服务器应使用后台管理模式，并通过锁文件控制进程。
+
+### 1. 启动开发服务
+
+推荐使用后台模式启动：
+
+```bash
+astro dev --background
+```
+
+若 `astro` 未在全局环境变量 PATH 中，可执行以下命令：
+
+```bash
+node node_modules/astro/bin/astro.mjs dev --background
+```
+
+### 2. 查询运行状态
+
+查询进程 PID 与当前监听端口：
+
+```bash
+astro dev status
+```
+
+### 3. 查看实时日志
+
+实时输出服务器运行日志：
+
+```bash
+astro dev logs
+```
+
+### 4. 停止开发服务
+
+优雅关闭进程并释放端口：
+
+```bash
+astro dev stop
+```
+
+---
+
+## 校验与自动化工具命令
+
+在提交变更或发布前，可调用以下脚本校验代码与产物：
+
+```bash
+# 扫描校验指定目录下的 MDX 语法与 KaTeX 编译是否符合规范
+node scripts/scan-mdx.mjs src/content/docs/collections/<collection>/<book>
+
+# 执行全书 EPUB 打包流程
+node scripts/build-epub.mjs
+```

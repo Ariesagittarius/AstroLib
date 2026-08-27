@@ -1,0 +1,39 @@
+---
+title: 项目总览与技术栈
+description: AstroLib 项目定位、架构体系与技术选型说明。
+---
+
+# 项目总览与技术栈
+
+AstroLib（代码库路径 `my-astro-site`）是一个专注于初高中及大学本科理科（数学、物理等）数字化教材、教辅与课后习题的数字化文献平台。系统旨在通过结构化数据组织与高性能前端渲染，提升理科文献的在线阅读体验与检索效率。
+
+---
+
+## 系统设计目标与核心特性
+
+1. **KaTeX 数学公式渲染体系**：
+   - 支持行内与块级 LaTeX 数学公式渲染。
+   - 采用 `rehypeKatexAnnotate` 与 `rehypeKatexPromote` 自研插件，在构建期将原始 LaTeX 源码注入 `data-latex` 属性，实现客户端公式源码复制能力。
+   - 配置 KaTeX 采用 `output: 'html'` 输出模式，避免冗余 MathML DOM 结构，使公式密集型页面的 DOM 体积降低约 50%。
+
+2. **VitePress 视觉与交互规范**：
+   - 界面严格遵循 VitePress 主题规范，包含标准色彩体系、半透明毛玻璃导航栏、侧滑抽屉式侧边栏以及基于 Marker 的目录指示器。
+   - 内置客户端 SPA 局部刷新引擎，在跨章节切换时保持顶栏与侧边栏状态，避免全页刷新开销。
+
+3. **教辅结构化卡片组件**：
+   - 抽象出包含例题、知识点、解析、注意事项等 11 种结构化卡片组件，去边框化处理，对齐 VitePress custom-block 设计。
+
+4. **模块化 Feature Registry 系统**：
+   - 核心功能受 `src/config/features.config.mjs` 控制，能够实现构建期零开销功能裁剪。
+
+---
+
+## 技术选型
+
+| 架构维度 | 选用技术 | 说明 |
+| :--- | :--- | :--- |
+| **基础框架** | Astro 7 + Starlight 0.41 | 基于 Content Collections 体系提供静态生成与路由管理 |
+| **数学引擎** | KaTeX + remark-math + rehype-katex | 提供高性能数学公式排版与源码标记扩展 |
+| **样式体系** | CSS Custom Properties + Fontsource | 实现双主题色板切换与思源黑体/宋体 WebFont 自托管 |
+| **构建工具** | Vite + Rollup | 配合 Vite Dev Server 插件实现开发期写回与巡检端点 |
+| **离线导出** | epub-gen + JSZip | 提供 Node.js 端全书 Markdown 转 ePub3 标准格式打包能力 |

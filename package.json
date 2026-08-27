@@ -5,13 +5,37 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build",
+    "build": "node --max-old-space-size=4096 scripts/build-ai-index.mjs && node --max-old-space-size=4096 scripts/build-relation-graphs.mjs && node --max-old-space-size=4096 scripts/build-inspector-data.mjs && node --max-old-space-size=4096 node_modules/astro/bin/astro.mjs build",
+    "build:all": "node scripts/generate-epub.mjs && npm run build",
     "preview": "astro preview",
+    "epub": "node scripts/generate-epub.mjs",
+    "check:katex": "node scripts/fix-katex-metrics.mjs --check",
+    "fix:katex": "node scripts/fix-katex-metrics.mjs",
+    "check:commit": "node scripts/validate-commit-msg.mjs",
+    "push:clean": "node scripts/git-clean-push.mjs --clean",
+    "push:private": "node scripts/git-clean-push.mjs --private",
+    "push:all": "node scripts/git-clean-push.mjs --all",
+    "test:stripper": "node scripts/test-comment-stripper.mjs",
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/markdown-remark": "^7.2.1",
     "@astrojs/starlight": "^0.41.3",
+    "@fontsource-variable/noto-sans-sc": "^5.3.0",
+    "@fontsource-variable/noto-serif-sc": "^5.3.0",
     "astro": "^7.0.2",
+    "jsqr": "^1.4.0",
+    "mermaid": "^11.17.2",
+    "qrcode": "^1.5.4",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0",
     "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "pagefind": "^1.5.2"
+  },
+  "allowScripts": {
+    "sharp@0.35.4": true,
+    "sharp@0.34.5": true
   }
 }

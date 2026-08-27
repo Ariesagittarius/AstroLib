@@ -1,0 +1,54 @@
+---
+title: VitePress 主题与 CSS
+description: VitePress 主题覆盖层与 CSS 样式级联架构说明。
+---
+
+# VitePress 主题与 CSS
+
+AstroLib 重构了 Starlight 的默认皮肤，在视觉设计、布局、字体栈与组件交互上严格对齐 **VitePress 官方主题规范**。
+
+---
+
+## 样式级联顺序
+
+在 `astro.config.mjs` 中，`customCss` 遵循严格的加载优先级顺序：
+
+```javascript
+const customCss = [
+  'katex/dist/katex.min.css',         // 1. KaTeX 基础排版样式
+  './src/styles/custom.css',          // 2. 基础结构与微调样式
+  './src/styles/vitepress-theme.css', // 3. VitePress 品牌覆盖层
+  './src/styles/fonts.css',           // 4. 思源字体定义 (覆盖 --sl-font)
+];
+```
+
+> [!NOTE]
+> `vitepress-theme.css` 使用样式重写覆盖 Starlight 的内置选择器。若从配置文件中移去该样式声明，系统将优雅回退至 Starlight 默认视觉外观。
+
+---
+
+## 主题变量映射规范
+
+系统支持亮色与暗色模式的自动与手动切换，对应色值由 `vitepress-theme.css` 定义：
+
+- **亮色模式 (Light)**：
+  - 背景色: `#ffffff`
+  - 侧边栏背景: `#f6f6f7`
+  - 边框分割线: `#e2e2e3`
+  - 品牌色 (Primary): `#3451b2` (Indigo)
+- **暗色模式 (Dark)**：
+  - 背景色: `#1b1b1f`
+  - 侧边栏背景: `#161618`
+  - 品牌色 (Primary): `#a8b1ff`
+
+---
+
+## 教辅插图暗色智能适配
+
+理科教辅与扫描图常以“白底黑线”呈现。在暗色模式下，系统在 `custom.css` 中应用了 GPU 硬件加速的**色彩保真智能反相系统**：
+
+- **智能明暗转换**：`invert(0.88)` 将白底映射为舒适深色（与 `#1b1b1f` 背景融为一体），黑线转为柔和浅白灰；
+- **色彩精确保真**：配合 `hue-rotate(180deg)` 旋转色相，确保红、蓝、绿等彩色标注与曲线完全不偏色；
+- **悬停原图透出**：暗色模式下鼠标悬停（hover）或轻触图片可平滑渐变恢复原始图样；
+- **排除规则**：实物照片等无需反色的插图，添加类名 `.no-dark-invert` 即可保留原生渲染。
+

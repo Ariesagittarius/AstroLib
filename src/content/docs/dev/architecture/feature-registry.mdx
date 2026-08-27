@@ -1,0 +1,54 @@
+---
+title: 全站功能开关 (features.config.mjs)
+description: Feature Registry 架构原理与零打包开销裁剪机制。
+---
+
+# 全站功能开关 (features.config.mjs)
+
+`src/config/features.config.mjs` 构成了系统的 **Feature Registry（全站功能注册表）**。旨在实现特性的集中化装配、环境敏感裁剪以及构建期打包优化。
+
+---
+
+## 零打包开销设计原则
+
+功能注册表遵循零打包开销原则 (Zero-bundle Overhead)：当某项功能被禁用 (`enabled: false`) 时，系统不仅在 UI 层面隐去对应入口，还将从构建阶段剔除相关的 Remark/Rehype 插件、CSS 样式依赖、Vite Dev 端点以及客户端脚本，确保生产产物中无冗余代码残留。
+
+---
+
+## 功能注册表声明规范
+
+`features.config.mjs` 中定义的主要功能配置项如下：
+
+```javascript
+export const features = {
+  // KaTeX 数学公式渲染 (包含 Remark/Rehype 插件及样式库)
+  katex: { enabled: true, devOnly: false, ui: false, label: 'KaTeX 数学公式' },
+
+  // VitePress 主题风格覆盖件
+  theme: { enabled: true, devOnly: false, ui: true, label: 'VitePress 主题' },
+
+  // 思源黑体/宋体 WebFont
+  fonts: { enabled: true, devOnly: false, ui: true, label: '思源 WebFont 字体' },
+
+  // 正文跨页与同页引用下沉 (rehype-cross-ref)
+  crossRef: { enabled: true, devOnly: false, ui: true, label: '跨页/同页引用' },
+
+  // EPUB 离线文件下载机制
+  epub: { enabled: true, devOnly: false, ui: true, label: 'EPUB 离线下载' },
+
+  // 开发模式在线可视化 MDX 精修工具 (dev-only)
+  editor: { enabled: true, devOnly: true, ui: true, label: '在线可视化精修' },
+
+  // 书籍模块索引与巡检速查工具（全书索引与跨章聚合全站开放，同章冲突与结构审查仅开发期可见）
+  inspector: { enabled: true, devOnly: false, ui: true, label: '模块索引与速查' },
+
+  // AI 书内问答 (RAG) 交互件
+  aiAsk: { enabled: true, devOnly: false, ui: true, label: 'AI 书内问答' }
+};
+```
+
+---
+
+## 核心辅助 API
+
+- `isEffective(featureId)`: 判定特定功能在当前模式（Dev 或 Production）下是否实际生效。对于标注为 `devOnly: true` 的特性，仅在开发环境且 `enabled: true` 时返回 `true`。

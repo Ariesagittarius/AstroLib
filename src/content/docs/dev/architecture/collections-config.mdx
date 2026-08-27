@@ -1,0 +1,62 @@
+---
+title: 中央图书配置 (collections.config.mjs)
+description: 中央图书与合集配置机制说明。
+---
+
+# 中央图书配置 (collections.config.mjs)
+
+`src/config/collections.config.mjs` 是全站图书、文献合集及卡片模块主题的 **唯一真理源 (Single Source of Truth)**。所有的图书路由注册、首页展现、全书检索及侧边栏生成均依赖此配置文件。
+
+> [!WARNING]
+> `src/config/books.config.mjs` 属于已废弃的历史文件。禁止修改或向其添加新的图书逻辑。
+
+---
+
+## 数据结构模型
+
+`collections.config.mjs` 导出一个 `collections` 数组，定义合集与图书的层级结构：
+
+```javascript
+export const collections = [
+  {
+    id: 'high-school-math',
+    slug: 'high-school-math',
+    title: '高中数学教辅文献库',
+    description: '收录初高中数学教辅、解析与专题拆解。',
+    stage: 'high-school',
+    stageLabel: '高中',
+    books: [
+      {
+        id: 'gaozhong-shuxue-zongfuxi',
+        slug: 'gaozhong-shuxue-zongfuxi',
+        collectionSlug: 'high-school-math',
+        title: '高中数学总复习资料',
+        author: '教研组',
+        publisher: '数理出版社',
+        isbn: '978-7-0000-0000-0',
+        edition: '2025年第1版',
+        stage: 'high-school',
+        stageLabel: '高中',
+        category: 'supplement',
+        categoryLabel: '教辅',
+        subject: 'math',
+        subjectLabel: '数学',
+        cover: '/covers/gaozhong-shuxue.jpg',
+        description: '涵盖高中数学考点与专题方法。',
+        entryPoint: '1.1-集合的概念', // 图书默认起始章节名
+        tags: ['高中数学', '高考总复习'],
+      }
+    ]
+  }
+];
+```
+
+---
+
+## 导出 API
+
+该文件同时对外提供以下公共操作函数：
+
+- `getAllBooks()`: 扁平化导出平台所有图书对象，供检索页面 `library.astro` 使用。
+- `findBookBySlug(slug)`: 根据图书 `slug` 检索对应图书对象及其归属的合集信息。
+- `getCollectionBySlug(slug)`: 根据 `slug` 查找对应合集对象。

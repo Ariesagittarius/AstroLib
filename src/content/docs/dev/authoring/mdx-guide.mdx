@@ -1,0 +1,39 @@
+---
+title: MDX 与 KaTeX 规范
+description: 理科教辅章节 MDX 撰写标准、KaTeX 编译语法与校验工具使用说明。
+---
+
+# MDX 与 KaTeX 规范
+
+平台所有图书章节均统一采用 MDX 格式书写。为确保复杂的数学排版及结构化组件编译正常，须遵守以下撰写规范。
+
+---
+
+## KaTeX 数学公式语法标准
+
+### 1. 行内公式 (Inline Math)
+采用单 `$` 符号界定：
+```markdown
+已知集合 $A = \{x \mid x^2 - 3x + 2 = 0\}$，求 $A$ 的子集个数。
+```
+
+### 2. 块级公式 (Display Math)
+采用双 `$$` 符号界定并独立成行：
+```markdown
+$$\lim_{n \to \infty} \left( 1 + \frac{1}{n} \right)^n = e$$
+```
+
+> [!TIP]
+> 框架底层配置了 `rehypeKatexAnnotate` 插件，在构建期自动为生成的 HTML 注入 `data-latex` 标签。读者在网页点击公式即可复制其原始 LaTeX 代码。
+
+---
+
+## MDX 静态语法校验
+
+在修改或新增章节文件后，必须使用预设的扫描校验脚本检查 MDX 语法与 KaTeX 编译状态：
+
+```bash
+node scripts/scan-mdx.mjs src/content/docs/collections/<collection>/<book>
+```
+
+该工具会精确定位未闭合的 JSX 标签、语法错误的 LaTeX 表达式以及缺失的组件引用。

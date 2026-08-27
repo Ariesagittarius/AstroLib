@@ -1,0 +1,28 @@
+---
+title: 可视化精修与巡检工具
+description: 开发模式下在线 MDX 位置精修与模块查重巡检工具说明。
+---
+
+# 可视化精修与巡检工具
+
+为了提高文献整理与排错效率，AstroLib 在 Vite Dev Server 中构建了两套专门的辅助端点。
+
+> [!NOTE]
+> 在线精修工具受 `features.editor` 的 `devOnly: true` 限制，**仅在开发模式 (`astro dev`) 下生效**。模块索引速查工具（`features.inspector`）全站开放（含生产环境与手机端），其中「同章冲突」与「结构审查」仅在开发期可见。
+
+---
+
+## 在线可视化精修工具 (MDX Editor)
+
+- **AST 源码标注**：在开发模式下，`rehypeEditorAnnotate` 插件会在 AST 解析阶段为 DOM 节点注入源码行号及文件路径信息。
+- **写回端点**：Vite 插件 `devEditServerPlugin` 在开发服务器挂载 `/__edit__/*` HTTP 端点。
+- **功能特性**：在前端修改公式或文本后，系统支持直接将改动反向写回磁盘源 MDX 文件。
+
+---
+
+## 模块索引与巡检速查工具 (Module Inspector)
+
+- **数据服务**：开发期由 Vite 插件 `devInspectorServerPlugin` 提供 `/__inspector__/*` 实时扫描；生产期由 `scripts/build-inspector-data.mjs` 构建生成按书隔离的静态 JSON 索引（`public/inspector-data/`）。
+- **权限与功能划分**：
+  - **全站可用（含生产环境与移动端）**：全书所有 `<Example>`、`<Knowledge>`、`<Exercise>` 等模块的全量索引查看、按类型与章节筛选、全文高亮检索、跨章同名聚合、一键跳转波纹高亮（Jump & Pulse）与源码坐标复制。
+  - **开发期专属 (`astro dev`)**：同章节同名冲突查重视图、OCR 误切与异常结构审查（空壳卡片、标题过长、误切段落）、在线精修定位按钮。
