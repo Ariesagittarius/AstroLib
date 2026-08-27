@@ -1,0 +1,356 @@
+---
+title: '4.3 大数定律'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+大数定律有多种形式,下面从最简单的伯努利大数定律说起,逐步介绍各种大数定律.
+
+## 4.3.1 伯努利大数定律
+
+记 $S_{n}$ 为 $n$ 重伯努利试验中事件 $A$ 出现的次数，称 $\frac{S_n}{n}$ 为事件 $A$ 出现的频率.
+如果记一次试验中 A 发生的概率为 p，则 $S_{n}$ 服从二项分布 $b(n,p)$ ，因此频率 $\frac{S_{n}}{n}$ 的数学期望与方差分别为
+$$
+E \left(\frac {S _ {n}}{n}\right) = p, \quad \mathrm{Var} \left(\frac {S _ {n}}{n}\right) = \frac {p (1 - p)}{n}.\tag{4.3.1}
+$$
+下面我们讨论 $n \to \infty$ 时, 频率 $\frac{S_n}{n}$ 与概率 $p$ 的绝对偏差 $\left|\frac{S_n}{n} - p\right|$ 的极限状态.
+按数学分析中的数列极限概念, 若 $\{S_{n}\}$ 为数列, 则数列 $\left\{\frac{S_{n}}{n}\right\}$ 的极限为 p 意味着对任意的 $\varepsilon > 0$ , 当 n 充分大时, 绝对偏差必定会小于 $\varepsilon$ , 即
+$$
+\left| \frac {S _ {n}}{n} - p \right| <   \varepsilon .
+$$
+然而，当 $S_{n}$ 为 $n$ 重伯努利试验中成功(A出现)的次数(是一个随机变量)时，上述现象不会再现，即不能指望对任意样本点 $\omega$ （长为 $n$ 的0,1序列），频率 $S_{n} / n$ 对成功概率 $p$ 的绝对偏差都小于 $\varepsilon$ ，即使充分小的 $\varepsilon >0$ 和很大的 $n$ ，也不能指望对任意样本点 $\omega$ ，不等式
+$$
+\left| \frac {S _ {n}}{n} - p \right| \leqslant \varepsilon , \quad \omega \in \Omega\tag{4.3.2}
+$$
+都成立.譬如,对0&lt;p&lt;1有
+$$
+\begin{array}{r l} & P \left(\frac {S _ {n}}{n} = 1\right) = P (X _ {1} = 1, X _ {2} = 1, \dots , X _ {n} = 1) = p ^ {n}, \\ & P \left(\frac {S _ {n}}{n} = 0\right) = P (X _ {1} = 0, X _ {2} = 0, \dots , X _ {n} = 0) = (1 - p) ^ {n}. \end{array}
+$$
+对充分小的 $\varepsilon>0$ ，不等式(4.3.2)式并不能永远成立.
+不过,应该看到,当 n 很大时,事件 $\{S_{n}/n=1\}$ 和 $\{S_{n}/n=0\}$ 的概率都很微小,当然希望大偏差 $\left|S_{n}/n-p\right|\geqslant\varepsilon$ 的概率也很小,且随着 n 增大而愈来愈小.特别希望有如下的概率陈述.
+$$
+\lim _ {n \to \infty} P \left(\left| \frac {S _ {n}}{n} - p \right| \geqslant \varepsilon\right) = 0.\tag{4.3.3}
+$$
+下面的伯努利大数定律就对上述讨论作了一个很好的总结,并作出了肯定的回答.
+
+<Knowledge title="定理 4.3.1 伯努利大数定律">
+设 $S_{n}$ 为 n 重伯努利试验中事件 A 发生的次数, p 为每次试验中 A 出现的概率, 则对任意的 $\varepsilon > 0$ , 有
+$$
+\lim _ {n \rightarrow \infty} P \left(\left| \frac {S _ {n}}{n} - p \right| <   \varepsilon\right) = 1.
+$$
+
+<Solution title="证明">
+因为 $S_{n} \sim b(n, p)$ , 且 $\frac{S_{n}}{n}$ 的数学期望和方差如 (4.3.1) 式所示. 所以由切比雪夫不等式得
+$$
+1 \geqslant P \left(\left| \frac {S _ {n}}{n} - p \right| <   \varepsilon\right) \geqslant 1 - \frac {\mathrm{Var} \left(\frac {S _ {n}}{n}\right)}{\varepsilon^ {2}} = 1 - \frac {p (1 - p)}{n \varepsilon^ {2}}.\tag{4.3.4}
+$$
+当 $n \to \infty$ 时，上式右端趋于1，因此
+$$
+\lim _ {n \rightarrow \infty} P \left(\left| \frac {S _ {n}}{n} - p \right| <   \varepsilon\right) = 1.
+$$
+结论得证.
+伯努利大数定律说明：随着 $n$ 的增大，事件 $A$ 发生的频率 $\frac{S_n}{n}$ 与其概率 $p$ 的偏差 $\left|\frac{S_n}{n} - p\right|$ 大于预先给定的精度 $\varepsilon$ 的可能性愈来愈小，要多小有多小.这就是频率稳定于概率的含义.
+譬如,抛一枚硬币出现正面的概率 p=0.5. 若把这枚硬币连抛 10 次,则因为 n 较小,发生偏差的可能性有时会大一些,有时会小一些. 若把这枚硬币连抛 10 万次,由切比雪夫不等式知:正面出现的频率与 0.5 的偏差大于预先给定的精度 $\varepsilon$ (若取精度 $\varepsilon=0.01$ ) 的可能性
+$$
+P \left(\left| \frac {S _ {n}}{n} - 0. 5 \right| > 0. 0 1\right) \leqslant \frac {0 . 5 \times 0 . 5}{n 0 . 0 1 ^ {2}} = \frac {1 0 ^ {4}}{4 n}.
+$$
+大偏差发生的可能性小于 $1/40 = 2.5\%$ . 当 $n = 10^{6}$ 时, 大偏差发生的可能性小于 $1/400 = 0.25\%$ . 可见试验次数愈多, 大偏差发生的可能性愈小.
+伯努利大数定律提供了用频率来确定概率的理论依据.譬如要估计某种产品的不合格品率 $p$ ，则可从该种产品中随机抽取 $n$ 件，当 $n$ 很大时，这 $n$ 件产品中的不合格品的比例可作为不合格品率 $p$ 的估计值.
+</Solution>
+</Knowledge>
+
+<Example title="例 4.3.1 用蒙特卡罗方法计算定积分(随机投点法">
+) 设 $0 \leqslant f(x) \leqslant 1$ ，求 $f(x)$ 在区间 $[0,1]$ 上的积分值
+$$
+J = \int_ {0} ^ {1} f (x) \mathrm{d} x.
+$$
+设二维随机变量 $(X,Y)$ 服从正方形 $\{0\leqslant x\leqslant 1,0\leqslant y\leqslant 1\}$ 上的均匀分布，则可知 $X$ 服从[0,1]上的均匀分布， $Y$ 也服从[0,1]上的均匀分布，且 $X$ 与 $Y$ 独立.又记事件
+$$
+A = \{Y \leqslant f (X) \},
+$$
+则 $A$ 的概率为
+$$
+p = P (Y \leqslant f (X)) = \int_ {0} ^ {1} \int_ {0} ^ {f (x)} \mathrm{d} y \mathrm{d} x = \int_ {0} ^ {1} f (x) \mathrm{d} x = J,
+$$
+即定积分的值 $J$ 就是事件 $A$ 的概率 $p$ (见图4.3.1). 由伯努利大数定律, 我们可以用重复试验中 $A$ 出现的频率作为 $p$ 的估计值. 这种求定积分的方法也称为随机投点法, 即将 $(X, Y)$ 看成是向正方形 $\{0 \leqslant x \leqslant 1, 0 \leqslant y \leqslant 1\}$ 内随机投的点, 用随机点落在区域 $\{y \leqslant f(x)\}$ 中的频率作为定积分的近似值.
+下面用蒙特卡罗方法得到 A 出现的频率：
+（1）先用计算机产生(0,1)上均匀分布的2n个随机数，组成n对随机数 $(x_{i},y_{i})$
+$i=1,2,\cdots,n$ , 这里 n 可以很大, 譬如 $n=10^{4}$ , 甚至 $n=10^{5}$ .
+（2）对 n 对数据 $(x_{i}, y_{i}), i = 1, 2, \cdots, n$ ，记录满足如下不等式
+$$
+y _ {i} \leqslant f (x _ {i})
+$$
+![](images/01ecf06a0b8b2ee8667db3e38256f4d51ad177fff1860abcf8b948ce8164ac50.jpg)
+的次数,这就是事件 A 发生的频数 $S_{n}$ . 由此可得事件 A 发生的频率 $\frac{S_{n}}{n}$ , 则 $J \approx \frac{S_{n}}{n}$ .
+图 4.3.1 随机投点法  
+譬如计算 $\int_0^1\mathrm{e}^{-x^2 /2} / \sqrt{2\pi}\mathrm{d}x$ ，其精确值和在 $n = 10^{4},n =$ $10^{5}$ 时的模拟值如下：
+<table><tr><td>精确值</td><td> $n = {10}^{4}$ </td><td> $n = {10}^{5}$ </td></tr><tr><td>0.341 344</td><td>0.340 698</td><td>0.341 355</td></tr></table>
+</Example>
+
+<Note>
+对于一般区间 $[a,b]$ 上的定积分
+$$
+J ^ {\prime} = \int_ {a} ^ {b} g (x) \mathrm{d} x,
+$$
+作线性变换 $y = (x - a) / (b - a)$ ，即可化成[0,1]区间上的积分.进一步若 $c \leqslant g(x) \leqslant d$ ，可令
+$$
+f (y) = \frac {1}{d - c} [ g (a + (b - a) y) - c ],
+$$
+则 $0 \leqslant f(y) \leqslant 1$ . 此时有
+$$
+J ^ {\prime} = \int_ {a} ^ {b} g (x) \mathrm{d} x = S _ {0} \int_ {0} ^ {1} f (y) \mathrm{d} y + c (b - a),
+$$
+其中 $S_0 = (b - a)(d - c)$ . 这说明以上用蒙特卡罗方法计算定积分的方法带有普遍意义.
+</Note>
+
+## 4.3.2 常用的几个大数定律
+
+## 一、大数定律的一般形式
+
+伯努利大数定律讨论的是一个相互独立同分布的随机变量序列 $\{X_{n}\}$ , 其共同分布为二点分布 $b(1, p)$ . 即记
+$$
+X _ {i} = \left\{ \begin{array}{l l} 1, & \text {第} i \text {次试验中事件} A \text {发生}, \\ 0, & \text {第} i \text {次试验中事件} A \text {不发生}, \end{array} \right. \quad i = 1, 2, \dots , n, \dots ,
+$$
+则 $\{X_{n}\}$ 是独立的二点分布随机变量序列，现考察该序列的前 $n$ 个随机变量之和 $S_{n} = \sum_{i = 1}^{n}X_{i}$ ，则
+$$
+\frac {S _ {n}}{n} = \frac {1}{n} \sum_ {i = 1} ^ {n} X _ {i}, \qquad p = E \bigg (\frac {1}{n} \sum_ {i = 1} ^ {n} X _ {i} \bigg) = \frac {1}{n} \sum_ {i = 1} ^ {n} E (X _ {i}).
+$$
+那么伯努利大数定律的结论为:对任意的 $\varepsilon>0$ ,有
+$$
+\lim _ {n \rightarrow \infty} P \left(\left| \frac {1}{n} \sum_ {i = 1} ^ {n} X _ {i} - \frac {1}{n} \sum_ {i = 1} ^ {n} E (X _ {i}) \right| <   \varepsilon\right) = 1.
+$$
+(4.3.5)
+一般的大数定律都涉及一个随机变量序列 $\{X_{n}\}$ , 大数定律的结论都形如 (4.3.5) 式, 为此我们给出如下定义.
+
+<Knowledge title="定义 4.3.1">
+设有一随机变量序列 $\{X_{n}\}$ ，假如它具有形如(4.3.5)式的性质，则称该随机变量序列 $\{X_{n}\}$ 服从大数定律.
+现在的问题是:随机变量序列 $\{X_{n}\}$ 在什么条件下服从大数定律?以下给出一些大数定律,它们之间的差别表现在条件上:有的是相互独立的随机变量序列,有的是相依的随机变量序列,有的是同分布的随机变量序列,有的是不同分布的随机变量序列,等等.
+</Knowledge>
+
+## 二、切比雪夫大数定律
+
+利用切比雪夫不等式就可证明下面的切比雪夫大数定律.
+
+<Knowledge title="定理 4.3.2 切比雪夫大数定律">
+设 $\{X_{n}\}$ 为一列两两不相关的随机变量序列, 若每个 $X_{i}$ 的方差存在, 且有共同的上界, 即 $\operatorname{Var}(X_{i}) \leqslant c, i = 1, 2, \cdots$ , 则 $\{X_{n}\}$ 服从大数定律, 即对任意的 $\varepsilon > 0$ , (4.3.5) 式成立.
+
+<Solution title="证明">
+因为 $\{X_{n}\}$ 两两不相关, 故
+$$
+\mathrm{Var} \left(\frac {1}{n} \sum_ {i = 1} ^ {n} X _ {i}\right) = \frac {1}{n ^ {2}} \sum_ {i = 1} ^ {n} \mathrm{Var} (X _ {i}) \leqslant \frac {c}{n}.
+$$
+再由切比雪夫不等式得到:对任意的 $\varepsilon>0$ ,有
+$$
+P \left(\left| \frac {1}{n} \sum_ {i = 1} ^ {n} X _ {i} - \frac {1}{n} \sum_ {i = 1} ^ {n} E (X _ {i}) \right| <   \varepsilon\right) \geqslant 1 - \frac {\operatorname{Var} \left(\frac {1}{n} \sum_ {i = 1} ^ {n} X _ {i}\right)}{\varepsilon^ {2}} \geqslant 1 - \frac {c}{n \varepsilon^ {2}}.
+$$
+于是当 $n \to \infty$ 时，有
+$$
+\lim _ {n \rightarrow \infty} P \left(\left| \frac {1}{n} \sum_ {i = 1} ^ {n} X _ {i} - \frac {1}{n} \sum_ {i = 1} ^ {n} E (X _ {i}) \right| <   \varepsilon\right) = 1.
+$$
+</Solution>
+</Knowledge>
+
+<Note>
+切比雪夫大数定律只要求 $\{X_{n}\}$ 互不相关,并不要求它们是同分布的.因此,我们很容易推出:如果 $\{X_{n}\}$ 是独立同分布的随机变量序列,且方差有限,则 $\{X_{n}\}$ 必定服从大数定律.伯努利大数定律是切比雪夫大数定律的特例.
+</Note>
+
+<Example title="例 4.3.2">
+设 $\{X_{n}\}$ 是独立同分布的随机变量序列, $E(X_{n}^{4}) < \infty$ . 若令 $E(X_{n}) = \mu$ , $\operatorname{Var}(X_{n}) = \sigma^{2}$ , 考察
+$$
+Y _ {n} = \left(X _ {n} - \mu\right) ^ {2}, \qquad n = 1, 2, \dots ,
+$$
+则随机变量序列 $\{Y_{n}\}$ 服从大数定律，即对任意的 $\varepsilon >0$ ，有
+$$
+\lim _ {n \rightarrow \infty} P \left(\left| \frac {1}{n} \sum_ {i = 1} ^ {n} \left(X _ {i} - \mu\right) ^ {2} - \sigma^ {2} \right| \geqslant \varepsilon\right) = 0.
+$$
+
+<Solution title="证明">
+显然 $\{Y_{n}\}$ 是独立同分布随机变量序列, 其方差
+$$
+\operatorname{Var} \left(Y _ {n}\right) = \operatorname{Var} \left(X _ {n} - \mu\right) ^ {2} = E \left(X _ {n} - \mu\right) ^ {4} - \sigma^ {4}.
+$$
+由于 $E(X_{n}^{4})$ 存在，故 $E(X_{n}^{3}), E(X_{n}^{2}), E(X_{n} - \mu)^{4}$ 也都存在.由切比雪夫大数定律知
+$$
+\lim _ {n \rightarrow \infty} P \left(\left| \frac {1}{n} \sum_ {i = 1} ^ {n} Y _ {i} - \frac {1}{n} \sum_ {i = 1} ^ {n} E (Y _ {i}) \right| \geqslant \varepsilon\right) = 0.
+$$
+其中
+$$
+\frac {1}{n} \sum_ {i = 1} ^ {n} Y _ {i} = \frac {1}{n} \sum_ {i = 1} ^ {n} (X _ {i} - \mu) ^ {2}, \quad \frac {1}{n} \sum_ {i = 1} ^ {n} E (Y _ {i}) = \sigma^ {2}.
+$$
+故 $\{Y_{n}\}$ 服从大数定律.
+</Solution>
+</Example>
+
+## 三、马尔可夫(Markov)大数定律
+
+<Note>
+意到以上大数定律的证明中,只要有
+$$
+\frac {1}{n ^ {2}} \mathrm{Var} \left(\sum_ {i = 1} ^ {n} X _ {i}\right)\rightarrow 0,\tag{4.3.6}
+$$
+则大数定律就能成立.这个条件(4.3.6)被称为马尔可夫条件.
+</Note>
+
+<Knowledge title="定理 4.3.3 马尔可夫大数定律">
+对随机变量序列 $\{X_{n}\}$ ，若(4.3.6)式成立，则 $\{X_{n}\}$ 服从大数定律，即对任意的 $\varepsilon>0$ ，(4.3.5)式成立.
+
+<Solution title="证明">
+利用切比雪夫不等式即可证得.
+马尔可夫大数定律的重要性在于:对 $\{X_{n}\}$ 已经没有任何同分布、独立性、不相关的假定.切比雪夫大数定律显然可由马尔可夫大数定律推出.
+</Solution>
+</Knowledge>
+
+<Example title="例 4.3.3">
+设 $\{X_{n}\}$ 为一同分布、方差存在的随机变量序列，且 $X_{n}$ 仅与相邻的 $X_{n-1}$ 和 $X_{n+1}$ 相关，而与其他的 $X_{i}$ 不相关。试问该随机变量序列 $\{X_{n}\}$ 是否服从大数定律？
+
+<Solution title="解">
+$\{X_{n}\}$ 为相依随机变量序列,考虑其马尔可夫条件
+$$
+\frac {1}{n ^ {2}} \mathrm{Var} \left(\sum_ {i = 1} ^ {n} X _ {i}\right) = \frac {1}{n ^ {2}} \left[ \sum_ {i = 1} ^ {n} \mathrm{Var} (X _ {i}) + 2 \sum_ {i = 1} ^ {n - 1} \mathrm{Cov} (X _ {i}, X _ {i + 1}) \right].
+$$
+记 $\operatorname{Var}(X_n) = \sigma^2$ ，则 $|\operatorname{Cov}(X_i, X_j)| \leqslant \sigma^2$ ，于是有
+$$
+\frac {1}{n ^ {2}} \mathrm{Var} \Big (\sum_ {i = 1} ^ {n} X _ {i} \Big) \leqslant \frac {1}{n ^ {2}} \big [ n \sigma^ {2} + 2 (n - 1) \sigma^ {2} \big ] \rightarrow 0 (n \rightarrow \infty),
+$$
+即马尔可夫条件成立,故 $\{X_{n}\}$ 服从大数定律.
+</Solution>
+</Example>
+
+## 四、辛钦(Khinchin)大数定律
+
+我们已经知道,一个随机变量的方差存在,则其数学期望必定存在;但反之不成立,即一个随机变量的数学期望存在,则其方差不一定存在.以上几个大数定律均假设随机变量序列 $\{X_{n}\}$ 的方差存在,以下的辛钦大数定律去掉了这一假设,仅设每个 $X_{i}$ 的数学期望存在,但同时要求 $\{X_{n}\}$ 为独立同分布的随机变量序列.伯努利大数定律也是辛钦大数定律的特例.
+
+<Knowledge title="定理 4.3.4 辛钦大数定律">
+设 $\{X_{n}\}$ 为一独立同分布的随机变量序列，若 $X_{i}$ 的数学期望存在，则 $\{X_{n}\}$ 服从大数定律，即对任意的 $\varepsilon >0$ ，(4.3.5)式成立.
+
+<Solution title="证明">
+设 $\{X_{n}\}$ 独立同分布，且 $E(X_{i})=a,i=1,2,\cdots$ 现在要证明
+$$
+\frac {1}{n} \sum_ {k = 1} ^ {n} X _ {k} \xrightarrow {P} a, \qquad n \to \infty .
+$$
+为此记
+$$
+Y _ {n} = \frac {1}{n} \sum_ {k = 1} ^ {n} X _ {k}.
+$$
+</Solution>
+</Knowledge>
+
+由定理4.1.3知，只需证 $Y_{n}\xrightarrow{L}a.$ 又由定理4.2.6知，只需证 $\varphi_{Y_n}(t)\to \mathrm{e}^{\mathrm{i}at}$
+因为 $\{X_{n}\}$ 同分布，所以它们有相同的特征函数，记这个特征函数为 $\varphi(t)$ . 又因为 $\varphi'(0)/i = E(X_i) = a$ ，从而 $\varphi(t)$ 在 0 点展开式为
+$$
+\varphi (t) = \varphi (0) + \varphi^ {\prime} (0) t + o (t) = 1 + \mathrm{i} a t + o (t).
+$$
+再由 $\{X_{n}\}$ 的独立性知 $Y_{n}$ 的特征函数为
+$$
+\varphi_ {_ {Y _ {n}}} (t) = \left[ \varphi \bigg (\frac {t}{n} \bigg) \right] ^ {n} = \left[ 1 + \mathrm{i} a \frac {t}{n} + o \bigg (\frac {1}{n} \bigg) \right] ^ {n}.
+$$
+对任意的 $t$ 有
+$$
+\lim _ {n \to \infty} \left[ \varphi \left(\frac {t}{n}\right) \right] ^ {n} = \lim _ {n \to \infty} \left[ 1 + \mathrm{i} a \frac {t}{n} + o \left(\frac {1}{n}\right) \right] ^ {n} = \mathrm{e} ^ {\mathrm{i} a t}.
+$$
+而 $\mathrm{e}^{\mathrm{i}at}$ 正是退化分布的特征函数，由此证得了 $Y_{n}\xrightarrow{P}a.$ 至此定理得证
+辛钦大数定律提供了求随机变量数学期望 $E(X)$ 的近似值的方法: 设想对随机变量 X 独立重复地观察 n 次, 第 k 次观察值为 $X_{k}$ , 则 $X_{1}, X_{2}, \cdots, X_{n}$ 应该是相互独立的, 且它们的分布应该与 X 的分布相同. 所以, 在 $E(X)$ 存在的条件下, 按照辛钦大数定律, 当 n 足够大时, 可以把平均观察值
+$$
+\frac {1}{n} \sum_ {i = 1} ^ {n} X _ {i}
+$$
+作为 $E(X)$ 的近似值. 这种做法的一个优点是我们可以不必去管 $X$ 的分布究竟是怎样的, 我们的目的只是寻求数学期望的近似值.
+事实上,用观察值的平均去近似随机变量的均值在实际生活中是常用的方法.譬如,用观察到的某地区5 000个人的平均寿命作为该地区的人均寿命的近似值是合适的,这种做法的依据就是辛钦大数定律.
+由辛钦大数定律我们很容易地得出:如果 $\{X_{n}\}$ 为一独立同分布的随机变量序列,且 $E(|X_{i}|^{k})$ 存在,其中k为正整数,则 $\{X_{n}^{k}\}$ 服从大数定律.这个结论在数理统计中是很有用的,也就是我们可以将 $\frac{1}{n}\sum_{i=1}^{n}X_{i}^{k}$ 作为 $E(X_{i}^{k})$ 的近似值.
+
+<Example title="例 4.3.4 用蒙特卡罗方法计算定积分(平均值法">
+) 计算定积分
+$$
+J = \int_ {0} ^ {1} f (x) \mathrm{d} x.
+$$
+设随机变量 X 服从 $(0,1)$ 上的均匀分布, 则 $Y=f(X)$ 的数学期望为
+$$
+E (f (X)) = \int_ {0} ^ {1} f (x) \mathrm{d} x = J.
+$$
+所以估计 J 的值就是估计 $f(X)$ 的数学期望的值. 由辛钦大数定律, 可以用 $f(X)$ 的观察值的平均去估计 $f(X)$ 的数学期望的值. 具体做法如下: 先用计算机产生 n 个 $(0,1)$ 上均匀分布的随机数 $x_{i}, i=1,2,\cdots,n$ , 然后对每个 $x_{i}$ 计算 $f(x_{i})$ , 最后得 J 的估计值为
+$$
+J \approx \frac {1}{n} \sum_ {i = 1} ^ {n} f (x _ {i}).
+$$
+譬如计算 $\int_0^1\mathrm{e}^{-x^2 /2} / \sqrt{2\pi}\mathrm{d}x$ ，其精确值和在 $n = 10^{4},n = 10^{5}$ 时的一次模拟值如下：
+<table><tr><td>精确值</td><td> $n = {10}^{4}$ </td><td> $n = {10}^{5}$ </td></tr><tr><td>0.341 344</td><td>0.341 329</td><td>0.341 334</td></tr></table>
+正如例 4.3.1 中所说明的, 可以通过线性变换将 $[a, b]$ 区间上的定积分化成 $[0, 1]$ 区间上的定积分, 所以以上计算定积分的方法带有普遍意义.
+</Example>
+
+<Block title="习题4.3">
+1. 设 $\{X_{k}\}$ 为独立随机变量序列，且
+$$
+P (X _ {k} = \pm \sqrt {\ln k}) = \frac {1}{2}, \qquad k = 1, 2, \dots .
+$$
+证明 $\{X_{k}\}$ 服从大数定律.
+2. 设 $\{X_{k}\}$ 为独立随机变量序列，且
+$$
+P (X _ {k} = \pm 2 ^ {k}) = \frac {1}{2 ^ {2 k + 1}}, P (X _ {k} = 0) = 1 - \frac {1}{2 ^ {2 k}}, \qquad k = 1, 2, \dots .
+$$
+证明 $\{X_{k}\}$ 服从大数定律.
+3. 设 $\{X_{n}\}$ 为独立随机变量序列，且 $P(X_{1} = 0) = 1$
+$$
+P (X _ {n} = \pm \sqrt {n}) = \frac {1}{n}, \quad P (X _ {n} = 0) = 1 - \frac {2}{n}, \qquad n = 2, 3, \dots .
+$$
+证明 $\{X_{n}\}$ 服从大数定律.
+4. 在伯努利试验中, 事件 A 出现的概率为 p, 令
+$X_{n} = \left\{ \begin{array}{ll}1, & \text{若在第 } n \text{ 次及第 } n + 1 \text{ 次试验中 } A \text{ 出现},\\ 0, & \text{其他}. \end{array} \right.$
+证明 $\{X_{n}\}$ 服从大数定律.
+5. 设 $\{X_{n}\}$ 为独立的随机变量序列, 且
+$$
+P (X _ {n} = 1) = p _ {n}, \quad P (X _ {n} = 0) = 1 - p _ {n}, \quad n = 1, 2, \dots .
+$$
+证明 $\{X_{n}\}$ 服从大数定律.
+6. 设 $\{X_{n}\}$ 为独立同分布的随机变量序列, 其共同的分布函数为
+$$
+F (x) = \frac {1}{2} + \frac {1}{\pi} \arctan \frac {x}{a}, \quad - \infty <   x <   \infty .
+$$
+试问：辛钦大数定律对此随机变量序列是否适用？
+7. 设 $\{X_{n}\}$ 为独立同分布的随机变量序列, 其共同分布为
+$$
+P \left(X _ {n} = \frac {2 ^ {k}}{k ^ {2}}\right) = \frac {1}{2 ^ {k}}, \qquad k = 1, 2, \dots .
+$$
+试问 $\{X_{n}\}$ 是否服从大数定律？
+8. 设 $\{X_{n}\}$ 为独立同分布的随机变量序列, 其共同分布为
+$$
+P (X _ {n} = k) = \frac {c}{k ^ {2} \cdot \lg^ {2} k}, \qquad k = 2, 3, \dots .
+$$
+其中
+$$
+c = \left(\sum_ {k = 2} ^ {\infty} \frac {1}{k ^ {2} \cdot \lg^ {2} k}\right) ^ {- 1},
+$$
+试问 $\{X_{n}\}$ 是否服从大数定律？
+9. 设 $\{X_{n}\}$ 为独立的随机变量序列, 其中 $X_{n}$ 服从参数为 $\sqrt{n}$ 的泊松分布, 试问 $\{X_{n}\}$ 是否服从大数定律?
+10. 设 $\{X_{n}\}$ 为独立的随机变量序列, 证明: 若诸 $X_{n}$ 的方差 $\sigma_{n}^{2}$ 一致有界, 即存在常数 $c$ , 使得
+$$
+\sigma_ {n} ^ {2} \leqslant c, \qquad n = 1, 2, \dots ,
+$$
+则 $\{X_{n}\}$ 服从大数定律.
+11.（泊松大数定律）设 $S_{n}$ 为 n 次独立试验中事件 A 出现的次数，而事件 A 在第 i 次试验时出现的概率为 $p_{i}, i=1,2,\cdots,n,\cdots$ ，则对任意的 $\varepsilon>0$ ，有
+$$
+\lim _ {n \rightarrow \infty} P \left(\left| \frac {S _ {n}}{n} - \frac {1}{n} \sum_ {i = 1} ^ {n} p _ {i} \right| <   \varepsilon\right) = 1.
+$$
+12.（伯恩斯坦(Bernstein)大数定律）设 $\{X_{n}\}$ 是方差一致有界的随机变量序列，且当 $|k - l|\rightarrow$ $\infty$ 时，一致地有 $\operatorname {Cov}(X_k,X_l)\to 0$ ，证明 $\{X_{n}\}$ 服从大数定律.
+13.（格涅坚科(Gnedenko)大数定律）设 $\{X_{n}\}$ 是随机变量序列，若记
+$$
+Y _ {n} = \frac {1}{n} \sum_ {i = 1} ^ {n} X _ {i}, \qquad a _ {n} = \frac {1}{n} \sum_ {i = 1} ^ {n} E (X _ {i}).
+$$
+则 $\{X_{n}\}$ 服从大数定律的充要条件是
+$$
+\lim _ {n \to \infty} E \left(\frac {\left(Y _ {n} - a _ {n}\right) ^ {2}}{1 + \left(Y _ {n} - a _ {n}\right) ^ {2}}\right) = 0.
+$$
+14. 设 $\{X_{n}\}$ 为独立同分布的随机变量序列, 方差存在. 又设 $\sum_{n=1}^{\infty} a_{n}$ 为绝对收敛级数. 令 $Y_{n} = \sum_{i=1}^{n} X_{i}$ , 证明 $\{a_{n} Y_{n}\}$ 服从大数定律.
+15. 设 $\{X_{n}\}$ 为独立同分布的随机变量序列, 方差存在, 令 $Y_{n} = \sum_{i=1}^{n} X_{i}$ . 又设 $\{a_{n}\}$ 为一列常数, 如果存在常数 $c > 0$ , 使得对一切 $n$ 有 $|na_{n}| \leqslant c$ , 证明 $\{a_{n} Y_{n}\}$ 服从大数定律.
+16. 设 $\{X_{n}\}$ 为独立同分布的随机变量序列, 其方差有限, 且 $X_{n}$ 不恒为常数. 如果 $S_{n} = \sum_{i=1}^{n} X_{i}$ , 试证: 随机变量序列 $\{S_{n}\}$ 不服从大数定律.
+17. 分别用随机投点法和平均值法计算下列定积分：
+$$
+J _ {1} = \int_ {0} ^ {1} \frac {\mathrm{e} ^ {x} - 1}{\mathrm{e} - 1} \mathrm{d} x, J _ {2} = \int_ {- 1} ^ {1} \mathrm{e} ^ {x} \mathrm{d} x.
+$$
+</Block>

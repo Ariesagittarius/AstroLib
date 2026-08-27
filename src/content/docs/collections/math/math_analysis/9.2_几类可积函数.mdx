@@ -1,0 +1,342 @@
+---
+title: '§$9.2$ 几类可积函数'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Solution from '@/components/Solution.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+
+以下是符合 MDX 规范的转换结果，包含组件化重构、数学公式与英文名规范化、以及严格换行要求。
+
+
+## $9.2.1$ 有理函数的积分
+
+有理函数是最基本的可积函数类，其他可积函数类都是化为有理函数进行积分的．有理函数可以分解为多项式与真分式的和，而真分式又可以分解为部分分式的和并求出积分，因此有理函数的原函数一定是初等函数．
+
+在将真分式分解为部分分式的和时，理论上是将问题归结为求解线性代数方程组．这方面的标准理论见 [$[14]$] 的第八章第 $2$ 节．实际上许多问题还可以有很灵活的解法．这里有一些常用的技巧．下面我们举例说明．
+
+<Example title="例 $9.2.1$">
+将 $\frac{1}{1 + x^3}$ 化为部分分式的和．
+
+<Solution title="证明">
+对待定的表达式
+
+$$
+\frac {1}{1 + x ^ {3}} = \frac {1}{(1 + x) (1 - x + x ^ {2})} = \frac {A}{1 + x} + \frac {B x + C}{1 - x + x ^ {2}} \tag{9.1}
+$$
+
+两边同乘 $1 + x$ 后，令 $x \to -1$，得 $A = \frac{1}{3}$．
+
+又将 ($9.1$) 两边同乘 $x$ 后，令 $x \to +\infty$，得 $A + B = 0$，因此 $B = -A = -\frac{1}{3}$．再在 ($9.1$) 两边用 $x = 0$ 代入，得 $1 = A + C$，因此 $C = 1 - A = \frac{2}{3}$．
+</Solution>
+
+<Note>
+从一般理论知道在求部分分式的计算中用四则代数运算就够了．以上引入的极限计算也是如此．容易看出，求 $A$ 的过程就是在 ($9.1$) 的左边将分母的因子 $(1 + x)$ 去掉之后再用 $x = -1$ 代入的结果．
+</Note>
+</Example>
+
+下面举一个比较复杂的例子（见 [$[72]$]），其中的解 $1$ 中不仅有极限计算，还有求导计算和在复数域中的计算．
+
+<Example title="例 $9.2.2$">
+求不定积分
+
+$$
+\int \frac {x ^ {7} - 2 x ^ {6} + 4 x ^ {5} - 5 x ^ {4} + 4 x ^ {3} - 5 x ^ {2} - x}{(x - 1) ^ {2} (x ^ {2} + 1) ^ {2}} \mathrm{d} x .
+$$
+
+<Solution title="解 $1$">
+记被积函数为 $R(x)$．首先要分离出真分式，得到
+
+$$
+R (x) = x + \frac {x ^ {5} - x ^ {4} + x ^ {3} - 3 x ^ {2} - 2 x}{(x - 1) ^ {2} (x ^ {2} + 1) ^ {2}} .
+$$
+
+根据部分分式理论，一定有唯一的分解如下：
+
+$$
+{\frac {x ^ {5} - x ^ {4} + x ^ {3} - 3 x ^ {2} - 2 x}{(x - 1) ^ {2} (x ^ {2} + 1) ^ {2}}} = {\frac {A}{(x - 1) ^ {2}}} + {\frac {B}{x - 1}} + {\frac {C x + D}{(x ^ {2} + 1) ^ {2}}} + {\frac {E x + F}{x ^ {2} + 1}} . \tag{9.2}
+$$
+
+两边同乘 $(x - 1)^2$ 后令 $x \to 1$，就得到 $A = -1$．又两边同乘 $(x - 1)^2$ 后求在点 $x = 1$ 处的导数值，则就可用求导法则计算如下：
+
+$$
+B = \frac {(5 - 4 + 3 - 6 - 2) \cdot 4 - 8 \cdot (1 - 1 + 1 - 3 - 2)}{16} = 1 .
+$$
+
+又在 ($9.2$) 两边同乘 $(x^{2} + 1)^{2}$，再令 $x \to \mathrm{i}$（复数域中的极限），就得到①，
+
+$$
+C \mathrm{i} + D = \frac {\mathrm{i} - 1 - \mathrm{i} + 3 - 2 \mathrm{i}}{- 2 \mathrm{i}} = 1 + \mathrm{i} ,
+$$
+
+因此 $C = D = 1$．再在 ($9.2$) 两边令 $x = 0$ 代入，得到 $A - B + D + F = 0$，因此 $F = 1$．最后在 ($9.2$) 两边同乘以 $x$，并令 $x \to +\infty$，就得到 $1 = B + E$，因此 $E = 0$．以下的积分没有困难，我们只列出结果为
+
+$$
+\int R (x) \mathrm{d} x = \frac {1}{2} x ^ {2} + \frac {1}{x - 1} + \frac {x - 1}{2 (x ^ {2} + 1)} + \ln | x - 1 | + \frac {3}{2} \arctan x + C .
+$$
+
+代替用各种手段去确定 ($9.2$) 中的未知数的思路，另外还有一种方法值得介绍，它看似笨拙，实际上往往很有效（见 [$[72]$]）．
+</Solution>
+
+<Solution title="解 $2$">
+写出 ($9.2$) 并求出 $A = -1$ 之后，将右边这一项移到左边，计算出
+
+$$
+\begin{array}{r l} & {\frac {x ^ {5} - x ^ {4} + x ^ {3} - 3 x ^ {2} - 2 x}{(x - 1) ^ {2} (x ^ {2} + 1) ^ {2}} - \frac {- 1}{(x - 1) ^ {2}}} \\ & {= \frac {x ^ {5} + x ^ {3} - x ^ {2} - 2 x + 1}{(x - 1) ^ {2} (x ^ {2} + 1) ^ {2}}} \\ & {= \frac {x ^ {4} + x ^ {3} + 2 x ^ {2} + x - 1}{(x - 1) (x ^ {2} + 1) ^ {2}} = \frac {B}{x - 1} + \dots ,} \end{array}
+$$
+
+然后就容易求出 $B = 1$．再将这右边的第一项移到左边，计算得到
+
+$$
+\begin{array}{c} \frac {x ^ {4} + x ^ {3} + 2 x ^ {2} + x - 1}{(x - 1) (x ^ {2} + 1) ^ {2}} - \frac {1}{x - 1} = \frac {x ^ {3} + x - 2}{(x - 1) (x ^ {2} + 1) ^ {2}} = \frac {x ^ {2} + x + 2}{(x ^ {2} + 1) ^ {2}} \\ = \frac {x + 1}{(x ^ {2} + 1) ^ {2}} + \frac {1}{x ^ {2} + 1}, \end{array}
+$$
+
+以下从略．
+</Solution>
+</Example>
+
+在将真分式分解为部分分式的和时，除了用观察法与待定系数法外，对于一些特殊的情况，另外有一些方法．
+
+<Method title="形如 $\int \frac{Q_m(x)}{(x - a)^n} \mathrm{d}x$ 的积分">
+其中 $Q_m(x)$ 为 $m$ 次多项式．对此类积分，可用换元 $u = x - a$ 或者将 $Q_m(x)$ 展开为 $x = a$ 处的 $Taylor$ 多项式．
+
+<Example title="例 $9.2.3$">
+计算 $\int \frac{1 - x^3}{(1 + x)^4} \, \mathrm{d}x$．
+
+<Solution title="证明">
+令 $u = 1 + x$，则 $x = u - 1$，因此
+
+$$
+\begin{array}{r l} & {\int \frac {1 - x ^ {3}}{(1 + x) ^ {4}} \mathrm{d} x = \int \frac {1 - (u - 1) ^ {3}}{u ^ {4}} \mathrm{d} u = \int \left(- \frac {1}{u} + \frac {3}{u ^ {2}} - \frac {3}{u ^ {3}} + \frac {2}{u ^ {4}}\right) \mathrm{d} u} \\ & {\qquad = - \ln | u | - \frac {3}{u} + \frac {3}{2 u ^ {2}} - \frac {2}{3 u ^ {3}} + C} \\ & {\qquad = - \ln | x + 1 | - \frac {3}{x + 1} + \frac {3}{2 (x + 1) ^ {2}} - \frac {2}{3 (x + 1) ^ {3}} + C.} \end{array}
+$$
+</Solution>
+</Example>
+</Method>
+
+<Method title="形如 $\int \frac{Q_m(x)}{(x^2 + px + q)^n} \mathrm{d}x$ 的积分">
+其中分母无实根，$Q_m(x)$ 为 $m$ 次多项式．这时可用带余除法将 $Q_m(x)$ 化成 $Q_{m-2}(x)(x^2 + px + q)$ 与一个余项的和，如果 $m - 2 \geqslant 2$，继续对 $Q_{m-2}(x)$ 作带余除法，直到其次数小于 $2$（例题从略）．
+</Method>
+
+## $9.2.2$ 三角函数有理式的积分
+
+三角函数有理式的积分 $\int R(\sin x, \cos x) \, \mathrm{d}x$ 都可以用“万能变换” $t = \tan \frac{x}{2}$ 化为有理函数进行积分．但这时产生的有理函数的分母的次数较高，计算工作量较大．因此我们往往避免用万能变换，而是根据具体情况寻找较为简单的解法．例如，下面的几种变换的计算量往往比用万能变换要小．
+
+<Method title="变换规则 $1$">
+如果 $R(-\sin x, \cos x) = -R(\sin x, \cos x)$，则令 $t = \cos x$；
+</Method>
+
+<Method title="变换规则 $2$">
+如果 $R(\sin x, -\cos x) = -R(\sin x, \cos x)$，则令 $t = \sin x$；
+</Method>
+
+<Method title="变换规则 $3$">
+如果 $R(-\sin x, -\cos x) = R(\sin x, \cos x)$，则令 $t = \tan x$．
+</Method>
+
+<Example title="例 $9.2.4$">
+计算 $I = \int \frac{\mathrm{d}x}{\sin x\cos 2x}$
+
+<Solution title="证明">
+这属于上面的情况 $1$，所以可试用 $t = \cos x$ 计算如下：
+
+$$
+\begin{array}{l} I = \int \frac {\sin x \mathrm{d} x}{(1 - \cos^ {2} x) (2 \cos^ {2} x - 1)} = \int \frac {\mathrm{d} \cos x}{(\cos^ {2} x - 1) (2 \cos^ {2} x - 1)} \\ = \int \frac {\mathrm{d} t}{(t ^ {2} - 1) (2 t ^ {2} - 1)} = \int \left(\frac {1}{t ^ {2} - 1} - \frac {2}{2 t ^ {2} - 1}\right) \mathrm{d} t \\ = \frac {1}{2} \ln \left| \frac {t - 1}{t + 1} \right| - \frac {1}{\sqrt {2}} \ln \left| \frac {\sqrt {2} t - 1}{\sqrt {2} t + 1} \right| + C \\ = \frac {1}{2} \ln \left| \frac {\cos x - 1}{\cos x + 1} \right| - \frac {1}{\sqrt {2}} \ln \left| \frac {\sqrt {2} \cos x - 1}{\sqrt {2} \cos x + 1} \right| + C. \end{array}
+$$
+</Solution>
+</Example>
+
+<Example title="例 $9.2.5$">
+计算 $I = \int \frac{\cos 2x}{\sin^4 x + \cos^4 x} \, \mathrm{d}x.$
+
+<Solution title="解 $1$">
+这属于上面的情况 $3$，因此可令 $t = \tan x$ 计算如下：
+
+$$
+\begin{array}{r l} & I = \int \frac {\frac {\cos^ {2} x - \sin^ {2} x}{\cos^ {2} x}}{\frac {\sin^ {4} x + \cos^ {4} x}{\cos^ {4} x}} \cdot \frac {1}{\cos^ {2} x} \mathrm{d} x = \int \frac {1 - \tan^ {2} x}{1 + \tan^ {4} x} \mathrm{d} \tan x = \int \frac {1 - t ^ {2}}{1 + t ^ {4}} \mathrm{d} t \\ & \qquad = \frac {1}{2 \sqrt {2}} \ln \frac {t ^ {2} + \sqrt {2} t + 1}{t ^ {2} - \sqrt {2} t + 1} + C = \frac {1}{2 \sqrt {2}} \ln \frac {\sec^ {2} x + \sqrt {2} \tan x}{\sec^ {2} x - \sqrt {2} \tan x} + C, \end{array}
+$$
+
+上面最后一个积分利用了例题 $9.1.8$ 中的结果．
+</Solution>
+
+<Solution title="解 $2$">
+如下解法更为简单：
+
+$$
+\begin{array}{r l} & {I = \int \frac {\cos 2 x}{(\sin^ {2} x + \cos^ {2} x) ^ {2} - 2 \sin^ {2} x \cos^ {2} x} \mathrm{d} x} \\ & {\quad = \int \frac {\cos 2 x}{2 - \sin^ {2} 2 x} \mathrm{d} (2 x) = \int \frac {\mathrm{d} \sin 2 x}{2 - \sin^ {2} 2 x}} \\ & {\quad = \frac {1}{2 \sqrt {2}} \ln \left| \frac {\sin 2 x + \sqrt {2}}{\sin 2 x - \sqrt {2}} \right| + C.} \end{array}
+$$
+</Solution>
+</Example>
+
+<Note>
+上面的例题表明，求三角函数有理式的不定积分时，不必拘泥于所提到的各种变换，而应根据具体问题去寻求最适当的解法．下面我们再举一例．
+</Note>
+
+<Example title="例 $9.2.6$">
+计算 $I = \int \sin^4 x\mathrm{d}x.$
+
+<Solution title="解 $1$（分部积分法）">
+可进行如下：
+
+$$
+\begin{array}{r l} & {I = - \int \sin^ {3} x \mathrm{d} \cos x} \\ & {\quad = - \sin^ {3} x \cos x + \int \cos x \mathrm{d} \sin^ {3} x} \\ & {\quad = - \sin^ {3} x \cos x + 3 \int \sin^ {2} x \cos^ {2} x \mathrm{d} x} \\ & {\quad = - \sin^ {3} x \cos x + 3 \int \sin^ {2} x (1 - \sin^ {2} x) \mathrm{d} x} \\ & {\quad = - \sin^ {3} x \cos x + 3 \int \sin^ {2} x \mathrm{d} x - 3 \int \sin^ {4} x \mathrm{d} x} \\ & {\quad = - \sin^ {3} x \cos x + \frac {3}{2} \int (1 - \cos 2 x) \mathrm{d} x - 3 I} \\ & {\quad = - \sin^ {3} x \cos x + \frac {3}{2} x - \frac {3}{4} \sin 2 x - 3 I,} \end{array}
+$$
+
+所以得到
+
+$$
+I = - \frac {1}{4} \sin^ {3} x \cos x + \frac {3}{8} x - \frac {3}{16} \sin 2 x + C.
+$$
+</Solution>
+
+<Solution title="解 $2$（倍角公式）">
+如果用三角函数的倍角公式，则可得到更简单的解法：
+
+$$
+{ \begin{array}{r l} & I = \int {\left({\frac {1 - \cos 2 x}{2}}\right) ^ {2}} \mathrm{d} x = {\frac {1}{4}} \int (1 - 2 \cos 2 x + \cos^ {2} 2 x) \mathrm{d} x \\ & = {\frac {1}{4}} \int {\left(1 - 2 \cos 2 x + {\frac {1 + \cos 4 x}{2}}\right)} \mathrm{d} x \\ & = {\frac {3}{8}} x - {\frac {1}{4}} \sin 2 x + {\frac {1}{32}} \sin 4 x + C. \end{array} }
+$$
+</Solution>
+</Example>
+
+## $9.2.3$ 无理函数积分的例子
+
+一般来说，无理函数的不定积分并不总是积得出来的．例如，即使看似简单的二项式微分式的积分
+
+$$
+\int x ^ {m} (a + b x ^ {n}) ^ {p} \mathrm{d} x ,
+$$
+
+其中 $a, b$ 为常数，$m, n, p$ 为有理数，也仅仅在 $p, (m + 1) / n$ 或 $(m + 1) / n + p$ 为整数这三种特殊情况下才能积得出来．其余情况下的二项式微分式都积不出来，见[$[14]$]第二卷 $279$ 小节．在前面我们已经提到，对于形如 $\int R(x, \sqrt{ax^2 + bx + c}) \, \mathrm{d}x$ ( $a \neq 0$ )，其中 $R$ 为有理分式的不定积分，可以利用 $Euler$ 变换或三角变换化为有理函数进行积分（见例题 $9.1.1$ 的注 $2$）．下面我们再举一些例题，说明如何对一些特殊的无理函数进行积分．
+
+<Example title="例 $9.2.7$">
+计算不定积分 $\int \frac{1}{x}\sqrt{\frac{x + 2}{x - 2}}\mathrm{d}x.$
+
+<Solution title="证明">
+令 $t = \sqrt{\frac{x + 2}{x - 2}}$，则 $x = \frac{2(t^2 + 1)}{t^2 - 1}$，$\mathrm{d}x = -\frac{8t}{(t^2 - 1)^2}\mathrm{d}t.$ 因此
+
+$$
+\begin{array}{r l} & {\int \frac {1}{x} \sqrt {\frac {x + 2}{x - 2}} \mathrm{d} x = \int \frac {4 t ^ {2}}{(1 - t ^ {2}) (1 + t ^ {2})} \mathrm{d} t} \\ & {\qquad = 2 \int \left(\frac {1}{1 - t ^ {2}} - \frac {1}{1 + t ^ {2}}\right) \mathrm{d} t} \\ & {\qquad = \ln \left| \frac {1 + t}{1 - t} \right| - 2 \arctan t + C} \\ & {\qquad = \ln \left| \frac {1 + \sqrt {\frac {x + 2}{x - 2}}}{1 - \sqrt {\frac {x + 2}{x - 2}}} \right| - 2 \arctan \sqrt {\frac {x + 2}{x - 2}} + C} \\ & {\qquad = \ln | x + \sqrt {x ^ {2} - 4} | + \arctan \frac {\sqrt {x ^ {2} - 4}}{2} + C.} \end{array}
+$$
+</Solution>
+
+<Note>
+对于形如 $\int R\left(x, \sqrt[n]{\frac{ax + b}{cx + d}}\right) \mathrm{d}x$ ($n > 1$, $ad - bc \neq 0$) 的不定积分，一般只要令 $t = \sqrt[n]{\frac{ax + b}{cx + d}}$，就可以将其化为有理函数积分.
+</Note>
+</Example>
+
+<Example title="例 $9.2.8$">
+计算不定积分 $I = \int \frac{1 - \sqrt{x + 1}}{(x + 1)(1 + \sqrt[3]{x + 1})}\mathrm{d}x.$
+
+<Solution title="证明">
+令 $t = \sqrt[6]{x + 1}$，则 $x = t^6 - 1$，$\mathrm{d}x = 6t^5\mathrm{d}t.$ 因此
+
+$$
+\begin{array}{l} I = \int \frac {6 (1 - t ^ {3}) t ^ {5}}{t ^ {6} (1 + t ^ {2})} \mathrm{d} t \\ \quad = 6 \int \frac {1 - t ^ {3}}{t (1 + t ^ {2})} \mathrm{d} t \\ \quad = 6 \int \frac {(1 + t ^ {2}) - t (t - 1) - t (1 + t ^ {2})}{t (1 + t ^ {2})} \mathrm{d} t \\ \quad = 6 \int \left(\frac {1}{t} - \frac {t - 1}{t ^ {2} + 1} - 1\right) \mathrm{d} t \\ \quad = 6 \left(\ln | t | - \frac {1}{2} \ln (1 + t ^ {2}) + \arctan t - t\right) + C \\ \quad = 6 \left(\ln \sqrt [ 6 ]{x + 1} - \frac {1}{2} \ln (1 + \sqrt [ 3 ]{x + 1}) + \arctan \sqrt [ 6 ]{x + 1} - \sqrt [ 6 ]{x + 1}\right) + C \\ \quad = 3 \ln \frac {\sqrt [ 3 ]{x + 1}}{1 + \sqrt [ 3 ]{x + 1}} + 6 \arctan \sqrt [ 6 ]{x + 1} - 6 \sqrt [ 6 ]{x + 1} + C. \end{array}
+$$
+</Solution>
+
+<Note>
+对于形如 $\int R(x, \sqrt[m]{ax + b}, \sqrt[m]{ax + b}) \mathrm{d}x$ 的不定积分，其中 $m, n$ 是正整数，可以用 $t = \sqrt[p]{ax + b}$，其中 $p$ 是 $m, n$ 的最小公倍数，将其有理化．
+</Note>
+</Example>
+
+最后，我们举出一些被积函数既含有无理式，又含有超越函数（指数函数、对数函数、三角函数与反三角函数）的不定积分例题．对这类题，并没有固定的一般解法，只有根据经验，对具体问题进行分析和尝试，寻找合适的解法．
+
+<Example title="例 $9.2.9$">
+计算不定积分 $I = \int \sqrt{1 + \sin x} \, \mathrm{d}x$．
+
+<Solution title="解 $1$（三角恒等式）">
+用适当的三角恒等式，可计算如下：
+
+$$
+\begin{array}{r l} & {I = \int \sqrt {\sin^ {2} \frac {x}{2} + \cos^ {2} \frac {x}{2} + 2 \sin \frac {x}{2} \cos \frac {x}{2}} \mathrm{d} x} \\ & {\quad = \int \left(\sin \frac {x}{2} + \cos \frac {x}{2}\right) \mathrm{d} x} \\ & {\quad = - 2 \cos \frac {x}{2} + 2 \sin \frac {x}{2} + C.} \end{array}
+$$
+</Solution>
+
+<Solution title="解 $2$（代换法）">
+用代换法，令 $t = \sqrt{1 + \sin x}$，则
+
+$$
+x = \arcsin (t ^ {2} - 1), \quad \mathrm{d} x = \frac {2 t \mathrm{d} t}{\sqrt {2 t ^ {2} - t ^ {4}}},
+$$
+
+因此
+
+$$
+I = \int {\frac {2 t ^ {2} \mathrm{d} t}{\sqrt {2 t ^ {2} - t ^ {4}}}} = \int {\frac {\mathrm{d} t ^ {2}}{\sqrt {2 - t ^ {2}}}} = - 2 \sqrt {2 - t ^ {2}} + C = - 2 \sqrt {1 - \sin x} + C.
+$$
+</Solution>
+</Example>
+
+<Example title="例 $9.2.10$">
+计算不定积分 $I = \int \arctan \sqrt{\frac{a - x}{a + x}} \, \mathrm{d}x$ ($a > 0$)．
+
+<Solution title="解 $1$（分部积分法）">
+用分部积分法：
+
+$$
+\begin{array}{l} I = x \arctan \sqrt {\frac {a - x}{a + x}} - \int x \cdot \frac {1}{1 + \frac {a - x}{a + x}} \cdot \frac {1}{2 \sqrt {\frac {a - x}{a + x}}} \cdot \frac {- 2 a}{(a + x) ^ {2}} \mathrm{d} x \\ = x \arctan \sqrt {\frac {a - x}{a + x}} + \frac {1}{2} \int \frac {x}{\sqrt {a ^ {2} - x ^ {2}}} \mathrm{d} x \\ = x \arctan \sqrt {\frac {a - x}{a + x}} - \frac {1}{2} \sqrt {a ^ {2} - x ^ {2}} + C. \end{array}
+$$
+</Solution>
+
+<Solution title="解 $2$（三角代换）">
+令 $x = a\cos t$，则有
+
+$$
+\arctan {\sqrt {\frac {a - x}{a + x}}} = \arctan {\sqrt {\frac {1 - \cos t}{1 + \cos t}}} = \arctan {\sqrt {\frac {2 \sin^ {2} {\frac {t}{2}}}{2 \cos^ {2} {\frac {t}{2}}}}} = \arctan \left(\tan {\frac {t}{2}}\right) = \frac {t}{2},
+$$
+
+因此
+
+$$
+\begin{array}{r l} & I = a \int \frac {t}{2} \mathrm{d} \cos t = a \cdot \frac {t}{2} \cos t - \frac {a}{2} \int \cos t \mathrm{d} t \\ & \quad = \frac {a t}{2} \cos t - \frac {a}{2} \sin t + C \\ & \quad = \frac {x}{2} \arccos \frac {x}{a} - \frac {1}{2} \sqrt {a ^ {2} - x ^ {2}} + C. \end{array}
+$$
+</Solution>
+</Example>
+
+<Block title="练习题">
+
+$1.$ 用观察法将被积函数拆开后计算不定积分：
+
+   (1) $\int \frac{x}{(x + 1)(x + 2)}\mathrm{d}x;$  
+   (2) $\int \frac{x^2 + x + 1}{x(1 + x^2)}\mathrm{d}x;$  
+   (3) $\int \frac{\mathrm{d}x}{x^4(x^2 + 1)}$ ;  
+   (4) $\int \frac{4x^2 + 3}{(x^2 + 1)(x^2 + 2)}\mathrm{d}x.$
+
+$2.$ 计算下列有理函数的不定积分：
+
+   (1) $\int \frac{x^5 - x}{1 + x^8} \, \mathrm{d}x;$  
+   (2) $\int \frac{\mathrm{d}x}{x(x^n + a)} \; (a \neq 0)$ ;  
+   (3) $\int \frac{x\mathrm{d}x}{(x + 1)(x^2 + 3)};$  
+   (4) $\int \frac{x - 1}{(x^2 + 2x + 3)^2} \, \mathrm{d}x;$  
+   (5) $\int \frac{1 + x + x^2}{(x - 2)^{10}}\mathrm{d}x;$  
+   (6) $\int \frac{x^3 + 1}{x^3 - 5x^2 + 6x}\mathrm{d}x;$  
+   (7) $\int \frac{\mathrm{d}x}{1 + x^6};$  
+   (8) $\int \frac{x^2 - x + 3}{(x^2 + x + 1)(x - 1)^2} \, \mathrm{d}x.$
+
+$3.$ 计算下列三角函数有理式的不定积分：
+
+   (1) $\int \frac{\mathrm{d}x}{1 + \cos x};$  
+   (2) $\int \frac{\mathrm{d}x}{\sin x\cos^4x};$  
+   (3) $\int \frac{\mathrm{d}x}{2 + \tan^2 x};$  
+   (4) $\int \tan^5 x\sec^3 x\mathrm{d}x;$  
+   (5) $\int \frac{\sec x}{(1 + \sec x)^2} \, \mathrm{d}x;$  
+   (6) $\int \frac{\sin^2 x \cos x}{\sin x + \cos x} \, \mathrm{d}x;$  
+   (7) $\int \frac{\sin x \cos x}{1 + \sin^4 x} \, \mathrm{d}x;$  
+   (8) $\int \frac{\mathrm{d}x}{\sin^4 x \cos^2 x}.$
+
+$4.$ 计算 $Poisson$（泊松）积分 $\int \frac{1 - r^2}{1 - 2r\cos x + r^2} \, \mathrm{d}x$（$-1 < r < 1$）．
+
+$5.$ 计算下列无理函数的不定积分：
+
+   (1) $\int \frac{\mathrm{d}x}{\sqrt{\sin x\cos^7x}};$  
+   (2) $\int \frac{\mathrm{d}x}{x\sqrt{2x^2 + 3}};$  
+   (3) $\int \sqrt{\tan^2 x + 2} \, \mathrm{d}x$ ;  
+   (4) $\int \frac{x\mathrm{e}^x\mathrm{d}x}{\sqrt{1 + \mathrm{e}^x}};$  
+   (5) $\int \frac{\mathrm{d}x}{\sqrt{(x - 1)^3(x - 2)}};$  
+   (6) $\int \frac{\sqrt{x} - 1}{\sqrt[3]{x} + 1} \, \mathrm{d}x.$
+
+</Block>

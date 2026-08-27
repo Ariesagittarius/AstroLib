@@ -1,0 +1,533 @@
+---
+title: '6.4 含参变量的积分与反常重积分'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+在许多问题中所遇到的积分,其被积函数除依赖于积分变量外还可能依赖于另外的变量.例如,在变力沿直线做功的问题中,如果此变力f不仅与位移x有关,还与时间t有关,即 $f=f(x,t)$ ,那么此变力将物体由x=a移至x=b所做的功应为 $W(t)=\int_{a}^{b}f(x,t)\mathrm{d}x$ ,这种积分称为含参变量积分.其实,我们已经不止一次地遇到过这种积分.例如将二重积分化成累次积分时所遇到的积分 $\int_{c}^{d}f(x,y)\mathrm{d}y$ ,第三章第五节中所介绍的 $\Gamma$ 函数,都是含参变量积分.本节将不通过计算其值而直接讨论含参变量积分的某些重要性质.此外,为满足科学技术的需要,还要将重积分的概念加以拓广,介绍反常重积分的概念、性质与计算.
+
+## 4.1 含参变量的积分
+
+在本段中我们总记 $D = [a,b]\times [c,d]$ .如果 $f\in C(D)$ ，那么对任一固定的 $y\in [c,d]$ 积分
+
+$$
+F (y) = \int_ {a} ^ {b} f (x, y) \mathrm{d} x\tag{4.1}
+$$
+
+存在,且将随 y 的改变而变化,我们称积分(4.1)为含参变量 y 的积分,它是参变量 y 的函数.同样,对任一 $x \in [a, b]$ , 积分
+
+$$
+G (x) = \int_ {c} ^ {d} f (x, y) \mathrm{d} y
+$$
+
+称为含参变量 x 的积分, 它是参变量 x 的函数.
+
+下面我们以含参变量积分(4.1)为例来讨论其有关性质.
+
+<Knowledge title="定理 4.1 连续性">
+若 $f \in C(D)$ ，则
+
+$$
+F (y) = \int_ {a} ^ {b} f (x, y) \mathrm{d} x
+$$
+
+在区间 $[c,d]$ 上连续.
+
+<Solution title="证明">
+任取 $y \in [c, d]$ ，令 $y + \Delta y \in [c, d]$ . 由于 $f \in C(D)$ ，且 $D$ 是有界闭域，故 $f$ 必在 $D$ 上一致连续，从而对 $\forall \varepsilon > 0$ ，存在仅与 $\varepsilon$ 有关的 $\delta(\varepsilon) > 0$ ，使得 $\forall (x, y) \in D$ ，当 $\Delta x = 0, |\Delta y| < \delta$ 时有
+
+$$
+\left| f (x, y + \Delta y) - f (x, y) \right| <   \frac {\varepsilon}{b - a}.
+$$
+
+于是
+
+$$
+\begin{array}{r l} & \mid F (y + \Delta y) - F (y) \mid \\ & \leqslant \int_ {a} ^ {b} \mid f (x, y + \Delta y) \\ & \quad - f (x, y) \mid \mathrm{d} x \\ & <   \int_ {a} ^ {b} \frac {\varepsilon}{b - a} \mathrm{d} x = \varepsilon , \end{array}
+$$
+
+因此 $F(y)$ 在 $[c,d]$ 上连续.
+
+由此定理可见，
+
+$$
+\lim _ {y \to y _ {0}} F (y) = F (y _ {0}),
+$$
+
+即
+</Solution>
+</Knowledge>
+
+<Note>
+定理 4.1 证明的思想是: $\forall \varepsilon > 0$ 要证明 $\exists \delta(\varepsilon)$ 使 $|\Delta y| < \delta$ 时恒有 $|F(y + \Delta y) - F(y)| < \varepsilon$ . 由于 (4.1) 式右端的积分变量和积分上、下限均与 y 及 $\Delta y$ 无关, 故可将 F 的改变量转化为被积函数 f 的改变量. 为了保证 $|f(x, y + \Delta y) - f(x, y)| < \frac{\varepsilon}{b - a}$ 中的 $\varepsilon$ 是与 x 和 y 无关的常数, 需要 f 在 D 上一致连续. 不难看出, 实际上我们证明了 $F(y)$ 在 [c, d] 上是一致连续的.
+
+$$
+\lim _ {y \to y _ {0}} \int_ {a} ^ {b} f (x, y) \mathrm{d} x = \int_ {a} ^ {b} f (x, y _ {0}) \mathrm{d} x = \int_ {a} ^ {b} [ \lim _ {y \to y _ {0}} f (x, y) ] \mathrm{d} x.
+$$
+</Note>
+
+<Note>
+定理 4.1 告诉我们, 当 $f \in C(D)$ 时, 求极限与求积分可以交换顺序.
+</Note>
+
+<Knowledge title="定理 4.2 可导性">
+若 $f \in C(D)$ , $f_{y} \in C(D)$ , 则
+
+$$
+F (y) = \int_ {a} ^ {b} f (x, y) \mathrm{d} x
+$$
+
+在 $[c,d]$ 上有连续的导数，且求导与积分可交换顺序，即
+</Knowledge>
+
+<Note>
+定理4.2告诉我们,在所给的条件下,对含参变量的积分求导可以在积分号内进行,或者说导数与积分可以交换顺序.
+
+$$
+F ^ {\prime} (y) = \frac {\mathrm{d}}{\mathrm{d} y} \int_ {a} ^ {b} f (x, y) \mathrm{d} x = \int_ {a} ^ {b} \frac {\partial f (x , y)}{\partial y} \mathrm{d} x.
+$$
+</Note>
+
+<Solution title="证明">
+任取 $y \in [c, d]$ ，令 $y + \Delta y \in [c, d]$ ，于是
+
+$$
+\Delta F = F (y + \Delta y) - F (y) = \int_ {a} ^ {b} [ f (x, y + \Delta y) - f (x, y) ] \mathrm{d} x.
+$$
+
+由微分中值定理知
+
+$$
+f (x, y + \Delta y) - f (x, y) = f _ {y} (x, y + \theta \Delta y) \Delta y, 0 <   \theta <   1,
+$$
+
+代入上式并除以 $\Delta y$ 得
+
+$$
+\frac {\Delta F}{\Delta y} = \int_ {a} ^ {b} f _ {y} (x, y + \theta \Delta y) \mathrm{d} x.\tag{4.2}
+$$
+
+由于 $f_{y}(x,y)$ 在闭域D上连续,根据定理4.1可知
+
+$$
+F ^ {\prime} (y) = \lim _ {\Delta y \rightarrow 0} \frac {\Delta F}{\Delta y} = \int_ {a} ^ {b} \lim _ {\Delta y \rightarrow 0} f _ {y} (x, y + \theta \Delta y) \mathrm{d} x = \int_ {a} ^ {b} f _ {y} (x, y) \mathrm{d} x,
+$$
+
+并且 $F'(y)$ 在 $[c,d]$ 上连续.
+</Solution>
+
+<Example title="例 4.1">
+求含参变量积分 $\int_{0}^{1}\arctan\frac{x}{y}\mathrm{d}x\quad(y\neq0)$ 对参数 y 的导数.
+
+<Solution title="解">
+当 $y \neq 0$ 时, 由定理4.2得
+
+$$
+\frac {\mathrm{d}}{\mathrm{d} y} \int_ {0} ^ {1} \arctan \frac {x}{y} \mathrm{d} x = \int_ {0} ^ {1} \left(\frac {\partial}{\partial y} \arctan \frac {x}{y}\right) \mathrm{d} x = - \int_ {0} ^ {1} \frac {x}{x ^ {2} + y ^ {2}} \mathrm{d} x = \frac {1}{2} \ln \frac {y ^ {2}}{1 + y ^ {2}}.
+$$
+</Solution>
+</Example>
+
+<Knowledge title="定理 4.3 积分顺序交换性">
+若 $f \in C(D)$ ，则
+
+$$
+F (y) = \int_ {a} ^ {b} f (x, y)   \mathrm{d} x   \text {在} [ c, d ]   \text {上可积},
+$$
+
+$$
+G (x) = \int_ {c} ^ {d} f (x, y)   \mathrm{d} y   \text {在} [ a, b ]   \text {上可积},
+$$
+
+且
+
+$$
+\int_ {c} ^ {d} \left(\int_ {a} ^ {b} f (x, y) \mathrm{d} x\right) \mathrm{d} y = \int_ {a} ^ {b} \left(\int_ {c} ^ {d} f (x, y) \mathrm{d} y\right) \mathrm{d} x.
+$$
+
+从二重积分的几何意义来看,等式的成立是显然的.下面我们再给以分析证明.
+
+<Solution title="证明">
+由定理4.1, $F(y) \in C([c,d]), G(x) \in C([a,b])$ , 因此它们在相应的区间上都是可积的. 设 $\forall t \in [c,d]$ , 令
+
+$$
+I (t) = \int_ {c} ^ {t} \mathrm{d} y \int_ {a} ^ {b} f (x, y) \mathrm{d} x - \int_ {a} ^ {b} \mathrm{d} x \int_ {c} ^ {t} f (x, y) \mathrm{d} y,\tag{4.3}
+$$
+</Solution>
+</Knowledge>
+
+<Note>
+定理4.3实际上就是在二重积分计算(第六章2.2节)中所述的累次积分交换积分顺序的特例.那时结论的成立是将其化为二重积分,再利用二重积分的几何意义,把它化为另一顺序的累次积分.这里我们借助于含参变量积分的相关结论,直接给出了分析证明.
+
+对变量 t 求导, 对其中第一个积分直接利用微积分学第一基本定理; 对于第二个积分, 先利用定理 4.2, 再利用微积分学第一基本定理, 得
+
+$$
+I ^ {\prime} (t) = \int_ {a} ^ {b} f (x, t) \mathrm{d} x - \int_ {a} ^ {b} f (x, t) \mathrm{d} x \equiv 0,
+$$
+
+于是在 $[c,d]$ 上有 $I(t)\equiv k$ （ $k$ 为常数）.
+
+由(4.3)式可知 $I(c)=0$ ，从而k=0。于是 $I(t)\equiv0,\forall t\in[c,d]$ ，所以 $I(d)=0$ ，即结论成立。
+</Note>
+
+<Note>
+定理 4.3 告诉我们, 当 $f \in C(D)$ 时, 若积分限均为常数, 则对含参变量积分求积分可以在积分号内进行, 或者说积分可以交换顺序.
+</Note>
+
+<Example title="例 4.2">
+计算积分 $\int_{0}^{1}\frac{x^{b}-x^{a}}{\ln x}dx\quad(a,b>0)$ .
+
+<Solution title="解">
+这个积分难以直接计算,需要利用定理 4.3 来求.由于
+
+$$
+\frac {x ^ {b} - x ^ {a}}{\ln x} = \int_ {a} ^ {b} x ^ {y} \mathrm{d} y,
+$$
+</Solution>
+</Example>
+
+由定理4.3可知
+
+$$
+\int_ {0} ^ {1} \frac {x ^ {b} - x ^ {a}}{\ln x} \mathrm{d} x = \int_ {0} ^ {1} \mathrm{d} x \int_ {a} ^ {b} x ^ {y} \mathrm{d} y = \int_ {a} ^ {b} \mathrm{d} y \int_ {0} ^ {1} x ^ {y} \mathrm{d} x = \int_ {a} ^ {b} \frac {1}{1 + y} \mathrm{d} y = \ln \frac {1 + b}{1 + a}. \quad i
+$$
+
+在把二重积分化为累次积分时,我们更常碰到的含参变量积分,其上、下限也是参变量的函数.下面就来讨论这种含参变量积分的连续性和求导法.
+
+<Knowledge title="定理 4.4">
+设 $f(x,y) \in C(D).x_{i}(y) \in C[c,d], i=1,2$ ，且其值域均为 $[a,b]$ . 则
+
+$$
+F (y) = \int_ {x _ {1} (y)} ^ {x _ {2} (y)} f (x, y) \mathrm{d} x
+$$
+
+必在 $[c,d]$ 上连续.
+
+<Solution title="证明">
+$\forall y\in [c,d)$ ，令 $y + \Delta y\in [c,d]$ ，有
+
+$$
+\Delta F = F (y + \Delta y) - F (y) = \int_ {x _ {1} (y + \Delta y)} ^ {x _ {2} (y + \Delta y)} f (x, y + \Delta y) \mathrm{d} x - \int_ {x _ {1} (y)} ^ {x _ {2} (y)} f (x, y) \mathrm{d} x,
+$$
+
+由于
+
+$$
+\begin{array}{l} \int_ {x _ {1} (y + \Delta y)} ^ {x _ {2} (y + \Delta y)} f (x, y + \Delta y) \mathrm{d} x \\ = \int_ {x _ {1} (y + \Delta y)} ^ {x _ {1} (y)} f (x _ {1} y + \Delta y) \mathrm{d} x + \int_ {x _ {1} (y)} ^ {x _ {2} (y)} f (x, y + \Delta y) \mathrm{d} x + \int_ {x _ {2} (y)} ^ {x _ {2} (y + \Delta y)} f (x, y + \Delta y) \mathrm{d} x, \end{array}
+$$
+
+从而
+
+$$
+\begin{array}{r l} \Delta F & = \int_ {x _ {1} (y + \Delta y)} ^ {x _ {1} (y)} f (x, y + \Delta y) \mathrm{d} x + \int_ {x _ {1} (y)} ^ {x _ {2} (y)} [ f (x, y + \Delta y) - f (x, y) ] \mathrm{d} x + \\ & \quad \int_ {x _ {2} (y)} ^ {x _ {2} (y + \Delta y)} f (x, y + \Delta y) \mathrm{d} x. \end{array}\tag{4.4}
+$$
+
+由于 $f\in C(D)$ ，令 $\Delta y\rightarrow0$ ，注意到(4.4)式右端第二个积分的上下限与 $\Delta y$ 无关，故由定理4.1可知，其值趋于0；又由于f在闭域D有界，设 $\left|f(x,y+\Delta y)\right|\leqslant M$ 。故有
+
+$$
+\begin{array}{r l} & {\left| \int_ {x _ {1} (y + \Delta y)} ^ {x _ {1} (y)} f (x, y + \Delta y) \mathrm{d} x \right| \leqslant M \left| x _ {1} (y + \Delta y) - x _ {1} (y) \right|,} \\ & {\left| \int_ {x _ {2} (y)} ^ {x _ {2} (y + \Delta y)} f (x, y + \Delta y) \mathrm{d} x \right| \leqslant M \left| x _ {2} (y + \Delta y) - x _ {2} (y) \right|.} \end{array}
+$$
+
+再由条件 $x_{1}(y), x_{2}(y) \in C[c, d]$ ，由上两不等式可知当 $\Delta y \to 0$ 时，(4.4)式右端第一个与第三个积分也均趋于0.所以
+
+$$
+\lim _ {\Delta y \rightarrow 0} \Delta F = 0.
+$$
+
+即 $F(y) = \int_{x_1(y)}^{x_2(y)}f(x,y)\mathrm{d}x$ 在 $[c,d]$ 上连续.
+</Solution>
+</Knowledge>
+
+<Knowledge title="定理 4.5">
+若 $f(x,y)$ 与 $f_{y}(x,y)$ 均在 $D$ 上连续， $x_{1}(y)$ 与 $x_{2}(y)$ 的值域均为 $[a,b]$ 且它们都在 $[c,d]$ 上可导，则
+
+$$
+F (y) = \int_ {x _ {1} (y)} ^ {x _ {2} (y)} f (x, y) \mathrm{d} x\tag{4.5}
+$$
+
+也在 $[c,d]$ 上可导，且有
+
+$$
+F ^ {\prime} (y) = \int_ {x _ {1} (y)} ^ {x _ {2} (y)} f _ {y} (x, y) \mathrm{d} x + f [ x _ {2} (y), y ] x _ {2} ^ {\prime} (y) - f [ x _ {1} (y), y ] x _ {1} ^ {\prime} (y).
+$$
+
+<Solution title="证明">
+将由(4.5)式所确定的函数看作是由
+
+$$
+G (y, x _ {1}, x _ {2}) \equiv \int_ {x _ {1}} ^ {x _ {2}} f (x, y)   \mathrm{d} x   \text {与}   x _ {1} = x _ {1} (y)  , x _ {2} = x _ {2} (y)
+$$
+
+所构成的复合函数.
+
+考察三元函数 $G(y, x_{1}, x_{2})$ . 由所设条件, 据定理 4.2 可知 G 对第一个变量 y 的导数:
+
+$$
+G _ {y} = \int_ {x _ {1}} ^ {x _ {2}} f _ {y} (x, y)   \mathrm{d} x   \text {存在且连续}.
+$$
+
+再据变上限求导定理, 可知
+
+$$
+G _ {x _ {1}} = - f (x _ {1}, y), \quad G _ {x _ {2}} = f (x _ {2}, y)
+$$
+
+也均存在且连续.故三元函数 $G(y,x_1,x_2)$ 在域 $[c,d]\times [a,b]\times [a,b]$ 上可微.应用复合函数链导法则，可知 $F(y)$ 在 $[c,d]$ 上可导，而且
+
+$$
+\begin{array}{r l} F ^ {\prime} (y) & = G _ {y} + G _ {x _ {i}} \frac {\mathrm{d} x _ {1}}{\mathrm{d} y} + G _ {x _ {2}} \frac {\mathrm{d} x _ {2}}{\mathrm{d} y} \\ & = \int_ {x _ {i} (y)} ^ {x _ {2} (y)} f _ {y} (x, y) \mathrm{d} x + f [ x _ {2} (y), y ] x _ {2} ^ {\prime} (y) - f (x _ {1} (y), y) x _ {1} ^ {\prime} (y). \end{array}
+$$
+</Solution>
+</Knowledge>
+
+<Example title="例 4.3">
+求 $F(y)=\int_{y}^{y^{2}}\frac{\sin(xy)}{x}\mathrm{d}x$ 的导数.
+
+<Solution title="解">
+由定理4.5得
+
+$$
+F ^ {\prime} (y) = \int_ {y} ^ {y ^ {2}} \cos (x y) \mathrm{d} x + 2 y \frac {\sin y ^ {3}}{y ^ {2}} - \frac {\sin y ^ {2}}{y} = \frac {3 \sin y ^ {3} - 2 \sin y ^ {2}}{y}.
+$$
+
+含参变量的积分不难推广到含参变量的无穷积分 $F(y)=\int_{a}^{+\infty}f(x,y)\mathrm{d}x$ ，可以证明（从略），在一定条件下定理4.1、4.2、4.3的结论仍然成立，即含参变量的无穷积分也同样具有连续性，求导与求积分可变换顺序以及积分顺序可交换等性质.
+</Solution>
+</Example>
+
+## 4.2 反常重积分
+
+与一元函数的反常积分一样,重积分也可以推广为无穷区域与无界函数两类反常重积分.下面以二重积分为例,对这两类反常重积分的概念和收敛的判别法则作一简单介绍(证明略去).
+
+### 1. 无界区域的二重积分
+
+<Knowledge title="定义 4.1">
+设(σ)是一无界区域, $f \in C((\sigma))$ ,任作一有界区域序列 $(\sigma_1),(\sigma_2),\cdots,(\sigma_n),\cdots$ ,使 $(\sigma_n) \subsetneqq (\sigma)(n=1,2,\cdots)$ ,且当 $n \to +\infty$ 时 $(\sigma_n)$ 扩张成为 $(\sigma)$ .如果不论 $(\sigma_n)$ 如何作法①,极限
+
+$$
+\lim _ {n \rightarrow + \infty} \iint_ {(\sigma_ {n})} f (x, y) \mathrm{d} \sigma
+$$
+
+总存在,那么称 $f(x,y)$ 在无界区域( $\sigma$ )上的二重积分 $\iint_{(\sigma)}f(x,y)\mathrm{d}\sigma$ 收敛,并称此极限值为该反常二重积分的值,即 $\iint_{(\sigma)}f(x,y)\mathrm{d}\sigma=\lim_{n\to+\infty}\iint_{(\sigma_{n})}f(x,y)\mathrm{d}\sigma$ ;否则称此反常二重积分发散.
+</Knowledge>
+
+<Example title="例 4.4">
+讨论无界区域的二重积分 $\iint_{(\sigma)}\frac{1}{\rho^{\alpha}}\mathrm{d}\sigma$ 的敛散性, 其中 $\rho=\sqrt{x^{2}+y^{2}}$ , (σ) 为
+
+去掉以原点 O 为中心的单位圆 $\Gamma$ 内部的全平面.
+
+<Solution title="解">
+注意到任一可扩张到 $\mathbf{R}^2$ 的有界区域序列 $\{(\sigma_n)\} ((\sigma_n) \subsetneq (\sigma))$ ，当 $n >> 1$ 时，总存在以原点 $O$ 为中心， $\rho_n$ 与 $\rho_n'$ 为半径，分别与圆周 $\Gamma$ 所围成的注:由于定义要求 $(\sigma_{n})$ 的任意性,无法计算二重积分,故将 $(\sigma_{n})$ 夹在两个圆环域序列中,再运用夹逼定理.
+
+两同心圆环系列 $\{(R_n)\}$ 与 $\{(R_n')\}$ 使 $n\to +\infty$ 时有 $\rho_{n}\rightarrow +\infty ,\rho_{n}^{\prime}\rightarrow +\infty$ ，且有
+
+$$
+(R _ {n} ^ {\prime}) \subseteq (\sigma_ {n}) \subseteq (R _ {n}).
+$$
+
+因此，研究 $\iint_{(\sigma)}\frac{1}{\rho^{\alpha}}\mathrm{d}\sigma$ 的收敛性，即极限 $\lim_{n\to +\infty}\iint_{(\sigma_n)}\frac{1}{\rho^\alpha}\mathrm{d}\sigma$ 的存在性，只需证明极限 $\lim_{n\to +\infty}\iint_{(R_n)}\frac{1}{\rho^\alpha}\mathrm{d}\sigma$ 与 $\lim_{n\to +\infty}\iint_{(R_n)}\frac{1}{\rho^\alpha}\mathrm{d}\sigma$ 均存在且相等.注意到二者的等价性，只需证明 $\lim_{n\to +\infty}\iint_{(R_n)}\frac{1}{\rho^\alpha}\mathrm{d}\sigma$ 存在即可.应用极坐标化为累次积分得
+
+$$
+\iint_ {(R _ {n})} \frac {1}{\rho^ {\alpha}} \mathrm{d} \sigma = \int_ {0} ^ {2 \pi} \mathrm{d} \theta \int_ {1} ^ {\rho_ {*}} \frac {1}{\rho^ {\alpha}} \rho \mathrm{d} \rho = 2 \pi \frac {1}{2 - \alpha} (\rho_ {n} ^ {2 - \alpha} - 1) \quad (\alpha \neq 2);
+$$
+
+当 $\alpha=2$ 时，
+
+$$
+\iint_ {(R _ {n})} \frac {1}{\rho^ {2}} \mathrm{d} \sigma = \int_ {0} ^ {2 \pi} \mathrm{d} \theta \int_ {1} ^ {\rho_ {n}} \frac {1}{\rho} \mathrm{d} \rho = 2 \pi \ln \rho_ {n}.
+$$
+
+于是可知反常二重积分 $\iint_{(\sigma)}\frac{1}{\rho^{\alpha}}\mathrm{d}\sigma$ 当 $\alpha >2$ 时收敛；类似地，通过讨论 $\lim_{n\to \infty}\iint_{(R_n')}\frac{1}{\rho^{\alpha}}\mathrm{d}\sigma$ 的发散性，可知当 $\alpha \leqslant 2$ 时发散.
+
+由此例不难得到下面的收敛判别法.
+</Solution>
+</Example>
+
+<Knowledge title="定理 4.6 收敛判别法">
+设 $f(x,y)$ 在无界区域 ( $\sigma$ ) 上连续, 若存在 $\rho_{0}>0$ , 使当 $\rho=\sqrt{x^{2}+y^{2}}\geqslant\rho_{0}$ 且 $(x,y)\in(\sigma)$ 时, 有 能否利用例 4.4 给出无界区域 ( $\sigma$ ) 上二重积分 $\iint_{(\sigma)}f(x,y)\mathrm{d}\sigma$ 发散的判别法.
+
+$$
+\mid f (x, y) \mid \leqslant \frac {M}{\rho^ {\alpha}},
+$$
+
+其中 M 与 $\alpha$ 均为常数, 则当 $\alpha > 2$ 时反常二重积分 $\iint_{(\sigma)} f(x, y) \, \mathrm{d}\sigma$ 收敛.
+</Knowledge>
+
+<Example title="例 4.5">
+证明无界区域上的二重积分
+
+$$
+I = \iint_ {(\mathbf {R} ^ {2})} \mathrm{e} ^ {- x ^ {2} - y ^ {2}} \mathrm{d} x \mathrm{d} y
+$$
+
+收敛,并求其值,其中 $R^{2}$ 是全平面.
+
+<Solution title="证明">
+由于对任意实数 $\alpha$ 均有
+
+$$
+\lim _ {\rho \rightarrow + \infty} \rho^ {\alpha} \mathrm{e} ^ {- \rho^ {2}} = 0 <   1,
+$$
+
+从而 $\exists \rho_0 > 0$ ，使当 $\rho >\rho_0$ 时有
+
+$$
+\mathrm{e} ^ {- \rho^ {2}} <   \frac {1}{\rho^ {\alpha}},
+$$
+
+特别当 $\alpha>2$ 时上不等式仍然成立.由定理 4.6 可知反常二重积分 I 收敛.
+
+因此,要求 I 的值只需要选取一组可以扩充到全平面的特殊区域序列去计算就行了.
+
+现取 $(\sigma_{n}) = \{(x,y) | x^{2} + y^{2} \leqslant a_{n}^{2}\}$ , 当 $n \to +\infty$ 时, 有 $a_{n} \to +\infty$ , 于是
+
+$$
+\begin{array}{r l}I&= \iint_ {(\mathbf {R} ^ {2})} \mathrm{e} ^ {- (x ^ {2} + y ^ {2})} \mathrm{d} x \mathrm{d} y = \lim _ {n \rightarrow + \infty} \iint_ {(\sigma_ {n})} \mathrm{e} ^ {- (x ^ {2} + y ^ {2})} \mathrm{d} x \mathrm{d} y\\&= \lim _ {n \rightarrow + \infty} \int_ {0} ^ {2 \pi} \mathrm{d} \theta \int_ {0} ^ {a _ {n}} \mathrm{e} ^ {- \rho^ {2}} \rho \mathrm{d} \rho = \lim _ {n \rightarrow + \infty} \pi (1 - \mathrm{e} ^ {- a _ {n} ^ {2}}) = \pi .\end{array}
+$$
+
+如果我们把扩充至全平面的区域序列选作正方形序列
+
+$$
+\left(D _ {n}\right) = \{(x, y) | - n \leqslant x \leqslant n, - n \leqslant y \leqslant n \},
+$$
+
+那么有
+
+$$
+\begin{array}{r l}I&= \iint_ {(\mathbf {R} ^ {2})} \mathrm{e} ^ {- (x ^ {2} + y ^ {2})} \mathrm{d} x \mathrm{d} y = \lim _ {n \rightarrow + \infty} \iint_ {(D _ {n})} \mathrm{e} ^ {- (x ^ {2} + y ^ {2})} \mathrm{d} x \mathrm{d} y\\&= \lim _ {n \rightarrow + \infty} \left[ \int_ {- n} ^ {n} \mathrm{e} ^ {- y ^ {2}} \mathrm{d} y \int_ {- n} ^ {n} \mathrm{e} ^ {- x ^ {2}} \mathrm{d} x \right] = \lim _ {n \rightarrow + \infty} \left(\int_ {- n} ^ {n} \mathrm{e} ^ {- x ^ {2}} \mathrm{d} x\right) ^ {2} = \left(\int_ {- \infty} ^ {+ \infty} \mathrm{e} ^ {- x ^ {2}} \mathrm{d} x\right) ^ {2}.\end{array}
+$$
+
+由于反常二重积分 I 存在, 其值为 $\pi$ , 从而
+
+$$
+\left(\int_ {- \infty} ^ {+ \infty} \mathrm{e} ^ {- x ^ {2}} \mathrm{d} x\right) ^ {2} = \pi ,
+$$
+
+或
+
+$$
+\frac {1}{\sqrt {\pi}} \int_ {- \infty} ^ {+ \infty} \mathrm{e} ^ {- x ^ {2}} \mathrm{d} x = 1.\tag{4.6}
+$$
+
+(4.6)式中的反常积分称为概率积分,它在概率统计中占有重要的地位.
+</Solution>
+</Example>
+
+### 2. 无界函数的二重积分
+
+<Knowledge title="定义 4.2">
+设 $f(x,y)$ 在有界闭域 $(\sigma)$ 上除一点 $P_{0}(x_{0},y_{0})$ 外处处连续，且当 $(x,y)\rightarrow(x_{0},y_{0})$ 时， $f(x,y)\rightarrow\infty$ . 作点 $P_{0}$ 的任一 d 邻域 $U(P_{0},d)$ ，记 $N_{d}=U(P_{0},d)\cap(\sigma)$ . 如果不论 $U(P_{0},d)$ 如何选取，当 $d\rightarrow0$ 注：概率积分 $\int_{-\infty}^{+\infty}\mathrm{e}^{-x^2}\mathrm{d}x$ 的收敛性很容易证明，但由于 $\mathrm{e}^{-x^2}$ 的原函数不能用初等函数表示，故此反常积分的值在一元函数中难以求出.这里我们是将它平方后看作累次积分，再化为二重反常积分来计算的
+
+$U(P_0,d)\cap (\sigma)$ .如果不论 $U(P_0,d)$ 如何选取，当 $d\to 0$ ，即 $N_{d}$ 缩为点 $P_0$ 时，极限
+
+$$
+\lim _ {d \to 0} \iint_ {(\sigma) \setminus (N _ {d})} f (x, y) \mathrm{d} \sigma
+$$
+
+存在,那么称在区域 $(\sigma)$ 上无界函数 $f(x,y)$ 的反常二重积分 $\iint_{(\sigma)}f(x,y)\mathrm{d}\sigma$ 收敛,并称该极限值为此反常二重积分的值，即 $\iint_{(\sigma)} f(x, y) \, \mathrm{d}\sigma = \lim_{d \to 0} \iint_{(\sigma) \setminus (N_x)} f(x, y) \, \mathrm{d}\sigma$ ；否则称其发散.
+</Knowledge>
+
+<Example title="例 4.6">
+讨论无界函数的二重积分 $\iint_{(\sigma)}\frac{1}{\rho^{\alpha}}\mathrm{d}\sigma\quad(\alpha>0)$ 的敛散性, 其中 $\rho=\sqrt{x^{2}+y^{2}}$ , ( $\sigma$ ) 为以原点 O 为圆心、半径为 R 的圆域.
+
+<Solution title="解">
+注意到 $\rho\to0$ 时 $\frac{1}{\rho^{\alpha}}\to\infty$ ，故所给积分是一无界函数的二重积分。对于任一包含原点而且缩小为原点的闭区域序列 $\left\{(\sigma_{n})\right\}\subsetneq(\sigma), n=1,2,\cdots$ ，总存在圆心为原点 O，半径分别为 $\varepsilon_{n}$ 与 $\varepsilon_{n}^{\prime}(0<\varepsilon_{n}^{\prime}<\varepsilon_{n}<R)$ 的圆域序列 $\left\{(R_{n})\right\}$ 与 $\left\{(R_{n}^{\prime})\right\}, n=1,2,\cdots$ ，使当 $n\to+\infty$ 时， $\varepsilon_{n}\to0,\varepsilon_{n}^{\prime}\to0$ ，且有
+
+$$
+\left(R _ {n} ^ {\prime}\right) \subseteq \left(\sigma_ {n}\right) \subseteq \left(R _ {n}\right), \quad n = 1, 2, \dots .
+$$
+</Solution>
+</Example>
+
+由定义4.2可知，研究 $\iint_{(\sigma)}\frac{1}{\rho^{\alpha}}\mathrm{d}\sigma (\alpha >0)$ 的收敛性，需要证明 $\lim_{n\to \infty}\iint_{(\sigma)\setminus (\sigma_n)}\frac{1}{\rho^{\alpha}}\mathrm{d}\sigma (\alpha >0)$ 存在，由于 $(\sigma)\backslash (R_n)\subseteq (\sigma)\backslash (\sigma_n)\subseteq (\sigma)\backslash (R_n')$ ，类似于例4.4，只需证明极限 $\lim_{n\to \infty}\iint_{(\sigma)\setminus (R_n)}\frac{1}{\rho^{\alpha}}\mathrm{d}\sigma$ 存在即可.利用极坐标得
+
+$$
+\begin{array}{r l} & {\underset {n \to + \infty} {\lim} \iint_ {(\sigma) \setminus (R _ {n})} \frac {1}{\rho^ {\alpha}} \mathrm{d} \sigma = \underset {n \to + \infty} {\lim} \int_ {0} ^ {2 \pi} \mathrm{d} \theta \int_ {\varepsilon_ {n}} ^ {R} \frac {1}{\rho^ {\alpha}} \rho \mathrm{d} \rho} \\ & {\qquad = \left\{ \begin{array}{l l} {\underset {n \to + \infty} {\lim} 2 \pi \frac {1}{2 - \alpha} (R ^ {2 - \alpha} - \varepsilon_ {n} ^ {2 - \alpha}), \alpha \neq 2,} \\ {\underset {n \to + \infty} {\lim} 2 \pi (\ln R - \ln \varepsilon_ {n}), \alpha = 2.} \end{array} \right.} \end{array}
+$$
+
+由此可见，反常积分 $\iint_{(\sigma)}\frac{1}{\rho^{\alpha}}\mathrm{d}\sigma (\alpha >0)$ 当 $0 <   \alpha <  2$ 时收敛；类似地，可以证明 $\alpha \geqslant 2$ 时原积分发散.
+
+由此例不难得到下面的判别法：
+
+<Knowledge title="定理 4.7 收敛判别法">
+设 $f(x,y)$ 在有界闭域 $(\sigma)$ 上除 $P_{0}(x_{0},y_{0})$ 外处处连续，且当 $(x,y)\rightarrow(x_{0},y_{0})$ 时 $f(x,y)\rightarrow\infty$ . 若不等式 想一想：
+
+$$
+\mid f (x, y) \mid \leqslant \frac {M}{\rho^ {\alpha}}
+$$
+
+在 $(\sigma)$ 上除点 $(x_0, y_0)$ 外处处成立，其中 $M$ 与 $\alpha$ 均为常数， $\rho = \sqrt{(x - x_0)^2 + (y - y_0)^2}$ ，则当 $\alpha < 2$ 时反常二重积分 $\iint_{(\sigma)} f(x, y) \mathrm{d}\sigma$ 收敛.
+</Knowledge>
+
+<Example title="例 4.7">
+证明反常二重积分
+
+$$
+I = \iint_ {(\sigma)} \frac {1}{| x | + | y |} \mathrm{d} \sigma
+$$
+
+收敛,其中 $(\sigma)=\{(x,y)\mid x^{2}+y^{2}\leqslant1\}$ .
+
+<Solution title="证明">
+由于
+
+$$
+(| x | + | y |) ^ {2} \geqslant x ^ {2} + y ^ {2},
+$$
+
+从而在 $(\sigma)$ 内除点 $(0,0)$ 外有
+
+$$
+\frac {1}{| x | + | y |} <   \frac {1}{\sqrt {x ^ {2} + y ^ {2}}} = \frac {1}{\rho},
+$$
+</Solution>
+</Example>
+
+由定理 4.7 可知反常重积分 I 收敛.
+
+<Block title="习题6.4">
+**（A）**
+
+1. 求下列极限：
+
+(1) $\lim_{\alpha \to 0}\int_0^1\frac{\mathrm{d}x}{1 + x^2 + \alpha^2};$ (2) $\lim_{\alpha \to 0}\int_0^2 x^2\cos \alpha x\mathrm{d}x;$
+
+(3) $\lim_{\alpha \to 0} \int_{0}^{1} \sqrt{1 + \alpha^2 - x^2} \, \mathrm{d}x.$
+
+2. 求下列函数的导数：
+(1) $F(x) = \int_{x}^{x^{2}} e^{-xy^{2}} dy$ ;
+(2) $F(y) = \int_{a+y}^{b+y} \frac{\sin xy}{x} dx;$
+
+(3) $F(x)=\int_{0}^{x}(x+y)f(y)\mathrm{d}y$ ，其中f为可微函数，求 $F''(x)$ .
+
+3. 利用定理 4.2 计算下列积分：
+(1) $\int_{0}^{1}\frac{\ln(1+x)}{1+x^{2}}dx;$ (2) $\int_{0}^{\pi/2}\ln(a^{2}\sin^{2}x+b^{2}\cos^{2}x)\mathrm{d}x\quad(a>0,b>0).$
+
+4. 利用定理 4.3 计算积分 $\int_{0}^{+\infty}\frac{e^{-ax}-e^{-bx}}{x}dx$ (a > 0, b > 0)
+
+5. 计算下列反常重积分：
+
+(1) $\iint_{(D)} \frac{\mathrm{d}\sigma}{\sqrt{1 - x^2 - y^2}}, (D) = \{(x, y) | x^2 + y^2 \leqslant 1\}$ ;
+
+(2) $\iint_{(D)} \ln \frac{1}{\sqrt{x^2 + y^2}} \, \mathrm{d}\sigma, (D) = \{(x, y) | x^2 + y^2 \leqslant 1\}$ ;
+
+(3) $\iint_{(D)} \frac{\mathrm{d}\sigma}{\sqrt{x^2 + y^2}}, (D) = \{(x, y) | x^2 + y^2 \leqslant x\}$ ;
+
+(4) $\int_{-\infty}^{+\infty}\int_{-\infty}^{+\infty}\mathrm{e}^{-(x^2 +y^2)}\cos (x^2 +y^2)\mathrm{d}x\mathrm{d}y.$
+
+**（B）**
+
+1. 设 $F(x) = \int_{a}^{b} f(y) |x - y| \, \mathrm{d}y$ ，其中 $a < b$ ，且 $f(y)$ 为可微函数，求 $F''(x)$ .
+
+2. 设 $f$ 有连续的一阶偏导数, 求 $F(\alpha) = \int_{0}^{\alpha} f(x + \alpha, x - \alpha) \mathrm{d}x$ 的导数 $\frac{\mathrm{d}F}{\mathrm{d}\alpha}$ .
+
+\*3. 试证明定理4.6.
+</Block>

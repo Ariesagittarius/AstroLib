@@ -1,0 +1,1357 @@
+---
+title: '4.3 线性微分方程组'
+---
+import QRCodeVideo from '@/components/QRCodeVideo.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+本节我们研究形式比较简单而且应用非常广泛的线性微分方程组.借助于线性代数的知识,我们将着重对线性微分方程组解的结构、常系数线性微分方程组的求解方法作比较系统的介绍.
+
+## 3.1 线性微分方程组的基本概念
+
+设 $a_{ij}(t)$ 与 $f_{i}(t)$ ( $i=1,2,\cdots,n; j=1,2,\cdots,n$ ) 是区间 $(a,b)$ 内的连续函数，形式为
+
+$$
+\frac {\mathrm{d} x _ {i} (t)}{\mathrm{d} t} = \sum_ {j = 1} ^ {n} a _ {i j} (t) x _ {j} (t) + f _ {i} (t), \quad i = 1, 2, \dots , n\tag{3.1}
+$$
+
+的常微分方程组称为关于未知函数组 $x_{1}(t)$ , $x_{2}(t)$ , $\cdots$ , $x_{n}(t)$ 的 n 阶线性常微分方程组, 简称为线性微分方程组.
+
+为了将这个方程组写成更为简洁的向量形式,我们先引入矩阵函数导数与积分的概念及有关的基本运算法则.
+
+<Knowledge title="定义 3.1">
+设有矩阵函数
+
+$$
+\boldsymbol {A} (t) = \left(a _ {i j} (t)\right) _ {n \times m}, \quad t \in I.
+$$
+
+（1）若所有函数 $a_{ij}(t)$ ( $i=1,2,\cdots,n; j=1,2,\cdots,m$ ) 均在区间 I 上连续，则称矩阵函数 $A(t)$ 在 I 上连续；
+
+(2) 若所有函数 $a_{ij}(t)$ ( $i=1,2,\cdots,n; j=1,2,\cdots,m$ ) 均在区间 I 上可导（可积），
+
+则称矩阵函数 $A(t)$ 在I上可导(可积)，且定义
+
+$$
+\dot {\boldsymbol {A}} (t) = \frac {\mathrm{d}}{\mathrm{d} t} \boldsymbol {A} (t) = (\dot {a} _ {i j} (t)) _ {n \times m}, \quad t \in I,
+$$
+
+$$
+\int_ {a} ^ {b} \boldsymbol {A} (t) \mathrm{d} t = \left(\int_ {a} ^ {b} a _ {i j} (t) \mathrm{d} t\right) _ {n \times m}.
+$$
+
+例如，设
+
+$$
+\boldsymbol {A} (t) = \left[ \begin{array}{c c} \sin t & t \\ 1 & \cos t \end{array} \right], \quad t \in [ 0, \pi ],
+$$
+
+则
+
+$$
+\dot {\boldsymbol {A}} (t) = \left[ \begin{array}{c c} \cos t & 1 \\ 0 & - \sin t \end{array} \right] (t \in [ 0, \pi ]), \quad \int_ {0} ^ {\pi} \boldsymbol {A} (t) \mathrm{d} t = \left[ \begin{array}{c c} 2 & \frac {\pi^ {2}}{2} \\ \pi & 0 \end{array} \right].
+$$
+
+由定义 3.1 容易验证矩阵函数的导数满足以下运算法则：
+
+(1) $\frac{\mathrm{d}}{\mathrm{d}t} (\pmb {C}\pmb {A}) = \pmb {C}\frac{\mathrm{d}\pmb{A}}{\mathrm{d}t}$ , 其中 $\pmb{C}$ 是一可与 $\pmb{A}$ 相乘的常数矩阵;
+
+(2) 若 A 与 B 为同阶矩阵函数, 则 $\frac{\mathrm{d}}{\mathrm{d}t}(A\pm B)=\frac{\mathrm{d}A}{\mathrm{d}t}\pm\frac{\mathrm{d}B}{\mathrm{d}t}$ ;
+
+(3) 若矩阵函数 A 与 B 可以相乘, 则 $\frac{\mathrm{d}}{\mathrm{d}t}(AB)=A\frac{\mathrm{d}B}{\mathrm{d}t}+\frac{\mathrm{d}A}{\mathrm{d}t}B.$
+
+由于向量值函数 $\boldsymbol{x}(t)=(x_{1}(t),x_{2}(t),\cdots,x_{n}(t))^{\mathrm{T}}$ 可以看成一个列矩阵, 是上述 $n\times m$ 矩阵 $\boldsymbol{A}(t)$ 的一个特例, 因此它的导数、积分的定义和运算法则都可用上述方法进行, 例如,
+
+$$
+\frac {\mathrm{d} \pmb {x} (t)}{\mathrm{d} t} = (\dot {x} _ {1} (t), \dot {x} _ {2} (t), \dots , \dot {x} _ {n} (t)) ^ {\mathrm{T}}
+$$
+
+等.
+
+有了向量值函数与矩阵函数导数的概念,我们可将线性微分方程组(3.1)式写成如下向量形式(也称矩阵形式):
+
+$$
+\frac {\mathrm{d} \boldsymbol {x} (t)}{\mathrm{d} t} = \boldsymbol {A} (t) \boldsymbol {x} (t) + \boldsymbol {f} (t),\tag{3.2}
+$$
+
+其中 $\boldsymbol{x}(t)=(x_{1}(t),x_{2}(t),\cdots,x_{n}(t))^{\mathrm{T}}$ 与 $\boldsymbol{f}(t)=(f_{1}(t),f_{2}(t),\cdots,f_{n}(t))^{\mathrm{T}}$ 为 n 维向量值函数, $\boldsymbol{A}(t)=(a_{ij}(t))_{n\times n}$ 为 n 阶函数方阵.
+
+当 $f(t)\equiv0$ 时，(3.2)式化为
+
+$$
+\frac {\mathrm{d} \boldsymbol {x} (t)}{\mathrm{d} t} = \boldsymbol {A} (t) \boldsymbol {x} (t),\tag{3.3}
+$$
+
+称为齐次线性微分方程组. 当 $f(t) \neq 0$ 时, 线性微分方程组 (3.2) 称为非齐次线性微
+
+分方程组， $f(t)$ 称为非齐次项或自由项.
+
+显然, $n = 1$ 时方程组(3.2)化为 $\frac{\mathrm{d}x}{\mathrm{d}t} = a(t)x + f(t)$ , 这就是我们已经研究过的一阶线性微分方程. 关于它的解的概念、解的结构和求法, 我们已作过比较详细的介绍和讨论, 其中的一些概念、结构和方法可以推广到一般的 $n$ 阶线性方程组.
+
+与一阶方程类似,若存在区间 $(\alpha,\beta)\subseteq(a,b)$ 内的连续可微向量值函数 $x=x(t)$ ，使方程组(3.2)在 $(\alpha,\beta)$ 上成为恒等式，则称向量值函数 $x=x(t)$ 为方程组(3.2)在 $(\alpha,\beta)$ 上的解.
+
+由于方程组(3.2)的左端由x的n个分量的导数组成,故它的解中可以含有n个独立的任意常数.称含有n个独立常数的解为方程组(3.2)的通解,不含任意常数的解为特解.要确定通解中的n个任意常数,需要n个独立的附加条件,这种条件称为定解条件.若定解条件是由函数 $x(t)$ 在一点 $t=t_{0}$ 的值给出: $x(t_{0})=x_{0}=(x_{0,1},\cdots,x_{0,n})^{\mathrm{T}}$ ,则此条件称为初值条件.在给定的初值条件下求解方程组(3.2)的问题,即求解
+
+$$
+\left\{ \begin{array}{l} \frac {\mathrm{d} \boldsymbol {x} (t)}{\mathrm{d} t} = \boldsymbol {A} (t) \boldsymbol {x} (t) + \boldsymbol {f} (t), \\ \boldsymbol {x} (t _ {0}) = \boldsymbol {x} _ {0} \end{array} \right.\tag{3.4}
+$$
+
+的问题,称为初值问题,或 Canchy 问题.
+
+可以证明(从略),对于方程组的初值问题(3.4),也有与方程式类似的解的存在唯一性定理,即当系数矩阵 $A(t)$ 与非齐次项 $f(t)$ 在 $(a,b)$ 内连续时,初值问题(3.4)的解在 $(a,b)$ 内是存在且唯一的,其中 $t_{0}\in(a,b),x_{0}\in\mathbf{R}^{n}$ ,即一定存在唯一的一个定义在 $(a,b)$ 内的n维向量值函数 $x=x(t)$ ,使当 $t\in(a,b)$ 时(3.4)恒成立.但是,一般情况下用初等积分的方法来求出它的解是不大可能的.因此在讨论它的求解问题之前,我们先介绍解的一些性质和解的结构.
+</Knowledge>
+
+## 3.2 线性微分方程组解的结构
+
+### 1. 齐次线性微分方程组
+
+对于齐次线性微分方程组(3.3)，容易看出，它具有以下简单性质：
+
+$1^{\circ}$ $x(t) \equiv 0$ 是方程组(3.3)的解,称为平凡解或零解;
+
+$2^{\circ}$ 若方程组(3.3)的解 $\pmb{x}(t)$ 满足初值条件 $\pmb{x}(t_0) = \mathbf{0}$ , 则由解的存在唯一性定理可知必有 $\pmb{x}(t) \equiv \mathbf{0}$ ;
+
+$3^{\circ}$ 若 $x_{i}(t) (i=1,\cdots,n,t\in(a,b))$ 均为方程组(3.3)的解, $C_{1},\cdots,C_{n}$ 皆为常数,则其线性组合 $\sum_{i=1}^{n}C_{i}x_{i}(t) (t\in(a,b))$ 也是方程组(3.3)的解.
+
+线性代数知识告诉我们, $n$ 维常向量的全体构成一个 $n$ 维线性空间, 它的基由任意 $n$ 个线性独立的常向量构成. 这时, 任意一个 $n$ 维常向量均可用此空间的基线性表示. 从上述性质 $1^{\circ}$ 和 $3^{\circ}$ 我们想到: 齐次线性微分方程组 (3.3) 的所有的解 (向量值函数) 是否也能够构成一个 $n$ 维线性空间呢? 它的基是否也可通过把常向量的线性无关概念推广后得到呢? 若能做到这一点, 则方程组 (3.3) 的任一解都可表示成基的线性组合. 这样, 我们就得到了方程组 (3.3) 通解的表达式. 为研究这一问题, 我们首先把第二节中函数组线性相关与线性无关的概念推广到向量值函数组.
+
+<Knowledge title="定义 3.2">
+设有 m 个 n 维向量值函数 $x_{1}(t), \cdots, x_{m}(t)$ 均在区间 $(a, b)$ 内有定义. 如果存在不全为零的常数 $C_{1}, \cdots, C_{m}$ 使在 $(a, b)$ 内成立恒等式
+
+$$
+\sum_ {i = 1} ^ {m} C _ {i} \pmb {x} _ {i} (t) = C _ {1} \pmb {x} _ {1} (t) + \dots + C _ {m} \pmb {x} _ {m} (t) \equiv \mathbf {0},
+$$
+
+那么称 $x_{1}(t),\cdots,x_{m}(t)$ 在区间 $(a,b)$ 内线性相关.如果 $x_{1}(t),\cdots,x_{m}(t)$ 在 $(a,b)$ 内不是线性相关的,那么就称这m个向量值函数在 $(a,b)$ 内线性无关或线性独立.
+
+由定义可见,向量值函数的线性相关与否是对区间内的所有点来说的.当任意固定一点时,它就是一个常向量,因而自然产生与函数组线性相关同样的问题,即它们会不会对在某个点 $t_{1}\in(a,b)$ 处所形成的常向量组 $x_{1}(t_{1}),\cdots,x_{m}(t_{1})$ 线性相关,而在另一点 $t_{2}\in(a,b)$ 处所形成的常向量组又线性无关呢?一般说来,这种情况是可能发生的.但是下列定理表明,正像函数组那样,若 $x_{i}(t)(i=1,2,\cdots,m)$ 是齐次线性微分方程组(3.3)的解时,这种情况不会发生.
+</Knowledge>
+
+<Knowledge title="定理 3.1">
+设 $\boldsymbol{x}_{i}(t) (t \in (a, b), i=1,2,\cdots,m)$ 是方程组 (3.3) 的任意 m 个解，则这 m 个解在区间 $(a, b)$ 内线性相关的充要条件是： $\exists t_{0} \in (a, b)$ ，使常向量组 $\boldsymbol{x}_{i}(t_{0}) (i=1,2,\cdots,m)$ 线性相关.
+
+<Solution title="证明">
+由定义3.2,必要性是显然的.
+
+现证充分性.设存在 $t_{0}\in(a,b)$ ，使向量组 $x_{i}(t_{0})\quad(i=1,2,\cdots,m)$ 线性相关，即存在不全为零的常数 $C_{1},\cdots,C_{m}$ ，使 $\sum_{i=1}^{m}C_{i}x_{i}(t_{0})=\mathbf{0}$ .考虑向量值函数 $\boldsymbol{x}(t)=\sum_{i=1}^{m}C_{i}\boldsymbol{x}_{i}(t)$ ， $t\in(a,b)$ ，由性质 $3^{\circ}$ 可知， $\boldsymbol{x}(t)$ 也是方程组(3.3)的解.但由于 $\boldsymbol{x}(t_{0})=\sum_{i=1}^{m}C_{i}\boldsymbol{x}_{i}(t_{0})=\mathbf{0}$ ，由性质 $2^{\circ}$ 可知，必有 $\boldsymbol{x}(t)=\sum_{i=1}^{m}C_{i}\boldsymbol{x}_{i}(t)\equiv\mathbf{0},t\in(a,b)$ ，即 $\boldsymbol{x}_{i}(t)\quad(i=1,\cdots,m)$ 在 $(a,b)$ 线性相关.
+
+从这个定理我们可以看出,对于方程组(3.3)在 $(a,b)$ 内存在的解 $x_{i}(t)$ $(i=1,\cdots,n)$ 来说,如果在 $(a,b)$ 内一点 $t_{0}$ 处线性无关,则必在整个区间 $(a,b)$ 内线性无关.
+
+由此,我们容易证明下述定理.
+</Solution>
+</Knowledge>
+
+<Knowledge title="定理 3.2">
+方程组(3.3)必存在 n 个线性无关的解; 此方程组的通解就是这 n 个线性无关解的线性组合, 即
+
+$$
+\pmb {x} (t) = \sum_ {i = 1} ^ {n} C _ {i} \pmb {x} _ {i} (t), \quad t \in (a, b)\tag{3.5}
+$$
+
+其中 $C_{i}(i=1,\cdots,n)$ 是任意常数, 而且此方程组的任一解均可表示为(3.5)形式.
+
+<Solution title="证明">
+在 $R^{n}$ 中任取一个基,例如取标准基 $e_{1}, e_{2}, \cdots, e_{n}$ 分别以它们作为初值,即令
+
+$$
+\boldsymbol {x} _ {1} (x _ {0}) = \boldsymbol {e} _ {1} = \left[ \begin{array}{l} 1 \\ 0 \\ \vdots \\ 0 \\ 0 \end{array} \right], \quad \boldsymbol {x} _ {2} (t _ {0}) = \boldsymbol {e} _ {2} = \left[ \begin{array}{l} 0 \\ 1 \\ 0 \\ \vdots \\ 0 \end{array} \right], \dots , \boldsymbol {x} _ {n} (t _ {0}) = \boldsymbol {e} _ {n} = \left[ \begin{array}{l} 0 \\ 0 \\ \vdots \\ 0 \\ 1 \end{array} \right]
+$$
+
+根据解的存在唯一性定理,方程组(3.3)适合上述初值的n个解 $x_{i}(t)(i=1,2,\cdots,n)$ 都必在 $(a,b)$ 内存在.由于初始向量组线性无关,由定理3.1知 $x_{1}(t),\cdots,x_{n}(t)$ 在 $(a,b)$ 内也线性无关.注:由定理3.2可见,我们也可以将线性齐次微分方程组(3.3)的通解定义为它的全部解的表达式.
+
+于是类似于定理 2.2 与 2.4 可证表达式(3.5)为方程组(3.3)的通解,而且包含了它的所有解.
+
+定理 3.2 也表明: 齐次线性微分方程组 (3.3) 的全部解构成一个 n 维线性空间, 称为此方程组的解空间. 同时, (3.5) 式也给出了齐次线性微分方程组通解的结构: 齐次线性微分方程组的通解 $\boldsymbol{x}(t)$ 是它的任意 n 个线性无关的特解 $\boldsymbol{x}_{i}(t) (i=1,2,\cdots,n)$ 与 n 个任意常数 $C_{i}$ 的线性组合, 即 (3.5) 式.
+</Solution>
+</Knowledge>
+
+## 基解矩阵及其判别法
+
+<Knowledge title="定义 3.3">
+齐次线性微分方程组(3.3)的任意 n 个线性无关的特解 $x_{1}(t), \cdots, x_{n}(t)$ 称为方程组(3.3)的一个基本解组, 它也就是由方程组(3.3)全部解所构成的解空间的一个基. 以这些解的分量为列所形成的矩阵称为方程组(3.3)的基解矩阵, 记为
+
+$$
+\boldsymbol {X} (t) = \left[ \begin{array}{c c c c} x _ {1 1} (t) & x _ {2 1} (t) & \dots & x _ {n 1} (t) \\ \vdots & \vdots & & \vdots \\ x _ {1 n} (t) & x _ {2 n} (t) & \dots & x _ {n n} (t) \end{array} \right] = (\boldsymbol {x} _ {1} (t), \dots , \boldsymbol {x} _ {n} (t)).
+$$
+</Knowledge>
+
+<Knowledge title="定义 3.4">
+由 n 个 n 维向量值函数 $x_{i}(t)$ ( $t \in I, i = 1, 2, \cdots, n$ ) 的分量 $x_{ij}$ ( $i, j = 1, 2, \cdots, n$ ) 依次为列所构成的行列式，称为这 n 个向量值函数的 Wronski 行列式，记作 $W(t) = \det(x_{ij}(t))$ , $t \in I$ .
+
+利用基解矩阵可将方程组(3.3)的通解表示为
+
+$$
+\boldsymbol {x} (t) = \boldsymbol {X} (t) \boldsymbol {C}, \quad t \in (a, b),\tag{3.6}
+$$
+
+其中， $C=(C_{1},\cdots,C_{n})^{\mathrm{T}}$ 是一由任意常数 $C_{1},\cdots,C_{n}$ 所组成的列向量.
+
+<QRCodeVideo id="4.3.1" title="线性高阶方程式与其对应一阶方程组解的 Wronski 行列式的一致性." url="http://2d.hep.cn/1254051/40" />
+
+由此可见,求解齐次线性微分方程组(3.3)的关键在于求出它的基解矩阵,或者说求出它的任意n个线性无关的特解.然而,当找到方程组(3.3)在 $(a,b)$ 内的n个特解 $x_{1}(t),\cdots,x_{n}(t)$ 后,怎样来判断它们在 $(a,b)$ 内是否线性无关呢?我们有下列简单的判别法.
+
+</Knowledge>
+
+<Knowledge title="定理 3.3">
+齐次线性微分方程组(3.3)的 n 个解 $x_{i}(t)$ (i=1,2, $\cdots$ ,n) 在 $(a,b)$ 内线性无关的充要条件是存在一点 $t_{0} \in (a,b)$ ，使得这 n 个解的 Wronski 行列式在 $t_{0}$ 处的值 $W(t_{0}) \neq 0$ .
+
+<Solution title="证明">
+由定理3.1可知,方程组(3.3)的n个解 $x_{i}(t)$ ( $i=1,2,\cdots,n$ )在 $(a,b)$ 内线性无关的充要条件是: $\exists t_{0}\in(a,b)$ 使 $x_{i}(t_{0})$ ( $i=1,2,\cdots,n$ )线性无关;而由线性代数知识可知,n个n维向量 $x_{i}(t_{0})$ ( $i=1,2,\cdots,n$ )线性无关的充要条件是:由它们的分量所构成的行列式
+
+$$
+W (t _ {0}) = \det (x _ {i j} (t _ {0})) \neq 0.
+$$
+
+实际上,不难看出,由方程组(3.3)的 n 个解所构成的 Wronski 行列式在解的存在区间 $(a,b)$ 内或者恒为零,或者恒不为零.
+
+基解矩阵的性质 方程组(3.3)的基解矩阵具有以下重要性质：
+
+$1^{\circ}$ 基解矩阵 $X(t)$ 满足矩阵方程
+
+$$
+\frac {\mathrm{d} X}{\mathrm{d} t} = A (t) X.
+$$
+
+事实上，
+
+$$
+\begin{array}{r l} \frac {\mathrm{d}}{\mathrm{d} t} \boldsymbol {X} (t) & = \left(\frac {\mathrm{d} x _ {i j} (t)}{\mathrm{d} t}\right) _ {n \times n} = \left(\sum_ {k = 1} ^ {n} a _ {i k} (t) x _ {k j} (t)\right) _ {n \times n} \\ & = \left(a _ {i j} (t)\right) _ {n \times n} \cdot \left(x _ {i j} (t)\right) _ {n \times n} = \boldsymbol {A} (t) \boldsymbol {X} (t). \end{array}
+$$
+
+2° 若 $X(t)$ 是方程组(3.3)在 $(a,b)$ 内的任一基解矩阵, B 是任一 n 阶非奇异常数矩阵, 则 $X(t)B$ 也是(3.3)在 $(a,b)$ 内的一个基解矩阵(习题4.3(B)1).
+
+3° 若 $X(t)$ 与 $X^{*}(t)$ 是方程组(3.3)在 $(a,b)$ 内的任意两个基解矩阵, 则必存在一 n 阶非奇异常数矩阵 B, 使
+
+$$
+\boldsymbol {X} (t) = \boldsymbol {X} ^ {*} (t) \boldsymbol {B}, \quad t \in (a, b).
+$$
+
+事实上, 因为 $X^{*}(t)$ 是一基解矩阵, 而 $X(t)$ 的列向量 $x_{1}(t), \cdots, x_{n}(t)$ 都是解, 所以由 (3.6), 必 $\exists b_{i} \in R^{n}$ 使
+
+$$
+\boldsymbol {x} _ {i} (t) = \boldsymbol {X} ^ {*} (t) \boldsymbol {b} _ {i}, \quad i = 1, 2, \dots , n,
+$$
+
+其中 $b_{i}$ 为非零向量,从而
+
+$$
+\boldsymbol {X} (t) = \left(\boldsymbol {X} ^ {*} (t) \boldsymbol {b} _ {1}, \dots , \boldsymbol {X} ^ {*} (t) \boldsymbol {b} _ {n}\right) = \boldsymbol {X} ^ {*} (t) \left(\boldsymbol {b} _ {1}, \dots , \boldsymbol {b} _ {n}\right) = \boldsymbol {X} ^ {*} (t) \boldsymbol {B}.
+$$
+
+其中，矩阵 $B=(b_{1},\cdots,b_{n})$ ，且由
+
+$$
+\det X ^ {*} (t) \cdot \det B = \det X (t) \neq 0,
+$$
+
+可知 $\det B \neq 0$ ，即 B 是非奇异矩阵.
+</Solution>
+</Knowledge>
+
+<Example title="例 3.1">
+验证微分方程组
+
+$$
+\frac {\mathrm{d}}{\mathrm{d} t} \left[ \begin{array}{l} x _ {1} \\ x _ {2} \end{array} \right] = \left[ \begin{array}{c c} \cos^ {2} t & \frac {1}{2} \sin 2 t - 1 \\ \frac {1}{2} \sin 2 t + 1 & \sin^ {2} t \end{array} \right] \left[ \begin{array}{l} x _ {1} \\ x _ {2} \end{array} \right]
+$$
+
+的通解为
+
+$$
+\pmb {x} = C _ {1} \left[ \begin{array}{c} {\mathrm{e} ^ {t} \cos t} \\ {\mathrm{e} ^ {t} \sin t} \end{array} \right] + C _ {2} \left[ \begin{array}{c} {- \sin t} \\ {\cos t} \end{array} \right], \quad t \in \mathbf {R}.
+$$
+
+<Solution title="证明">
+代入微分方程组直接验证可知: 当 $t \in R$ 时, $\begin{bmatrix} e^{t} \cos t \\ e^{t} \sin t \end{bmatrix}$ 与 $\begin{bmatrix} -\sin t \\ \cos t \end{bmatrix}$ 是该方程组的两个特解, 由于当 t = 0 时 Wronski 行列式
+
+$$
+W (t) = \left| \begin{array}{c c} 1 & 0 \\ 0 & 1 \end{array} \right| \neq 0,
+$$
+
+所以,此两特解在 $t \in R$ 线性无关,于是其通解如题中所示.
+</Solution>
+</Example>
+
+### 2. 非齐次线性微分方程组
+
+由本章第二节,我们知道,非齐次线性微分方程的通解是由它的任一特解与对应齐次线性微分方程的通解之和组成的.完全类似的证明可知,非齐次线性微分方程组(3.2)的通解仍然具有同样的结构.
+
+<Knowledge title="定理 3.4 非齐次线性微分方程组解的结构">
+非齐次线性微分方程组(3.2)的任一解 $x(t)$ 可以表示成它的任一特解 $x^{*}(t)$ 与它所对应的齐次线性微分方程组
+
+(3.3)的通解(3.6)之和的形式,即
+
+$$
+\boldsymbol {x} (t) = \boldsymbol {X} (t) \boldsymbol {C} + \boldsymbol {x} ^ {*} (t), \quad t \in (a, b),\tag{3.7}
+$$
+
+其中 $X(t)$ 是齐次线性微分方程组(3.3)的一个基解矩阵, $C \in R^{n}$ 为常向量.
+
+证明留给读者.
+
+由定理 3.4 可知, 在已知齐次线性微分方程组 (3.3) 的基解矩阵的情况下, 要求非齐次线性微分方程组 (3.2) 的通解, 关键在于找到它的任一特解, 下注意:由于(3.7)式中的 $C\in R^{n}$ 可以是任意常向量,因此,该式也是非齐次线性微分方程组(3.2)通解的表达式.由定理3.4可见,与齐次线性微分方程组一样,非齐次线性微分方程组的通解也包括了它的全部解.故也可用后一特征去定义非齐次线性微分方程组的通解.
+
+述定理给出了此特解的表达式,而其证明给出了求此特解的一种方法.
+</Knowledge>
+
+<Knowledge title="定理 3.5">
+设 $X(t) (t \in (a, b))$ 是齐次线性微分方程组(3.3)的一个基解矩阵, 则
+
+$$
+\boldsymbol {x} ^ {*} (t) = \boldsymbol {X} (t) \int_ {t _ {0}} ^ {t} \boldsymbol {X} ^ {- 1} (\tau) \boldsymbol {f} (\tau) \mathrm{d} \tau , \quad t \in (a, b)\tag{3.8}
+$$
+
+就是非齐次线性微分方程组(3.2)适合初值条件 $x^{*}(t_{0})=0$ 的特解.
+
+<Solution title="证明">
+我们采用在一阶线性微分方程中曾经用过的常数变易法来证明公式(3.8). 假设方程组(3.2)有如下形式的特解
+
+$$
+\boldsymbol {x} ^ {*} (t) = \boldsymbol {X} (t) \boldsymbol {C} (t),\tag{3.9}
+$$
+
+其中 $C(t)$ 为 n 维向量值函数. 我们期望把(3.9)代入非齐次方程组(3.2)后可将待定的向量值函数 $C(t)$ 确定出来. 为此, 把(3.9)代入方程组(3.2), 把 $C(t)$ 看作是 n 行一列矩阵函数, 得
+
+$$
+\dot {\boldsymbol {X}} (t) \boldsymbol {C} (t) + \boldsymbol {X} (t) \dot {\boldsymbol {C}} (t) = \boldsymbol {A} (t) \boldsymbol {X} (t) \boldsymbol {C} (t) + \boldsymbol {f} (t).\tag{3.10}
+$$
+
+由于 $X(t)$ 为齐次方程组(3.3)的基解矩阵,由基解矩阵的性质 $1^{\circ}$ 可知,它应满足矩阵方程,即
+
+$$
+\dot {\boldsymbol {X}} (t) = \boldsymbol {A} (t) \boldsymbol {X} (t),
+$$
+
+代入(3.10)式后化简得
+
+$$
+\boldsymbol {X} (t) \dot {\boldsymbol {C}} (t) = \boldsymbol {f} (t).\tag{3.11}
+$$
+
+由于 $X(t)$ 是基解矩阵，故Wronski行列式
+
+$$
+W (t) = \det X (t) \neq 0, \quad t \in (a, b).
+$$
+
+从而逆矩阵 $X^{-1}(t) (t \in (a, b))$ 存在. 用 $X^{-1}(t)$ 左乘(3.11)式两端得
+
+$$
+\dot {\boldsymbol {C}} (t) = \boldsymbol {X} ^ {- 1} (t) \boldsymbol {f} (t),
+$$
+
+积分得
+
+$$
+\boldsymbol {C} (t) = \int \boldsymbol {X} ^ {- 1} (t) \boldsymbol {f} (t) \mathrm{d} t = \int_ {t _ {0}} ^ {t} \boldsymbol {X} ^ {- 1} (\tau) \boldsymbol {f} (\tau) \mathrm{d} \tau + \boldsymbol {C} _ {1},
+$$
+
+其中 $C_{1}$ 为任意常向量,代入(3.9)式得注意:此处积分中的被积函数为向量值函数,因此,它们的积分应等于对每个分量积分所构成的向量值函数.
+
+$$
+\boldsymbol {x} ^ {*} (t) = \boldsymbol {X} (t) \left(\int_ {t _ {0}} ^ {t} \boldsymbol {X} ^ {- 1} (\tau) \boldsymbol {f} (\tau) \mathrm{d} \tau + \boldsymbol {C} _ {1}\right),
+$$
+
+由初值条件 $x^{*}(t_{0}) = 0$ 可得 $C_1 = 0$ ，于是定理得证.
+
+综合定理 3.4 与 3.5 可得非齐次线性微分方程组(3.2)通解的表达式
+
+$$
+\boldsymbol {x} (t) = \boldsymbol {X} (t) \boldsymbol {C} + \boldsymbol {X} (t) \int_ {t _ {0}} ^ {t} \boldsymbol {X} ^ {- 1} (\tau) \boldsymbol {f} (\tau) \mathrm{d} \tau .\tag{3.12}
+$$
+
+若将初值条件 $\boldsymbol{x}(t_{0})=\boldsymbol{x}_{0}$ 代入, 可得
+
+$$
+\boldsymbol {C} = \boldsymbol {X} ^ {- 1} (t _ {0}) \boldsymbol {x} _ {0},
+$$
+
+于是,方程组满足初值条件 $x(t_{0})=x_{0}$ 的特解为
+
+$$
+\boldsymbol {x} (t) = \boldsymbol {X} (t) \boldsymbol {X} ^ {- 1} \left(t _ {0}\right) \boldsymbol {x} _ {0} + \boldsymbol {X} (t) \int_ {t _ {0}} ^ {t} \boldsymbol {X} ^ {- 1} (\tau) \boldsymbol {f} (\tau) \mathrm{d} \tau .\tag{3.13}
+$$
+</Solution>
+</Knowledge>
+
+<Example title="例 3.2">
+求微分方程组
+
+$$
+\left\{ \begin{array}{l} \frac {\mathrm{d} x _ {1}}{\mathrm{d} t} = x _ {1} \cos^ {2} t + x _ {2} \left(\frac {1}{2} \sin 2 t - 1\right) + \cos t, \\ \frac {\mathrm{d} x _ {2}}{\mathrm{d} t} = x _ {1} \left(\frac {1}{2} \sin 2 t + 1\right) + x _ {2} \sin^ {2} t + \sin t \end{array} \right.
+$$
+
+的通解与适合初值条件 $x_{1}(0)=0, x_{2}(0)=1$ 的特解.
+
+<Solution title="解">
+由例 3.1 可知,对应的齐次线性微分方程组的基解矩阵为
+
+$$
+\boldsymbol {X} (t) = \left[ \begin{array}{c c} \mathrm{e} ^ {t} \cos t & - \sin t \\ \mathrm{e} ^ {t} \sin t & \cos t \end{array} \right],
+$$
+
+于是对应齐次方程组的通解为
+
+$$
+\boldsymbol {X} (t) = \left[ \begin{array}{c c} \mathrm{e} ^ {t} \cos t & - \sin t \\ \mathrm{e} ^ {t} \sin t & \cos t \end{array} \right] \left[ \begin{array}{c} C _ {1} \\ C _ {2} \end{array} \right].
+$$
+
+为了求出非齐次方程组的一个特解,先求
+
+$$
+\boldsymbol {X} ^ {- 1} (t) = \left[ \begin{array}{c c} \mathrm{e} ^ {- t} \cos t & \mathrm{e} ^ {- t} \sin t \\ - \sin t & \cos t \end{array} \right],
+$$
+
+从而
+
+$$
+\begin{array}{r l} \int_ {0} ^ {t} X ^ {- 1} (\tau) f (\tau) \mathrm{d} \tau & = \int_ {0} ^ {t} \left[ \begin{array}{c c} \mathrm{e} ^ {- \tau} \cos \tau & \mathrm{e} ^ {- \tau} \sin \tau \\ - \sin \tau & \cos \tau \end{array} \right] \left[ \begin{array}{c} \cos \tau \\ \sin \tau \end{array} \right] \mathrm{d} \tau , \\ & = \int_ {0} ^ {t} \left[ \begin{array}{c} \mathrm{e} ^ {- \tau} \\ 0 \end{array} \right] \mathrm{d} \tau = \left[ \begin{array}{c} 1 - \mathrm{e} ^ {- t} \\ 0 \end{array} \right], \end{array}
+$$
+
+于是， $\left[ \begin{array}{ll}\mathrm{e}^t\cos t & -\sin t\\ \mathrm{e}^t\sin t & \cos t \end{array} \right]\left[ \begin{array}{l}1 - \mathrm{e}^{-t}\\ 0 \end{array} \right]$ 便是非齐次方程组的一个特解.从而由通解的结构可知非齐次方程组的通解为
+</Solution>
+</Example>
+
+<Note>
+我们当然也可以求出 $X^{-1}(t)$ 后直接代入非齐次方程组的特解公式(3.13)来求出所求特解.
+
+$$
+\begin{array}{r l} \boldsymbol {x} (t) & = \left[ \begin{array}{c c} \mathrm{e} ^ {t} \cos t & - \sin t \\ \mathrm{e} ^ {t} \sin t & \cos t \end{array} \right] \left[ \left[ \begin{array}{c} C _ {1} \\ C _ {2} \end{array} \right] + \left[ \begin{array}{c} 1 - \mathrm{e} ^ {- t} \\ 0 \end{array} \right] \right] \\ & = \left[ \begin{array}{c} C _ {1} \mathrm{e} ^ {t} \cos t - C _ {2} \sin t + (\mathrm{e} ^ {t} - 1) \cos t \\ C _ {1} \mathrm{e} ^ {t} \sin t + C _ {2} \cos t + (\mathrm{e} ^ {t} - 1) \sin t \end{array} \right]. \end{array}\tag{3.14}
+$$
+</Note>
+
+<Note>
+意到
+
+$$
+\boldsymbol {X} ^ {- 1} (0) = \left[ \begin{array}{c c} 1 & 0 \\ 0 & 1 \end{array} \right],
+$$
+
+把初值条件代入所求得的通解(3.14)中,确定出 $C_{1}=0,C_{2}=1$ ,从而得出特解为
+
+$$
+\begin{array}{r l} \boldsymbol {X} (t) & = \left[ \begin{array}{c c} \mathrm{e} ^ {t} \cos t & - \sin t \\ \mathrm{e} ^ {t} \sin t & \cos t \end{array} \right] \left[ \left[ \begin{array}{c c} 1 & 0 \\ 0 & 1 \end{array} \right] \left[ \begin{array}{c} 0 \\ 1 \end{array} \right] + \left[ \begin{array}{c} 1 - \mathrm{e} ^ {- t} \\ 0 \end{array} \right] \right] \\ & = \left[ \begin{array}{c} (\mathrm{e} ^ {t} - 1) \cos t - \sin t \\ (\mathrm{e} ^ {t} - 1) \sin t + \cos t \end{array} \right]. \end{array}
+$$
+</Note>
+
+<Note>
+对于线性微分方程组来说,如果知道了对应齐次线性微分方程组的基解矩阵,那么非齐次线性微分方程组的通解一定可以求出,但这并不意味着线性微分方程组的解一定可用初等积分法得到.因为齐次线性微分方程组的解,一般说来是很难求得的.即使对于仅由两个方程构成的齐次线性微分方程组
+
+$$
+\left\{ \begin{array}{l} \frac {\mathrm{d} x _ {1}}{\mathrm{d} t} = a _ {1} (t) x _ {1} + b _ {1} (t) x _ {2}, \\ \frac {\mathrm{d} x _ {2}}{\mathrm{d} t} = a _ {2} (t) x _ {1} + b _ {2} (t) x _ {2}, \end{array} \right.
+$$
+
+它的解一般也是无法通过初等积分法获得的.
+</Note>
+
+## 3.3 常系数线性齐次微分方程组的求解方法
+
+3.2 段中, 我们已经对微分方程组的解的结构, 建立了一套比较完整的理论. 然而, 上面我们已经指出, 正像线性微分方程那样, 线性微分方程组的解, 一般说来也是难以求得的. 但是, 也正如线性微分方程那样, 当线性微分方程组 (3.2) 中的系数 $a_{ij}(t) (i = 1, 2, \cdots, n; j = 1, 2, \cdots, n)$ 全为常数, 即 $a_{ij}(t) \equiv a_{ij}$ (常数) 时, 它的解却可以利用线性代数的方法求出. 这种系数全为常数的线性微分方程组称为常系数线性微分方程组. 相应的非齐次和齐次线性微分方程组, 分别称为常系数非齐次线性微分方程组和常系数齐次线性微分方程组, 简称为常系数非齐次方程组和常系数齐次方程组.
+
+下面,我们就来讨论这类应用中最常见的常系数线性微分方程组的求解问题,着重介绍方法.本段先对齐次方程组的情形进行讨论.
+
+对于一阶常系数齐次线性微分方程
+
+$$
+\frac {\mathrm{d} x}{\mathrm{d} t} = a x,
+$$
+
+利用分离变量法,我们立即就可得到它的通解
+
+$$
+x = C \mathrm{e} ^ {a t}.
+$$
+
+现在,考察常系数齐次线性微分方程组
+
+$$
+\frac {\mathrm{d} x _ {i}}{\mathrm{d} t} = \sum_ {j = 1} ^ {n} a _ {i j} x _ {j}, \quad i = 1, 2, \dots , n,
+$$
+
+或其向量形式
+
+$$
+\frac {\mathrm{d} \boldsymbol {x}}{\mathrm{d} t} = \boldsymbol {A} \boldsymbol {x},\tag{3.15}
+$$
+
+其中 $A = (a_{ij})_{n \times n}$ 为一常数矩阵. 由解的存在唯一性定理可知, 方程组(3.15)的任一解的存在区间均为 $(- \infty, + \infty)$ . 注意到一阶常系数齐次线性方程的解为指数函数以及指数函数的导数仍为指数函数, 为求解方程组(3.15), 我们可以设想方程组(3.15)有形如
+
+$$
+\boldsymbol {x} = \boldsymbol {r e} ^ {\lambda t}\tag{3.16}
+$$
+
+的特解,其中 $\lambda$ 为待定常数,r 为待定常向量.然后把(3.16)式代入方程组(3.15)去确定 $\lambda$ 与 r.这种方法称为待定系数法.将(3.16)式代入方程组(3.15)得
+
+$$
+\boldsymbol {r} \lambda \mathrm{e} ^ {\lambda t} = \boldsymbol {A r e} ^ {\lambda t},
+$$
+
+从而
+
+$$
+r \lambda = A r \quad \text {或} \quad (A - \lambda E) r = 0,
+$$
+
+其中 E 为 n 阶单位方阵. 可见, 当且仅当 $\lambda$ 为系数矩阵 A 的特征值时, 方程组 (3.15) 有形如 (3.16) 的解. 此时, 非零向量 r 就是 A 的特征值 $\lambda$ 所对应的特征向量. 这样, 对于一种简单情形, 即 n 阶矩阵 A 有 n 个线性无关的特征向量时, 方程组 (3.15) 的基解矩阵是较容易求得的. 对于其他情形怎么去求解该方程组呢? 下面分别来讨论这些问题.
+
+### (1) A 有 n 个线性无关的特征向量的情形.
+
+此时,我们只要求出 A 的 n 个线性无关的特征向量以及对应的特征值,就可写出方程组(3.15)的 n 个形如(3.16)式且线性无关的特解及基解矩阵.
+
+<Knowledge title="定理 3.6">
+设 n 阶矩阵 A 有 n 个线性无关的特征向量 $r_{1}, r_{2}, \cdots, r_{n}$ ，它们对应的特征值分别为 $\lambda_{1}, \lambda_{2}, \cdots, \lambda_{n}$ （未必互不相同），则矩阵
+
+$$
+\boxed {X (t) = \left(\boldsymbol {r} _ {1} \mathrm{e} ^ {\lambda_ {1} t}, \boldsymbol {r} _ {2} \mathrm{e} ^ {\lambda_ {2} t}, \dots , \boldsymbol {r} _ {n} \mathrm{e} ^ {\lambda_ {n} t}\right)}\tag{3.17}
+$$
+
+就是常系数齐次线性微分方程组(3.15)的一个基解矩阵.从而(3.15)的通解为
+
+$$
+\boldsymbol {X} (t) = (\boldsymbol {r} _ {1} \mathrm{e} ^ {\lambda_ {1} t}, \dots , \boldsymbol {r} _ {n} \mathrm{e} ^ {\lambda_ {n} t}) \left( \begin{array}{c} C _ {1} \\ \vdots \\ C _ {n} \end{array} \right),
+$$
+
+其中 $\begin{pmatrix}C_{1}\\ \vdots \\ C_{n}\end{pmatrix}$ 为任意常向量.
+
+<Solution title="证明">
+如上所述,每一个向量值函数 $\boldsymbol{r}_{i}\mathrm{e}^{\lambda_{i}}\quad(i=1,2,\cdots,n)$ 都是方程组(3.15)的解,而且由于 $r_{1},r_{2},\cdots,r_{n}$ 线性无关,从而
+
+$$
+\det X (0) = \det (\boldsymbol {r} _ {1} \boldsymbol {r} _ {2} \dots \boldsymbol {r} _ {n}) \neq 0,
+$$
+
+所以向量值函数 $r_i e^{\lambda i} (i=1,2,\cdots,n)$ 线性无关，故矩阵(3.17)是方程组(3.15)的一个基解矩阵。于是由定理3.2可得齐次方程组(3.15)的通解形式。
+</Solution>
+</Knowledge>
+
+<Note>
+定理 3.6 包括两种情形:
+(1) 矩阵 A 的 n 个特征值互不相同, 即都是单重根; (2) 有重特征值, 但此重特征值所对应线性无关的特征向量的个数正好等于该特征值的重数.
+</Note>
+
+<Example title="例 3.3">
+求齐次线性微分方程组
+
+$$
+\frac {\mathrm{d} \boldsymbol {x}}{\mathrm{d} t} = \left[ \begin{array}{r r r} 5 & - 2 8 & - 1 8 \\ - 1 & 5 & 3 \\ 3 & - 1 6 & - 1 0 \end{array} \right] \boldsymbol {x}
+$$
+
+的通解.
+
+<Solution title="解">
+其系数矩阵 A 的特征方程为
+
+$$
+\det (\boldsymbol {A} - \lambda \boldsymbol {E}) = \left| \begin{array}{c c c} 5 - \lambda & - 2 8 & - 1 8 \\ - 1 & 5 - \lambda & 3 \\ 3 & - 1 6 & - 1 0 - \lambda \end{array} \right| = \lambda (1 - \lambda^ {2}) = 0,
+$$
+
+从而特征值为
+
+$$
+\lambda = 0, 1, - 1.
+$$
+
+由于 A 的 3 个特征值都是单重的, 它们所对应的特征向量当然线性无关. 通过计算可得与它们对应的特征向量可以分别取为
+
+$$
+\boldsymbol {r} _ {1} = \left[ \begin{array}{c c} - 2 \\ - 1 \\ 1 \end{array} \right], \quad \boldsymbol {r} _ {2} = \left[ \begin{array}{c c} 2 \\ - 1 \\ 2 \end{array} \right], \quad \boldsymbol {r} _ {3} = \left[ \begin{array}{c} 3 \\ 0 \\ 1 \end{array} \right].
+$$
+
+于是,所给微分方程组的一个基解矩阵为
+
+$$
+\boldsymbol {X} (t) = (\boldsymbol {r} _ {1} \mathrm{e} ^ {0 t}, \boldsymbol {r} _ {2} \mathrm{e} ^ {t}, \boldsymbol {r} _ {3} \mathrm{e} ^ {- t}) = \left[ \begin{array}{c c c} - 2 & 2 \mathrm{e} ^ {t} & 3 \mathrm{e} ^ {- t} \\ - 1 & - \mathrm{e} ^ {t} & 0 \\ 1 & 2 \mathrm{e} ^ {t} & \mathrm{e} ^ {- t} \end{array} \right],
+$$
+
+故所给微分方程组的通解为
+
+$$
+\boldsymbol {x} (t) = \boldsymbol {X} (t) \boldsymbol {C} = \left[ \begin{array}{c c c} - 2 & 2 \mathrm{e} ^ {t} & 3 \mathrm{e} ^ {- t} \\ - 1 & - \mathrm{e} ^ {t} & 0 \\ 1 & 2 \mathrm{e} ^ {t} & \mathrm{e} ^ {- t} \end{array} \right] \left[ \begin{array}{l} C _ {1} \\ C _ {2} \\ C _ {3} \end{array} \right]
+$$
+
+$$
+= C _ {1} \left[ \begin{array}{c c} - & 2 \\ - & 1 \\ & 1 \end{array} \right] + C _ {2} \left[ \begin{array}{c c} & 2 \\ - & 1 \\ & 2 \end{array} \right] \mathrm{e} ^ {t} + C _ {3} \left[ \begin{array}{c} 3 \\ 0 \\ 1 \end{array} \right] \mathrm{e} ^ {- t},
+$$
+
+其中 $C=(C_{1},C_{2},C_{3})^{\mathrm{T}}$ 为任意常向量.
+</Solution>
+</Example>
+
+<Example title="例 3.4">
+求齐次线性微分方程组
+
+$$
+\frac {\mathrm{d} \boldsymbol {x}}{\mathrm{d} t} = \left[ \begin{array}{l l l} 1 & - 3 & 3 \\ 3 & - 5 & 3 \\ 6 & - 6 & 4 \end{array} \right] \boldsymbol {x}
+$$
+
+的通解.
+
+<Solution title="解">
+微分方程组的系数矩阵 A 的特征方程为
+
+$$
+\det (\boldsymbol {A} - \lambda \boldsymbol {E}) = (\lambda + 2) ^ {2} (4 - \lambda) = 0,
+$$
+
+从而求得A有二重特征值 $\lambda_{1}=\lambda_{2}=-2$ ，及单重特征值 $\lambda_{3}=4$ 。要求对应于特征值 $\lambda_{1}=-2$ 的线性无关的特征向量，也就是要求齐次线性方程组 $(A+2E)r=0$ 的注意：这里出现二重特征值 $\lambda=-2$ ，于是必须检验它能否对应两个线性无关的特征向量。
+
+一个基础解系.为此,对其系数矩阵 $A+2E$ 作初等行变换
+
+$$
+\boldsymbol {A} + 2 \boldsymbol {E} = \left[\begin{array}{c c c}3&- 3&3\\3&- 3&3\\6&- 6&6\end{array}\right]\rightarrow \left[\begin{array}{c c c}1&- 1&1\\0&0&0\\0&0&0\end{array}\right].
+$$
+
+可见 $A + 2E$ 的秩为1,故方程组 $(A + 2E)r = 0$ 的基础解系含2个向量，即矩阵 $\pmb{A}$ 对应于二重特征值-2的线性无关的特征向量有2个，它们可取为
+
+$$
+\boldsymbol {r} _ {1} = \left[ \begin{array}{c} 1 \\ 1 \\ 0 \end{array} \right], \quad \boldsymbol {r} _ {2} = \left[ \begin{array}{c} - 1 \\ 0 \\ 1 \end{array} \right].
+$$
+
+计算可得对应于特征值 $\lambda_{3}=4$ 的特征向量可取为
+
+$$
+\boldsymbol {r} _ {3} = \left[ \begin{array}{l} 1 \\ 1 \\ 2 \end{array} \right].
+$$
+
+由于 $\lambda_{1} \neq \lambda_{3}$ , 所以 $r_{1}, r_{2}, r_{3}$ 是线性无关的. 这样, 对于 3 阶方阵 $A$ , 我们求得了 $A$ 的 3 个线性无关的特征向量. 根据定理 3.6, 所给微分方程组的基解矩阵为
+
+$$
+\boldsymbol {X} (t) = \left(\boldsymbol {r} _ {1} \mathrm{e} ^ {- 2 t}, \boldsymbol {r} _ {2} \mathrm{e} ^ {- 2 t}, \boldsymbol {r} _ {3} \mathrm{e} ^ {4 t}\right) = \left[ \begin{array}{c c c} \mathrm{e} ^ {- 2 t} & - \mathrm{e} ^ {- 2 t} & \mathrm{e} ^ {4 t} \\ \mathrm{e} ^ {- 2 t} & 0 & \mathrm{e} ^ {4 t} \\ 0 & \mathrm{e} ^ {- 2 t} & 2 \mathrm{e} ^ {4 t} \end{array} \right].
+$$
+
+从而得微分方程组的通解为
+
+$$
+\boldsymbol {x} (t) = \boldsymbol {X} (t) \boldsymbol {C} = C _ {1} \mathrm{e} ^ {- 2 t} \left[ \begin{array}{l} 1 \\ 1 \\ 0 \end{array} \right] + C _ {2} \mathrm{e} ^ {- 2 t} \left[ \begin{array}{c} - 1 \\ 0 \\ 1 \end{array} \right] + C _ {3} \mathrm{e} ^ {4 t} \left[ \begin{array}{l} 1 \\ 1 \\ 2 \end{array} \right].
+$$
+
+其中 $C=(C_{1},C_{2},C_{3})^{\mathrm{T}}$ 为任意的常向量.
+
+(2) A 没有 n 个线性无关的特征向量的情形.
+
+这是一种比较困难的情形,即存在A的 $n_{i}$ 重特征值 $\lambda_{i}$ ,它所对应的线性无关的特征向量的个数小于该特征值的重数 $n_{i}$ .从而A的线性无关的特征向量的个数小于n.这时,若仍像定理3.6那样,仅利用A的特征向量,方程组(3.15)的基解矩阵将不能得到.对于这样的特征值 $\lambda_{i}$ ,能否找到方程组(3.15)的 $n_{i}$ 个其他形式的线性无关的特解呢?下面的定理回答了这一问题.
+</Solution>
+</Example>
+
+<Knowledge title="定理 3.7">
+设 $\lambda_{i}$ 是矩阵 A 的 $n_{i}$ 重特征值, 则方程组 (3.15) 必存在 $n_{i}$ 个形如
+
+$$
+\boldsymbol {x} (t) = \mathrm{e} ^ {\lambda_ {i} t} \left(\boldsymbol {r} _ {0} + \frac {t}{1 !} \boldsymbol {r} _ {1} + \frac {t ^ {2}}{2 !} \boldsymbol {r} _ {2} + \dots + \frac {t ^ {n _ {i} - 1}}{(n _ {i} - 1) !} \boldsymbol {r} _ {n _ {i} - 1}\right)\tag{3.18}
+$$
+
+的线性无关的特解,其中 $r_{0}$ 是齐次线性方程组
+
+$$
+\left(\boldsymbol {A} - \lambda_ {i} \boldsymbol {E}\right) ^ {n _ {i}} \boldsymbol {r} = \mathbf {0}\tag{3.19}
+$$
+</Knowledge>
+
+<Note>
+求解常系数齐次线性方程组
+
+的非零解,而方程组(3.19)必有 $n_{i}$ 个线性无关的解.对于每一个解 $r_{0}$ ,相应的 $r_{1},\cdots,r_{n_{i}-1}$ 可由下列关系式逐次确定:
+
+$$
+\frac {\mathrm{d} \boldsymbol {x}}{\mathrm{d} t} = \boldsymbol {A} \boldsymbol {x}, \quad \boldsymbol {A} = (a _ {i j}) _ {n \times n}
+$$
+
+$$
+\begin{array}{l} \boldsymbol {r} _ {1} = (\boldsymbol {A} - \lambda_ {i} \boldsymbol {E}) \boldsymbol {r} _ {0}, \\ \boldsymbol {r} _ {2} = (\boldsymbol {A} - \lambda_ {i} \boldsymbol {E}) \boldsymbol {r} _ {1}, \\ \dots \dots \\ \boldsymbol {r} _ {n _ {i} - 1} = (\boldsymbol {A} - \lambda_ {i} \boldsymbol {E}) \boldsymbol {r} _ {n _ {i} - 2}. \end{array}
+$$
+
+的步骤.
+
+1. 求系数矩阵 A 的特征值, 即求特征方程
+
+$$
+\boldsymbol {A} - \lambda \boldsymbol {E} = \boldsymbol {0}\tag{3.20}
+$$
+
+的根；
+
+2. 求基解矩阵 X.
+
+(证明从略)
+
+(1) 若 n 个特征值都是特征方程的单根, 则可直接写出基解矩阵如 (3.17).
+
+对于 A 的每个多重特征值, 利用定理 3.6 或 3.7, 可以求得方程组 (3.15) 与每个多重特征值所对应的线性无关的特解, 而且与每个特征值所对应的线性无关的特解数目恰好等于此特征值的重数. 这样一来, 我们就可以得到方程组 (3.15) 的 n 个特解. 现在的问题是这 n 个特解是否彼此线性无关呢? 把问题提得再明确一些就是: 把对应于每个特征值的那些线性无关的特解合起来后是否仍然线性无关? 下(2) 若其中有重根. 则求出对应的线性无关的特征向量.
+
+1）若线性无关特征向量的个数正好等于其对应特征值的重数，则基解矩阵仍如(3.17)所示；
+
+2）若上述个数小于对应特征值的重数，则需用定理3.7中的方法，求出此重特征值所对应的线性无关的特解后，构成基解矩阵.
+
+3. 写出通解 x = XC.
+
+面的定理回答了这一问题.
+</Note>
+
+<Knowledge title="定理 3.8">
+设 n 阶矩阵 A 的互不相同的特征值为 $\lambda_{1}, \lambda_{2}, \cdots, \lambda_{s}$ ，其相应的重数分别为 $n_{1}, n_{2}, \cdots, n_{s}$ ( $n_{1} + n_{2} + \cdots + n_{s} = n$ ). 则由定理 3.6（包括多重特征值所对应的线性无关特征向量的个数等于该特征值的重数情形）与定理 3.7 所求出的方程组 (3.15) 的诸线性无关特解的全体，必构成方程组 (3.15) 的 n 个线性无关的特解，因而构成了方程组 (3.15) 的一个基本解组（证明略去）.
+</Knowledge>
+
+<Example title="例 3.5">
+求微分方程组
+
+$$
+\frac {\mathrm{d} \boldsymbol {x}}{\mathrm{d} t} = \left[ \begin{array}{c c c} 1 & 1 & 1 \\ 2 & 1 & - 1 \\ 0 & - 1 & 1 \end{array} \right] \boldsymbol {x}
+$$
+
+的通解.
+
+<Solution title="解">
+微分方程组的系数矩阵 A 的特征方程为
+
+$$
+\det (\boldsymbol {A} - \lambda \boldsymbol {E}) = \left| \begin{array}{c c c} 1 - \lambda & 1 & 1 \\ 2 & 1 - \lambda & - 1 \\ 0 & - 1 & 1 - \lambda \end{array} \right| = - (\lambda - 2) ^ {2} (\lambda + 1) = 0.
+$$
+
+因此， $A$ 的特征值为
+
+$$
+\lambda_ {1} = \lambda_ {2} = 2, \quad \lambda_ {3} = - 1.
+$$
+
+对于二重特征值 $\lambda_{1}=2$ ，由于 A-2E 的秩为 2，故矩阵 A 对应于 $\lambda_{1}=\lambda_{2}=2$ 的线性无关的特征向量只能有一个，从而我们不能用例 3.3 与例 3.4 的方法求解。根据定理 3.7，我们需要先求齐次线性方程组 $(A-2E)^{2}r=0$ 的基础解系，为此，对矩阵 $(A-2E)^{2}$ 作初等行变换
+
+$$
+(A - 2 E) ^ {2} = \left[\begin{array}{c c c}3&- 3&- 3\\- 4&4&4\\- 2&2&2\end{array}\right]\rightarrow \left[\begin{array}{c c c}1&- 1&- 1\\0&0&0\\0&0&0\end{array}\right],
+$$
+
+因此,方程组 $(A-2E)^{2}r=0$ 的两个线性无关的解可取为
+
+$$
+\boldsymbol {r} _ {0} ^ {(1)} = \left[ \begin{array}{l} 1 \\ 1 \\ 0 \end{array} \right], \quad \boldsymbol {r} _ {0} ^ {(2)} = \left[ \begin{array}{l} 1 \\ 0 \\ 1 \end{array} \right].
+$$
+
+把 $r_{0}^{(1)}$ 和 $r_{0}^{(2)}$ 分别代入(3.20)(注意m=2)，可得到
+
+$$
+\boldsymbol {r} _ {1} ^ {(1)} = (\boldsymbol {A} - 2 \boldsymbol {E}) \boldsymbol {r} _ {0} ^ {(1)} = \left[ \begin{array}{r r r} - 1 & 1 & 1 \\ 2 & - 1 & - 1 \\ 0 & - 1 & - 1 \end{array} \right] \left[ \begin{array}{l} 1 \\ 1 \\ 0 \end{array} \right] = \left[ \begin{array}{c} 0 \\ 1 \\ - 1 \end{array} \right]
+$$
+
+和
+
+$$
+\boldsymbol {r} _ {1} ^ {(2)} = (\boldsymbol {A} - 2 \boldsymbol {E}) \boldsymbol {r} _ {0} ^ {(2)} = \left[ \begin{array}{c c c} - 1 & 1 & 1 \\ 2 & - 1 & - 1 \\ 0 & - 1 & - 1 \end{array} \right] \left[ \begin{array}{l} 1 \\ 0 \\ 1 \end{array} \right] = \left[ \begin{array}{c} 0 \\ 1 \\ - 1 \end{array} \right].
+$$
+
+把 $r_{0}^{(1)}, r_{1}^{(1)}$ 和 $r_{0}^{(2)}, r_{1}^{(2)}$ 分别代入(3.18)式, 就得到了所给微分方程组的对应于二重特征值 $\lambda_{1}=2$ 的两个线性无关的特解
+
+$$
+\boldsymbol {x} _ {1} (t) = \mathrm{e} ^ {2 t} (\boldsymbol {r} _ {0} ^ {(1)} + t \boldsymbol {r} _ {1} ^ {(1)}) = \mathrm{e} ^ {2 t} \left(\left[ \begin{array}{l} 1 \\ 1 \\ 0 \end{array} \right] + t \left[ \begin{array}{c} 0 \\ 1 \\ - 1 \end{array} \right]\right) = \mathrm{e} ^ {2 t} \left[ \begin{array}{l} 1 \\ 1 + t \\ - t \end{array} \right],
+$$
+
+$$
+\boldsymbol {x} _ {2} (t) = \mathrm{e} ^ {2 t} (\boldsymbol {r} _ {0} ^ {(2)} + t \boldsymbol {r} _ {1} ^ {(2)}) = \mathrm{e} ^ {2 t} \left(\left[ \begin{array}{l} 1 \\ 0 \\ 1 \end{array} \right] + t \left[ \begin{array}{c} 0 \\ 1 \\ - 1 \end{array} \right]\right) = \mathrm{e} ^ {2 t} \left[ \begin{array}{c} 1 \\ t \\ 1 - t \end{array} \right].
+$$
+
+对于单重特征值 $\lambda_{3}=-1$ ，对应的特征向量可通过计算取为
+
+$$
+\boldsymbol {r} = \left[ \begin{array}{c} - 3 \\ 4 \\ 2 \end{array} \right].
+$$
+
+因此,所给微分方程组与特征值 $\lambda_{3}=-1$ 所对应的非零特解为
+
+$$
+\boldsymbol {x} _ {3} (t) = \mathrm{e} ^ {- t} \boldsymbol {r} = \mathrm{e} ^ {- t} \left[ \begin{array}{c c} - 3 \\ & 4 \\ & 2 \end{array} \right].
+$$
+</Solution>
+</Example>
+
+由定理 3.8 可知, $x_{1}(t)$ , $x_{2}(t)$ , $x_{3}(t)$ 就是所给微分方程组的一个基本解组. 因此, 微分方程组的通解为
+
+$$
+\begin{array}{r l} \boldsymbol {x} (t) & = C _ {1} \boldsymbol {x} _ {1} (t) + C _ {2} \boldsymbol {x} _ {2} (t) + C _ {3} \boldsymbol {x} _ {3} (t) \\ & = C _ {1} \mathrm{e} ^ {2 t} \left[ \begin{array}{c} 1 \\ 1 + t \\ - t \end{array} \right] + C _ {2} \mathrm{e} ^ {2 t} \left[ \begin{array}{c} 1 \\ t \\ 1 - t \end{array} \right] + C _ {3} \mathrm{e} ^ {- t} \left[ \begin{array}{c} - 3 \\ 4 \\ 2 \end{array} \right], \end{array}
+$$
+
+其中 $C_{1}, C_{2}, C_{3}$ 是任意常数.
+
+<Example title="例 3.6">
+求微分方程组
+
+$$
+\frac {\mathrm{d} \boldsymbol {x}}{\mathrm{d} t} = \left[ \begin{array}{r r r} 5 & - 3 & - 2 \\ 8 & - 5 & - 4 \\ - 4 & 3 & 3 \end{array} \right] \boldsymbol {x}
+$$
+
+的一个基本解组.
+
+<Solution title="解">
+微分方程组的系数矩阵 A 的特征方程为
+
+$$
+\det (A - \lambda E) = \left| \begin{array}{c c c} 5 - \lambda & - 3 & - 2 \\ 8 & - 5 - \lambda & - 4 \\ - 4 & 3 & 3 - \lambda \end{array} \right| = (1 - \lambda) ^ {3} = 0,
+$$
+
+因此,矩阵A只有1个三重特征值 $\lambda=1$ ,通过计算得知 $(A-E)^{2}=0$ ,因此 $(A-E)^{3}=0$ .
+所以齐次线性方程组 $(A-E)^{3}r=0$ 的基础解系可取为
+
+$$
+\boldsymbol {r} _ {0} ^ {(1)} = \left[ \begin{array}{l} 1 \\ 0 \\ 0 \end{array} \right], \qquad \boldsymbol {r} _ {0} ^ {(2)} = \left[ \begin{array}{l} 0 \\ 1 \\ 0 \end{array} \right], \qquad \boldsymbol {r} _ {0} ^ {(3)} = \left[ \begin{array}{l} 0 \\ 0 \\ 1 \end{array} \right].
+$$
+
+把 $r_{0}^{(1)},r_{0}^{(2)},r_{0}^{(3)}$ 分别代入(3.20)式,并注意m=3,可得到
+
+$$
+\boldsymbol {r} _ {1} ^ {(1)} = (\boldsymbol {A} - \boldsymbol {E}) \boldsymbol {r} _ {0} ^ {(1)} = \left[ \begin{array}{c} 4 \\ 8 \\ - 4 \end{array} \right], \quad \boldsymbol {r} _ {2} ^ {(1)} = (\boldsymbol {A} - \boldsymbol {E}) \boldsymbol {r} _ {1} ^ {(1)} = (\boldsymbol {A} - \boldsymbol {E}) ^ {2} \boldsymbol {r} _ {0} ^ {(1)} = \mathbf {0},
+$$
+
+$$
+\boldsymbol {r} _ {1} ^ {(2)} = (\boldsymbol {A} - \boldsymbol {E}) \boldsymbol {r} _ {0} ^ {(2)} = \left[ \begin{array}{c} {- 3} \\ {- 6} \\ {3} \end{array} \right], \quad \boldsymbol {r} _ {2} ^ {(2)} = (\boldsymbol {A} - \boldsymbol {E}) \boldsymbol {r} _ {1} ^ {(2)} = \mathbf {0},
+$$
+
+$$
+\boldsymbol {r} _ {1} ^ {(3)} = (\boldsymbol {A} - \boldsymbol {E}) \boldsymbol {r} _ {0} ^ {(3)} = \left[ \begin{array}{c} {- 2} \\ {- 4} \\ {2} \end{array} \right], \quad \boldsymbol {r} _ {2} ^ {(3)} = (\boldsymbol {A} - \boldsymbol {E}) \boldsymbol {r} _ {1} ^ {(3)} = \mathbf {0}.
+$$
+
+再把 $r_{0}^{(i)},r_{1}^{(i)},r_{2}^{(i)}$ （i=1,2,3）分别代入（3.18）式，可得
+
+$$
+\boldsymbol {x} _ {1} (t) = \mathrm{e} ^ {t} (\boldsymbol {r} _ {0} ^ {(1)} + t \boldsymbol {r} _ {1} ^ {(1)}) = \mathrm{e} ^ {t} \left[ \begin{array}{c} 1 + 4 t \\ 8 t \\ - 4 t \end{array} \right],
+$$
+
+$$
+\boldsymbol {x} _ {2} (t) = \mathrm{e} ^ {t} (\boldsymbol {r} _ {0} ^ {(2)} + t \boldsymbol {r} _ {1} ^ {(2)}) = \mathrm{e} ^ {t} \left[ \begin{array}{c} - 3 t \\ 1 - 6 t \\ 3 t \end{array} \right],
+$$
+
+$$
+\boldsymbol {x} _ {3} (t) = \mathrm{e} ^ {t} (\boldsymbol {r} _ {0} ^ {(3)} + t \boldsymbol {r} _ {1} ^ {(3)}) = \mathrm{e} ^ {t} \left[ \begin{array}{l} - 2 t \\ - 4 t \\ 1 + 2 t \end{array} \right],
+$$
+
+于是 $x_{1}(t), x_{2}(t), x_{3}(t)$ 就是所给微分方程组的一个基本解组.
+</Solution>
+</Example>
+
+### (3) $A$ 有复特征值的情形
+
+我们知道, 当 A 为实矩阵时, 它的特征值中有可能出现共轭复数, 从而相对应的特征向量就可能为复向量. 这时, 由定理 3.6 与 3.7 所求得的方程组 (3.15) 的特解也可能是复向量值函数, 使用起来颇不方便. 下面介绍一种利用线性无关的复向量值函数解来构造相应的线性无关的实向量值函数解的方法.
+
+设方程组(3.15)有一个复值解
+
+$$
+\boldsymbol {x} _ {1} (t) = \boldsymbol {u} (t) + \mathrm{i} \boldsymbol {v} (t),
+$$
+
+其中 $u(t)$ 与 $v(t)$ 都是实向量值函数. 代入(3.15), 得
+
+$$
+\dot {\boldsymbol {u}} (t) + \mathrm{i} \dot {\boldsymbol {v}} (t) \equiv \boldsymbol {A} (\boldsymbol {u} (t) + \mathrm{i} \boldsymbol {v} (t)).
+$$
+
+将上式两端取共轭,注意到A为实矩阵,得
+
+$$
+\dot {\boldsymbol {u}} (t) - \mathrm{i} \dot {\boldsymbol {v}} (t) \equiv \boldsymbol {A} (\boldsymbol {u} (t) - \mathrm{i} \boldsymbol {v} (t)),
+$$
+
+因此, $x_{1}(t)$ 的共轭向量
+
+$$
+\boldsymbol {x} _ {2} (t) = \boldsymbol {u} (t) - \mathrm{i} \boldsymbol {v} (t)
+$$
+
+也是方程组(3.15)的一个解.利用齐次线性微分方程组解的性质,可知这两个复值解的实部
+
+$$
+\boldsymbol {u} (t) = \frac {1}{2} (\boldsymbol {x} _ {1} (t) + \boldsymbol {x} _ {2} (t))
+$$
+
+和虚部
+
+$$
+\pmb {v} (t) = \frac {1}{2 \mathrm{i}} (\pmb {x} _ {1} (t) - \pmb {x} _ {2} (t))
+$$
+
+也都分别是方程组(3.15)的解.由本章习题4.3(A)第8题可知,用 $u(t)$ 与 $v(t)$ 取代(3.15)的基解矩阵中的向量 $x_{1}(t)$ 与 $x_{2}(t)$ 后,所得的矩阵仍是(3.15)的基解矩阵.使用这种方法,我们就可把方程组(3.15)的复值基解矩阵用实值基解矩阵来代替.
+
+<Example title="例 3.7">
+求解初值问题
+
+$$
+\frac {\mathrm{d} \boldsymbol {x}}{\mathrm{d} t} = \left[ \begin{array}{c c c} 1 & 0 & 0 \\ 0 & 1 & - 1 \\ 0 & 1 & 1 \end{array} \right] \boldsymbol {x}, \quad \boldsymbol {x} (0) = \left[ \begin{array}{l} 1 \\ 1 \\ 1 \end{array} \right].
+$$
+
+<Solution title="解">
+微分方程系数矩阵 A 的特征方程为
+
+$$
+\det (\boldsymbol {A} - \lambda \boldsymbol {E}) = \left| \begin{array}{c c c} 1 - \lambda & 0 & 0 \\ 0 & 1 - \lambda & - 1 \\ 0 & 1 & 1 - \lambda \end{array} \right| = (1 - \lambda) (\lambda^ {2} - 2 \lambda + 2) = 0.
+$$
+
+解之,得特征值
+
+$$
+\lambda = 1, \quad 1 \pm \mathrm{i}.
+$$
+
+对于 $\lambda=1$ ，容易求得它对应的一个特征向量 $\begin{bmatrix}1\\ 0\\ 0\end{bmatrix}$ ，故所对应的解为
+
+$$
+\boldsymbol {x} _ {1} (t) = \mathrm{e} ^ {t} \left[ \begin{array}{l} 1 \\ 0 \\ 0 \end{array} \right].
+$$
+
+对于 $\lambda = 1 + \mathrm{i}$ ，它对应的特征向量 $r = (r_1,r_2,r_3)^{\mathrm{T}}$ 满足方程组 $[A - (1 + \mathrm{i})E]\mathbf{r} = \mathbf{0}$ ，即
+
+$$
+\left[ \begin{array}{c c c} - \mathrm{i} & 0 & 0 \\ 0 & - \mathrm{i} & - 1 \\ 0 & 1 & - \mathrm{i} \end{array} \right] \left[ \begin{array}{l} r _ {1} \\ r _ {2} \\ r _ {3} \end{array} \right] = \mathbf {0}.
+$$
+
+容易求得一个解为
+
+$$
+\boldsymbol {r} = \left[ \begin{array}{c} 0 \\ \mathrm{i} \\ 1 \end{array} \right],
+$$
+
+从而可得 $\lambda=1+i$ 所对应的复值解为
+
+$$
+\begin{array}{r l} \boldsymbol {x} _ {2} (t) & = \mathrm{e} ^ {(1 + \mathrm{i}) t} \left[ \begin{array}{l} 0 \\ \mathrm{i} \\ 1 \end{array} \right] = \mathrm{e} ^ {t} (\cos t + \mathrm{i} \sin t) \left(\left[ \begin{array}{l} 0 \\ 0 \\ 1 \end{array} \right] + \mathrm{i} \left[ \begin{array}{l} 0 \\ 1 \\ 0 \end{array} \right]\right) \\ & = \mathrm{e} ^ {t} \left\{\cos t \left[ \begin{array}{l} 0 \\ 0 \\ 1 \end{array} \right] - \sin t \left[ \begin{array}{l} 0 \\ 1 \\ 0 \end{array} \right] + \mathrm{i} \left(\cos t \left[ \begin{array}{l} 0 \\ 1 \\ 0 \end{array} \right] + \sin t \left[ \begin{array}{l} 0 \\ 0 \\ 1 \end{array} \right]\right) \right\} \\ & = \mathrm{e} ^ {t} \left[ \begin{array}{c} 0 \\ - \sin t \\ \cos t \end{array} \right] + \mathrm{i} \mathrm{e} ^ {t} \left[ \begin{array}{l} 0 \\ \cos t \\ \sin t \end{array} \right], \end{array}
+$$
+
+故 $\lambda=1\pm i$ 所对应的两个线性独立的实值解为
+
+$$
+\boldsymbol {u} (t) = \mathrm{e} ^ {t} \left[ \begin{array}{c} 0 \\ - \sin t \\ \cos t \end{array} \right], \quad \boldsymbol {v} (t) = \mathrm{e} ^ {t} \left[ \begin{array}{c} 0 \\ \cos t \\ \sin t \end{array} \right].
+$$
+
+所以,原方程的通解可由 $x_{1}(t)$ , $u(t)$ 与 $v(t)$ 表示为
+
+$$
+\boldsymbol {x} (t) = \mathrm{e} ^ {t} \left(C _ {1} \left[ \begin{array}{l} 1 \\ 0 \\ 0 \end{array} \right] + C _ {2} \left[ \begin{array}{c} 0 \\ - \sin t \\ \cos t \end{array} \right] + C _ {3} \left[ \begin{array}{l} 0 \\ \cos t \\ \sin t \end{array} \right]\right) = \mathrm{e} ^ {t} \left[ \begin{array}{c} C _ {1} \\ - C _ {2} \sin t + C _ {3} \cos t \\ C _ {2} \cos t + C _ {3} \sin t \end{array} \right].
+$$
+
+代入初值条件 $x(0)=(1,1,1)^{\mathrm{T}}$ ，解得
+
+$$
+C _ {1} = 1, \quad C _ {2} = 1, \quad C _ {3} = 1,
+$$
+
+于是,所求初值问题的解为
+
+$$
+\boldsymbol {x} (t) = \mathrm{e} ^ {t} \left[ \begin{array}{c} 1 \\ \cos t - \sin t \\ \cos t + \sin t \end{array} \right].
+$$
+</Solution>
+</Example>
+
+## 3.4 常系数线性非齐次微分方程组的求解
+
+在3.2节中我们已经讨论过一般线性非齐次微分方程组的求解问题,得到其通解的表达式(3.12)和满足初值条件 $x(t_{0})=x_{0}$ 的特解公式(3.13).
+
+对于常系数线性非齐次微分方程组
+
+$$
+\frac {\mathrm{d} \boldsymbol {x}}{\mathrm{d} t} = \boldsymbol {A} \boldsymbol {x} + \boldsymbol {f} (t), \quad \boldsymbol {f} \in C (a, b),\tag{3.21}
+$$
+
+我们当然可以先求出其对应的常系数线性齐次微分方程组的基解矩阵 $X(t)$ , 然后代入公式(3.12)或(3.13), 从而得到方程组(3.21)的通解和相应特解. 虽然它们必在 $(a, b)$ 内存在, 但是为代入公式, 需要求 $X(t)$ 的逆矩阵 $X^{-1}(t)$ , 比较麻烦. 其实, 对常系数线性微分方程组(3.21)来说, 公式(3.12)与(3.13)可以化成更便于计算的下述形式.
+
+<Knowledge title="定理 3.9">
+设 $X(t)$ 是常系数线性齐次微分方程组 (3.15) 满足 $X(0)=E$ 的基解矩阵, 则常系数线性非齐次微分方程组 (3.21) 的通解可表示为
+
+$$
+\boldsymbol {x} (t) = \boldsymbol {X} (t) \boldsymbol {C} + \int_ {t _ {0}} ^ {t} \boldsymbol {X} (t - \tau) \boldsymbol {f} (\tau) \mathrm{d} \tau ,\tag{3.22}
+$$
+
+而方程组(3.21)满足初值条件 $x(t_{0})=x_{0}$ 的特解可表示为
+
+$$
+\boldsymbol {x} (t) = \boldsymbol {X} (t - t _ {0}) \boldsymbol {x} _ {0} + \int_ {t _ {0}} ^ {t} \boldsymbol {X} (t - \tau) \boldsymbol {f} (\tau) \mathrm{d} \tau .\tag{3.23}
+$$
+
+证明从略.
+</Knowledge>
+
+<Example title="例 3.8">
+求微分方程组
+
+$$
+\frac {\mathrm{d} \boldsymbol {x}}{\mathrm{d} t} = \left[ \begin{array}{c c c} 1 & 0 & 0 \\ 0 & 1 & - 1 \\ 0 & 1 & 1 \end{array} \right] \boldsymbol {x} + \left[ \begin{array}{l} 0 \\ 0 \\ \mathrm{e} ^ {t} \end{array} \right]
+$$
+
+的通解.
+
+<Solution title="解">
+此微分方程组对应的齐次微分方程组的一个基解矩阵可由例 3.7 得出，其为
+
+$$
+\boldsymbol {X} _ {1} (t) = \left[ \begin{array}{c c c} \mathrm{e} ^ {t} & 0 & 0 \\ 0 & - \mathrm{e} ^ {t} \sin t & \mathrm{e} ^ {t} \cos t \\ 0 & \mathrm{e} ^ {t} \cos t & \mathrm{e} ^ {t} \sin t \end{array} \right].
+$$
+
+但是，由于 $X_{1}(0) \neq E$ ，所以 $X_{1}(t)$ 不能用于公式(3.22)，为得到所需的基解矩阵，利
+
+用基解矩阵的性质 $2^{\circ}$ ，我们可以选取基解矩阵为
+
+$$
+\boldsymbol {X} (t) = \boldsymbol {X} _ {1} (t) \boldsymbol {X} _ {1} ^ {- 1} (0),
+$$
+
+显然, $X(0)=E$ ,且容易算得
+
+$$
+\boldsymbol {X} _ {1} ^ {- 1} (0) = \left[ \begin{array}{l l l} 1 & 0 & 0 \\ 0 & 0 & 1 \\ 0 & 1 & 0 \end{array} \right] ^ {- 1} = \left[ \begin{array}{l l l} 1 & 0 & 0 \\ 0 & 0 & 1 \\ 0 & 1 & 0 \end{array} \right].
+$$
+
+代入通解公式(3.22)得
+
+$$
+\pmb {x} (t) = \pmb {X} _ {1} (t) \pmb {X} _ {1} ^ {- 1} (0) \pmb {C} + \int_ {0} ^ {t} \pmb {X} _ {1} (t - \tau) \pmb {X} _ {1} ^ {- 1} (0) \pmb {f} (\tau) \mathrm{d} \tau ,
+$$
+
+而
+
+$$
+\boldsymbol {X} _ {1} (t) \boldsymbol {X} _ {1} ^ {- 1} (0) = \mathrm{e} ^ {t} \left[ \begin{array}{c c c} 1 & 0 & 0 \\ 0 & - \sin t & \cos t \\ 0 & \cos t & \sin t \end{array} \right] \left[ \begin{array}{c c c} 1 & 0 & 0 \\ 0 & 0 & 1 \\ 0 & 1 & 0 \end{array} \right] = \mathrm{e} ^ {t} \left[ \begin{array}{c c c} 1 & 0 & 0 \\ 0 & \cos t & - \sin t \\ 0 & \sin t & \cos t \end{array} \right],
+$$
+
+$$
+\begin{array}{r l} \boldsymbol {X} _ {1} (t - \tau) \boldsymbol {X} _ {1} ^ {- 1} (0) \boldsymbol {f} (\tau) & = \left[ \begin{array}{c c c} \mathrm{e} ^ {t - \tau} & 0 & 0 \\ 0 & \mathrm{e} ^ {t - \tau} \cos (t - \tau) & - \mathrm{e} ^ {t - \tau} \sin (t - \tau) \\ 0 & \mathrm{e} ^ {t - \tau} \sin (t - \tau) & \mathrm{e} ^ {t - \tau} \cos (t - \tau) \end{array} \right] \left[ \begin{array}{l} 0 \\ . 0 \\ \mathrm{e} ^ {\tau} \end{array} \right] \\ & = \mathrm{e} ^ {t} \left[ \begin{array}{c} 0 \\ - \sin (t - \tau) \\ \cos (t - \tau) \end{array} \right], \end{array}
+$$
+
+于是
+
+$$
+\begin{array}{r l} \boldsymbol {x} (t) & = \mathrm{e} ^ {t} \left[ \begin{array}{c c c} 1 & 0 & 0 \\ 0 & \cos t & - \sin t \\ 0 & \sin t & \cos t \end{array} \right] \left[ \begin{array}{l} C _ {1} \\ C _ {2} \\ C _ {3} \end{array} \right] + \mathrm{e} ^ {t} \int_ {0} ^ {t} \left[ \begin{array}{c} 0 \\ - \sin (t - \tau) \\ \cos (t - \tau) \end{array} \right] \mathrm{d} \tau \\ & = \left[ \begin{array}{c} C _ {1} \mathrm{e} ^ {t} \\ (C _ {2} \cos t - C _ {3} \sin t) \mathrm{e} ^ {t} - \mathrm{e} ^ {t} (1 - \cos t) \\ (C _ {2} \sin t + C _ {3} \cos t) \mathrm{e} ^ {t} + \mathrm{e} ^ {t} \sin t \end{array} \right]. \end{array}
+$$
+</Solution>
+</Example>
+
+## 3.5 微分方程组应用举例
+
+线性微分方程组有着广泛的实际应用,现举两例说明.
+
+<Example title="例 3.9">
+Lanchester 作战模型 第一次世界大战期间, F. W. Lanchester 通过研究他自己所建立的数学模型, 得出了所谓“Lanchester 平方定律”, 说明军队的集中在战争中的重要性. 下面就让我们来介绍他的模型.
+
+在甲乙双方的战役中,双方开始时投入的士兵数量分别为 $x_0$ 与 $y_0$ ,时刻 $t$ 时双方的士兵数量分别为 $x(t)$ 与 $y(t)$ ,甲乙双方战斗的有效系数(包括士气、武器装配、指挥艺术等)分别为 $b$ 与 $a$ ,即甲方平均一个士兵使乙方士兵在单位时间内的减员数为 $b$ ,乙方平均一个士兵使甲方士兵在单位时间内的减员数为 $a$ ,在时刻 $t$ 甲乙双方士兵的增援率分别设为 $f(t)$ 与 $g(t)$ .如果把士兵病故、逃亡等因素忽略不计,那么这两支正规部队作战的数学模型为
+
+$$
+\left\{ \begin{array}{l l} \frac {\mathrm{d} x}{\mathrm{d} t} = - a y + f (t), \\ \frac {\mathrm{d} y}{\mathrm{d} t} = - b x + g (t), \end{array} \right. \quad \left\{ \begin{array}{l l} x (0) = x _ {0}, \\ y (0) = y _ {0}. \end{array} \right.
+$$
+
+这是一个常系数线性非齐次微分方程组的 Cauchy 问题.
+
+这里我们仅讨论双方均无增援的情形.这时模型变为常系数线性齐次微分方程组的 Cauchy 问题
+
+$$
+\left\{ \begin{array}{l l} \frac {\mathrm{d} x}{\mathrm{d} t} = - a y, \\ \frac {\mathrm{d} y}{\mathrm{d} t} = - b x, \end{array} \right. \quad \left\{ \begin{array}{l l} x (0) = x _ {0}, \\ y (0) = y _ {0}. \end{array} \right.\tag{3.24}
+$$
+
+如果我们只关心 x 与 y 之间的依赖关系和变化趋势, 则不必求出其解 $x(t)$ , $y(t)$ 而直接在 xOy 平面上研究解曲线, 即把 t 看作参数, 在 xOy 平面 (称为相平面) 上研究曲线上动点 $(x, y)$ 的运动轨迹, 称为此方程 (3.24) 的轨线. 显然此轨线应满足方程
+
+$$
+\frac {\mathrm{d} y}{\mathrm{d} x} = \frac {b}{a} \frac {x}{y},
+$$
+
+这是一个可分离变量的一阶微分方程,它的解
+
+$$
+a y ^ {2} - b x ^ {2} = C\tag{3.25}
+$$
+
+是一族双曲线,在第一象限部分的图像如图4.8所示.
+
+用初值条件确定出常数 C 后得轨线方程为
+
+$$
+a y ^ {2} - b x ^ {2} = a y _ {0} ^ {2} - b x _ {0} ^ {2}.
+$$
+
+由方程组(3.24)可见,由于 $\dot{x}<0,\dot{y}<0$ , 故当 t 增大时动点 $(x,y)$ 将沿轨线朝使 x,y 减少的方向运动. 于是, 当 $\sqrt{a}y_{0}=\sqrt{b}x_{0}$ 时, 动点将沿轨线 $\sqrt{a}y-\sqrt{b}x=0$ 趋向于原点 O. 当点 $(x_{0},y_{0})$ 位于直线 $\sqrt{a}y-\sqrt{b}x=0$ 的上方时, 由于解的唯一性,过 $(x_{0},y_{0})$ 的轨线不可能穿过轨线 $\sqrt{a}y-\sqrt{b}x=0$ 而跑到此直线的下方,故只能如图4.8所示方式减少到y轴,从而乙方将获胜;当点 $(x_{0},y_{0})$ 位于直线下方时,甲方将获胜.因此,如果乙方想获胜,就必须增加其士兵的初始数量 $y_{0}$ 或提高其战斗有效系数a,使 $ay_{0}^{2}-bx_{0}^{2}>0$ ,从而让动点位于直线 $\sqrt{a}y-\sqrt{b}x=0$ 的上方.而且我们还看到,增加士兵数量十分重要,因为它是以平方出现的,这就是著名的Lanchester平方定律.
+
+![](images/bbceb344d275a024c7eeefb0a7787b355175375b1310bffdbf6d1d084edb3572.jpg)  
+图4.8
+
+例如,假设甲乙双方战斗有效系数相仿,即 b=a,甲乙双方开始投入士兵数目分别为 $x_{0}=100$ 人与 $y_{0}=50$ 人.在这种情况下,解(3.25)为
+
+$$
+y ^ {2} - x ^ {2} = \frac {C}{a},
+$$
+
+将初值代入,得
+
+$$
+\frac {C}{a} = 5 0 ^ {2} - 1 0 0 ^ {2} = - 7 5 0 0.
+$$
+
+从而有
+
+$$
+x ^ {2} - y ^ {2} = 7 5 0 0.
+$$
+
+战斗结束时意味着乙方50人全部损失(伤亡或被俘),即y=0.这时可算得
+
+$$
+x = \sqrt {7 5 0 0} \approx 8 7 \text {人},
+$$
+
+故在战斗中,甲方仅损失13人.
+
+如果我们不仅要研究 x 与 y 的变化趋势, 还想知道在每一时刻 t, 双方剩余士兵的具体数量 $x(t)$ 和 $y(t)$ , 那就必须由方程组 (3.24) 中求出解 $x(t)$ , $y(t)$ 的表达式. 方程组 (3.24) 的系数矩阵的特征方程为
+
+$$
+\left| \begin{array}{c c} \lambda & a \\ b & \lambda \end{array} \right| = \lambda^ {2} - a b = 0,
+$$
+
+从而特征值为 $\lambda=\pm\sqrt{ab}$ . 容易求得它们所对应的特征向量分别为
+
+$$
+\left[ \begin{array}{c} a \\ - \sqrt {a b} \end{array} \right], \quad \left[ \begin{array}{c} a \\ \sqrt {a b} \end{array} \right],
+$$
+
+于是,方程(3.24)的通解为
+
+$$
+\left[ \begin{array}{l} x \\ y \end{array} \right] = C _ {1} \mathrm{e} ^ {\sqrt {a b t}} \left[ \begin{array}{c} a \\ - \sqrt {a b} \end{array} \right] + C _ {2} \mathrm{e} ^ {- \sqrt {a b t}} \left[ \begin{array}{l} a \\ \sqrt {a b} \end{array} \right].
+$$
+
+代入初值条件 $x(0)=x_{0}, y(0)=y_{0}$ ，不难求得 Canchy 问题(3.24) 的解为
+
+$$
+\left\{ \begin{array}{l} x = \frac {\sqrt {a b} x _ {0} - a y _ {0}}{2 \sqrt {a b}} \mathrm{e} ^ {\sqrt {a b t}} + \frac {a y _ {0} + \sqrt {a b} x _ {0}}{2 \sqrt {a b}} \mathrm{e} ^ {- \sqrt {a b t}}, \\ y = - \frac {\sqrt {a b} x _ {0} - a y _ {0}}{2 a} \mathrm{e} ^ {\sqrt {a b t}} + \frac {a y _ {0} + \sqrt {a b} x _ {0}}{2 a} \mathrm{e} ^ {- \sqrt {a b t}}. \end{array} \right.\tag{3.26}
+$$
+
+由此解得表达式(3.26)，便可计算出各时刻 t 甲乙双方剩余的士兵数量 $x(t)$ 与 $y(t)$ .
+
+例如当 $b=a, x_{0}=100, y_{0}=50$ 时，由(3.26)式可算得
+
+$$
+\left\{ \begin{array}{l} x (t) = 2 5 \mathrm{e} ^ {a t} + 7 5 \mathrm{e} ^ {- a t}, \\ y (t) = - 2 5 \mathrm{e} ^ {a t} + 7 5 \mathrm{e} ^ {- a t}. \end{array} \right.
+$$
+
+若认为当乙方士兵数量 $y(t)=0$ 时战斗结束, 则由
+
+$$
+- 2 5 \mathrm{e} ^ {a t} + 7 5 \mathrm{e} ^ {- a t} = 0
+$$
+
+可求得战斗结束时间为
+
+$$
+t = \frac {\ln 3}{2 a}.
+$$
+</Example>
+
+<Example title="例 3.10">
+两自由度的振动问题.
+
+为了消除不需要的振动,常常在振动系统中设置减振器.图4.9就是一个典型的设有减振器的系统.其中 $m_{1}$ 是原机械部件的质量; $m_{2}$ 是减振器的质量; $k_{1}$ 和 $k_{2}$ 是两个弹簧,它们的劲度系数(或称为刚度)也分别用 $k_{1}$ 和 $k_{2}$ 表示;c是减速器(假定阻力与速度成正比)的阻尼系数;F是强迫力; $x_{1}$ 和 $x_{2}$ 分别表示 $m_{1}$ 和 $m_{2}$ 距它们
+
+的平衡位置的位移,求物体 $m_{1}$ 运动的方程.
+
+<Solution title="解">
+为建立这个系统的运动方程,先分别考虑物体 $m_{1}$ 和 $m_{2}$ 的受力情况.
+
+(1) 物体 $m_{2}$ 的受力情况
+
+![](images/7a57912a2bbcd1d764f32c72761c4c31a7961b113f5d3dd879e7674728671cd6.jpg)
+
+假定弹簧 $k_{1}$ 和 $k_{2}$ 都满足 Hooke 定律. 当物体 $m_{1}$ 有位移 $x_{1}$ 时, 物体 $m_{2}$ 同时有位移 $x_{2}$ . 这时, 弹簧 $k_{2}$ 变形 (拉长或压缩) 的长度为 $x_{2}-x_{1}$ . 因此, 这时弹簧 $k_{2}$ 的弹性力是 $-k_{2}(x_{2}-x_{1})$ (力的方向与位移方向相反).
+
+图4.9
+
+(2) 物体 $m_{1}$ 的受力情况
+
+1）沿位移方向的外力： $F=F_{0}\sin\omega t$ ;
+
+2）阻尼力： $-c\frac{dx_{1}}{dt}$ （方向与速度方向相反）；
+
+3）这时物体 $m_{1}$ 受到两个弹簧的作用：弹簧 $k_{1}$ 的弹性力为 $-k_{1}x_{1}$ ，弹簧 $k_{2}$ 的弹性力为 $k_{2}(x_{2} - x_{1})$ 。
+
+由 Newton 第二定律, 可建立如下运动方程
+
+$$
+m _ {2} \frac {\mathrm{d} ^ {2} x _ {2}}{\mathrm{d} t ^ {2}} = - k _ {2} (x _ {2} - x _ {1}),
+$$
+
+$$
+m _ {1} \frac {\mathrm{d} ^ {2} x _ {1}}{\mathrm{d} t ^ {2}} = F _ {0} \sin \omega t - c \frac {\mathrm{d} x _ {1}}{\mathrm{d} t} - k _ {1} x _ {1} + k _ {2} (x _ {2} - x _ {1}),
+$$
+
+即上述运动系统满足微分方程组
+
+$$
+\left\{ \begin{array}{l} m _ {1} \frac {\mathrm{d} ^ {2} x _ {1}}{\mathrm{d} t ^ {2}} + c \frac {\mathrm{d} x _ {1}}{\mathrm{d} t} + (k _ {1} + k _ {2}) x _ {1} - k _ {2} x _ {2} = F _ {0} \sin \omega t, \\ m _ {2} \frac {\mathrm{d} ^ {2} x _ {2}}{\mathrm{d} t ^ {2}} + k _ {2} (x _ {2} - x _ {1}) = 0. \end{array} \right.
+$$
+
+令 $\frac{\mathrm{d}x_1}{\mathrm{d}t} = y_1$ 及 $\frac{\mathrm{d}x_2}{\mathrm{d}t} = y_2$ ，则其化为一个常系数线性非齐次方程组
+
+$$
+\left\{ \begin{array}{l} \frac {\mathrm{d} x _ {1}}{\mathrm{d} t} = y _ {1}, \\ \frac {\mathrm{d} y _ {1}}{\mathrm{d} t} = - \frac {k _ {1} + k _ {2}}{m _ {1}} x _ {1} + \frac {k _ {2}}{m _ {1}} x _ {2} - \frac {c}{m _ {1}} y _ {1} + \frac {1}{m _ {1}} F _ {0} \sin \omega t, \\ \frac {\mathrm{d} x _ {2}}{\mathrm{d} t} = y _ {2}, \\ \frac {\mathrm{d} y _ {2}}{\mathrm{d} t} = - \frac {k _ {2}}{m _ {2}} (x _ {2} - x _ {1}). \end{array} \right.\tag{3.27}
+$$
+
+为了简单, 只考虑无阻尼自由振动的情形, 即 $c=0, F_{0} \equiv 0$ . 于是, 方程组(3.27) 变成
+
+$$
+\left\{ \begin{array}{l} \frac {\mathrm{d} x _ {1}}{\mathrm{d} t} = y _ {1}, \\ \frac {\mathrm{d} y _ {1}}{\mathrm{d} t} = - \frac {k _ {1} + k _ {2}}{m _ {1}} x _ {1} + \frac {k _ {2}}{m _ {1}} x _ {2}, \\ \frac {\mathrm{d} x _ {2}}{\mathrm{d} t} = y _ {2}, \\ \frac {\mathrm{d} y _ {2}}{\mathrm{d} t} = - \frac {k _ {2}}{m _ {2}} (x _ {2} - x _ {1}). \end{array} \right.\tag{3.28}
+$$
+
+容易求得它的特征方程为
+
+$$
+\lambda^ {4} + \left(\frac {k _ {1} + k _ {2}}{m _ {1}} + \frac {k _ {2}}{m _ {2}}\right) \lambda^ {2} + \frac {k _ {1} k _ {2}}{m _ {1} m _ {2}} = 0.\tag{3.29}
+$$
+
+设 $z = \lambda^2$ ，则(3.29)式可写成
+
+$$
+z ^ {2} + \left(\frac {k _ {1} + k _ {2}}{m _ {1}} + \frac {k _ {2}}{m _ {2}}\right) z + \frac {k _ {1} k _ {2}}{m _ {1} m _ {2}} = 0,
+$$
+
+解之,得
+
+$$
+z _ {1, 2} = \frac {1}{2} \left[ - \left(\frac {k _ {1} + k _ {2}}{m _ {1}} + \frac {k _ {2}}{m _ {2}}\right) \pm \sqrt {\left(\frac {k _ {1} + k _ {2}}{m _ {1}} + \frac {k _ {2}}{m _ {2}}\right) ^ {2} - 4 \frac {k _ {1} k _ {2}}{m _ {1} m _ {2}}} \right].
+$$
+
+容易看出, $z_{1}<0,z_{2}<0$ ,因此,可令 $z_{1}=-\alpha^{2},z_{2}=-\beta^{2}$ ,这时
+
+$$
+\alpha^ {2}, \beta^ {2} = \frac {1}{2} \left[ \left(\frac {k _ {1} + k _ {2}}{m _ {1}} + \frac {k _ {2}}{m _ {2}}\right) \mp \sqrt {\left(\frac {k _ {1} + k _ {2}}{m _ {1}} + \frac {k _ {2}}{m _ {2}}\right) ^ {2} - 4 \frac {k _ {1} k _ {2}}{m _ {1} m _ {2}}} \right],
+$$
+
+因此,方程(3.29)最后可写成
+
+$$
+\left(\lambda^ {2} + \alpha^ {2}\right) \left(\lambda^ {2} + \beta^ {2}\right) = 0.
+$$
+
+故方程(3.29)的特征根全是纯虚根.方程组(3.28)解的第一个函数可写成形如
+
+$$
+x _ {1} = C _ {1} \sin \alpha t + C _ {2} \cos \alpha t + C _ {3} \sin \beta t + C _ {4} \cos \beta t
+$$
+
+或
+
+$$
+x _ {1} = A _ {1} \sin (\alpha t + \varphi_ {1}) + A _ {2} \sin (\beta t + \varphi_ {2}).
+$$
+
+这就是物体 $m_{1}$ 运动的方程. 它是两个简谐运动的叠合. 每一个简谐运动的角频率(即 $\alpha$ 与 $\beta$ ) 均与减振器的参数 $m_{2}$ 与 $k_{2}$ 有关. 因此, 调整 $m_{2}$ 与 $k_{2}$ 可以改变原部件的运动频率. 这个事实可以用来防止机器设备与外力发生共振现象, 以及减小外力的干扰等.
+</Solution>
+</Example>
+
+<Block title="习题4.3">
+**（A）**
+
+1. 下列方程(组)中哪些是线性微分方程(组)? 哪些不是?
+
+(1) $\frac{\mathrm{d}x}{\mathrm{d}t} + 2x^{2} - t = 3;$ (2) $\frac{\mathrm{d}x}{\mathrm{d}t} + 2t^2 x + \mathrm{e}^t = 0;$
+
+(3) $\left\{ \begin{array}{l} \frac{\mathrm{d}x}{\mathrm{d}t} = 3tx + 2xy, \\ \frac{\mathrm{d}y}{\mathrm{d}t} = 4x + ty; \end{array} \right.$
+
+$$
+\left\{ \begin{array}{l} \frac {\mathrm{d} y}{\mathrm{d} x} = x ^ {3} y + z \sin x, \\ \frac {\mathrm{d} z}{\mathrm{d} x} = y \cos x - x ^ {2} z. \end{array} \right.
+$$
+
+2. 证明: 若 $x = x(t)$ 是线性齐次微分方程组 $\dot{x} = A(t)x$ 满足 $x(t_0) = 0$ 的解, 则必有 $x(t) \equiv 0$ .
+
+3. 试验证向量值函数 $x(t) = \begin{bmatrix} t \\ 1 \end{bmatrix}, y(t) = \begin{bmatrix} 1 \\ t \end{bmatrix}$ 在 $(- \infty, + \infty)$ 线性无关；但在 $t_1 = 1, t_2 = -1$ 时， $x(t_i)$ 与 $y(t_i) (i=1,2)$ 线性相关.
+
+4. 证明: 若 $\boldsymbol{x}_{i}(t), i=1,\cdots,n, t\in(a,b)$ 都是线性齐次微分方程组 $\dot{\boldsymbol{x}}=\boldsymbol{A}(t)\boldsymbol{x}$ 的解，则其线性组合 $\sum_{i=1}^{n}C_{i}\boldsymbol{x}_{i}(t), t\in(a,b)$ 也是其解，其中 $C_{i}$ 为实的或复的常数.
+
+5. 设 $v_{i} \in R^{n}, v_{i} \neq 0, \lambda_{i} \in C, \lambda_{i}$ 互不相同, $i = 1, \cdots, m$ . 试证向量值函数 $v_{1} e^{\lambda_{i} t}, \cdots, v_{m} e^{\lambda_{m} t}$ 在区间 $(-∞, +∞)$ 线性无关.
+
+6. 证明: 非齐次线性微分方程组 $\dot{\boldsymbol{x}} = \boldsymbol{A}(t) \boldsymbol{x} + \boldsymbol{f}(t), \boldsymbol{x} \in \mathbb{R}^{n}$ 的任意两个解之差必为对应齐次线性微分方程组的一个解.
+
+7. 设 $A(t)$ 为实矩阵, $x = x(t)$ 是 $\frac{dx}{dt} = A(t)x$ 的复值解, 试证明 $x(t)$ 的实部和虚部分别都是它的解.
+
+8. 设 $A(t)$ 为实矩阵， $(x_{1}(t)\cdots x_{n}(t))$ 是 $\dot{x}=A(t)x$ 的基解矩阵，其中 $x_{1}(t)$ 与 $x_{2}(t)$ 是一对共轭复值解向量，记
+
+$$
+\mathbf {y} _ {1} (t) \stackrel {\mathrm{def}} {=} \operatorname{Re} \mathbf {x} _ {1} (t) = \frac {1}{2} (\mathbf {x} _ {1} (t) + \mathbf {x} _ {2} (t)),
+$$
+
+$$
+\mathbf {y} _ {2} (t) \stackrel {\mathrm{def}} {=} \operatorname{Im} \mathbf {x} _ {1} (t) = \frac {1}{2 \mathrm{i}} (\mathbf {x} _ {1} (t) - \mathbf {x} _ {2} (t)).
+$$
+
+证明：用向量 $y_{1}, y_{2}$ 代替 $x_{1}, x_{2}$ 后所得的矩阵 $(y_{1}(t), y_{2}(t), x_{3}(t), \cdots, x_{n}(t))$ 也是原方程组的一个基解矩阵.
+
+9. 设 $\boldsymbol{x}=\boldsymbol{x}_{i}(t)$ 是 $\frac{\mathrm{d}\boldsymbol{x}}{\mathrm{d}t}=\boldsymbol{A}(t)\boldsymbol{x}+\boldsymbol{f}_{i}(t)(i=1,\cdots,m)$ 的解，证明： $x=\sum_{i=1}^{m}\boldsymbol{x}_{i}(t)$ 必为 $\frac{\mathrm{d}\boldsymbol{x}}{\mathrm{d}t}=A(t)\boldsymbol{x}+\sum_{i=1}^{m}\boldsymbol{f}_{i}(t)$ 的解.
+
+10.（1）试验证向量值函数组 $(1,0,0)^{\mathrm{T}}, (t,0,0)^{\mathrm{T}}, (t^{2},0,0)^{\mathrm{T}}$ 在任意区间 $(a,b)$ 内线性无关，但它们的Wronski行列式 $W(t) \equiv 0$ ；
+
+（2）试证明方程组(3.3)的 n 个解构成的 Wronski 行列式在解存在的区间 $(a,b)$ 内或者恒为零, 或者恒不为零.
+
+11. 求下列常系数线性齐次微分方程组的通解：
+
+$$
+\left\{ \begin{array}{l} \frac {\mathrm{d} x _ {1}}{\mathrm{d} t} = x _ {2}, \\ \frac {\mathrm{d} x _ {2}}{\mathrm{d} t} = - 4 x _ {1} + 4 x _ {2} + 2 x _ {3}, \\ \frac {\mathrm{d} x _ {3}}{\mathrm{d} t} = 2 x _ {1} - x _ {2} - x _ {3}; \end{array} \right.
+$$
+
+$$
+\frac {\mathrm{d} \boldsymbol {x}}{\mathrm{d} t} = \left[ \begin{array}{c c} - 1 & - 1 \\ 2 & - 3 \end{array} \right] \boldsymbol {x}.
+$$
+
+12. 求下列常系数线性非齐次微分方程组的通解：
+
+$$
+\left\{ \begin{array}{l} \frac {\mathrm{d} x _ {1}}{\mathrm{d} t} = x _ {1} + 2 x _ {2} - \mathrm{e} ^ {- t}, \\ \frac {\mathrm{d} x _ {2}}{\mathrm{d} t} = 4 x _ {1} + 3 x _ {2} + 4 \mathrm{e} ^ {- t}; \end{array} \right.
+$$
+
+$$
+\frac {\mathrm{d} \boldsymbol {x}}{\mathrm{d} t} = \left[ \begin{array}{c c} 2 & - 3 \\ 1 & - 2 \end{array} \right] \boldsymbol {x} + \left[ \begin{array}{c} 0 \\ 2 \sin t \end{array} \right]. \tag {2}
+$$
+
+**（B）**
+
+1. 若 $X(t)$ 是线性齐次微分方程组 $\dot{\pmb{x}} = A(t)\pmb{x},\pmb {x}\in \mathbf{R}^n$ 的任一基解矩阵， $\pmb{B}$ 是任一 $n$ 阶非奇异常数矩阵，证明： $X(t)\pmb{B}$ 也是此方程组的一个基解矩阵.
+
+2. 证明: 若下列两方程组
+
+$$
+\frac {\mathrm{d} \boldsymbol {x}}{\mathrm{d} t} = \boldsymbol {A} (t) \boldsymbol {x}, \quad \frac {\mathrm{d} \boldsymbol {x}}{\mathrm{d} t} = \boldsymbol {B} (t) \boldsymbol {x}
+$$
+
+有相同的基解矩阵,则 $A(t) \equiv B(t)$ , 其中 $A(t)$ , $B(t)$ 是两个 n 阶连续矩阵.
+
+3. 证明: 若 $X(t)$ 是 $\frac{\mathrm{d}x}{\mathrm{d}t}=A(t)x$ 的基解矩阵, 则 $(X(t))^{-1}$ 是 $\frac{\mathrm{d}x}{\mathrm{d}t}=-A^{\mathrm{T}}(t)x$ 的基解矩阵.
+4. 设 $\dot{x}=A(t)x$ ,
+
+(1) 怎样的行列式称为其解的 Wronski 行列式；
+
+(2) 证明: Wronski 行列式 $W(t)$ 满足下列 Liouville 公式:
+
+$$
+W (t) = W \left(t _ {0}\right) \mathrm{e} ^ {\int_ {t _ {0}} ^ {t} \operatorname{tr} A (\tau) \mathrm{d} \tau},
+$$
+
+其中 $\operatorname{tr} A(t)$ 表示矩阵 $A(t)$ 的迹.
+
+5. 设有线性非齐次微分方程组
+
+$$
+\left\{ \begin{array}{l} \frac {\mathrm{d} x}{\mathrm{d} t} = \frac {1}{t} x - y + t, \\ \frac {\mathrm{d} y}{\mathrm{d} t} = \frac {1}{t ^ {2}} x + \frac {2}{t} y - t ^ {2}. \end{array} \right.
+$$
+
+（1）验证 $x=t^{2}, y=-t$ 是其对应的线性齐次微分方程组的解；
+
+(2) 求所给线性非齐次微分方程组的通解.
+
+6. 求下列常系数线性齐次微分方程组的通解：
+
+(1) $\frac{\mathrm{d}\pmb{x}}{\mathrm{d}t} = \begin{bmatrix} -1 & -1 & 0\\ 0 & -1 & -1\\ 0 & 0 & -1 \end{bmatrix}\pmb {x};$
+
+$$
+\frac {\mathrm{d} \boldsymbol {x}}{\mathrm{d} t} = \left[ \begin{array}{c c c} - 5 & - 1 0 & - 2 0 \\ 5 & 5 & 1 0 \\ 2 & 4 & 9 \end{array} \right] \boldsymbol {x}.
+$$
+
+7. 一电路如图所示, 输入电压为 $\sin t$ , 电感 $L_{2}=1\ H$ , 电容 $C_{3}=1\ F$ , 电阻 $R_{1}=2\ \Omega$ , $R_{3}=3\ \Omega$ , 当 t=0 时接通电路, 其时 $I_{2}=I_{3}=0$ , 求开关闭合后电路 $I_{1}(t)$ , $I_{2}(t)$ , $I_{3}(t)$ 的变化规律.
+
+![](images/57e1f368be4cd53f75432c54707f42db1c664973478d7494db0124999f96bf38.jpg)  
+(第7题图)
+</Block>

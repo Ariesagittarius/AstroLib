@@ -1,0 +1,291 @@
+---
+title: '§$16.1$ 积分计算'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Solution from '@/components/Solution.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+
+
+从上册第九章不定积分已经知道, 初等函数的原函数未必是初等函数. 因此在第十章中用$Newton$-$Leibniz$公式计算积分的方法的适用范围是有限的. 在$12.3.2$小节 (见上册$390$页) 中列举了几个特殊的广义积分的计算, 可以说每一个例题都有其特殊的方法. 本节将从方法论的角度介绍无穷级数在积分计算中的应用. 这方面的更一般性讨论见后面第二十三章的含参变量积分.
+
+## $16.1.1$ 关于逐项积分的补充命题
+
+利用函数项级数的逐项积分法可以计算出许多在定积分或广义积分理论中无法计算的积分。对于常义积分来说，应用一致收敛充分条件下的逐项积分，或者$Arzelà$控制收敛定理(命题$14.2.4$)一般就可以解决问题。但是对于广义积分问题则还需要补充几个新的工具。下面只对无穷限广义积分写出保证逐项积分成立的两个命题，它们当然可以推广到有限区间上的瑕积分上去。
+
+<Knowledge title="命题 16.1.1">
+设在区间 $[a, +\infty)$ 上的连续函数列 $\{f_{n}\}$ 单调收敛于连续函数 $\varphi$ ，又设每个 $f_{n} (n = 1, 2, \cdots)$ 和 $\varphi$ 均在区间 $[a, +\infty)$ 上广义可积，则成立
+
+$$
+\lim _ {n \rightarrow \infty} \int_ {a} ^ {+ \infty} f _ {n} (x) \mathrm{d} x = \int_ {a} ^ {+ \infty} \varphi (x) \mathrm{d} x.
+$$
+
+<Solution title="证明">
+为确定起见, 只对连续函数列 $\{f_n\}$ 单调减少的情况写出证明. 对于 $A > a$ 写出
+
+$$
+\begin{array}{r l} & 0 \leqslant \int_ {a} ^ {+ \infty} f _ {n} (x) \mathrm{d} x - \int_ {a} ^ {+ \infty} \varphi (x) \mathrm{d} x \\ & = \int_ {a} ^ {A} [ f _ {n} (x) - \varphi (x) ] \mathrm{d} x + \int_ {A} ^ {+ \infty} [ f _ {n} (x) - \varphi (x) ] \mathrm{d} x. \end{array}\tag{16.1}
+$$
+
+利用 $\{f_n\}$ 单调减少收敛于 $\varphi$ ，取定 $N$ ，由于 $f_{N}$ 和 $\varphi$ 在 $[a, +\infty)$ 上均广义可积，因此对于每个给定的 $\varepsilon >0$ ，可以取定 $A$ ，使得
+
+$$
+0 \leqslant \int_ {A} ^ {+ \infty} [ f _ {N} (x) - \varphi (x) ] \mathrm{d} x <   \varepsilon .
+$$
+
+因此当 n > N 时 (16.1) 右边的第二项满足估计:
+
+$$
+0 \leqslant \int_ {A} ^ {+ \infty} [ f _ {n} (x) - \varphi (x) ] \mathrm{d} x \leqslant \int_ {A} ^ {+ \infty} [ f _ {N} (x) - \varphi (x) ] \mathrm{d} x <   \varepsilon .
+$$
+
+然后在区间 $[a, A]$ 上利用 (42页上的) $Dini$定理知道 $\{f_n\}$ 一致收敛于 $\varphi$ ，因此存在 $N_1 > N$ ，使得当 $n > N_1$ 时 (16.1) 右边的第一项也小于 $\varepsilon$ .
+</Solution>
+
+<Note>
+对于函数项级数有相应的结论, 从略.
+</Note>
+</Knowledge>
+
+为建立更一般的充分条件, 需引入一个新的概念 (参见命题 $14.2.2$ 后的说明).
+
+<Block title="定义">
+设函数列 $\{f_n\}$ 中的每个函数在区间 $[a, +\infty)$ 上均广义可积. 如果对于任意 $\varepsilon > 0$ , 存在 $A_0 > a$ , 使得当 $A > A_0$ 时 $\left|\int_{A}^{+\infty} f_n(x) \mathrm{d}x\right| < \varepsilon$ 对于所有 $n$ 同时成立, 则称 (含参变量 $n$ 的) 广义积分 $\int_{a}^{+\infty} f_n(x) \mathrm{d}x$ 关于 $n$ 一致收敛.
+</Block>
+
+<Knowledge title="命题 16.1.2">
+设在区间 $[a, +\infty)$ 上函数列 $\{f_{n}\}$ 内闭一致收敛于函数 $\varphi$ ，又设 $\{f_{n}\}(n = 1, 2, \cdots)$ 在区间 $[a, +\infty)$ 上的广义积分关于 n 一致收敛，且极限函数 $\varphi$ 于 $[a, +\infty)$ 上内闭可积，则成立
+
+$$
+\lim _ {n \rightarrow \infty} \int_ {a} ^ {+ \infty} f _ {n} (x) \mathrm{d} x = \int_ {a} ^ {+ \infty} \varphi (x) \mathrm{d} x.
+$$
+
+<Solution title="证明">
+（只列出主要步骤）先用$Cauchy$收敛准则证明 $\varphi$ 于 $[a, +\infty)$ 上广义可积，然后可用三分法估计如下：
+
+$$
+\begin{array}{l} \left| \int_ {a} ^ {+ \infty} f _ {n} (x) \mathrm{d} x - \int_ {a} ^ {+ \infty} \varphi (x) \mathrm{d} x \right| \\ \leqslant \int_ {a} ^ {A} | \varphi (x) - f _ {n} (x) | \mathrm{d} x + \left| \int_ {A} ^ {+ \infty} \varphi (x) \mathrm{d} x \right| + \left| \int_ {A} ^ {+ \infty} f _ {n} (x) \mathrm{d} x \right|. \end{array}
+$$
+</Solution>
+
+<Note>
+将上两个命题所要建立的等式改写为
+
+$$
+\lim _ {n \rightarrow \infty} \lim _ {A \rightarrow + \infty} \int_ {a} ^ {A} f _ {n} (x) \mathrm{d} x = \lim _ {A \rightarrow + \infty} \lim _ {n \rightarrow \infty} \int_ {a} ^ {A} f _ {n} (x) \mathrm{d} x,\tag{16.2}
+$$
+
+并应用极限顺序交换的基本原理（见命题$14.2.1$后的注以及命题$14.2.2$），就可以知道上述命题中的广义积分关于 $n$ 的一致收敛条件可以更换为
+
+$$
+\lim _ {n \rightarrow \infty} \int_ {a} ^ {A} f _ {n} (x) \mathrm{d} x = \int_ {a} ^ {A} \varphi (x) \mathrm{d} x
+$$
+
+关于 $A \in [a, +\infty)$ 的一致性.
+</Note>
+</Knowledge>
+
+## $16.1.2$ 例题
+
+首先需指出, 这里的要点是将积分计算问题转化为级数求和问题. 在这之后的问题从数值角度来说就是近似计算问题. 至于是否所求的积分值都有简单的表达式, 即能够用熟悉的常数和有限次初等运算得到, 那当然不一定.
+
+<Example title="例题 16.1.1">
+出现在一系列应用问题中的积分
+
+$$
+E (k) = \int_ {0} ^ {\pi / 2} \sqrt {1 - k ^ {2} \sin^ {2} \varphi} \mathrm{d} \varphi\tag{16.3}
+$$
+
+称为第二类完全椭圆积分, 其中 $k \in (0,1)$ 为参数. 试将 $E(k)$ 展开为 k 的幂级数, 并利用它研究椭圆周长近似公式
+
+$$
+s _ {1} = \frac {\pi}{2} [ a + b + \sqrt {2 a ^ {2} + 2 b ^ {2}} ]\tag{16.4}
+$$
+
+当椭圆偏心率充分小时的误差的渐近性态, 其中 a > b > 0 为椭圆的长半轴和短半轴, 偏心率 $\varepsilon = \sqrt{a^{2} - b^{2}} / a$ . (公式 (16.4) 来自上册 $356$ 页的例题 $11.3.3$ .)
+
+<Solution title="解">
+除了 $k = 0,1$ 之外，积分(16.3)的被积函数没有初等原函数（参见上册$297$页），但要将 $E(k)$ 展开为幂级数则是容易的。在 $(1 - x)^{1 / 2}$ 的$Maclaurin$级数中令 $x = k^2\sin^2\varphi$ 代入，就得到
+
+$$
+(1 - k ^ {2} \sin^ {2} \varphi) ^ {1 / 2} = 1 - \sum_ {n = 1} ^ {\infty} \frac {(2 n - 3) ! !}{2 ^ {n} n !} k ^ {2 n} \sin^ {2 n} \varphi , 0 \leqslant k <   1.
+$$
+
+以 $k$ 为参数, 以 $\varphi \in [0, \pi / 2]$ 为自变量, 这是同号函数项级数, 从$Dini$定理可知一致收敛, 因此可以逐项积分, 这样就得到所要的展开式:
+
+$$
+E (k) = \frac {\pi}{2} \left(1 - \sum_ {n = 1} ^ {\infty} \left[ \frac {(2 n - 1) ! !}{(2 n) ! !} \right] ^ {2} \cdot \frac {k ^ {2 n}}{2 n - 1}\right).
+$$
+
+椭圆周长可以表示为
+
+$$
+s = 4 a \int_ {0} ^ {\pi / 2} \sqrt {1 - \varepsilon^ {2} \sin^ {2} \varphi} \mathrm{d} \varphi = 4 a E (\varepsilon), 0 <   \varepsilon <   1,
+$$
+
+因此就有
+
+$$
+\begin{array}{r l}s =&2 \pi a \left(1 - \frac {1}{4} \varepsilon^ {2} - \frac {3}{6 4} \varepsilon^ {4} - \frac {5}{2 5 6} \varepsilon^ {6} - \frac {1 7 5}{1 6 3 8 4} \varepsilon^ {8} \right.\\&\left. - \frac {4 4 1}{6 5 5 3 6} \varepsilon^ {1 0} - \frac {4 8 5 1}{1 0 4 8 5 7 6} \varepsilon^ {1 2}\right) + O (\varepsilon^ {1 4}) \quad (\varepsilon \rightarrow 0).\end{array}\tag{16.5}
+$$
+
+同时将近似计算公式(16.4)右边按 $\varepsilon$ 展开，并与上式比较得到：
+
+$$
+s _ {1} = s - 2 \pi a \cdot \frac {5}{1 6 3 8 4} \varepsilon^ {8} + O (\varepsilon^ {1 0}) \quad (\varepsilon \rightarrow 0).
+$$
+</Solution>
+
+<Note>
+本题取材于 [44] 卷 2 第八章 §$7$. 其中还有椭圆周长的另一个近似公式
+
+$$
+s _ {2} = \pi \left[ \frac {3}{2} (a + b) - \sqrt {a b} \right].\tag{16.6}
+$$
+
+采用同样的分析方法可以知道
+
+$$
+s _ {2} = s + 2 \pi a \cdot \frac {3}{1 6 3 8 4} \varepsilon^ {8} + O (\varepsilon^ {1 0}) \quad (\varepsilon \rightarrow 0).
+$$
+
+容易看出, 这两个公式的误差符号相反, 若采取加权平均的方法就可能得到更好的结果: 将 (16.4) 乘 $3/8$ 与 (16.6) 乘 $5/8$ 再相加, 就得到新公式:
+
+$$
+s _ {3} = \pi \left[ \frac {9}{8} (a + b) + \frac {3}{1 6} \sqrt {2 a ^ {2} + 2 b ^ {2}} - \frac {5}{8} \sqrt {a b} \right].\tag{16.7}
+$$
+
+可以发现新公式的幂级数展开式的 $\varepsilon^{8}$ 项和 $\varepsilon^{10}$ 项的系数与 (16.5) 的展开式完全相同. 这里前者是预期的, 而后者是意外的. 于是误差的级别为 $O(\varepsilon^{12})$ :
+
+$$
+s _ {3} = s - 2 \pi a \cdot \frac {7}{1 0 4 8 5 7 6} \varepsilon^ {1 2} + O (\varepsilon^ {1 4}).
+$$
+
+从数值计算可以知道, 这个近似公式不仅在 $\varepsilon$ 充分小时有效, 而且直到 $\varepsilon = 0.9$ 时的相对误差还小于 $10^{-4}$ .
+</Note>
+</Example>
+
+<Example title="例题 16.1.2">
+利用 $\lim_{n\to \infty}\left(1 + \frac{x^2}{n}\right)^{-n} = \mathrm{e}^{-x^2}$ 证明：
+
+$$
+\int_ {0} ^ {+ \infty} \mathrm{e} ^ {- x ^ {2}} \mathrm{d} x = \frac {\sqrt {\pi}}{2}.
+$$
+
+<Solution title="解">
+用平均值不等式可以看出
+
+$$
+\left(1 + \frac {x ^ {2}}{n}\right) ^ {n} = 1 \cdot \left(1 + \frac {x ^ {2}}{n}\right) ^ {n} \leqslant \left[ \frac {1 + n (1 + x ^ {2} / n)}{n + 1} \right] ^ {n + 1} = \left(1 + \frac {x ^ {2}}{n + 1}\right) ^ {n + 1},
+$$
+
+因此在区间 $[0, +\infty)$ 上函数列 $\left\{\left(1 + \frac{x^2}{n}\right)^{-n}\right\}$ 单调减少收敛于极限函数 $\mathrm{e}^{-x^2}$ . 应用命题$16.1.1$即有
+
+$$
+\lim _ {n \rightarrow \infty} \int_ {0} ^ {+ \infty} \left(1 + \frac {x ^ {2}}{n}\right) ^ {- n} \mathrm{d} x = \int_ {0} ^ {+ \infty} \mathrm{e} ^ {- x ^ {2}} \mathrm{d} x.
+$$
+
+用变量替换 $x = \sqrt{n}\tan t$ 计算左边极限号下的积分如下：
+
+$$
+\begin{array}{r l} \int_ {0} ^ {+ \infty} \left(1 + \frac {x ^ {2}}{n}\right) ^ {- n} \mathrm{d} x & = \sqrt {n} \int_ {0} ^ {\pi / 2} \cos^ {2 n - 2} t \mathrm{d} t \\ & = \frac {\sqrt {n} \pi}{2} \cdot \frac {(2 n - 3) ! !}{(2 n - 2) ! !} \sim \frac {\sqrt {n} \pi}{2} \cdot \frac {1}{\sqrt {n \pi}} = \frac {\sqrt {\pi}}{2}, \end{array}
+$$
+
+这里最后一步利用了 $Wallis$ 公式 (11.29).
+</Solution>
+</Example>
+
+<Example title="例题 16.1.3 ($Euler$ 积分)">
+证明: 若 $0 < p < 1$, 则
+
+$$
+\int_ {0} ^ {+ \infty} \frac {\mathrm{d} x}{x ^ {p} (1 + x)} = \frac {\pi}{\sin \pi p}.
+$$
+
+<Solution title="证明">
+将积分拆开为区间 $[0,1]$ 和 $[1,+\infty)$ 上的两个积分.
+
+在区间 $(0,1)$ 上 $\frac{1}{x^p(1 + x)} = \sum_{n=0}^{\infty} (-1)^n x^{n-p}$ , 它在 $(0,1)$ 上虽然不一致收敛, 但除去第一项之外, 级数的部分和在 $[0,1]$ 上一致有界, 因此可以根据 $Arzelà$ 定理 (即命题 $14.2.4$) 交换积分与求和的顺序①, 得到
+
+$$
+\begin{array}{r l} \int_ {0} ^ {1} \frac {\mathrm{d} x}{x ^ {p} (1 + x)} & = \int_ {0} ^ {1} \left(\frac {1}{x ^ {p}} + \sum_ {n = 1} ^ {\infty} (- 1) ^ {n} x ^ {n - p}\right) \mathrm{d} x = \frac {1}{1 - p} + \sum_ {n = 1} ^ {\infty} (- 1) ^ {n} \int_ {0} ^ {1} x ^ {n - p} \mathrm{d} x \\ & = \frac {1}{1 - p} + \sum_ {n = 1} ^ {\infty} \frac {(- 1) ^ {n}}{n + 1 - p} = \sum_ {n = 1} ^ {\infty} \frac {(- 1) ^ {n - 1}}{n - p}. \end{array}
+$$
+
+对于 $[1, +\infty)$ 上的积分可作变量替换变为 $[0, 1]$ 上的积分，经同样计算得到
+
+$$
+\begin{array}{r l} \int_ {1} ^ {+ \infty} \frac {\mathrm{d} x}{x ^ {p} (1 + x)} & = \int_ {0} ^ {1} \frac {\mathrm{d} x}{x ^ {1 - p} (1 + x)} \\ & = \sum_ {n = 1} ^ {\infty} \frac {(- 1) ^ {n - 1}}{n - (1 - p)} = \frac {1}{p} + \sum_ {n = 1} ^ {\infty} \frac {(- 1) ^ {n}}{n + p}. \end{array}
+$$
+
+合并两个结果得到
+
+$$
+\begin{array}{r l} \int_ {0} ^ {+ \infty} \frac {\mathrm{d} x}{x ^ {p} (1 + x)} & = \frac {1}{p} + \sum_ {n = 1} ^ {\infty} (- 1) ^ {n} \left(\frac {1}{p - n} + \frac {1}{p + n}\right) \\ & = \frac {1}{p} + \sum_ {n = 1} ^ {\infty} (- 1) ^ {n} \frac {2 p}{p ^ {2} - n ^ {2}}. \end{array}
+$$
+
+最后利用余割函数 $\csc x$ 的部分分式展开式就得到所求结果. (该公式见$15.2.7$小节练习题$3$, 也可以从 $\sin x$ 的无穷乘积展开式(13.30)求导得到.)
+</Solution>
+
+<Note>
+本题的积分有各种不同的形式,例如
+
+$$
+\int_ {0} ^ {+ \infty} \frac {x ^ {a - 1} \mathrm{d} x}{1 + x} (0 <   a <   1), \quad \int_ {0} ^ {+ \infty} \frac {x ^ {m - 1} \mathrm{d} x}{1 + x ^ {n}} (0 <   m <   n)
+$$
+
+等. 此外, 上册 $402$ 页题 $8$ 中的所有公式均为本题之特例, 且其中的参数 $m, n$ 等都可以不限于正整数. 读者可以对比两处所用方法, 从而知道在积分计算问题中我们已经取得的进步.
+</Note>
+</Example>
+
+在上册 $400$ 页的题 $16$ 引进了 $x > 0$ 时的 $\Gamma$ 函数的积分定义, 在例题 $13.4.4$ 中又引进了它的无穷乘积定义. 利用积分号下取极限的过程, 我们可以证明当 $x > 0$ 时两个定义是一致的.
+
+<Example title="例题 16.1.4">
+当 $x > 0$ 时成立
+
+$$
+\Gamma (x) = \int_ {0} ^ {+ \infty} t ^ {x - 1} \mathrm{e} ^ {- t} \mathrm{d} t = \lim _ {n \rightarrow \infty} \frac {n ! n ^ {x}}{x (x + 1) \cdots (x + n)}.
+$$
+
+<Solution title="证明">
+在广义积分中作变量替换 $t = \ln \frac{1}{s}$ ，当 $t$ 从0到 $+\infty$ 时， $s$ 从1到0，于是得到
+
+$$
+\Gamma (x) = \int_ {0} ^ {1} \left(\ln \frac {1}{s}\right) ^ {x - 1} \mathrm{d} s.
+$$
+
+利用
+
+$$
+\ln \frac {1}{s} = \lim _ {n \rightarrow \infty} n \left(1 - s ^ {\frac {1}{n}}\right),
+$$
+
+而且右边的极限过程关于 n 单调, 就可以用命题 $16.1.1$ 得到
+
+$$
+\Gamma (x) = \lim _ {n \rightarrow \infty} \int_ {0} ^ {1} \left[ n \left(1 - s ^ {\frac {1}{n}}\right)\right] ^ {x - 1} \mathrm{d} s.
+$$
+
+对于右边的积分用变量替换 $s^{\frac{1}{n}} = y$ ，然后多次分部积分即可.
+</Solution>
+</Example>
+
+## $16.1.3$ 练习题
+
+1. (广义积分的控制收敛定理) 设函数列 $\{S_n(x)\}$ 在 $(- \infty, +\infty)$ 上内闭可积, 且内闭一致收敛于函数 $S$ , 如果存在函数 $F$ , 使 $|S_n(x)| \leqslant F(x)$ 对于每个 $n$ 和每个 $x$ 都成立, 且广义积分 $\int_{-\infty}^{+\infty} F(x) \mathrm{d}x$ 收敛, 证明:
+
+$$
+\lim _ {n \rightarrow \infty} \int_ {- \infty} ^ {+ \infty} S _ {n} (x) \mathrm{d} x = \int_ {- \infty} ^ {+ \infty} S (x) \mathrm{d} x.
+$$
+
+2. 设 $\sum_{n=0}^{\infty} a_n x^n$ 的系数均非负, 收敛半径为 $+\infty$ , 和函数为 $S(x)$ . 证明: 如果 $\sum_{n=0}^{\infty} a_n n!$ 收敛, 则广义积分 $\int_0^{+\infty} \mathrm{e}^{-x} S(x) \mathrm{d}x$ 也收敛, 且等于 $\sum_{n=0}^{\infty} a_n n!$ . (去掉系数非负条件后本题结论仍成立, 这时可以利用命题 $16.1.2$ 后的注.)
+
+3. 证明下列结果:
+(1) $\int_{0}^{1}\frac{\ln(1-x)}{x}\mathrm{d}x=-\sum_{n=1}^{\infty}\frac{1}{n^{2}};$ (2) $\int_{0}^{1}\frac{\ln x}{1-x^{2}}\mathrm{d}x=-\frac{\pi^{2}}{8};$ (3) $\int_{0}^{1}\ln x\ln(1-x)\mathrm{d}x=2-\frac{\pi^{2}}{6};$ (4) $\int_{0}^{+\infty}\frac{x}{\mathrm{e}^{x}-\mathrm{e}^{-x}}\mathrm{d}x=\frac{\pi^{2}}{8}.$
+
+4. 证明: $\int_{0}^{1} x^{-x} \, \mathrm{d}x = \sum_{n=1}^{\infty} n^{-n}$ .
+
+5. 证明: $\int_{0}^{+\infty} x \mathrm{e}^{-\frac{x^2}{2}} \left(1 + \frac{x^2}{2^2} + \frac{x^4}{2^2 4^2} + \cdots + \frac{x^{2n}}{[(2n)!!]^2} + \cdots\right) \mathrm{d}x = \mathrm{e}^{\frac{1}{2}}$ .

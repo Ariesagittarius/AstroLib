@@ -1,0 +1,534 @@
+---
+title: '§18.2 多元函数的连续性'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Solution from '@/components/Solution.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+
+
+## 18.2.1 定义与基本性质
+
+设 $S$ 是 $R^{n}$ 中的点集, $f$ 是定义在 $S$ 上的函数, $x_{0} \in S$ 且是 $S$ 的聚点. 若
+
+$$
+\lim _ {\boldsymbol {x} \rightarrow \boldsymbol {x} _ {0}} f (\boldsymbol {x}) = f (\boldsymbol {x} _ {0}),
+$$
+
+则称 $f$ 在点 $\pmb{x_0}$ 连续，否则就说 $f$ 在点 $\pmb{x_0}$ 不连续或间断.如果 $f$ 在 $S$ 上的每一点都连续，则称 $f$ 在 $S$ 上连续
+
+从定义可以看出, 在形式上多元函数的连续性的定义与一元函数的连续性的定义是相同的. 因此在连续性方面多元函数也有许多与一元函数相同的性质, 如保号性, 和、差、积、商的连续性, 复合函数的连续性等, 它们的叙述与证明都是和一元函数相同的 (参见上册第五章).
+
+但与多元极限情况类似的是: 一个多元函数如果对每个变元都连续, 则并不能推出它是一个多元连续函数. 例如函数
+
+$$
+f (x, y) = \left\{ \begin{array}{l l} \frac {x y}{x ^ {2} + y ^ {2}}, & (x, y) \neq (0, 0), \\ 0, & (x, y) = (0, 0) \end{array} \right.
+$$
+
+在全平面上对 $x$, $y$ 都分别连续, 在原点当然也是如此, 但它作为二元函数在原点是不连续的 (见 $147$ 页上的讨论).
+
+<Example title="18.2.1">
+令
+
+$$
+f (x, y) = \left\{ \begin{array}{l l} \frac {\ln (1 + x y)}{x}, & x \neq 0, \\ y, & x = 0, \end{array} \right.
+$$
+
+则 $f(x,y)$ 在其定义域上是连续的.
+
+<Solution title="证明">
+$f(x,y)$ 的定义域是 $\{(x,y) | xy > -1\}$ 且 $f(x,y)$ 在 $x \neq 0$ 处是连续的，所以只须证明 $f(x,y)$ 作为二元函数在 $y$ 轴上的每一点处连续. 以下分两种情况讨论.
+
+### (1) 在点 $(0,0)$ .
+
+由于 $f(0,0) = 0$ ，而当 $x\neq 0$ 时
+
+$$
+f (x, y) = \frac {\ln (1 + x y)}{x} = \left\{ \begin{array}{l l} 0, & y = 0, \\ y \ln (1 + x y) ^ {\frac {1}{x y}}, & y \neq 0. \end{array} \right.
+$$
+
+又由于
+
+$$
+\lim _ {(x, y) \to (0, 0)} \ln (1 + x y) ^ {\frac {1}{x y}} = 1,
+$$
+
+从而 $\exists \delta_1 > 0$ ，当 $0 < |x| < \delta_1$ ， $0 < |y| < \delta_1$ 时
+
+$$
+\left| \frac {\ln (1 + x y)}{x} \right| \leqslant | y | \cdot \left| \ln (1 + x y) ^ {\frac {1}{x y}} \right| \leqslant 2 | y |.
+$$
+
+由 $f(x,y)$ 的表达式知只要 $|x| < \delta_1, |y| < \delta_1$ ，无论 $x = 0$ 还是 $x \neq 0$ 都有 $|f(x,y)| \leqslant 2|y|$ .
+
+所以
+
+$$
+\lim _ {(x, y) \rightarrow (0, 0)} f (x, y) = 0 = f (0, 0).
+$$
+
+(2) 在点 $(0, y_{0})$ , $y_{0} \neq 0$ .
+
+当 $x \neq 0$ 时
+
+$$
+\begin{array}{r l} | f (x, y) - f (0, y _ {0}) | & = \left| y \ln (1 + x y) ^ {\frac {1}{x y}} - y _ {0} \right| \\ & = \left| y \left[ \ln (1 + x y) ^ {\frac {1}{x y}} - 1 \right] + (y - y _ {0}) \right| \\ & \leqslant | y | \cdot \left| \ln (1 + x y) ^ {\frac {1}{x y}} - 1 \right| + | y - y _ {0} |. \end{array}
+$$
+
+而当 $x = 0$ 时
+
+$$
+\left| f (x, y) - f \left(0, y _ {0}\right) \right| = \left| y - y _ {0} \right|.
+$$
+
+注意到当 $y_0 \neq 0$ 时
+
+$$
+\lim _ {(x, y) \rightarrow (0, y _ {0})} \ln (1 + x y) ^ {\frac {1}{x y}} = 1.
+$$
+
+结合上述各式得
+
+$$
+\lim _ {(x, y) \rightarrow (0, y _ {0})} (f (x, y) - f (0, y _ {0})) = 0.
+$$
+
+所以 $f(x,y)$ 在点 $(0,y_{0})$ 处连续，从而在其定义域上是连续的.
+</Solution>
+</Example>
+
+<Example title="18.2.2 多元函数连续的若干充分条件">
+设 $f(x,y)$ 在 $D\subset \mathbf{R}^2$ 上分别对 $x$ 和 $y$ 连续.证明：当下列条件之一满足时 $f(x,y)$ 是 $D$ 上的二元连续函数
+
+(1) $f(x,y)$ 在 $D$ 上对 $x$ 连续且关于 $y$ 一致, 即 $\forall x_0, \forall \varepsilon > 0$ , $\exists \delta = \delta (\varepsilon, x_0) > 0$ (与 $y$ 无关), $|x - x_0| < \delta$ 时, $\forall y$ , 点 $(x,y), (x_0,y) \in D$ 恒有
+
+$$
+| f (x, y) - f (x _ {0}, y) | <   \varepsilon ;
+$$
+
+(2) $f(x,y)$ 在 $D$ 上对 $x$ 局部满足 $Lipschitz$ 条件且关于 $y$ 一致，即： $\forall p_0 = (x_0,y_0)\in D,\exists r > 0$ 及 $L > 0,$ 使得 $\forall (x_1,y),(x_2,y)\in D\cap B_r(p_0)$ ，恒有
+
+$$
+\left| f \left(x _ {1}, y\right) - f \left(x _ {2}, y\right) \right| <   L \left| x _ {1} - x _ {2} \right|;
+$$
+
+(3) $f(x,y)$ 关于变量 $y$ 是单调的.
+
+<Solution title="证明">
+(1) 由定义, 并用拆项补项的方法.
+
+(2) 逐点连续是局部性质, 可由定义并用拆项补项的方法来证.
+
+(3) 为证 $f(x, y)$ 在点 $(x_0, y_0)$ 连续，可找 $(x_0, y_0)$ 的一个矩形邻域 $D_1 = [x_0 - \delta_1, x_0 + \delta_1] \times [y_0 - \delta_2, y_0 + \delta_2]$ . 先利用 $f(x_0, y)$ 在直线 $x = x_0$ 上的连续性，可选取 $\delta_2$ 足够小，使 $f$ 在 $D_1$ 的上下边中点 $(x_0, y_0 \pm \delta_2)$ 的值与 $f(x_0, y_0)$ 的误差不超过 $\frac{1}{2}\varepsilon$ ; 然后再由 $f(x, y_0 \pm \delta_2)$ 在直线 $y = y_0 \pm \delta_2$ 上的连续性，可取 $\delta_1$ 足够小，使 $f$ 在 $D_1$ 的上下边上的值与 $f(x_0, y_0)$ 的误差不超过 $\varepsilon$ . 最后利用 $f$ 关于 $y$ 的单调性，即可得 $f$ 在 $D_1$ 上的值与 $f(x_0, y_0)$ 的误差不超过 $\varepsilon$ .
+</Solution>
+</Example>
+
+连续性除了可用极限刻画之外, 也可用集合来刻画. 下面是一些等价描述.
+
+<Knowledge title="18.2.1">
+设 $f$ 是定义在 $\mathbf{R}^n$ 上的函数，则下述几个条件等价：
+
+(1) $f(\pmb {x})$ 连续；
+
+(2) 任何开集的原象是开集;
+
+(3) 任何闭集的原象是闭集;
+
+(4) 对 $\mathbf{R}^n$ 中的任意子集 $E$ , 有 $f(\overline{E}) \subset \overline{f(E)}$ .
+
+<Solution title="证明">
+我们采用循环证明的方法.
+
+(1) $\Rightarrow$ (2): 设 $f(\pmb{x})$ 在 $\mathbf{R}^n$ 上连续, $A$ 是 $\mathbf{R}$ 中的任一开集. 如果 $f^{-1}(A)$ 是空集, 结论自然成立; 若 $f^{-1}(A)$ 非空, $\forall \pmb{x}_0 \in f^{-1}(A)$ , 则 $f(\pmb{x}_0) \in A$ . 而 $A$ 是 $\mathbf{R}$ 中开集, 于是存在 $\varepsilon > 0$ , 使得 $f(\pmb{x}_0)$ 的开邻域 $(f(\pmb{x}_0) - \varepsilon, f(\pmb{x}_0) + \varepsilon) \subset A$ . 由 $f(\pmb{x})$ 在点 $\pmb{x}_0$ 连续知 $\exists \delta > 0$ , 当 $|\pmb{x} - \pmb{x}_0| < \delta$ 时 $f(\pmb{x}) \in (f(\pmb{x}_0) - \varepsilon, f(\pmb{x}_0) + \varepsilon)$ . 于是 $O_{\delta}(\pmb{x}_0) = \{\pmb{x} \in \mathbf{R}^n \mid |\pmb{x} - \pmb{x}_0| < \delta\} \subset f^{-1}(A)$ , 从而 $f^{-1}(A)$ 为开集.
+
+(2) $\Rightarrow$ (3): 设 $S$ 是 $R$ 中的任一集合, 则
+
+$$
+f ^ {- 1} (S ^ {c}) = [ f ^ {- 1} (S) ] ^ {c}.\tag{18.1}
+$$
+
+事实上，由于点 $x \in f^{-1}(S^c) \iff f(x) \in S^c$ ，而 $x \in [f^{-1}(S)]^c \iff x \notin f^{-1}(S) \iff f(x) \notin S$ ，由此可以看出 (18.1) 成立.
+
+设 $F$ 是 $R$ 中的任一闭集, 由 (18.1) 得
+
+$$
+f ^ {- 1} (F) = f ^ {- 1} ((F ^ {c}) ^ {c}) = [ f ^ {- 1} (F ^ {c}) ] ^ {c}.
+$$
+
+由条件(2)及 $F^{c}$ 为开集知 $f^{-1}(F)$ 为闭集.
+
+(3) $\Rightarrow$ (4): 要证 $f(\overline{E}) \subset \overline{f(E)}$ , 只要证 $\overline{E} \subset f^{-1}(\overline{f(E)})$ . 事实上, 下面的包含关系显然成立,
+
+$$
+E \subset f ^ {- 1} (f (E)) \subset f ^ {- 1} (\overline {{f (E)}}).
+$$
+
+又由条件(3)及 $\overline{f(E)}$ 是闭集知
+
+$$
+\overline {{{{E}}}} \subset f ^ {- 1} (\overline {{{{f (E)}}}}).
+$$
+
+(4) $\Rightarrow$ (1): 反证法. 若不然, $\exists x_{0} \in R^{n}$ , $f(x)$ 在点 $x_{0}$ 不连续, 由 $Heine$ 归结原理知, $\exists \varepsilon_{0} > 0$ 及点列 $\{x_{n}, n = 1, 2, \cdots\}$ , $x_{n} \to x_{0}$ 但
+
+$$
+\left| f \left(\boldsymbol {x} _ {n}\right) - f \left(\boldsymbol {x} _ {0}\right) \right| \geqslant \varepsilon_ {0}.\tag{18.2}
+$$
+
+取 $E = \{\pmb{x}_n\}_{n\in \mathbf{N}_+}$ ，则 $\pmb{x_0}\in \overline{E},f(E) = \{f(\pmb {x}_n)\}_{n\in \mathbf{N}_+}$ 由条件(4）知 $f(x_0)\in$ $\overline{f(E)} = \overline{\{f(\pmb{x_n})\}}_{n\in \mathbf{N}_+}$ ，与(18.2）矛盾. □
+</Solution>
+</Knowledge>
+
+<Example title="18.2.3">
+函数 $f(x, y)$ 定义在正方形 $I_1 = \{(x, y) \mid 0 \leqslant x \leqslant 1, 0 \leqslant y \leqslant 1\}$ 上，在底边 $I_0 = \{(x, 0) \mid 0 \leqslant x \leqslant 1\}$ 上连续，证明： $\exists \delta > 0$ 使得 $f(x, y)$ 在 $I_\delta = \{(x, y) \mid 0 \leqslant x \leqslant 1, 0 \leqslant y \leqslant \delta\}$ 上有界.
+
+<Solution title="证明">
+证1（用凝聚定理）用反证法. 若不然, 则 $\forall \delta > 0$ , $f(x, y)$ 在 $I_{\delta}$ 上都无界, 于是 $\exists (x_n, y_n) \in I_{\underline{1}}$ 使得
+
+$$
+\exists (x _ {n}, y _ {n}) \in I _ {\frac {1}{n}}
+$$
+
+$$
+\left| f (x _ {n}, y _ {n}) \right| > n.\tag{18.3}
+$$
+
+由于 $\{(x_{n},y_{n})\}$ 有界，由凝聚定理知存在子列 $(x_{n_k},y_{n_k})\to (x_0,y_0)$ ，且 $x_0\in [0,1],y_0 = 0,$ 由 $f(x,y)$ 在点 $(x_0,0)$ 的连续性知
+
+$$
+\lim _ {k \rightarrow \infty} f (x _ {n _ {k}}, y _ {n _ {k}}) = f (x _ {0}, 0).
+$$
+
+此与(18.3)矛盾.
+
+证2（用紧性定理） $\forall x_0\in [0,1]$ ，由 $f(x,y)$ 在点 $(x_0,0)$ 的连续性知 $\exists \delta_0 > 0$ 使得 $f(x,y)$ 在 $V(x_0) = \{(x,y)\mid |x - x_0| <   \delta_0,|y| <   \delta_0\} \cap I_1$ 上有界，由此得到一族开集覆盖有界闭集 $I_{0}$ 。由紧性定理可选出有限个 $V(x_{i}), i=1,2,\cdots,n$ ，使得 $\bigcup_{i=1}^{n}V(x_{i})\supset I_{0}$ 。取 $\delta=\min_{1\leqslant i\leqslant n}\{\delta_{i}\}$ ，则 $f(x,y)$ 在 $I_{\delta}$ 上有界。
+</Solution>
+</Example>
+
+<Example title="18.2.4">
+设 $f(\theta)$ 是以 $2\pi$ 为周期的连续函数, 定义
+
+$$
+u (\rho , \theta) = \frac {1}{2 \pi} \int_ {- \pi} ^ {\pi} \frac {(1 - \rho^ {2}) f (\varphi + \theta)}{1 - 2 \rho \cos \varphi + \rho^ {2}} d \varphi ,
+$$
+
+则对于任意 $\theta_0\in \mathbf{R}$ ，有
+
+$$
+\lim _ {(\rho , \theta) \rightarrow (1 ^ {-}, \theta_ {0})} u (\rho , \theta) = f (\theta_ {0}).
+$$
+
+<Solution title="证明">
+首先要用一个结果
+
+$$
+\frac {1}{2 \pi} \int_ {- \pi} ^ {\pi} \frac {1 - \rho^ {2}}{1 - 2 \rho \cos \varphi + \rho^ {2}} \mathrm{d} \varphi = 1,
+$$
+
+即 $f \equiv 1$ 时, $u \equiv 1$ . 这个关系式可用多种方法证明, 例如通过万能变换 (参见上册 $291$ 页以及 $296$ 页题 $4$) 求出下面的不定积分
+
+$$
+\int \frac {\mathrm{d} \varphi}{1 + \varepsilon \cos \varphi} = \frac {2}{\sqrt {1 - \varepsilon^ {2}}} \arctan \left(\sqrt {\frac {1 - \varepsilon}{1 + \varepsilon}} \tan \frac {\varphi}{2}\right) (| \varepsilon | <   1)
+$$
+
+来证明. 由这个结果就可以得到如下的表达式
+
+$$
+u (\rho , \theta) - f (\theta_ {0}) = \frac {1}{2 \pi} \int_ {- \pi} ^ {\pi} \frac {1 - \rho^ {2}}{1 - 2 \rho \cos \varphi + \rho^ {2}} [ f (\varphi + \theta) - f (\theta_ {0}) ] d \varphi .
+$$
+
+$\forall \varepsilon > 0$ ，要找 $\delta > 0$ ，使得当 $1 - \delta < \rho < 1$ ， $|\theta - \theta_0| < \delta$ 时，有
+
+$$
+\left| u (\rho , \theta) - f \left(\theta_ {0}\right) \right| <   \varepsilon .
+$$
+
+为此先由 $f$ 的连续性知 $\forall \varepsilon > 0, \exists \delta > 0,$ 使得当 $|\varphi| < \delta, |\theta - \theta_0| < \delta$ 时，有
+
+$$
+\left| f (\varphi + \theta) - f \left(\theta_ {0}\right) \right| <   \frac {\varepsilon}{2}.
+$$
+
+将要估计的积分分为三部分, 即
+
+$$
+u (\rho , \theta) - f (\theta_ {0}) = \frac {1}{2 \pi} \left(\int_ {- \pi} ^ {- \delta} + \int_ {- \delta} ^ {\delta} + \int_ {\delta} ^ {\pi}\right) = I _ {1} + I _ {2} + I _ {3}.
+$$
+
+由于在 $(- \pi, -\delta)$ 上， $\cos \varphi \leqslant \cos \delta$ 。于是
+
+$$
+1 - 2 \rho \cos \varphi + \rho^ {2} \geqslant 1 - 2 \rho \cos \delta + \rho^ {2} = (1 - \rho) ^ {2} + 2 \rho (1 - \cos \delta) \geqslant 4 \rho \sin^ {2} \frac {\delta}{2}.
+$$
+
+又由 $f$ 的连续性知 $\exists M > 0$ ，使得
+
+$$
+\left| f (\varphi + \theta) - f (\theta_ {0}) \right| \leqslant M.
+$$
+
+于是
+
+$$
+\left| I _ {1} \right| \leqslant \frac {1}{2 \pi} \cdot \frac {(1 - \rho^ {2}) M}{4 \rho \sin^ {2} \frac {\delta}{2}} (\pi - \delta) \leqslant \frac {(1 - \rho^ {2}) M}{8 \rho \sin^ {2} \frac {\delta}{2}}.
+$$
+
+从而 $\exists \delta_{1}$ ，使得当 $1 - \delta_{1} <   \rho <  1$ 时，有
+
+$$
+\left| I _ {1} \right| <   \frac {\varepsilon}{4}.
+$$
+
+同理可证，此时
+
+$$
+\left| I _ {3} \right| <   \frac {\varepsilon}{4}.
+$$
+
+最后估计 $I_{2}$ ，有
+
+$$
+\begin{array}{r l} | I _ {2} | & \leqslant \frac {1}{2 \pi} \cdot \frac {\varepsilon}{2} \cdot \int_ {- \delta} ^ {\delta} \frac {1 - \rho^ {2}}{1 - 2 \rho \cos \varphi + \rho^ {2}} \mathrm{d} \varphi \\ & \leqslant \frac {\varepsilon}{4 \pi} \int_ {- \pi} ^ {\pi} \frac {1 - \rho^ {2}}{1 - 2 \rho \cos \varphi + \rho^ {2}} \mathrm{d} \varphi = \frac {\varepsilon}{2}. \end{array}
+$$
+
+于是 $\exists \delta, \delta_1$ ，使得当 $1 - \delta_1 < \rho < 1$ ， $|\theta - \theta_0| < \delta$ 时，有
+
+$$
+\left| u (\rho , \theta) - f \left(\theta_ {0}\right) \right| <   \varepsilon .
+$$
+</Solution>
+</Example>
+
+## 18.2.2 紧集上多元连续函数的性质
+
+定义在紧集上的多元连续函数也具有与定义在有界闭集上的一元连续函数相同的性质: 有界性, 存在最大、最小值, 一致连续性以及值域也是紧集等.
+
+<Knowledge title="18.2.2">
+紧集上的连续函数的值域必是紧集 (有界闭集), 从而紧集上的连续函数必有界, 并存在最大、最小值.
+</Knowledge>
+
+<Knowledge title="18.2.3 ($Cantor$ 定理)">
+紧集上的连续函数必定一致连续.
+</Knowledge>
+
+<Example title="18.2.5">
+设 $f(x,y,z)$ 在 $a \leqslant x, y, z \leqslant b$ 上连续，令
+
+$$
+\varphi (x) = \max _ {a \leqslant y \leqslant x} \left\{\min _ {a \leqslant z \leqslant b} \{f (x, y, z) \} \right\},
+$$
+
+则 $\varphi(x)$ 在 $[a,b]$ 上连续.
+
+<Solution title="证明">
+我们将证明分成两步.
+
+第一步: 设
+
+$$
+\psi (x, y) = \min _ {a \leqslant z \leqslant b} \{f (x, y, z) \}, a \leqslant x, y \leqslant b.
+$$
+
+因为 $f(x,y,z)$ 在有界闭区域上连续，从而一致连续.于是 $\forall \varepsilon >0,\exists \delta >0$ ，当 $|x - x_0| <   \delta ,|y - y_0| <   \delta$ 时
+
+$$
+f (x _ {0}, y _ {0}, z) - \varepsilon <   f (x, y, z) <   f (x _ {0}, y _ {0}, z) + \varepsilon .
+$$
+
+对 $z$ 在 $[a,b]$ 上取最小值得到
+
+$$
+\psi (x _ {0}, y _ {0}) - \varepsilon <   \psi (x, y) <   \psi (x _ {0}, y _ {0}) + \varepsilon .
+$$
+
+可见 $\psi(x,y)$ 在正方形 $[a,b]\times[a,b]$ 上连续.
+
+第二步: 令 $y = a + k(x - a)$ ，其中 $0 \leqslant k \leqslant 1$ ，则
+
+$$
+\varphi (x) = \max _ {a \leqslant y \leqslant x} \{\psi (x, y) \} = \max _ {0 \leqslant k \leqslant 1} \{\psi (x, a + k (x - a)) \}.
+$$
+
+由 $\psi$ 在 $\{(x,y)\mid a\leqslant x\leqslant b,a\leqslant y\leqslant x\}$ 上连续知 $\psi(x,a+k(x-a))$ 在 $\{(x,k)\mid a\leqslant x\leqslant b,0\leqslant k\leqslant1\}$ 上连续，用与第一步相同的方法可证 $\varphi(x)$ 在 $[a,b]$ 上连续. □
+</Solution>
+
+<Note>
+从上面第二步所用的方法, 可以联想到一元函数中的一个题目:
+
+设 $f(x)$ 在 $[a,b]$ 上连续，则
+
+$$
+g (x) = \max _ {a \leqslant \xi \leqslant x} \{f (\xi) \} \quad \text {与} \quad h (x) = \min _ {a \leqslant \xi \leqslant x} \{f (\xi) \}
+$$
+
+都在 $[a, b]$ 上连续（见上册 $155$ 页的题 $10$）.
+
+我们可以证明如下：设 $\xi = a + k(x - a), 0 \leqslant k \leqslant 1$ ，则
+
+$$
+g (x) = \max _ {0 \leqslant k \leqslant 1} \left\{f (a + k (x - a)) \right\}.
+$$
+
+由于二元函数 $f(a + k(x - a))$ 在 $\{(x,k)\mid a\leqslant x\leqslant b,0\leqslant k\leqslant 1\}$ 上连续，用例题 $18.2.5$ 中的第一步的证法可证 $g(x)$ 在 $[a,b]$ 上连续，同理 $h(x)$ 也在 $[a,b]$ 上连续.
+
+从上例可见, 有些一元函数的问题可以在多元函数理论中得到较好的解决.
+</Note>
+</Example>
+
+<Example title="18.2.6">
+设 $A$ 是 $n \times n$ 矩阵, 它的行列式 $\det A \neq 0$ . 证明: 存在 $\alpha > 0$ , 使对任意点 $x \in R^{n}$ 都有 $|Ax| \geqslant \alpha |x|$ .
+
+<Solution title="证明">
+容易证明 $|Ay|$ 是定义在有界闭集 $S^1 = \{y \in \mathbf{R}^n \mid |y| = 1\}$ 上的连续函数。因为 $\operatorname{det} A \neq 0$ ，故对点 $y \in S^1$ ，有 $|Ay| > 0$ 。因此由命题 $18.2.2$, $\min_{y \in S^1} \{|Ay|\} = \alpha > 0$ 。从而当点 $x \neq 0$ 时， $|A(x / |x|)| \geqslant \alpha$ ，即 $|Ax| \geqslant \alpha |x|$ 。当 $x = 0$ 时，不等式显然成立。
+</Solution>
+</Example>
+
+<Example title="18.2.7">
+设 $E$ 是 $R^{n}$ 中的点集, 点 $x \in R^{n}$ , $d(x, E)$ 是上一章 ($140$ 页) 所定义的 $x$ 和 $E$ 的距离. 证明: $d(x, E)$ 在 $R^{n}$ 上一致连续.
+
+<Solution title="证明">
+任取点 $y \in \mathbf{R}^n$ ，点 $z \in E$ ，则
+
+$$
+d (\boldsymbol {x}, E) \leqslant d (\boldsymbol {x}, \boldsymbol {y}) + d (\boldsymbol {y}, \boldsymbol {z}).
+$$
+
+对所有 $z \in E$ 取下确界得 $d(\pmb{x}, E) \leqslant d(\pmb{x}, \pmb{y}) + d(\pmb{y}, E)$ . 同理得到 $d(\pmb{y}, E) \leqslant d(\pmb{x}, \pmb{y}) + d(\pmb{x}, E)$ . 因而
+
+$$
+\left| d (\boldsymbol {x}, E) - d (\boldsymbol {y}, E) \right| \leqslant | \boldsymbol {x} - \boldsymbol {y} |.
+$$
+
+取 $\delta = \varepsilon$ ，则由 $|\pmb {x} - \pmb{y}| < \delta$ 推出 $|d(\pmb {x},E) - d(\pmb {y},E)| < \varepsilon .$ 所以 $d(\pmb {x},E)$ 在 $\mathbf{R}^n$ 上一致连续. □
+</Solution>
+</Example>
+
+<Example title="18.2.8">
+设 $E\subset \mathbf{R}^n$ ， $f(x)$ 定义在 $E$ 上.对于点 $\pmb{a}$ 的邻域 $O_{\delta}(\pmb {a})$ 定义 $f$ 在这个邻域上的振幅为
+
+$$
+\omega_ {f} (\boldsymbol {a}, \delta) = \sup _ {\boldsymbol {x} \in O _ {\delta} (\boldsymbol {a})} \{f (\boldsymbol {x}) \} - \inf _ {\boldsymbol {x} \in O _ {\delta} (\boldsymbol {a})} \{f (\boldsymbol {x}) \}.
+$$
+
+然后令
+
+$$
+\omega_ {f} (\boldsymbol {a}) = \lim _ {\delta \rightarrow 0 ^ {+}} \omega_ {f} (\boldsymbol {a}, \delta),
+$$
+
+称为函数 $f$ 在点 $\pmb{a}$ 的振幅. 证明：
+
+(1) 若 $f(\pmb{x})$ 在 $E$ 上有界, 则 $\forall \pmb{a} \in E, \omega_f(\pmb{a})$ 存在;
+
+(2) $f(\pmb{x})$ 在点 $\pmb{a}$ 连续的充分必要条件是 $\omega_{f}(\pmb{a}) = 0$ .
+
+(参见上册 $124$ 页的定义和 $129$ 页的题 $12$.)
+
+<Solution title="证明">
+(1) 对固定的点 $a \in E$ , 由定义知 $\sup_{x \in O_{\delta}(a)} \{f(x)\}$ 与 $\inf_{x \in O_{\delta}(a)} \{f(x)\}$ 分别是 $\delta$ 的单调增加与单调减少函数. 由 $f(x)$ 的有界性知, 当 $\delta$ 充分小时, $\sup_{x \in O_{\delta}(a)} \{f(x)\}$ 与 $\inf_{x \in O_{\delta}(a)} \{f(x)\}$ 都是 $\delta$ 的有界函数, 于是 $\omega_f(a, \delta)$ 是 $\delta$ 的单调增加有界函数, 从而 $\lim_{\delta \to 0^+} \omega_f(a, \delta)$ 存在.
+
+(2) 若 $f(\pmb{x})$ 在点 $\pmb{a}$ 连续, 则 $\forall \varepsilon > 0, \exists \delta > 0$ , 当 $\pmb{x} \in O_{\delta}(\pmb{a})$ 时, $|f(\pmb{x}) - f(\pmb{a})| < \varepsilon$ . 此时应有
+
+$$
+\omega_ {f} (\boldsymbol {a}, \delta) \leqslant \sup _ {\boldsymbol {x} \in O _ {\delta} (\boldsymbol {a})} \left\{f (\boldsymbol {x}) \right\} - f (\boldsymbol {a}) + f (\boldsymbol {a}) - \inf _ {\boldsymbol {x} \in O _ {\delta} (\boldsymbol {a})} \left\{f (\boldsymbol {x}) \right\} \leqslant 2 \varepsilon ,
+$$
+
+于是
+
+$$
+\omega_ {f} (\boldsymbol {a}) = \lim _ {\delta \rightarrow 0 ^ {+}} \omega_ {f} (\boldsymbol {a}, \delta) = 0.
+$$
+
+反之，若 $\lim_{\delta \to 0^{+}}\omega_{f}(\pmb {a},\delta) = 0,$ 则 $\forall \varepsilon >0,\exists \delta_0 > 0,$ 当 $\delta \leqslant \delta_0$ 时
+
+$$
+\sup _ {\boldsymbol {x} \in O _ {\delta} (\boldsymbol {a})} \left\{f (\boldsymbol {x}) \right\} - \inf _ {\boldsymbol {x} \in O _ {\delta} (\boldsymbol {a})} \left\{f (\boldsymbol {x}) \right\} = \omega_ {f} (\boldsymbol {a}, \delta) <   \varepsilon ,
+$$
+
+于是当 $x \in O_{\delta_0}(a)$ 时
+
+$$
+| f (\boldsymbol {x}) - f (\boldsymbol {a}) | \leqslant \sup _ {\boldsymbol {x} \in O _ {\delta_ {0}} (\boldsymbol {a})} \left\{f (\boldsymbol {x}) \right\} - \inf _ {\boldsymbol {x} \in O _ {\delta_ {0}} (\boldsymbol {a})} \left\{f (\boldsymbol {x}) \right\} <   \varepsilon ,
+$$
+
+即 $f(x)$ 在点 a 处连续.
+</Solution>
+</Example>
+
+## 18.2.3 多元连续函数的介值定理
+
+一元连续函数的介值定理(上册§5.2)建立在区间的连通性上. 多元连续函数也有类似的讨论.
+
+<Knowledge title="18.2.4">
+设 $f$ 是定义在 $R^{n}$ 中连通集合 $D$ 上的连续函数, 点 $a, b \in D$ , 则对任意数 $C \in (f(a), f(b))$ , 存在点 $c \in D$ , 使得 $f(c) = C$ .
+
+<Solution title="证明">
+首先证明连续函数把 $\mathbf{R}^n$ 中连通集合 $D$ 映到 $\mathbf{R}$ 中的连通集 $f(D)$ . 设有分解式 $f(D) = A \cup B$ , 其中 $A, B$ 为两个不相交的非空子集. 于是
+
+$$
+D = E \cup F,
+$$
+
+其中 $E = f^{-1}(A), F = f^{-1}(B)$ . 易知 $E, F$ 非空且不相交. 由 $D$ 的连通性, 可设 $E$ 中有 $F$ 的聚点, 即存在点列 $\{\pmb{x}_i\} \subset f^{-1}(B)$ 收敛到点 $\pmb{x} \in f^{-1}(A)$ . 由 $f$ 的连续性, $\{f(\pmb{x}_i)\}$ 收敛到 $f(\pmb{x}) \in A$ . 这表明 $A$ 中有 $B$ 的聚点. 故 $f(D)$ 是 $\mathbf{R}$ 中的连通集.
+
+不难证明 $f(D)$ 是区间（见第十七章的第二组参考题 $2$）。因此由 $f(\boldsymbol{a}), f(\boldsymbol{b}) \in f(D)$ 得 $[f(\boldsymbol{a}), f(\boldsymbol{b})] \subset f(D)$ 。故 $C \in f(D)$ ，即存在点 $c \in D$ ，使 $f(c) = C$ 。
+</Solution>
+</Knowledge>
+
+## 18.2.4 向量值函数
+
+向量值函数是一个从 $\mathbf{R}^n$ 到 $\mathbf{R}^m$ 的映射 $(n, m \geqslant 1)$ 。对应于每一个自变量 $x \in R^{n}$ ，函数值是一个向量，即它的每一个分量是一个多元函数（或一元函数），因此多元函数的极限与连续的概念都可以推广到向量值函数上来.
+
+定义 设 $\Omega \subset \mathbf{R}^n$ , $f: \Omega \to \mathbf{R}^n$ , 满足
+
+(1) $f(\Omega) \subset \Omega;$
+
+(2) $\forall x_{1}, x_{2} \in \Omega$ , 有
+
+$$
+\left| \boldsymbol {f} \left(\boldsymbol {x} _ {1}\right) - \boldsymbol {f} \left(\boldsymbol {x} _ {2}\right) \right| \leqslant L \left| \boldsymbol {x} _ {1} - \boldsymbol {x} _ {2} \right|,
+$$
+
+其中 $0 < L < 1$，则称 $f$ 是 $\Omega$ 上的一个压缩映射（参见上册 $77$ 页）.
+
+从以上定义可以看出, 有关向量值函数的压缩映射的定义是一元函数压缩映射定义的推广. 类似于一元函数, 我们也有下面的压缩映射原理.
+
+<Knowledge title="18.2.5（压缩映射原理）">
+设 $\Omega$ 是 $\mathbf{R}^n$ 中的闭集， $f$ 是 $\Omega$ 上的一个压缩映射，则在 $\Omega$ 中存在 $f$ 的惟一不动点 $x^*$ ，即
+
+$$
+f (x ^ {*}) = x ^ {*}.
+$$
+
+<Solution title="证明">
+证明与一维情况的命题 $3.4.4$ 类似, 从略.
+</Solution>
+</Knowledge>
+
+压缩映射原理有许多重要的应用, 这将在后面的章节中介绍 (例如在 §20.2 中用于证明反函数组存在定理).
+
+## 18.2.5 练习题
+
+1. 设二元函数 $f(x,y)$ 在 $[a,b]\times[c,d]$ 上连续，函数列 $\varphi_{n}(x)$ ( $n=1,2,\cdots$ ) 在 $[a,b]$ 上一致收敛并满足条件 $c\leqslant\varphi_{n}(x)\leqslant d$ ，证明：函数列 $F_{n}(x)=f(x,\varphi_{n}(x))$ ( $n=1,2,\cdots$ ) 在 $[a,b]$ 上一致收敛.
+
+2. 证明: $f(x, y) = \sqrt{x^2 + y^2}$ 在 $\mathbf{R}^2$ 上一致连续.
+
+3. 在命题 $18.2.1$ 中, 由 (1) 直接证 (4).
+
+4. 如果 $f$ 把 $R$ 中的任意开集映为开集, 问 $f$ 是否是 $R$ 上的连续函数.
+
+5. $f(x,y)$ 在 $\mathbf{R}^2$ 上连续，且 $\lim_{|x| + |y|\to \infty}f(x,y)$ 存在.证明： $f(x,y)$ 在 $\mathbf{R}^2$ 上有界，且一致连续.
+
+6. 证明: 若 $D \subset \mathbf{R}^2$ 是有界闭域, $f$ 为 $D$ 上连续函数, 则 $f(D)$ 是一个有界闭区间.
+
+7. 利用命题 $18.2.1$ 和例题 $18.2.7$ 重新证明上一章的第一组参考题 $5$.
+
+8. ($14.1.1$ 小节中 $Dini$ 判别法的推广) 设 $D$ 是 $\mathbf{R}^n$ 中的紧集, $\{f_k\}$ 是 $D$ 上的连续函数列, 且对每一点 $\pmb{x} \in D$ 有 $f_1(\pmb{x}) \geqslant f_2(\pmb{x}) \geqslant \cdots \geqslant f_k(\pmb{x}) \geqslant \cdots$ 以及 $\lim_{k \to \infty} f_k(\pmb{x}) = 0$ . 证明: 函数列 $\{f_k\}$ 在 $D$ 上一致收敛.
+
+9. 证明：在例题 $18.2.8$ 中的 $\omega_{f}(\pmb{a})$ 可改用 $\lim_{\delta \to 0^{+}}\sup_{|\pmb {a} - \pmb {x}|\leqslant \delta}\{|f(\pmb {a}) - f(\pmb {x})|\}$
+
+10. 证明: 连续映射把紧集映为紧集.

@@ -1,0 +1,488 @@
+---
+title: '§11.4 积分学在分析中的其他应用'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Solution from '@/components/Solution.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+
+
+## 11.4.1 利用定积分求数列极限
+
+从第二章开始，已经介绍过求数列极限的许多方法。下面再介绍一种求数列极限的新方法——将求数列极限化为求定积分。它的原理如下：
+
+设 $f \in R[a, b]$，则有与等距分划对应的极限等式：
+
+$$
+\int_{a}^{b} f(x) \mathrm{d} x = \lim_{n \rightarrow \infty} \sum_{i=1}^{n} f\left(a + i \frac{b-a}{n}\right) \frac{b-a}{n}
+$$
+
+或
+
+$$
+\int_{a}^{b} f(x) \mathrm{d} x = \lim_{n \to \infty} \sum_{i=1}^{n} f\left(a + (i-1) \frac{b-a}{n}\right) \frac{b-a}{n}.
+$$
+
+因此，如果能将某个数列 $\{a_{n}\}$ 的通项 $a_{n}$ 写成如上面右边的积分和式那样的表达式，则就将极限计算问题转换为定积分的计算问题了。当然还可以有与不等距分划相对应的变形。
+
+应当指出，这个新方法有时很有效，但有时也不一定比过去的方法简单。它的优点是至少对于一类问题提供了一种统一的思路。
+
+<Example title="例 11.4.1">
+
+计算数列 $\{a_{n}\}$ 的极限，其中通项为
+
+$$
+a_{n} = \frac{1}{n+1} + \frac{1}{n+2} + \dots + \frac{1}{2n}.
+$$
+
+<Solution title="解">
+
+这里用定积分方法的计算非常简单：
+
+$$
+\begin{array}{c} \lim_{n \to \infty} a_{n} = \lim_{n \to \infty} \frac{1}{n} \left(\frac{1}{1+\frac{1}{n}} + \frac{1}{1+\frac{2}{n}} + \dots + \frac{1}{1+\frac{n}{n}}\right) \\ = \int_{0}^{1} \frac{\mathrm{d} x}{1+x} = \ln 2. \end{array}
+$$
+
+</Solution>
+
+<Note>
+
+在过去对于本题已经有了两个解法。这就是例题 2.5.4，其中以 $Euler$ 常数的命题 2.5.6 为工具，以及 2.8.3 小节中巧用夹逼定理的方法。本节的解法虽然需要积分学的知识，但思路要简明得多。
+
+</Note>
+
+</Example>
+
+<Example title="例 11.4.2">
+
+证明：$\lim_{n\to \infty}\frac{\sqrt[n]{n!}}{n} = \frac{1}{e}$.
+
+<Solution title="证明 1">
+
+取对数后就不难写成积分和式：
+
+$$
+\ln \frac{\sqrt[n]{n!}}{n} = \frac{1}{n} \ln(n!) - \ln n = \frac{1}{n} \sum_{k=1}^{n} \ln k - \frac{1}{n} \sum_{k=1}^{n} \ln n = \frac{1}{n} \sum_{k=1}^{n} \ln \left(\frac{k}{n}\right).
+$$
+
+令 $n \to \infty$，注意到上式右端的极限为 $\int_0^1 \ln x \, \mathrm{d}x = -1$，便得到
+
+$$
+\lim_{n \to \infty} \frac{\sqrt[n]{n!}}{n} = \frac{1}{\mathrm{e}}.
+$$
+
+</Solution>
+
+<Note>
+
+这个题在过去已有几种解法 (见例题 2.5.3)。这里的方法从思路上是清楚的，但是函数 $\ln x$ 在 $x = 0$ 右侧邻近无界，因此所涉及的积分是第十二章中的广义积分。而用和式取极限计算广义积分是要另行讨论的问题 (见例题 12.1.1)。
+
+</Note>
+
+<Solution title="证明 2">
+
+由于对数函数单调增加，因而成立不等式
+
+$$
+\sum_{k=1}^{n-1} \ln k < \int_{1}^{n} \ln x \mathrm{d} x < \sum_{k=2}^{n} \ln k,
+$$
+
+这就是
+
+$$
+\ln (n-1)! < (x \ln x - x) \Big|_{1}^{n} = n \ln n - n + 1 < \ln n!,
+$$
+
+整理后得到关于 $n!$ 的双边不等式：
+
+$$
+\mathrm{e} \left(\frac{n}{\mathrm{e}}\right)^{n} < n! < n \mathrm{e} \left(\frac{n}{\mathrm{e}}\right)^{n}.
+$$
+
+开 $n$ 次根后取极限，利用 $\lim_{n\to \infty}\sqrt[n]{e} = 1,\lim_{n\to \infty}\sqrt[n]{n} = 1,$ 即可达到目的。 □
+
+</Solution>
+
+</Example>
+
+<Example title="例 11.4.3">
+
+计算极限
+
+$$
+\lim_{n \to \infty} \left[ \left(1 + \frac{1}{n}\right) \sin{\frac{\pi}{n^{2}}} + \left(1 + \frac{2}{n}\right) \sin{\frac{2\pi}{n^{2}}} + \dots + \left(1 + \frac{n}{n}\right) \sin{\frac{n\pi}{n^{2}}} \right].
+$$
+
+<Solution title="解">
+
+记表达式为 $a_{n}$. 由 $Taylor$ 公式，我们有
+
+$$
+\sin \frac{k\pi}{n^{2}} = \frac{k\pi}{n^{2}} + o\left(\left(\frac{k}{n^{2}}\right)^{2}\right) = \frac{k\pi}{n^{2}} + o\left(\frac{1}{n^{2}}\right), k = 1, 2, \dots, n.
+$$
+
+因此可计算如下：
+
+$$
+\begin{array}{r l} \lim_{n \to \infty} a_{n} & = \lim_{n \to \infty} \left[ \sum_{k=1}^{n} \left(1 + \frac{k}{n}\right) \cdot \frac{k\pi}{n^{2}} + o\left(\frac{1}{n}\right) \right] \\ & = \lim_{n \to \infty} \sum_{k=1}^{n} \frac{\pi}{n} \cdot \frac{k}{n} \cdot \left(1 + \frac{k}{n}\right) \\ & = \int_{0}^{1} \pi x (1 + x) \mathrm{d} x = \frac{5}{6} \pi. \end{array}
+$$
+
+</Solution>
+
+</Example>
+
+## 11.4.2 $Wallis$ 公式与 $Stirling$ 公式
+
+本小节将介绍与阶乘 $n!$ 有关的两个重要公式，它们在处理有关阶乘的极限问题时非常有用。
+
+第一个公式是数学家 $Wallis$ 得到的 (1655 年)，因此称为 $Wallis$ 公式 (其原文见 [4])。它与 $Viète$ 公式 (见 4.3.4 小节题 5) 都是关于圆周率的无穷乘积公式，但在 $Wallis$ 公式中只需要乘除运算，连开方运算也不需要。$Wallis$ 公式对于 $\pi$ 的近似计算没有直接影响，但是在导出 $Stirling$ 公式中将起重要作用。
+
+<Knowledge title="命题 11.4.1 ($Wallis$ 公式)">
+
+$$
+\lim_{n \to \infty} \frac{1}{2 n + 1} \left[ \frac{2 \cdot 4 \cdot \cdots \cdot (2 n)}{1 \cdot 3 \cdot \cdots \cdot (2 n - 1)} \right]^{2} = \frac{\pi}{2}.\tag{11.27}
+$$
+
+分析 回顾 2.3.2 小节的练习题 8 和 9，我们看到 (11.27) 左边的极限存在性是容易证明的，困难在于求出这个极限。
+
+从例题10.4.9的积分计算已知 $I_{n} = \int_{0}^{\pi/2}\sin^{n}x\mathrm{d}x$ 的表达式为
+
+$$
+I_{2 n} = \frac{(2 n - 1)!!}{(2 n)!!} \cdot \frac{\pi}{2}, \quad I_{2 n + 1} = \frac{(2 n)!!}{(2 n + 1)!!}.\tag{11.28}
+$$
+
+这里的差异是显著的，圆周率 $\pi$ 只出现在一个公式中！
+
+将 $I_{n}$ 作为一个数列的通项，则从例题10.2.4已知 $\{I_n\}$ 是无穷小量：$\lim_{n\to \infty}I_n = 0$. 可以想像，当 $n$ 充分大时，$I_{n}$ 与 $I_{n+1}$ 之间的差是更高阶的无穷小量 (见310页的图10.3)，从而 $I_{2n+1}/I_{2n}$ 的极限很有可能是1. 如果真是如此，则就有可能得到关于 $\pi$ 的某种结果。当然这里又遇到了0/0型的不定式，但是由于有表达式(11.28)，因此不难处理。
+
+<Solution title="证明">
+
+在 $0 < x < \frac{\pi}{2}$ 时有 $0 < \sin x < 1$，因此就有 $\sin^{2n+2}x < \sin^{2n+1}x < \sin^{2n}x$. 这样就成立 (积分) 不等式 $I_{2n+2} < I_{2n+1} < I_{2n}$. 利用 (11.28)，得到
+
+$$
+I_{2n+2} = \frac{2 n + 1}{2 n + 2} \cdot I_{2n} < I_{2n+1} < I_{2n}.
+$$
+
+两边除以 $I_{2n}$，并取极限 (即夹逼)，可见确实有
+
+$$
+\lim_{n \to \infty} \frac{I_{2n+1}}{I_{2n}} = 1.
+$$
+
+再用 (11.28) 代入，就得到所要的结果：
+
+$$
+\lim_{n \rightarrow \infty} \frac{1}{2 n + 1} \left[ \frac{(2 n)!!}{(2 n - 1)!!} \right]^{2} \cdot \frac{2}{\pi} = 1.
+$$
+
+</Solution>
+
+<Note>
+
+在应用中，$Wallis$ 公式的几个等价形式有时更为方便，例如：
+
+$$
+\frac{(2 n)!!}{(2 n - 1)!!} \sim \sqrt{\pi n},\tag{11.29}
+$$
+
+$$
+\frac{(n!)^{2} 2^{2 n}}{(2 n)!} \sim \sqrt{\pi n}.\tag{11.30}
+$$
+
+特别是公式 (11.29) 刻画了双阶乘 $(2n)!!$ 与 $(2n-1)!!$ 之比的渐近性态，是 $Wallis$ 公式的一种便于使用的形式。
+
+</Note>
+
+</Knowledge>
+
+<Knowledge title="命题 11.4.2 (最简单形式的 $Stirling$ 公式)">
+
+$Stirling$ 公式是关于阶乘 $n!$ 的重要结果，具有广泛的应用。其一般形式为
+
+$$
+\begin{array}{l} \ln n! = \ln \sqrt{2 \pi} + \left(n + \frac{1}{2}\right) \ln n - n + \frac{B_{2}}{1 \cdot 2 n} + \frac{B_{4}}{3 \cdot 4 n^{3}} + \dots \\ \qquad + \frac{B_{2 m}}{(2 m - 1)(2 m) n^{2 m - 1}} + \theta_{n} \cdot \frac{B_{2 m + 2}}{(2 m + 1)(2 m + 2) n^{2 m + 1}}, \end{array}\tag{11.31}
+$$
+
+其中 $0 < \theta_{n} < 1$, $B_{2n}$ 是 $Bernoulli$ 数（见7.2.3小节）。
+
+本书只给出含有上述公式右边前三项的最简单形式的 $Stirling$ 公式的证明，而在第二组参考题15中指出如何可以得到更为精细的下一个公式的证明。一般形式的 $Stirling$ 公式(11.31)可以从 $Euler$-$Maclaurin$ 公式(11.22)推出。其他证明方法还有很多，有兴趣的读者可以参看近年来在《美国数学月刊》上发表的许多新方法。
+
+关于阶乘 $n!$ 有渐近公式：
+
+$$
+n! \sim \sqrt{2 \pi n} \left(\frac{n}{\mathrm{e}}\right)^{n} (n \rightarrow \infty).\tag{11.32}
+$$
+
+分析 关于阶乘 $n!$ 的结果很多。就本书来说，在前面的 1.3.2, 2.5.5, 2.7.3 各小节中都有关于 $n!$ 的不等式，此外还有许多与极限有关的结果。在 2.7.1 小节中还有对于 $n!$ 作为无穷大量的比较：$a^n \ll n! \ll n^n (a > 1)$. 但如何确切地刻画 $n!$ 的渐近性态，当时还是不清楚。这就是 $Stirling$ 公式要解决的问题。
+
+从以前的结果出发，可以得到许多启示。首先，从 2.5.5 小节练习题 7 就有对每个 $n \in \mathbf{N}_{+}$ 成立的不等式：
+
+$$
+\left(1 + \frac{1}{n}\right)^{n} < b_{n} = \frac{n! \mathrm{e}^{n}}{n^{n}} < n \cdot \left(1 + \frac{1}{n}\right)^{n+1}.
+$$
+
+为了研究 $\{b_n\}$ 的性态，自然要观察它的前后项之比，这样就有
+
+$$
+\frac{b_{n}}{b_{n+1}} = \frac{1}{\mathrm{e}} \left(1 + \frac{1}{n}\right)^{n} < 1,
+$$
+
+因此数列 $\{b_n\}$ 严格单调增加。这里只不过利用了关于数 $\mathbf{e}$ 的最初讨论 (见命题2.5.1)。再利用例题8.2.3的结论，可见以 $\left(1 + \frac{1}{n}\right)^{n + \frac{1}{2}}$ 为通项的数列严格单调减少，且收敛于 $\mathbf{e}$. 这样就得到
+
+$$
+\frac{b_{n} \sqrt{n+1}}{b_{n+1} \sqrt{n}} = \frac{b_{n}}{b_{n+1}} \left(1 + \frac{1}{n}\right)^{\frac{1}{2}} = \frac{1}{\mathrm{e}} \left(1 + \frac{1}{n}\right)^{n + \frac{1}{2}} > 1,
+$$
+
+它就是下面证明的出发点。
+
+<Solution title="证明">
+
+定义数列
+
+$$
+a_{n} = \frac{n! \mathrm{e}^{n}}{n^{n + \frac{1}{2}}}, \quad n \in \mathbf{N}_{+},
+$$
+
+则只需证明 $\{a_{n}\}$ 收敛于 $\sqrt{2\pi}$. 为此写出其前后项之比：
+
+$$
+\frac{a_{n}}{a_{n+1}} = \frac{1}{\mathrm{e}} \left(1 + \frac{1}{n}\right)^{n + \frac{1}{2}}.\tag{11.33}
+$$
+
+利用 $f(x) = 1/x$ 下凸，在 $Hadamard$ 不等式(例题11.2.1)中，令 $x_{1} = n$，$x_{2} = n+1$ 代入，得到不等式：
+
+$$
+\frac{1}{n + \frac{1}{2}} \leqslant \ln\left(1 + \frac{1}{n}\right) \leqslant \frac{1}{2} \left(\frac{1}{n} + \frac{1}{n+1}\right).
+$$
+
+将上式乘 $\left(n + \frac{1}{2}\right)$ 并作整理，得到等价的不等式：
+
+$$
+0 \leqslant \left(n + \frac{1}{2}\right) \ln\left(1 + \frac{1}{n}\right) - 1 \leqslant \frac{1}{4} \left(\frac{1}{n} - \frac{1}{n+1}\right).\tag{11.34}
+$$
+
+将它与 (11.33) 作比较，就有
+
+$$
+1 \leqslant \frac{a_{n}}{a_{n+1}} \leqslant \mathrm{e}^{\frac{1}{4}\left(\frac{1}{n} - \frac{1}{n+1}\right)}.\tag{11.35}
+$$
+
+这表明正数列 $\{a_{n}\}$ 单调减少，因此收敛，记其极限为 $\alpha$. 同时从 (11.35) 的右边不等式又知道另一个正数列 $\{a_{n} \mathrm{e}^{-\frac{1}{4n}}\}$ 单调增加。由于它的极限也是 $\alpha$，这样就证明了 $\alpha > 0$.
+
+利用 $Wallis$ 公式 (11.27) 或 (11.30)，并用 $n! = a_{n} \cdot \frac{n^{n + \frac{1}{2}}}{\mathrm{e}^{n}}$ 代入，就有
+
+$$
+\sqrt{\pi} = \lim_{n \to \infty} \frac{(n!)^{2} 2^{2 n}}{(2 n)! \sqrt{n}} = \lim_{n \to \infty} \frac{a_{n}^{2}}{a_{2 n} \sqrt{2}} = \frac{\alpha^{2}}{\alpha \sqrt{2}},\tag{11.36}
+$$
+
+可见极限 $\alpha = \sqrt{2\pi}$.
+
+</Solution>
+
+<Note>
+
+对于数列 $\{a_{n}\}$ 不仅要证明它收敛，而且还必须证明其极限 $\alpha > 0$，否则 (11.36) 的最后一步通不过。有不少文献忽略了这一点。上述证明来自 [8].
+
+</Note>
+
+</Knowledge>
+
+## 11.4.3 $Taylor$ 公式的积分型余项
+
+在第七章“微分学的基本定理”中已介绍了带有 $Peano$ 余项、$Lagrange$ 余项与 $Cauchy$ 余项的 $Taylor$ 公式。这里将介绍带积分型余项的 $Taylor$ 公式。
+
+<Knowledge title="命题 11.4.3">
+
+设 $f(x)$ 在区间 $(x_{0}-r, x_{0}+r)$ 上有 $n+1$ 阶连续导函数，则对每个 $x \in (x_{0}-r, x_{0}+r)$ 成立
+
+$$
+f(x) = \sum_{k=0}^{n} \frac{f^{(k)}(x_{0})}{k!} (x-x_{0})^{k} + R_{n}(x),
+$$
+
+其中余项
+
+$$
+R_{n}(x) = \frac{1}{n!} \int_{x_{0}}^{x} f^{(n+1)}(t) (x-t)^{n} \mathrm{d} t.\tag{11.37}
+$$
+
+<Solution title="证明">
+
+从
+
+$$
+R_{n}(x) = f(x) - \sum_{k=0}^{n} \frac{f^{(k)}(x_{0})}{k!} (x-x_{0})^{k},
+$$
+
+可以得到
+
+$$
+R_{n}^{(k)}(x_{0}) = 0, k = 1, 2, \dots, n, \quad R_{n}^{(n+1)}(x) = f^{(n+1)}(x).
+$$
+
+利用逐次分部积分运算就可以有
+
+$$
+\begin{array}{r l} & R_{n}(x) = \int_{x_{0}}^{x} R_{n}^{\prime}(t) \mathrm{d} t = (t-x) R_{n}^{\prime}(t) \bigg|_{x_{0}}^{x} + \int_{x_{0}}^{x} R_{n}^{\prime\prime}(t)(x-t) \mathrm{d} t \\ & \qquad = \int_{x_{0}}^{x} R_{n}^{\prime\prime}(t)(x-t) \mathrm{d} t = \frac{1}{2} \int_{x_{0}}^{x} R_{n}^{\prime\prime\prime}(t)(x-t)^{2} \mathrm{d} t \\ & \qquad = \dots = \frac{1}{n!} \int_{x_{0}}^{x} R_{n}^{(n+1)}(t)(x-t)^{n} \mathrm{d} t \\ & \qquad = \frac{1}{n!} \int_{x_{0}}^{x} f^{(n+1)}(t)(x-t)^{n} \mathrm{d} t. \end{array}
+$$
+
+</Solution>
+
+<Note>
+
+(1) 对余项 (11.37) 右边用第一中值定理，在 $x_{0}$ 与 $x$ 之间有 $\xi$，使得
+
+$$
+\begin{array}{l} R_{n}(x) = \frac{1}{n!} \int_{x_{0}}^{x} f^{(n+1)}(t)(x-t)^{n} \mathrm{d} t = \frac{1}{n!} f^{(n+1)}(\xi) \int_{x_{0}}^{x} (x-t)^{n} \mathrm{d} t \\ \qquad = -\frac{1}{(n+1)!} f^{(n+1)}(\xi) (x-t)^{n+1} \Bigg|_{x_{0}}^{x} \\ \qquad = \frac{1}{(n+1)!} f^{(n+1)}(\xi) (x-x_{0})^{n+1}. \end{array}
+$$
+
+这就是 $Lagrange$ 余项 (命题 7.2.3).
+
+(2) 在 (11.37) 右边的积分中，把被积函数看作 $f^{(n+1)}(t)(x-t)^{n}$ 与 $1$ 的乘积，由积分第一中值定理，存在 $\xi$ 在 $x_{0}$ 与 $x$ 之间，使
+
+$$
+\begin{array}{c} R_{n}(x) = \frac{1}{n!} f^{(n+1)}(\xi) (x-\xi)^{n} \int_{x_{0}}^{x} \mathrm{d} t \\ = \frac{1}{n!} f^{(n+1)}(\xi) (x-\xi)^{n} (x-x_{0}). \end{array}
+$$
+
+将 $\xi$ 改写成 $\xi = x_{0} + \eta (x-x_{0}), 0 \leqslant \eta \leqslant 1$，则上式成为
+
+$$
+R_{n}(x) = \frac{1}{n!} f^{(n+1)}(x_{0}+\eta(x-x_{0})) (1-\eta)^{n} (x-x_{0})^{n+1}.
+$$
+
+这就是 $Cauchy$ 余项 (命题 7.2.4).
+
+(3) $Lagrange$ 余项与 $Cauchy$ 余项分别含有不完全确定的中值 $\xi$ 与 $\eta$，而积分型余项中则不含中值，这无疑是一个优点。由于这个原因，带积分型余项的 $Taylor$ 公式常被用于比较精确的表达式中。
+
+</Note>
+
+</Knowledge>
+
+## 11.4.4 $\pi$ 的无理性证明
+
+作为定积分的又一方面的应用，我们证明 $\pi$ 是无理数。下面的证法是由 $I. Niven$ (尼文) 提出的 (见 [4])。这方面较新的材料见《美国数学月刊》(2001) 第 108 卷 222-231 页 (《数学译林》(2001) 第 3 期)。
+
+<Knowledge title="命题 11.4.4">
+
+$\pi$ 是无理数。
+
+<Solution title="证明">
+
+用反证法。假定 $\pi$ 是有理数，则可设 $\pi = \frac{a}{b}$，其中 $a, b$ 为正整数。定义辅助函数
+
+$$
+f(x) = \frac{x^{n} (a - b x)^{n}}{n!} = \frac{b^{n} x^{n} (\pi - x)^{n}}{n!}.
+$$
+
+这是一个多项式，其中各项的次数从 $n$ 到 $2n$。可以证明：对每一项求任意阶导数后，再令 $x = 0$ 代入，只能得到 $0$ 或者整数。实际上这里只有三种情况：(1) 该项求导后仍含有因子 $x$；(2) 该项求导后已经是常数 $0$；(3) 该项求导后为非零常数。只需要讨论情况 (3)。假设求导之前该项为 $cx^{k}$，则情况 (3) 只能是对该项求 $k$ 阶导数的结果，这时得到的值是 $k!c$。由于 $c$ 是整数除以 $n!$ 得到的有理数，而 $k \geqslant n$，因此 $k!c$ 一定是整数。
+
+这就证明了对任意正整数 $i, f^{(i)}(0)$ 都是整数。
+
+又由 $f(x)$ 的表达式可知 $f(x) = f(\pi - x)$，因此对任意正整数 $i$，$f^{(i)}(\pi) = (-1)^{n} f^{(i)}(0)$ 也是整数。
+
+然后我们要证明定积分
+
+$$
+\int_{0}^{\pi} f(x) \sin x \mathrm{d} x\tag{11.38}
+$$
+
+的值也是整数。对这个积分用分部积分得到
+
+$$
+\begin{array}{r l} \int_{0}^{\pi} f(x) \sin x \mathrm{d} x & = f(x)(-\cos x) \Big|_{0}^{\pi} + \int_{0}^{\pi} f^{\prime}(x) \cos x \mathrm{d} x \\ & = f(0) + f(\pi) + f^{\prime}(x) \sin x \Big|_{0}^{\pi} - \int_{0}^{\pi} f^{\prime\prime}(x) \sin x \mathrm{d} x \\ & = f(0) + f(\pi) - \int_{0}^{\pi} f^{\prime\prime}(x) \sin x \mathrm{d} x. \end{array}
+$$
+
+由于 $f$ 为 $2n$ 次多项式，重复以上过程，最后的结果是
+
+$$
+\int_{0}^{\pi} f(x) \sin x \mathrm{d} x = f(0) + f(\pi) - f^{\prime\prime}(0) - f^{\prime\prime}(\pi) + \dots + (-1)^{n} f^{(2n)}(0) + (-1)^{n} f^{(2n)}(\pi).
+$$
+
+根据前面的分析，可见左边的积分值是整数。
+
+另一方面，在区间 $[0, \pi]$ 上，$0 \leqslant a - bx = b(\pi - x) \leqslant a$，因此对 $f(x)$ 有估计式
+
+$$
+0 \leqslant f(x) = \frac{x^{n} (a - b x)^{n}}{n!} \leqslant \frac{\pi^{n} a^{n}}{n!},
+$$
+
+这样就得到对于积分 (11.38) 的估计：
+
+$$
+0 < \int_{0}^{\pi} f(x) \sin x \mathrm{d} x \leqslant \int_{0}^{\pi} f(x) \mathrm{d} x < \frac{\pi^{n+1} a^{n}}{n!}.
+$$
+
+由于当 $n \to \infty$ 时 $n!$ 是较 $\pi^{n} a^{n}$ 更为高阶的无穷大量，因此只要取 $n$ 充分大，上式右边就小于 $1$。这与积分 (11.38) 为整数不相容。因此 $\pi$ 不能是有理数，而只能是无理数。
+
+</Solution>
+
+<Note>
+
+一个复数，如果它是某个整系数代数方程的根，则称之为代数数，否则，就称之为超越数。命题 2.5.5 已经证明数 $e$ 是无理数。在它的注解中还提到 $e$ 还是超越数。$\pi$ 的情况也是如此。$Lindemann$ (林德曼) 于 1882 年证明了 $\pi$ 是超越数，从而最后解决了用圆规和直尺不可能化圆为方这个古希腊三大几何难题中的最后一个问题。关于 $e$ 和 $\pi$ 的超越性证明可看 [53, 55, 4] 等。
+
+</Note>
+
+</Knowledge>
+
+## 11.4.5 练习题
+
+1. 求下列极限：
+
+   (1) $\lim_{n\to\infty}n\left(\frac{1}{n^{2}+1^{2}}+\frac{1}{n^{2}+2^{2}}+\cdots+\frac{1}{2n^{2}}\right);$
+
+   (2) $\lim_{n\to \infty}\left[\frac{1}{\sqrt{n^{2}}}+\frac{1}{\sqrt{n(n+1)}}+\dots+\frac{1}{\sqrt{n(2n-1)}}\right];$
+
+   (3) $\lim_{n\to \infty}\frac{\left[1^{a}+3^{a}+\cdots+(2n+1)^{a}\right]^{b+1}}{\left[2^{b}+4^{b}+\cdots+(2n)^{b}\right]^{a+1}}$，其中 $a, b \neq -1$；
+
+   (4) $\lim_{n\to \infty}\prod_{k=0}^{n-1}\left(2+\cos{\frac{k\pi}{n}}\right)^{\pi/n};$
+
+   (5) $\lim_{n\to \infty}\frac{1}{n}\sqrt[n]{n(n+1)\cdots(2n-1)};$
+
+   $$
+   (6) \lim_{n \to \infty} \frac{1}{n^{2}} \sum_{k=1}^{n} \sqrt{(n x + k)(n x + k - 1)} \quad (x > 0).
+   $$
+
+   (题 (4) 可利用第十一章第二组参考题 2 中的 $Poisson$ 积分，题 (6) 可利用第十章第一组参考题 3.)
+
+2. 证明对于区间 $\left(\frac{2}{3}, 1\right)$ 中的数 $A$，存在 $N$ 使 $n > N$ 时，成立
+
+   $$
+   \sqrt{1} + \sqrt{2} + \dots + \sqrt{n} < A n^{\frac{3}{2}},
+   $$
+
+   并与 11.3.3 小节的题 5 在方法和结果上进行比较。
+
+3. 设 $f(x) \in C[0,1]$，$f(x)$ 处处大于 $0$，求极限
+
+   $$
+   \lim_{n \to \infty} \sqrt[n]{f\left(\frac{1}{n}\right) f\left(\frac{2}{n}\right) \cdots f\left(\frac{n-1}{n}\right) f(1)},
+   $$
+
+   由此导出算术平均值 - 几何平均值不等式的积分形式，并与 11.2.1 小节的不等式 (11.10) 作比较。
+
+4. 设 $A_{n}=\frac{1}{n+1}+\frac{1}{n+2}+\cdots+\frac{1}{2n}$，求 $\lim_{n\to\infty}n(\ln2-A_{n})$.
+
+5. 设 $B_{n}=\frac{2}{2n+1}+\frac{2}{2n+3}+\cdots+\frac{2}{4n-1}$，求 $\lim_{n\to\infty}n^{2}(\ln2-B_{n})$.
+
+6. 求 $\lim_{n\to \infty}\sqrt{n}\int_{-1}^{1}(1-x^{2})^{n}\mathrm{d}x.$
+
+7. 试从 $Stirling$ 公式 (命题 11.4.2) 的证明中推导出
+
+   $$
+   n! = \sqrt{2\pi n} \left(\frac{n}{\mathrm{e}}\right)^{n} \mathrm{e}^{\frac{\theta_{n}}{4n}},
+   $$
+
+   其中 $0 < \theta_{n} < 1$.
+
+   (在第十一章第二组参考题 15 中有更好的结果，但需要比 (11.34) 更强的不等式.)
+
+8. 试写出 $(2n)!!$, $(2n-1)!!$ 和 $\mathrm{C}_{2n}^{n}$ 的渐近公式.
+
+9. 利用 $Stirling$ 公式计算下列极限：
+
+   (1) $\lim_{n\to \infty}\left(1+\frac{1}{n}\right)^{n^{2}}\cdot\frac{n!}{n^{n}\sqrt{n}};$ (2) $\lim_{n\to \infty}(-1)^{n}\binom{-1/2}{n}\sqrt{n}.$
+
+10. 证明：$\lim_{n\to \infty}\sqrt{n}\prod_{k=1}^{n}\frac{\mathrm{e}^{1-\frac{1}{k}}}{\left(1+\frac{1}{k}\right)^{k}} = \frac{\sqrt{2\pi}}{\mathrm{e}^{1+\gamma}}$，其中 $\gamma$ 是 $Euler$ 常数

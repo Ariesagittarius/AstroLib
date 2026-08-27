@@ -1,0 +1,286 @@
+---
+title: '11.3.2 积分的近似计算'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Solution from '@/components/Solution.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+
+<Example title="例题 11.3.1">
+估计积分 $I=\int_{a}^{b}\frac{\sin x}{x}dx$ 的值, 其中 $0\lt a\lt b$.
+
+<Solution title="解">
+如果利用 $|\sin x| \leqslant |x|$ , 则只能得到
+
+$$
+| I | \leqslant b - a.\tag{11.17}
+$$
+
+这个估计在 $b-a$ 较大时当然很差.
+
+利用积分第一中值定理, 由于因子 $1 / x$ 不变号, 就得到
+
+$$
+\left| I \right| = \left| \sin \xi \int_ {a} ^ {b} \frac {\mathrm{d} x}{x} \right| \leqslant \int_ {a} ^ {b} \frac {\mathrm{d} x}{x} = \ln \frac {b}{a} = \ln \left(1 + \frac {b - a}{a}\right) <   \frac {b}{a} - 1.\tag{11.18}
+$$
+
+如果 $a > 1$ ，则这个估计比 $(11.17)$ 要好.但是对于 $b - a$ 很大的情况仍然不好
+
+利用积分第二中值定理和因子 $1 / x$ 单调非负，就有
+
+$$
+| I | = \left| \frac {1}{a} \int_ {a} ^ {\xi} \sin x \mathrm{d} x \right| \leqslant \frac {1}{a} | \cos \xi - \cos a | \leqslant \frac {2}{a}.\tag{11.19}
+$$
+
+如果 $a > 1$ ，则对于 $b - a$ 很大的情况这个估计明显比前两个要好. 观察该被积函数的特性(其图像见图 $4.2(a)$)，当积分区间较大时，必须将 $\sin x$ 所起的正负抵消的作用考虑进去，而不能如前两个估计那样只利用 $|\sin x| \leqslant |x|$ 和 $|\sin x| \leqslant 1$ . 这就是估计 $(11.19)$ 优于它们的理由所在.
+
+估计 $(11.19)$ 与区间右端无关. 下面一个估计则对任何 $0 \leqslant a < b$ 都成立:
+
+$$
+\left| \int_ {a} ^ {b} \frac {\sin x}{x} \mathrm{d} x \right| <   3.\tag{11.20}
+$$
+
+这里不妨设 $0 \leqslant a < 1 < b$ , 否则下面的估计更为简单. 这时将积分拆开, 并利用 $(11.17)$ 和 $(11.19)$ 就得到
+
+$$
+| I | \leqslant \left| \int_ {a} ^ {1} \frac {\sin x}{x} \mathrm{d} x \right| + \left| \int_ {1} ^ {b} \frac {\sin x}{x} \mathrm{d} x \right| <   1 + 2 = 3.\tag{11.21}
+$$
+
+当然这还是一个很粗的估计. 与区间无关的最优估计问题留作为本章第二组参考题 $5$ . 又若 $a, b$ 是给定的具体数值, 则还需要利用被积函数在 $[a, b]$ 上的具体特性才能作出较好的估计.
+</Solution>
+</Example>
+
+下面就是一个例子 (即是 $[27]$ 中的 $2328$ 题).
+
+<Example title="例题 11.3.2">
+估计定积分 $I = \int_{100\pi}^{200\pi}\frac{\sin x}{x}\mathrm{d}x$ 的值.
+
+<Solution title="解 1">
+将积分区间按 $\pi$ 的整倍数拆开, 就不难证明 $I > 0$ (细节从略). 又利用上面已有的估计式 $(11.19)$, 就得到 $[27]$ 中的答案:
+
+$$
+I = \frac {\theta}{5 0 \pi}, 0 <   \theta \leqslant 1.
+$$
+</Solution>
+
+<Solution title="解 2">
+利用被积函数的分母大于 $100\pi$ ，而如下分部积分后会变得更大，就有
+
+$$
+\begin{array}{r} I = \left(- \frac {\cos x}{x} - \frac {\sin x}{x ^ {2}}\right) \bigg | _ {1 0 0 \pi} ^ {2 0 0 \pi} - 2 \int_ {1 0 0 \pi} ^ {2 0 0 \pi} \frac {\sin x}{x ^ {3}} \mathrm{d} x \\ = \frac {1}{2 0 0 \pi} - 2 \int_ {1 0 0 \pi} ^ {2 0 0 \pi} \frac {\sin x}{x ^ {3}} \mathrm{d} x. \end{array}
+$$
+
+对于右边的积分用积分第二中值定理估计, 就有
+
+$$
+\left| I - \frac {1}{2 0 0 \pi} \right| \leqslant \frac {2}{1 0 ^ {6} \pi^ {3}} \left| \int_ {1 0 0 \pi} ^ {\xi} \sin x \mathrm{d} x \right| \leqslant \frac {4}{1 0 ^ {6} \pi^ {3}} \approx 0. 1 2 9 \times 1 0 ^ {- 6}.
+$$
+
+也就是说积分 $I \approx \frac{1}{200\pi} \approx 0.00159.$
+</Solution>
+
+<Note>
+用 $Mathematica$ 计算得到 $I \approx 0.00159149$ . 实际上, 如果对上面的最后一个积分再用分部积分和第二中值定理, 则可以得到更为精确的近似值.
+</Note>
+</Example>
+
+各种不等式在估计中都可能有用. 其中 $Cauchy$ 不等式与 $Schwarz$ 不等式更是常用的工具. 例如, 椭圆 $\frac{x^2}{a^2} + \frac{y^2}{b^2} = 1 (a, b > 0)$ 的周长为
+
+$$
+s = 4 \int_ {0} ^ {\pi / 2} \sqrt {a ^ {2} \sin^ {2} t + b ^ {2} \cos^ {2} t} \mathrm{d} t,
+$$
+
+其中被积函数的原函数不是初等函数, 因此不可能用 $Newton-Leibniz$ 公式来计算 (可参看 $[50]$ 中的 $138–142$ 页). 下面我们分别用 $Schwarz$ 不等式和 $Cauchy$ 不等式来估计这个积分的上界和下界. 它们的平均值即是在某些数学手册中关于椭圆周长的近似公式之一.
+
+<Example title="例题 11.3.3">
+证明： $\pi (a + b)\leqslant s\leqslant \pi \sqrt{2a^2 + 2b^2}.$
+
+<Solution title="证">
+首先, 不难由 $Schwarz$ 不等式得到上界估计:
+
+$$
+\begin{array}{l} s = 4 \int_ {0} ^ {\pi / 2} \sqrt {a ^ {2} \sin^ {2} t + b ^ {2} \cos^ {2} t} \mathrm{d} t \\ \leqslant 4 \left[ \int_ {0} ^ {\pi / 2} (a ^ {2} \sin^ {2} t + b ^ {2} \cos^ {2} t) \mathrm{d} t \right] ^ {\frac {1}{2}} \left(\int_ {0} ^ {\pi / 2} \mathrm{d} t\right) ^ {\frac {1}{2}} \\ = 4 \left[ \frac {\pi}{4} (a ^ {2} + b ^ {2}) \right] ^ {\frac {1}{2}} \left(\frac {\pi}{2}\right) ^ {\frac {1}{2}} = \pi \sqrt {2 a ^ {2} + 2 b ^ {2}}. \end{array}
+$$
+
+然后 (反方向) 用 $Cauchy$ 不等式求出被积函数的下界:
+
+$$
+\begin{array}{r l} & {\sqrt {a ^ {2} \sin^ {2} t + b ^ {2} \cos^ {2} t} = \sqrt {a ^ {2} \sin^ {2} t + b ^ {2} \cos^ {2} t} \cdot \sqrt {\sin^ {2} t + \cos^ {2} t}} \\ & {\qquad \geqslant a \sin t \cdot \sin t + b \cos t \cdot \cos t} \\ & {\qquad = a \sin^ {2} t + b \cos^ {2} t,} \end{array}
+$$
+
+对两边积分再乘 $4$ 就得到积分的下界估计:
+
+$$
+s \geqslant 4 \int_ {0} ^ {\pi / 2} (a \sin^ {2} t + b \cos^ {2} t) \mathrm{d} t = \pi (a + b).
+$$
+</Solution>
+</Example>
+
+
+在数学分析教科书中对于积分的近似计算一般是介绍三种方法, 即梯形公式、矩形公式和抛物线公式 (也称为 $Simpson$ (辛普森) 公式). 这些公式以及更深入的数值积分方法都是以下面的定理为基础的.
+
+<Knowledge title="命题 11.3.1 ($Euler-Maclaurin$ 求和公式)">
+设函数 $f \in C^{(2m+2)}[a, b]$ ， $h = (b - a)/n$ ， $x_i = a + ih$ ， $i = 0, 1, \cdots, n$ ，则
+
+$$
+\begin{array}{l} \frac {b - a}{n} \sum_ {i = 1} ^ {n} \frac {1}{2} [ f (x _ {i - 1}) + f (x _ {i}) ] - \int_ {a} ^ {b} f (x) \mathrm{d} x \\ = \sum_ {k = 1} ^ {m} \frac {B _ {2 k}}{(2 k) !} h ^ {2 k} [ f ^ {(2 k - 1)} (b) - f ^ {(2 k - 1)} (a) ] \\ + \frac {B _ {2 m + 2}}{(2 m + 2) !} h ^ {2 m + 2} f ^ {(2 m + 2)} (\xi) (b - a), \end{array}\tag{11.22}
+$$
+
+其中 $\xi\in[a,b]$ , $B_{2k}\left(k=1,2,\cdots,m+1\right)$ 是 $Bernoulli$ 数 (见 $7.2.3$ 小节), 其中前三个是:
+
+$$
+B _ {2} = \frac {1}{6}, B _ {4} = - \frac {1}{3 0}, B _ {6} = \frac {1}{4 2}.
+$$
+
+容易看出, 上述公式的左边就是对于区间 $[a, b]$ 的 $n$ 等距分划下的梯形公式与积分之差, 因此公式给出了梯形公式的误差表达式. 通过组合就可以得到矩形公式和抛物线公式的误差估计.
+
+公式 $(11.22)$ 的证明并不困难, 主要是用分部积分法. 下面给出的几个例题主要是介绍方法. 将例题中所得的结果用于等距分划的每个子区间, 并加以合并就可以得到 $m = 0, 1$ 时的 $Euler-Maclaurin$ 公式. 它们提供了梯形公式和矩形公式的误差估计.
+</Knowledge>
+
+<Example title="例题 11.3.4">
+设 $f \in C^2[0, h]$ , 则存在 $\xi \in [0, h]$ , 使成立
+
+$$
+\int_ {0} ^ {h} f (x) \mathrm{d} x = \frac {h}{2} [ f (0) + f (h) ] - \frac {1}{1 2} f ^ {\prime \prime} (\xi) h ^ {3}.\tag{11.23}
+$$
+
+<Solution title="证">
+如下用两次分部积分得到
+
+$$
+\begin{array}{r l} \int_ {0} ^ {h} f (x) \mathrm{d} x & = \int_ {0} ^ {h} f (x) \left(x - \frac {h}{2}\right) ^ {\prime} \mathrm{d} x \\ & = f (x) \left(x - \frac {h}{2}\right) \Big | _ {0} ^ {h} - \int_ {0} ^ {h} f ^ {\prime} (x) \left(x - \frac {h}{2}\right) \mathrm{d} x \\ & = \frac {h}{2} [ f (0) + f (h) ] - \frac {1}{2} \int_ {0} ^ {h} f ^ {\prime} (x) [ x (x - h) ] ^ {\prime} \mathrm{d} x \\ & = \frac {h}{2} [ f (0) + f (h) ] + \frac {1}{2} \int_ {0} ^ {h} f ^ {\prime \prime} (x) [ x (x - h) ] \mathrm{d} x. \end{array}\tag{11.24}
+$$
+
+由于 $x(x - h)$ 不变号, 对右边的积分用第一中值定理就得到所要的结果:
+
+$$
+\frac {1}{2} \int_ {0} ^ {h} f ^ {\prime \prime} (x) [ x (x - h) ] \mathrm{d} x = \frac {1}{2} f ^ {\prime \prime} (\xi) \int_ {0} ^ {h} x (x - h) \mathrm{d} x = - \frac {1}{1 2} f ^ {\prime \prime} (\xi) h ^ {3}.
+$$
+</Solution>
+
+<Note>
+如果引进变上限积分 $F(x) = \int_0^x f(t)\mathrm{d}t, 0 \leqslant x \leqslant h$ ，就可以看出本题与第七章第一组参考题 $9(3)$ 相同。两者在条件和结论上的差异不是本质的，只要应用第十章第一组参考题 $11$ 就可以解决。此外，这也说明在积分学中的许多问题用微分学也是可以解决的。
+</Note>
+</Example>
+
+<Example title="例题 11.3.5">
+设 $f \in C^{4}[0, h]$ ，证明：存在 $\xi \in [0, h]$ ，使成立
+
+$$
+\int_ {0} ^ {h} f (x) \mathrm{d} x = \frac {h}{2} [ f (0) + f (h) ] - \frac {h ^ {2}}{1 2} [ f ^ {\prime} (h) - f ^ {\prime} (0) ] + \frac {1}{7 2 0} f ^ {(4)} (\xi) h ^ {5}.\tag{11.25}
+$$
+
+<Solution title="证">
+从上一例题中推导得到的等式 $(11.24)$ 继续做下去:
+
+$$
+\begin{array}{r l} & {\int_ {0} ^ {h} f (x) \mathrm{d} x - \frac {h}{2} [ f (0) + f (h) ]} \\ & {= \frac {1}{2} \int_ {0} ^ {h} f ^ {\prime \prime} (x) [ x (x - h) ] \mathrm{d} x} \\ & {= - \frac {h ^ {2}}{1 2} \int_ {0} ^ {h} f ^ {\prime \prime} (x) \mathrm{d} x + \frac {1}{2} \int_ {0} ^ {h} f ^ {\prime \prime} (x) \left(x ^ {2} - h x + \frac {h ^ {2}}{6}\right) \mathrm{d} x} \\ & {= - \frac {h ^ {2}}{1 2} [ f ^ {\prime} (h) - f ^ {\prime} (0) ] + \frac {1}{2} \int_ {0} ^ {h} f ^ {\prime \prime} (x) \left(\frac {x ^ {3}}{3} - \frac {h x ^ {2}}{2} + \frac {h ^ {2} x}{6}\right) ^ {\prime} \mathrm{d} x} \\ & {= - \frac {h ^ {2}}{1 2} [ f ^ {\prime} (h) - f ^ {\prime} (0) ] - \frac {1}{2} \int_ {0} ^ {h} f ^ {\prime \prime \prime} (x) \left(\frac {x ^ {3}}{3} - \frac {h x ^ {2}}{2} + \frac {h ^ {2} x}{6}\right) \mathrm{d} x} \\ & {= - \frac {h ^ {2}}{1 2} [ f ^ {\prime} (h) - f ^ {\prime} (0) ] - \frac {1}{2} \int_ {0} ^ {h} f ^ {\prime \prime \prime} (x) \left(\frac {x ^ {4}}{1 2} - \frac {h x ^ {3}}{6} + \frac {h ^ {2} x ^ {2}}{1 2}\right) ^ {\prime} \mathrm{d} x} \\ & {= - \frac {h ^ {2}}{1 2} [ f ^ {\prime} (h) - f ^ {\prime} (0) ] + \frac {1}{2 4} \int_ {0} ^ {h} f ^ {(4)} (x) [ x ^ {2} (x - h) ^ {2} ] \mathrm{d} x,} \end{array}
+$$
+
+在最后一个积分中, 利用因子 $x^{2}(h - x)^{2}$ 不变号, 再用积分第一中值定理就可得到所要的等式. $\square$
+</Solution>
+</Example>
+
+以上结果对于梯形公式和矩形公式的误差估计已经够用．为了对抛物线公式作出误差估计，还需要 $m = 2$ 时的 $Euler-Maclaurin$ 公式，其证明方法与上面完全一样，读者可自己完成．此外，在 $[14, 17]$ 等教科书中均对抛物线公式采用微分学方法作出误差估计．下面只是对于抛物线方法中的基本公式作一点介绍．
+
+<Example title="例题 11.3.6（万能公式）">
+若 $p(x)$ 是不超过 $3$ 次的多项式，则有
+
+$$
+\int_ {a} ^ {b} p (x) \mathrm{d} x = \frac {1}{6} \left[ p (a) + 4 p \left(\frac {1}{2} (a + b)\right) + p (b) \right] (b - a).\tag{11.26}
+$$
+
+<Solution title="证">
+令 $q(t) = f(a + t(b - a))$ ，就可以将要证明的公式变为等价的
+
+$$
+\int_ {0} ^ {1} q (t) \mathrm{d} t = \frac {1}{6} \left[ q (0) + 4 q \left(\frac {1}{2}\right) + q (1) \right].
+$$
+
+然后利用积分为线性运算, 分别用 $q(t) = 1, t, t^2, t^3$ 代入验算即可.
+</Solution>
+
+<Note>
+这个公式在初等数学的体积计算中有万能公式的美名：只要将一个立体的顶截面、中截面和底截面的面积分别乘 $1:4:1$ 并相加，然后除以 $6$,再乘高度即可.容易验证它对于球、圆锥和圆台等形体的体积都给出了准确的答案.
+</Note>
+</Example>
+
+## 11.3.3 练习题
+
+1. 证明:
+
+(1) $\int_{0}^{\sqrt{2\pi}}\sin x^{2}\mathrm{d}x>0;$ (2) $\frac{1}{20\sqrt[3]{2}}<\int_{0}^{1}\frac{x^{19}}{\sqrt[3]{1+x^{6}}}\mathrm{d}x<\frac{1}{20};$ (3) $\int_{0}^{\pi/2}x\left(\frac{\sin nx}{\sin x}\right)^{4}\mathrm{d}x<\frac{n^{2}\pi^{2}}{4};$ (4) $0<\frac{\pi}{2}-\int_{0}^{\pi/2}\frac{\sin x}{x}\mathrm{d}x<\frac{\pi^{3}}{144};$ (5) $0.005<\int_{0}^{100}\frac{\mathrm{e}^{-x}}{x+100}\mathrm{d}x<0.01;$ (6) $\frac{2}{9}\pi^{2}<\int_{\pi/6}^{\pi/2}\frac{2x}{\sin x}\mathrm{d}x<\frac{1}{3}\pi^{2}.$
+
+2. 设 $f$ 在 $[0, a] (a > 0)$ 上有可积的导函数, 证明:
+
+$$
+| f (0) | \leqslant \frac {1}{a} \int_ {0} ^ {a} | f (x) | \mathrm{d} x + \int_ {0} ^ {a} | f ^ {\prime} (x) | \mathrm{d} x.
+$$
+
+3. 设 $f$ 在 $[0,1]$ 上有可积的导函数, 证明:
+
+$$
+\int_ {0} ^ {1} | f (x) | \mathrm{d} x \leqslant \max \left\{\int_ {0} ^ {1} | f ^ {\prime} (x) | \mathrm{d} x, \left| \int_ {0} ^ {1} f (x) \mathrm{d} x \right| \right\}.
+$$
+
+4. 设函数 $f$ 在 $[a, b]$ 上可微, $|f'(x)| \leqslant M$ , 且 $\int_{a}^{b} f(x) \mathrm{d}x = 0$ . 对于函数 $F(x) = \int_{a}^{x} f(t) \mathrm{d}t$ ,
+
+(1) 证明: $|F(x)| \leqslant \frac{M(b - a)^2}{8}$ ;
+
+(2) 在增加条件 $f(a) = f(b) = 0$ 时证明: $|F(x)| \leqslant \frac{M(b - a)^2}{16}$ .
+
+5. 证明: 对每个正整数 $n$ , 成立
+
+$$
+\frac {2}{3} n \sqrt {n} <   1 + \sqrt {2} + \dots + \sqrt {n} <   \frac {4 n + 3}{6} \sqrt {n}.
+$$
+
+6. 设 $f$ 在 $[a, b]$ 上可微, $f(a) = f(b) = 0$ , $|f'(x)| \leqslant M$ , 证明:
+
+$$
+\left| \int_ {a} ^ {b} f (x) \mathrm{d} x \right| \leqslant \frac {M}{4} (b - a) ^ {2}.
+$$
+
+7. 设 $f$ 在 $[a, b]$ 上二阶可微, $f(a) = f(b) = 0$ , $|f''(x)| \leqslant M$ , 证明:
+
+$$
+\left| \int_ {a} ^ {b} f (x) \mathrm{d} x \right| \leqslant \frac {M}{1 2} (b - a) ^ {3}.
+$$
+
+8. (矩形公式) 设 $f \in C^2[a, b]$ , 证明: 存在 $\xi \in (a, b)$ , 使成立
+
+$$
+\int_ {a} ^ {b} f - (b - a) f \Big (\frac {a + b}{2} \Big) = \frac {f ^ {\prime \prime} (\xi) (b - a) ^ {3}}{2 4}.
+$$
+
+9. 设 $f$ 于 $[-1, 1]$ 上可微, 且有 $a \in (0, 1)$ , 使得 $\int_{-a}^{a} f(x) \, \mathrm{d}x = 0$ , 证明:
+
+$$
+\left| \int_ {- 1} ^ {1} f (x) \mathrm{d} x \right| \leqslant M (1 - a ^ {2}).
+$$
+
+10. 设 $f$ 于 $[0,1]$ 上可微, $|f'(x)| \leqslant M$ , 证明:
+
+$$
+\left| \int_ {0} ^ {1} f (x) \mathrm{d} x - \frac {1}{n} \sum_ {k = 1} ^ {n} f \left(\frac {k}{n}\right) \right| \leqslant \frac {M}{2 n}.
+$$
+
+11. 设 $f$ 在区间 $[0,1]$ 上可微, 且 $f' \in R[0,1]$ , 对正整数 $n$ 定义
+
+$$
+A _ {n} = \int_ {0} ^ {1} f (x) \mathrm{d} x - \frac {1}{n} \sum_ {k = 1} ^ {n} f \left(\frac {k}{n}\right),
+$$
+
+证明： $\lim_{n\to \infty}nA_n = \frac{1}{2} (f(0) - f(1)).$
+
+12. 设 $f$ 在区间 $[0,1]$ 上二阶可微, 且 $f'' \in R[0,1]$ , 对正整数 $n$ 定义
+
+$$
+B _ {n} = \int_ {0} ^ {1} f (x) \mathrm{d} x - \frac {1}{n} \sum_ {k = 1} ^ {n} f \left(\frac {2 k - 1}{2 n}\right),
+$$
+
+证明： $\lim_{n\to \infty}n^2 B_n = \frac{1}{24} [f'(1) - f'(0)].$

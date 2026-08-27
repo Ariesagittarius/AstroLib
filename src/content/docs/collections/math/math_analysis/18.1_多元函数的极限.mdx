@@ -1,0 +1,471 @@
+---
+title: '§18.1 多元函数的极限'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Solution from '@/components/Solution.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+
+
+## 18.1.1 重极限
+
+设点 $a \in \mathbf{R}^n$ ，$n$ 元函数 $f$ 在 $a$ 的某个去心邻域中有定义，$A$ 为某一常数。若
+
+$$
+\forall \varepsilon > 0, \exists \delta > 0, \text{当 } 0 < |x-a| < \delta \text{ 时, 有 } |f(x)-A|<\varepsilon,
+$$
+
+则称 $n$ 元函数 $f(x)$ 当 $x \to a$ 时以 $A$ 为极限（又称它是 $n$ 重极限），记为
+
+$$
+\lim_{\pmb{x} \to \pmb{a}} f(\pmb{x}) = A \text{ 或简记为 } f(\pmb{x}) \to A \; (\pmb{x} \to \pmb{a}).
+$$
+
+用邻域的语言来描述，就是
+
+$$
+\forall \varepsilon > 0, \exists \delta > 0, \text{当 } \pmb{x} \in O_{\delta}(\pmb{a}) \setminus \{\pmb{a}\} \text{ 时, 有 } f(\pmb{x}) \in O_{\varepsilon}(A).
+$$
+
+<Note>
+在定义重极限时，可以放宽对函数定义域的要求，只要 $a$ 是定义域的聚点即可。
+</Note>
+
+从邻域的观点看，多元函数极限的定义与一元函数极限的定义完全一样。但现在是在高维空间中讨论，$x \to a$ 是指点 $x$ 以任何方式或沿任何曲线趋于点 $a$。其趋近方式要比一元函数的情形复杂得多。一个简单的例子是讨论 $f(x, y) = \frac{xy}{x^2 + y^2}$ 在点 $(0,0)$ 的二重极限是否存在。容易看出，当点 $(x, y)$ 沿直线 $y = mx$（其中 $m$ 为任意实数）趋于点 $(0,0)$ 时，$f(x, y)$ 的极限为 $\frac{m}{1 + m^2}$，与 $m$ 有关。由此可以看出这个二元函数 $f(x, y)$ 在点 $(0,0)$ 的二重极限不存在。
+
+与一元函数相仿，也可以定义自变量趋于 $\pm \infty$ 或 $\infty$ 时的极限，但现在是多个自变量，于是可以出现某一些自变量趋于一个定数，而另一些自变量趋于 $\pm \infty$ 或 $\infty$ 的情形。以两个自变量为例，可举出下述几种极限：
+
+$$
+\begin{array}{c} {(1) \lim _ {(x, y) \to (\infty , \infty)} f (x, y) = A \Longleftrightarrow \forall \varepsilon > 0, \exists M > 0, \text {当} | x | > M, | y | > M \text {时},} \\ {| f (x, y) - A | <   \varepsilon ;} \end{array}
+$$
+
+$$
+\begin{array}{c} {(2) \lim _ {(x, y) \to (x _ {0}, + \infty)} f (x, y) = A \Longleftrightarrow \forall   \varepsilon > 0, \exists   \delta , M > 0, \text {当} 0 <   | x - x _ {0} | <   \delta ,} \\ {y > M \text {时}, | f (x, y) - A | <   \varepsilon ;} \end{array}
+$$
+
+(3)
+
+$$
+\lim _ {(x, y) \to (- \infty , y _ {0})} f (x, y) = A \Longleftrightarrow \forall   \varepsilon > 0,   \exists   \delta ,   M > 0,   \text {当}   x <   - M,
+$$
+
+$$
+0 <   | y - y _ {0} | <   \delta   \text {时,}   | f (x, y) - A | <   \varepsilon .
+$$
+
+还有其他一些情形，在此不一一列举。此外当 $A$ 为 $\pm\infty$ 或 $\infty$ 时，与一元函数类似，我们称之为广义极限或极限不存在（参见上册 $98$ 页）。
+
+多元函数的极限的惟一性、局部有界性、局部保号性、局部比较原理、四则运算法则、$Cauchy$ 收敛准则以及 $Heine$ 归结原理的叙述与论证完全与一元函数相仿，这里就不再重复了（参见上册第四章）。
+
+<Method title="常用方法">
+求多元函数的极限有如下常用方法：
+
+1. 利用函数的连续性和函数极限的运算性质（多元函数的连续性将在下一节讨论）；
+
+2. 利用不等式缩放或使用夹逼定理；
+
+3. 利用变量替换化简或化为已知极限。对含有三角函数或幂指函数的二重极限可考虑它是否能通过变形或变量代换化为一元函数中的基本极限，如
+
+   $$
+   \lim_{t \rightarrow 0} \frac{\sin t}{t} = 1,\quad \lim_{t \rightarrow 0} \frac{\tan t}{t} = 1,\quad \lim_{t \rightarrow \infty} (1 + \frac{1}{t})^{t} = e
+   $$
+
+   等（参见上册 $116$ 页题 $9$），然后利用这些基本极限去求重极限的值；
+
+4. 利用初等变形，如分母有理化、对指数形式取对数等等。
+</Method>
+
+<Example title="例题 18.1.1">
+求 $\displaystyle\lim_{(x,y)\to (0,0)}\frac{x^3 + y^3}{x^2 + y^2}$。
+
+分析 直观上看分子的多项式次数高于分母的多项式次数，极限应该是 $0$。这种题目一般用极坐标变换后可化为一个有界量与无穷小量的乘积。
+
+<Solution title="解">
+令 $x = r\cos\theta,\ y = r\sin\theta$，则
+
+$$
+\lim_{(x,y)\rightarrow(0,0)}\frac{x^{3}+y^{3}}{x^{2}+y^{2}} = \lim_{r\rightarrow0} r(\cos^{3}\theta+\sin^{3}\theta) = 0.
+$$
+</Solution>
+</Example>
+
+<Example title="例题 18.1.2">
+求 $\displaystyle\lim_{(x,y)\to (0,0)}\frac{\sin(x^{3}+y^{3})}{x^{2}+y^{2}}$。
+
+<Solution title="解">
+由于
+
+$$
+|\sin(x^{3}+y^{3})| \leqslant |x|^{3}+|y|^{3} \leqslant (|x|+|y|)(x^{2}+y^{2}),
+$$
+
+从而
+
+$$
+\lim_{(x,y)\rightarrow(0,0)}\Big|\frac{\sin(x^{3}+y^{3})}{x^{2}+y^{2}}\Big| \leqslant \lim_{(x,y)\rightarrow(0,0)}(|x|+|y|) = 0.
+$$
+
+所以
+
+$$
+\lim_{(x,y)\rightarrow(0,0)}\frac{\sin(x^{3}+y^{3})}{x^{2}+y^{2}} = 0.
+$$
+</Solution>
+
+<Note>
+也可对 $\sin(x^{3}+y^{3})$ 用一元 $Taylor$ 展式
+
+$$
+\sin(x^{3}+y^{3}) = x^{3}+y^{3}+o(|x|^{3}+|y|^{3}) \qquad (|x|+|y|\rightarrow0).
+$$
+</Note>
+</Example>
+
+<Example title="例题 18.1.3">
+求 $\displaystyle\lim_{(x,y)\to (0,0)}f(x,y)$，其中
+
+$$
+f(x,y)=\left\{
+\begin{array}{ll}
+\displaystyle\frac{\sin xy}{x}, & \text{当 } x \neq 0,\\[6pt]
+y, & \text{当 } x=0,\ y \neq 0.
+\end{array}
+\right.
+$$
+
+<Solution title="解">
+由于
+
+$$
+|f(x,y)|=\left\{
+\begin{array}{ll}
+\Big|\displaystyle\frac{\sin xy}{x}\Big| \leqslant |y|, & \text{当 } x \neq 0,\\[6pt]
+|y|, & \text{当 } x=0,\ y \neq 0,
+\end{array}
+\right.
+$$
+
+所以
+
+$$
+\lim_{(x,y)\rightarrow(0,0)}|f(x,y)| \leqslant \lim_{(x,y)\rightarrow(0,0)}|y| = 0.
+$$
+
+于是
+
+$$
+\lim_{(x,y)\to(0,0)}f(x,y)=0.
+$$
+</Solution>
+</Example>
+
+<Example title="例题 18.1.4">
+求极限
+
+$$
+\lim_{(x,y)\rightarrow(0,0)}(x^{2}+y^{2})^{xy}.
+$$
+
+<Solution title="解">
+先求其对数的极限 $\displaystyle\lim_{(x,y)\to(0,0)}xy\ln(x^{2}+y^{2})$。设 $r=\sqrt{x^{2}+y^{2}}$，由于
+
+$$
+|xy\ln(x^{2}+y^{2})| \leqslant r^{2}\ln r^{2} \rightarrow 0 \quad (r\rightarrow0^{+}),
+$$
+
+所以
+
+$$
+\lim_{(x,y)\rightarrow(0,0)}xy\ln(x^{2}+y^{2}) = 0,
+$$
+
+故
+
+$$
+\lim_{(x,y)\rightarrow(0,0)}(x^{2}+y^{2})^{xy}=1.
+$$
+</Solution>
+</Example>
+
+<Example title="例题 18.1.5">
+证明：
+
+$$
+\lim_{(x,y)\rightarrow(+\infty,+\infty)}\Big(\frac{xy}{x^{2}+y^{2}}\Big)^{x^{2}} = 0.
+$$
+
+<Solution title="证明">
+此题底数的极限并不存在，但可用夹逼方法。注意到 $x>0,\ y>0$ 时
+
+$$
+0 < \frac{xy}{x^{2}+y^{2}} \leqslant \frac{1}{2},
+$$
+
+所以
+
+$$
+0 < \Big(\frac{xy}{x^{2}+y^{2}}\Big)^{x^{2}} \leqslant \Big(\frac{1}{2}\Big)^{x^{2}}.
+$$
+
+由于 $\displaystyle\lim_{(x,y)\to(+\infty,+\infty)}\Big(\frac{1}{2}\Big)^{x^{2}} = 0$，从而有
+
+$$
+\lim_{(x,y)\rightarrow(+\infty,+\infty)}\Big(\frac{xy}{x^{2}+y^{2}}\Big)^{x^{2}} = 0.
+$$
+</Solution>
+</Example>
+
+关于证明重极限不存在的方法，我们将在累次极限之后介绍。
+
+## 18.1.2 累次极限
+
+为方便起见，在 $\mathbf{R}^{2}$ 中讨论，设 $f(x,y)$ 在点 $(x_{0},y_{0})$ 的某个去心邻域上有定义，称下列两个极限（如果存在的话）
+
+$$
+\lim_{y\to y_{0}}\lim_{x\to x_{0}}f(x,y),\quad \lim_{x\to x_{0}}\lim_{y\to y_{0}}f(x,y)
+$$
+
+分别是函数 $f$ 在点 $(x_{0},y_{0})$ 的先 $x$ 后 $y$ 的二次极限和先 $y$ 后 $x$ 的二次极限，统称它们是累次极限。
+
+重极限与累次极限的关系反映在下面的命题中。
+
+<Knowledge title="命题 18.1.1">
+当重极限存在且 $\displaystyle\lim_{(x,y)\to(x_{0},y_{0})}f(x,y)=A$ 时，
+
+(1) 如果 $y\neq y_{0}$ 时，$\displaystyle\lim_{x\to x_{0}}f(x,y)$ 存在，则 $\displaystyle\lim_{y\to y_{0}}\lim_{x\to x_{0}}f(x,y)=A$；
+
+(2) 如果 $x\neq x_{0}$ 时，$\displaystyle\lim_{y\to y_{0}}f(x,y)$ 存在，则 $\displaystyle\lim_{x\to x_{0}}\lim_{y\to y_{0}}f(x,y)=A$。
+</Knowledge>
+
+由此命题可见：当重极限和某个累次极限都存在时，则该累次极限的值应该等于重极限的值。但在一般情况下，重极限与累次极限没有什么必然的关系。
+
+当重极限存在时，两个二次极限可以都不存在，也可以一个存在而另一个不存在，例如
+
+$$
+f(x,y)=\left\{
+\begin{array}{ll}
+x\sin\frac{1}{y}, & y\neq0,\\
+0, & y=0.
+\end{array}
+\right.
+$$
+
+此时 $\displaystyle\lim_{(x,y)\to(0,0)}f(x,y)=\lim_{y\to0}\lim_{x\to0}f(x,y)=0$，但 $\displaystyle\lim_{x\to0}\lim_{y\to0}f(x,y)$ 不存在。
+
+当重极限不存在时，可以是两个二次极限存在且相等，也可以是两个二次极限存在但不相等，还可以是两个二次极限中一个存在而另一个不存在。例如
+
+$$
+f(x,y)=\frac{y}{x},\quad \text{当 } x\neq0,
+$$
+
+显然有 $\displaystyle\lim_{x\to0}\lim_{y\to0}f(x,y)=0$，但是 $\displaystyle\lim_{(x,y)\to(0,0)}f(x,y)$ 与 $\displaystyle\lim_{y\to0}\lim_{x\to0}f(x,y)$ 都不存在。
+
+## 18.1.3 证明函数的重极限不存在的常用方法
+
+1. 找两种特殊的趋近方式，使得在两种方式下函数的极限值不同。例如
+
+   $$
+   f(x,y)=\left\{
+   \begin{array}{ll}
+   0, & x^{2}\leqslant |y| \text{ 或 } y=0,\\
+   1, & \text{其他}.
+   \end{array}
+   \right.
+   $$
+
+   当点 $(x,y)$ 沿过原点的任何直线 $y=kx$ 趋于点 $(0,0)$ 时，有
+
+   $$
+   \lim_{(x,y=kx)\rightarrow(0,0)}f(x,y)=0.
+   $$
+
+   但点 $(x,y)$ 沿曲线 $y=\frac{1}{2}x^{2}$ 趋于点 $(0,0)$ 时
+
+   $$
+   \lim_{(x,y=x^{2}/2)\rightarrow(0,0)}f(x,y)=1,
+   $$
+
+   所以 $f(x,y)$ 在点 $(0,0)$ 处的重极限不存在。
+
+2. 证明两个累次极限存在但不相等，例如
+
+   $$
+   f(x,y)=\frac{x^{2}-y^{2}}{x^{2}+y^{2}},
+   $$
+
+   由于
+
+   $$
+   \begin{array}{l}
+   \lim_{x\to0}\lim_{y\to0}f(x,y)=1,\\
+   \lim_{y\to0}\lim_{x\to0}f(x,y)=-1,
+   \end{array}
+   $$
+
+   可见重极限不存在。因为如果重极限存在，两个累次极限又存在，由命题 $18.1.1$ 知道三个极限值应该相等。
+
+## 18.1.4 思考题
+
+<Block title="思考题">
+
+1. 证明多元函数极限的 $Heine$ 归结原理：设点 $a\in\mathbf{R}^{n}$，$A\in\mathbf{R}$，则 $\displaystyle\lim_{x\to a}f(x)=A$ 的充分必要条件是：对满足条件 $x_{n}\neq a\;(n=1,2,\cdots)$，$\displaystyle\lim_{n\to\infty}x_{n}=a$ 的每个点列 $\{x_{n}\}$，都有 $\displaystyle\lim_{n\to\infty}f(x_{n})=A$。（参见上册 $104$–$105$ 页。）
+
+2. 证明多元函数极限的 $Cauchy$ 收敛准则：函数 $f(\boldsymbol{x})$ 在点 $\boldsymbol{a}$ 有极限的充分必要条件是对每一个 $\varepsilon>0$，$\exists\delta>0$，使得对于 $O_{\delta}(\boldsymbol{a})\setminus\{\boldsymbol{a}\}$ 中的每一对点 $\boldsymbol{x}'$，$\boldsymbol{x}''$，满足不等式 $|f(\boldsymbol{x}')-f(\boldsymbol{x}'')|<\varepsilon$。
+
+</Block>
+
+## 18.1.5 关于累次极限换序
+
+命题 $18.1.1$ 告诉我们，如果在某一点二元函数的重极限与两个累次极限都存在，则对 $x$ 和 $y$ 取极限的顺序可以交换，即
+
+$$
+\lim_{x\to x_{0}}\lim_{y\to y_{0}}f(x,y)=\lim_{y\to y_{0}}\lim_{x\to x_{0}}f(x,y).
+$$
+
+如果我们并不知道重极限是否存在或者甚至知道重极限不存在，那么在什么条件下，累次极限可以交换次序呢？下面的命题回答了这个问题。
+
+<Knowledge title="命题 18.1.2">
+$f(x,y)$ 在点 $(x_{0},y_{0})$ 的一个去心邻域上有定义，如果
+
+(1) 对 $x_{0}$ 临近的每个 $x\neq x_{0}$，$\displaystyle\lim_{y\to y_{0}}f(x,y)=g(x)$ 存在；
+
+(2) $\displaystyle\lim_{x\to x_{0}}f(x,y)=h(y)$ 关于 $y$ 在 $0<|y-y_{0}|<\eta$ 上一致，
+
+则 $\displaystyle\lim_{x\to x_{0}}g(x)=\lim_{y\to y_{0}}h(y)$，即
+
+$$
+\lim_{x\rightarrow x_{0}}\lim_{y\rightarrow y_{0}}f(x,y)=\lim_{y\rightarrow y_{0}}\lim_{x\rightarrow x_{0}}f(x,y).
+$$
+
+分析 这是一个极限换序问题，而条件 (2) 已给出对 $y$ 的一致性，这使我们想到利用一致收敛的函数列与求极限的有关性质（参见在 $14.2.1$ 小节中的讨论）。
+
+<Solution title="证 1">
+根据 $Heine$ 归结原理，我们只要证明 $\forall x_{n},\ x_{n}\neq x_{0},\ n=1,2,\cdots,\ x_{n}\rightarrow x_{0}$，都有
+
+$$
+\lim_{n\rightarrow\infty}g(x_{n})=\lim_{y\rightarrow y_{0}}h(y).
+$$
+
+为此，我们定义 $f_{n}(y)=f(x_{n},y)$。由条件 (2) 知函数列 $\{f_{n}(y)\}$ 在 $y_{0}$ 的去心邻域 $0<|y-y_{0}|<\eta$ 上一致收敛，因此有
+
+$$
+\lim_{n\rightarrow\infty}f_{n}(y)=\lim_{n\rightarrow\infty}f(x_{n},y)=h(y).
+$$
+
+另一方面，由条件 (1) 得到
+
+$$
+\lim_{y\rightarrow y_{0}}f_{n}(y)=\lim_{y\rightarrow y_{0}}f(x_{n},y)=g(x_{n}).
+$$
+
+由一致收敛的函数列求极限的性质（见命题 $14.2.1$）知下列两个极限存在且相等：
+
+$$
+\lim_{n\rightarrow\infty}g(x_{n})=\lim_{y\rightarrow y_{0}}h(y).
+$$
+
+再由 $Heine$ 归结原理，得到
+
+$$
+\lim_{x\rightarrow x_{0}}g(x)=\lim_{y\rightarrow y_{0}}h(y).
+$$
+</Solution>
+
+<Solution title="证 2">
+直接证明。由于 $\displaystyle\lim_{x\to x_{0}}f(x,y)=h(y)$ 在 $0<|y-y_{0}|<\eta$ 上对 $y$ 一致，于是 $\forall\varepsilon>0,\ \exists\delta>0$，当 $0<|x'-x_{0}|<\delta$ 且 $0<|x''-x_{0}|<\delta$ 时，$|f(x',y)-f(x'',y)|<\varepsilon$ 对 $y\in O_{\eta}(y_{0})\setminus\{y_{0}\}$ 一致。令 $y\to y_{0}$ 得到
+
+$$
+|g(x')-g(x'')|\leqslant\varepsilon.
+$$
+
+由 $Cauchy$ 收敛准则，$\displaystyle\lim_{x\to x_{0}}g(x)$ 存在，记为 $A$。由此可知 $\forall\varepsilon>0,\ \exists\delta_{1}>0$，当 $0<|x-x_{0}|<\delta_{1}$ 时
+
+$$
+|g(x)-A|<\varepsilon/3,
+$$
+
+又由条件 (2) 知同时还可以成立
+
+$$
+|h(y)-f(x,y)|<\varepsilon/3,\quad\forall y\in O_{\eta}(y_{0})\setminus\{y_{0}\}.
+$$
+
+取定 $\overline{x}\in O_{\delta_{1}}(x_{0})\setminus\{x_{0}\}$。由条件 (1) 知 $\exists\delta\in(0,\eta)$，使得当 $0<|y-y_{0}|<\delta$ 时
+
+$$
+|f(\overline{x},y)-g(\overline{x})|<\varepsilon/3,
+$$
+
+从而当 $0<|y-y_{0}|<\delta$ 时
+
+$$
+|h(y)-A|\leqslant|h(y)-f(\overline{x},y)|+|f(\overline{x},y)-g(\overline{x})|+|g(\overline{x})-A|<\varepsilon,
+$$
+
+于是
+
+$$
+\lim_{y\to y_{0}}h(y)=A.
+$$
+</Solution>
+</Knowledge>
+
+## 18.1.6 练习题
+
+<Block title="练习题">
+
+1. 求下列极限：
+
+   (1) $\displaystyle\lim_{(x,y)\to(0,a)}\frac{\sin xy}{x}$；
+
+   (2) $\displaystyle\lim_{(x,y)\to(0,0)}(x+y)\ln(x^{2}+y^{2})$；
+
+   (3) $\displaystyle\lim_{(x,y)\to(0,0)}f(x,y)$，其中
+
+   $$
+   f(x,y)=\left\{
+   \begin{array}{ll}
+   \displaystyle\frac{\ln(1+xy)}{x}, & \text{当 } x\neq0,\\[6pt]
+   y, & \text{当 } x=0;
+   \end{array}
+   \right.
+   $$
+
+   (4) $\displaystyle\lim_{(x,y)\to(\infty,0)}\Big(1+\frac{1}{x}\Big)^{\frac{x^{2}}{x+y}}$；
+
+   (5) $\displaystyle\lim_{(x,y)\to(\infty,\infty)}\frac{x+y}{x^{2}-xy+y^{2}}$.
+
+2. 证明：$\displaystyle\lim_{(x,y)\to(0,0)}\frac{x^{2}y^{2}}{x^{3}+y^{3}}$ 不存在。
+
+3. 讨论下列函数在点 $(0,0)$ 的重极限与累次极限：
+
+   (1) $\displaystyle\frac{x^{2}y^{2}}{x^{2}y^{2}+(x-y)^{2}}$；
+
+   (2) $(x+y)\sin\frac{1}{x}\sin\frac{1}{y}$；
+
+   (3) $f(x,y)=\left\{
+   \begin{array}{ll}
+   \displaystyle\frac{xy}{x^{2}+y^{2}}+y\sin\frac{1}{x}, & \text{当 } x\neq0,\\[6pt]
+   0, & \text{当 } x=0.
+   \end{array}
+   \right.$
+
+4. 设一元函数 $f(t)$ 在 $\mathbf{R}$ 上有连续导数，定义二元函数
+
+   $$
+   g(x,y)=\frac{f(x)-f(y)}{x-y},\quad \text{当 } x\neq y,
+   $$
+
+   求 $\displaystyle\lim_{(x,y)\to(t,t)}g(x,y)$。
+
+5. 叙述并证明二元函数极限存在的惟一性定理、局部有界性定理与局部保号性定理。
+
+6. 设 $\displaystyle\lim_{y\to y_{0}}\varphi(y)=A,\ \lim_{x\to x_{0}}\psi(x)=0$，且在点 $(x_{0},y_{0})$ 附近有 $|f(x,y)-\varphi(y)|\leqslant\psi(x)$，证明：$\displaystyle\lim_{(x,y)\to(x_{0},y_{0})}f(x,y)=A$。
+
+7. 证明：在命题 $18.1.2$ 中若 $f(x,y)$ 除直线 $x=x_{0},\ y=y_{0}$ 外有定义，其他条件不变，则重极限与两个累次极限都存在，并且相等。
+
+</Block>
