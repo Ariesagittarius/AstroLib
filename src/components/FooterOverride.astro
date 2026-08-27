@@ -1,0 +1,48 @@
+---
+// 页面底部 Footer 覆盖组件：保留 Starlight 默认的 EditLink / LastUpdated / Pagination，
+// 并追加在线精修工具的服务端壳（EditorMode，仅 dev 渲染，生产构建为空）。
+// SPA 导航只替换 main-pane 与 right-sidebar，footer 保留 → 编辑器脚本只加载执行一次。
+import EditLink from 'virtual:starlight/components/EditLink';
+import LastUpdated from 'virtual:starlight/components/LastUpdated';
+import Pagination from 'virtual:starlight/components/Pagination';
+import EditorMode from './EditorMode.astro';
+import ModuleInspector from './ModuleInspector.astro';
+import AIAsk from './AIAsk.astro';
+import BookRelationGraph from './BookRelationGraph.astro';
+import { features } from '../config/features.config.mjs';
+const isDev = import.meta.env.DEV;
+---
+
+<footer class="sl-flex">
+  <div class="meta sl-flex">
+    <EditLink />
+    <LastUpdated />
+  </div>
+  <Pagination />
+</footer>
+
+{isDev && features.editor.enabled && <EditorMode />}
+
+{features.inspector.enabled && <ModuleInspector />}
+
+{features.aiAsk.enabled && <AIAsk />}
+
+{features.relationGraph.enabled && <BookRelationGraph />}
+
+<style>
+  footer {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  .meta {
+    gap: 0.75rem 3rem;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-top: 3rem;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+  }
+  .meta > :global(p:only-child) {
+    margin-inline-start: auto;
+  }
+</style>

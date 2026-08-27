@@ -1,0 +1,373 @@
+---
+// 字体选择器（中西文两栏 · 思源黑体/宋体为自托管 webfont，其余为系统栈）
+// -----------------------------------------------------------------------------
+// Starlight 没有给「header 额外控件」预留槽位，因此本组件作为 ThemeSelectOverride
+// 的兄弟组件嵌入同一个 ThemeSelect 槽位：
+//   · 桌面端 → header 右侧动作区（与主题切换并列）
+//   · 移动端 → 左侧抽屉底部 MobileMenuFooter（主题/语言切换同一行）
+//
+// 交互（两栏独立选择）：
+//   · 面板分左右两栏：左「中文字体」右「英文字体」，各自独立选择，互不影响。
+//   · 中文字体：系统无衬线 / 系统宋体 / 思源黑体 / 思源宋体。
+//   · 英文字体：无衬线 / 衬线 / KaTeX 公式字体（KaTeX_Main，Computer Modern 衬线，
+//     与页面公式同款）。
+//   · 选择后写 localStorage 'starlight-font'（JSON { latin, cjk }），并分别置
+//     <html data-font-latin> / <html data-font-cjk>（字体栈组合见 fonts.css）。
+//   · 与 ThemeSelectOverride 的 web-component 模式一致，不引入任何新依赖。
+// 存储：默认 { latin:'sans', cjk:'sans' }（零下载）；思源两档由 @font-face（unicode-range
+//   按需切片）驱动，仅当选中的读者才会按需下载对应字形切片；选中某思源档选项时同样会
+//   触发该档字形按需加载，属预期行为。
+// 复用：偏好逻辑（解析/迁移/读写/apply）集中在 src/scripts/font-presets.ts，
+//   与 feature-toggles.ts 的字体开关共用同一套。
+// 自托管思源 webfont（@fontsource-variable/noto-sans-sc、noto-serif-sc）已由
+//   astro.config.mjs 在 features.fonts.enabled 时通过 customCss 引入，本组件【不再 import 它们】。
+// -----------------------------------------------------------------------------
+import { LATIN_PRESETS, CJK_PRESETS } from '../scripts/font-presets';
+---
+
+<starlight-font-select class="vp-font-switch" title="切换字体" data-feature="fonts">
+  <button
+    type="button"
+    class="vp-font-btn"
+    aria-label="切换字体"
+    title="切换字体"
+    aria-haspopup="listbox"
+    aria-expanded="false"
+  >
+    <span class="vp-font-icon" aria-hidden="true"><span class="letter-l">A</span><span class="letter-s">a</span></span>
+  </button>
+
+  <div class="vp-font-panel" role="listbox" aria-label="切换字体" aria-hidden="true">
+    <div class="vp-font-panel-title">切换字体</div>
+    <div class="vp-font-cols">
+      <div class="vp-font-col" data-col="cjk">
+        <div class="vp-font-col-title">中文字体</div>
+        <div class="vp-font-options">
+          {CJK_PRESETS.map((opt) => (
+            <button
+              type="button"
+              class="vp-font-option"
+              data-setting="cjk"
+              data-value={opt.value}
+              role="option"
+              aria-selected="false"
+            >
+              <span class="vp-font-check" aria-hidden="true"></span>
+              <span class="vp-font-option-text">{opt.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div class="vp-font-col" data-col="latin">
+        <div class="vp-font-col-title">英文字体</div>
+        <div class="vp-font-options">
+          {LATIN_PRESETS.map((opt) => (
+            <button
+              type="button"
+              class="vp-font-option"
+              data-setting="latin"
+              data-value={opt.value}
+              role="option"
+              aria-selected="false"
+            >
+              <span class="vp-font-check" aria-hidden="true"></span>
+              <span class="vp-font-option-text">{opt.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</starlight-font-select>
+
+<style>
+  .vp-font-switch {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Aa 图标按钮：对齐 ThemeSelect / FeatureToggles 的 VitePress 40px 圆形图标按钮 */
+  .vp-font-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+    color: var(--sl-color-gray-2);
+    transition: color 0.25s, background-color 0.25s;
+  }
+  .vp-font-btn:hover,
+  .vp-font-btn:focus-visible {
+    color: var(--sl-color-white);
+    background-color: var(--sl-color-gray-6);
+  }
+  .vp-font-btn:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 1px;
+  }
+
+  /* Aa 字形图标：大 A + 小 a 基线错落，颜色跟随按钮 currentColor。
+     字体例外项：顶栏「字体图标」不随全局 UI 的思源黑体、也不随读者正文偏好变化，
+     固定用中性的系统拉丁字形作为「切换字体」的通用视觉标示。 */
+  .vp-font-icon {
+    display: inline-flex;
+    align-items: baseline;
+    line-height: 1;
+    font-weight: 700;
+    font-size: 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    user-select: none;
+  }
+  .vp-font-icon .letter-l {
+    font-size: 1.15rem;
+  }
+  .vp-font-icon .letter-s {
+    font-size: 0.72rem;
+  }
+
+  /* 下拉 panel：右对齐、VitePress 卡片观感（两栏时加宽，对齐 FeatureToggles .ft-panel） */
+  .vp-font-panel {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    display: none;
+    flex-direction: column;
+    width: min(92vw, 22rem);
+    background-color: var(--sl-color-bg-nav);
+    color: var(--sl-color-gray-2);
+    border: 1px solid var(--sl-color-hairline-light);
+    border-radius: 0.5rem;
+    box-shadow: var(--sl-shadow-md);
+    overflow: hidden;
+    z-index: 2147483001;
+  }
+  .vp-font-switch.vp-open .vp-font-panel {
+    display: flex;
+  }
+
+  .vp-font-panel-title {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--sl-color-gray-2);
+    opacity: 0.8;
+  }
+
+  /* 两栏布局：左中文、右英文，中间细分隔线 */
+  .vp-font-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding-bottom: 0.25rem;
+  }
+  .vp-font-col {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .vp-font-col + .vp-font-col {
+    border-inline-start: 1px solid var(--sl-color-hairline-light);
+  }
+  .vp-font-col-title {
+    padding: 0.4rem 0.85rem 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--sl-color-gray-2);
+    opacity: 0.7;
+  }
+
+  .vp-font-options {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .vp-font-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.45rem 0.85rem;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    color: var(--sl-color-text);
+    transition: background-color 0.15s, color 0.15s;
+  }
+  .vp-font-option:hover,
+  .vp-font-option:focus-visible {
+    background-color: var(--sl-color-gray-6);
+    color: var(--sl-color-white);
+  }
+  .vp-font-option:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: -2px;
+  }
+
+  /* 勾选占位：当前选中项显示对勾 */
+  .vp-font-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    line-height: 1;
+    color: var(--sl-color-text-accent);
+  }
+  .vp-font-option[aria-selected='true'] .vp-font-check::before {
+    content: '✓';
+  }
+
+  /* 每个选项用对应字体本身渲染标签，直观展示档位效果：
+     中文字体（cjk 栏）按中文段字体预览；英文字体（latin 栏）按拉丁段字体预览。 */
+  .vp-font-col[data-col='cjk'] .vp-font-option[data-value='sans'] .vp-font-option-text,
+  .vp-font-col[data-col='latin'] .vp-font-option[data-value='sans'] .vp-font-option-text {
+    font-family: var(--font-latin-sans), var(--font-cjk-sans);
+  }
+  .vp-font-col[data-col='cjk'] .vp-font-option[data-value='serif'] .vp-font-option-text,
+  .vp-font-col[data-col='latin'] .vp-font-option[data-value='serif'] .vp-font-option-text {
+    font-family: var(--font-latin-serif), var(--font-cjk-serif);
+  }
+  .vp-font-col[data-col='cjk'] .vp-font-option[data-value='han-sans'] .vp-font-option-text {
+    font-family: 'Noto Sans SC Variable', var(--font-latin-sans), var(--font-cjk-sans);
+  }
+  .vp-font-col[data-col='cjk'] .vp-font-option[data-value='han-serif'] .vp-font-option-text {
+    font-family: 'Noto Serif SC Variable', var(--font-latin-serif), var(--font-cjk-serif);
+  }
+  .vp-font-col[data-col='latin'] .vp-font-option[data-value='katex'] .vp-font-option-text {
+    font-family: var(--font-latin-katex), var(--font-cjk-sans);
+  }
+  .vp-font-option-text {
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  /* 窄屏：两栏过宽时改为上下分栏，保持可读 */
+  @media (max-width: 30rem) {
+    .vp-font-panel {
+      width: min(88vw, 18rem);
+    }
+    .vp-font-cols {
+      grid-template-columns: 1fr;
+    }
+    .vp-font-col + .vp-font-col {
+      border-inline-start: none;
+      border-top: 1px solid var(--sl-color-hairline-light);
+    }
+  }
+</style>
+
+<script>
+  import {
+    LATIN_PRESETS,
+    CJK_PRESETS,
+    loadFontPref,
+    saveFontPref,
+    applyFontPref,
+    type FontPref,
+    type LatinFont,
+    type CjkFont,
+  } from '../scripts/font-presets';
+
+  /** 任意值 → 合法拉丁档（非法回退 'sans'） */
+  const parseLatin = (v: unknown): LatinFont =>
+    LATIN_PRESETS.some((p) => p.value === v) ? (v as LatinFont) : 'sans';
+  /** 任意值 → 合法中文档（非法回退 'sans'） */
+  const parseCjk = (v: unknown): CjkFont =>
+    CJK_PRESETS.some((p) => p.value === v) ? (v as CjkFont) : 'sans';
+
+  class StarlightFontSelect extends HTMLElement {
+    connectedCallback() {
+      // 挂载即同步（含首次加载与 SPA 导航后重新插入的场景）
+      const pref = loadFontPref();
+      applyFontPref(pref);
+      this.syncSelected(pref);
+      if (this.dataset.bound) return;
+      this.dataset.bound = '1';
+
+      const btn = this.querySelector<HTMLButtonElement>('.vp-font-btn');
+      const panel = this.querySelector<HTMLElement>('.vp-font-panel');
+
+      btn?.addEventListener('click', () => this.toggle(panel));
+
+      // 中文字体（cjk 栏）
+      this.querySelectorAll<HTMLButtonElement>('.vp-font-option[data-setting="cjk"]').forEach((opt) => {
+        opt.addEventListener('click', () => this.applyOne('cjk', parseCjk(opt.dataset.value)));
+      });
+      // 英文字体（latin 栏）
+      this.querySelectorAll<HTMLButtonElement>('.vp-font-option[data-setting="latin"]').forEach((opt) => {
+        opt.addEventListener('click', () => this.applyOne('latin', parseLatin(opt.dataset.value)));
+      });
+    }
+
+    /** 选择某一栏后：读写偏好 + 应用到页面 + 同步所有实例。两栏独立，故选择后不收起面板。 */
+    applyOne(kind: 'latin' | 'cjk', value: LatinFont | CjkFont): void {
+      const pref = loadFontPref();
+      const next: FontPref = kind === 'latin' ? { ...pref, latin: value as LatinFont } : { ...pref, cjk: value as CjkFont };
+      saveFontPref(next);
+      applyFontPref(next);
+      this.syncAll(next);
+    }
+
+    /** 同步所有实例的高亮选中态。 */
+    private syncAll(pref: FontPref): void {
+      document
+        .querySelectorAll<StarlightFontSelect>('starlight-font-select')
+        .forEach((el) => el.syncSelected(pref));
+    }
+
+    /** 展开/收起面板；展开时关闭其它实例，保证同时只有一个面板打开。 */
+    toggle(panel?: HTMLElement | null): void {
+      document
+        .querySelectorAll<StarlightFontSelect>('starlight-font-select')
+        .forEach((el) => el !== this && el.close());
+      const open = this.classList.toggle('vp-open');
+      panel?.setAttribute('aria-hidden', String(!open));
+      this.querySelector<HTMLButtonElement>('.vp-font-btn')?.setAttribute('aria-expanded', String(open));
+    }
+
+    close(): void {
+      this.classList.remove('vp-open');
+      this.querySelector<HTMLElement>('.vp-font-panel')?.setAttribute('aria-hidden', 'true');
+      this.querySelector<HTMLButtonElement>('.vp-font-btn')?.setAttribute('aria-expanded', 'false');
+    }
+
+    /** 高亮当前选中档（两栏各自独立判断）。 */
+    syncSelected(pref: FontPref): void {
+      this.querySelectorAll<HTMLButtonElement>('.vp-font-option').forEach((opt) => {
+        const setting = opt.dataset.setting;
+        const val = opt.dataset.value;
+        const selected = setting === 'latin' ? val === pref.latin : val === pref.cjk;
+        opt.setAttribute('aria-selected', String(selected));
+      });
+    }
+  }
+
+  // 组件的 <script> 由 Astro 按模块去重、每页仅注入一次；仍加守卫以双保险
+  // （桌面 header 与移动抽屉各渲染一个 <starlight-font-select> 实例）。
+  if (!customElements.get('starlight-font-select')) {
+    customElements.define('starlight-font-select', StarlightFontSelect);
+  }
+
+  // 文档级关闭：点击外部 / Escape，全局只注册一次；内部实时查询当前展开的实例。
+  // 在自定义元素上注册，避免其它框架在同一 document 上的 click 监听互相干扰。
+  if (!window.__vpFontDocHandlers) {
+    window.__vpFontDocHandlers = true;
+    document.addEventListener('click', (e) => {
+      document.querySelectorAll<StarlightFontSelect>('starlight-font-select').forEach((el) => {
+        if (!el.contains(e.target as Node)) el.close();
+      });
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      document.querySelector<StarlightFontSelect>('starlight-font-select.vp-open')?.close();
+    });
+  }
+</script>

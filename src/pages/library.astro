@@ -1,0 +1,1011 @@
+---
+import { collections, getAllBooks } from '../config/collections.config.mjs';
+import { features } from '../config/features.config.mjs';
+import { cleanSlug } from '../utils/sidebar.mjs';
+import VpNav from '../components/VpNav.astro';
+import VpFooter from '../components/VpFooter.astro';
+import fs from 'node:fs';
+
+function getEpubUrl(slug: string) {
+  if (!features.epub?.enabled) return null;
+  try {
+    if (fs.existsSync(`public/epub/${slug}.epub`)) {
+      return `/epub/${slug}.epub`;
+    }
+  } catch {}
+  if (features.epub?.config?.releaseBaseUrl) {
+    return `${features.epub.config.releaseBaseUrl}/${slug}.epub`;
+  }
+  return null;
+}
+
+const allBooks = getAllBooks().map(book => {
+  const epubUrl = getEpubUrl(book.slug);
+  return {
+    ...book,
+    hasEpubFile: !!epubUrl,
+    readUrl: `/collections/${book.collectionSlug}/${book.slug}/${cleanSlug(book.entryPoint)}/`,
+    epubUrl: epubUrl || `/epub/${book.slug}.epub`,
+  };
+});
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AstroLib | 书目检索与分类索引</title>
+    <meta name="description" content="按学段、资料类别与学科检索 AstroLib 收录的初高中及大学理科教材、教辅与配套习题。" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      :root {
+        --vp-bg: #ffffff;
+        --vp-bg-alt: #f6f6f7;
+        --vp-bg-soft: #f6f6f7;
+        --vp-bg-elv: #ffffff;
+        --vp-divider: #e2e2e3;
+        --vp-text-1: #3c3c43;
+        --vp-text-2: #67676c;
+        --vp-text-3: #929295;
+        --vp-brand-1: #3451b2;
+        --vp-brand-2: #3a5ccc;
+        --vp-brand-soft: rgba(100, 108, 255, 0.14);
+      }
+      :root[data-theme='dark'] {
+        --vp-bg: #1b1b1f;
+        --vp-bg-alt: #161618;
+        --vp-bg-soft: #202127;
+        --vp-bg-elv: #202127;
+        --vp-divider: #2e2e32;
+        --vp-text-1: #dfdfd6;
+        --vp-text-2: #98989f;
+        --vp-text-3: #6a6a71;
+        --vp-brand-1: #a8b1ff;
+        --vp-brand-2: #5c73e7;
+        --vp-brand-soft: rgba(100, 108, 255, 0.16);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+          'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+        background-color: var(--vp-bg);
+        color: var(--vp-text-1);
+        -webkit-font-smoothing: antialiased;
+        min-height: 100vh;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .lib-container {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem 5rem;
+      }
+
+      /* Breadcrumb & Header */
+      .lib-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-size: 0.825rem;
+        color: var(--vp-text-3);
+        margin-bottom: 1rem;
+      }
+      .lib-breadcrumb a:hover {
+        color: var(--vp-brand-1);
+      }
+      .lib-header {
+        margin-bottom: 1.5rem;
+      }
+      .lib-title {
+        margin: 0 0 0.4rem;
+        font-size: 1.65rem;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+      }
+      .lib-subtitle {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--vp-text-2);
+        line-height: 1.6;
+      }
+
+      /* Filter Box */
+      .filter-panel {
+        background-color: var(--vp-bg);
+        border: 1px solid var(--vp-divider);
+        border-radius: 6px;
+        padding: 1.25rem 1.25rem 0.75rem;
+        margin-bottom: 1.75rem;
+      }
+
+      /* Search Row */
+      .filter-search-row {
+        position: relative;
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+      .search-icon {
+        position: absolute;
+        left: 0.75rem;
+        width: 0.95rem;
+        height: 0.95rem;
+        color: var(--vp-text-3);
+        pointer-events: none;
+      }
+      .search-main-input {
+        width: 100%;
+        height: 2.35rem;
+        padding: 0 2rem 0 2.25rem;
+        font-size: 0.875rem;
+        font-family: inherit;
+        background-color: var(--vp-bg-soft);
+        border: 1px solid var(--vp-divider);
+        border-radius: 4px;
+        color: var(--vp-text-1);
+        outline: none;
+        transition: border-color 0.2s, background-color 0.2s;
+      }
+      .search-main-input:focus {
+        border-color: var(--vp-brand-1);
+        background-color: var(--vp-bg);
+      }
+      .search-clear-btn {
+        position: absolute;
+        right: 0.5rem;
+        background: transparent;
+        border: none;
+        color: var(--vp-text-3);
+        cursor: pointer;
+        font-size: 1rem;
+        display: none;
+        padding: 0.2rem;
+      }
+      .search-clear-btn:hover {
+        color: var(--vp-text-1);
+      }
+      .search-clear-btn.is-active {
+        display: block;
+      }
+
+      /* Dimensions */
+      .filter-dim-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.45rem 0;
+        border-top: 1px solid var(--vp-divider);
+        font-size: 0.85rem;
+      }
+      .dim-label {
+        color: var(--vp-text-3);
+        font-weight: 500;
+        width: 3.5rem;
+        flex-shrink: 0;
+      }
+      .dim-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        flex: 1;
+      }
+      .dim-btn {
+        padding: 0.2rem 0.55rem;
+        font-size: 0.825rem;
+        border-radius: 4px;
+        background-color: transparent;
+        border: 1px solid transparent;
+        color: var(--vp-text-2);
+        cursor: pointer;
+        transition: color 0.15s, background-color 0.15s, border-color 0.15s;
+      }
+      .dim-btn:hover {
+        color: var(--vp-brand-1);
+      }
+      .dim-btn.active {
+        background-color: var(--vp-brand-soft);
+        border-color: var(--vp-brand-1);
+        color: var(--vp-brand-1);
+        font-weight: 600;
+      }
+      .dim-btn.disabled {
+        color: var(--vp-text-3);
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+
+      /* Results header & Controls */
+      .results-controls-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+        font-size: 0.85rem;
+      }
+      .active-filters-wrap {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+      .results-summary {
+        color: var(--vp-text-2);
+      }
+      .filter-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.15rem 0.45rem;
+        font-size: 0.775rem;
+        border-radius: 3px;
+        background-color: var(--vp-bg-soft);
+        border: 1px solid var(--vp-divider);
+        color: var(--vp-text-2);
+      }
+      .tag-remove {
+        cursor: pointer;
+        font-size: 0.85rem;
+      }
+      .tag-remove:hover {
+        color: #ef4444;
+      }
+      .clear-filters-btn {
+        font-size: 0.8rem;
+        color: var(--vp-text-3);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        text-decoration: underline;
+        padding: 0 0.2rem;
+      }
+      .clear-filters-btn:hover {
+        color: #ef4444;
+      }
+
+      .sort-view-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        margin-left: auto;
+      }
+      .sort-select {
+        height: 1.9rem;
+        padding: 0 0.4rem;
+        border: 1px solid var(--vp-divider);
+        border-radius: 4px;
+        background-color: var(--vp-bg-soft);
+        color: var(--vp-text-1);
+        font-size: 0.8rem;
+        outline: none;
+      }
+      .view-toggle {
+        display: flex;
+        border: 1px solid var(--vp-divider);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .view-mode-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.85rem;
+        height: 1.85rem;
+        border: none;
+        background: var(--vp-bg-soft);
+        color: var(--vp-text-2);
+        cursor: pointer;
+        font-size: 0.75rem;
+      }
+      .view-mode-btn.active {
+        background-color: var(--vp-bg);
+        color: var(--vp-brand-1);
+        font-weight: 600;
+      }
+
+      /* Book Items Table / Rows */
+      .books-display-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+      }
+      .lib-book-row {
+        display: flex;
+        gap: 1.25rem;
+        padding: 1.15rem;
+        border: 1px solid var(--vp-divider);
+        border-radius: 6px;
+        background-color: var(--vp-bg);
+        transition: border-color 0.2s, background-color 0.2s;
+      }
+      .lib-book-row:hover {
+        border-color: var(--vp-text-3);
+        background-color: var(--vp-bg-soft);
+      }
+
+      .book-thumb {
+        width: 70px;
+        height: 98px;
+        flex-shrink: 0;
+        background-size: cover;
+        background-position: center;
+        border: 1px solid var(--vp-divider);
+        border-radius: 3px;
+        background-color: var(--vp-bg-soft);
+      }
+
+      .book-details-wrap {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .book-row-header {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+        flex-wrap: wrap;
+      }
+      .book-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      .book-title a:hover {
+        color: var(--vp-brand-1);
+      }
+      .stage-badge {
+        font-size: 0.7rem;
+        padding: 0.05rem 0.35rem;
+        border-radius: 3px;
+        border: 1px solid var(--vp-divider);
+        color: var(--vp-text-3);
+      }
+
+      .book-meta-line {
+        font-size: 0.825rem;
+        color: var(--vp-text-2);
+        margin-bottom: 0.4rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+      }
+      .book-desc-text {
+        margin: 0 0 0.65rem;
+        font-size: 0.85rem;
+        line-height: 1.55;
+        color: var(--vp-text-2);
+      }
+
+      .book-row-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin-top: auto;
+      }
+      .btn-read-action {
+        padding: 0.25rem 0.65rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #ffffff;
+        background-color: var(--vp-brand-1);
+        border-radius: 3px;
+        transition: opacity 0.2s;
+      }
+      .btn-read-action:hover {
+        opacity: 0.9;
+      }
+      .btn-sub-action {
+        padding: 0.25rem 0.6rem;
+        font-size: 0.8rem;
+        color: var(--vp-text-2);
+        border: 1px solid var(--vp-divider);
+        border-radius: 3px;
+        background-color: var(--vp-bg);
+        cursor: pointer;
+        transition: color 0.15s, border-color 0.15s;
+      }
+      .btn-sub-action:hover {
+        color: var(--vp-brand-1);
+        border-color: var(--vp-brand-1);
+      }
+
+      /* Empty state */
+      .empty-box {
+        display: none;
+        padding: 3rem 1.5rem;
+        text-align: center;
+        border: 1px dashed var(--vp-divider);
+        border-radius: 6px;
+        margin: 2rem 0;
+      }
+      .empty-text {
+        font-size: 0.95rem;
+        color: var(--vp-text-2);
+        margin-bottom: 1rem;
+      }
+
+      /* Modal */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.45);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+      }
+      .modal-overlay.is-open {
+        display: flex;
+      }
+      .modal-card {
+        background-color: var(--vp-bg);
+        border: 1px solid var(--vp-divider);
+        border-radius: 6px;
+        max-width: 580px;
+        width: 100%;
+        max-height: 85vh;
+        overflow-y: auto;
+        padding: 1.75rem;
+        position: relative;
+      }
+      .modal-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        border: none;
+        background: transparent;
+        font-size: 1.25rem;
+        color: var(--vp-text-3);
+        cursor: pointer;
+      }
+      .modal-close:hover {
+        color: var(--vp-text-1);
+      }
+      .modal-head {
+        margin-bottom: 1.25rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--vp-divider);
+      }
+      .modal-title {
+        margin: 0 0 0.35rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+      }
+      .modal-author {
+        font-size: 0.85rem;
+        color: var(--vp-text-2);
+      }
+      .modal-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+        margin: 1rem 0;
+      }
+      .modal-table td {
+        padding: 0.35rem 0.5rem;
+        border-bottom: 1px solid var(--vp-divider);
+      }
+      .modal-table td:first-child {
+        color: var(--vp-text-3);
+        width: 25%;
+      }
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+      }
+
+      @media (max-width: 640px) {
+        .lib-book-row {
+          flex-direction: column;
+        }
+        .filter-dim-row {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Nav -->
+    <VpNav currentPath="/library/" />
+
+    <main class="lib-container">
+      <!-- Breadcrumb -->
+      <nav class="lib-breadcrumb" aria-label="面包屑导航">
+        <a href="/">首页</a>
+        <span>/</span>
+        <span>书目索引与检索</span>
+      </nav>
+
+      <!-- Header -->
+      <div class="lib-header">
+        <h1 class="lib-title">书目检索与分类索引</h1>
+        <p class="lib-subtitle">
+          支持按学段、资料分类与学科领域检索 AstroLib 所收录的数理教材、教辅与课后习题。
+        </p>
+      </div>
+
+      <!-- Filter Panel -->
+      <section class="filter-panel" aria-label="多维分类检索栏">
+        <!-- 1. Search Row -->
+        <div class="filter-search-row">
+          <svg class="search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="8.5" cy="8.5" r="5.5" />
+            <path d="M12.5 12.5L17 17" stroke-linecap="round" />
+          </svg>
+          <input
+            type="text"
+            id="lib-search-input"
+            class="search-main-input"
+            placeholder="检索书名、作者、ISBN、出版社或关键词..."
+            autocomplete="off"
+          />
+          <button type="button" id="lib-search-clear" class="search-clear-btn" aria-label="清空检索词">✕</button>
+        </div>
+
+        <!-- 2. Stage Filter -->
+        <div class="filter-dim-row">
+          <span class="dim-label">学段</span>
+          <div class="dim-pills">
+            <button type="button" class="dim-btn active" data-filter-type="stage" data-filter-val="all">全部</button>
+            <button type="button" class="dim-btn" data-filter-type="stage" data-filter-val="high-school">高中 (1)</button>
+            <button type="button" class="dim-btn" data-filter-type="stage" data-filter-val="university">大学本科 (5)</button>
+            <button type="button" class="dim-btn disabled" data-filter-type="stage" data-filter-val="middle-school">初中 (预备)</button>
+            <button type="button" class="dim-btn disabled" data-filter-type="stage" data-filter-val="postgraduate">考研 (预备)</button>
+          </div>
+        </div>
+
+        <!-- 3. Category Filter -->
+        <div class="filter-dim-row">
+          <span class="dim-label">类别</span>
+          <div class="dim-pills">
+            <button type="button" class="dim-btn active" data-filter-type="category" data-filter-val="all">全部</button>
+            <button type="button" class="dim-btn" data-filter-type="category" data-filter-val="supplement">教辅</button>
+            <button type="button" class="dim-btn" data-filter-type="category" data-filter-val="textbook">教材</button>
+            <button type="button" class="dim-btn" data-filter-type="category" data-filter-val="exercise">课后习题</button>
+          </div>
+        </div>
+
+        <!-- 4. Subject Filter -->
+        <div class="filter-dim-row">
+          <span class="dim-label">学科</span>
+          <div class="dim-pills">
+            <button type="button" class="dim-btn active" data-filter-type="subject" data-filter-val="all">全部</button>
+            <button type="button" class="dim-btn" data-filter-type="subject" data-filter-val="math">数学</button>
+            <button type="button" class="dim-btn" data-filter-type="subject" data-filter-val="science">物理</button>
+            <button type="button" class="dim-btn disabled" data-filter-type="subject" data-filter-val="chemistry">化学 (预备)</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Results Indicator & Sort -->
+      <div class="results-controls-row">
+        <div class="active-filters-wrap" id="active-filters-container">
+          <span class="results-summary">收录书目：<strong id="matched-count">{allBooks.length}</strong> 部</span>
+        </div>
+
+        <div class="sort-view-controls">
+          <label for="sort-select">排序：</label>
+          <select id="sort-select" class="sort-select">
+            <option value="default">默认</option>
+            <option value="title-asc">书名 (A-Z)</option>
+            <option value="stage-asc">学段 (由低到高)</option>
+            <option value="stage-desc">学段 (由高到低)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Book List -->
+      <div id="books-list" class="books-display-list">
+        {allBooks.map(book => (
+          <article
+            class="lib-book-row"
+            data-id={book.id}
+            data-title={book.title}
+            data-author={book.author || ''}
+            data-publisher={book.publisher || ''}
+            data-isbn={book.isbn || ''}
+            data-stage={book.stage}
+            data-category={book.category}
+            data-subject={book.subject}
+            data-tags={(book.tags || []).join(',')}
+            data-desc={book.description}
+            data-entry={book.readUrl}
+            data-epub={book.epubUrl}
+            data-has-epub={book.hasEpubFile ? '1' : '0'}
+            data-edition={book.edition || ''}
+          >
+            <div class="book-thumb" style={`background-image: url(${book.cover});`}></div>
+            <div class="book-details-wrap">
+              <div class="book-row-header">
+                <h2 class="book-title">
+                  <a href={book.readUrl}>{book.title}</a>
+                </h2>
+                <span class="stage-badge">{book.stageLabel}</span>
+                <span class="stage-badge">{book.categoryLabel}</span>
+              </div>
+
+              <div class="book-meta-line">
+                <span>著者：{book.author}</span>
+                <span>出版：{book.publisher}</span>
+                {book.isbn && <span>ISBN：{book.isbn}</span>}
+                {book.edition && <span>版次：{book.edition}</span>}
+              </div>
+
+              <p class="book-desc-text">{book.description}</p>
+
+              <div class="book-row-actions">
+                <a href={book.readUrl} class="btn-read-action">
+                  阅读章节
+                </a>
+                <button type="button" class="btn-sub-action btn-modal-trigger">
+                  详细信息
+                </button>
+                {book.hasEpubFile && (
+                  <a href={book.epubUrl} class="btn-sub-action" download>
+                    EPUB 下载
+                  </a>
+                )}
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <!-- Empty State -->
+      <div id="lib-empty-box" class="empty-box">
+        <p class="empty-text">未检索到匹配的书目。</p>
+        <button type="button" id="lib-empty-reset" class="btn-sub-action">清空筛选条件</button>
+      </div>
+    </main>
+
+    <!-- Details Modal -->
+    <div id="details-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+      <div class="modal-card">
+        <button type="button" id="dialog-close-btn" class="modal-close" aria-label="关闭详情">✕</button>
+        <div class="modal-head">
+          <h2 id="dialog-title" class="modal-title"></h2>
+          <div id="dialog-author" class="modal-author"></div>
+        </div>
+
+        <div class="modal-body-content">
+          <p id="dialog-desc" style="font-size: 0.875rem; line-height: 1.65; color: var(--vp-text-2); margin-bottom: 1rem;"></p>
+          <table class="modal-table">
+            <tbody>
+              <tr>
+                <td>出版社</td>
+                <td id="dialog-publisher"></td>
+              </tr>
+              <tr>
+                <td>标准书号</td>
+                <td id="dialog-isbn" style="font-family: monospace;"></td>
+              </tr>
+              <tr>
+                <td>版次</td>
+                <td id="dialog-edition"></td>
+              </tr>
+              <tr>
+                <td>适用学段</td>
+                <td id="dialog-stage"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="modal-actions">
+          <a id="dialog-read-btn" href="#" class="btn-read-action">进入阅读</a>
+          <a id="dialog-epub-btn" href="#" class="btn-sub-action" download style="display: none;">下载 EPUB</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <VpFooter />
+
+    <!-- Script -->
+    <script>
+      interface FilterState {
+        query: string;
+        stage: string;
+        category: string;
+        subject: string;
+        sortBy: string;
+      }
+
+      const state: FilterState = {
+        query: '',
+        stage: 'all',
+        category: 'all',
+        subject: 'all',
+        sortBy: 'default',
+      };
+
+      const searchInput = document.getElementById('lib-search-input') as HTMLInputElement;
+      const searchClearBtn = document.getElementById('lib-search-clear');
+      const booksContainer = document.getElementById('books-list');
+      const activeFiltersContainer = document.getElementById('active-filters-container');
+      const sortSelect = document.getElementById('sort-select') as HTMLSelectElement;
+      const emptyBox = document.getElementById('lib-empty-box');
+
+      // Modal
+      const modal = document.getElementById('details-modal');
+      const modalClose = document.getElementById('dialog-close-btn');
+      const dialogTitle = document.getElementById('dialog-title');
+      const dialogAuthor = document.getElementById('dialog-author');
+      const dialogDesc = document.getElementById('dialog-desc');
+      const dialogPublisher = document.getElementById('dialog-publisher');
+      const dialogIsbn = document.getElementById('dialog-isbn');
+      const dialogEdition = document.getElementById('dialog-edition');
+      const dialogStage = document.getElementById('dialog-stage');
+      const dialogReadBtn = document.getElementById('dialog-read-btn') as HTMLAnchorElement;
+      const dialogEpubBtn = document.getElementById('dialog-epub-btn') as HTMLAnchorElement;
+
+      function parseUrlParams() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('q')) {
+          state.query = params.get('q') || '';
+          if (searchInput) searchInput.value = state.query;
+        }
+        if (params.has('stage')) state.stage = params.get('stage') || 'all';
+        if (params.has('type') || params.has('category')) {
+          state.category = params.get('type') || params.get('category') || 'all';
+        }
+        if (params.has('subject')) state.subject = params.get('subject') || 'all';
+        if (params.has('focus') && searchInput) {
+          setTimeout(() => searchInput.focus(), 150);
+        }
+      }
+
+      function updateUrl() {
+        const params = new URLSearchParams();
+        if (state.query) params.set('q', state.query);
+        if (state.stage !== 'all') params.set('stage', state.stage);
+        if (state.category !== 'all') params.set('type', state.category);
+        if (state.subject !== 'all') params.set('subject', state.subject);
+        const newUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
+        window.history.replaceState({}, '', newUrl);
+      }
+
+      function renderActiveChips() {
+        if (!activeFiltersContainer) return;
+        const chips: string[] = [];
+
+        if (state.query) {
+          chips.push(`<span class="filter-tag">检索: "${state.query}" <span class="tag-remove" data-clear="query">✕</span></span>`);
+        }
+        if (state.stage !== 'all') {
+          const label = state.stage === 'high-school' ? '高中' : state.stage === 'university' ? '大学本科' : state.stage;
+          chips.push(`<span class="filter-tag">学段: ${label} <span class="tag-remove" data-clear="stage">✕</span></span>`);
+        }
+        if (state.category !== 'all') {
+          const label = state.category === 'supplement' ? '教辅' : state.category === 'textbook' ? '教材' : '课后习题';
+          chips.push(`<span class="filter-tag">类别: ${label} <span class="tag-remove" data-clear="category">✕</span></span>`);
+        }
+        if (state.subject !== 'all') {
+          const label = state.subject === 'math' ? '数学' : '物理';
+          chips.push(`<span class="filter-tag">学科: ${label} <span class="tag-remove" data-clear="subject">✕</span></span>`);
+        }
+
+        const hasFilters = chips.length > 0;
+        activeFiltersContainer.innerHTML = `
+          <span class="results-summary">收录书目：<strong id="matched-count">0</strong> 部</span>
+          ${chips.join('')}
+          ${hasFilters ? `<button type="button" class="clear-filters-btn" id="clear-all-btn">清空筛选</button>` : ''}
+        `;
+
+        activeFiltersContainer.querySelectorAll('.tag-remove').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const clearType = (e.currentTarget as HTMLElement).dataset.clear;
+            if (clearType === 'query') {
+              state.query = '';
+              if (searchInput) searchInput.value = '';
+            } else if (clearType === 'stage') state.stage = 'all';
+            else if (clearType === 'category') state.category = 'all';
+            else if (clearType === 'subject') state.subject = 'all';
+
+            syncUI();
+            applyFilters();
+          });
+        });
+
+        document.getElementById('clear-all-btn')?.addEventListener('click', resetAll);
+      }
+
+      function resetAll() {
+        state.query = '';
+        state.stage = 'all';
+        state.category = 'all';
+        state.subject = 'all';
+        if (searchInput) searchInput.value = '';
+        syncUI();
+        applyFilters();
+      }
+
+      function syncUI() {
+        document.querySelectorAll('.dim-btn').forEach(btn => {
+          const b = btn as HTMLElement;
+          const type = b.dataset.filterType;
+          const val = b.dataset.filterVal;
+          if (type === 'stage') b.classList.toggle('active', state.stage === val);
+          if (type === 'category') b.classList.toggle('active', state.category === val);
+          if (type === 'subject') b.classList.toggle('active', state.subject === val);
+        });
+
+        if (searchClearBtn) {
+          searchClearBtn.classList.toggle('is-active', state.query.trim().length > 0);
+        }
+      }
+
+      function applyFilters() {
+        if (!booksContainer) return;
+        const rows = Array.from(booksContainer.querySelectorAll('.lib-book-row')) as HTMLElement[];
+        const q = state.query.toLowerCase().trim();
+
+        let visibleCount = 0;
+        const visibleRows: HTMLElement[] = [];
+
+        rows.forEach(row => {
+          const title = (row.dataset.title || '').toLowerCase();
+          const author = (row.dataset.author || '').toLowerCase();
+          const publisher = (row.dataset.publisher || '').toLowerCase();
+          const isbn = (row.dataset.isbn || '').toLowerCase();
+          const stage = row.dataset.stage || '';
+          const category = row.dataset.category || '';
+          const subject = row.dataset.subject || '';
+          const tags = (row.dataset.tags || '').toLowerCase();
+          const desc = (row.dataset.desc || '').toLowerCase();
+
+          const matchStage = state.stage === 'all' || stage === state.stage;
+          const matchCat = state.category === 'all' || category === state.category;
+          const matchSub = state.subject === 'all' || subject === state.subject;
+          const matchQuery = !q ||
+            title.includes(q) ||
+            author.includes(q) ||
+            publisher.includes(q) ||
+            isbn.includes(q) ||
+            tags.includes(q) ||
+            desc.includes(q);
+
+          if (matchStage && matchCat && matchSub && matchQuery) {
+            row.style.display = '';
+            visibleCount++;
+            visibleRows.push(row);
+          } else {
+            row.style.display = 'none';
+          }
+        });
+
+        if (state.sortBy === 'title-asc') {
+          visibleRows.sort((a, b) => (a.dataset.title || '').localeCompare(b.dataset.title || '', 'zh-CN'));
+        } else if (state.sortBy === 'stage-asc') {
+          visibleRows.sort((a, b) => (a.dataset.stage || '').localeCompare(b.dataset.stage || ''));
+        } else if (state.sortBy === 'stage-desc') {
+          visibleRows.sort((a, b) => (b.dataset.stage || '').localeCompare(a.dataset.stage || ''));
+        }
+        visibleRows.forEach(r => booksContainer.appendChild(r));
+
+        renderActiveChips();
+        const countEl = document.getElementById('matched-count');
+        if (countEl) countEl.innerText = String(visibleCount);
+
+        if (emptyBox) emptyBox.style.display = visibleCount === 0 ? 'block' : 'none';
+        updateUrl();
+      }
+
+      function openModal(row: HTMLElement) {
+        if (!modal) return;
+        const title = row.dataset.title || '';
+        const author = row.dataset.author || '';
+        const publisher = row.dataset.publisher || '未注明';
+        const isbn = row.dataset.isbn || '无';
+        const desc = row.dataset.desc || '';
+        const stage = row.dataset.stage === 'high-school' ? '高中' : '大学本科';
+        const edition = row.dataset.edition || '标准数字化版';
+        const entry = row.dataset.entry || '#';
+        const epub = row.dataset.epub || '#';
+        const hasEpub = row.dataset.hasEpub === '1';
+
+        if (dialogTitle) dialogTitle.innerText = title;
+        if (dialogAuthor) dialogAuthor.innerText = `著者：${author}`;
+        if (dialogDesc) dialogDesc.innerText = desc;
+        if (dialogPublisher) dialogPublisher.innerText = publisher;
+        if (dialogIsbn) dialogIsbn.innerText = isbn;
+        if (dialogEdition) dialogEdition.innerText = edition;
+        if (dialogStage) dialogStage.innerText = stage;
+        if (dialogReadBtn) dialogReadBtn.href = entry;
+        if (dialogEpubBtn) {
+          if (hasEpub) {
+            dialogEpubBtn.href = epub;
+            dialogEpubBtn.style.display = 'inline-block';
+          } else {
+            dialogEpubBtn.style.display = 'none';
+          }
+        }
+
+        modal.classList.add('is-open');
+      }
+
+      function closeModal() {
+        modal?.classList.remove('is-open');
+      }
+
+      function init() {
+        parseUrlParams();
+        syncUI();
+        applyFilters();
+
+        let timer: any;
+        searchInput?.addEventListener('input', () => {
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            state.query = searchInput.value;
+            syncUI();
+            applyFilters();
+          }, 150);
+        });
+
+        searchClearBtn?.addEventListener('click', () => {
+          if (searchInput) searchInput.value = '';
+          state.query = '';
+          syncUI();
+          applyFilters();
+          searchInput?.focus();
+        });
+
+        document.querySelectorAll('.dim-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const b = e.currentTarget as HTMLElement;
+            if (b.classList.contains('disabled')) return;
+            const type = b.dataset.filterType;
+            const val = b.dataset.filterVal || 'all';
+
+            if (type === 'stage') state.stage = val;
+            if (type === 'category') state.category = val;
+            if (type === 'subject') state.subject = val;
+
+            syncUI();
+            applyFilters();
+          });
+        });
+
+        sortSelect?.addEventListener('change', () => {
+          state.sortBy = sortSelect.value;
+          applyFilters();
+        });
+
+        document.getElementById('lib-empty-reset')?.addEventListener('click', resetAll);
+
+        document.querySelectorAll('.btn-modal-trigger').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const row = (e.currentTarget as HTMLElement).closest('.lib-book-row') as HTMLElement;
+            if (row) openModal(row);
+          });
+        });
+
+        modalClose?.addEventListener('click', closeModal);
+        modal?.addEventListener('click', (e) => {
+          if (e.target === modal) closeModal();
+        });
+        window.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') closeModal();
+        });
+      }
+
+      init();
+    </script>
+  </body>
+</html>

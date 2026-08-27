@@ -1,0 +1,354 @@
+---
+import SidebarPersister from '@astrojs/starlight/components/SidebarPersister.astro';
+import SidebarSublist from '@astrojs/starlight/components/SidebarSublist.astro';
+import MobileMenuFooter from 'virtual:starlight/components/MobileMenuFooter';
+import fs from 'node:fs';
+import { features } from '../config/features.config.mjs';
+
+const { sidebar } = Astro.locals.starlightRoute;
+const pathname = Astro.url.pathname;
+
+// 性能优化：侧边栏只保留当前所在图书的子树（首页等非图书页仍显示全部图书）。
+// 避免每页都序列化全部 300+ 章节，显著减小 HTML 体积与首屏时间。
+let filteredSidebar = sidebar;
+const bookMatch = pathname.match(/\/collections\/([^/]+)\/([^/]+)/);
+if (bookMatch) {
+  const prefix = `/collections/${bookMatch[1]}/${bookMatch[2]}/`;
+  const kept = [];
+  for (const entry of sidebar) {
+    if (entry.type !== 'group') continue;
+    const books = (entry.entries || []).filter(
+      (b) => b.type === 'group' && (b.entries || []).some(
+        (i) => i.type === 'link' && typeof i.href === 'string' && i.href.startsWith(prefix)
+      )
+    );
+    if (books.length > 0) kept.push({ ...entry, entries: books });
+  }
+  if (kept.length > 0) filteredSidebar = kept;
+} else if (pathname.startsWith('/dev')) {
+  const kept = sidebar.filter(
+    (entry) => entry.type === 'group' && (entry.label.includes('开发文档') || (entry.entries || []).some(
+      (i) => (i.type === 'link' && typeof i.href === 'string' && i.href.startsWith('/dev')) ||
+             (i.type === 'group' && (i.entries || []).some((sub) => typeof sub.href === 'string' && sub.href.startsWith('/dev')))
+    ))
+  );
+  if (kept.length > 0) filteredSidebar = kept;
+}
+
+// 当前图书的 EPUB 下载链接：优先探测本地 public/epub/<slug>.epub，若无则回退至 GitHub Release 资产链接。
+// 受 features.epub.enabled 控制：关闭 EPUB 功能则不渲染下载入口。
+let epubHref = null;
+if (features.epub.enabled && bookMatch) {
+  const bookSlug = bookMatch[2];
+  const epubPath = `public/epub/${bookSlug}.epub`;
+  try {
+    if (fs.existsSync(epubPath)) {
+      epubHref = `/epub/${bookSlug}.epub`;
+    } else if (features.epub?.config?.releaseBaseUrl) {
+      epubHref = `${features.epub.config.releaseBaseUrl}/${bookSlug}.epub`;
+    }
+  } catch {
+    if (features.epub?.config?.releaseBaseUrl) {
+      epubHref = `${features.epub.config.releaseBaseUrl}/${bookSlug}.epub`;
+    }
+  }
+}
+---
+
+<!-- 1. 渲染过滤后的侧边栏结构 -->
+<SidebarPersister>
+  <SidebarSublist sublist={filteredSidebar} />
+</SidebarPersister>
+
+{features.epub.enabled && epubHref && (
+  <div class="epub-entry" data-feature="epub">
+    <a href={epubHref} download title="下载本书 EPUB（离线阅读）" aria-label="下载本书 EPUB">
+      <svg class="epub-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" y1="3" x2="12" y2="15" />
+      </svg>
+    </a>
+  </div>
+)}
+
+<div class="md:sl-hidden">
+  <MobileMenuFooter />
+</div>
+
+<style>
+  .epub-entry {
+    margin: auto 0.75rem 0.25rem 0;
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 0.5rem;
+  }
+  .epub-entry a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    color: var(--sl-color-gray-4);
+    opacity: 0.85;
+    text-decoration: none;
+    transition: color 0.15s ease, opacity 0.15s ease, background-color 0.15s ease;
+  }
+  .epub-entry a .epub-icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+  }
+  .epub-entry a:hover,
+  .epub-entry a:focus-visible {
+    opacity: 1;
+    color: var(--sl-color-text-accent);
+    background-color: color-mix(in srgb, var(--sl-color-text-accent) 12%, transparent);
+  }
+</style>
+
+<!-- 2. 注入客户端脚本，同时渲染“侧边栏”与“页面大标题 (h1)”中的数学公式 -->
+<script>
+  // @ts-ignore
+  import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
+  // 注意：katex.min.css 已通过 astro.config.mjs 的 customCss 全局引入（且先于
+  // custom.css 加载，保证 .tag 流内定位覆盖生效），这里不再重复引入。
+    import { initSidebarResizers } from '../scripts/sidebar-resizer';
+
+  // 侧边栏公式只渲染一次：SPA 局部导航后侧边栏 DOM 并未变化，无需重复渲染
+  let sidebarMathRendered = false;
+
+  function renderCustomMath() {
+    // 渲染参数配置
+    const katexConfig = {
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '$', right: '$', display: false },
+      ],
+      throwOnError: false
+    };
+
+    if (!sidebarMathRendered) {
+      const sidebar = document.querySelector('.sidebar') || document.querySelector('aside');
+      if (sidebar) {
+        renderMathInElement(sidebar, katexConfig);
+        sidebarMathRendered = true;
+      }
+    }
+
+    // 页面大标题每个新页面都不同，需要每次导航后重新渲染
+    const mainTitle = document.querySelector('h1');
+    if (mainTitle) {
+      renderMathInElement(mainTitle, katexConfig);
+    }
+  }
+
+  // 页面初次加载时执行一次
+    initSidebarResizers();
+  renderCustomMath();
+
+  // 监听 Astro 页面过渡和加载事件，确保在路由切换后依然生效
+  document.addEventListener('astro:page-load', () => {
+    renderCustomMath();
+    initSidebarResizers();
+  });
+</script>
+
+<!-- 3. SPA 局部刷新导航：点击内部链接时只替换正文与右侧大纲，保留头部与左侧栏 -->
+<script>
+  if (!window.__spaNavInstalled) {
+    window.__spaNavInstalled = true;
+
+    // 按 URL 缓存已抓取的页面（限制数量，防止内存膨胀）
+    const pageCache = new Map();
+    const CACHE_MAX = 24;
+    // 导航令牌：快速连续点击时，只允许最新一次导航真正替换 DOM
+    let navToken = 0;
+
+    function isNavLink(a) {
+      if (a.hasAttribute('download')) return false;
+      if (a.target && a.target !== '_self') return false;
+      if ((a.getAttribute('rel') || '').split(' ').includes('external')) return false;
+      try {
+        const url = new URL(a.href, location.href);
+        return url.origin === location.origin && /^https?:$/.test(url.protocol);
+      } catch {
+        return false;
+      }
+    }
+
+    function fetchPage(url) {
+      const key = url.href;
+      if (pageCache.has(key)) return pageCache.get(key);
+      const p = fetch(url, { headers: { Accept: 'text/html' }, credentials: 'same-origin' })
+        .then((r) => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.text();
+        })
+        .then((html) => new DOMParser().parseFromString(html, 'text/html'));
+      pageCache.set(key, p);
+      if (pageCache.size > CACHE_MAX) {
+        pageCache.delete(pageCache.keys().next().value);
+      }
+      return p;
+    }
+
+    function normPath(p) {
+      return p === '/' ? p : p.replace(/\/+$/, '');
+    }
+
+    // 新内容来自 DOMParser，插入前移除 script，避免意外执行
+    function stripScripts(root) {
+      root.querySelectorAll('script').forEach((s) => s.remove());
+    }
+
+    // 更新左侧栏当前页高亮，并展开所属分组
+    function updateSidebarActive(pathname) {
+      const sidebar = document.querySelector('nav.sidebar, .sidebar');
+      if (!sidebar) return;
+      let matched = null;
+      sidebar.querySelectorAll('a[aria-current="page"]').forEach((a) => a.removeAttribute('aria-current'));
+      sidebar.querySelectorAll('a[href]').forEach((a) => {
+        let url;
+        try {
+          url = new URL(a.href, location.href);
+        } catch {
+          return;
+        }
+        if (normPath(url.pathname) === normPath(pathname)) {
+          matched = a;
+          let node = a.parentElement;
+          while (node && node !== sidebar) {
+            if (node.tagName === 'DETAILS') node.open = true;
+            node = node.parentElement;
+          }
+        }
+      });
+      if (matched) matched.setAttribute('aria-current', 'page');
+    }
+
+    // 移动端：点击侧边栏链接后收起菜单遮罩
+    function closeMobileMenu() {
+      const btn = document.querySelector('starlight-menu-button button');
+      if (btn && document.body.hasAttribute('data-mobile-menu-expanded')) btn.click();
+    }
+
+    // 移动端左侧抽屉：点击抽屉外区域（遮罩/正文）关闭 —— VitePress VPBackdrop 行为。
+    // 打开抽屉时按钮自身的 click 会先冒泡到这里（target 命中按钮则跳过）；
+    // btn.click() 同步关闭后再冒泡时 body 已无展开标记，直接返回，无死循环。
+    document.addEventListener('click', (e) => {
+      if (!document.body.hasAttribute('data-mobile-menu-expanded')) return;
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest('starlight-menu-button') || target.closest('.sidebar-pane')) return;
+      closeMobileMenu();
+    });
+
+    async function loadPage(url, { restoreScroll = false } = {}) {
+      const token = ++navToken;
+      const doc = await fetchPage(url);
+      if (token !== navToken) return; // 已被更新的导航取代
+
+      const newMain = doc.querySelector('.main-pane');
+      const currentMain = document.querySelector('.main-pane');
+      if (!newMain || !currentMain) throw new Error('main-pane not found');
+
+      const flexWrap = currentMain.parentElement;
+      const newRight = doc.querySelector('.right-sidebar-container');
+      const currentRight = document.querySelector('.right-sidebar-container');
+
+      document.title = doc.title || document.title;
+
+      stripScripts(newMain);
+      currentMain.replaceWith(newMain);
+      if (newRight) {
+        stripScripts(newRight);
+        if (currentRight) currentRight.replaceWith(newRight);
+        else flexWrap?.prepend(newRight);
+      } else if (currentRight) {
+        currentRight.remove();
+      }
+
+      updateSidebarActive(url.pathname);
+      closeMobileMenu();
+
+      // 滚动处理：带锚点滚动到目标；后退时恢复保存的滚动位置
+      if (url.hash) {
+        const targetId = decodeURIComponent(url.hash.slice(1));
+        const el = document.getElementById(targetId);
+        if (el) el.scrollIntoView({ block: 'start' });
+        else window.scrollTo(0, 0);
+      } else {
+        const y = restoreScroll && history.state && typeof history.state.scrollY === 'number'
+          ? history.state.scrollY
+          : 0;
+        window.scrollTo(0, y);
+      }
+
+      // 触发既有初始化逻辑（大纲重建、选择题重构、公式二次渲染等）
+      document.dispatchEvent(new CustomEvent('astro:page-load'));
+    }
+
+    // 拦截所有站内链接
+    document.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const a = target.closest('a[href]');
+      if (!a || !isNavLink(a)) return;
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      const url = new URL(a.href, location.href);
+      if (normPath(url.pathname) === normPath(location.pathname)) {
+        if (!url.hash) e.preventDefault(); // 同页无锚点：不触发整页刷新
+        return;
+      }
+
+      e.preventDefault();
+      // 立即更新地址栏并保存当前滚动位置，随后异步替换内容
+      history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, '');
+      history.pushState({ scrollY: 0 }, '', url.href);
+      loadPage(url).catch(() => {
+        window.location.href = url.href;
+      });
+    });
+
+    // 悬停导航链接时预取（短延迟去抖）：左侧栏 + 页脚翻页链接。
+    // 预取命中后点击时几乎瞬时完成替换（缓存上限 CACHE_MAX 内）。
+    let prefetchTimer = 0;
+    function isPrefetchable(a) {
+      return !!a.closest('nav.sidebar, .sidebar, .pagination-links, footer');
+    }
+    document.addEventListener('pointerover', (e) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const a = target.closest('a[href]');
+      if (!a || !isNavLink(a) || !isPrefetchable(a)) return;
+      const url = new URL(a.href, location.href);
+      if (normPath(url.pathname) === normPath(location.pathname)) return;
+      clearTimeout(prefetchTimer);
+      prefetchTimer = setTimeout(() => fetchPage(url).catch(() => {}), 50);
+    });
+
+    // 按下鼠标（点击之前）立即拉取目标页：把“网络 + 解析”提前到点击前，
+    // 点击发生时 loadPage 直接命中缓存，进一步压缩切换等待。
+    document.addEventListener('pointerdown', (e) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const a = target.closest('a[href]');
+      if (!a || !isNavLink(a)) return;
+      const url = new URL(a.href, location.href);
+      if (normPath(url.pathname) === normPath(location.pathname)) return;
+      clearTimeout(prefetchTimer);
+      fetchPage(url).catch(() => {});
+    }, { passive: true });
+
+    // 浏览器前进/后退
+    window.addEventListener('popstate', () => {
+      const url = new URL(location.href);
+      loadPage(url, { restoreScroll: true }).catch(() => {
+        location.reload();
+      });
+    });
+  }
+</script>

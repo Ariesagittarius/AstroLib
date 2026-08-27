@@ -1,0 +1,361 @@
+---
+// 自定义右侧侧边栏组件 - 替代 Starlight 的 PageSidebar.astro
+// 模块化架构：逻辑解耦至 src/components/sidebar/ 与 src/utils/cross-ref-indexer.mjs
+import { collections } from '../config/collections.config.mjs';
+import { features, crossRefRefs } from '../config/features.config.mjs';
+import { buildGlobalBlockIndex } from '../utils/cross-ref-indexer.mjs';
+
+// 引用联动模式：'interactive'（默认，可点击/跨页联动）| 'static'（统一静态 chip）。
+const refsMode = crossRefRefs() === 'static' ? 'static' : 'interactive';
+
+const pathname = Astro.url.pathname;
+
+// 1. 深度遍历两级结构，感知当前路由所属的图书及其 TOC 规则
+let currentBook = null;
+let currentCol = null;
+for (const col of collections) {
+  const matchedBook = col.books.find(book => pathname.includes(`/collections/${col.slug}/${book.slug}/`));
+  if (matchedBook) {
+    currentCol = col;
+    currentBook = matchedBook;
+    break;
+  }
+}
+
+// 2. 备用安全降级方案
+if (!currentBook) {
+  currentCol = collections[0];
+  currentBook = collections[0].books[0];
+}
+const bookConfigJson = JSON.stringify(currentBook);
+
+// 3. 构建期递归扫描提取当前图书的全局跨页路由索引
+const globalBlockIndex = refsMode === 'interactive' ? buildGlobalBlockIndex(currentCol?.slug, currentBook?.slug) : {};
+const globalIndexJson = JSON.stringify(globalBlockIndex);
+---
+
+<aside class="custom-page-sidebar" data-book-key={`${currentCol.slug}/${currentBook.slug}`} data-refs-mode={refsMode} data-book-config={bookConfigJson} data-global-index={globalIndexJson}>
+  <!-- VitePress outline-marker：跟随滚动高亮项的 2px 品牌色指示条（JS 更新 top） -->
+  <div class="outline-marker" aria-hidden="true"></div>
+  <div class="toc-container">
+    <div class="toc-header-row">
+      <h2 class="toc-title">本节导航大纲</h2>
+      <div class="toc-header-actions">
+        {features.inspector.enabled && (
+          <button type="button" class="sidebar-action-btn inspector-trigger" data-feature="inspector" data-inspector-trigger title="查看全书模块速查与索引 (Alt+M)">
+            <svg class="action-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              <circle cx="12" cy="9.5" r="2.5" />
+              <path d="M14 11.5l2.5 2.5" />
+            </svg>
+            <span>模块</span>
+          </button>
+        )}
+        {features.relationGraph.enabled && (
+          <button type="button" class="sidebar-action-btn relation-graph-trigger" data-feature="relationGraph" data-open-relation-graph title="查看全书章节内联关系图谱 (Alt+G)">
+            <svg class="action-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="6" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <circle cx="18" cy="12" r="3"/>
+              <line x1="8.59" y1="7.49" x2="15.42" y2="10.51"/>
+              <line x1="8.59" y1="16.51" x2="15.42" y2="13.49"/>
+            </svg>
+            <span>关系图</span>
+          </button>
+        )}
+      </div>
+    </div>
+    <ul id="custom-toc-list" class="toc-list">
+      <li class="toc-loading">正在提取教辅大纲...</li>
+    </ul>
+  </div>
+</aside>
+
+<!-- 移动端本地导航 VPLocalNav（VitePress 移植：顶部 sticky 条 + 大纲 popup 下拉面板） -->
+<div class="vp-local-nav" data-vp-local-nav>
+  <div class="vp-local-nav-container">
+    <button class="vp-local-nav-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="vp-local-nav-panel" aria-label="本页大纲">
+      <svg class="vp-local-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+      </svg>
+      <svg class="vp-local-nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9 18l6-6-6-6" />
+      </svg>
+    </button>
+    <div class="vp-local-nav-items" id="vp-local-nav-panel" aria-hidden="true">
+      <div class="vp-local-nav-header">
+        <a class="vp-local-nav-top-link" href="#">返回顶部</a>
+        <div class="vp-local-nav-actions">
+          {features.inspector.enabled && (
+            <button type="button" class="vp-local-nav-btn-link" data-inspector-trigger title="查看全书模块索引速查">
+              <svg class="action-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                <circle cx="12" cy="9.5" r="2.5" />
+                <path d="M14 11.5l2.5 2.5" />
+              </svg>
+              <span>模块速查</span>
+            </button>
+          )}
+        </div>
+      </div>
+      <div class="vp-local-nav-outline">
+        <ul id="vp-local-nav-toc-list" class="toc-list">
+          <li class="toc-loading">正在提取教辅大纲...</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* 1. 默认隐藏所有自定义大纲，防止在移动端正文中泄露 */
+  .custom-page-sidebar {
+    display: none;
+  }
+
+  /* 2. 仅在桌面端 (>= 72rem) 显示并接管右侧固定位置 */
+  @media (min-width: 72rem) {
+    .custom-page-sidebar {
+      display: block;
+      position: fixed;
+      top: var(--sl-nav-height);
+      right: 0;
+      width: var(--sl-sidebar-width);
+      height: calc(100vh - var(--sl-nav-height));
+      overflow-y: auto;
+      padding: 1.5rem 1rem 1.5rem 0.5rem;
+      font-size: var(--sl-text-xs);
+      z-index: 1;
+    }
+  }
+
+  /* outline-marker：2px 宽的竖条，绝对定位在 aside 左边缘（与链接左 border 对齐） */
+  .outline-marker {
+    position: absolute;
+    left: 0.5rem;
+    width: 2px;
+    height: 18px;
+    background: var(--sl-color-text-accent);
+    border-radius: 1px;
+    opacity: 0;
+    transition: top 0.25s cubic-bezier(0, 1, 0.5, 1), opacity 0.25s;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .toc-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    gap: 0.3rem;
+  }
+
+  .toc-title {
+    font-size: var(--sl-text-xs);
+    font-weight: 700;
+    color: var(--sl-color-white);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  .toc-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .sidebar-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background-color: var(--sl-color-gray-6, #f6f6f7);
+    color: var(--sl-color-text-accent, #3451b2);
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .sidebar-action-btn:hover {
+    background-color: var(--sl-color-accent-low, rgba(52, 81, 178, 0.1));
+    border-color: var(--sl-color-text-accent, #3451b2);
+    transform: translateY(-1px);
+  }
+
+  .action-btn-icon {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+
+  .vp-local-nav-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--sl-color-hairline, #e2e2e3);
+  }
+
+  .vp-local-nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .vp-local-nav-btn-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--sl-color-text-accent, #3451b2);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .toc-item {
+    margin: 0;
+    padding: 0;
+  }
+
+  :global(.toc-link) {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    color: var(--sl-color-gray-3);
+    text-decoration: none;
+    transition: all 0.15s ease;
+    line-height: 1.3;
+  }
+
+  :global(.toc-link:hover) {
+    color: var(--sl-color-white);
+    background-color: var(--sl-color-gray-6);
+  }
+
+  :global(.toc-link.active) {
+    color: var(--sl-color-text-accent);
+    font-weight: 600;
+  }
+
+  :global(.toc-chip) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    flex-shrink: 0;
+  }
+
+  :global(.toc-number) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  :global(.toc-heading) {
+    font-size: 0.85em;
+    font-weight: 500;
+    color: var(--sl-color-gray-2);
+  }
+  :global(.toc-heading.toc-level-3) {
+    padding-left: 1.1rem;
+    font-size: 0.8em;
+  }
+  :global(.toc-heading.toc-level-4) {
+    padding-left: 1.7rem;
+    font-size: 0.75em;
+    opacity: 0.85;
+  }
+  :global(.toc-heading.active) {
+    color: var(--sl-color-text-accent);
+    font-weight: 600;
+  }
+
+  .toc-loading {
+    color: var(--sl-color-gray-4);
+    font-style: italic;
+  }
+
+  :global(.chip-example) {
+    background-color: rgba(59, 130, 246, 0.12);
+    color: #3b82f6;
+  }
+  :global(.chip-knowledge) {
+    background-color: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+  }
+  :global(.chip-method) {
+    background-color: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+  }
+  :global(.chip-conclusion) {
+    background-color: rgba(236, 72, 153, 0.12);
+    color: #ec4899;
+  }
+  :global(.chip-summary) {
+    background-color: rgba(100, 116, 139, 0.12);
+    color: #475569;
+  }
+  :global(.chip-problem) {
+    background-color: rgba(139, 92, 246, 0.12);
+    color: #7c3aed;
+  }
+  :global(.chip-default) {
+    background-color: rgba(100, 116, 139, 0.12);
+    color: #475569;
+  }
+</style>
+
+<script>
+  import { initPageSidebar } from './sidebar/toc-generator';
+  import { initMermaid, setupMermaidThemeListener } from './sidebar/mermaid-loader';
+  import { initImageBlur } from './sidebar/image-blur-loader';
+
+  function syncRelationGraphButtonVisibility() {
+    const isShow = localStorage.getItem('astro-show-relation-graph-btn') !== 'false';
+    document.querySelectorAll('.relation-graph-trigger').forEach((btn) => {
+      (btn as HTMLElement).style.display = isShow ? '' : 'none';
+    });
+  }
+
+  function handleInit() {
+    initPageSidebar();
+    syncRelationGraphButtonVisibility();
+    initMermaid();
+    setupMermaidThemeListener();
+    initImageBlur();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', handleInit);
+  } else {
+    handleInit();
+  }
+  document.addEventListener('astro:page-load', handleInit);
+</script>

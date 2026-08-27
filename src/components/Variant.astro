@@ -1,0 +1,42 @@
+---
+import { renderTitleHtml } from '../utils/render-title.mjs';
+import { srcAttrs } from '../utils/src-attrs.mjs';
+const { title } = Astro.props;
+const cleanId = title ? title.trim().replace(/\s+/g, '-') : undefined;
+---
+
+<div class="variant-card toc-chunk" data-title={title} id={cleanId} {...srcAttrs(Astro.props)}>
+  <div class="card-header" set:html={renderTitleHtml(title)}></div>
+  <div class="card-body">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .variant-card {
+    --card-border: #f97316;
+    --card-header-bg: #fff7ed;
+    --card-header-fg: #9a3412;
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    overflow: hidden;
+  }
+  .card-header {
+    background-color: var(--card-header-bg);
+    color: var(--card-header-fg);
+    padding: 0.6rem 1rem;
+    font-weight: bold;
+    border-bottom: 1px solid var(--card-border);
+  }
+  .card-body {
+    padding: 1rem;
+  }
+
+  /* 黑夜主题适配 */
+  :global(html[data-theme='dark']) .variant-card {
+    --card-border: #fb923c;
+    --card-header-bg: rgba(249, 115, 22, 0.16);
+    --card-header-fg: #fdba74;
+  }
+</style>

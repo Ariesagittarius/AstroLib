@@ -1,0 +1,28 @@
+---
+import { renderTitleHtml } from '../utils/render-title.mjs';
+import { srcAttrs } from '../utils/src-attrs.mjs';
+const { title } = Astro.props;
+const cleanId = title ? title.trim().replace(/\s+/g, '-') : undefined;
+---
+
+<div class="fallback-block toc-chunk" data-title={title} id={cleanId} {...srcAttrs(Astro.props)}>
+  <div class="fallback-header" set:html={renderTitleHtml(title)}></div>
+  <div class="fallback-content">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .fallback-block {
+    background-color: var(--sl-color-gray-6);
+    border-left: 4px solid var(--sl-color-gray-4);
+    padding: 0.8rem 1rem;
+    margin: 1.5rem 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .fallback-header {
+    font-weight: bold;
+    color: var(--sl-color-gray-1);
+    margin-bottom: 0.4rem;
+  }
+</style>

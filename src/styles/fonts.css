@@ -1,0 +1,96 @@
+/* ==========================================================================
+   字体系统（Font Presets & Reader Override）
+   --------------------------------------------------------------------------
+   全站字体由 Starlight 的 --sl-font / --sl-font-mono 驱动（默认栈写在
+   vitepress-theme.css 第 96–102 行）。本文件在其后加载，负责：
+
+   1. 「中西文两栏独立选择」作用于【正文】：读者分别挑拉丁段（英文/数字）与中文段（汉字），
+      最终字体栈 = [拉丁段], [中文段] 两条顺序 fallback —— 英文落拉丁段，
+      汉字自动回退到中文段；零 JS、零解析。
+   2. 两条全局变量把「界面/全局字体」与「正文阅读字体」解耦：
+        --font-ui        → 界面（导航/侧栏/大纲），最终映射到 Starlight 的 --sl-font
+        --font-reading   → 正文阅读，作用于 .sl-markdown-content
+   3. 读者通过 <html data-font-latin="…"> 与 <html data-font-cjk="…"> 覆盖：
+        latin: sans | serif | katex
+        cjk:   sans | serif | han-sans | han-serif
+      （选择器见 FontSelectOverride.astro；持久化与迁移见 src/scripts/font-presets.ts）
+       · 思源两档使用 @fontsource 自托管 webfont（unicode-range 按需切片），
+         仅当选中的读者才按需下载对应字形切片；默认系统档位零下载。
+       · katex 档复用 KaTeX 的 KaTeX_Main（Computer Modern 衬线），让正文英文与
+         页面公式同款（仅当 features.katex.enabled 时该 @font-face 才存在，否则回退衬线）。
+
+   加载顺序：本文件位于 astro.config.mjs customCss 数组最后（晚于 vitepress-theme.css），
+   因此它覆盖 --sl-font 的优先级最高。
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. 底层可定制字体段 —— 想单独调英文或中文，只改这里即可
+   -------------------------------------------------------------------------- */
+:root {
+  /* 无衬线拉丁段。
+     说明：拉丁段末尾【不能】放 sans-serif/serif 等通用族。通用族是「终态」回退，会吃掉其后的
+     中文段（浏览器用平台默认字体做系统级回退中文），导致中文字体切换完全无效。
+     因此下面三段一律以具体字体名结尾，让汉字能落到放在其后的中文段（见第 3 节）。 */
+  --font-latin-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial;
+  /* 衬线拉丁段（纯拉丁字符；汉字归中文段处理） */
+  --font-latin-serif: Georgia, 'Times New Roman';
+  /* KaTeX 公式字体段：KaTeX_Main（Computer Modern 衬线），与页面公式同款；缺字体回退常规衬线 */
+  --font-latin-katex: 'KaTeX_Main', 'Times New Roman', Georgia;
+  /* 无衬线中文段（系统字体，零下载） */
+  --font-cjk-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+  /* 衬线中文段（宋体系，系统字体，零下载） */
+  --font-cjk-serif: 'Songti SC', 'STSong', 'SimSun', 'Noto Serif CJK SC', serif;
+}
+
+/* --------------------------------------------------------------------------
+   2. 各段当前值 —— 由 data-font-latin / data-font-cjk 驱动（无属性 = 默认无衬线）
+   -------------------------------------------------------------------------- */
+:root {
+  --font-latin: var(--font-latin-sans);
+  --font-cjk: var(--font-cjk-sans);
+}
+:root[data-font-latin='serif'] {
+  --font-latin: var(--font-latin-serif);
+}
+:root[data-font-latin='katex'] {
+  --font-latin: var(--font-latin-katex);
+}
+:root[data-font-cjk='serif'] {
+  --font-cjk: var(--font-cjk-serif);
+}
+:root[data-font-cjk='han-sans'] {
+  --font-cjk: 'Noto Sans SC Variable', var(--font-cjk-sans);
+}
+:root[data-font-cjk='han-serif'] {
+  --font-cjk: 'Noto Serif SC Variable', var(--font-cjk-serif);
+}
+
+/* --------------------------------------------------------------------------
+   3. 组合字体栈 → --font-ui / --font-reading，并映射到 Starlight / 正文容器
+   -------------------------------------------------------------------------- */
+
+/* 全局界面字体：固定用思源黑体（Noto Sans SC Variable，@fontsource 自托管 webfont），
+   作为导航/侧栏/大纲/底部等所有「非正文组件」的默认字体。
+   它【不随读者选择变化】——字体切换只作用于下方正文阅读字体。 */
+:root {
+  --font-ui: 'Noto Sans SC Variable', var(--font-cjk-sans);
+}
+
+/* 全局界面字体：覆盖 vitepress-theme.css 的 --sl-font（强制高优先级）。 */
+:root,
+:root:not([data-site-theme='starlight']) {
+  --sl-font: var(--font-ui) !important;
+}
+
+/* 正文阅读字体：真正响应读者 <html data-font-latin / data-font-cjk> 的字体栈，
+   顺序 = [拉丁段], [中文段]。这是全站唯一受字体切换影响的位置——字体只改正文、不动全局。
+   注意第 1 节拉丁段末尾【不能】放通用族：通用族会「吃掉」其后的中文段，中文字体切换即失效。 */
+:root {
+  --font-reading: var(--font-latin), var(--font-cjk);
+}
+
+/* 正文阅读字体：与界面分离，作用于文章内容容器（含卡片、表格、引用块）。
+   行内代码/代码块仍走 --sl-font-mono，KaTeX 公式仍走 KaTeX 自带字体，均不受影响。 */
+.sl-markdown-content {
+  font-family: var(--font-reading);
+}

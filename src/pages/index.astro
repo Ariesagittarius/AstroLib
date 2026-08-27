@@ -1,0 +1,768 @@
+---
+import { collections, getAllBooks } from '../config/collections.config.mjs';
+import { features } from '../config/features.config.mjs';
+import { cleanSlug } from '../utils/sidebar.mjs';
+import VpNav from '../components/VpNav.astro';
+import VpFooter from '../components/VpFooter.astro';
+import fs from 'node:fs';
+
+function getEpubUrl(slug: string) {
+  if (!features.epub?.enabled) return null;
+  try {
+    if (fs.existsSync(`public/epub/${slug}.epub`)) {
+      return `/epub/${slug}.epub`;
+    }
+  } catch {}
+  if (features.epub?.config?.releaseBaseUrl) {
+    return `${features.epub.config.releaseBaseUrl}/${slug}.epub`;
+  }
+  return null;
+}
+
+const allBooks = getAllBooks();
+const highSchoolBooks = allBooks.filter(b => b.stage === 'high-school');
+const collegeMathMarks = allBooks.filter(b => b.stage === 'university' && b.subject === 'math');
+const collegeScienceBooks = allBooks.filter(b => b.stage === 'university' && b.subject === 'science');
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AstroLib · 数理教材与教辅数字化文献库</title>
+    <meta name="description" content="AstroLib 理科文献库，收录初高中及大学本科数学、物理教材与教辅，提供结构化章节大纲、KaTeX 公式渲染与离线文献导出。" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      :root {
+        --vp-c-bg: #ffffff;
+        --vp-c-bg-alt: #f6f6f7;
+        --vp-c-bg-soft: #f6f6f7;
+        --vp-c-bg-elv: #ffffff;
+        --vp-c-divider: #e2e2e3;
+        --vp-c-text-1: #3c3c43;
+        --vp-c-text-2: #67676c;
+        --vp-c-text-3: #929295;
+        --vp-c-brand-1: #3451b2;
+        --vp-c-brand-2: #3a5ccc;
+        --vp-c-brand-3: #5672cd;
+        --vp-c-brand-soft: rgba(100, 108, 255, 0.14);
+        --vp-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+        --vp-shadow-2: 0 3px 12px rgba(0, 0, 0, 0.07), 0 1px 4px rgba(0, 0, 0, 0.07);
+        --vp-shadow-3: 0 12px 32px -2px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.04);
+      }
+      :root[data-theme='dark'] {
+        --vp-c-bg: #1b1b1f;
+        --vp-c-bg-alt: #161618;
+        --vp-c-bg-soft: #202127;
+        --vp-c-bg-elv: #202127;
+        --vp-c-divider: #2e2e32;
+        --vp-c-text-1: #dfdfd6;
+        --vp-c-text-2: #98989f;
+        --vp-c-text-3: #6a6a71;
+        --vp-c-brand-1: #a8b1ff;
+        --vp-c-brand-2: #5c73e7;
+        --vp-c-brand-3: #3e63dd;
+        --vp-c-brand-soft: rgba(100, 108, 255, 0.16);
+        --vp-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.24);
+        --vp-shadow-2: 0 3px 12px rgba(0, 0, 0, 0.28), 0 1px 4px rgba(0, 0, 0, 0.24);
+        --vp-shadow-3: 0 12px 32px -2px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.24);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+          'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC Variable', sans-serif;
+        background-color: var(--vp-c-bg);
+        color: var(--vp-c-text-1);
+        -webkit-font-smoothing: antialiased;
+        min-height: 100vh;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .vp-container {
+        max-width: 1152px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+      }
+
+      /* ==========================================================================
+         1. VitePress VPHomeHero 英雄区
+         ========================================================================== */
+      .vp-hero {
+        padding: 4.5rem 0 3rem;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .vp-hero-clip-title {
+        font-size: clamp(2.2rem, 5.5vw, 3.75rem);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+        margin: 0 0 0.5rem;
+        background: linear-gradient(120deg, #bd34fe 30%, #41d1ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .vp-hero-subtitle {
+        font-size: clamp(1.5rem, 3.5vw, 2.25rem);
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        line-height: 1.25;
+        color: var(--vp-c-text-1);
+        margin: 0 0 1.25rem;
+      }
+
+      .vp-hero-tagline {
+        margin: 0 0 2rem;
+        font-size: 1.125rem;
+        line-height: 1.6;
+        color: var(--vp-c-text-2);
+        max-width: 720px;
+      }
+
+      /* VitePress Action Buttons */
+      .vp-hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.85rem;
+        margin-bottom: 2rem;
+      }
+
+      .vp-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 1.25rem;
+        height: 2.5rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        line-height: 1;
+        transition: color 0.25s, border-color 0.25s, background-color 0.25s, transform 0.15s;
+        cursor: pointer;
+        user-select: none;
+      }
+      .vp-btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .vp-btn-brand {
+        background-color: var(--vp-c-brand-1);
+        border: 1px solid var(--vp-c-brand-1);
+        color: #ffffff;
+      }
+      .vp-btn-brand:hover {
+        background-color: var(--vp-c-brand-2);
+        border-color: var(--vp-c-brand-2);
+        color: #ffffff;
+      }
+
+      .vp-btn-alt {
+        background-color: var(--vp-c-bg-soft);
+        border: 1px solid var(--vp-c-divider);
+        color: var(--vp-c-text-1);
+      }
+      .vp-btn-alt:hover {
+        background-color: var(--vp-c-bg-alt);
+        border-color: var(--vp-c-brand-1);
+        color: var(--vp-c-brand-1);
+      }
+
+      /* VitePress Search Box in Hero */
+      .vp-hero-search {
+        width: 100%;
+        max-width: 620px;
+      }
+      .vp-search-form {
+        display: flex;
+        align-items: center;
+        border: 1px solid var(--vp-c-divider);
+        border-radius: 8px;
+        background-color: var(--vp-c-bg-soft);
+        padding: 0.35rem 0.35rem 0.35rem 0.85rem;
+        transition: border-color 0.25s, background-color 0.25s, box-shadow 0.25s;
+      }
+      .vp-search-form:focus-within {
+        border-color: var(--vp-c-brand-1);
+        background-color: var(--vp-c-bg);
+        box-shadow: 0 0 0 3px var(--vp-c-brand-soft);
+      }
+      .vp-search-icon {
+        width: 1.1rem;
+        height: 1.1rem;
+        color: var(--vp-c-text-3);
+        margin-right: 0.65rem;
+        flex-shrink: 0;
+      }
+      .vp-search-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 0.9rem;
+        color: var(--vp-c-text-1);
+        font-family: inherit;
+      }
+      .vp-search-input::placeholder {
+        color: var(--vp-c-text-3);
+      }
+      .vp-search-submit {
+        background-color: var(--vp-c-brand-1);
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        padding: 0.5rem 1.1rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .vp-search-submit:hover {
+        background-color: var(--vp-c-brand-2);
+      }
+
+      .vp-quick-tags {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.75rem;
+        font-size: 0.8125rem;
+      }
+      .vp-tag-label {
+        color: var(--vp-c-text-3);
+      }
+      .vp-quick-tag {
+        color: var(--vp-c-text-2);
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+        background-color: var(--vp-c-bg-soft);
+        border: 1px solid var(--vp-c-divider);
+        transition: color 0.2s, border-color 0.2s;
+      }
+      .vp-quick-tag:hover {
+        color: var(--vp-c-brand-1);
+        border-color: var(--vp-c-brand-1);
+      }
+
+      /* ==========================================================================
+         2. VitePress VPHomeFeatures 核心特性网格
+         ========================================================================== */
+      .vp-features-section {
+        padding: 2.5rem 0 3.5rem;
+        border-top: 1px solid var(--vp-c-divider);
+        border-bottom: 1px solid var(--vp-c-divider);
+      }
+      .vp-features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.25rem;
+      }
+      .vp-feature-card {
+        display: flex;
+        flex-direction: column;
+        padding: 1.5rem;
+        border-radius: 12px;
+        background-color: var(--vp-c-bg-soft);
+        border: 1px solid var(--vp-c-bg-soft);
+        transition: border-color 0.25s, background-color 0.25s, transform 0.2s;
+      }
+      .vp-feature-card:hover {
+        border-color: var(--vp-c-brand-1);
+        background-color: var(--vp-c-bg);
+        transform: translateY(-2px);
+      }
+      .vp-feature-icon-box {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 8px;
+        background-color: var(--vp-c-bg-alt);
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+      }
+      :root[data-theme='dark'] .vp-feature-icon-box {
+        background-color: var(--vp-c-bg);
+      }
+      .vp-feature-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--vp-c-text-1);
+        margin: 0 0 0.5rem;
+      }
+      .vp-feature-details {
+        font-size: 0.875rem;
+        line-height: 1.6;
+        color: var(--vp-c-text-2);
+        margin: 0;
+      }
+
+      /* ==========================================================================
+         3. VitePress 图书分类与精选列表展区
+         ========================================================================== */
+      .catalog-section {
+        padding: 3rem 0 1.5rem;
+      }
+      .section-heading {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--vp-c-divider);
+        padding-bottom: 0.75rem;
+      }
+      .section-title {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        color: var(--vp-c-text-1);
+      }
+      .section-meta {
+        font-size: 0.85rem;
+        color: var(--vp-c-text-3);
+      }
+
+      .book-table {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
+
+      .book-row-item {
+        display: flex;
+        gap: 1.5rem;
+        padding: 1.35rem;
+        border: 1px solid var(--vp-c-divider);
+        border-radius: 8px;
+        background-color: var(--vp-c-bg);
+        box-shadow: var(--vp-shadow-1);
+        transition: border-color 0.25s, box-shadow 0.25s, background-color 0.25s;
+      }
+      .book-row-item:hover {
+        border-color: var(--vp-c-brand-1);
+        box-shadow: var(--vp-shadow-2);
+      }
+
+      .book-cover-col {
+        width: 85px;
+        height: 118px;
+        flex-shrink: 0;
+        background-size: cover;
+        background-position: center;
+        border-radius: 4px;
+        border: 1px solid var(--vp-c-divider);
+        background-color: var(--vp-c-bg-soft);
+        box-shadow: var(--vp-shadow-1);
+      }
+
+      .book-info-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .book-row-header-wrap {
+        display: flex;
+        align-items: baseline;
+        gap: 0.6rem;
+        margin-bottom: 0.4rem;
+        flex-wrap: wrap;
+      }
+      .book-row-title {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 600;
+        line-height: 1.35;
+      }
+      .book-row-title a {
+        color: var(--vp-c-text-1);
+        transition: color 0.2s;
+      }
+      .book-row-title a:hover {
+        color: var(--vp-c-brand-1);
+      }
+
+      /* VitePress VPBadge 胶囊徽章 */
+      .vp-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.1rem 0.5rem;
+        border-radius: 10px;
+        font-size: 0.725rem;
+        font-weight: 500;
+        line-height: 1.4;
+        background-color: var(--vp-c-brand-soft);
+        color: var(--vp-c-brand-1);
+        border: 1px solid transparent;
+      }
+
+      .book-row-meta {
+        font-size: 0.825rem;
+        color: var(--vp-c-text-2);
+        margin-bottom: 0.6rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.85rem;
+      }
+      .meta-field {
+        display: inline-block;
+      }
+      .book-row-desc {
+        margin: 0 0 0.85rem;
+        font-size: 0.875rem;
+        line-height: 1.6;
+        color: var(--vp-c-text-2);
+      }
+
+      .book-actions-col {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-top: auto;
+      }
+      .action-read-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.35rem 0.85rem;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #ffffff;
+        background-color: var(--vp-c-brand-1);
+        border-radius: 6px;
+        transition: background-color 0.2s, transform 0.15s;
+      }
+      .action-read-btn:hover {
+        background-color: var(--vp-c-brand-2);
+        transform: translateY(-1px);
+      }
+      .action-epub-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.3rem 0.75rem;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--vp-c-text-2);
+        border: 1px solid var(--vp-c-divider);
+        border-radius: 6px;
+        background-color: var(--vp-c-bg);
+        transition: border-color 0.2s, color 0.2s, transform 0.15s;
+      }
+      .action-epub-btn:hover {
+        border-color: var(--vp-c-brand-1);
+        color: var(--vp-c-brand-1);
+        transform: translateY(-1px);
+      }
+
+      /* View All Section */
+      .view-all-box {
+        margin: 3rem 0 4rem;
+        padding: 1.75rem 2rem;
+        border: 1px solid var(--vp-c-divider);
+        border-radius: 12px;
+        background-color: var(--vp-c-bg-soft);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1.25rem;
+        box-shadow: var(--vp-shadow-1);
+      }
+      .view-all-text {
+        font-size: 0.95rem;
+        color: var(--vp-c-text-2);
+        max-width: 600px;
+      }
+      .view-all-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.55rem 1.25rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        border: 1px solid var(--vp-c-brand-1);
+        color: var(--vp-c-brand-1);
+        border-radius: 8px;
+        background-color: var(--vp-c-bg);
+        transition: background-color 0.2s, color 0.2s, transform 0.15s;
+      }
+      .view-all-btn:hover {
+        background-color: var(--vp-c-brand-1);
+        color: #ffffff;
+        transform: translateY(-1px);
+      }
+
+      @media (max-width: 640px) {
+        .vp-hero {
+          padding: 3rem 0 2rem;
+        }
+        .book-row-item {
+          flex-direction: column;
+        }
+        .book-cover-col {
+          width: 75px;
+          height: 105px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top Nav -->
+    <VpNav currentPath="/" />
+
+    <main class="vp-container">
+      <!-- 1. VitePress VPHomeHero 英雄区 -->
+      <section class="vp-hero">
+        <h1 class="vp-hero-clip-title">AstroLib</h1>
+        <div class="vp-hero-subtitle">数理教材与教辅数字化文献库</div>
+        <p class="vp-hero-tagline">
+          面向初高中及大学本科理科（数学、物理）核心教材与教辅的结构化数字化整理。依托 LaTeX/KaTeX 规范排版、交叉引用大纲与离线文献导出，服务于学术阅读与教学研讨。
+        </p>
+
+        <!-- Action Buttons -->
+        <div class="vp-hero-actions">
+          <a href="/library/" class="vp-btn vp-btn-brand">
+            进入书目检索 →
+          </a>
+          <a href="/dev/" class="vp-btn vp-btn-alt">
+            项目开发文档
+          </a>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="vp-hero-search">
+          <form action="/library/" method="GET" class="vp-search-form">
+            <svg class="vp-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="8.5" cy="8.5" r="5.5" />
+              <path d="M12.5 12.5L17 17" stroke-linecap="round" />
+            </svg>
+            <input
+              type="text"
+              name="q"
+              class="vp-search-input"
+              placeholder="检索书名、编著者、ISBN 或学科关键词..."
+              autocomplete="off"
+            />
+            <button type="submit" class="vp-search-submit">检索</button>
+          </form>
+
+          <div class="vp-quick-tags">
+            <span class="vp-tag-label">快速索引：</span>
+            <a href="/library/?stage=high-school" class="vp-quick-tag">高中数学</a>
+            <a href="/library/?q=工科数学分析" class="vp-quick-tag">工科数学分析</a>
+            <a href="/library/?q=线性代数" class="vp-quick-tag">线性代数</a>
+            <a href="/library/?q=概率论" class="vp-quick-tag">概率论与数理统计</a>
+            <a href="/library/?q=大学物理" class="vp-quick-tag">大学物理学</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. VitePress VPHomeFeatures 核心特性网格 -->
+      <section class="vp-features-section">
+        <div class="vp-features-grid">
+          <div class="vp-feature-card">
+            <div class="vp-feature-icon-box">📐</div>
+            <h3 class="vp-feature-title">LaTeX/KaTeX 高精排版</h3>
+            <p class="vp-feature-details">
+              全站公式高精度 HTML 渲染，行间公式防溢出与移动端胶囊化支持，并提供公式源码一键拷贝。
+            </p>
+          </div>
+
+          <div class="vp-feature-card">
+            <div class="vp-feature-icon-box">🔗</div>
+            <h3 class="vp-feature-title">知识引用与语义联动</h3>
+            <p class="vp-feature-details">
+              构建期自动提取定理、例题、性质与插图双向锚点，提供浮动卡片预览与无缝跨章节上下文跳转。
+            </p>
+          </div>
+
+          <div class="vp-feature-card">
+            <div class="vp-feature-icon-box">📦</div>
+            <h3 class="vp-feature-title">全书离线 EPUB 导出</h3>
+            <p class="vp-feature-details">
+              全书自动化离线电子书生成管线，完整打包数学公式与结构化组件，完美兼容电子墨水屏阅读器。
+            </p>
+          </div>
+
+          <div class="vp-feature-card">
+            <div class="vp-feature-icon-box">🤖</div>
+            <h3 class="vp-feature-title">AI 知识库问答助手</h3>
+            <p class="vp-feature-details">
+              基于教材语义分块的高精度 RAG 书内知识检索与智能答疑，深度助力自学研讨与难点突破。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Section 1: 高中教材与教辅 -->
+      <section class="catalog-section">
+        <div class="section-heading">
+          <h2 class="section-title">高中教材与教辅</h2>
+          <span class="section-meta">共 {highSchoolBooks.length} 部</span>
+        </div>
+
+        <div class="book-table">
+          {highSchoolBooks.map(book => (
+            <article class="book-row-item">
+              <div class="book-cover-col" style={`background-image: url(${book.cover});`}></div>
+              <div class="book-info-col">
+                <div class="book-row-header-wrap">
+                  <h3 class="book-row-title">
+                    <a href={`/collections/${book.collectionSlug}/${book.slug}/${cleanSlug(book.entryPoint)}/`}>
+                      {book.title}
+                    </a>
+                  </h3>
+                  <span class="vp-badge">高中</span>
+                  <span class="vp-badge">{book.categoryLabel || '教辅'}</span>
+                </div>
+                <div class="book-row-meta">
+                  <span class="meta-field">编著：{book.author}</span>
+                  <span class="meta-field">出版：{book.publisher}</span>
+                  <span class="meta-field">ISBN：{book.isbn}</span>
+                  <span class="meta-field">版次：{book.edition}</span>
+                </div>
+                <p class="book-row-desc">{book.description}</p>
+
+                <div class="book-actions-col">
+                  <a
+                    href={`/collections/${book.collectionSlug}/${book.slug}/${cleanSlug(book.entryPoint)}/`}
+                    class="action-read-btn"
+                  >
+                    阅读章节
+                  </a>
+                  {getEpubUrl(book.slug) && (
+                    <a href={getEpubUrl(book.slug)} class="action-epub-btn" download>
+                      EPUB 下载
+                    </a>
+                  )}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <!-- 4. Section 2: 大学本科数学教材 -->
+      <section class="catalog-section">
+        <div class="section-heading">
+          <h2 class="section-title">大学本科 · 数学教材</h2>
+          <span class="section-meta">共 {collegeMathMarks.length} 部</span>
+        </div>
+
+        <div class="book-table">
+          {collegeMathMarks.map(book => (
+            <article class="book-row-item">
+              <div class="book-cover-col" style={`background-image: url(${book.cover});`}></div>
+              <div class="book-info-col">
+                <div class="book-row-header-wrap">
+                  <h3 class="book-row-title">
+                    <a href={`/collections/${book.collectionSlug}/${book.slug}/${cleanSlug(book.entryPoint)}/`}>
+                      {book.title}
+                    </a>
+                  </h3>
+                  <span class="vp-badge">本科</span>
+                  <span class="vp-badge">{book.categoryLabel || '教材'}</span>
+                </div>
+                <div class="book-row-meta">
+                  <span class="meta-field">著者：{book.author}</span>
+                  <span class="meta-field">出版：{book.publisher}</span>
+                  <span class="meta-field">ISBN：{book.isbn}</span>
+                  <span class="meta-field">版次：{book.edition}</span>
+                </div>
+                <p class="book-row-desc">{book.description}</p>
+
+                <div class="book-actions-col">
+                  <a
+                    href={`/collections/${book.collectionSlug}/${book.slug}/${cleanSlug(book.entryPoint)}/`}
+                    class="action-read-btn"
+                  >
+                    阅读章节
+                  </a>
+                  {getEpubUrl(book.slug) && (
+                    <a href={getEpubUrl(book.slug)} class="action-epub-btn" download>
+                      EPUB 下载
+                    </a>
+                  )}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <!-- 5. Section 3: 大学本科物理教材 -->
+      <section class="catalog-section">
+        <div class="section-heading">
+          <h2 class="section-title">大学本科 · 物理教材</h2>
+          <span class="section-meta">共 {collegeScienceBooks.length} 部</span>
+        </div>
+
+        <div class="book-table">
+          {collegeScienceBooks.map(book => (
+            <article class="book-row-item">
+              <div class="book-cover-col" style={`background-image: url(${book.cover});`}></div>
+              <div class="book-info-col">
+                <div class="book-row-header-wrap">
+                  <h3 class="book-row-title">
+                    <a href={`/collections/${book.collectionSlug}/${book.slug}/${cleanSlug(book.entryPoint)}/`}>
+                      {book.title}
+                    </a>
+                  </h3>
+                  <span class="vp-badge">本科</span>
+                  <span class="vp-badge">{book.categoryLabel || '教材'}</span>
+                </div>
+                <div class="book-row-meta">
+                  <span class="meta-field">著者：{book.author}</span>
+                  <span class="meta-field">出版：{book.publisher}</span>
+                  <span class="meta-field">ISBN：{book.isbn}</span>
+                  <span class="meta-field">版次：{book.edition}</span>
+                </div>
+                <p class="book-row-desc">{book.description}</p>
+
+                <div class="book-actions-col">
+                  <a
+                    href={`/collections/${book.collectionSlug}/${book.slug}/${cleanSlug(book.entryPoint)}/`}
+                    class="action-read-btn"
+                  >
+                    阅读章节
+                  </a>
+                  {getEpubUrl(book.slug) && (
+                    <a href={getEpubUrl(book.slug)} class="action-epub-btn" download>
+                      EPUB 下载
+                    </a>
+                  )}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <!-- 6. Directory Link Footer -->
+      <div class="view-all-box">
+        <div class="view-all-text">
+          AstroLib 收录初高中与大学理科核心文献，支持按学段、资料类型、学科领域与关键词进行多维度细粒度筛选检索。
+        </div>
+        <a href="/library/" class="view-all-btn">
+          进入全部书目分类索引 →
+        </a>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <VpFooter />
+  </body>
+</html>

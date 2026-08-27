@@ -1,0 +1,180 @@
+---
+import config from 'virtual:starlight/user-config';
+
+import LanguageSelect from 'virtual:starlight/components/LanguageSelect';
+import Search from 'virtual:starlight/components/Search';
+import SocialIcons from 'virtual:starlight/components/SocialIcons';
+import ThemeSelect from 'virtual:starlight/components/ThemeSelect';
+
+/**
+ * Render the `Search` component if Pagefind is enabled or default search is overridden.
+ */
+const shouldRenderSearch =
+	config.pagefind || config.components.Search !== '@astrojs/starlight/components/Search.astro';
+---
+
+<div class="vp-header-inner">
+	<!-- Brand & Existing Logo Icon (为手机端侧滑栏按钮留出边距，防止重叠) -->
+	<div class="vp-brand-wrapper">
+		<a href="/" class="vp-brand-link" aria-label="AstroLib 首页">
+			<div class="vp-logo-wrap" aria-hidden="true">
+				<svg class="vp-logo-svg" viewBox="0 0 32 32" fill="none" stroke="currentColor">
+					<path d="M4 22.5C4 22.5 8.5 20.5 16 20.5C23.5 20.5 28 22.5 28 22.5V9.5C28 9.5 23.5 7.5 16 7.5C8.5 7.5 4 9.5 4 9.5V22.5Z" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+					<path d="M16 7.5V20.5" stroke-width="2" stroke-linecap="round"/>
+					<path d="M16 1.5L17.2 5.3L21 6.5L17.2 7.7L16 11.5L14.8 7.7L11 6.5L14.8 5.3L16 1.5Z" fill="currentColor" stroke="none"/>
+				</svg>
+			</div>
+			<span class="vp-site-name">AstroLib</span>
+		</a>
+	</div>
+
+	<!-- Search Trigger -->
+	<div class="vp-search-wrapper print:hidden">
+		{shouldRenderSearch && <Search />}
+	</div>
+
+	<!-- Right Control Group (桌面端完整展示 / 移动端仅挂载大纲按钮) -->
+	<div class="print:hidden vp-right-group right-group">
+		<!-- Group 1: Text Nav Links (桌面端显示) -->
+		<nav class="vp-header-nav-links sl-hidden md:sl-flex" aria-label="快捷导航">
+			<a href="/library/" class="vp-header-link">全部书目</a>
+			<a href="/dev/" class="vp-header-link">开发文档</a>
+		</nav>
+
+		<!-- Divider 1 -->
+		<div class="vp-nav-divider sl-hidden md:sl-block" aria-hidden="true"></div>
+
+		<!-- Group 2: Theme & Settings Controls (桌面端显示) -->
+		<div class="vp-header-theme-group sl-hidden md:sl-flex">
+			<ThemeSelect />
+		</div>
+
+		<!-- Divider 2 -->
+		<div class="vp-nav-divider sl-hidden md:sl-block" aria-hidden="true"></div>
+
+		<!-- Group 3: Social Links (桌面端显示) -->
+		<div class="vp-social-group sl-hidden md:sl-flex">
+			<SocialIcons />
+		</div>
+
+		<div class="sl-hidden md:sl-block">
+			<LanguageSelect />
+		</div>
+	</div>
+</div>
+
+<style>
+	.vp-header-inner {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+		height: 100%;
+		gap: 0.75rem;
+	}
+
+	.vp-brand-wrapper {
+		display: flex;
+		align-items: center;
+		flex-shrink: 0;
+	}
+
+	/* 移动端 (<50rem) 为左侧 fixed 菜单按钮 (0.75rem + 2.5rem) 留足让位，杜绝重叠 */
+	@media (max-width: 49.999rem) {
+		.vp-brand-wrapper {
+			padding-left: 2.85rem;
+		}
+	}
+
+	.vp-brand-link {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		text-decoration: none;
+		color: inherit;
+	}
+	.vp-logo-wrap {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--sl-color-accent, #3451b2);
+	}
+	:global([data-theme='dark']) .vp-logo-wrap {
+		color: var(--sl-color-accent, #a8b1ff);
+	}
+	.vp-logo-svg {
+		width: 1.35rem;
+		height: 1.35rem;
+		flex-shrink: 0;
+	}
+	.vp-site-name {
+		font-size: 1rem;
+		font-weight: 600;
+		letter-spacing: -0.01em;
+		color: var(--sl-color-white, #3c3c43);
+		white-space: nowrap;
+	}
+
+	.vp-search-wrapper {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+		max-width: 16rem;
+		margin-left: 0.25rem;
+		min-width: 0;
+	}
+
+	@media (max-width: 49.999rem) {
+		.vp-search-wrapper {
+			max-width: none;
+			margin-right: 0.25rem;
+		}
+	}
+
+	.vp-right-group {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin-left: auto;
+		flex-shrink: 0;
+	}
+
+	.vp-header-nav-links {
+		display: flex;
+		align-items: center;
+		gap: 0.2rem;
+	}
+	.vp-header-link {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.3rem 0.6rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--sl-color-gray-2);
+		text-decoration: none;
+		border-radius: 6px;
+		transition: color 0.25s, background-color 0.25s;
+		white-space: nowrap;
+	}
+	.vp-header-link:hover {
+		color: var(--sl-color-accent);
+		background-color: var(--sl-color-gray-6);
+	}
+
+	.vp-header-theme-group,
+	.vp-social-group {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	/* 垂直分割线 */
+	.vp-nav-divider {
+		width: 1px;
+		height: 1.15rem;
+		background-color: var(--sl-color-hairline, #e2e2e3);
+		margin: 0 0.1rem;
+		flex-shrink: 0;
+	}
+</style>

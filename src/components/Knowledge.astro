@@ -1,0 +1,41 @@
+---
+import { renderTitleHtml } from '../utils/render-title.mjs';
+import { srcAttrs } from '../utils/src-attrs.mjs';
+const { title } = Astro.props;
+const cleanId = title ? title.trim().replace(/\s+/g, '-') : undefined;
+---
+
+<div class="knowledge-card toc-chunk" data-title={title} id={cleanId} {...srcAttrs(Astro.props)}>
+  <div class="card-header" set:html={renderTitleHtml(title)}></div>
+  <div class="card-body">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .knowledge-card {
+    --knowledge-border: #3b82f6;
+    --knowledge-bg: #eff6ff;
+    --knowledge-header-fg: #1e3a8a;
+    border-left: 4px solid var(--knowledge-border);
+    background-color: var(--knowledge-bg);
+    border-radius: 0 8px 8px 0;
+    margin: 1.5rem 0;
+    padding: 1rem;
+  }
+  .card-header {
+    font-weight: bold;
+    color: var(--knowledge-header-fg);
+    margin-bottom: 0.5rem;
+  }
+  .card-body {
+    padding: 0;
+  }
+
+  /* 黑夜主题适配 */
+  :global(html[data-theme='dark']) .knowledge-card {
+    --knowledge-border: #60a5fa;
+    --knowledge-bg: rgba(59, 130, 246, 0.13);
+    --knowledge-header-fg: #93c5fd;
+  }
+</style>
