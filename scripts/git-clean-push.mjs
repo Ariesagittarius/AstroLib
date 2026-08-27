@@ -236,8 +236,8 @@ async function pushClean(options, repoInfo) {
       console.log(`ℹ️  未产生注释差异，直接使用当前提交: ${strippedCommit.slice(0, 8)}`);
     }
 
-    // 推送到远程公共仓库
-    const forceFlag = options.force ? ' --force' : '';
+    // 推送到远程公共仓库（纯净镜像分支需 --force 覆盖发布）
+    const forceFlag = ' --force';
     const pushCmd = `push ${remote} ${strippedCommit}:refs/heads/${targetBranch}${forceFlag}`;
 
     if (options.dryRun) {
