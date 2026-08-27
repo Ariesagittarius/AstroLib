@@ -1,0 +1,968 @@
+---
+// 书籍模块巡检与结构校验开发工具 · 服务端表现层组件（仅 dev 渲染）
+// -----------------------------------------------------------------------------
+// 目的：在开发期为图书清洗校对提供全书模块索引速查、同章序号冲突、跨章同名聚合、
+// 异常拆分审查与一键跳转定位能力，辅助图书开发者高效纠偏。
+// 挂载：由 FooterOverride.astro 引入，开发时渲染，生产构建零输出。
+// -----------------------------------------------------------------------------
+import { features } from '../config/features.config.mjs';
+const isDev = import.meta.env.DEV;
+---
+
+{
+  features.inspector.enabled && (
+    <div id="dsh-inspector-root" class="insp-root" data-is-dev={isDev ? 'true' : 'false'} aria-label="书籍模块索引与巡检速查工具">
+      <div class="insp-backdrop"></div>
+      <aside class="insp-panel" role="dialog" aria-label="模块巡检抽屉面板">
+        <!-- 头部 -->
+        <header class="insp-header">
+          <div class="insp-header-left">
+            <div class="insp-header-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                <circle cx="12" cy="9.5" r="2.5" />
+                <path d="M14 11.5l2.5 2.5" />
+              </svg>
+            </div>
+            <div class="insp-header-title-box">
+              <div class="insp-header-title-row">
+                <h2 class="insp-header-title">模块索引与速查</h2>
+                {isDev && <span class="insp-header-badge">DEV</span>}
+              </div>
+              <div class="insp-book-select-wrap">
+                <select class="insp-book-select" title="切换当前巡检图书"></select>
+              </div>
+            </div>
+          </div>
+          <div class="insp-header-actions">
+            <button type="button" class="insp-icon-btn insp-refresh-btn" title="重新扫描全书数据 (刷新)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21.5 2v6h-6M21.34 15.57a9 9 0 1 1-.57-8.38l6.73-6.19" />
+              </svg>
+            </button>
+            <button type="button" class="insp-icon-btn insp-close" title="关闭 (Esc)" aria-label="关闭">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <!-- 工具栏：检索与章节筛选 -->
+        <div class="insp-toolbar">
+          <div class="insp-search-box">
+            <svg class="insp-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="8.5" cy="8.5" r="5.5" />
+              <path d="M12.5 12.5L17 17" />
+            </svg>
+            <input type="text" class="insp-search-input" placeholder="检索条目标题、正文片段、章节名或行号..." autocomplete="off" />
+            <button type="button" class="insp-search-clear" title="清空检索" aria-label="清空检索">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <line x1="12" y1="4" x2="4" y2="12" />
+                <line x1="4" y1="4" x2="12" y2="12" />
+              </svg>
+            </button>
+          </div>
+          <div class="insp-chapter-filter-box">
+            <select class="insp-chapter-select" title="筛选所属章节"></select>
+          </div>
+        </div>
+
+        <!-- 视图标签栏 -->
+        <nav class="insp-tabs" aria-label="巡检视图切换">
+          <button type="button" class="insp-tab active" data-tab="all">
+            <span>全量索引</span>
+            <span class="insp-tab-count">0</span>
+          </button>
+          {isDev && (
+            <button type="button" class="insp-tab insp-tab-dev" data-tab="same_chapter_dups" title="同一章节内出现的重名模块（仅开发模式）">
+              <span>同章冲突</span>
+              <span class="insp-tab-count">0</span>
+            </button>
+          )}
+          <button type="button" class="insp-tab" data-tab="all_dups">
+            <span>跨章聚合</span>
+            <span class="insp-tab-count">0</span>
+          </button>
+          {isDev && (
+            <button type="button" class="insp-tab insp-tab-dev" data-tab="suspicious" title="OCR切分异常与清洗审查（仅开发模式）">
+              <span>结构审查</span>
+              <span class="insp-tab-count">0</span>
+            </button>
+          )}
+        </nav>
+
+        <!-- 卡片类型筛选 Chips -->
+        <div class="insp-kind-chips-wrap">
+          <div class="insp-kind-chips"></div>
+        </div>
+
+        <!-- 主体列表容器 -->
+        <main class="insp-body">
+          <div class="insp-list">
+            <div class="insp-empty-state">
+              <div class="insp-loading-spinner" aria-hidden="true"></div>
+              <div class="insp-empty-title">正在扫描全书模块结构...</div>
+              <div class="insp-empty-desc">解析章节卡片并构建索引</div>
+            </div>
+          </div>
+        </main>
+
+        <!-- 底部快捷操作与提示 -->
+        <footer class="insp-footer">
+          <div class="insp-footer-tip">
+            <span class="insp-tip-desktop">快捷键：<kbd>Alt+M</kbd> 展开/收起 · <kbd>Esc</kbd> 关闭</span>
+            <span class="insp-tip-mobile">点击条目即可快速定位直达正文卡片</span>
+          </div>
+          <span class="insp-footer-tag">AstroLib Academic</span>
+        </footer>
+      </aside>
+    </div>
+  )
+}
+
+<style is:global>
+  /* ===== 模块巡检与校验工具全局样式（遵循 VitePress 学术设计系统） ===== */
+  :root {
+    --insp-brand: var(--sl-color-accent, #3451b2);
+    --insp-brand-hover: #3a5ccc;
+    --insp-brand-soft: rgba(52, 81, 178, 0.08);
+    --insp-bg: var(--sl-color-bg, #ffffff);
+    --insp-bg-soft: var(--sl-color-bg-inline-code, #f6f6f7);
+    --insp-bg-mute: #f1f2f4;
+    --insp-text-1: var(--sl-color-white, #3c3c43);
+    --insp-text-2: var(--sl-color-gray-2, #67676c);
+    --insp-text-3: var(--sl-color-gray-3, #929295);
+    --insp-border: var(--sl-color-hairline, #e2e2e3);
+    --insp-shadow: 0 12px 36px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.05);
+    --insp-font-mono: var(--sl-font-mono, ui-monospace, 'Menlo', 'Monaco', monospace);
+  }
+
+  html[data-theme='dark'] {
+    --insp-brand: var(--sl-color-accent, #a8b1ff);
+    --insp-brand-hover: #5c73e7;
+    --insp-brand-soft: rgba(168, 177, 255, 0.12);
+    --insp-bg: var(--sl-color-bg, #1b1b1f);
+    --insp-bg-soft: var(--sl-color-bg-inline-code, #202127);
+    --insp-bg-mute: var(--sl-color-bg-sidebar, #161618);
+    --insp-text-1: var(--sl-color-white, #dfdfd6);
+    --insp-text-2: var(--sl-color-gray-2, #98989f);
+    --insp-text-3: var(--sl-color-gray-3, #6a6a71);
+    --insp-border: var(--sl-color-hairline, #2e2e32);
+    --insp-shadow: 0 16px 48px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  /* 宿主容器（Portal 提升至 document.body，拥有全局最高层叠上下文） */
+  .insp-root {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483002;
+    pointer-events: none;
+    font-family: var(--sl-font, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', sans-serif);
+  }
+  .insp-root * {
+    box-sizing: border-box;
+  }
+
+  /* 遮罩背景：全屏磨砂模糊 */
+  .insp-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.42);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+    z-index: 2147483002;
+  }
+  .insp-open .insp-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* 抽屉面板（右侧滑出，层级高于遮罩与右侧大纲） */
+  .insp-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    height: 100vh;
+    height: 100dvh;
+    width: min(94vw, 620px);
+    background: var(--insp-bg);
+    color: var(--insp-text-1);
+    border-left: 1px solid var(--insp-border);
+    box-shadow: var(--insp-shadow);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    z-index: 2147483003;
+  }
+  .insp-open .insp-panel {
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  /* 头部 */
+  .insp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--insp-border);
+    background: var(--insp-bg);
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .insp-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .insp-header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--insp-brand-soft);
+    color: var(--insp-brand);
+    border: 1px solid var(--insp-border);
+    flex-shrink: 0;
+  }
+  .insp-header-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+  .insp-header-title-box {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .insp-header-title-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .insp-header-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.2;
+    color: var(--insp-text-1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.01em;
+  }
+  .insp-header-badge {
+    font-size: 9.5px;
+    font-weight: 600;
+    padding: 0 4px;
+    border-radius: 4px;
+    background: var(--insp-brand-soft);
+    color: var(--insp-brand);
+    border: 1px solid var(--insp-border);
+    line-height: 1.35;
+  }
+  .insp-book-select-wrap {
+    display: flex;
+    align-items: center;
+  }
+  .insp-book-select {
+    font-size: 11px;
+    color: var(--insp-text-2);
+    background: var(--insp-bg-soft);
+    border: 1px solid var(--insp-border);
+    border-radius: 5px;
+    padding: 2px 6px;
+    cursor: pointer;
+    max-width: 300px;
+    transition: border-color 0.2s;
+  }
+  .insp-book-select:focus {
+    outline: none;
+    border-color: var(--insp-brand);
+  }
+
+  .insp-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .insp-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--insp-text-2);
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+  }
+  .insp-icon-btn:hover {
+    background: var(--insp-bg-soft);
+    color: var(--insp-text-1);
+  }
+  .insp-icon-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+  .insp-refresh-btn.spinning svg {
+    animation: insp-spin 0.75s linear infinite;
+  }
+  @keyframes insp-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* 工具栏 */
+  .insp-toolbar {
+    padding: 10px 14px;
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid var(--insp-border);
+    background: var(--insp-bg);
+    flex-shrink: 0;
+  }
+  .insp-search-box {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+  .insp-search-icon {
+    position: absolute;
+    left: 9px;
+    width: 14px;
+    height: 14px;
+    color: var(--insp-text-3);
+    pointer-events: none;
+  }
+  .insp-search-input {
+    width: 100%;
+    height: 32px;
+    padding: 0 28px 0 30px;
+    font-size: 12px;
+    border: 1px solid var(--insp-border);
+    border-radius: 6px;
+    background: var(--insp-bg-soft);
+    color: var(--insp-text-1);
+    transition: border-color 0.2s, background-color 0.2s;
+  }
+  .insp-search-input:focus {
+    outline: none;
+    border-color: var(--insp-brand);
+    background: var(--insp-bg);
+  }
+  .insp-search-clear {
+    position: absolute;
+    right: 6px;
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: transparent;
+    color: var(--insp-text-3);
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  .insp-search-clear svg {
+    width: 12px;
+    height: 12px;
+  }
+  .insp-search-clear:hover {
+    background: var(--insp-border);
+    color: var(--insp-text-1);
+  }
+  .insp-chapter-filter-box {
+    width: 145px;
+    flex-shrink: 0;
+  }
+  .insp-chapter-select {
+    width: 100%;
+    height: 32px;
+    font-size: 11.5px;
+    padding: 0 6px;
+    border: 1px solid var(--insp-border);
+    border-radius: 6px;
+    background: var(--insp-bg-soft);
+    color: var(--insp-text-1);
+    cursor: pointer;
+  }
+  .insp-chapter-select:focus {
+    outline: none;
+    border-color: var(--insp-brand);
+  }
+
+  /* 视图 Tab 栏 */
+  .insp-tabs {
+    display: flex;
+    padding: 6px 14px 0;
+    gap: 4px;
+    border-bottom: 1px solid var(--insp-border);
+    background: var(--insp-bg);
+    flex-shrink: 0;
+    overflow-x: auto;
+  }
+  .insp-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--insp-text-2);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .insp-tab:hover {
+    color: var(--insp-text-1);
+  }
+  .insp-tab.active {
+    color: var(--insp-brand);
+    border-bottom-color: var(--insp-brand);
+    font-weight: 600;
+  }
+  .insp-tab-count {
+    font-size: 10px;
+    font-family: var(--insp-font-mono);
+    padding: 0.5px 5px;
+    border-radius: 10px;
+    background: var(--insp-bg-soft);
+    border: 1px solid var(--insp-border);
+    color: var(--insp-text-3);
+  }
+  .insp-tab.active .insp-tab-count {
+    background: var(--insp-brand-soft);
+    border-color: transparent;
+    color: var(--insp-brand);
+    font-weight: 600;
+  }
+  .insp-tab-count.danger {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.25);
+    color: #ef4444 !important;
+  }
+
+  /* 类型筛选 Chips */
+  .insp-kind-chips-wrap {
+    padding: 8px 14px 6px;
+    border-bottom: 1px solid var(--insp-border);
+    flex-shrink: 0;
+    background: var(--insp-bg);
+  }
+  .insp-kind-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .insp-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 6px;
+    border: 1px solid var(--insp-border);
+    background: var(--insp-bg-soft);
+    color: var(--insp-text-2);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .insp-chip:hover {
+    border-color: var(--insp-brand);
+    color: var(--insp-brand);
+  }
+  .insp-chip.active {
+    background: var(--insp-brand-soft);
+    border-color: var(--insp-brand);
+    color: var(--insp-brand);
+    font-weight: 600;
+  }
+  .insp-chip-count {
+    font-size: 10px;
+    font-family: var(--insp-font-mono);
+    opacity: 0.8;
+  }
+
+  /* 主体列表区域 */
+  .insp-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 14px;
+    background: var(--insp-bg-soft);
+  }
+  .insp-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .insp-items-count-hint {
+    font-size: 11px;
+    color: var(--insp-text-3);
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* 卡片条目 */
+  .insp-item-row {
+    background: var(--insp-bg);
+    border: 1px solid var(--insp-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    cursor: pointer;
+    transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+  }
+  .insp-item-row:hover {
+    border-color: var(--insp-brand);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transform: translateY(-1px);
+  }
+
+  .insp-item-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .insp-item-badge-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .insp-item-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    border: 1px solid var(--insp-border);
+    background: var(--insp-bg-soft);
+    color: var(--insp-text-2);
+    flex-shrink: 0;
+  }
+  .insp-badge-code {
+    font-family: var(--insp-font-mono);
+    letter-spacing: 0.02em;
+    opacity: 0.85;
+  }
+  .insp-badge-label {
+    font-size: 10px;
+  }
+
+  .insp-item-title {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--insp-text-1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .insp-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .insp-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10.5px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--insp-border);
+    background: var(--insp-bg-soft);
+    color: var(--insp-text-2);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .insp-btn-svg {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+  }
+  .insp-action-btn:hover {
+    border-color: var(--insp-brand);
+    color: var(--insp-brand);
+    background: var(--insp-brand-soft);
+  }
+  .insp-action-jump {
+    background: var(--insp-brand);
+    border-color: var(--insp-brand);
+    color: #fff;
+    font-weight: 500;
+  }
+  html[data-theme='dark'] .insp-action-jump {
+    color: #1b1b1f;
+  }
+  .insp-action-jump:hover {
+    background: var(--insp-brand-hover);
+    color: #fff;
+  }
+
+  /* 审查原因提示 */
+  .insp-item-reasons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .insp-reason-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+  }
+  .insp-reason-svg {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+  }
+
+  /* 正文片段预览 */
+  .insp-item-snippet {
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--insp-text-2);
+    background: var(--insp-bg-soft);
+    padding: 5px 8px;
+    border-radius: 4px;
+    border-left: 2px solid var(--insp-brand);
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 52px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  /* 元信息 */
+  .insp-item-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10.5px;
+    color: var(--insp-text-3);
+    gap: 8px;
+  }
+  .insp-meta-chapter {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 65%;
+  }
+  .insp-meta-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-family: var(--insp-font-mono);
+    white-space: nowrap;
+  }
+  .insp-meta-svg {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+    opacity: 0.75;
+  }
+
+  /* 重复冲突分组样式 */
+  .insp-dup-group {
+    background: var(--insp-bg);
+    border: 1px solid var(--insp-border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .insp-dup-group-head {
+    padding: 8px 12px;
+    background: var(--insp-bg-mute);
+    border-bottom: 1px solid var(--insp-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .insp-dup-group-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .insp-dup-head-svg {
+    width: 13px;
+    height: 13px;
+    color: #ef4444;
+    flex-shrink: 0;
+  }
+  .insp-dup-title-text {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: var(--insp-text-1);
+  }
+  .insp-dup-count-chip {
+    font-size: 9.5px;
+    font-family: var(--insp-font-mono);
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    font-weight: 600;
+  }
+  .insp-dup-chapters-chip {
+    font-size: 9.5px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--insp-brand-soft);
+    color: var(--insp-brand);
+    border: 1px solid var(--insp-border);
+  }
+  .insp-dup-chapter {
+    font-size: 11px;
+    color: var(--insp-text-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .insp-dup-group-body {
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--insp-bg-soft);
+  }
+
+  /* 空状态 */
+  .insp-empty-state {
+    padding: 48px 16px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .insp-empty-svg {
+    width: 32px;
+    height: 32px;
+    color: var(--insp-text-3);
+    margin-bottom: 4px;
+  }
+  .insp-empty-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--insp-text-1);
+  }
+  .insp-empty-desc {
+    font-size: 11.5px;
+    color: var(--insp-text-3);
+  }
+  .insp-loading-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--insp-border);
+    border-top-color: var(--insp-brand);
+    border-radius: 50%;
+    animation: insp-spin 0.7s linear infinite;
+    margin-bottom: 6px;
+  }
+
+  /* 底部状态 */
+  .insp-footer {
+    padding: 8px 14px;
+    background: var(--insp-bg);
+    border-top: 1px solid var(--insp-border);
+    font-size: 11px;
+    color: var(--insp-text-3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .insp-footer-tip kbd {
+    padding: 1px 4px;
+    font-size: 9.5px;
+    font-family: var(--insp-font-mono);
+    background: var(--insp-bg-soft);
+    border: 1px solid var(--insp-border);
+    border-radius: 3px;
+  }
+  .insp-footer-tag {
+    font-size: 9.5px;
+    font-family: var(--insp-font-mono);
+    opacity: 0.6;
+    letter-spacing: 0.04em;
+  }
+
+  /* Toast 浮层提示 */
+  .insp-toast {
+    position: absolute;
+    bottom: 38px;
+    left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: rgba(0, 0, 0, 0.88);
+    color: #ffffff;
+    font-size: 11.5px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 10;
+    white-space: nowrap;
+  }
+  html[data-theme='dark'] .insp-toast {
+    background: rgba(255, 255, 255, 0.92);
+    color: #1b1b1f;
+    font-weight: 500;
+  }
+  .insp-toast-show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ===== 模块跳转波纹脉冲高亮动画 ===== */
+  @keyframes dsh-inspector-pulse-glow {
+    0% {
+      outline: 2px solid var(--insp-brand);
+      outline-offset: 4px;
+      box-shadow: 0 0 0 3px rgba(52, 81, 178, 0.4);
+    }
+    50% {
+      outline: 2px solid var(--insp-brand);
+      outline-offset: 4px;
+      box-shadow: 0 0 0 8px rgba(52, 81, 178, 0.15);
+    }
+    100% {
+      outline: 1px solid transparent;
+      outline-offset: 2px;
+      box-shadow: none;
+    }
+  }
+  .dsh-inspector-pulse {
+    animation: dsh-inspector-pulse-glow 2s ease-out !important;
+  }
+
+  /* ===== 移动端与不同视口响应式适配 ===== */
+  @media (max-width: 48rem) {
+    .insp-panel {
+      width: 100vw;
+      max-width: 100vw;
+      border-left: none;
+    }
+    .insp-header {
+      padding: 10px 12px;
+    }
+    .insp-header-title {
+      font-size: 13px;
+    }
+    .insp-book-select {
+      max-width: 180px;
+      font-size: 11px;
+    }
+    .insp-toolbar {
+      padding: 8px 12px;
+    }
+    .insp-tabs {
+      padding: 4px 12px 0;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .insp-tabs::-webkit-scrollbar {
+      display: none;
+    }
+    .insp-kind-chips-wrap {
+      padding: 6px 12px 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .insp-body {
+      padding: 8px 12px;
+    }
+    .insp-footer {
+      padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+    }
+    .insp-tip-desktop {
+      display: none;
+    }
+    .insp-tip-mobile {
+      display: inline;
+    }
+  }
+
+  @media (min-width: 48.001rem) {
+    .insp-tip-desktop {
+      display: inline;
+    }
+    .insp-tip-mobile {
+      display: none;
+    }
+  }
+
+  /* 极窄屏视口 (< 36rem / 576px) */
+  @media (max-width: 36rem) {
+    .insp-toolbar {
+      flex-direction: column;
+      gap: 6px;
+    }
+    .insp-chapter-filter-box {
+      width: 100%;
+    }
+    .insp-book-select {
+      max-width: 135px;
+    }
+    .insp-item-top {
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .insp-item-actions {
+      margin-left: auto;
+    }
+  }
+</style>
+
+<script>
+  import { initModuleInspector } from '../utils/module-inspector/inspector';
+  try {
+    initModuleInspector();
+  } catch (e) {
+    console.error('[module-inspector] 初始化失败：', e);
+  }
+</script>

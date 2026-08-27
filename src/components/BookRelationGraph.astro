@@ -1,0 +1,993 @@
+---
+// src/components/BookRelationGraph.astro
+// 全书各章节内联关系与知识图谱可视化模态窗（基于 Apache ECharts 5）
+// -----------------------------------------------------------------------------
+// 模块化特性：由 features.config.mjs 中的 relationGraph 控制，
+// 开启时在 FooterOverride.astro 挂载，关闭时零打包、零 DOM 渲染。
+// -----------------------------------------------------------------------------
+import { features } from '../config/features.config.mjs';
+import { collections } from '../config/collections.config.mjs';
+
+const pathname = Astro.url.pathname;
+let currentBook = null;
+let currentCol = null;
+
+for (const col of collections) {
+  const matched = col.books.find(b => pathname.includes(`/collections/${col.slug}/${b.slug}/`));
+  if (matched) {
+    currentCol = col;
+    currentBook = matched;
+    break;
+  }
+}
+
+if (!currentBook) {
+  currentCol = collections[0];
+  currentBook = collections[0].books[0];
+}
+
+const bookKey = `${currentCol.slug}/${currentBook.slug}`;
+const colSlug = currentCol.slug;
+const bookSlug = currentBook.slug;
+---
+
+{
+  features.relationGraph.enabled && (
+    <div id="book-relation-graph-root" class="brg-root" data-feature="relationGraph" data-book-key={bookKey} data-col={colSlug} data-book={bookSlug} aria-label="全书各章节内联关系图谱">
+      <div class="brg-backdrop"></div>
+      <div class="brg-modal" role="dialog" aria-label="全书章节内联关系图谱与知识导图">
+        <!-- 模态窗顶部工具栏 -->
+        <header class="brg-header">
+          <div class="brg-header-left">
+            <span class="brg-header-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="6" r="3"/>
+                <circle cx="6" cy="18" r="3"/>
+                <circle cx="18" cy="12" r="3"/>
+                <line x1="8.59" y1="7.49" x2="15.42" y2="10.51"/>
+                <line x1="8.59" y1="16.51" x2="15.42" y2="13.49"/>
+              </svg>
+            </span>
+            <div class="brg-header-title-box">
+              <h2 class="brg-header-title">{currentBook.title} · 章节内联关系图谱</h2>
+              <div class="brg-header-stats-pill">
+                <span class="brg-stat-tag" id="brg-stat-chapters">0 章节</span>
+                <span class="brg-stat-tag" id="brg-stat-cross-refs">0 跨章引用</span>
+                <span class="brg-stat-tag" id="brg-stat-links">0 关联边</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 视图切换 Tab -->
+          <nav class="brg-nav-tabs" aria-label="图表视图切换">
+            <button type="button" class="brg-tab active" data-view="force">
+              <svg class="brg-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="8.5" y1="7.5" x2="15.5" y2="16.5"/><line x1="8.5" y1="16.5" x2="15.5" y2="7.5"/></svg>
+              <span>拓扑网络</span>
+            </button>
+            <button type="button" class="brg-tab" data-view="circular">
+              <svg class="brg-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 2a10 10 0 0 0-10 10"/></svg>
+              <span>环形依存</span>
+            </button>
+            <button type="button" class="brg-tab" data-view="mindmap">
+              <svg class="brg-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/><path d="M15 5l4 4"/></svg>
+              <span>思维导图</span>
+            </button>
+            <button type="button" class="brg-tab" data-view="matrix">
+              <svg class="brg-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+              <span>关联清单</span>
+            </button>
+          </nav>
+
+          <!-- 工具操作 -->
+          <div class="brg-header-actions">
+            <!-- 视角与层级粒度选择器 -->
+            <select id="brg-scope-select" class="brg-scope-select" title="选择关系网络显示层级与范围" aria-label="图谱层级与视角选择">
+              <option value="all">🌐 全书细分章节</option>
+              <option value="group">📦 按篇章/大章聚合</option>
+              <option value="focus">🎯 聚焦当前章及关联</option>
+              <option value="connected">🔗 仅看有引用的节点</option>
+            </select>
+
+            <div class="brg-search-box">
+              <svg class="brg-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="brg-search-input" class="brg-search-input" placeholder="搜索章节、定理或例题..." autocomplete="off" />
+              <button type="button" id="brg-search-clear" class="brg-search-clear" title="清空搜索">✕</button>
+            </div>
+            <button type="button" id="brg-btn-fullscreen" class="brg-icon-btn" title="切换全屏" aria-label="切换全屏">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            </button>
+            <button type="button" id="brg-btn-close" class="brg-icon-btn brg-close-btn" title="关闭 (Esc)" aria-label="关闭">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <!-- 模态窗主体 -->
+        <div class="brg-body">
+          <!-- 图表画布区域 -->
+          <div class="brg-canvas-wrapper">
+            <div id="brg-echarts-container" class="brg-echarts-container"></div>
+            
+            <!-- 画布左下角浮动操控工具栏 (缩放 / 居中 / 物理碰撞) -->
+            <div id="brg-canvas-toolbar" class="brg-canvas-toolbar" role="toolbar" aria-label="图表缩放与画布控制">
+              <button type="button" id="brg-zoom-in" class="brg-toolbar-btn" title="放大图表 (滚轮或此按钮)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+              </button>
+              <button type="button" id="brg-zoom-out" class="brg-toolbar-btn" title="缩小图表">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+              </button>
+              <button type="button" id="brg-zoom-reset" class="brg-toolbar-btn" title="重置视角并居中适配">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+              </button>
+              <div class="brg-toolbar-divider"></div>
+              <button type="button" id="brg-toggle-physics" class="brg-toolbar-btn active" title="开关拓扑网络物理引力模拟">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              </button>
+            </div>
+
+            <!-- 清单矩阵视图 -->
+            <div id="brg-matrix-container" class="brg-matrix-container" style="display: none;">
+              <div class="brg-matrix-table-wrap">
+                <table class="brg-matrix-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 28%;">章节名称</th>
+                      <th style="width: 14%;">所属分组</th>
+                      <th style="width: 10%;">卡片数</th>
+                      <th style="width: 10%;">被引用度</th>
+                      <th style="width: 10%;">跨章出度</th>
+                      <th style="width: 28%;">主要引用目标</th>
+                    </tr>
+                  </thead>
+                  <tbody id="brg-matrix-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 加载遮罩 -->
+            <div id="brg-loading-mask" class="brg-loading-mask">
+              <div class="brg-spinner"></div>
+              <div class="brg-loading-text">正在分析并生成全书章节关系拓扑...</div>
+            </div>
+          </div>
+
+          <!-- 右侧信息侧栏 -->
+          <aside class="brg-info-panel">
+            <div id="brg-inspector-card" class="brg-inspector-card">
+              <!-- 默认：全书枢纽榜单 -->
+              <div class="brg-default-view">
+                <div class="brg-info-section">
+                  <h3 class="brg-info-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    核心知识枢纽章节
+                  </h3>
+                  <p class="brg-info-desc">被全书其他章节引用频次最高的基石章节：</p>
+                  <ul id="brg-hubs-list" class="brg-hubs-list"></ul>
+                </div>
+
+                <div class="brg-info-section brg-tip-box">
+                  <h4 class="brg-tip-title">图谱交互提示</h4>
+                  <ul class="brg-tip-list">
+                    <li><b>视角放大/缩小</b>：使用左下角工具栏 <kbd>+</kbd>/<kbd>-</kbd> 或鼠标滚轮；</li>
+                    <li><b>大书防混淆</b>：顶部选择<b>“按篇章/大章聚合”</b>或<b>“聚焦当前章”</b>；</li>
+                    <li><b>视图平移与拖拽</b>：拖动画布或节点；双击节点直达原文。</li>
+                  </ul>
+                </div>
+
+                <!-- 前端用户偏好设置面板 -->
+                <div class="brg-info-section brg-pref-box">
+                  <h4 class="brg-tip-title">界面显示偏好</h4>
+                  <label class="brg-pref-label">
+                    <input type="checkbox" id="brg-pref-show-sidebar-btn" checked />
+                    <span>在右侧栏显示 [关系图] 按钮</span>
+                  </label>
+                  <div class="brg-pref-tip">关闭后按钮隐藏，您随时可按 Alt+G 或在此开启。</div>
+                </div>
+              </div>
+
+              <!-- 选中节点详情视图 -->
+              <div class="brg-node-detail-view" style="display: none;">
+                <div class="brg-node-header">
+                  <span id="brg-node-group-badge" class="brg-node-group-badge">第1章</span>
+                  <h3 id="brg-node-title" class="brg-node-title">1.1 集合、映射与函数</h3>
+                </div>
+
+                <div class="brg-node-stats-grid">
+                  <div class="brg-node-stat-item">
+                    <div class="brg-node-stat-num" id="brg-node-card-count">0</div>
+                    <div class="brg-node-stat-label">包含模块</div>
+                  </div>
+                  <div class="brg-node-stat-item">
+                    <div class="brg-node-stat-num" id="brg-node-in-degree">0</div>
+                    <div class="brg-node-stat-label">被外部引用</div>
+                  </div>
+                  <div class="brg-node-stat-item">
+                    <div class="brg-node-stat-num" id="brg-node-out-degree">0</div>
+                    <div class="brg-node-stat-label">引用外部</div>
+                  </div>
+                </div>
+
+                <div class="brg-node-actions">
+                  <a id="brg-node-jump-btn" href="#" class="brg-btn-primary">
+                    <span>前往该章节阅读</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  </a>
+                </div>
+
+                <div class="brg-ref-section">
+                  <h4 class="brg-ref-section-title">
+                    <span class="brg-ref-dot out"></span>
+                    本章引用的外部知识 (出链)
+                  </h4>
+                  <ul id="brg-node-out-refs" class="brg-ref-list"></ul>
+                </div>
+
+                <div class="brg-ref-section">
+                  <h4 class="brg-ref-section-title">
+                    <span class="brg-ref-dot in"></span>
+                    引用本章的其他章节 (入链)
+                  </h4>
+                  <ul id="brg-node-in-refs" class="brg-ref-list"></ul>
+                </div>
+
+                <div class="brg-ref-section">
+                  <h4 class="brg-ref-section-title">
+                    <span class="brg-ref-dot local"></span>
+                    本章核心知识卡片
+                  </h4>
+                  <div id="brg-node-local-cards" class="brg-local-cards-tags"></div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+<style>
+  /* ==========================================================================
+     章节内联关系图谱模态窗 (VitePress 风格)
+     ========================================================================== */
+  .brg-root {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 999999 !important;
+    font-family: var(--sl-font, system-ui, -apple-system, sans-serif);
+  }
+
+  .brg-root.open {
+    display: block;
+  }
+
+  .brg-backdrop {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: brg-fade-in 0.2s ease-out;
+  }
+
+  .brg-modal {
+    position: absolute;
+    inset: 1.5rem;
+    background-color: var(--sl-color-bg, #ffffff);
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    border-radius: 12px;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: brg-scale-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .brg-modal.fullscreen {
+    inset: 0;
+    border-radius: 0;
+    border: none;
+  }
+
+  @keyframes brg-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes brg-scale-in {
+    from { opacity: 0; transform: scale(0.97) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  /* 顶部工具栏 */
+  .brg-header {
+    height: 3.75rem;
+    padding: 0 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--sl-color-hairline, #e2e2e3);
+    background-color: var(--sl-color-bg-nav, #ffffff);
+    flex-shrink: 0;
+  }
+
+  .brg-scope-select {
+    height: 2rem;
+    padding: 0 0.5rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    background-color: var(--sl-color-gray-6, #f6f6f7);
+    color: var(--sl-color-white, #3c3c43);
+    outline: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .brg-scope-select:hover, .brg-scope-select:focus {
+    border-color: var(--sl-color-text-accent, #3451b2);
+    background-color: var(--sl-color-bg, #ffffff);
+  }
+
+  .brg-canvas-toolbar {
+    position: absolute;
+    left: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.25rem;
+    border-radius: 8px;
+    background-color: var(--sl-color-bg, #ffffff);
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  }
+
+  .brg-toolbar-btn {
+    width: 1.85rem;
+    height: 1.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    border: none;
+    background: transparent;
+    color: var(--sl-color-gray-2, #67676c);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .brg-toolbar-btn:hover {
+    background-color: var(--sl-color-gray-6, #f6f6f7);
+    color: var(--sl-color-text-accent, #3451b2);
+  }
+
+  .brg-toolbar-btn.active {
+    color: #d97706;
+  }
+
+  .brg-toolbar-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .brg-toolbar-divider {
+    width: 1px;
+    height: 1.1rem;
+    background-color: var(--sl-color-hairline, #e2e2e3);
+    margin: 0 0.15rem;
+  }
+
+  .brg-pref-box {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    background-color: var(--sl-color-bg, #ffffff);
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+  }
+
+  .brg-pref-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--sl-color-white, #3c3c43);
+    cursor: pointer;
+  }
+
+  .brg-pref-label input {
+    accent-color: var(--sl-color-text-accent, #3451b2);
+    cursor: pointer;
+  }
+
+  .brg-pref-tip {
+    font-size: 0.7rem;
+    color: var(--sl-color-gray-3, #929295);
+    margin-top: 0.35rem;
+    line-height: 1.4;
+  }
+
+  .brg-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .brg-header-icon {
+    width: 2.2rem;
+    height: 2.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background-color: var(--sl-color-accent-low, rgba(52, 81, 178, 0.1));
+    color: var(--sl-color-text-accent, #3451b2);
+    flex-shrink: 0;
+  }
+  .brg-header-icon svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .brg-header-title-box {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .brg-header-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--sl-color-white, #3c3c43);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .brg-header-stats-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.15rem;
+  }
+
+  .brg-stat-tag {
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 0.05rem 0.4rem;
+    border-radius: 4px;
+    background-color: var(--sl-color-gray-6, #f6f6f7);
+    color: var(--sl-color-gray-2, #67676c);
+  }
+
+  /* 视图切换 Tabs */
+  .brg-nav-tabs {
+    display: flex;
+    align-items: center;
+    background-color: var(--sl-color-gray-6, #f6f6f7);
+    padding: 0.2rem;
+    border-radius: 8px;
+    gap: 0.2rem;
+    flex-shrink: 0;
+  }
+
+  .brg-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: none;
+    background: transparent;
+    color: var(--sl-color-gray-2, #67676c);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+  }
+
+  .brg-tab:hover {
+    color: var(--sl-color-white, #3c3c43);
+  }
+
+  .brg-tab.active {
+    background-color: var(--sl-color-bg, #ffffff);
+    color: var(--sl-color-text-accent, #3451b2);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    font-weight: 600;
+  }
+
+  .brg-tab-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* 头部操作栏 */
+  .brg-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .brg-search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .brg-search-icon {
+    position: absolute;
+    left: 0.6rem;
+    width: 14px;
+    height: 14px;
+    color: var(--sl-color-gray-3, #929295);
+    pointer-events: none;
+  }
+
+  .brg-search-input {
+    height: 2rem;
+    width: 13rem;
+    padding: 0 1.8rem 0 2rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    background-color: var(--sl-color-gray-6, #f6f6f7);
+    color: var(--sl-color-white, #3c3c43);
+    outline: none;
+    transition: all 0.15s ease;
+  }
+
+  .brg-search-input:focus {
+    border-color: var(--sl-color-text-accent, #3451b2);
+    background-color: var(--sl-color-bg, #ffffff);
+    width: 16rem;
+  }
+
+  .brg-search-clear {
+    position: absolute;
+    right: 0.5rem;
+    background: transparent;
+    border: none;
+    font-size: 0.8rem;
+    color: var(--sl-color-gray-3, #929295);
+    cursor: pointer;
+    display: none;
+  }
+
+  .brg-icon-btn {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    background-color: var(--sl-color-bg, #ffffff);
+    color: var(--sl-color-gray-2, #67676c);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .brg-icon-btn:hover {
+    color: var(--sl-color-text-accent, #3451b2);
+    border-color: var(--sl-color-text-accent, #3451b2);
+    background-color: var(--sl-color-gray-6, #f6f6f7);
+  }
+
+  .brg-close-btn:hover {
+    color: #e11d48 !important;
+    border-color: #e11d48 !important;
+    background-color: rgba(225, 29, 72, 0.08) !important;
+  }
+
+  .brg-icon-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* 主体区域 */
+  .brg-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .brg-canvas-wrapper {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background-color: var(--sl-color-bg, #ffffff);
+  }
+
+  .brg-echarts-container {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* 矩阵列表视图 */
+  .brg-matrix-container {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    padding: 1rem;
+    box-sizing: border-box;
+  }
+
+  .brg-matrix-table-wrap {
+    background-color: var(--sl-color-bg, #ffffff);
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .brg-matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    text-align: left;
+  }
+
+  .brg-matrix-table th {
+    background-color: var(--sl-color-gray-6, #f6f6f7);
+    color: var(--sl-color-gray-2, #67676c);
+    padding: 0.65rem 0.85rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--sl-color-hairline, #e2e2e3);
+  }
+
+  .brg-matrix-table td {
+    padding: 0.65rem 0.85rem;
+    border-bottom: 1px solid var(--sl-color-hairline, #e2e2e3);
+    color: var(--sl-color-white, #3c3c43);
+    vertical-align: middle;
+  }
+
+  .brg-matrix-table tr:hover td {
+    background-color: var(--sl-color-gray-6, #f6f6f7);
+  }
+
+  .brg-matrix-chap-link {
+    color: var(--sl-color-text-accent, #3451b2);
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .brg-matrix-chap-link:hover {
+    text-decoration: underline;
+  }
+
+  /* 加载遮罩 */
+  .brg-loading-mask {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(255, 255, 255, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    z-index: 10;
+    transition: opacity 0.2s ease;
+  }
+  :global(html[data-theme='dark']) .brg-loading-mask {
+    background-color: rgba(27, 27, 31, 0.85);
+  }
+
+  .brg-loading-mask.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .brg-spinner {
+    width: 2.2rem;
+    height: 2.2rem;
+    border: 3px solid var(--sl-color-gray-5, #e2e2e3);
+    border-top-color: var(--sl-color-text-accent, #3451b2);
+    border-radius: 50%;
+    animation: brg-spin 0.75s linear infinite;
+  }
+
+  @keyframes brg-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .brg-loading-text {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--sl-color-gray-2, #67676c);
+  }
+
+  /* 右侧信息侧栏 */
+  .brg-info-panel {
+    width: 20rem;
+    border-left: 1px solid var(--sl-color-hairline, #e2e2e3);
+    background-color: var(--sl-color-bg-sidebar, #f6f6f7);
+    overflow-y: auto;
+    padding: 1.25rem;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .brg-info-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--sl-color-white, #3c3c43);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.5rem 0;
+  }
+  .brg-info-title svg {
+    width: 14px;
+    height: 14px;
+    color: #d97706;
+  }
+
+  .brg-info-desc {
+    font-size: 0.75rem;
+    color: var(--sl-color-gray-3, #929295);
+    margin: 0 0 0.75rem 0;
+  }
+
+  .brg-hubs-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  :global(.brg-hub-item) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.45rem 0.65rem;
+    background-color: var(--sl-color-bg, #ffffff);
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    border-radius: 6px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  :global(.brg-hub-item:hover) {
+    border-color: var(--sl-color-text-accent, #3451b2);
+    transform: translateX(2px);
+  }
+
+  :global(.brg-hub-name) {
+    font-weight: 500;
+    color: var(--sl-color-white, #3c3c43);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 11rem;
+  }
+
+  :global(.brg-hub-badge) {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    background-color: var(--sl-color-accent-low, rgba(52, 81, 178, 0.1));
+    color: var(--sl-color-text-accent, #3451b2);
+  }
+
+  .brg-tip-box {
+    padding: 0.75rem;
+    border-radius: 8px;
+    background-color: var(--sl-color-bg, #ffffff);
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+  }
+
+  .brg-tip-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin: 0 0 0.4rem 0;
+    color: var(--sl-color-white, #3c3c43);
+  }
+
+  .brg-tip-list {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: 0.72rem;
+    line-height: 1.6;
+    color: var(--sl-color-gray-2, #67676c);
+  }
+
+  /* 节点详情视图 */
+  .brg-node-header {
+    margin-bottom: 1rem;
+  }
+
+  .brg-node-group-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    background-color: var(--sl-color-gray-6, #f6f6f7);
+    color: var(--sl-color-gray-2, #67676c);
+    margin-bottom: 0.3rem;
+  }
+
+  .brg-node-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--sl-color-white, #3c3c43);
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .brg-node-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+  }
+
+  .brg-node-stat-item {
+    background-color: var(--sl-color-bg, #ffffff);
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    border-radius: 6px;
+    padding: 0.5rem 0.2rem;
+    text-align: center;
+  }
+
+  .brg-node-stat-num {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--sl-color-text-accent, #3451b2);
+    line-height: 1.2;
+  }
+
+  .brg-node-stat-label {
+    font-size: 0.65rem;
+    color: var(--sl-color-gray-3, #929295);
+    margin-top: 0.2rem;
+  }
+
+  .brg-node-actions {
+    margin-bottom: 1.25rem;
+  }
+
+  .brg-btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    background-color: var(--sl-color-text-accent, #3451b2);
+    color: #ffffff !important;
+    text-decoration: none !important;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: opacity 0.15s ease;
+    box-sizing: border-box;
+  }
+
+  .brg-btn-primary:hover {
+    opacity: 0.9;
+  }
+
+  .brg-btn-primary svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .brg-ref-section {
+    margin-bottom: 1.25rem;
+  }
+
+  .brg-ref-section-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--sl-color-white, #3c3c43);
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .brg-ref-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+  .brg-ref-dot.out { background-color: #d97706; }
+  .brg-ref-dot.in { background-color: #059669; }
+  .brg-ref-dot.local { background-color: #3451b2; }
+
+  .brg-ref-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    max-height: 9rem;
+    overflow-y: auto;
+  }
+
+  :global(.brg-ref-item) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 4px;
+    background-color: var(--sl-color-bg, #ffffff);
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    color: var(--sl-color-gray-2, #67676c);
+  }
+
+  :global(.brg-ref-link) {
+    color: var(--sl-color-text-accent, #3451b2);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  :global(.brg-ref-tag) {
+    font-size: 0.68rem;
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+    background-color: var(--sl-color-gray-6, #f6f6f7);
+    color: var(--sl-color-gray-2, #67676c);
+  }
+
+  .brg-local-cards-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    max-height: 8rem;
+    overflow-y: auto;
+  }
+
+  :global(.brg-local-card-chip) {
+    font-size: 0.72rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    background-color: var(--sl-color-bg, #ffffff);
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    color: var(--sl-color-gray-2, #67676c);
+    text-decoration: none;
+    transition: all 0.15s ease;
+  }
+  :global(.brg-local-card-chip:hover) {
+    border-color: var(--sl-color-text-accent, #3451b2);
+    color: var(--sl-color-text-accent, #3451b2);
+  }
+
+  @media (max-width: 64rem) {
+    .brg-info-panel {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  import { initRelationGraphClient } from '../utils/relation-graph/relation-graph-client';
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => initRelationGraphClient());
+  } else {
+    initRelationGraphClient();
+  }
+  document.addEventListener('astro:page-load', () => initRelationGraphClient());
+</script>
