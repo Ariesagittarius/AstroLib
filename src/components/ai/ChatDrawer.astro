@@ -1,0 +1,107 @@
+---
+// 表现层：ChatDrawer 抽屉外壳与面板
+---
+
+<button class="ask-fab" type="button" aria-label="AI 提问" title="本书智能问答">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 3a6 6 0 0 1 6 6c0 2.1-1 3.6-2.3 4.8-.6.5-1 1.2-1 2v.5M9 21h6"></path>
+  </svg>
+  <span>AI 提问</span>
+</button>
+
+<div class="ask-panel" role="dialog" aria-label="AI 书内智能问答">
+  <header class="ask-head">
+    <div class="ask-brand">
+      <span class="ask-brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3a6 6 0 0 1 6 6c0 2.1-1 3.6-2.3 4.8-.6.5-1 1.2-1 2v.5M9 21h6"></path>
+        </svg>
+      </span>
+      <div style="min-width:0;">
+        <div class="ask-title">本书智能问答</div>
+        <div class="ask-book"></div>
+      </div>
+    </div>
+    <div class="ask-head-actions">
+      <button class="ask-icon-btn ask-history-btn" type="button" title="历史会话">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 7v5l3 2"></path>
+        </svg>
+      </button>
+      <button class="ask-icon-btn ask-settings-btn" type="button" title="设置（模型 / API Key）">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+      <button class="ask-icon-btn ask-close" type="button" title="关闭" aria-label="关闭">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M18 6 6 18M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="ask-tabs">
+    <div class="ask-tabs-list"></div>
+    <button class="ask-tab-add" type="button" title="新建会话" aria-label="新建会话">＋</button>
+  </div>
+
+  <slot />
+
+  <div class="ask-settings">
+    <div class="ask-settings-head">设置</div>
+
+    <label for="ai-model">模型</label>
+    <div class="ask-row">
+      <select class="ask-model" id="ai-model"></select>
+      <button class="ask-custom-toggle" type="button" title="新增自定义模型">＋</button>
+    </div>
+    <div class="ask-custom-form" hidden>
+      <input class="ask-custom-id" type="text" placeholder="模型 id（如 my-model）" autocomplete="off" />
+      <input class="ask-custom-label" type="text" placeholder="显示名" autocomplete="off" />
+      <input class="ask-custom-ep" type="text" placeholder="OpenAI 兼容端点 URL" autocomplete="off" />
+      <button class="ask-custom-add" type="button">添加自定义模型</button>
+    </div>
+
+    <label for="ai-key">该模型 API Key（只存本机浏览器）</label>
+    <input type="password" class="ask-key" id="ai-key" placeholder="sk-..." autocomplete="off" />
+
+    <label for="ai-ep">端点（可覆盖该模型默认）</label>
+    <input type="text" class="ask-endpoint" id="ai-ep" placeholder="https://.../v1/chat/completions" autocomplete="off" />
+
+    <label for="ai-mode">回答方式</label>
+    <select class="ask-mode" id="ai-mode">
+      <option value="retrieve">检索本书（默认，带来源引用）</option>
+      <option value="discussion">深度讨论（不默认检索，AI 按需查原文）</option>
+    </select>
+    <div class="ask-settings-note" data-mode-note>「检索本书」总是把命中的 topK 片段注入答案；「深度讨论」不注入片段，AI 基于理解与上文深入讲解，需要原文时才按需调用检索工具。</div>
+
+    <label for="ai-topk">检索返回片段 topK</label>
+    <input type="number" class="ask-topk" id="ai-topk" min="1" max="20" step="1" />
+
+    <label for="ai-maxctx">上下文总字符上限（-1 不限制）</label>
+    <input type="number" class="ask-maxctx" id="ai-maxctx" min="-1" step="500" />
+
+    <label for="ai-maxtok">回答最大 token（-1 不限制）</label>
+    <input type="number" class="ask-maxtok" id="ai-maxtok" min="-1" step="64" />
+
+    <label for="ai-src-open">AI 回复与来源链接跳转方式</label>
+    <select class="ask-src-open" id="ai-src-open">
+      <option value="new">新窗口打开（target="_blank"）</option>
+      <option value="same">本页跳转（target="_self"）</option>
+    </select>
+
+    <div class="ask-settings-note">Key / 端点 / 参数仅保存在本机浏览器（localStorage），不落地、不随构建产物暴露。建议服务商侧绑定受限 Key。</div>
+  </div>
+
+  <div class="ask-history">
+    <div class="ask-history-head">
+      <span class="ask-history-title">历史会话</span>
+      <button class="ask-history-new" type="button">＋ 新会话</button>
+    </div>
+    <div class="ask-history-list"></div>
+    <div class="ask-history-empty">暂无历史</div>
+  </div>
+</div>

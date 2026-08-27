@@ -1,0 +1,41 @@
+---
+// AI 书内智能问答主组件 · SSR 壳与表现层组合
+import { features } from '../config/features.config.mjs';
+import { collections } from '../config/collections.config.mjs';
+import ChatDrawer from './ai/ChatDrawer.astro';
+import MessageList from './ai/MessageList.astro';
+import InputBar from './ai/InputBar.astro';
+import './ai/ai-theme.css';
+
+const { enabled = false, config = {} } = features.aiAsk || {};
+if (!enabled) return;
+
+const pathname = Astro.url.pathname;
+let currentBook = null;
+for (const col of collections) {
+  const b = col.books.find((x) => pathname.includes(`/collections/${col.slug}/${x.slug}/`));
+  if (b) { currentBook = b; break; }
+}
+
+const bookList = collections.flatMap((c) =>
+  c.books.map((b) => ({ col: c.slug, book: b.slug, title: b.title }))
+);
+
+const fullConfig = {
+  ...config,
+  bookList,
+};
+const configJson = JSON.stringify(fullConfig);
+const bookTitle = currentBook ? currentBook.title : '';
+---
+
+<ai-ask data-config={configJson} data-book-title={bookTitle} data-feature="aiAsk">
+  <ChatDrawer>
+    <MessageList />
+    <InputBar />
+  </ChatDrawer>
+</ai-ask>
+
+<script>
+  import '../ai/client/chat-controller';
+</script>
