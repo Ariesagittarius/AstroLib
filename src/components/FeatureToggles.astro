@@ -1,16 +1,10 @@
 ---
-// 站点与阅读偏好设置面板（VitePress 现代极简风格 · 面向读者与开发者）
-// -----------------------------------------------------------------------------
-// 挂载：ThemeSelectOverride.astro 在顶栏右侧动作区引入（桌面 header / 移动端抽屉
-// 底部各渲染一个 <starlight-feature-toggles>，各自管理自己的开合与下拉面板）。
-// -----------------------------------------------------------------------------
 import { features } from '../config/features.config.mjs';
 import { siteThemes } from '../config/themes.config.mjs';
 import { CJK_PRESETS, LATIN_PRESETS } from '../scripts/font-presets';
 
 const isDev = import.meta.env.DEV;
 
-// 可在运行时被用户/读者切换的功能
 const RUNTIME_IDS = new Set([
   'theme',
   'fonts',
@@ -48,12 +42,10 @@ const metaJson = JSON.stringify(featureMeta);
     </svg>
   </button>
 
-  <!-- 全局遮罩 (移动端 BottomSheet 遮罩与点击关闭) -->
   <div class="ft-backdrop" aria-hidden="true"></div>
 
-  <!-- 设置面板主体 (移动端向上滑出 Bottom Sheet，桌面端右上角悬浮面板) -->
   <div class="ft-panel" role="dialog" aria-label="偏好与功能设置面板" aria-hidden="true">
-    <!-- 移动端顶部拖拽手柄条 -->
+
     <div class="ft-sheet-handle" aria-hidden="true"></div>
 
     <div class="ft-panel-head">
@@ -67,11 +59,11 @@ const metaJson = JSON.stringify(featureMeta);
     </div>
 
     <div class="ft-panel-body">
-      <!-- 分组一：排版与外观 -->
+
       <div class="ft-section">
         <div class="ft-section-title">排版与外观</div>
         <div class="ft-list">
-          <!-- 1. 字体排版设置 -->
+
           {
             features.fonts.enabled && (
               <div class="ft-group-block">
@@ -89,7 +81,6 @@ const metaJson = JSON.stringify(featureMeta);
                   </div>
                 </div>
 
-                <!-- 中文字体 -->
                 <div class="ft-segment-wrapper">
                   <div class="ft-segment-label">中文字体</div>
                   <div class="ft-segment-track ft-grid-2">
@@ -107,7 +98,6 @@ const metaJson = JSON.stringify(featureMeta);
                   </div>
                 </div>
 
-                <!-- 英文字体 -->
                 <div class="ft-segment-wrapper">
                   <div class="ft-segment-label">英文字体</div>
                   <div class="ft-segment-track ft-grid-3">
@@ -128,7 +118,6 @@ const metaJson = JSON.stringify(featureMeta);
             )
           }
 
-          <!-- 2. UI 界面风格主题 -->
           {
             features.theme.enabled && siteThemes && siteThemes.length > 1 && (
               <div class="ft-group-block">
@@ -162,7 +151,6 @@ const metaJson = JSON.stringify(featureMeta);
             )
           }
 
-          <!-- 3. 主题平滑过渡动画 -->
           <div class="ft-item-row">
             <div class="ft-row-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -187,7 +175,6 @@ const metaJson = JSON.stringify(featureMeta);
             </label>
           </div>
 
-          <!-- 4. 知识引用联动 -->
           <div class="ft-item-row">
             <div class="ft-row-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -210,11 +197,10 @@ const metaJson = JSON.stringify(featureMeta);
         </div>
       </div>
 
-      <!-- 分组二：阅读与知识工具 -->
       <div class="ft-section">
         <div class="ft-section-title">功能与工具</div>
         <div class="ft-list">
-          <!-- 1. AI 智能问答 -->
+
           <div class="ft-item-row">
             <div class="ft-row-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -234,7 +220,6 @@ const metaJson = JSON.stringify(featureMeta);
             </label>
           </div>
 
-          <!-- 2. 章节关系图谱 -->
           <div class="ft-item-row">
             <div class="ft-row-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -258,7 +243,6 @@ const metaJson = JSON.stringify(featureMeta);
             </label>
           </div>
 
-          <!-- 3. Mermaid 图表 -->
           <div class="ft-item-row">
             <div class="ft-row-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -281,7 +265,6 @@ const metaJson = JSON.stringify(featureMeta);
             </label>
           </div>
 
-          <!-- 4. 模块索引与速查 -->
           <div class="ft-group-block">
             <div class="ft-item-row ft-item-row-nested">
               <div class="ft-row-icon">
@@ -316,7 +299,6 @@ const metaJson = JSON.stringify(featureMeta);
             </div>
           </div>
 
-          <!-- 5. EPUB 导出 -->
           <div class="ft-item-row">
             <div class="ft-row-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -340,13 +322,12 @@ const metaJson = JSON.stringify(featureMeta);
         </div>
       </div>
 
-      <!-- 分组三：开发者选项（仅 dev 模式展示） -->
       {
         isDev && (
           <div class="ft-section ft-section-dev">
             <div class="ft-section-title">开发者选项</div>
             <div class="ft-list">
-              <!-- 在线精修 -->
+
               <div class="ft-item-row">
                 <div class="ft-row-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -372,7 +353,6 @@ const metaJson = JSON.stringify(featureMeta);
       }
     </div>
 
-    <!-- 底部状态与重置 -->
     <div class="ft-panel-footer">
       <span class="ft-footer-hint">偏好已自动保存在本地</span>
       <button type="button" class="ft-reset-btn" data-action="reset-defaults" title="恢复所有选项至默认配置">
@@ -382,15 +362,10 @@ const metaJson = JSON.stringify(featureMeta);
   </div>
 </starlight-feature-toggles>
 
-<style is:global>
-  /* ===== 站点与阅读偏好设置面板（VitePress 风格极简设计） ===== */
-
-  /* 页面中由功能开关控制的 [data-feature] 元素在关闭时隐藏 */
-  .dsh-feature-off {
+<style is:global>.dsh-feature-off {
     display: none !important;
   }
 
-  /* 引用联动关闭时：禁用徽章交互，恢复中性展示 */
   .dsh-crossref-off .interactive-badge {
     pointer-events: none !important;
     cursor: default !important;
@@ -398,12 +373,10 @@ const metaJson = JSON.stringify(featureMeta);
     opacity: 0.88;
   }
 
-  /* 移动端全屏防滚动穿透 */
   html.ft-scroll-lock {
     overflow: hidden !important;
   }
 
-  /* 宿主控件 */
   starlight-feature-toggles {
     position: relative;
     display: inline-flex;
@@ -415,7 +388,6 @@ const metaJson = JSON.stringify(featureMeta);
     box-sizing: border-box;
   }
 
-  /* 顶栏与抽屉触发按钮（VitePress 36px/40px 极简图标按钮） */
   starlight-feature-toggles .ft-toggle-btn {
     display: flex;
     align-items: center;
@@ -447,9 +419,6 @@ const metaJson = JSON.stringify(featureMeta);
     height: 1.15rem;
   }
 
-  /* ==========================================================================
-     移动端 Bottom Sheet 模式 (< 800px) —— 独立全屏/底栏 Fragment 体验
-     ========================================================================== */
   @media (max-width: 49.999rem) {
     .ft-backdrop {
       position: fixed;
@@ -531,9 +500,6 @@ const metaJson = JSON.stringify(featureMeta);
     }
   }
 
-  /* ==========================================================================
-     桌面端 Popover 浮层模式 (>= 800px)
-     ========================================================================== */
   @media (min-width: 50rem) {
     .ft-backdrop,
     .ft-sheet-handle {
@@ -578,7 +544,6 @@ const metaJson = JSON.stringify(featureMeta);
     }
   }
 
-  /* 面板头部 */
   .ft-panel-head {
     display: flex;
     align-items: center;
@@ -621,7 +586,6 @@ const metaJson = JSON.stringify(featureMeta);
     background-color: var(--sl-color-gray-6);
   }
 
-  /* 面板主体内容区 */
   .ft-panel-body {
     padding: 12px 14px;
     overflow-y: auto;
@@ -641,7 +605,6 @@ const metaJson = JSON.stringify(featureMeta);
     }
   }
 
-  /* 极简精致滚动条 */
   .ft-panel-body::-webkit-scrollbar {
     width: 4px;
   }
@@ -650,7 +613,6 @@ const metaJson = JSON.stringify(featureMeta);
     border-radius: 4px;
   }
 
-  /* 分组 */
   .ft-section {
     display: flex;
     flex-direction: column;
@@ -671,7 +633,6 @@ const metaJson = JSON.stringify(featureMeta);
     gap: 2px;
   }
 
-  /* 单行特性项（无多余边框卡片堆叠，清爽 VitePress 列表行） */
   .ft-item-row {
     display: flex;
     align-items: center;
@@ -693,7 +654,6 @@ const metaJson = JSON.stringify(featureMeta);
     background-color: transparent;
   }
 
-  /* 复合组（字体与主题、巡检组合） */
   .ft-group-block {
     display: flex;
     flex-direction: column;
@@ -713,7 +673,6 @@ const metaJson = JSON.stringify(featureMeta);
     gap: 10px;
   }
 
-  /* 极简单色行图标（无高饱和度彩块背景） */
   .ft-row-icon {
     display: flex;
     align-items: center;
@@ -729,7 +688,6 @@ const metaJson = JSON.stringify(featureMeta);
     height: 15px;
   }
 
-  /* 行信息 */
   .ft-row-info {
     flex: 1;
     min-width: 0;
@@ -757,7 +715,6 @@ const metaJson = JSON.stringify(featureMeta);
     color: var(--sl-color-gray-3);
   }
 
-  /* 极简徽章 */
   .ft-badge {
     font-size: 9.5px;
     font-weight: 500;
@@ -773,7 +730,6 @@ const metaJson = JSON.stringify(featureMeta);
     border-color: var(--sl-color-gray-5);
   }
 
-  /* ===== 分段选择器（Segmented Control · VitePress 胶囊切换） ===== */
   .ft-segment-wrapper {
     display: flex;
     flex-direction: column;
@@ -840,7 +796,6 @@ const metaJson = JSON.stringify(featureMeta);
     text-overflow: ellipsis;
   }
 
-  /* 字体族预设 */
   .ft-cjk-sans { font-family: var(--font-cjk-sans, sans-serif); }
   .ft-cjk-serif { font-family: var(--font-cjk-serif, serif); }
   .ft-cjk-han-sans { font-family: 'Noto Sans SC Variable', sans-serif; }
@@ -849,7 +804,6 @@ const metaJson = JSON.stringify(featureMeta);
   .ft-latin-serif { font-family: var(--font-latin-serif, serif); }
   .ft-latin-katex { font-family: var(--font-latin-katex, KaTeX_Main, serif); }
 
-  /* 巡检抽屉唤起按钮 */
   .ft-inspector-action-row {
     padding-left: 30px;
   }
@@ -882,7 +836,6 @@ const metaJson = JSON.stringify(featureMeta);
     background-color: var(--sl-color-gray-6);
   }
 
-  /* ===== VitePress 标准 Switch 开关 ===== */
   .ft-switch {
     position: relative;
     display: inline-block;
@@ -941,7 +894,6 @@ const metaJson = JSON.stringify(featureMeta);
     outline-offset: 2px;
   }
 
-  /* 面板底部工具栏 */
   .ft-panel-footer {
     display: flex;
     align-items: center;
@@ -980,12 +932,10 @@ const metaJson = JSON.stringify(featureMeta);
   }
 </style>
 
-<script>
-  import { initFeatureToggles } from '../scripts/feature-toggles';
+<script>import { initFeatureToggles } from '../scripts/feature-toggles';
   try {
     initFeatureToggles();
   } catch (e) {
     console.error('[feature-toggles] 初始化失败：', e);
   }
 </script>
-

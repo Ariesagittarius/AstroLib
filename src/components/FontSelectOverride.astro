@@ -1,27 +1,4 @@
 ---
-// 字体选择器（中西文两栏 · 思源黑体/宋体为自托管 webfont，其余为系统栈）
-// -----------------------------------------------------------------------------
-// Starlight 没有给「header 额外控件」预留槽位，因此本组件作为 ThemeSelectOverride
-// 的兄弟组件嵌入同一个 ThemeSelect 槽位：
-//   · 桌面端 → header 右侧动作区（与主题切换并列）
-//   · 移动端 → 左侧抽屉底部 MobileMenuFooter（主题/语言切换同一行）
-//
-// 交互（两栏独立选择）：
-//   · 面板分左右两栏：左「中文字体」右「英文字体」，各自独立选择，互不影响。
-//   · 中文字体：系统无衬线 / 系统宋体 / 思源黑体 / 思源宋体。
-//   · 英文字体：无衬线 / 衬线 / KaTeX 公式字体（KaTeX_Main，Computer Modern 衬线，
-//     与页面公式同款）。
-//   · 选择后写 localStorage 'starlight-font'（JSON { latin, cjk }），并分别置
-//     <html data-font-latin> / <html data-font-cjk>（字体栈组合见 fonts.css）。
-//   · 与 ThemeSelectOverride 的 web-component 模式一致，不引入任何新依赖。
-// 存储：默认 { latin:'sans', cjk:'sans' }（零下载）；思源两档由 @font-face（unicode-range
-//   按需切片）驱动，仅当选中的读者才会按需下载对应字形切片；选中某思源档选项时同样会
-//   触发该档字形按需加载，属预期行为。
-// 复用：偏好逻辑（解析/迁移/读写/apply）集中在 src/scripts/font-presets.ts，
-//   与 feature-toggles.ts 的字体开关共用同一套。
-// 自托管思源 webfont（@fontsource-variable/noto-sans-sc、noto-serif-sc）已由
-//   astro.config.mjs 在 features.fonts.enabled 时通过 customCss 引入，本组件【不再 import 它们】。
-// -----------------------------------------------------------------------------
 import { LATIN_PRESETS, CJK_PRESETS } from '../scripts/font-presets';
 ---
 
@@ -80,14 +57,12 @@ import { LATIN_PRESETS, CJK_PRESETS } from '../scripts/font-presets';
   </div>
 </starlight-font-select>
 
-<style>
-  .vp-font-switch {
+<style>.vp-font-switch {
     position: relative;
     display: flex;
     align-items: center;
   }
 
-  /* Aa 图标按钮：对齐 ThemeSelect / FeatureToggles 的 VitePress 40px 圆形图标按钮 */
   .vp-font-btn {
     display: flex;
     align-items: center;
@@ -112,9 +87,6 @@ import { LATIN_PRESETS, CJK_PRESETS } from '../scripts/font-presets';
     outline-offset: 1px;
   }
 
-  /* Aa 字形图标：大 A + 小 a 基线错落，颜色跟随按钮 currentColor。
-     字体例外项：顶栏「字体图标」不随全局 UI 的思源黑体、也不随读者正文偏好变化，
-     固定用中性的系统拉丁字形作为「切换字体」的通用视觉标示。 */
   .vp-font-icon {
     display: inline-flex;
     align-items: baseline;
@@ -131,7 +103,6 @@ import { LATIN_PRESETS, CJK_PRESETS } from '../scripts/font-presets';
     font-size: 0.72rem;
   }
 
-  /* 下拉 panel：右对齐、VitePress 卡片观感（两栏时加宽，对齐 FeatureToggles .ft-panel） */
   .vp-font-panel {
     position: absolute;
     top: calc(100% + 0.5rem);
@@ -159,7 +130,6 @@ import { LATIN_PRESETS, CJK_PRESETS } from '../scripts/font-presets';
     opacity: 0.8;
   }
 
-  /* 两栏布局：左中文、右英文，中间细分隔线 */
   .vp-font-cols {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -210,7 +180,6 @@ import { LATIN_PRESETS, CJK_PRESETS } from '../scripts/font-presets';
     outline-offset: -2px;
   }
 
-  /* 勾选占位：当前选中项显示对勾 */
   .vp-font-check {
     display: inline-flex;
     align-items: center;
@@ -225,8 +194,6 @@ import { LATIN_PRESETS, CJK_PRESETS } from '../scripts/font-presets';
     content: '✓';
   }
 
-  /* 每个选项用对应字体本身渲染标签，直观展示档位效果：
-     中文字体（cjk 栏）按中文段字体预览；英文字体（latin 栏）按拉丁段字体预览。 */
   .vp-font-col[data-col='cjk'] .vp-font-option[data-value='sans'] .vp-font-option-text,
   .vp-font-col[data-col='latin'] .vp-font-option[data-value='sans'] .vp-font-option-text {
     font-family: var(--font-latin-sans), var(--font-cjk-sans);
@@ -249,7 +216,6 @@ import { LATIN_PRESETS, CJK_PRESETS } from '../scripts/font-presets';
     line-height: 1.4;
   }
 
-  /* 窄屏：两栏过宽时改为上下分栏，保持可读 */
   @media (max-width: 30rem) {
     .vp-font-panel {
       width: min(88vw, 18rem);
@@ -264,8 +230,7 @@ import { LATIN_PRESETS, CJK_PRESETS } from '../scripts/font-presets';
   }
 </style>
 
-<script>
-  import {
+<script>import {
     LATIN_PRESETS,
     CJK_PRESETS,
     loadFontPref,
@@ -276,16 +241,15 @@ import { LATIN_PRESETS, CJK_PRESETS } from '../scripts/font-presets';
     type CjkFont,
   } from '../scripts/font-presets';
 
-  /** 任意值 → 合法拉丁档（非法回退 'sans'） */
   const parseLatin = (v: unknown): LatinFont =>
     LATIN_PRESETS.some((p) => p.value === v) ? (v as LatinFont) : 'sans';
-  /** 任意值 → 合法中文档（非法回退 'sans'） */
+
   const parseCjk = (v: unknown): CjkFont =>
     CJK_PRESETS.some((p) => p.value === v) ? (v as CjkFont) : 'sans';
 
   class StarlightFontSelect extends HTMLElement {
     connectedCallback() {
-      // 挂载即同步（含首次加载与 SPA 导航后重新插入的场景）
+
       const pref = loadFontPref();
       applyFontPref(pref);
       this.syncSelected(pref);
@@ -297,17 +261,15 @@ import { LATIN_PRESETS, CJK_PRESETS } from '../scripts/font-presets';
 
       btn?.addEventListener('click', () => this.toggle(panel));
 
-      // 中文字体（cjk 栏）
       this.querySelectorAll<HTMLButtonElement>('.vp-font-option[data-setting="cjk"]').forEach((opt) => {
         opt.addEventListener('click', () => this.applyOne('cjk', parseCjk(opt.dataset.value)));
       });
-      // 英文字体（latin 栏）
+
       this.querySelectorAll<HTMLButtonElement>('.vp-font-option[data-setting="latin"]').forEach((opt) => {
         opt.addEventListener('click', () => this.applyOne('latin', parseLatin(opt.dataset.value)));
       });
     }
 
-    /** 选择某一栏后：读写偏好 + 应用到页面 + 同步所有实例。两栏独立，故选择后不收起面板。 */
     applyOne(kind: 'latin' | 'cjk', value: LatinFont | CjkFont): void {
       const pref = loadFontPref();
       const next: FontPref = kind === 'latin' ? { ...pref, latin: value as LatinFont } : { ...pref, cjk: value as CjkFont };
@@ -316,14 +278,12 @@ import { LATIN_PRESETS, CJK_PRESETS } from '../scripts/font-presets';
       this.syncAll(next);
     }
 
-    /** 同步所有实例的高亮选中态。 */
     private syncAll(pref: FontPref): void {
       document
         .querySelectorAll<StarlightFontSelect>('starlight-font-select')
         .forEach((el) => el.syncSelected(pref));
     }
 
-    /** 展开/收起面板；展开时关闭其它实例，保证同时只有一个面板打开。 */
     toggle(panel?: HTMLElement | null): void {
       document
         .querySelectorAll<StarlightFontSelect>('starlight-font-select')
@@ -339,7 +299,6 @@ import { LATIN_PRESETS, CJK_PRESETS } from '../scripts/font-presets';
       this.querySelector<HTMLButtonElement>('.vp-font-btn')?.setAttribute('aria-expanded', 'false');
     }
 
-    /** 高亮当前选中档（两栏各自独立判断）。 */
     syncSelected(pref: FontPref): void {
       this.querySelectorAll<HTMLButtonElement>('.vp-font-option').forEach((opt) => {
         const setting = opt.dataset.setting;
@@ -350,14 +309,10 @@ import { LATIN_PRESETS, CJK_PRESETS } from '../scripts/font-presets';
     }
   }
 
-  // 组件的 <script> 由 Astro 按模块去重、每页仅注入一次；仍加守卫以双保险
-  // （桌面 header 与移动抽屉各渲染一个 <starlight-font-select> 实例）。
   if (!customElements.get('starlight-font-select')) {
     customElements.define('starlight-font-select', StarlightFontSelect);
   }
 
-  // 文档级关闭：点击外部 / Escape，全局只注册一次；内部实时查询当前展开的实例。
-  // 在自定义元素上注册，避免其它框架在同一 document 上的 click 监听互相干扰。
   if (!window.__vpFontDocHandlers) {
     window.__vpFontDocHandlers = true;
     document.addEventListener('click', (e) => {

@@ -284,9 +284,6 @@ export function tameInlineMathWhenReady(): void {
   }
 }
 
-/**
- * 每次导航初始化入口
- */
 export function initPageSidebar(): void {
   formatMultipleChoiceQuestions();
 

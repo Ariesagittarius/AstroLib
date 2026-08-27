@@ -154,7 +154,6 @@ function renderInline(s: string, openNew = true): string {
   const rel = openNew ? 'rel="noopener"' : '';
   const placeholders: string[] = [];
 
-  // 1. Markdown 链接 [text](url) -> 转换为 <a> 标签并暂存占位符（避免被步 2 裸 URL 正则二次替换）
   s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, text, url) => {
     const href = safeLink(url);
     if (!href) return esc(`[${text}](${url})`);
@@ -163,7 +162,6 @@ function renderInline(s: string, openNew = true): string {
     return `___LINK_PLACEHOLDER_${placeholders.length - 1}___`;
   });
 
-  // 2. 裸路径/各类畸形 collections 链接（含 https://collections/...、//collections/...、/collections/...）
   s = s.replace(/(^|[^\w"'/=])((?:https?:)?\/\/[^\s<>"']*collections\/[^\s<>"']+|\/?collections\/[^\s<>"']+)/gi, (fullMatch, prefix, rawUrl) => {
     const href = safeLink(rawUrl);
     if (!href) return fullMatch;
@@ -172,13 +170,11 @@ function renderInline(s: string, openNew = true): string {
     return `${prefix}___LINK_PLACEHOLDER_${placeholders.length - 1}___`;
   });
 
-  // 3. 行内基础 Markdown 格式
   s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
   s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
 
-  // 4. 还原所有链接占位符
   s = s.replace(/___LINK_PLACEHOLDER_(\d+)___/g, (_m, idx) => placeholders[Number(idx)]);
 
   return s;

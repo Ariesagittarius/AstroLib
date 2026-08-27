@@ -1,10 +1,4 @@
 ---
-// src/components/BookRelationGraph.astro
-// 全书各章节内联关系与知识图谱可视化模态窗（基于 Apache ECharts 5）
-// -----------------------------------------------------------------------------
-// 模块化特性：由 features.config.mjs 中的 relationGraph 控制，
-// 开启时在 FooterOverride.astro 挂载，关闭时零打包、零 DOM 渲染。
-// -----------------------------------------------------------------------------
 import { features } from '../config/features.config.mjs';
 import { collections } from '../config/collections.config.mjs';
 
@@ -36,7 +30,7 @@ const bookSlug = currentBook.slug;
     <div id="book-relation-graph-root" class="brg-root" data-feature="relationGraph" data-book-key={bookKey} data-col={colSlug} data-book={bookSlug} aria-label="全书各章节内联关系图谱">
       <div class="brg-backdrop"></div>
       <div class="brg-modal" role="dialog" aria-label="全书章节内联关系图谱与知识导图">
-        <!-- 模态窗顶部工具栏 -->
+
         <header class="brg-header">
           <div class="brg-header-left">
             <span class="brg-header-icon" aria-hidden="true">
@@ -58,7 +52,6 @@ const bookSlug = currentBook.slug;
             </div>
           </div>
 
-          <!-- 视图切换 Tab -->
           <nav class="brg-nav-tabs" aria-label="图表视图切换">
             <button type="button" class="brg-tab active" data-view="force">
               <svg class="brg-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="8.5" y1="7.5" x2="15.5" y2="16.5"/><line x1="8.5" y1="16.5" x2="15.5" y2="7.5"/></svg>
@@ -78,9 +71,8 @@ const bookSlug = currentBook.slug;
             </button>
           </nav>
 
-          <!-- 工具操作 -->
           <div class="brg-header-actions">
-            <!-- 视角与层级粒度选择器 -->
+
             <select id="brg-scope-select" class="brg-scope-select" title="选择关系网络显示层级与范围" aria-label="图谱层级与视角选择">
               <option value="all">🌐 全书细分章节</option>
               <option value="group">📦 按篇章/大章聚合</option>
@@ -102,13 +94,11 @@ const bookSlug = currentBook.slug;
           </div>
         </header>
 
-        <!-- 模态窗主体 -->
         <div class="brg-body">
-          <!-- 图表画布区域 -->
+
           <div class="brg-canvas-wrapper">
             <div id="brg-echarts-container" class="brg-echarts-container"></div>
-            
-            <!-- 画布左下角浮动操控工具栏 (缩放 / 居中 / 物理碰撞) -->
+
             <div id="brg-canvas-toolbar" class="brg-canvas-toolbar" role="toolbar" aria-label="图表缩放与画布控制">
               <button type="button" id="brg-zoom-in" class="brg-toolbar-btn" title="放大图表 (滚轮或此按钮)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
@@ -125,7 +115,6 @@ const bookSlug = currentBook.slug;
               </button>
             </div>
 
-            <!-- 清单矩阵视图 -->
             <div id="brg-matrix-container" class="brg-matrix-container" style="display: none;">
               <div class="brg-matrix-table-wrap">
                 <table class="brg-matrix-table">
@@ -144,17 +133,15 @@ const bookSlug = currentBook.slug;
               </div>
             </div>
 
-            <!-- 加载遮罩 -->
             <div id="brg-loading-mask" class="brg-loading-mask">
               <div class="brg-spinner"></div>
               <div class="brg-loading-text">正在分析并生成全书章节关系拓扑...</div>
             </div>
           </div>
 
-          <!-- 右侧信息侧栏 -->
           <aside class="brg-info-panel">
             <div id="brg-inspector-card" class="brg-inspector-card">
-              <!-- 默认：全书枢纽榜单 -->
+
               <div class="brg-default-view">
                 <div class="brg-info-section">
                   <h3 class="brg-info-title">
@@ -174,7 +161,6 @@ const bookSlug = currentBook.slug;
                   </ul>
                 </div>
 
-                <!-- 前端用户偏好设置面板 -->
                 <div class="brg-info-section brg-pref-box">
                   <h4 class="brg-tip-title">界面显示偏好</h4>
                   <label class="brg-pref-label">
@@ -185,7 +171,6 @@ const bookSlug = currentBook.slug;
                 </div>
               </div>
 
-              <!-- 选中节点详情视图 -->
               <div class="brg-node-detail-view" style="display: none;">
                 <div class="brg-node-header">
                   <span id="brg-node-group-badge" class="brg-node-group-badge">第1章</span>
@@ -246,11 +231,7 @@ const bookSlug = currentBook.slug;
   )
 }
 
-<style>
-  /* ==========================================================================
-     章节内联关系图谱模态窗 (VitePress 风格)
-     ========================================================================== */
-  .brg-root {
+<style>.brg-root {
     display: none;
     position: fixed;
     inset: 0;
@@ -300,7 +281,6 @@ const bookSlug = currentBook.slug;
     to { opacity: 1; transform: scale(1) translateY(0); }
   }
 
-  /* 顶部工具栏 */
   .brg-header {
     height: 3.75rem;
     padding: 0 1.25rem;
@@ -467,7 +447,6 @@ const bookSlug = currentBook.slug;
     color: var(--sl-color-gray-2, #67676c);
   }
 
-  /* 视图切换 Tabs */
   .brg-nav-tabs {
     display: flex;
     align-items: center;
@@ -510,7 +489,6 @@ const bookSlug = currentBook.slug;
     height: 14px;
   }
 
-  /* 头部操作栏 */
   .brg-header-actions {
     display: flex;
     align-items: center;
@@ -594,7 +572,6 @@ const bookSlug = currentBook.slug;
     height: 14px;
   }
 
-  /* 主体区域 */
   .brg-body {
     flex: 1;
     display: flex;
@@ -614,7 +591,6 @@ const bookSlug = currentBook.slug;
     height: 100%;
   }
 
-  /* 矩阵列表视图 */
   .brg-matrix-container {
     width: 100%;
     height: 100%;
@@ -666,7 +642,6 @@ const bookSlug = currentBook.slug;
     text-decoration: underline;
   }
 
-  /* 加载遮罩 */
   .brg-loading-mask {
     position: absolute;
     inset: 0;
@@ -707,7 +682,6 @@ const bookSlug = currentBook.slug;
     color: var(--sl-color-gray-2, #67676c);
   }
 
-  /* 右侧信息侧栏 */
   .brg-info-panel {
     width: 20rem;
     border-left: 1px solid var(--sl-color-hairline, #e2e2e3);
@@ -809,7 +783,6 @@ const bookSlug = currentBook.slug;
     color: var(--sl-color-gray-2, #67676c);
   }
 
-  /* 节点详情视图 */
   .brg-node-header {
     margin-bottom: 1rem;
   }
@@ -981,8 +954,7 @@ const bookSlug = currentBook.slug;
   }
 </style>
 
-<script>
-  import { initRelationGraphClient } from '../utils/relation-graph/relation-graph-client';
+<script>import { initRelationGraphClient } from '../utils/relation-graph/relation-graph-client';
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => initRelationGraphClient());

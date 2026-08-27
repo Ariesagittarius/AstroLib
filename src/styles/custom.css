@@ -1,11 +1,3 @@
-/* ==========================================================================
-   UI 样式表
-   ========================================================================== */
-
-/* --------------------------------------------------------------------------
-   1. 数学公式排版优化：让行间公式在超出边界时支持横向滚动，防止溢出或截断
-   -------------------------------------------------------------------------- */
-
 .katex-display {
   width: 100%;
   max-width: 100%;
@@ -27,13 +19,6 @@
   background-color: transparent;
 }
 
-/* 关键修复：KaTeX 默认将公式在 .katex-display 中居中，一旦公式比容器宽，
-   左侧会被裁掉且无法滚动到（移动端尤为致命）。
-   这里让 .katex 子盒保持 block（保证溢出能被外层滚动容器感知），
-   宽度取 max-content 并配合 margin:auto 居中：
-   - 公式放得下时：盒子=公式宽度，自动居中，观感与原来一致；
-   - 公式放不下时：盒子被 max-width:100% 压到容器宽度，
-     内容贴左溢出，外层 overflow-x:auto 出现横向滚动，左右两端都能看全。 */
 .katex-display > .katex {
   display: block;
   width: max-content;
@@ -42,25 +27,16 @@
   text-align: left;
 }
 
-/* 公式末尾编号（\tag）修复：KaTeX 默认把编号绝对定位（right:0）在 .katex-html
-   右缘，而 .katex 盒子只取公式自身宽度（max-content），于是编号永远压在公式
-   末尾字符上；公式一旦比容器宽被压窄，重叠就更严重。
-   这里把编号改为流内定位：紧跟公式末尾（留 0.75em 间距），
-   - 公式放得下时：公式+编号整体居中，编号不再叠字；
-   - 公式放不下时：编号随公式一起横向滚动，永不与公式重叠。 */
 .katex-display > .katex > .katex-html > .tag {
   position: static;
   margin-left: 0.75em;
   white-space: nowrap;
 }
 
-/* 行内公式：仅限制最大宽度，不轻易改动行内盒模型（99% 的短公式保持原生排版） */
 .katex {
   max-width: 100%;
 }
 
-/* 长行内公式“胶囊”：由脚本只对真正超出行宽的行内公式套用，
-   使其变为可横向滚动的内联小盒子，常规公式排版完全不受影响 */
 .katex-scroll-capsule {
   display: inline-block;
   max-width: 100%;
@@ -82,10 +58,6 @@
   background-color: transparent;
 }
 
-
-/* --------------------------------------------------------------------------
-   2. 选择题排版优化：等宽响应式网格与自适应单列折行
-   -------------------------------------------------------------------------- */
 .question-stem {
   margin-bottom: 1.25rem !important;
   line-height: 1.6;
@@ -93,15 +65,15 @@
 
 .options-container {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 大屏严格等宽 4 列，防止大小不一 */
+  grid-template-columns: repeat(4, 1fr);
   gap: 0.75rem 1.5rem;
   margin-top: 1rem;
   margin-bottom: 0.5rem;
-  min-width: 0; /* 允许网格整体收缩，避免被长公式撑破卡片 */
+  min-width: 0;
 }
 
 .options-container.options-vertical {
-  grid-template-columns: 1fr !important; /* 长文本自动转为单列 */
+  grid-template-columns: 1fr !important;
 }
 
 .option-chip-wrapper {
@@ -115,7 +87,7 @@
   cursor: pointer;
   user-select: none;
   margin-top: 0 !important;
-  min-width: 0; /* 网格子项默认 min-width:auto，会被 nowrap 公式撑破，必须归零 */
+  min-width: 0;
 }
 
 .option-chip-wrapper:hover {
@@ -149,7 +121,7 @@
   color: var(--sl-color-text, #1e293b);
   font-weight: 400;
   line-height: 1.4;
-  min-width: 0; /* flex 子项允许收缩，长公式交由内部滚动接管 */
+  min-width: 0;
 }
 
 @media (max-width: 48rem) {
@@ -164,12 +136,6 @@
   }
 }
 
-
-/* ==========================================================================
-   图文与块级组件深度联动组件 (VitePress 风格极简徽章)
-   ========================================================================== */
-
-/* 1. 正文与题干中的联动胶囊通用样式 */
 .fig-ref-badge, .block-ref-badge {
   display: inline-flex;
   align-items: center;
@@ -186,7 +152,6 @@
   box-sizing: border-box;
 }
 
-/* 可交互徽章赋予手势与悬浮提亮动效 */
 .fig-ref-badge.interactive-badge, .block-ref-badge.interactive-badge {
   cursor: pointer;
   user-select: none;
@@ -196,13 +161,11 @@
   transform: translateY(-1px);
 }
 
-/* 静态徽章（未匹配到或纯声明）保持朴素 */
 .fig-ref-badge.static-badge, .block-ref-badge.static-badge {
   cursor: default;
   opacity: 0.9;
 }
 
-/* 微型矢量 SVG 图标 */
 .badge-svg {
   width: 12px;
   height: 12px;
@@ -216,7 +179,6 @@
   height: 10px;
 }
 
-/* 徽章内部结构 */
 .fig-icon, .block-icon {
   display: inline-flex;
   align-items: center;
@@ -251,9 +213,6 @@
   transform: translate(1px, -1px);
 }
 
-/* --- 2. VitePress 语义色板分级映射 --- */
-
-/* A. 例题 (翡翠绿系) */
 .block-ref-badge[data-type="例题"], .block-ref-badge[data-type="例"] {
   background-color: rgba(16, 185, 129, 0.08);
   border: 1px solid rgba(16, 185, 129, 0.25);
@@ -272,7 +231,6 @@ html[data-theme='dark'] .block-ref-badge[data-type="例"] {
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.18);
 }
 
-/* B. 定理 / 公理 / 命题 / 推论 / 引理 / 性质 (品牌蓝紫系) */
 .block-ref-badge[data-type="定理"], .block-ref-badge[data-type="公理"],
 .block-ref-badge[data-type="命题"], .block-ref-badge[data-type="推论"],
 .block-ref-badge[data-type="引理"], .block-ref-badge[data-type="性质"] {
@@ -301,7 +259,6 @@ html[data-theme='dark'] .block-ref-badge[data-type="性质"] {
   box-shadow: 0 2px 8px rgba(52, 81, 178, 0.18);
 }
 
-/* C. 变式 / 习题 (暖橙系) */
 .block-ref-badge[data-type="变式"], .block-ref-badge[data-type="习题"] {
   background-color: rgba(245, 158, 11, 0.08);
   border: 1px solid rgba(245, 158, 11, 0.25);
@@ -320,8 +277,7 @@ html[data-theme='dark'] .block-ref-badge[data-type="习题"] {
   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.18);
 }
 
-/* D. 结论 / 经验总结 / 解析 (玫瑰红系) */
-.block-ref-badge[data-type="结论总结"], .block-ref-badge[data-type="结论"], 
+.block-ref-badge[data-type="结论总结"], .block-ref-badge[data-type="结论"],
 .block-ref-badge[data-type="经验总结"], .block-ref-badge[data-type="经验"],
 .block-ref-badge[data-type="解析"] {
   background-color: rgba(225, 29, 72, 0.08);
@@ -346,7 +302,6 @@ html[data-theme='dark'] .block-ref-badge[data-type="解析"] {
   box-shadow: 0 2px 8px rgba(225, 29, 72, 0.18);
 }
 
-/* E. 方法总结 / 技巧 / 导引 (青碧绿系) */
 .block-ref-badge[data-type="方法总结"], .block-ref-badge[data-type="方法"],
 .block-ref-badge[data-type="导引"] {
   background-color: rgba(13, 148, 136, 0.08);
@@ -368,7 +323,6 @@ html[data-theme='dark'] .block-ref-badge[data-type="导引"] {
   box-shadow: 0 2px 8px rgba(13, 148, 136, 0.18);
 }
 
-/* F. 定义 / 知识点 / 考点 (天蓝系) */
 .block-ref-badge[data-type="定义"], .block-ref-badge[data-type="知识点"],
 .block-ref-badge[data-type="考点"] {
   background-color: rgba(2, 132, 199, 0.08);
@@ -390,7 +344,6 @@ html[data-theme='dark'] .block-ref-badge[data-type="考点"] {
   box-shadow: 0 2px 8px rgba(2, 132, 199, 0.18);
 }
 
-/* G. 插图引用与通用图文 (极简灰系) */
 .fig-ref-badge, .block-ref-badge[data-type="通用块"], .block-ref-badge[data-type="模块"] {
   background-color: var(--sl-color-gray-6, #f6f6f7);
   border: 1px solid var(--sl-color-gray-5, #e2e2e3);
@@ -412,14 +365,11 @@ html[data-theme='dark'] .block-ref-badge[data-type="模块"] {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-/* --- 3. 目标插图与卡片的高亮与闪烁 (Glow & Flash Transition) --- */
-
 .fig-target-image, .fig-target-caption,
 .example-card, .variant-card, .summary-card, .knowledge-card, .method-card, .fallback-block, .solution-details {
   transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-/* 插图高亮 */
 .fig-target-image.fig-highlight {
   border-color: var(--sl-color-text-accent, #3b82f6) !important;
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2) !important;
@@ -431,13 +381,11 @@ html[data-theme='dark'] .block-ref-badge[data-type="模块"] {
   transform: translateX(4px);
 }
 
-/* 组件卡片高亮 */
 .card-ref-highlight {
   box-shadow: 0 12px 24px -6px rgba(59, 130, 246, 0.12) !important;
   transform: translateY(-2.5px);
 }
 
-/* 大卡片点击时的弹性水波纹放大与闪烁动效关键帧 */
 @keyframes card-flash-pulse {
   0% {
     box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.4);
@@ -452,7 +400,6 @@ html[data-theme='dark'] .block-ref-badge[data-type="模块"] {
   animation: card-flash-pulse 1.2s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-/* 图片点击水波闪烁动画 */
 @keyframes fig-flash-pulse {
   0% {
     background-color: rgba(59, 130, 246, 0.3);
@@ -468,10 +415,6 @@ html[data-theme='dark'] .block-ref-badge[data-type="模块"] {
   border-color: var(--sl-color-text-accent, #3b82f6) !important;
 }
 
-
-/* --------------------------------------------------------------------------
-   4. 插图高亮与点击水波闪烁过渡
-   -------------------------------------------------------------------------- */
 .fig-target-image {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 2px solid transparent;
@@ -515,33 +458,26 @@ html[data-theme='dark'] .block-ref-badge[data-type="模块"] {
   color: var(--sl-color-text-accent, #3b82f6) !important;
 }
 
-/* ==========================================================================
-   正文图像基础排版与平滑过渡
-   ========================================================================== */
 .sl-markdown-content img {
   display: block;
   max-width: 100%;
   height: auto;
   margin-inline: auto;
   border-radius: 6px;
-  transition: 
+  transition:
     filter 0.35s cubic-bezier(0.2, 0, 0.2, 1),
     box-shadow 0.25s ease,
     opacity 0.4s ease,
     transform 0.35s cubic-bezier(0.2, 0, 0.2, 1);
 }
 
-/* ==========================================================================
-   正文图像高斯模糊占位 (LQIP) 与平滑渐变加载系统
-   ========================================================================== */
 .astro-blur-image {
-  /* 占位图背景层 */
+
   background-image: var(--blur-placeholder);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  
-  /* 初始未完成加载时的磨砂高斯模糊态 */
+
   filter: blur(14px);
   transform: scale(0.995);
   opacity: 0.88;
@@ -549,7 +485,6 @@ html[data-theme='dark'] .block-ref-badge[data-type="模块"] {
   will-change: filter, opacity, transform;
 }
 
-/* 图像加载就绪状态：高斯模糊消退，清晰呈现原图 */
 .astro-blur-image.is-loaded {
   filter: blur(0);
   opacity: 1;
@@ -557,37 +492,25 @@ html[data-theme='dark'] .block-ref-badge[data-type="模块"] {
   background-image: none;
 }
 
-/* ==========================================================================
-   夜间模式白底教辅图像智能反相与色彩保真系统 (Dark Theme Precise Calibration)
-   ========================================================================== */
 :root[data-theme='dark'] .sl-markdown-content img:not(.no-dark-invert) {
-  /* 
-   * 精确色彩学校准：
-   * 1. invert(0.894)：将白底 (255) 数学映射至 RGB(27, 27, 27)，与全站背景色 #1b1b1f (RGB 27, 27, 31) 精准贴合、无缝消除方框；
-   *    同时将黑色文字/线条 (0) 映射至 RGB(228, 228, 228)，与正文字色 #dfdfd6 完美匹配；
-   * 2. hue-rotate(180deg)：色相回正，保留红色、蓝色等彩色标记与曲线的原生色彩；
-   */
+
   filter: invert(0.894) hue-rotate(180deg);
 }
 
-/* 配合 LQIP 模糊占位未完成态 */
 :root[data-theme='dark'] .sl-markdown-content img.astro-blur-image:not(.is-loaded):not(.no-dark-invert) {
   filter: blur(14px) invert(0.894) hue-rotate(180deg);
 }
 
-/* 配合 LQIP 模糊占位就绪态 */
 :root[data-theme='dark'] .sl-markdown-content img.astro-blur-image.is-loaded:not(.no-dark-invert) {
   filter: blur(0) invert(0.894) hue-rotate(180deg);
 }
 
-/* 夜间模式悬停交互：鼠标悬停或轻触时平滑恢复原图原色，并呈现立体浮层阴影 */
 :root[data-theme='dark'] .sl-markdown-content img:not(.no-dark-invert):hover {
   filter: invert(0) hue-rotate(0deg);
   background-color: #ffffff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
-/* 打印模式禁用模糊与反相 */
 @media print {
   .astro-blur-image {
     filter: none !important;
@@ -601,14 +524,10 @@ html[data-theme='dark'] .block-ref-badge[data-type="模块"] {
   }
 }
 
-/* ==========================================================================
-   双侧边栏拖拽调宽与折叠系统 (Interactive Sidebar Resizers)
-   ========================================================================== */
-
 :root {
   --right-sidebar-width: 17rem;
 }
-/* 1. 默认右侧边栏宽度绑定与自适应计算 */
+
 @media (min-width: 72rem) {
   .right-sidebar-container {
     width: var(--right-sidebar-width, 18.75rem) !important;
@@ -621,7 +540,6 @@ html[data-theme='dark'] .block-ref-badge[data-type="模块"] {
   }
 }
 
-/* 2. 当左/右侧边栏折叠时的平滑隐藏动画 */
 .collapsed-sidebar {
   visibility: hidden !important;
   pointer-events: none !important;
@@ -629,21 +547,19 @@ html[data-theme='dark'] .block-ref-badge[data-type="模块"] {
   transition: visibility 0.2s, opacity 0.2s;
 }
 
-/* 3. 拖拽手柄条样式：透明热区，宽度 8px，方便鼠标抓取 */
 .resizer-handle {
   position: fixed;
-  top: var(--sl-nav-height); /* 与 Starlight 顶部导航条严格对齐 */
+  top: var(--sl-nav-height);
   bottom: 0;
-  width: 8px; 
+  width: 8px;
   cursor: col-resize;
   z-index: 100;
   background-color: transparent;
     touch-action: none;
   transition: background-color 0.15s, border 0.15s;
-  display: none; /* 移动端默认不展示 */
+  display: none;
 }
 
-/* 桌面端按断点展示手柄 */
 @media (min-width: 50rem) {
   .resizer-handle.left-handle {
     display: block;
@@ -658,14 +574,12 @@ html[data-theme='dark'] .block-ref-badge[data-type="模块"] {
   }
 }
 
-/* 悬停或处于激活拖拽状态下的高亮发光蓝色细线效果 */
 .resizer-handle:hover, .resizer-handle.active {
   background-color: rgba(59, 130, 246, 0.05);
   border-left: 1px solid var(--sl-color-text-accent);
   border-right: 1px solid var(--sl-color-text-accent);
 }
 
-/* 4. 极简 MD3 小药丸折叠按钮 */
 .resizer-toggle-btn {
   position: absolute;
   top: 50%;
@@ -688,7 +602,7 @@ html[data-theme='dark'] .block-ref-badge[data-type="模块"] {
   font-weight: bold;
   color: var(--sl-color-gray-3);
   cursor: pointer;
-  opacity: 0; /* 默认完全隐藏，鼠标靠近手柄时才浮现 */
+  opacity: 0;
   transition: opacity 0.15s, background-color 0.15s, color 0.15s;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
 }
@@ -696,7 +610,7 @@ html[data-theme='dark'] .block-ref-badge[data-type="模块"] {
 .resizer-handle:hover .resizer-toggle-btn {
   opacity: 1;
 }
-/* 折叠态下手柄按钮常驻可见，方便一键展开 */
+
 body.left-sidebar-collapsed .left-toggle,
 body.right-sidebar-collapsed .right-toggle {
   opacity: 1;
@@ -713,13 +627,11 @@ body.right-sidebar-collapsed .right-toggle {
   outline-offset: 1px;
 }
 
-/* 5. 拖拽全局防护类：防止在拖动过程中意外选中页面文本 */
 .is-resizing {
   user-select: none !important;
   cursor: col-resize !important;
 }
 
-/* 拖拽全屏透明图层覆盖，防止拖动鼠标划过 iframe 时产生卡顿 */
 #resizer-iframe-cover {
   position: fixed;
   top: 0;
@@ -730,51 +642,36 @@ body.right-sidebar-collapsed .right-toggle {
   cursor: col-resize;
 }
 
-/* ==========================================================================
-   正文区域自适应扩宽与沉浸阅读系统 (Adaptive Content Expansion)
-   ========================================================================== */
-
-/* 1. 全局正文容器性能升级：默认最大限制宽度提升至 1080px */
 .sl-container {
-  max-width: 68rem !important; /* 默认极简升级 */
+  max-width: 68rem !important;
   width: 100% !important;
-  /* 注入平滑缓动动画：当侧边栏折叠时，正文如流水般丝滑展开 */
+
   transition: max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* 2. 单侧折叠状态：当左侧栏或右侧栏单侧隐藏时，正文宽度自动拓宽至 1280px */
 body.left-sidebar-collapsed .sl-container,
 body.right-sidebar-collapsed .sl-container {
   max-width: 80rem !important;
 }
 
-/* 3. 双侧折叠状态：当两边全部隐藏时，正文瞬间转入“超宽沉浸阅读模式”（最宽 1520px） */
 body.left-sidebar-collapsed.right-sidebar-collapsed .sl-container {
   max-width: 95rem !important;
 }
 
-/* 针对正文区域整体页面版心的限制，防止在超宽带屏（如 2K, 4K）上发生排版撕裂 */
 .main-frame {
-  width: 100%; /* 显式宽度：配合下方 margin:auto 在超宽屏居中，同时避免 margin:auto 关闭 flex 拉伸 */
-  max-width: 120rem !important; /* 整体版心最宽限制在 1920px */
+  width: 100%;
+  max-width: 120rem !important;
   margin: 0 auto !important;
-  /* 移动端根治性修复：.page 是纵向 flex，.main-frame 作为 flex 子项默认
-     min-width:auto，会被不可断行的公式/图片/表格撑到数百像素宽，
-     再被 html/body 的 overflow-x:clip 整体裁掉（右侧内容直接“消失”）。
-     归零后整列收缩到视口宽度，宽内容改由各自的滚动容器接管。 */
+
   min-width: 0 !important;
 }
 
-/* 联动容器同步允许收缩，保证收缩链路畅通 */
 .main-pane,
 .sl-container,
 .sl-markdown-content {
   min-width: 0;
 }
 
-/* ==========================================================================
-   移动端防横向溢出：宽表格改为容器内横向滚动
-   ========================================================================== */
 table {
   display: block;
   width: max-content;
@@ -785,12 +682,6 @@ table {
   scrollbar-color: var(--sl-color-gray-5, #cbd5e1) transparent;
 }
 
-/* ==========================================================================
-   移动端容器收缩链路：让每一个可能被撑破的盒都能缩回视口内
-   ========================================================================== */
-
-/* 卡片正文/标题、解析、思路分析等组件内容盒统一允许收缩，
-   内部的公式与表格各自横向滚动，不再把卡片撑破后又被 overflow:hidden 裁掉 */
 .card-body,
 .card-header,
 .solution-content,
@@ -802,25 +693,18 @@ table {
   min-width: 0;
 }
 
-/* 移动端不展示自定义右侧大纲：该大纲仅保留给桌面端右侧栏使用。
-   移动端由 Starlight 自带的“本页目录”下拉条接管导航，
-   避免 272px 宽的大纲块挤在正文上方造成观感割裂 */
 @media (max-width: 71.999rem) {
   .right-sidebar-container {
     display: none !important;
   }
 }
 
-/* ==========================================================================
-   移动端精致化：紧凑呼吸感 + 自适应字号
-   ========================================================================== */
 @media (max-width: 48rem) {
-  /* 正文左右留白略微加宽，贴合手机阅读手感 */
+
   :root {
     --sl-content-pad-x: 1.125rem;
   }
 
-  /* 卡片组件：缩小边距与间距，减少移动端的“臃肿感” */
   .example-card,
   .variant-card,
   .method-card,
@@ -845,7 +729,6 @@ table {
     padding: 0.875rem;
   }
 
-  /* 选择题：更紧凑的间距，双列/单列折行更自然 */
   .question-stem {
     margin-bottom: 0.875rem !important;
   }
@@ -860,7 +743,6 @@ table {
     font-size: 0.85rem;
   }
 
-  /* 行间公式：移动端略微缩小字号，让更多公式免于滚动，滚动时也更从容 */
   .katex-display {
     padding: 0.35rem 0;
   }
@@ -869,34 +751,18 @@ table {
   }
 }
 
-/* 兜底：任何残留超宽元素不再撑大布局视口（配合上面的容器收缩，保证不裁内容） */
 html, body {
   overflow-x: clip;
 }
 
-/* 长不可断内容（URL/英文/公式串）允许换行 */
 .sl-markdown-content {
   overflow-wrap: anywhere;
 }
 
-/* ==========================================================================
-   文章正文公式操作：一键复制 LaTeX / 导出图片（SVG / PNG 二级菜单）
-   （仅作用于带 data-latex 的公式，见 src/scripts/formula-actions.ts）
-   设计原则：默认完全隐藏，悬停/聚焦/触屏点按才浮现，不打扰正常阅读排版
-   ========================================================================== */
-
-/* 行间公式块作为操作钮的定位上下文（本身不改变任何渲染） */
 .katex-display[data-latex] {
   position: relative;
 }
 
-/* 操作钮容器（复制 + 下载 SVG 两个小按钮）
-   注意：本容器任何状态下都不得有 transform —— 脚本会把二级菜单提升为
-   position:fixed 以逃逸公式块/卡片的 overflow 裁剪，而祖先上的任何
-   transform 都会让 fixed 退化为相对它定位，菜单会脱离按钮、渲染到错位处。
-   （悬停态选择器 .katex-display:hover .katex-actions 特异性 (0,3,0) 高于
-   .katex-actions.is-open，若悬停态带 transform 则 is-open 压不住，
-   因此所有状态统一只做透明度过渡，不做位移动画。） */
 .katex-actions {
   position: absolute;
   top: 0.3rem;
@@ -906,18 +772,16 @@ html, body {
   align-items: center;
   gap: 0.2rem;
   opacity: 0;
-  pointer-events: none; /* 隐藏时绝不拦截公式区域的鼠标事件 */
+  pointer-events: none;
   transition: opacity 0.16s ease;
 }
 
-/* 行间公式：悬停公式块即浮现 */
 .katex-display:hover .katex-actions,
 .katex-display:focus-within .katex-actions {
   opacity: 1;
   pointer-events: auto;
 }
 
-/* 行内公式：透明宿主包裹，操作钮悬浮于公式上方 */
 .katex-copy-host {
   position: relative;
   display: inline;
@@ -926,10 +790,7 @@ html, body {
 .katex-copy-host .katex-actions {
   top: -1.9em;
   right: -0.45em;
-  /* 命中桥：按钮悬浮在公式行上方，鼠标从公式移向按钮会先短暂离开宿主
-     （宿主 :hover 立即失效、pointer-events 变 none，按钮在半路“消失”）。
-     下方留出一段透明 padding，把按钮容器自身的可命中区延伸到宿主内，
-     鼠标在这段间隙里仍算悬停在容器（宿主的后代）上，hover 不中断。 */
+
   padding-bottom: 0.75em;
 }
 
@@ -939,26 +800,23 @@ html, body {
   pointer-events: auto;
 }
 
-/* 触屏点按浮现态（由脚本临时添加） */
 .katex-actions.is-visible {
   opacity: 1;
   pointer-events: auto;
 }
 
-/* 导出菜单展开态：即使鼠标离开/触屏无悬停，也保持操作钮与菜单可见可点 */
 .katex-actions.is-open {
   opacity: 1;
   pointer-events: auto;
 }
 
-/* 复制钮与导出钮本体：极小幽灵按钮 */
 .katex-copy-btn,
 .katex-download-btn {
-  position: relative; /* 作为反馈气泡的定位上下文 */
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 auto; /* 禁止伸缩，保证两个按钮尺寸严格一致 */
+  flex: 0 0 auto;
   width: 1.55rem;
   height: 1.55rem;
   padding: 0;
@@ -969,7 +827,7 @@ html, body {
   color: var(--sl-color-gray-3, #475569);
   cursor: pointer;
   user-select: none;
-  /* 消除浏览器按钮 UA 默认样式（appearance/行高/字号）对内容居中的干扰 */
+
   appearance: none;
   -webkit-appearance: none;
   line-height: 1;
@@ -1011,7 +869,6 @@ html, body {
   display: block;
 }
 
-/* 导出二级菜单（SVG / PNG）：下拉小卡片，默认隐藏 */
 .katex-download-menu {
   position: absolute;
   top: calc(100% + 4px);
@@ -1039,7 +896,6 @@ html, body {
   transform: translateY(0);
 }
 
-/* 菜单项 */
 .katex-menu-item {
   appearance: none;
   -webkit-appearance: none;
@@ -1068,7 +924,6 @@ html, body {
   outline-offset: -1px;
 }
 
-/* 操作成功/失败的反馈气泡 */
 .katex-copy-btn-tip,
 .katex-download-btn-tip {
   position: absolute;
@@ -1094,7 +949,6 @@ html, body {
   transform: translateY(0);
 }
 
-/* 触屏设备上按钮更克制：避免常驻视觉噪音，仅悬停/点按逻辑由脚本接管 */
 @media (hover: none) {
   .katex-copy-btn,
   .katex-download-btn {
@@ -1102,23 +956,12 @@ html, body {
   }
 }
 
-/* 打印 / PDF 导出时不渲染操作钮 */
 @media print {
   .katex-actions {
     display: none !important;
   }
 }
 
-/* ==========================================================================
-   黑夜主题适配 (Dark Theme)
-   卡片组件的深色配色在各组件自身的 scoped <style> 中处理，
-   此处统一处理全局的“引用微章”与“侧栏大纲胶囊”等动态生成元素。
-   Starlight 通过 <html data-theme="dark"> 开启暗色（默认即暗色）。
-   ========================================================================== */
-
-/* --- 1. 引用微章：深色文本(600级) → 亮色文本(300级)，底色微加强 --- */
-
-/* A. 例题 (绿系) */
 :root[data-theme='dark'] .block-ref-badge[data-type="例题"],
 :root[data-theme='dark'] .block-ref-badge[data-type="例"] {
   background-color: rgba(16, 185, 129, 0.14);
@@ -1134,7 +977,6 @@ html, body {
   border-color: #34d399;
 }
 
-/* B. 变式 (橙系) */
 :root[data-theme='dark'] .block-ref-badge[data-type="变式"] {
   background-color: rgba(249, 115, 22, 0.14);
   border-color: rgba(249, 115, 22, 0.38);
@@ -1147,7 +989,6 @@ html, body {
   border-color: #fb923c;
 }
 
-/* C. 结论与经验总结 (红系) */
 :root[data-theme='dark'] .block-ref-badge[data-type="结论总结"],
 :root[data-theme='dark'] .block-ref-badge[data-type="结论"],
 :root[data-theme='dark'] .block-ref-badge[data-type="经验总结"] {
@@ -1166,7 +1007,6 @@ html, body {
   border-color: #f87171;
 }
 
-/* D. 方法总结 (蓝绿系) */
 :root[data-theme='dark'] .block-ref-badge[data-type="方法总结"],
 :root[data-theme='dark'] .block-ref-badge[data-type="方法"] {
   background-color: rgba(13, 148, 136, 0.14);
@@ -1182,7 +1022,6 @@ html, body {
   border-color: #2dd4bf;
 }
 
-/* E. 知识点 (蓝系) */
 :root[data-theme='dark'] .block-ref-badge[data-type="知识点"],
 :root[data-theme='dark'] .block-ref-badge[data-type="考点"] {
   background-color: rgba(59, 130, 246, 0.14);
@@ -1198,7 +1037,6 @@ html, body {
   border-color: #93c5fd;
 }
 
-/* F. 问题与解析步骤 (紫系) */
 :root[data-theme='dark'] .block-ref-badge[data-type="问题"],
 :root[data-theme='dark'] .block-ref-badge[data-type="解析"] {
   background-color: rgba(139, 92, 246, 0.14);
@@ -1214,9 +1052,6 @@ html, body {
   border-color: #a78bfa;
 }
 
-/* G. 图片参考 (灰系)：本就基于 sl 变量，自动适配，无需覆盖 */
-
-/* --- 2. 侧栏大纲胶囊 (TOC chips)：深色文本 → 亮色文本 --- */
 :root[data-theme='dark'] .chip-example { color: #34d399; }
 :root[data-theme='dark'] .chip-variant { color: #fb923c; }
 :root[data-theme='dark'] .chip-conclusion { color: #f87171; }
@@ -1226,36 +1061,20 @@ html, body {
 :root[data-theme='dark'] .chip-problem { color: #a78bfa; }
 :root[data-theme='dark'] .chip-default { color: #cbd5e1; }
 
-/* ==========================================================================
-   移动端：顶栏大纲入口 + 左侧栏 VitePress 侧滑抽屉（改造）
-   结构：左侧栏菜单按钮与右侧大纲按钮都并入固定顶栏（header）——
-   顶栏左侧 = 菜单（hamburger），顶栏右侧 = 「本页大纲」按钮 + popup 面板。
-   本段只放“功能样式”（断点/滚动锁/显示切换/打印隐藏）；
-   VitePress 视觉细节见 vitepress-theme.css 区块 11（大纲按钮/面板）与
-   区块 12（左侧抽屉/菜单按钮）。
-   ========================================================================== */
-
-/* 大纲入口并入顶栏后不再单独占一行：锚点滚动补偿归零（值被 Page.astro 的
-   scroll-padding-top 与 makeTocEntry 点击滚动补偿读取），正文顶部恢复
-   Starlight 默认 calc(nav + toc) padding（= 4rem）。 */
 body.vp-local-nav-active {
   --sl-mobile-toc-height: 0rem;
 }
 
-/* 面板展开时锁定背景滚动（popup 打开时防止滚动穿透） */
 body.mobile-toc-open {
   overflow: hidden;
 }
 
-/* 默认全部隐藏：桌面端右侧栏可见，大纲按钮永不出现，也防止任何布局残留 */
 .vp-local-nav {
   display: none;
 }
 
-/* —— 移动端 / 平板段（右侧栏隐藏，大纲入口进顶栏） —— */
 @media (max-width: 71.999rem) {
-  /* 大纲按钮并入顶栏右侧（JS 搬运进 .right-group，作为 flex 项；
-     position: relative 作 popup 面板的定位锚点） */
+
   .vp-local-nav {
     display: flex;
     align-items: center;
@@ -1264,9 +1083,6 @@ body.mobile-toc-open {
   }
 }
 
-/* 纯移动端（<50rem）：Starlight 的 .right-group 默认隐藏，强制显示为“只含大纲按钮”
-   的右侧动作区（社交/主题切换仍在左侧抽屉底部，见 MobileMenuFooter 组件）。
-   平板段（50–72rem）right-group 默认显示，社交/主题/大纲按钮并列，不受影响。 */
 @media (max-width: 49.999rem) {
   .right-group {
     display: flex !important;
@@ -1283,30 +1099,18 @@ body.mobile-toc-open {
   }
 }
 
-/* 左侧移动菜单展开时，顶栏大纲按钮让位（避免与抽屉遮罩/布局冲突）。
-   注意：data-mobile-menu-expanded 由 Starlight 加在 <body> 上（此前写成
-   html[...] 是永不匹配的坏规则，此处一并修正）。 */
 body[data-mobile-menu-expanded] .vp-local-nav {
   visibility: hidden;
 }
 
-/* 打印 / PDF 导出时不渲染本地导航条 */
 @media print {
   .vp-local-nav {
     display: none !important;
   }
 }
 
-/* --------------------------------------------------------------------------
-   移动端左侧栏：VitePress 侧滑抽屉（替换 Starlight 默认的全屏“上下抽屉”）
-   对照 VPSidebar.vue：position fixed 左侧、宽 calc(100vw - 4rem)、
-   max-width 20rem、translateX(-100%) → 0 滑入，配合遮罩（VPBackdrop 语义）。
-   关闭方式：顶栏菜单按钮（变 X）或点击遮罩（JS 绑定，见 SidebarOverride）。
-   -------------------------------------------------------------------------- */
 @media (max-width: 49.999rem) {
-  /* 菜单按钮：从“顶栏右侧浮动圆钮”挪到“顶栏左侧”（VitePress 汉堡入口语义）。
-     Starlight 默认 fixed 在视口右侧（inset-inline-end），改为 fixed 左侧，
-     与 fixed header 对齐；视觉（透明底、无阴影、hover 圆角）见 vitepress-theme.css 区块 12 */
+
   starlight-menu-button button {
     position: fixed;
     inset-inline-start: 0.75rem;
@@ -1328,8 +1132,6 @@ body[data-mobile-menu-expanded] .vp-local-nav {
     background-color: var(--sl-color-gray-6) !important;
   }
 
-  /* 抽屉：左侧滑入窄面板（对照 VPSidebar；顶部从 header 下缘开始，
-     顶栏与菜单按钮保持可见，随时可关） */
   .sidebar-pane {
     inset-block: var(--sl-nav-height) 0;
     inset-inline-start: 0;
@@ -1348,8 +1150,6 @@ body[data-mobile-menu-expanded] .vp-local-nav {
     transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
   }
 
-  /* 遮罩（VPBackdrop 语义）：抽屉打开时覆盖其余屏幕；z-index 低于抽屉(5)、
-     低于顶栏(10)，保证菜单按钮始终可点；点击关闭由 SidebarOverride 的 JS 绑定 */
   body[data-mobile-menu-expanded] .page::before {
     content: '';
     position: fixed;
@@ -1371,9 +1171,6 @@ body[data-mobile-menu-expanded] .vp-local-nav {
   }
 }
 
-/* --- 脚注（本书首次支持：MinerU 上标标记 + 页内脚注块） --- */
-
-/* 正文脚注上标：原书用圆圈数字（①②③…）标注页脚注释 */
 .prose sup, .content sup, .sl-markdown-content sup,
 main sup, article sup {
   font-size: 0.72em;
@@ -1385,20 +1182,12 @@ main sup, article sup {
   user-select: text;
 }
 
-/* 页内脚注块（节末 <Block title="脚注">）：缩小字号、与正文区分 */
 .fallback-block .footnote-text,
 .block-title-footnote {
   font-size: 0.9em;
   color: var(--sl-color-gray-5, #666);
 }
 
-/* ==========================================================================
-   底栏翻页（Pager / Pagination）基准样式
-   --------------------------------------------------------------------------
-   供 Starlight 经典模式（或默认基础）使用：
-   为 PaginationOverride.astro 的 nav.prev-next 结构提供标准卡片翻页样式。
-   在 VitePress 模式下被 vitepress-theme.css 区块 10 覆盖。
-   ========================================================================== */
 .prev-next {
   display: grid;
   grid-template-columns: 1fr;
@@ -1448,5 +1237,3 @@ main sup, article sup {
   font-weight: 600;
   color: var(--sl-color-white);
 }
-
-

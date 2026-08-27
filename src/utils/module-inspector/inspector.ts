@@ -1,20 +1,3 @@
-/**
- * inspector.ts —— 书籍模块巡检与结构校验开发工具 · 前端客户端控制器
- *
- * 职责：
- *   1. 自动根据当前 URL 识别当前图书，通过 /__inspector__/modules 端点获取全书模块扫描数据。
- *   2. 支持实时切换书籍、手动重新扫描全书。
- *   3. 提供多 Tab 查重与结构巡检视图：
- *      - 全量索引：全量模块索引（支持按卡片类型/章节过滤与全文实时检索）
- *      - 同章冲突：同章节内出现的重复同名模块分组
- *      - 跨章聚合：全书范围内同名模块聚合与跨章节分布统计
- *      - 结构审查：标记缺少标题、标题过长、空壳卡片等数据清洗异常
- *   4. 一键跳转定位（Jump & Pulse）：
- *      - 同页内平滑滚动至对应卡片，附加 2s 典雅品牌色聚焦波纹高亮；
- *      - 跨章节利用 SPA 路由导航并在页面载入后精确定位与高亮。
- *   5. 快捷交互：一键复制 文件路径:行号 坐标、联动在线精修工具、快捷键 Alt+M / M 开关。
- */
-
 export interface ModuleItem {
   id: string;
   kind: string;
@@ -123,9 +106,6 @@ class ModuleInspectorController {
 
     this.isDev = this.rootEl.getAttribute('data-is-dev') === 'true';
 
-    // 关键：将 inspector 根节点直接提升挂载到 document.body 下，
-    // 彻底摆脱 Starlight 内部 main-pane / main-frame / footer 的层叠上下文限制，
-    // 保证 z-index 高于全站 header（顶栏）与 custom-page-sidebar（右侧大纲栏）。
     if (this.rootEl.parentElement !== document.body) {
       document.body.appendChild(this.rootEl);
     }
@@ -135,11 +115,9 @@ class ModuleInspectorController {
     this.bindUIEvents();
     this.setupPageLoadHighlight();
 
-    // 初始识别书籍
     const detected = this.detectCurrentBookKey();
     this.currentBookKey = detected || 'math/math_senior';
 
-    // 监听特性开关联动（若被禁用则关闭面板）
     document.addEventListener('dsh:feature-change', () => {
       const allowed = (window as unknown as Record<string, unknown>).__dshFeatureInspectorAllowed !== false;
       if (!allowed && this.isOpen) {
@@ -147,13 +125,11 @@ class ModuleInspectorController {
       }
     });
 
-    // 监听外部打开事件
     document.addEventListener('dsh:open-inspector', () => {
       this.open();
     });
   }
 
-  /** 从当前 URL 识别当前所在合集/书籍（如 /collections/math/math_senior/...） */
   private detectCurrentBookKey(): string | null {
     const match = location.pathname.match(/\/collections\/([^/]+)\/([^/]+)/);
     if (match) {
@@ -172,21 +148,18 @@ class ModuleInspectorController {
           target.tagName === 'SELECT' ||
           target.isContentEditable);
 
-      // Alt+M / Option+M 随时开关
       if (e.altKey && (e.key === 'm' || e.key === 'M' || e.code === 'KeyM')) {
         e.preventDefault();
         this.toggle();
         return;
       }
 
-      // 非输入状态下按 M 快捷键打开
       if (!isInput && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && (e.key === 'm' || e.key === 'M')) {
         e.preventDefault();
         this.toggle();
         return;
       }
 
-      // Esc 关闭
       if (e.key === 'Escape' && this.isOpen) {
         e.preventDefault();
         this.close();
@@ -195,7 +168,7 @@ class ModuleInspectorController {
   }
 
   private bindTriggerButtons() {
-    // 监听全局巡检工具触发按钮
+
     document.addEventListener('click', (e) => {
       const target = e.target as HTMLElement | null;
       const btn = target?.closest<HTMLButtonElement>('[data-inspector-trigger]');
@@ -209,22 +182,18 @@ class ModuleInspectorController {
   private bindUIEvents() {
     if (!this.rootEl) return;
 
-    // 遮罩点击关闭
     this.rootEl.querySelector('.insp-backdrop')?.addEventListener('click', () => {
       this.close();
     });
 
-    // 关闭按钮
     this.rootEl.querySelector('.insp-close')?.addEventListener('click', () => {
       this.close();
     });
 
-    // 刷新按钮
     this.rootEl.querySelector('.insp-refresh-btn')?.addEventListener('click', () => {
       this.loadData(true);
     });
 
-    // 书籍切换下拉
     const bookSelect = this.rootEl.querySelector<HTMLSelectElement>('.insp-book-select');
     bookSelect?.addEventListener('change', () => {
       if (bookSelect.value) {
@@ -233,21 +202,18 @@ class ModuleInspectorController {
       }
     });
 
-    // 检索输入
     const searchInput = this.rootEl.querySelector<HTMLInputElement>('.insp-search-input');
     searchInput?.addEventListener('input', () => {
       this.searchQuery = searchInput.value.trim().toLowerCase();
       this.renderList();
     });
 
-    // 检索清除
     this.rootEl.querySelector('.insp-search-clear')?.addEventListener('click', () => {
       if (searchInput) searchInput.value = '';
       this.searchQuery = '';
       this.renderList();
     });
 
-    // Tab 切换
     this.rootEl.querySelectorAll<HTMLButtonElement>('.insp-tab').forEach((tabBtn) => {
       tabBtn.addEventListener('click', () => {
         const tab = tabBtn.getAttribute('data-tab') as typeof this.activeTab;
@@ -260,20 +226,17 @@ class ModuleInspectorController {
       });
     });
 
-    // 章节选择下拉
     const chapterSelect = this.rootEl.querySelector<HTMLSelectElement>('.insp-chapter-select');
     chapterSelect?.addEventListener('change', () => {
       this.selectedChapter = chapterSelect.value;
       this.renderList();
     });
 
-    // 事件代理：列表内部操作（跳转 / 复制 / 编辑）
     const listContainer = this.rootEl.querySelector('.insp-body');
     listContainer?.addEventListener('click', (e) => {
       const target = e.target as HTMLElement | null;
       if (!target) return;
 
-      // 复制路径坐标
       const copyBtn = target.closest<HTMLElement>('[data-action="copy"]');
       if (copyBtn) {
         e.stopPropagation();
@@ -282,7 +245,6 @@ class ModuleInspectorController {
         return;
       }
 
-      // 在编辑器中编辑
       const editBtn = target.closest<HTMLElement>('[data-action="edit"]');
       if (editBtn) {
         e.stopPropagation();
@@ -292,7 +254,6 @@ class ModuleInspectorController {
         return;
       }
 
-      // 卡片点击跳转定位
       const cardRow = target.closest<HTMLElement>('.insp-item-row');
       if (cardRow) {
         const itemUrl = cardRow.getAttribute('data-url') || '';
@@ -309,7 +270,6 @@ class ModuleInspectorController {
     this.rootEl.classList.add('insp-open');
     document.body.classList.add('insp-drawer-open');
 
-    // 每次打开同步检测是否切换了书籍
     const detected = this.detectCurrentBookKey();
     if (detected && detected !== this.currentBookKey) {
       this.currentBookKey = detected;
@@ -321,7 +281,6 @@ class ModuleInspectorController {
       this.renderAll();
     }
 
-    // 聚焦搜索框
     setTimeout(() => {
       this.rootEl?.querySelector<HTMLInputElement>('.insp-search-input')?.focus();
     }, 150);
@@ -339,7 +298,6 @@ class ModuleInspectorController {
     else this.open();
   }
 
-  /** 加载书籍与模块扫描数据 */
   private async loadData(force = false) {
     if (this.loading) return;
     this.loading = true;
@@ -347,7 +305,7 @@ class ModuleInspectorController {
     this.renderLoading(true);
 
     try {
-      // 1. 获取书籍列表（若尚未获取，优先走 Dev 端点，生产走静态 books.json）
+
       if (!this.booksList.length) {
         let bRes = await fetch('/__inspector__/books').catch(() => null);
         if (!bRes || !bRes.ok) {
@@ -360,13 +318,11 @@ class ModuleInspectorController {
         }
       }
 
-      // 2. 解析合集与图书 slug
       const [col, book] = this.currentBookKey.split('/');
       if (!col || !book) {
         throw new Error('未指定有效的图书标识');
       }
 
-      // 优先请求 Dev 中间件动态扫描；若失败/非 Dev 则请求静态预生成的 json
       let res = await fetch(
         `/__inspector__/modules?col=${encodeURIComponent(col)}&book=${encodeURIComponent(book)}&t=${force ? Date.now() : 0}`
       ).catch(() => null);
@@ -429,25 +385,20 @@ class ModuleInspectorController {
   private renderAll() {
     if (!this.scanData) return;
 
-    // 1. 更新标题与摘要
     const titleEl = this.rootEl?.querySelector('.insp-header-title');
     if (titleEl) {
       titleEl.textContent = `模块速查 · ${this.scanData.bookTitle || this.scanData.bookSlug}`;
     }
 
-    // 2. 更新 Tab 徽章数字
     this.updateTabBadge('all', this.scanData.totalModules);
     this.updateTabBadge('same_chapter_dups', this.scanData.stats.sameChapterDupsCount);
     this.updateTabBadge('all_dups', this.scanData.stats.allDupsCount);
     this.updateTabBadge('suspicious', this.scanData.stats.suspiciousCount);
 
-    // 3. 渲染类型过滤标签
     this.renderKindFilterChips();
 
-    // 4. 渲染章节下拉选项
     this.renderChapterOptions();
 
-    // 5. 渲染主体列表
     this.renderList();
   }
 
@@ -492,7 +443,7 @@ class ModuleInspectorController {
     const select = this.rootEl?.querySelector<HTMLSelectElement>('.insp-chapter-select');
     if (!select || !this.scanData) return;
 
-    const chapters = new Map<string, string>(); // slug -> title
+    const chapters = new Map<string, string>();
     for (const m of this.scanData.modules) {
       chapters.set(m.chapterSlug, m.chapterTitle);
     }
@@ -506,15 +457,15 @@ class ModuleInspectorController {
 
   private filterItems(items: ModuleItem[]): ModuleItem[] {
     return items.filter((item) => {
-      // 类型过滤
+
       if (this.selectedKind !== 'all' && item.kind !== this.selectedKind) {
         return false;
       }
-      // 章节过滤
+
       if (this.selectedChapter !== 'all' && item.chapterSlug !== this.selectedChapter) {
         return false;
       }
-      // 检索词过滤
+
       if (this.searchQuery) {
         const q = this.searchQuery;
         const inTitle = item.cleanTitle.toLowerCase().includes(q) || item.rawTitle.toLowerCase().includes(q);
@@ -580,7 +531,6 @@ class ModuleInspectorController {
     if (!this.scanData) return;
     let groups = this.scanData.sameChapterDuplicates;
 
-    // 过滤章节与检索
     if (this.selectedChapter !== 'all') {
       groups = groups.filter((g) => g.chapterSlug === this.selectedChapter);
     }
@@ -769,11 +719,9 @@ class ModuleInspectorController {
     `;
   }
 
-  /** 跳转并执行波纹脉冲高亮 */
   private navigateTo(url: string, anchorId: string, line: number) {
     if (!url) return;
 
-    // 记录待高亮的目标（跨页面时在 sessionStorage 暂存）
     const highlightTarget = { anchorId, line, timestamp: Date.now() };
     sessionStorage.setItem('dsh-pending-highlight', JSON.stringify(highlightTarget));
 
@@ -783,7 +731,7 @@ class ModuleInspectorController {
     if (isSamePage) {
       this.executeHighlight(anchorId, line);
     } else {
-      // 跨页跳转：通过站内 SPA 导航或普通导航
+
       const link = document.createElement('a');
       link.href = url;
       document.body.appendChild(link);
@@ -793,7 +741,7 @@ class ModuleInspectorController {
   }
 
   private openInEditor(url: string, line: string) {
-    // 触发编辑器
+
     const targetUrl = new URL(url, location.href);
     targetUrl.searchParams.set('edit', '1');
     this.navigateTo(targetUrl.href, '', Number(line));
@@ -813,14 +761,14 @@ class ModuleInspectorController {
       targetEl = document.querySelector<HTMLElement>(`[data-src-line="${line}"]`);
     }
     if (!targetEl && anchorId) {
-      // 容错：查找 data-title 匹配的卡片
+
       targetEl = document.querySelector<HTMLElement>(`[data-title*="${decodeURIComponent(anchorId)}"]`);
     }
 
     if (targetEl) {
       targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
       targetEl.classList.remove('dsh-inspector-pulse');
-      // 强制重绘
+
       void targetEl.offsetWidth;
       targetEl.classList.add('dsh-inspector-pulse');
 
@@ -843,7 +791,7 @@ class ModuleInspectorController {
           }, 150);
         }
       } catch {
-        /* 忽略 */
+
       }
     };
 
@@ -889,7 +837,7 @@ class ModuleInspectorController {
 }
 
 export function initModuleInspector() {
-  // 如果 body 下已经有运行中的实例，清理页面新插入的重复壳
+
   const existingInBody = document.querySelector('body > #dsh-inspector-root');
   const allInstances = document.querySelectorAll('#dsh-inspector-root');
   if (existingInBody && allInstances.length > 1) {
@@ -906,11 +854,10 @@ export function initModuleInspector() {
     controller.init();
     (window as unknown as Record<string, unknown>).__dshModuleInspector = controller;
   } else {
-    // 确保已有 controller 的 rootEl 在 body 下
+
     const rootEl = document.getElementById('dsh-inspector-root');
     if (rootEl && rootEl.parentElement !== document.body) {
       document.body.appendChild(rootEl);
     }
   }
 }
-

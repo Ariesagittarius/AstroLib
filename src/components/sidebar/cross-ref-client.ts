@@ -212,9 +212,6 @@ function getCandidates(text: string, globalBlockIndex: Record<string, any>): any
   return [];
 }
 
-/**
- * 客户端全时无条件高阶联动引擎
- */
 export function linkPageElements(
   bookConfig: any,
   globalBlockIndex: Record<string, any>,
@@ -513,7 +510,7 @@ const ARROW_SVG = `<svg class="badge-svg badge-arrow-svg" viewBox="0 0 24 24" fi
 }
 
 export function attachInteractiveListeners(): void {
-  // 1. 图文联动
+
   document.querySelectorAll('.fig-ref-badge.interactive-badge').forEach((badge) => {
     if (badge.classList.contains('listeners-attached')) return;
     badge.classList.add('listeners-attached');
@@ -555,7 +552,6 @@ export function attachInteractiveListeners(): void {
     });
   });
 
-  // 2. 块组件联动
   document.querySelectorAll('.block-ref-badge.interactive-badge').forEach((badge) => {
     if (badge.classList.contains('listeners-attached')) return;
     badge.classList.add('listeners-attached');
@@ -612,4 +608,3 @@ export function attachInteractiveListeners(): void {
     });
   });
 }
-

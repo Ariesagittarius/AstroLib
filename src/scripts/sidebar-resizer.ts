@@ -1,13 +1,3 @@
-/**
- * 双侧边栏统一调宽 / 折叠引擎
- *
- * 设计目标：
- * - 左侧栏与右侧栏使用同一套逻辑与视觉，避免两套实现漂移；
- * - 右侧栏只在“真正存在右侧栏”的页面显示手柄，SPA 切页后自动清理；
- * - 宽度与折叠状态持久化到 localStorage，刷新 / 前进后退后保持一致；
- * - 使用 Pointer Events，避免鼠标拖动移出窗口后卡在拖拽态。
- */
-
 type Side = 'left' | 'right';
 
 const STORAGE_KEY = 'starlight:sidebar-resizer';
@@ -41,7 +31,7 @@ function saveState(): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {
-    // 隐私模式或存储不可用时静默降级为“仅本次会话生效”。
+
   }
 }
 
@@ -110,9 +100,6 @@ function updateToggle(side: Side): void {
   const collapsed = isCollapsed(side);
   const label = `${collapsed ? '展开' : '折叠'}${side === 'left' ? '左侧' : '右侧'}边栏`;
 
-  // 箭头始终指向“面板将被移动的方向”：
-  // 左侧栏可见时指向左（‹），折叠后指向右（›）；
-  // 右侧栏可见时指向右（›），折叠后指向左（‹）。
   btn.innerHTML = side === 'left' ? (collapsed ? '›' : '‹') : (collapsed ? '‹' : '›');
   btn.setAttribute('aria-label', label);
   btn.setAttribute('aria-expanded', String(!collapsed));
@@ -149,7 +136,6 @@ function startResize(event: PointerEvent, side: Side): void {
 
   const handle = event.currentTarget as HTMLElement;
 
-  // 从折叠态直接拖拽时先展开，避免“拖了但面板不出现”的困惑。
   if (isCollapsed(side)) setCollapsed(side, false);
 
   event.preventDefault();
@@ -202,7 +188,7 @@ function applySidebarState(): void {
 }
 
 function syncSidebarResizers(): void {
-  // 每次同步都重新读取持久化状态，避免多入口脚本各自持有过期副本。
+
   state = loadState();
 
   const left = sidebarEl('left');
@@ -223,18 +209,13 @@ function syncSidebarResizers(): void {
     }
     updateToggle('right');
   } else {
-    // SPA 从“有右侧栏”切到“无右侧栏”时，必须移除残留手柄，否则会出现无法点击的幽灵手柄。
+
     document.getElementById('right-resizer-handle')?.remove();
   }
 
   applySidebarState();
 }
 
-/**
- * 初始化双侧边栏调宽系统。
- * 可在每次 Astro 页面切换后重复调用：内部只会注册一次全局监听，
- * 但每次都会根据当前 DOM 同步手柄的存在与状态。
- */
 export function initSidebarResizers(): void {
   if (!initialized) {
     initialized = true;

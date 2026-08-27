@@ -1,6 +1,3 @@
-/**
- * 计算一个元素的“可视最右缘”
- */
 export function visibleContentRight(el: Element): number {
   let max = el.getBoundingClientRect().right;
   const walker = document.createTreeWalker(el, NodeFilter.SHOW_ELEMENT, {
@@ -21,9 +18,6 @@ export function visibleContentRight(el: Element): number {
   return max;
 }
 
-/**
- * 长行内公式“胶囊化”（移动端友好）
- */
 export function tameOverflowingInlineMath(): void {
   const main = document.querySelector('main');
   if (!main) return;

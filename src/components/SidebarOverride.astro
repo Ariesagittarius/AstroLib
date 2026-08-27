@@ -8,8 +8,6 @@ import { features } from '../config/features.config.mjs';
 const { sidebar } = Astro.locals.starlightRoute;
 const pathname = Astro.url.pathname;
 
-// 性能优化：侧边栏只保留当前所在图书的子树（首页等非图书页仍显示全部图书）。
-// 避免每页都序列化全部 300+ 章节，显著减小 HTML 体积与首屏时间。
 let filteredSidebar = sidebar;
 const bookMatch = pathname.match(/\/collections\/([^/]+)\/([^/]+)/);
 if (bookMatch) {
@@ -35,8 +33,6 @@ if (bookMatch) {
   if (kept.length > 0) filteredSidebar = kept;
 }
 
-// 当前图书的 EPUB 下载链接：优先探测本地 public/epub/<slug>.epub，若无则回退至 GitHub Release 资产链接。
-// 受 features.epub.enabled 控制：关闭 EPUB 功能则不渲染下载入口。
 let epubHref = null;
 if (features.epub.enabled && bookMatch) {
   const bookSlug = bookMatch[2];
@@ -55,7 +51,6 @@ if (features.epub.enabled && bookMatch) {
 }
 ---
 
-<!-- 1. 渲染过滤后的侧边栏结构 -->
 <SidebarPersister>
   <SidebarSublist sublist={filteredSidebar} />
 </SidebarPersister>
@@ -76,8 +71,7 @@ if (features.epub.enabled && bookMatch) {
   <MobileMenuFooter />
 </div>
 
-<style>
-  .epub-entry {
+<style>.epub-entry {
     margin: auto 0.75rem 0.25rem 0;
     display: flex;
     justify-content: flex-end;
@@ -108,19 +102,14 @@ if (features.epub.enabled && bookMatch) {
   }
 </style>
 
-<!-- 2. 注入客户端脚本，同时渲染“侧边栏”与“页面大标题 (h1)”中的数学公式 -->
-<script>
-  // @ts-ignore
-  import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
-  // 注意：katex.min.css 已通过 astro.config.mjs 的 customCss 全局引入（且先于
-  // custom.css 加载，保证 .tag 流内定位覆盖生效），这里不再重复引入。
+<script>import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
+
     import { initSidebarResizers } from '../scripts/sidebar-resizer';
 
-  // 侧边栏公式只渲染一次：SPA 局部导航后侧边栏 DOM 并未变化，无需重复渲染
   let sidebarMathRendered = false;
 
   function renderCustomMath() {
-    // 渲染参数配置
+
     const katexConfig = {
       delimiters: [
         { left: '$$', right: '$$', display: true },
@@ -137,33 +126,27 @@ if (features.epub.enabled && bookMatch) {
       }
     }
 
-    // 页面大标题每个新页面都不同，需要每次导航后重新渲染
     const mainTitle = document.querySelector('h1');
     if (mainTitle) {
       renderMathInElement(mainTitle, katexConfig);
     }
   }
 
-  // 页面初次加载时执行一次
     initSidebarResizers();
   renderCustomMath();
 
-  // 监听 Astro 页面过渡和加载事件，确保在路由切换后依然生效
   document.addEventListener('astro:page-load', () => {
     renderCustomMath();
     initSidebarResizers();
   });
 </script>
 
-<!-- 3. SPA 局部刷新导航：点击内部链接时只替换正文与右侧大纲，保留头部与左侧栏 -->
-<script>
-  if (!window.__spaNavInstalled) {
+<script>if (!window.__spaNavInstalled) {
     window.__spaNavInstalled = true;
 
-    // 按 URL 缓存已抓取的页面（限制数量，防止内存膨胀）
     const pageCache = new Map();
     const CACHE_MAX = 24;
-    // 导航令牌：快速连续点击时，只允许最新一次导航真正替换 DOM
+
     let navToken = 0;
 
     function isNavLink(a) {
@@ -198,12 +181,10 @@ if (features.epub.enabled && bookMatch) {
       return p === '/' ? p : p.replace(/\/+$/, '');
     }
 
-    // 新内容来自 DOMParser，插入前移除 script，避免意外执行
     function stripScripts(root) {
       root.querySelectorAll('script').forEach((s) => s.remove());
     }
 
-    // 更新左侧栏当前页高亮，并展开所属分组
     function updateSidebarActive(pathname) {
       const sidebar = document.querySelector('nav.sidebar, .sidebar');
       if (!sidebar) return;
@@ -228,15 +209,11 @@ if (features.epub.enabled && bookMatch) {
       if (matched) matched.setAttribute('aria-current', 'page');
     }
 
-    // 移动端：点击侧边栏链接后收起菜单遮罩
     function closeMobileMenu() {
       const btn = document.querySelector('starlight-menu-button button');
       if (btn && document.body.hasAttribute('data-mobile-menu-expanded')) btn.click();
     }
 
-    // 移动端左侧抽屉：点击抽屉外区域（遮罩/正文）关闭 —— VitePress VPBackdrop 行为。
-    // 打开抽屉时按钮自身的 click 会先冒泡到这里（target 命中按钮则跳过）；
-    // btn.click() 同步关闭后再冒泡时 body 已无展开标记，直接返回，无死循环。
     document.addEventListener('click', (e) => {
       if (!document.body.hasAttribute('data-mobile-menu-expanded')) return;
       const target = e.target;
@@ -248,7 +225,7 @@ if (features.epub.enabled && bookMatch) {
     async function loadPage(url, { restoreScroll = false } = {}) {
       const token = ++navToken;
       const doc = await fetchPage(url);
-      if (token !== navToken) return; // 已被更新的导航取代
+      if (token !== navToken) return;
 
       const newMain = doc.querySelector('.main-pane');
       const currentMain = document.querySelector('.main-pane');
@@ -273,7 +250,6 @@ if (features.epub.enabled && bookMatch) {
       updateSidebarActive(url.pathname);
       closeMobileMenu();
 
-      // 滚动处理：带锚点滚动到目标；后退时恢复保存的滚动位置
       if (url.hash) {
         const targetId = decodeURIComponent(url.hash.slice(1));
         const el = document.getElementById(targetId);
@@ -286,11 +262,9 @@ if (features.epub.enabled && bookMatch) {
         window.scrollTo(0, y);
       }
 
-      // 触发既有初始化逻辑（大纲重建、选择题重构、公式二次渲染等）
       document.dispatchEvent(new CustomEvent('astro:page-load'));
     }
 
-    // 拦截所有站内链接
     document.addEventListener('click', (e) => {
       const target = e.target;
       if (!(target instanceof Element)) return;
@@ -300,12 +274,12 @@ if (features.epub.enabled && bookMatch) {
 
       const url = new URL(a.href, location.href);
       if (normPath(url.pathname) === normPath(location.pathname)) {
-        if (!url.hash) e.preventDefault(); // 同页无锚点：不触发整页刷新
+        if (!url.hash) e.preventDefault();
         return;
       }
 
       e.preventDefault();
-      // 立即更新地址栏并保存当前滚动位置，随后异步替换内容
+
       history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, '');
       history.pushState({ scrollY: 0 }, '', url.href);
       loadPage(url).catch(() => {
@@ -313,8 +287,6 @@ if (features.epub.enabled && bookMatch) {
       });
     });
 
-    // 悬停导航链接时预取（短延迟去抖）：左侧栏 + 页脚翻页链接。
-    // 预取命中后点击时几乎瞬时完成替换（缓存上限 CACHE_MAX 内）。
     let prefetchTimer = 0;
     function isPrefetchable(a) {
       return !!a.closest('nav.sidebar, .sidebar, .pagination-links, footer');
@@ -330,8 +302,6 @@ if (features.epub.enabled && bookMatch) {
       prefetchTimer = setTimeout(() => fetchPage(url).catch(() => {}), 50);
     });
 
-    // 按下鼠标（点击之前）立即拉取目标页：把“网络 + 解析”提前到点击前，
-    // 点击发生时 loadPage 直接命中缓存，进一步压缩切换等待。
     document.addEventListener('pointerdown', (e) => {
       const target = e.target;
       if (!(target instanceof Element)) return;
@@ -343,7 +313,6 @@ if (features.epub.enabled && bookMatch) {
       fetchPage(url).catch(() => {});
     }, { passive: true });
 
-    // 浏览器前进/后退
     window.addEventListener('popstate', () => {
       const url = new URL(location.href);
       loadPage(url, { restoreScroll: true }).catch(() => {

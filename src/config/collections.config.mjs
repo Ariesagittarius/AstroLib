@@ -1,21 +1,13 @@
-/**
- * 中央书库配置：合集（collections）与图书（books）的唯一数据源。
- *
- * ⚠️ 全站「功能开关」已迁移到 src/config/features.config.mjs（Feature Registry）：
- *   正文引用联动模式 refs 现由 features.crossRef.config.refs 单一来源提供，
- *   astro.config.mjs 与 PageSidebarOverride 均从那里读取（见 crossRefRefs()）。
- *   本文件不再导出 siteConfig，避免同一开关出现两处源头。
- */
 export const collections = [
   {
     id: 'math',
-    slug: 'math', 
+    slug: 'math',
     title: '数学',
     description: '收录高中数学教辅、数学分析、工科数学分析、线性代数与概率论数理统计教材',
     books: [
       {
         id: 'math-senior',
-        slug: 'math_senior', 
+        slug: 'math_senior',
         title: '新高考数学你真的掌握了吗（第二版）',
         author: '清华大学出版社教研团队',
         publisher: '清华大学出版社',
@@ -30,7 +22,7 @@ export const collections = [
         description: '高中数学专题方法与典型例题解析，包含三角函数、数列、导数与立体几何等核心章节。',
         tags: ['高考数学', '高中数学', '三角函数', '数列', '导数', '解析几何'],
         cover: 'https://img.alicdn.com/bao/uploaded/i3/2222147525702/O1CN01uA0zRt1rzZVUNfX91_!!4611686018427386950-53-xy_item.heic_790x10000Q90.jpg_.webp',
-        entryPoint: '06_第1章-三角函数', 
+        entryPoint: '06_第1章-三角函数',
         trackClasses: ['.example-card', '.variant-card', '.summary-card', '.knowledge-card', '.method-card', '.fallback-block'],
         modules: {
           '例题': { emoji: '✍️', short: '例', aliases: ['例题', '例'], theme: 'chip-example' },
@@ -44,13 +36,13 @@ export const collections = [
           '知识点': { emoji: '💡', short: '点', aliases: ['知识点'], theme: 'chip-knowledge' },
           '问题': { emoji: '❓', short: '问', aliases: ['问题'], theme: 'chip-problem' },
           '解析': { emoji: '🔑', short: '解', aliases: ['解析', '步骤'], theme: 'chip-problem' },
-          '图': { 
-            short: '图', 
-            aliases: ['图'], 
-            theme: 'chip-default', 
-            isImage: true, 
-            targetQuery: 'p, div, figcaption', 
-            targetPattern: '^图\\\\s*(\\\\d+\\\\s*[-－]\\\\s*\\\\d+)$' 
+          '图': {
+            short: '图',
+            aliases: ['图'],
+            theme: 'chip-default',
+            isImage: true,
+            targetQuery: 'p, div, figcaption',
+            targetPattern: '^图\\\\s*(\\\\d+\\\\s*[-－]\\\\s*\\\\d+)$'
           }
         }
       },
@@ -87,13 +79,13 @@ export const collections = [
           '结论': { emoji: '🏆', short: '结', aliases: ['结论'], theme: 'chip-conclusion' },
           '方法': { emoji: '🛠️', short: '方', aliases: ['方法总结', '方法'], theme: 'chip-method' },
           '习题': { emoji: '📝', short: '习', aliases: ['习题', '练习题'], theme: 'chip-problem' },
-          '图': { 
-            short: '图', 
-            aliases: ['图'], 
-            theme: 'chip-default', 
-            isImage: true, 
-            targetQuery: 'p, div, figcaption', 
-            targetPattern: '^图\\\\s*(\\\\d+\\\\s*[-－]\\\\s*\\\\d+)$' 
+          '图': {
+            short: '图',
+            aliases: ['图'],
+            theme: 'chip-default',
+            isImage: true,
+            targetQuery: 'p, div, figcaption',
+            targetPattern: '^图\\\\s*(\\\\d+\\\\s*[-－]\\\\s*\\\\d+)$'
           }
         }
       },
@@ -258,9 +250,6 @@ export const collections = [
   }
 ];
 
-/**
- * 辅助函数：拍平获取全站所有书籍列表（附带合集信息）
- */
 export function getAllBooks() {
   const list = [];
   for (const col of collections) {
@@ -275,4 +264,3 @@ export function getAllBooks() {
   }
   return list;
 }
-

@@ -14,9 +14,6 @@ if (!fs.existsSync(targetDir)) {
 
 const imagesDir = path.join(targetDir, 'images');
 
-/**
- * 识别某张图片是否为二维码，返回解出的字符串 URL 或 null
- */
 async function decodeQRCode(imgPath) {
   try {
     const { data, info } = await sharp(imgPath)
@@ -29,14 +26,14 @@ async function decodeQRCode(imgPath) {
       return code.data.trim();
     }
   } catch (err) {
-    // 忽略非图片或解不出的图
+
   }
   return null;
 }
 
 async function main() {
   console.log(`== 1. 扫描与检测图片目录: ${imagesDir} ==`);
-  const qrImageMap = new Map(); // filename -> url
+  const qrImageMap = new Map();
 
   if (fs.existsSync(imagesDir)) {
     const files = fs.readdirSync(imagesDir);
@@ -65,7 +62,6 @@ async function main() {
     const filePath = path.join(targetDir, mdxFile);
     let content = fs.readFileSync(filePath, 'utf-8');
 
-    // 1. 将现有的 ![](images/qr.jpg) 替换为临时 <QRCodeVideo url="..." />
     for (const [imgName, url] of qrImageMap.entries()) {
       const reg = new RegExp(`!\\[.*?\\]\\(images\\/${imgName.replace(/\./g, '\\.')}\\)`, 'g');
       if (reg.test(content)) {
@@ -76,9 +72,8 @@ async function main() {
 
     const lines = content.split(/\r?\n/);
     const toRemoveIndices = new Set();
-    const qrVideoUpdates = new Map(); // lineIndex -> replacement string
+    const qrVideoUpdates = new Map();
 
-    // 2. 寻找所有 <QRCodeVideo ... /> 的行号
     const qrVideoIndices = [];
     for (let i = 0; i < lines.length; i++) {
       if (lines[i].includes('<QRCodeVideo')) {
@@ -86,7 +81,6 @@ async function main() {
       }
     }
 
-    // 3. 寻找所有 "二维码..." 行号
     const qrTextMatches = [];
     for (let i = 0; i < lines.length; i++) {
       const lineTrim = lines[i].trim();
@@ -100,7 +94,6 @@ async function main() {
       }
     }
 
-    // 4. 对每个二维码匹配最近的 <QRCodeVideo> 行
     for (const qrText of qrTextMatches) {
       let closestVideoIndex = -1;
       let minDistance = 999;
@@ -108,7 +101,7 @@ async function main() {
       for (const vIdx of qrVideoIndices) {
         const dist = Math.abs(vIdx - qrText.lineIndex);
         if (dist < minDistance && dist < 12) {
-          // 在12行范围内配对
+
           minDistance = dist;
           closestVideoIndex = vIdx;
         }
@@ -119,7 +112,6 @@ async function main() {
         let id = qrText.id;
         toRemoveIndices.add(qrText.lineIndex);
 
-        // 如果该行只有 "二维码 1.1.1" 且下一行是文字标题，尝试捕获下一行
         if (!title && qrText.lineIndex + 1 < lines.length) {
           const nextLine = lines[qrText.lineIndex + 1].trim();
           if (
@@ -134,7 +126,6 @@ async function main() {
           }
         }
 
-        // 获取原有的 url
         const videoLine = lines[closestVideoIndex];
         const urlMatch = videoLine.match(/url="([^"]+)"/);
         const url = urlMatch ? urlMatch[1] : '';
@@ -146,7 +137,6 @@ async function main() {
       }
     }
 
-    // 5. 组装新行
     let modified = false;
     const newLines = [];
 
@@ -167,7 +157,6 @@ async function main() {
     if (modified || content.includes('<QRCodeVideo')) {
       let finalContent = newLines.join('\n');
 
-      // 确保顶部 import
       if (!finalContent.includes("import QRCodeVideo from '@/components/QRCodeVideo.astro'")) {
         const fmEndIndex = finalContent.indexOf('---', 3);
         if (fmEndIndex !== -1) {

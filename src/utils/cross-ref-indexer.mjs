@@ -44,12 +44,6 @@ export function parseTitleDetails(rawTitle) {
   };
 }
 
-/**
- * 构建指定书籍的编译期全局跨页路由索引
- * @param {string} colSlug 合集 slug
- * @param {string} bookSlug 图书 slug
- * @returns {Record<string, Array<{url: string, chapterTitle: string, rawTitle: string, cleanTitle: string}>>} 紧凑跨页索引字典
- */
 export function buildGlobalBlockIndex(colSlug, bookSlug) {
   const globalBlockIndex = {};
   if (!colSlug || !bookSlug) return globalBlockIndex;
@@ -69,7 +63,6 @@ export function buildGlobalBlockIndex(colSlug, bookSlug) {
         let urlPath = `/${cleanSlugPath}/`;
         urlPath = urlPath.replace(/\/+/g, '/');
 
-        // 提取章节标题 (Frontmatter title 或文件名)
         const fmTitleMatch = fileContent.match(/^---\s*\n([\s\S]*?)\n---/);
         let chapterTitle = path.basename(file, path.extname(file));
         if (fmTitleMatch) {
@@ -112,4 +105,3 @@ export function buildGlobalBlockIndex(colSlug, bookSlug) {
 
   return globalBlockIndex;
 }
-

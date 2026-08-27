@@ -1,25 +1,9 @@
 ---
-// VitePress 风格主题切换器（覆盖 Starlight 默认的 ThemeSelect 下拉 pill）
-// 视觉：纯 sun/moon 图标按钮（对照 VitePress VPSwitchAppearance / VPNavBarAppearance）
-// 交互：点击在 亮 ↔ 暗 之间循环切换（VitePress toggle-appearance 行为）
-// 存储：沿用 Starlight 的 localStorage 键 'starlight-theme'，与既有偏好兼容
-//       （auto 时跟随系统，图标显示当前有效主题；点击后写入显式 light/dark）
-// 注意：Starlight ThemeProvider.updatePickers() 对无 <select> 的 picker 是安全 no-op，
-//       组件自行管理图标与 data-theme，无需依赖它。
-//
-// 字体选择器（FontSelectOverride）作为兄弟组件一并输出：桌面端出现在 header 右侧
-// 动作区，移动端出现在左侧抽屉底部（MobileMenuFooter 复用本组件），无需额外布线。
-// 仅当 features.fonts.enabled（字体系统启用）时渲染，关闭字体功能即不打包/不显示。
-//
-// 设置按钮（FeatureToggles，右下角 ⚙ 功能开关面板）也已并入本顶栏槽位：作为兄弟控件
-// 与主题/字体切换并排，桌面 header 与移动端抽屉底部各渲染一个 <starlight-feature-toggles>
-// 实例，各自管理自己的开合与下拉面板（详见 FeatureToggles.astro / feature-toggles.ts）。
 import FeatureToggles from './FeatureToggles.astro';
 import { features } from '../config/features.config.mjs';
 ---
 
-<script is:inline>
-  (function () {
+<script is:inline>(function () {
     try {
       var key = 'starlight-site-theme';
       var theme = localStorage.getItem(key) || 'vitepress';
@@ -45,13 +29,11 @@ import { features } from '../config/features.config.mjs';
 </starlight-theme-select>
 
 <FeatureToggles />
-<style>
-  .vp-theme-switch {
+<style>.vp-theme-switch {
     display: flex;
     align-items: center;
   }
 
-  /* VitePress VPSwitchAppearance：40px×22px 胶囊底座 + 18px 滑块 */
   .vp-switch-appearance {
     position: relative;
     border: 1px solid var(--sl-color-gray-5, #e2e2e3);
@@ -99,70 +81,44 @@ import { features } from '../config/features.config.mjs';
     height: 12px;
     display: none;
   }
-  /* 图标反映当前有效主题：dark 显示月亮，light 显示太阳 */
+
   .vp-theme-switch.is-dark .vp-moon {
     display: block;
   }
   .vp-theme-switch:not(.is-dark) .vp-sun {
     display: block;
   }
-
 </style>
 
-<script>
-  type Theme = 'auto' | 'dark' | 'light';
+<script>type Theme = 'auto' | 'dark' | 'light';
 
-  /** Key in `localStorage` to store color theme preference at. */
   const storageKey = 'starlight-theme';
 
-  /** Get a typesafe theme string from any JS value (unknown values are coerced to `'auto'`). */
   const parseTheme = (theme: unknown): Theme =>
     theme === 'auto' || theme === 'dark' || theme === 'light' ? theme : 'auto';
 
-  /** Load the user’s preference from `localStorage`. */
   const loadTheme = (): Theme =>
     parseTheme(typeof localStorage !== 'undefined' && localStorage.getItem(storageKey));
 
-  /** Store the user’s preference in `localStorage`. */
   function storeTheme(theme: Theme): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(storageKey, theme === 'light' || theme === 'dark' ? theme : '');
     }
   }
 
-  /** Get the preferred system color scheme. */
   const getPreferredColorScheme = (): Theme =>
     matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 
-  /** 主题切换动画偏好在 localStorage 的键：'instant'（即时切换）| 'animate'（柔和过渡）。 */
   const themeTransitionKey = 'starlight-theme-transition';
 
-  /**
-   * 主题切换是否使用柔和过渡动画。
-   * 默认 'instant'（即时切换、无过渡 —— 修复本站在切主题时的卡顿：文章页几十个卡片 +
-   * 大量引用徽章 + 成百上千个 KaTeX 节点，它们多数带 `transition: all`，主题切换会触发
-   * 成百上千个元素同时播放颜色过渡，叠加整页 CSS 变量重算，形成明显卡顿）。
-   * 仅当功能面板里显式开启「主题切换动画」（= 'animate'）时才走柔和过渡。
-   */
   function useThemeTransitionAnimation(): boolean {
     try {
       return localStorage.getItem(themeTransitionKey) === 'animate';
     } catch {
-      return false; // 读不到存储（隐私模式等）按默认即时切换
+      return false;
     }
   }
 
-  /**
-   * Apply theme to the document (mirrors Starlight ThemeProvider), and around the
-   * swap temporarily disable the whole page's CSS transitions.
-   *
-   * 默认（instant）时：先给 <html> 挂 `.theme-switching`（CSS 里 `.theme-switching *`
-   * 关闭过渡，见 vitepress-theme.css 末段），让换肤变成「即时快照」；等新主题那一帧
-   * 绘制完，再移除 class 恢复日常 hover/高亮用的 0.3s / 0.15s 过渡。
-   * 用双重 rAF 而非单次：单次 rAF 回调发生在下一帧 style-recalc 之前，此时移除 class
-   * 会让颜色过渡在绘制帧里重新触发；双重 rAF 保证「带 .theme-switching」的那帧已画完。
-   * 当偏好为 animate 时不做任何干预，走 Starlight/VitePress 原始的柔和过渡。
-   */
   function applyTheme(theme: Theme): void {
     const root = document.documentElement;
     const animate = useThemeTransitionAnimation();
@@ -175,7 +131,6 @@ import { features } from '../config/features.config.mjs';
     }
   }
 
-  /** Effective theme: `auto` resolves to the system scheme. */
   const effectiveTheme = (): Theme => {
     const stored = loadTheme();
     return stored === 'auto' ? getPreferredColorScheme() : stored;
@@ -183,7 +138,7 @@ import { features } from '../config/features.config.mjs';
 
   class VpThemeSwitch extends HTMLElement {
     connectedCallback() {
-      // 挂载即同步（含 SPA 导航后重新插入的场景）
+
       applyTheme(loadTheme());
       this.syncIcon();
       if (this.dataset.bound) return;
@@ -204,7 +159,6 @@ import { features } from '../config/features.config.mjs';
 
   customElements.define('starlight-theme-select', VpThemeSwitch);
 
-  // 系统配色变化时，auto 用户跟随切换（全局只注册一次）
   if (!window.__vpThemeSysListener) {
     window.__vpThemeSysListener = true;
     matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {

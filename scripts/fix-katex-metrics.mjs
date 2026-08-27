@@ -1,11 +1,3 @@
-// 一次性/按需全量检查与修复脚本：检测并规范化 MDX 数学公式中导致 KaTeX character metrics 警告的特殊字符
-// 涵盖：
-// 1. 公式内的 Unicode 罗马数字 (Ⅰ..Ⅻ, ⅰ..ⅹ) -> 标准 ASCII 字符 (I..XII, i..x)
-// 2. 公式内的公式编号 \tag{①} -> \tag{\textcircled{1}}
-// 3. 公式内的上标脚注 ^{①} / ^{\text{①}} / ^{\textcircled{①}} -> 移至公式外 <sup>①</sup>
-// 4. 公式末尾粘连的脚注序号 $...①$ -> $...$<sup>①</sup>
-// 5. 公式内部的 \underbrace / \textcircled / 衍生步骤序号 -> \textcircled{1}
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { compile } from '@mdx-js/mdx';
@@ -53,23 +45,18 @@ function walk(dir, list = []) {
 export function fixMathString(mathStr) {
   let s = mathStr;
 
-  // 1. 替换公式内的 Unicode 罗马数字
   for (const [r, repl] of Object.entries(romanMap)) {
     if (s.includes(r)) {
       s = s.replaceAll(r, repl);
     }
   }
 
-  // 2. 修复 \tag{①} -> \tag{\textcircled{1}}
   s = s.replace(/\\tag\s*\{([①-⑳])\}/g, (m, c) => `\\tag{\\textcircled{${circledMap[c]}}}`);
 
-  // 3. 修复 \textcircled{①} -> \textcircled{1}
   s = s.replace(/\\textcircled\s*\{([①-⑳])\}/g, (m, c) => `\\textcircled{${circledMap[c]}}`);
 
-  // 4. 修复 \underbrace{...}_{①} -> \underbrace{...}_{\textcircled{1}}
   s = s.replace(/(\\underbrace\{[^}]*\}_\s*\{?)([①-⑳])(\}?)/g, (m, p1, c, p3) => `${p1}\\textcircled{${circledMap[c]}}${p3}`);
 
-  // 5. 替换公式内其余带圈数字 (如联立方程标号、算式推导标号) -> \textcircled{n}
   s = s.replace(/([①-⑳])/g, (m, c) => `\\textcircled{${circledMap[c]}}`);
 
   return s;
@@ -91,7 +78,7 @@ export function fixContent(content) {
 
     if (inBlock) {
       let fixedLine = line;
-      // 块级公式指数中的角标
+
       fixedLine = fixedLine.replace(/(\^\{[^\}]*?)([①-⑳])(\})/g, (m, p1, c, p3) => `${p1}\\textcircled{${circledMap[c]}}${p3}`);
       fixedLine = fixMathString(fixedLine);
       newLines.push(fixedLine);
@@ -100,18 +87,14 @@ export function fixContent(content) {
 
     let fixedLine = line;
 
-    // 1. 独立 $^{①}$ 或 $^{\text{①}}$ -> <sup>①</sup>
     fixedLine = fixedLine.replace(/\$\s*\^\{?\\text\{([①-⑳])\}\}?\s*\$/g, '<sup>$1</sup>');
     fixedLine = fixedLine.replace(/\$\s*\^\{?([①-⑳])\}?\s*\$/g, '<sup>$1</sup>');
 
-    // 2. 粘在行内公式末尾的上标角标:
-    // e.g. `$N = \left[\frac{1}{\varepsilon}\right]^{\textcircled{①}}$` -> `$N = \left[\frac{1}{\varepsilon}\right]$<sup>①</sup>`
     fixedLine = fixedLine.replace(/\$([^\$\n]+?)\^\{\\textcircled\{([①-⑳])\}\}\$/g, '$$$1$$<sup>$2</sup>');
     fixedLine = fixedLine.replace(/\$([^\$\n]+?)\^\{\\text\{([①-⑳])\}\}\$/g, '$$$1$$<sup>$2</sup>');
     fixedLine = fixedLine.replace(/\$([^\$\n]+?)\^\{([①-⑳])\}\$/g, '$$$1$$<sup>$2</sup>');
     fixedLine = fixedLine.replace(/\$([^\$\n]+?)\^([①-⑳])\$/g, '$$$1$$<sup>$2</sup>');
 
-    // 3. 粘在行内公式末尾的无上标角标 (如 $y=f(x)①$ -> $y=f(x)$<sup>①</sup>)
     fixedLine = fixedLine.replace(/\$([^\$\n]+?)\s*([①-⑳])\$/g, (m, math, c) => {
       if (/^[①-⑳\s\+\-\*\\times]+$/.test(math.trim() + c)) {
         return `$${fixMathString(math + c)}$`;
@@ -119,7 +102,6 @@ export function fixContent(content) {
       return `$${math.trim()}$<sup>${c}</sup>`;
     });
 
-    // 4. 行内公式本体清洗
     fixedLine = fixedLine.replace(/(?<!\\)\$(.+?)(?<!\\)\$/g, (match, mathContent) => {
       return `$${fixMathString(mathContent)}$`;
     });

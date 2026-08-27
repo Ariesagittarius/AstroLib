@@ -1,16 +1,12 @@
 ---
-// 自定义右侧侧边栏组件 - 替代 Starlight 的 PageSidebar.astro
-// 模块化架构：逻辑解耦至 src/components/sidebar/ 与 src/utils/cross-ref-indexer.mjs
 import { collections } from '../config/collections.config.mjs';
 import { features, crossRefRefs } from '../config/features.config.mjs';
 import { buildGlobalBlockIndex } from '../utils/cross-ref-indexer.mjs';
 
-// 引用联动模式：'interactive'（默认，可点击/跨页联动）| 'static'（统一静态 chip）。
 const refsMode = crossRefRefs() === 'static' ? 'static' : 'interactive';
 
 const pathname = Astro.url.pathname;
 
-// 1. 深度遍历两级结构，感知当前路由所属的图书及其 TOC 规则
 let currentBook = null;
 let currentCol = null;
 for (const col of collections) {
@@ -22,20 +18,18 @@ for (const col of collections) {
   }
 }
 
-// 2. 备用安全降级方案
 if (!currentBook) {
   currentCol = collections[0];
   currentBook = collections[0].books[0];
 }
 const bookConfigJson = JSON.stringify(currentBook);
 
-// 3. 构建期递归扫描提取当前图书的全局跨页路由索引
 const globalBlockIndex = refsMode === 'interactive' ? buildGlobalBlockIndex(currentCol?.slug, currentBook?.slug) : {};
 const globalIndexJson = JSON.stringify(globalBlockIndex);
 ---
 
 <aside class="custom-page-sidebar" data-book-key={`${currentCol.slug}/${currentBook.slug}`} data-refs-mode={refsMode} data-book-config={bookConfigJson} data-global-index={globalIndexJson}>
-  <!-- VitePress outline-marker：跟随滚动高亮项的 2px 品牌色指示条（JS 更新 top） -->
+
   <div class="outline-marker" aria-hidden="true"></div>
   <div class="toc-container">
     <div class="toc-header-row">
@@ -72,7 +66,6 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
   </div>
 </aside>
 
-<!-- 移动端本地导航 VPLocalNav（VitePress 移植：顶部 sticky 条 + 大纲 popup 下拉面板） -->
 <div class="vp-local-nav" data-vp-local-nav>
   <div class="vp-local-nav-container">
     <button class="vp-local-nav-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="vp-local-nav-panel" aria-label="本页大纲">
@@ -109,13 +102,10 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
   </div>
 </div>
 
-<style>
-  /* 1. 默认隐藏所有自定义大纲，防止在移动端正文中泄露 */
-  .custom-page-sidebar {
+<style>.custom-page-sidebar {
     display: none;
   }
 
-  /* 2. 仅在桌面端 (>= 72rem) 显示并接管右侧固定位置 */
   @media (min-width: 72rem) {
     .custom-page-sidebar {
       display: block;
@@ -131,7 +121,6 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     }
   }
 
-  /* outline-marker：2px 宽的竖条，绝对定位在 aside 左边缘（与链接左 border 对齐） */
   .outline-marker {
     position: absolute;
     left: 0.5rem;
@@ -332,8 +321,7 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
   }
 </style>
 
-<script>
-  import { initPageSidebar } from './sidebar/toc-generator';
+<script>import { initPageSidebar } from './sidebar/toc-generator';
   import { initMermaid, setupMermaidThemeListener } from './sidebar/mermaid-loader';
   import { initImageBlur } from './sidebar/image-blur-loader';
 

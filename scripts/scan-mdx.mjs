@@ -1,4 +1,3 @@
-// 一次性扫描脚本：用与 Astro 相同的 MDX 编译管线检查指定目录下的所有 .mdx 文件
 import fs from 'node:fs';
 import path from 'node:path';
 import { compile } from '@mdx-js/mdx';
@@ -32,7 +31,7 @@ const failures = [];
 
 for (const file of files) {
   const content = fs.readFileSync(file, 'utf-8');
-  // 剥离 frontmatter（Astro 会单独处理，编译 MDX 时不含它）
+
   const body = content.replace(/^---[\s\S]*?---\r?\n?/, '');
   try {
     await compile({ value: body, path: file }, {

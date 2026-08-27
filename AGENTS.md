@@ -75,5 +75,3 @@ All Git commits must strictly follow the **Academic Restrained Conventional Spec
    ```bash
    npm run push:all
    ```
-
-

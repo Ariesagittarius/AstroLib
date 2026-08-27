@@ -3,9 +3,6 @@ import path from 'node:path';
 import { cleanSlug, naturalSort } from '../sidebar.mjs';
 import { collections } from '../../config/collections.config.mjs';
 
-/**
- * 学术规范卡片组件定义与元数据映射表（严格去 Emoji 化，采用学术编码与统一语义色板）
- */
 export const CARD_TYPES = {
   example: { label: '例题', code: 'EG', theme: 'chip-example' },
   variant: { label: '变式', code: 'VAR', theme: 'chip-variant' },
@@ -33,9 +30,6 @@ export const CARD_TYPES = {
 
 const EMOJI_REGEX = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\uFE0F]/gu;
 
-/**
- * 递归扫描目录下的所有 MDX/MD 文件并按自然顺序排序
- */
 function walkMdxFiles(dir, fileList = []) {
   if (!fs.existsSync(dir)) return fileList;
   const files = fs.readdirSync(dir);
@@ -55,10 +49,6 @@ function walkMdxFiles(dir, fileList = []) {
   return fileList;
 }
 
-/**
- * 规范化标题用于去重聚合匹配
- * 如 "例 1" -> "例1", "定理 2.1" -> "定理2.1", "注 $1$" -> "注1", "$Cauchy$ 判别法" -> "cauchy判别法"
- */
 export function normalizeTitle(title) {
   if (!title) return '';
   return title
@@ -72,9 +62,6 @@ export function normalizeTitle(title) {
     .trim();
 }
 
-/**
- * 从卡片源码内容中提取纯文本预览（去除标签、数学公式与多余空格）
- */
 function extractSnippet(bodyContent) {
   if (!bodyContent) return '';
   return bodyContent
@@ -88,14 +75,10 @@ function extractSnippet(bodyContent) {
     .slice(0, 140);
 }
 
-/**
- * 从组件标签名和标题内容智能推断学术语义细分类型
- */
 function inferCardKind(tagName, title) {
   const t = tagName.toLowerCase();
   const titleClean = (title || '').trim();
 
-  // 若为通用容器 Knowledge / Block / Summary / Note，依据标题前缀智能判定学术类型
   if (t === 'knowledge' || t === 'block' || t === 'summary') {
     if (/^定理\b|^定理\s*[\d.一二三四五六七八九十]/.test(titleClean) || titleClean.endsWith('定理')) {
       return 'theorem';
@@ -156,9 +139,6 @@ function inferCardKind(tagName, title) {
   return CARD_TYPES[t] ? t : 'block';
 }
 
-/**
- * 扫描指定书籍（colSlug / bookSlug）下的所有卡片模块并执行查重与异常分析
- */
 export function scanBookModules(colSlug, bookSlug) {
   const result = {
     ok: true,
@@ -179,7 +159,6 @@ export function scanBookModules(colSlug, bookSlug) {
     suspiciousItems: [],
   };
 
-  // 1. 获取书籍配置与信息
   let bookConfig = null;
   for (const col of collections) {
     if (col.slug === colSlug) {
@@ -199,13 +178,11 @@ export function scanBookModules(colSlug, bookSlug) {
     return result;
   }
 
-  // 2. 递归收集 MDX 文件
   const allMdxFiles = walkMdxFiles(bookDir);
   result.totalChapters = allMdxFiles.length;
 
   const singleTagRegex = /<([A-Z][a-zA-Z0-9]*)\b([^>]*?)>/g;
 
-  // 识别的目标组件标签白名单
   const KNOWN_TAGS = new Set([
     'Example',
     'Variant',
@@ -225,8 +202,8 @@ export function scanBookModules(colSlug, bookSlug) {
   ]);
 
   const allModules = [];
-  const normalizedTitleMap = new Map(); // normalizedTitle -> Module[]
-  const sameChapterMap = new Map(); // `${file}:::${normalizedTitle}` -> Module[]
+  const normalizedTitleMap = new Map();
+  const sameChapterMap = new Map();
 
   for (const filePath of allMdxFiles) {
     const fileContent = fs.readFileSync(filePath, 'utf-8');
@@ -236,11 +213,9 @@ export function scanBookModules(colSlug, bookSlug) {
     const cleanChapterSlug = cleanSlug(rawSlug);
     const chapterUrl = `/${cleanChapterSlug}/`;
 
-    // 提取章节标题
     const titleMatch = fileContent.match(/title:\s*['"](.*?)['"]/);
     const chapterTitle = titleMatch ? titleMatch[1] : filename.replace(/^\d+[_-]/, '').replace(/\.mdx?$/, '');
 
-    // 行首偏移表（用于换算字符索引到行号）
     const lineBreakOffsets = [0];
     for (let i = 0; i < fileContent.length; i++) {
       if (fileContent.charCodeAt(i) === 10) {
@@ -271,14 +246,12 @@ export function scanBookModules(colSlug, bookSlug) {
       const startChar = match.index;
       const startLine = getLineNumber(startChar);
 
-      // 提取 title 属性
       const titleAttrMatch = fullAttrStr.match(/title=(?:["'](.*?)["']|{(.*?)}|(\S+))/);
       let rawTitle = '';
       if (titleAttrMatch) {
         rawTitle = (titleAttrMatch[1] || titleAttrMatch[2] || titleAttrMatch[3] || '').trim();
       }
 
-      // 若为 QRCodeVideo，且无 title 时读取 id 或其他提示
       if (!rawTitle && tagName === 'QRCodeVideo') {
         const idMatch = fullAttrStr.match(/id=(?:["'](.*?)["']|{(.*?)}|(\S+))/);
         if (idMatch) {
@@ -286,11 +259,9 @@ export function scanBookModules(colSlug, bookSlug) {
         }
       }
 
-      // 智能推断细分类型
       const kind = inferCardKind(tagName, rawTitle);
       const typeInfo = CARD_TYPES[kind] || CARD_TYPES.block;
 
-      // 默认标题容错（Note -> 标注说明，Solution -> 解析，Analysis -> 思路分析，Guide -> 教学导引）
       let cleanTitle = rawTitle.replace(EMOJI_REGEX, '').trim();
       if (!cleanTitle) {
         if (tagName === 'Note') cleanTitle = '标注说明';
@@ -304,12 +275,10 @@ export function scanBookModules(colSlug, bookSlug) {
       const normTitle = normalizeTitle(cleanTitle) || `[无标题_${kind}]`;
       const cleanId = cleanTitle ? encodeURIComponent(cleanTitle.replace(/\s+/g, '-')) : '';
 
-      // 估算内容片段（从标签后截取 300 字符）
       const tagEndChar = startChar + match[0].length;
       const bodyPreview = fileContent.slice(tagEndChar, tagEndChar + 350);
       const snippet = extractSnippet(bodyPreview);
 
-      // 自定义模块主题与简写联动
       const bookModuleCustom =
         bookConfig?.modules?.[cleanTitle] ||
         bookConfig?.modules?.[typeInfo.label] ||
@@ -340,38 +309,31 @@ export function scanBookModules(colSlug, bookSlug) {
         suspiciousReasons: [],
       };
 
-      // 结构校验警示（精准识别真正的数据清洗异常，杜绝误报）
       const isSelfClosing = fullAttrStr.trim().endsWith('/');
 
-      // 1. 严格检查必须具备标题的卡片类型
       if (!rawTitle && (tagName === 'Example' || tagName === 'Variant' || tagName === 'Exercise')) {
         item.suspiciousReasons.push(`缺少 title 标题属性`);
       }
 
-      // 2. 卡片标题异常过长（> 50 字符，疑似误将整段正文吞入标题）
       if (cleanTitle.length > 50) {
         item.suspiciousReasons.push(`标题过长（${cleanTitle.length} 字符，疑似误将段落吞入标题属性）`);
       }
 
-      // 3. 空壳卡片（正文极短，疑似拆分遗留碎片）
       if (!isSelfClosing && snippet.length === 0 && tagName !== 'QRCodeVideo') {
         item.suspiciousReasons.push(`卡片正文为空，疑似空壳或截断碎片`);
       }
 
-      // 4. 误切为例题/变式的段落（如例题标题误填“说明：xxx”）
       if ((tagName === 'Example' || tagName === 'Variant') && /^说明\s*[:：]|^注意\s*[:：]/.test(cleanTitle)) {
         item.suspiciousReasons.push(`例题/变式标题以“说明/注意”开头，疑似段落误切`);
       }
 
       allModules.push(item);
 
-      // 全书聚合
       if (!normalizedTitleMap.has(normTitle)) {
         normalizedTitleMap.set(normTitle, []);
       }
       normalizedTitleMap.get(normTitle).push(item);
 
-      // 同章聚合
       const chapterKey = `${relativePath}:::${normTitle}`;
       if (!sameChapterMap.has(chapterKey)) {
         sameChapterMap.set(chapterKey, []);
@@ -379,7 +341,6 @@ export function scanBookModules(colSlug, bookSlug) {
       sameChapterMap.get(chapterKey).push(item);
     }
 
-    // 扫描未封装为 <Note> 的原始文本注解行（常见 OCR 正则遗漏/漏切分）
     const lines = fileContent.split('\n');
     let insideCodeBlock = false;
     let insideJsxBlock = false;
@@ -394,7 +355,6 @@ export function scanBookModules(colSlug, bookSlug) {
       }
       if (insideCodeBlock) return;
 
-      // 跟踪进入/离开 JSX 卡片标签
       if (/<([A-Z][a-zA-Z0-9]*)\b[^>]*>/.test(trimmed) && !trimmed.endsWith('/>')) {
         insideJsxBlock = true;
       }
@@ -403,7 +363,6 @@ export function scanBookModules(colSlug, bookSlug) {
         return;
       }
 
-      // 如果未在 JSX 标签内且非 Markdown 标题，检查是否匹配原始注解格式
       if (!insideJsxBlock && !trimmed.startsWith('#')) {
         const rawNoteMatch = trimmed.match(
           /^(?:[*#>\-\d.]+\s*)?(?:【\s*(?:注|注解|说明|标注说明|注意|评注)\s*】|(?:注|注解|说明|标注说明|注意|评注)\s*[:：])\s*(.*)$/
@@ -440,15 +399,12 @@ export function scanBookModules(colSlug, bookSlug) {
   result.totalModules = allModules.length;
   result.modules = allModules;
 
-  // 3. 构建统计
   const byKind = {};
   for (const m of allModules) {
     byKind[m.kind] = (byKind[m.kind] || 0) + 1;
   }
   result.stats.byKind = byKind;
 
-  // 4. 计算同章序号冲突
-  // 注意：对于通用无独立大序号的注记（如 '注' / '注1'）、解析（'解析'/'证明'/'证1'/'解法一'）、思路分析，同章多处出现属于常规教学子块，不作为冲突警示
   const COMMON_SUB_BLOCK_PATTERN = /^(注|注意|标注说明|评注|按语|解析|证明|解|解法|证|证法|思路分析|教学导引|微课视频)\s*[\d.一二三四五六七八九十()（）]*$/;
 
   const sameChapterDups = [];
@@ -456,7 +412,7 @@ export function scanBookModules(colSlug, bookSlug) {
     if (items.length > 1) {
       const first = items[0];
       const isCommonSub = COMMON_SUB_BLOCK_PATTERN.test(first.cleanTitle) || COMMON_SUB_BLOCK_PATTERN.test(first.normalizedTitle);
-      
+
       if (!isCommonSub) {
         for (const item of items) {
           if (!item.suspiciousReasons.some((r) => r.includes('同章节存在同名'))) {
@@ -480,7 +436,6 @@ export function scanBookModules(colSlug, bookSlug) {
   result.sameChapterDuplicates = sameChapterDups;
   result.stats.sameChapterDupsCount = sameChapterDups.length;
 
-  // 5. 计算全书重名聚合（不含通用子块）
   const allDups = [];
   for (const [normTitle, items] of normalizedTitleMap.entries()) {
     if (items.length > 1) {
@@ -501,7 +456,6 @@ export function scanBookModules(colSlug, bookSlug) {
   result.allDuplicates = allDups;
   result.stats.allDupsCount = allDups.length;
 
-  // 6. 收集全部疑似异常模块
   const suspicious = allModules.filter((m) => m.suspiciousReasons.length > 0);
   result.suspiciousItems = suspicious;
   result.stats.suspiciousCount = suspicious.length;
@@ -509,9 +463,6 @@ export function scanBookModules(colSlug, bookSlug) {
   return result;
 }
 
-/**
- * 列出全站所有合集与图书信息（供前端图书切换下拉）
- */
 export function listAllBooks() {
   const books = [];
   for (const col of collections) {

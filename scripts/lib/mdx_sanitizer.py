@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import re
 
 class MdxSanitizer:
@@ -68,7 +67,7 @@ class MdxSanitizer:
         clean_name = tag_name.lstrip('/')
         if clean_name not in self.VALID_TAGS:
             return False
-        # 如果不是标准 JSX 组件（即非大写开头），则属性内不允许出现中文字符（防止类似 a<b 还是 a>b 的误判）
+
         if not clean_name[0].isupper():
             if any(ord(c) >= 128 for c in tag_str):
                 return False
@@ -145,7 +144,6 @@ class MdxSanitizer:
         title = re.sub(r'\$([^$]*)\$', lambda m: re.sub(r'\s+', '', m.group(1)), title)
         title = title.replace("'", "\\'")
         return title.strip()
-
 
 class TextCleaner:
     """MinerU 产物通用噪声过滤与文本清洗器。"""
