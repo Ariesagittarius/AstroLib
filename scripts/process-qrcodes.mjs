@@ -34,6 +34,30 @@ async function decodeQRCode(imgPath) {
   return null;
 }
 
+/**
+ * 在线/自动解析 URL 对应的资源标题
+ */
+async function resolveUrlTitle(url) {
+  if (!url) return '';
+  try {
+    const res = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(6000) });
+    const u = new URL(res.url);
+    const resName = u.searchParams.get('resName');
+    if (resName) {
+      return decodeURIComponent(resName).trim();
+    }
+
+    const text = await res.text();
+    const m = text.match(/readingMaterialsHeaderTitle:\s*['"](.*?)['"]/);
+    if (m && m[1]) {
+      return m[1].trim();
+    }
+  } catch (e) {
+    // 网络超时或失败则返回空，后续回退到本地提取
+  }
+  return '';
+}
+
 async function main() {
   console.log(`== 1. 扫描与检测图片目录: ${imagesDir} ==`);
   const qrImageMap = new Map(); // filename -> url
@@ -55,7 +79,28 @@ async function main() {
     console.log(`检查了 ${checkedCount} 张图片，成功检测并提取出 ${qrImageMap.size} 个二维码。`);
   }
 
-  console.log(`\n== 2. 扫描与改写 MDX 文件 ==`);
+  console.log(`\n== 2. 在线解析二维码资源标题与微课名称 ==`);
+  const urlTitleMap = new Map(); // url -> title
+  const uniqueUrls = Array.from(new Set(qrImageMap.values()));
+  console.log(`共有 ${uniqueUrls.length} 个独立 URL 待解析...`);
+
+  // 分批并发请求，防止网络拥塞
+  const batchSize = 15;
+  for (let i = 0; i < uniqueUrls.length; i += batchSize) {
+    const batch = uniqueUrls.slice(i, i + batchSize);
+    await Promise.all(
+      batch.map(async (u) => {
+        const title = await resolveUrlTitle(u);
+        if (title) {
+          urlTitleMap.set(u, title);
+        }
+      })
+    );
+    process.stdout.write(`  已完成解析: ${Math.min(i + batchSize, uniqueUrls.length)} / ${uniqueUrls.length}\r`);
+  }
+  console.log(`\n成功解析到 ${urlTitleMap.size} 个微课资源标题。`);
+
+  console.log(`\n== 3. 扫描与改写 MDX 文件 ==`);
   const mdxFiles = fs.readdirSync(targetDir).filter((f) => f.endsWith('.mdx'));
   let updatedMdxCount = 0;
   let totalReplacements = 0;
@@ -64,107 +109,117 @@ async function main() {
   for (const mdxFile of mdxFiles) {
     const filePath = path.join(targetDir, mdxFile);
     let content = fs.readFileSync(filePath, 'utf-8');
-
-    // 1. 将现有的 ![](images/qr.jpg) 替换为临时 <QRCodeVideo url="..." />
-    for (const [imgName, url] of qrImageMap.entries()) {
-      const reg = new RegExp(`!\\[.*?\\]\\(images\\/${imgName.replace(/\./g, '\\.')}\\)`, 'g');
-      if (reg.test(content)) {
-        content = content.replace(reg, `<QRCodeVideo url="${url}" />`);
-        convertedImageFiles.add(imgName);
-      }
-    }
-
     const lines = content.split(/\r?\n/);
     const toRemoveIndices = new Set();
-    const qrVideoUpdates = new Map(); // lineIndex -> replacement string
+    const lineReplacements = new Map(); // lineIndex -> replacement string
+    let fileModified = false;
 
-    // 2. 寻找所有 <QRCodeVideo ... /> 的行号
-    const qrVideoIndices = [];
+    // 扫描每一行是否包含二维码图片
     for (let i = 0; i < lines.length; i++) {
-      if (lines[i].includes('<QRCodeVideo')) {
-        qrVideoIndices.push(i);
-      }
-    }
+      const line = lines[i];
+      for (const [imgName, url] of qrImageMap.entries()) {
+        const imgPattern = new RegExp(`!\\[.*?\\]\\(images\\/${imgName.replace(/\./g, '\\.')}\\)`);
+        if (imgPattern.test(line)) {
+          convertedImageFiles.add(imgName);
+          fileModified = true;
 
-    // 3. 寻找所有 "二维码..." 行号
-    const qrTextMatches = [];
-    for (let i = 0; i < lines.length; i++) {
-      const lineTrim = lines[i].trim();
-      const m = lineTrim.match(/^二维码\s*(\d+(?:\.\d+)*)?\s*(.*)$/);
-      if (m) {
-        qrTextMatches.push({
-          lineIndex: i,
-          id: m[1] || '',
-          title: (m[2] || '').trim(),
-        });
-      }
-    }
+          let title = urlTitleMap.get(url) || '';
+          let id = '';
 
-    // 4. 对每个二维码匹配最近的 <QRCodeVideo> 行
-    for (const qrText of qrTextMatches) {
-      let closestVideoIndex = -1;
-      let minDistance = 999;
+          // 1. 检查前后是否有标题说明文本
+          // 向上检查前 1 行
+          const prevLine = i > 0 ? lines[i - 1].trim() : '';
+          // 向下检查后 2 行
+          const nextLine1 = i + 1 < lines.length ? lines[i + 1].trim() : '';
+          const nextLine2 = i + 2 < lines.length ? lines[i + 2].trim() : '';
 
-      for (const vIdx of qrVideoIndices) {
-        const dist = Math.abs(vIdx - qrText.lineIndex);
-        if (dist < minDistance && dist < 12) {
-          // 在12行范围内配对
-          minDistance = dist;
-          closestVideoIndex = vIdx;
-        }
-      }
+          // 检查 "二维码 1.1.1 标题"
+          const qrMatchNext = nextLine1.match(/^二维码\s*(\d+(?:\.\d+)*)?\s*(.*)$/);
+          const qrMatchPrev = prevLine.match(/^二维码\s*(\d+(?:\.\d+)*)?\s*(.*)$/);
 
-      if (closestVideoIndex !== -1) {
-        let title = qrText.title;
-        let id = qrText.id;
-        toRemoveIndices.add(qrText.lineIndex);
+          if (qrMatchNext) {
+            id = qrMatchNext[1] || '';
+            if (qrMatchNext[2]) title = qrMatchNext[2].trim();
+            toRemoveIndices.add(i + 1);
+          } else if (qrMatchPrev) {
+            id = qrMatchPrev[1] || '';
+            if (qrMatchPrev[2]) title = qrMatchPrev[2].trim();
+            toRemoveIndices.add(i - 1);
+          } else {
+            // 检查紧随其后的短文本行是否为标题（如 "本章提要"、"北斗导航系统"、"金属表面为什么容易反射电磁波？" 等）
+            if (
+              nextLine1 &&
+              !nextLine1.startsWith('#') &&
+              !nextLine1.startsWith('!') &&
+              !nextLine1.startsWith('$') &&
+              !nextLine1.startsWith('<') &&
+              !nextLine1.startsWith('式') &&
+              !nextLine1.startsWith('图') &&
+              !nextLine1.startsWith('表') &&
+              !nextLine1.startsWith('---') &&
+              nextLine1.length <= 40
+            ) {
+              // 如果在线标题与该行吻合，或者本地没有在线标题
+              const cleanedNext1 = nextLine1.replace(/[\s\-_—·:：,，.。()（）[\]【】？?]/g, '');
+              const cleanedOnline = title.replace(/[\s\-_—·:：,，.。()（）[\]【】？?]/g, '');
 
-        // 如果该行只有 "二维码 1.1.1" 且下一行是文字标题，尝试捕获下一行
-        if (!title && qrText.lineIndex + 1 < lines.length) {
-          const nextLine = lines[qrText.lineIndex + 1].trim();
-          if (
-            nextLine &&
-            !nextLine.startsWith('#') &&
-            !nextLine.startsWith('<') &&
-            !nextLine.startsWith('$') &&
-            !nextLine.startsWith('!')
-          ) {
-            title = nextLine;
-            toRemoveIndices.add(qrText.lineIndex + 1);
+              if (!title) {
+                title = nextLine1;
+                toRemoveIndices.add(i + 1);
+                // 处理双行标题（如 "物理中的" \n "模型化"）
+                if (
+                  nextLine2 &&
+                  !nextLine2.startsWith('#') &&
+                  !nextLine2.startsWith('!') &&
+                  !nextLine2.startsWith('$') &&
+                  !nextLine2.startsWith('<') &&
+                  !nextLine2.startsWith('---') &&
+                  nextLine2.length <= 20 &&
+                  !/[。；!！?？]$/.test(title)
+                ) {
+                  title += nextLine2;
+                  toRemoveIndices.add(i + 2);
+                }
+              } else if (
+                cleanedNext1 &&
+                (cleanedOnline.includes(cleanedNext1) || cleanedNext1.includes(cleanedOnline) || nextLine1 === title)
+              ) {
+                // 冗余标题行，删除
+                toRemoveIndices.add(i + 1);
+                // 如果是折成两行的冗余行也一并清理
+                if (nextLine2 && cleanedOnline.includes(cleanedNext1 + nextLine2.replace(/[\s\-_—·:：,，.。()（）[\]【】？?]/g, ''))) {
+                  toRemoveIndices.add(i + 2);
+                }
+              }
+            }
           }
+
+          // 规范化 title / id
+          title = (title || '').replace(/^二维码\s*\d+(\.\d+)*\s*/, '').replace(/[\.\。\s]+$/, '').trim();
+          const propId = id ? ` id="${id}"` : '';
+          const propTitle = title ? ` title="${title.replace(/"/g, '&quot;')}"` : '';
+
+          const componentTag = `<QRCodeVideo${propId}${propTitle} url="${url}" />`;
+          lineReplacements.set(i, line.replace(imgPattern, componentTag));
+          totalReplacements++;
+          break;
         }
-
-        // 获取原有的 url
-        const videoLine = lines[closestVideoIndex];
-        const urlMatch = videoLine.match(/url="([^"]+)"/);
-        const url = urlMatch ? urlMatch[1] : '';
-
-        const propId = id ? ` id="${id}"` : '';
-        const propTitle = title ? ` title="${title.replace(/"/g, '&quot;')}"` : '';
-
-        qrVideoUpdates.set(closestVideoIndex, `<QRCodeVideo${propId}${propTitle} url="${url}" />`);
       }
     }
 
-    // 5. 组装新行
-    let modified = false;
-    const newLines = [];
-
-    for (let i = 0; i < lines.length; i++) {
-      if (toRemoveIndices.has(i)) {
-        modified = true;
-        continue;
+    if (fileModified) {
+      const newLines = [];
+      for (let i = 0; i < lines.length; i++) {
+        if (toRemoveIndices.has(i)) {
+          continue;
+        }
+        if (lineReplacements.has(i)) {
+          newLines.push(lineReplacements.get(i));
+        } else {
+          newLines.push(lines[i]);
+        }
       }
-      if (qrVideoUpdates.has(i)) {
-        newLines.push(qrVideoUpdates.get(i));
-        modified = true;
-        totalReplacements++;
-      } else {
-        newLines.push(lines[i]);
-      }
-    }
 
-    if (modified || content.includes('<QRCodeVideo')) {
       let finalContent = newLines.join('\n');
 
       // 确保顶部 import
@@ -187,7 +242,7 @@ async function main() {
     }
   }
 
-  console.log(`\n== 3. 清理已被替换的纯二维码图片 ==`);
+  console.log(`\n== 4. 清理已被替换的纯二维码图片 ==`);
   let deletedImgCount = 0;
   for (const imgName of convertedImageFiles) {
     const imgPath = path.join(imagesDir, imgName);
@@ -198,6 +253,7 @@ async function main() {
   }
 
   console.log(`\n== 处理完成 ==`);
+  console.log(`· 替换卡片数量: ${totalReplacements} 个`);
   console.log(`· 更新 MDX 文件: ${updatedMdxCount} 个`);
   console.log(`· 清理纯二维码图片: ${deletedImgCount} 张`);
 }
@@ -206,3 +262,4 @@ main().catch((err) => {
   console.error('[process-qrcodes] 执行报错:', err);
   process.exit(1);
 });
+
