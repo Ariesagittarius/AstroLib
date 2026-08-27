@@ -71,9 +71,13 @@ All Git commits must strictly follow the **Academic Restrained Conventional Spec
    ```bash
    npm run push:private
    ```
-5. **Dual Remote Synchronization (Recommended)**:
+5. **Dual Remote Synchronization (Granular)**:
    ```bash
    npm run push:all
+   ```
+6. **One-Click Autonomous Sync & Push (Recommended)**:
+   ```bash
+   npm run push      # or npm run update, or ./update.cmd
    ```
 
 
