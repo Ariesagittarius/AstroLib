@@ -227,7 +227,8 @@ async function pushClean(options, repoInfo) {
 
     if (status) {
       runGit('add -A', tempDir);
-      const cleanCommitMsg = 'release(distribution): strip code annotations for public repository';
+      const isSkipCi = /\[(skip ci|ci skip|skip vercel|vercel skip)\]/i.test(repoInfo.commitMsg);
+      const cleanCommitMsg = `release(distribution): strip code annotations for public repository${isSkipCi ? ' [skip ci]' : ''}`;
       runGit(`commit -m "${cleanCommitMsg.replace(/"/g, '\\"')}"`, tempDir);
       strippedCommit = runGit('rev-parse HEAD', tempDir).trim();
       console.log(`📝 生成纯净无注释提交: ${strippedCommit.slice(0, 8)}`);
