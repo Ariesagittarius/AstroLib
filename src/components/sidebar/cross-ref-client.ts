@@ -212,32 +212,6 @@ function getCandidates(text: string, globalBlockIndex: Record<string, any>): any
   return [];
 }
 
-/**
- * 客户端全时无条件高阶联动引擎
- */
-export function linkPageElements(
-  bookConfig: any,
-  globalBlockIndex: Record<string, any>,
-  refsMode: 'interactive' | 'static' | string,
-  parseTitleFromConfig: (title: string, modules: any) => { type: string; number: string; coreNumber?: string }
-): void {
-  if (refsMode === 'static') return;
-
-  const mainContent =
-    document.querySelector('main') ||
-    document.querySelector('.main-pane') ||
-    document.querySelector('article') ||
-    document.body;
-  if (!mainContent) return;
-
-  const modules = bookConfig.modules || {};
-
-  if (modules['图']) {
-    modules['图'].isImage = true;
-    modules['图'].short = '图';
-    modules['图'].theme = 'chip-default';
-  }
-
 function getModuleSvgIcon(masterKey: string): string {
   switch (masterKey) {
     case '例题':
@@ -311,6 +285,32 @@ export function upgradeStaticBadges(root: ParentNode, globalBlockIndex: Record<s
     }
   });
 }
+
+/**
+ * 客户端全时无条件高阶联动引擎
+ */
+export function linkPageElements(
+  bookConfig: any,
+  globalBlockIndex: Record<string, any>,
+  refsMode: 'interactive' | 'static' | string,
+  parseTitleFromConfig: (title: string, modules: any) => { type: string; number: string; coreNumber?: string }
+): void {
+  if (refsMode === 'static') return;
+
+  const mainContent =
+    document.querySelector('main') ||
+    document.querySelector('.main-pane') ||
+    document.querySelector('article') ||
+    document.body;
+  if (!mainContent) return;
+
+  const modules = bookConfig.modules || {};
+
+  if (modules['图']) {
+    modules['图'].isImage = true;
+    modules['图'].short = '图';
+    modules['图'].theme = 'chip-default';
+  }
 
   if (mainContent.querySelector('[data-xref-built]')) {
     upgradeStaticBadges(mainContent, globalBlockIndex);
