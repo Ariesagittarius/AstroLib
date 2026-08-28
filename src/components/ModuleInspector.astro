@@ -92,6 +92,12 @@ const isDev = import.meta.env.DEV;
               <span class="insp-tab-count">0</span>
             </button>
           )}
+          {isDev && (
+            <button type="button" class="insp-tab insp-tab-dev" data-tab="formula_errors" title="公式语法异常排查（仅开发模式）">
+              <span>公式异常</span>
+              <span class="insp-tab-count">0</span>
+            </button>
+          )}
         </nav>
 
         <!-- 卡片类型筛选 Chips -->
@@ -608,7 +614,12 @@ const isDev = import.meta.env.DEV;
     gap: 6px;
     cursor: pointer;
     transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
-    animation: insp-fade-in 0.16s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    content-visibility: auto;
+    contain-intrinsic-size: 0 85px;
+  }
+  /* 仅首屏前8项应用轻量淡入，避免海量项并发启动动画打满渲染线程 */
+  .insp-item-row:nth-child(-n+8) {
+    animation: insp-fade-in 0.15s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   }
   .insp-item-row:hover {
     border-color: var(--insp-brand);
@@ -792,6 +803,8 @@ const isDev = import.meta.env.DEV;
     border-radius: 8px;
     overflow: hidden;
     margin-bottom: 4px;
+    content-visibility: auto;
+    contain-intrinsic-size: 0 140px;
   }
   .insp-dup-group-head {
     padding: 8px 12px;
@@ -801,6 +814,18 @@ const isDev = import.meta.env.DEV;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+  }
+
+  /* 滚动分块加载哨兵 */
+  .insp-sentinel {
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--insp-text-3);
+    opacity: 0.6;
+    margin: 4px 0;
   }
   .insp-dup-group-title {
     display: flex;

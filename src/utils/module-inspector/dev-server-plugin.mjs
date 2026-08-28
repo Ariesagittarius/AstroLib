@@ -40,6 +40,7 @@ async function handle(req, res) {
   if (url.pathname === '/__inspector__/modules' && req.method === 'GET') {
     const col = url.searchParams.get('col');
     const book = url.searchParams.get('book');
+    const force = url.searchParams.get('force') === 'true' || url.searchParams.get('force') === '1';
 
     if (!col || !book) {
       sendJson(res, 400, { ok: false, message: '缺少 col 或 book 参数' });
@@ -47,7 +48,7 @@ async function handle(req, res) {
     }
 
     try {
-      const data = scanBookModules(col, book);
+      const data = scanBookModules(col, book, force);
       sendJson(res, data.ok ? 200 : 404, data);
     } catch (err) {
       sendJson(res, 500, { ok: false, message: String(err?.message || err) });

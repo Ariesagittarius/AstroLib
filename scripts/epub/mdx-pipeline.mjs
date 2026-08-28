@@ -23,46 +23,74 @@ function escAttr(s) {
   return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
-// 卡片式组件：带标题头的彩色卡片（对应站点组件结构）
-function card(className, emoji, title) {
-  const t = title ?? '';
-  const id = t ? ` id="${escAttr(slugify(t))}"` : '';
-  return `<div class="${className} toc-chunk" data-title="${escAttr(t)}"${id}><div class="card-header">${emoji} ${escAttr(t)}</div><div class="card-body">`;
+// 卡片式组件：学术规范卡片
+function card(className, tag, title) {
+  const rawT = title ?? '';
+  const plainT = plainTitle(rawT);
+  const id = plainT ? ` id="${escAttr(slugify(plainT))}"` : '';
+  const headerHtml = rawT ? `<div class="card-header">${renderTitleMath(rawT)}</div>` : '';
+  return `<div class="${className} toc-chunk" data-title="${escAttr(plainT)}"${id}>${headerHtml}<div class="card-body">`;
+}
+
+function qrVideoBlock(id, title, url) {
+  const cleanTitle = (title || '').replace(/^二维码\s*\d+(\.\d+)*\s*/, '').replace(/[\.\。\s]+$/, '').trim();
+  const fullTitle = id ? `${id} ${cleanTitle}`.trim() : cleanTitle || '微课讲解';
+  const fullTitleHtml = renderTitleMath(fullTitle);
+  const linkHtml = url ? ` <a href="${escAttr(url)}" class="qr-video-link" target="_blank">[查看视频]</a>` : '';
+  return `<div class="qr-video-card"><div class="qr-video-inner"><span class="qr-video-tag">微课</span><span class="qr-video-title">${fullTitleHtml}</span>${linkHtml}</div></div>`;
 }
 
 // 组件名 -> [open, close]
 const COMPONENT_MAP = {
   Guide: () => [
-    `<div class="guide-block toc-chunk" data-title="章节导读" id="section-guide"><div class="guide-header">📖 章节导读</div><div class="guide-content">`,
+    `<div class="guide-block toc-chunk" data-title="章节导读" id="section-guide"><div class="guide-header">章节导读</div><div class="guide-content">`,
     `</div></div>`,
   ],
-  Knowledge: (t) => [card('knowledge-card', '💡', t), `</div></div>`],
-  Example: (t) => [card('example-card', '✍️', t), `</div></div>`],
+  Knowledge: (t) => [card('knowledge-card', '知识', t), `</div></div>`],
+  Example: (t) => [card('example-card', '例题', t), `</div></div>`],
   Analysis: () => [
-    `<div class="analysis-block"><div class="analysis-header">🧠 思路分析</div><div class="analysis-content">`,
+    `<div class="analysis-block"><div class="analysis-header">思路分析</div><div class="analysis-content">`,
     `</div></div>`,
   ],
   // Solution 原为 <details>（点击展开），EPUB 阅读器对 details 支持不一，
   // 直接输出展开的板块，保证解析步骤始终可见。
-  Solution: (t) => [
-    `<div class="solution-block"><div class="solution-header">🔑 ${escAttr(t || '查看解析与步骤')}</div><div class="solution-content">`,
-    `</div></div>`,
-  ],
-  Variant: (t) => [card('variant-card', '🎯', t), `</div></div>`],
+  Solution: (t) => {
+    const titleText = t || '解析与步骤';
+    const headerHtml = `<div class="solution-header">${renderTitleMath(titleText)}</div>`;
+    return [
+      `<div class="solution-block">${headerHtml}<div class="solution-content">`,
+      `</div></div>`,
+    ];
+  },
+  Variant: (t) => [card('variant-card', '变式', t), `</div></div>`],
   Note: () => [
-    `<div class="note-block"><div class="note-header">📌 标注说明</div><div class="note-content">`,
+    `<div class="note-block"><div class="note-header">注记说明</div><div class="note-content">`,
     `</div></div>`,
   ],
-  Block: (t) => [
-    `<div class="fallback-block toc-chunk" data-title="${escAttr(t || '')}" id="${escAttr(slugify(t))}"><div class="fallback-header">📦 ${escAttr(t || '')}</div><div class="fallback-content">`,
-    `</div></div>`,
-  ],
-  Method: (t) => [card('method-card', '🛠️', t), `</div></div>`],
-  Exercise: (t) => [card('exercise-card', '📝', t), `</div></div>`],
-  Summary: (t) => [card('summary-card', '🏆', t), `</div></div>`],
-  Section: (t) => [
-    `<div class="fallback-block toc-chunk" data-title="${escAttr(t || '')}" id="${escAttr(slugify(t))}"><div class="fallback-header">📦 ${escAttr(t || '')}</div><div class="fallback-content">`,
-    `</div></div>`,
+  Block: (t) => {
+    const plainT = plainTitle(t || '');
+    const id = plainT ? ` id="${escAttr(slugify(plainT))}"` : '';
+    const headerHtml = t ? `<div class="fallback-header">${renderTitleMath(t)}</div>` : '';
+    return [
+      `<div class="fallback-block toc-chunk" data-title="${escAttr(plainT)}"${id}>${headerHtml}<div class="fallback-content">`,
+      `</div></div>`,
+    ];
+  },
+  Method: (t) => [card('method-card', '方法', t), `</div></div>`],
+  Exercise: (t) => [card('exercise-card', '习题', t), `</div></div>`],
+  Summary: (t) => [card('summary-card', '总结', t), `</div></div>`],
+  Section: (t) => {
+    const plainT = plainTitle(t || '');
+    const id = plainT ? ` id="${escAttr(slugify(plainT))}"` : '';
+    const headerHtml = t ? `<div class="fallback-header">${renderTitleMath(t)}</div>` : '';
+    return [
+      `<div class="fallback-block toc-chunk" data-title="${escAttr(plainT)}"${id}>${headerHtml}<div class="fallback-content">`,
+      `</div></div>`,
+    ];
+  },
+  QRCodeVideo: (t, node) => [
+    qrVideoBlock(attrValue(node, 'id'), attrValue(node, 'title') || t, attrValue(node, 'url')),
+    '',
   ],
 };
 
@@ -133,7 +161,7 @@ function transformChildren(nodes) {
     if (node && (node.type === 'mdxJsxFlowElement' || node.type === 'mdxJsxTextElement')) {
       const name = node.name;
       if (COMPONENT_MAP[name]) {
-        const [open, close] = COMPONENT_MAP[name](attrValue(node, 'title'));
+        const [open, close] = COMPONENT_MAP[name](attrValue(node, 'title'), node);
         out.push({ type: 'html', value: open }, ...transformChildren(node.children || []), { type: 'html', value: close });
       } else if (PASSTHROUGH_TAGS.has(name)) {
         out.push({ type: 'html', value: serializeHtmlNode(node) });
@@ -161,31 +189,74 @@ function remarkComponentTransform() {
   };
 }
 
+function cleanMathEntities(tex) {
+  if (!tex) return '';
+  return tex
+    .replace(/&gt;/g, '>')
+    .replace(/&lt;/g, '<')
+    .replace(/&amp;/g, '&')
+    .replace(/&ge;/g, '\\ge ')
+    .replace(/&le;/g, '\\le ')
+    .replace(/&ne;/g, '\\neq ')
+    .replace(/&plusmn;/g, '\\pm ')
+    .replace(/&times;/g, '\\times ')
+    .replace(/&infin;/g, '\\infty ')
+    .replace(/&approx;/g, '\\approx ')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/\\right\s*:/g, '\\right.')
+    .replace(/\\tag\s*\{[^}]*\}\s*(\\tag\s*\{[^}]*\})/g, '$1');
+}
+
 // ---------------------------------------------------------------- 兜底公式渲染
 function renderLeftoverMath(html) {
-  // 显示公式 $$...$$
-  html = html.replace(/\$\$([\s\S]+?)\$\$/g, (m, tex) => {
-    if (!tex.trim()) return m;
-    try {
-      return katex.renderToString(tex.trim(), {
-        displayMode: true, output: 'html', throwOnError: false, strict: false,
-      });
-    } catch {
-      return m;
+  // 按 HTML 标签拆分，确保绝不在 <...tag attributes...> 内部替换公式
+  const tokens = String(html).split(/(<[^>]+>)/g);
+  let inCode = false;
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (token.startsWith('<')) {
+      if (/^<code\b/i.test(token) || /^<pre\b/i.test(token) || /^<script\b/i.test(token) || /^<style\b/i.test(token)) {
+        inCode = true;
+      } else if (/^<\/(code|pre|script|style)>/i.test(token)) {
+        inCode = false;
+      }
+      continue;
     }
-  });
-  // 行内公式 $...$
-  html = html.replace(/(^|[^$\\])\$([^$\n]+?)\$(?![0-9])/g, (m, pre, tex) => {
-    if (!tex.trim() || /^\s|\s$/.test(tex)) return m;
-    try {
-      return pre + katex.renderToString(tex, {
-        displayMode: false, output: 'html', throwOnError: false, strict: false,
-      });
-    } catch {
-      return m;
-    }
-  });
-  return html;
+
+    if (inCode || !token.includes('$')) continue;
+
+    // 显示公式 $$...$$
+    let text = token.replace(/\$\$([\s\S]+?)\$\$/g, (m, tex) => {
+      if (!tex.trim()) return m;
+      const cleanTex = cleanMathEntities(tex.trim());
+      try {
+        return katex.renderToString(cleanTex, {
+          displayMode: true, output: 'html', throwOnError: false, strict: false,
+        });
+      } catch {
+        return m;
+      }
+    });
+
+    // 行内公式 $...$
+    text = text.replace(/(^|[^$\\])\$([^$\n]+?)\$(?![0-9])/g, (m, pre, tex) => {
+      if (!tex.trim() || /^\s|\s$/.test(tex)) return m;
+      const cleanTex = cleanMathEntities(tex);
+      try {
+        return pre + katex.renderToString(cleanTex, {
+          displayMode: false, output: 'html', throwOnError: false, strict: false,
+        });
+      } catch {
+        return m;
+      }
+    });
+
+    tokens[i] = text;
+  }
+
+  return tokens.join('');
 }
 
 // ---------------------------------------------------------------- 图片与链接处理

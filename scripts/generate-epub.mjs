@@ -122,7 +122,7 @@ async function generateOneBook(book, meta) {
   const uuid = uuidFromSlug(book.slug);
   const modified = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 
-  console.log(`\n📚 生成 EPUB：${title}（${book.mdxFiles.length} 章）`);
+  console.log(`\n[epub] 生成 EPUB：${title}（${book.mdxFiles.length} 章）`);
 
   const chapters = await renderAllChapters(book);
 
@@ -173,10 +173,14 @@ async function generateOneBook(book, meta) {
   const titleHref = 'text/title.xhtml';
   const titleBody = `
   <div class="title-page">
+    <div class="book-brand">AstroLib 数字化书库</div>
     <h1 class="book-title">${escXml(title)}</h1>
     ${description ? `<p class="book-desc">${escXml(description)}</p>` : ''}
-    <p class="book-meta">数字化 EPUB 版 · 由「AstroLib」生成</p>
-    <p class="book-meta">共 ${chapters.length} 章 · 公式以 KaTeX 排版</p>
+    <div class="book-meta-group">
+      <span class="book-pill">共 ${chapters.length} 章节</span>
+      <span class="book-pill">KaTeX 公式排版</span>
+      <span class="book-pill">VitePress 规范</span>
+    </div>
   </div>`;
   entries.push({ name: `OEBPS/${titleHref}`, data: xhtmlDoc(title, titleBody) });
 
@@ -233,7 +237,11 @@ async function generateOneBook(book, meta) {
   const nav = `<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="zh-CN" lang="zh-CN">
-<head><title>目录</title></head>
+<head>
+  <title>目录</title>
+  <link rel="stylesheet" type="text/css" href="katex.min.css"/>
+  <link rel="stylesheet" type="text/css" href="css/site.css"/>
+</head>
 <body>
   <nav epub:type="toc" id="toc">
     <h1>目录</h1>
@@ -298,7 +306,7 @@ async function generateOneBook(book, meta) {
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
   fs.writeFileSync(outFile, zip);
   const mb = (zip.length / 1024 / 1024).toFixed(2);
-  console.log(`   ✔ ${path.relative(ROOT, outFile)}  (${mb} MB)`);
+  console.log(`   + ${path.relative(ROOT, outFile)}  (${mb} MB)`);
   return { slug: book.slug, size: zip.length };
 }
 
@@ -336,7 +344,7 @@ async function main() {
     await generateOneBook(book, m);
     count++;
   }
-  console.log(`\n✅ 完成：${count} 本 EPUB 已输出到 ${path.relative(ROOT, OUT_DIR)}/`);
+  console.log(`\n[epub] 完成：${count} 本 EPUB 已输出到 ${path.relative(ROOT, OUT_DIR)}/`);
 }
 
 main().catch((e) => {

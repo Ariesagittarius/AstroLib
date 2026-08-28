@@ -112,14 +112,12 @@ if (features.epub.enabled && bookMatch) {
 <script>
   // @ts-ignore
   import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
-  // 注意：katex.min.css 已通过 astro.config.mjs 的 customCss 全局引入（且先于
-  // custom.css 加载，保证 .tag 流内定位覆盖生效），这里不再重复引入。
+  // 注意：katex.min.css 已通过 astro.config.mjs 的 customCss 全局引入，这里不再重复引入。
 
   // 侧边栏公式只渲染一次：SPA 局部导航后侧边栏 DOM 并未变化，无需重复渲染
   let sidebarMathRendered = false;
 
-  function renderCustomMath() {
-    // 渲染参数配置
+  window.__renderCustomMath = function renderCustomMath(root = document) {
     const katexConfig = {
       delimiters: [
         { left: '$$', right: '$$', display: true },
@@ -130,74 +128,174 @@ if (features.epub.enabled && bookMatch) {
 
     if (!sidebarMathRendered) {
       const sidebar = document.querySelector('.sidebar') || document.querySelector('aside');
-      if (sidebar) {
+      if (sidebar && sidebar.textContent?.includes('$')) {
         renderMathInElement(sidebar, katexConfig);
         sidebarMathRendered = true;
       }
     }
 
-    // 页面大标题每个新页面都不同，需要每次导航后重新渲染
-    const mainTitle = document.querySelector('h1');
-    if (mainTitle) {
+    // 页面大标题每个新页面都不同，按需重新渲染
+    const mainTitle = root?.querySelector ? root.querySelector('h1') : null;
+    if (mainTitle && mainTitle.textContent?.includes('$')) {
       renderMathInElement(mainTitle, katexConfig);
     }
-  }
+  };
 
   // 页面初次加载时执行一次
-  renderCustomMath();
+  window.__renderCustomMath();
 
   // 监听 Astro 页面过渡和加载事件，确保在路由切换后依然生效
   document.addEventListener('astro:page-load', () => {
-    renderCustomMath();
+    window.__renderCustomMath();
   });
 </script>
 
-<!-- 3. SPA 局部刷新导航：点击内部链接时只替换正文与右侧大纲，保留头部与左侧栏 -->
+<!-- 3. SPA 极速导航引擎：不可变内存缓存、全书空闲预热、乐观 UI、View Transitions 学术微动效 -->
 <script>
   if (!window.__spaNavInstalled) {
     window.__spaNavInstalled = true;
 
-    // 按 URL 缓存已抓取的页面（限制数量，防止内存膨胀）
-    const pageCache = new Map();
-    const CACHE_MAX = 24;
-    // 导航令牌：快速连续点击时，只允许最新一次导航真正替换 DOM
+    // 不可变页面缓存：保存预解析清洗的母版 DOM 节点，导航时通过 cloneNode(true) 取用，支持无限次极速重入
+    const pageCache = new Map(); // key -> { title: string, mainPane: HTMLElement, rightSidebar: HTMLElement | null, sidebar: HTMLElement | null }
+    const inFlightRequests = new Map(); // key -> Promise<{ ... }>
+    const CACHE_MAX = 60; // 覆盖单本大部头教材全部章节缓存上限
     let navToken = 0;
 
+    // 顶栏极简微光进度条
+    let progressBarEl = null;
+    let progressTimer = 0;
+    let progressFinishTimer = 0;
+
+    function ensureProgressBar() {
+      if (progressBarEl) return progressBarEl;
+      progressBarEl = document.createElement('div');
+      progressBarEl.className = 'vp-progress-bar';
+      progressBarEl.innerHTML = '<div class="vp-progress-bar-inner"></div>';
+      document.body.appendChild(progressBarEl);
+      return progressBarEl;
+    }
+
+    function startProgressBar() {
+      clearTimeout(progressTimer);
+      clearTimeout(progressFinishTimer);
+      // 仅对超过 60ms 的网络慢请求展示进度条，本地秒开缓存零闪烁
+      progressTimer = window.setTimeout(() => {
+        const bar = ensureProgressBar();
+        bar.classList.add('is-active');
+        const inner = bar.querySelector('.vp-progress-bar-inner');
+        if (inner) {
+          inner.style.width = '0%';
+          inner.style.transition = 'width 0.1s linear';
+          requestAnimationFrame(() => {
+            inner.style.width = '30%';
+            setTimeout(() => {
+              if (bar.classList.contains('is-active')) {
+                inner.style.transition = 'width 1.8s cubic-bezier(0.1, 0.5, 0.1, 1)';
+                inner.style.width = '85%';
+              }
+            }, 80);
+          });
+        }
+      }, 60);
+    }
+
+    function finishProgressBar() {
+      clearTimeout(progressTimer);
+      if (!progressBarEl || !progressBarEl.classList.contains('is-active')) return;
+      const inner = progressBarEl.querySelector('.vp-progress-bar-inner');
+      if (inner) {
+        inner.style.transition = 'width 0.12s ease-out';
+        inner.style.width = '100%';
+      }
+      progressFinishTimer = window.setTimeout(() => {
+        progressBarEl?.classList.remove('is-active');
+        if (inner) inner.style.width = '0%';
+      }, 200);
+    }
+
     function isNavLink(a) {
+      if (!a || !a.getAttribute) return false;
       if (a.hasAttribute('download')) return false;
       if (a.target && a.target !== '_self') return false;
       if ((a.getAttribute('rel') || '').split(' ').includes('external')) return false;
       try {
-        const url = new URL(a.href, location.href);
+        const href = a.getAttribute('href') || '';
+        if (!href || href.startsWith('#') || href.startsWith('javascript:')) return false;
+        const url = new URL(href, location.href);
         return url.origin === location.origin && /^https?:$/.test(url.protocol);
       } catch {
         return false;
       }
     }
 
-    function fetchPage(url) {
-      const key = url.href;
-      if (pageCache.has(key)) return pageCache.get(key);
-      const p = fetch(url, { headers: { Accept: 'text/html' }, credentials: 'same-origin' })
-        .then((r) => {
-          if (!r.ok) throw new Error('HTTP ' + r.status);
-          return r.text();
-        })
-        .then((html) => new DOMParser().parseFromString(html, 'text/html'));
-      pageCache.set(key, p);
-      if (pageCache.size > CACHE_MAX) {
-        pageCache.delete(pageCache.keys().next().value);
-      }
-      return p;
-    }
-
     function normPath(p) {
       return p === '/' ? p : p.replace(/\/+$/, '');
     }
 
-    // 新内容来自 DOMParser，插入前移除 script，避免意外执行
     function stripScripts(root) {
+      if (!root) return;
       root.querySelectorAll('script').forEach((s) => s.remove());
+    }
+
+    // 解析与清洗 HTML，构建不可变母版缓存项
+    function parseAndCache(key, htmlText) {
+      const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+      const mainPane = doc.querySelector('.main-pane');
+      if (!mainPane) throw new Error('main-pane not found in response');
+
+      stripScripts(mainPane);
+      const rightSidebar = doc.querySelector('.right-sidebar-container');
+      if (rightSidebar) stripScripts(rightSidebar);
+      const sidebar = doc.querySelector('nav.sidebar, .sidebar-pane, .sidebar');
+      if (sidebar) stripScripts(sidebar);
+      const title = doc.title || '';
+
+      // 预先将 H1 中的数学公式完成 KaTeX 转换，杜绝 DOM 上树后的闪烁
+      if (typeof window.__renderCustomMath === 'function') {
+        window.__renderCustomMath(mainPane);
+      }
+
+      const record = {
+        title,
+        mainPane,
+        rightSidebar,
+        sidebar
+      };
+
+      pageCache.set(key, record);
+      if (pageCache.size > CACHE_MAX) {
+        pageCache.delete(pageCache.keys().next().value);
+      }
+      return record;
+    }
+
+    function fetchPage(url) {
+      const key = normPath(url.pathname);
+      if (pageCache.has(key)) return Promise.resolve(pageCache.get(key));
+      if (inFlightRequests.has(key)) return inFlightRequests.get(key);
+
+      const p = fetch(url.href, { headers: { Accept: 'text/html' }, credentials: 'same-origin' })
+        .then((r) => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.text();
+        })
+        .then((html) => parseAndCache(key, html))
+        .finally(() => {
+          inFlightRequests.delete(key);
+        });
+
+      inFlightRequests.set(key, p);
+      return p;
+    }
+
+    // 从不可变母版中克隆独立的一套 DOM 节点供当前页面挂载
+    function getPageNodes(record) {
+      return {
+        title: record.title,
+        mainPane: record.mainPane.cloneNode(true),
+        rightSidebar: record.rightSidebar ? record.rightSidebar.cloneNode(true) : null,
+        sidebar: record.sidebar ? record.sidebar.cloneNode(true) : null,
+      };
     }
 
     // 更新左侧栏当前页高亮，并展开所属分组
@@ -205,11 +303,14 @@ if (features.epub.enabled && bookMatch) {
       const sidebar = document.querySelector('nav.sidebar, .sidebar');
       if (!sidebar) return;
       let matched = null;
-      sidebar.querySelectorAll('a[aria-current="page"]').forEach((a) => a.removeAttribute('aria-current'));
+      sidebar.querySelectorAll('a[aria-current="page"]').forEach((a) => {
+        a.removeAttribute('aria-current');
+        a.classList.remove('active');
+      });
       sidebar.querySelectorAll('a[href]').forEach((a) => {
         let url;
         try {
-          url = new URL(a.href, location.href);
+          url = new URL(a.getAttribute('href'), location.href);
         } catch {
           return;
         }
@@ -222,7 +323,10 @@ if (features.epub.enabled && bookMatch) {
           }
         }
       });
-      if (matched) matched.setAttribute('aria-current', 'page');
+      if (matched) {
+        matched.setAttribute('aria-current', 'page');
+        matched.classList.add('active');
+      }
     }
 
     // 移动端：点击侧边栏链接后收起菜单遮罩
@@ -231,9 +335,7 @@ if (features.epub.enabled && bookMatch) {
       if (btn && document.body.hasAttribute('data-mobile-menu-expanded')) btn.click();
     }
 
-    // 移动端左侧抽屉：点击抽屉外区域（遮罩/正文）关闭 —— VitePress VPBackdrop 行为。
-    // 注意：放行设置面板 (FeatureToggles)、模块速查 (ModuleInspector)、AI助手与各类 Dialog/Portal，
-    // 避免在修改设置、使用速查或关闭浮层时误触导致左侧栏被意外收起。
+    // 移动端左侧抽屉：点击抽屉外区域关闭
     document.addEventListener('click', (e) => {
       if (!document.body.hasAttribute('data-mobile-menu-expanded')) return;
       const target = e.target;
@@ -261,52 +363,180 @@ if (features.epub.enabled && bookMatch) {
       closeMobileMenu();
     });
 
-    async function loadPage(url, { restoreScroll = false } = {}) {
-      const token = ++navToken;
-      const doc = await fetchPage(url);
-      if (token !== navToken) return; // 已被更新的导航取代
+    // 字体内存预热缓存：已就绪字符集缓存，杜绝 FOUT 与字体替换重排跳变
+    const warmedFontsCache = new Set();
 
-      const newMain = doc.querySelector('.main-pane');
-      const currentMain = document.querySelector('.main-pane');
-      if (!newMain || !currentMain) throw new Error('main-pane not found');
+    async function warmPageFonts(text, timeoutMs = 80) {
+      if (!document.fonts || !document.fonts.load) return;
+      if (!text || text.length === 0) return;
 
-      const flexWrap = currentMain.parentElement;
-      const newRight = doc.querySelector('.right-sidebar-container');
-      const currentRight = document.querySelector('.right-sidebar-container');
+      const sample = text.length > 2500 ? text.slice(0, 2500) : text;
+      const hashKey = sample.slice(0, 100);
+      if (warmedFontsCache.has(hashKey)) return;
+      warmedFontsCache.add(hashKey);
 
-      document.title = doc.title || document.title;
+      const fontCjk = document.documentElement.dataset.fontCjk || 'sans';
+      const targetCjkFont = fontCjk === 'han-serif' ? '"Noto Serif SC Variable"' : '"Noto Sans SC Variable"';
 
-      stripScripts(newMain);
-      currentMain.replaceWith(newMain);
-      if (newRight) {
-        stripScripts(newRight);
-        if (currentRight) currentRight.replaceWith(newRight);
-        else flexWrap?.prepend(newRight);
-      } else if (currentRight) {
-        currentRight.remove();
+      try {
+        const promises = [
+          document.fonts.load(`16px ${targetCjkFont}`, sample),
+          document.fonts.load('16px "Plus Jakarta Sans Variable"', '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'),
+        ];
+
+        if (timeoutMs > 0) {
+          await Promise.race([
+            Promise.allSettled(promises),
+            new Promise((resolve) => setTimeout(resolve, timeoutMs)),
+          ]);
+        } else {
+          await Promise.allSettled(promises);
+        }
+      } catch (err) {
+        // 忽略字体加载异常
       }
-
-      updateSidebarActive(url.pathname);
-      closeMobileMenu();
-
-      // 滚动处理：带锚点滚动到目标；后退时恢复保存的滚动位置
-      if (url.hash) {
-        const targetId = decodeURIComponent(url.hash.slice(1));
-        const el = document.getElementById(targetId);
-        if (el) el.scrollIntoView({ block: 'start' });
-        else window.scrollTo(0, 0);
-      } else {
-        const y = restoreScroll && history.state && typeof history.state.scrollY === 'number'
-          ? history.state.scrollY
-          : 0;
-        window.scrollTo(0, y);
-      }
-
-      // 触发既有初始化逻辑（大纲重建、选择题重构、公式二次渲染等）
-      document.dispatchEvent(new CustomEvent('astro:page-load'));
     }
 
-    // 拦截所有站内链接
+    // 核心页面切换执行器：支持 View Transitions 优雅微动效与 0ms 本地瞬切
+    async function loadPage(url, { restoreScroll = false } = {}) {
+      const token = ++navToken;
+      startProgressBar();
+
+      try {
+        const pageData = await fetchPage(url);
+        if (token !== navToken) return; // 已被最新导航取代
+
+        const { title, mainPane, rightSidebar, sidebar: newSidebar } = getPageNodes(pageData);
+        const currentMain = document.querySelector('.main-pane');
+        if (!currentMain) throw new Error('current main-pane not found');
+        const flexWrap = currentMain.parentElement;
+        const currentRight = document.querySelector('.right-sidebar-container');
+        const currentSidebar = document.querySelector('nav.sidebar, .sidebar-pane, .sidebar');
+
+        // 在 View Transition 开始前预热字体，确保过渡开始时文字已由目标字体渲染，杜绝过渡后的 FOUT 跳变
+        await warmPageFonts(mainPane.textContent, 75);
+
+        const performDomSwap = () => {
+          document.title = title || document.title;
+
+          // 1. 跨图书切换时若侧边栏结构不同则同步替换侧边栏
+          if (newSidebar && currentSidebar && newSidebar.innerHTML !== currentSidebar.innerHTML) {
+            currentSidebar.replaceWith(newSidebar);
+          }
+
+          // 2. 正文与右侧大纲置换
+          currentMain.replaceWith(mainPane);
+          if (rightSidebar) {
+            if (currentRight) currentRight.replaceWith(rightSidebar);
+            else flexWrap?.prepend(rightSidebar);
+          } else if (currentRight) {
+            currentRight.remove();
+          }
+
+          updateSidebarActive(url.pathname);
+          closeMobileMenu();
+
+          // 3. 滚动位置恢复
+          if (url.hash) {
+            const targetId = decodeURIComponent(url.hash.slice(1));
+            const el = document.getElementById(targetId);
+            if (el) el.scrollIntoView({ block: 'start' });
+            else window.scrollTo(0, 0);
+          } else {
+            const y = restoreScroll && history.state && typeof history.state.scrollY === 'number'
+              ? history.state.scrollY
+              : 0;
+            window.scrollTo(0, y);
+          }
+        };
+
+        const hasViewTransition =
+          typeof document.startViewTransition === 'function' &&
+          !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (hasViewTransition) {
+          const transition = document.startViewTransition(() => {
+            performDomSwap();
+          });
+          await transition.finished.catch(() => {});
+        } else {
+          performDomSwap();
+          mainPane.classList.add('main-pane-enter');
+          setTimeout(() => mainPane.classList.remove('main-pane-enter'), 250);
+        }
+
+        finishProgressBar();
+
+        // 触发既有初始化管线（大纲重建、公式二次渲染、图文联动等）
+        document.dispatchEvent(new CustomEvent('astro:page-load'));
+
+        // 触发全书空闲智能预热
+        triggerIdlePrewarming();
+
+      } catch (err) {
+        finishProgressBar();
+        console.error('[SPA Navigation Error]', err);
+        window.location.href = url.href;
+      }
+    }
+
+    // 全书章节空闲期智能预热引擎（Idle Pre-warming Queue）
+    let prewarmQueue = [];
+    let isPrewarmingActive = false;
+
+    function triggerIdlePrewarming() {
+      const sidebar = document.querySelector('nav.sidebar, .sidebar');
+      if (!sidebar) return;
+
+      const links = Array.from(sidebar.querySelectorAll('a[href]'))
+        .map((a) => {
+          try {
+            return new URL(a.getAttribute('href'), location.href);
+          } catch {
+            return null;
+          }
+        })
+        .filter((u) => u && isNavLink({ getAttribute: () => u.href, href: u.href }) && normPath(u.pathname) !== normPath(location.pathname));
+
+      // 提取尚未缓存且未在请求中的链接
+      prewarmQueue = links.filter((u) => !pageCache.has(normPath(u.pathname)) && !inFlightRequests.has(normPath(u.pathname)));
+      if (prewarmQueue.length === 0) return;
+
+      if (!isPrewarmingActive) {
+        isPrewarmingActive = true;
+        scheduleNextPrewarm();
+      }
+    }
+
+    function scheduleNextPrewarm() {
+      if (prewarmQueue.length === 0) {
+        isPrewarmingActive = false;
+        return;
+      }
+
+      const idleCallback = window.requestIdleCallback || ((cb) => setTimeout(cb, 120));
+      idleCallback((deadline) => {
+        while (prewarmQueue.length > 0 && (deadline.timeRemaining ? deadline.timeRemaining() > 10 : true)) {
+          const targetUrl = prewarmQueue.shift();
+          if (targetUrl && !pageCache.has(normPath(targetUrl.pathname))) {
+            fetchPage(targetUrl).then((record) => {
+              if (record && record.mainPane) {
+                warmPageFonts(record.mainPane.textContent, 0);
+              }
+            }).catch(() => {});
+            break; // 每次执行拉取 1 个，平滑让出主线程与网络带宽
+          }
+        }
+
+        if (prewarmQueue.length > 0) {
+          setTimeout(scheduleNextPrewarm, 60);
+        } else {
+          isPrewarmingActive = false;
+        }
+      }, { timeout: 1500 });
+    }
+
+    // 拦截全站内部导航链接
     document.addEventListener('click', (e) => {
       const target = e.target;
       if (!(target instanceof Element)) return;
@@ -314,57 +544,67 @@ if (features.epub.enabled && bookMatch) {
       if (!a || !isNavLink(a)) return;
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 
-      const url = new URL(a.href, location.href);
+      const url = new URL(a.getAttribute('href'), location.href);
       if (normPath(url.pathname) === normPath(location.pathname)) {
-        if (!url.hash) e.preventDefault(); // 同页无锚点：不触发整页刷新
+        if (!url.hash) e.preventDefault(); // 同页无锚点：阻止整页刷新
         return;
       }
 
       e.preventDefault();
-      // 立即更新地址栏并保存当前滚动位置，随后异步替换内容
+
+      // 1. 0ms 瞬间点亮侧边栏高亮（乐观交互，极致触感响应）
+      updateSidebarActive(url.pathname);
+
+      // 2. 立即更新地址栏历史记录
       history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, '');
       history.pushState({ scrollY: 0 }, '', url.href);
-      loadPage(url).catch(() => {
-        window.location.href = url.href;
-      });
+
+      // 3. 极速切换
+      loadPage(url);
     });
 
-    // 悬停导航链接时预取（短延迟去抖）：左侧栏 + 页脚翻页链接。
-    // 预取命中后点击时几乎瞬时完成替换（缓存上限 CACHE_MAX 内）。
-    let prefetchTimer = 0;
+    // 悬停/触碰即时预取：多目标并发优化
+    let prefetchMap = new Set();
     function isPrefetchable(a) {
-      return !!a.closest('nav.sidebar, .sidebar, .pagination-links, footer');
+      return !!a.closest('nav.sidebar, .sidebar, .pagination-links, footer, .main-pane');
     }
+
     document.addEventListener('pointerover', (e) => {
       const target = e.target;
       if (!(target instanceof Element)) return;
       const a = target.closest('a[href]');
       if (!a || !isNavLink(a) || !isPrefetchable(a)) return;
-      const url = new URL(a.href, location.href);
-      if (normPath(url.pathname) === normPath(location.pathname)) return;
-      clearTimeout(prefetchTimer);
-      prefetchTimer = setTimeout(() => fetchPage(url).catch(() => {}), 50);
-    });
+      const url = new URL(a.getAttribute('href'), location.href);
+      const key = normPath(url.pathname);
+      if (key === normPath(location.pathname) || prefetchMap.has(key)) return;
+      prefetchMap.add(key);
+      fetchPage(url).catch(() => {});
+    }, { passive: true });
 
-    // 按下鼠标（点击之前）立即拉取目标页：把“网络 + 解析”提前到点击前，
-    // 点击发生时 loadPage 直接命中缓存，进一步压缩切换等待。
     document.addEventListener('pointerdown', (e) => {
       const target = e.target;
       if (!(target instanceof Element)) return;
       const a = target.closest('a[href]');
       if (!a || !isNavLink(a)) return;
-      const url = new URL(a.href, location.href);
-      if (normPath(url.pathname) === normPath(location.pathname)) return;
-      clearTimeout(prefetchTimer);
+      const url = new URL(a.getAttribute('href'), location.href);
+      const key = normPath(url.pathname);
+      if (key === normPath(location.pathname)) return;
       fetchPage(url).catch(() => {});
     }, { passive: true });
 
-    // 浏览器前进/后退
+    // 浏览器前进/后退处理
     window.addEventListener('popstate', () => {
       const url = new URL(location.href);
       loadPage(url, { restoreScroll: true }).catch(() => {
         location.reload();
       });
     });
+
+    // 初始页面就绪后，排队启动全书空闲智能预热
+    if (document.readyState === 'complete') {
+      triggerIdlePrewarming();
+    } else {
+      window.addEventListener('load', () => triggerIdlePrewarming(), { once: true });
+    }
   }
 </script>

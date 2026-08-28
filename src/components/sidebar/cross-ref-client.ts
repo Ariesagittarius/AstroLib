@@ -277,39 +277,43 @@ function getModuleSvgIcon(masterKey: string): string {
 
 const ARROW_SVG = `<svg class="badge-svg badge-arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V8H8"/></svg>`;
 
-  if (mainContent.querySelector('[data-xref-built]')) {
-    const solDetails = Array.from(document.querySelectorAll('.solution-details'));
-    solDetails.forEach((sol, idx) => {
-      if (!sol.id) sol.id = `sol-ref-block-${idx + 1}`;
-    });
+export function upgradeStaticBadges(root: ParentNode, globalBlockIndex: Record<string, any>): void {
+  if (!root || !globalBlockIndex) return;
+  const solDetails = Array.from(root.querySelectorAll('.solution-details'));
+  solDetails.forEach((sol, idx) => {
+    if (!sol.id) sol.id = `sol-ref-block-${idx + 1}`;
+  });
 
-    mainContent.querySelectorAll('.block-ref-badge.static-badge').forEach((badge) => {
-      const text = (badge.querySelector('.block-text')?.textContent || '').trim();
-      if (!text) return;
-      const candidates = getCandidates(text, globalBlockIndex);
-      if (candidates.length === 1) {
-        badge.classList.remove('static-badge');
-        badge.classList.add('interactive-badge');
-        badge.setAttribute('data-url', resolveIndexUrl(candidates[0].url));
-        if (!badge.querySelector('.block-arrow')) {
-          const arrow = document.createElement('span');
-          arrow.className = 'block-arrow';
-          arrow.innerHTML = ARROW_SVG;
-          badge.appendChild(arrow);
-        }
-      } else if (candidates.length > 1) {
-        badge.classList.remove('static-badge');
-        badge.classList.add('interactive-badge', 'multi-candidate-badge');
-        badge.setAttribute('data-candidates', JSON.stringify(candidates));
-        if (!badge.querySelector('.block-arrow')) {
-          const arrow = document.createElement('span');
-          arrow.className = 'block-arrow';
-          arrow.innerHTML = ARROW_SVG;
-          badge.appendChild(arrow);
-        }
+  root.querySelectorAll('.block-ref-badge.static-badge').forEach((badge) => {
+    const text = (badge.querySelector('.block-text')?.textContent || '').trim();
+    if (!text) return;
+    const candidates = getCandidates(text, globalBlockIndex);
+    if (candidates.length === 1) {
+      badge.classList.remove('static-badge');
+      badge.classList.add('interactive-badge');
+      badge.setAttribute('data-url', resolveIndexUrl(candidates[0].url));
+      if (!badge.querySelector('.block-arrow')) {
+        const arrow = document.createElement('span');
+        arrow.className = 'block-arrow';
+        arrow.innerHTML = ARROW_SVG;
+        badge.appendChild(arrow);
       }
-    });
+    } else if (candidates.length > 1) {
+      badge.classList.remove('static-badge');
+      badge.classList.add('interactive-badge', 'multi-candidate-badge');
+      badge.setAttribute('data-candidates', JSON.stringify(candidates));
+      if (!badge.querySelector('.block-arrow')) {
+        const arrow = document.createElement('span');
+        arrow.className = 'block-arrow';
+        arrow.innerHTML = ARROW_SVG;
+        badge.appendChild(arrow);
+      }
+    }
+  });
+}
 
+  if (mainContent.querySelector('[data-xref-built]')) {
+    upgradeStaticBadges(mainContent, globalBlockIndex);
     attachInteractiveListeners();
     return;
   }

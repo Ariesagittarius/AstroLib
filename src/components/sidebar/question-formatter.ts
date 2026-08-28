@@ -31,8 +31,9 @@ export function extractOptionsSafely(html: string): Array<{ label: string; conte
 /**
  * 智能提取选择题，自适应重构为响应式 MD3 选项卡片 (DOM 节点流版本)
  */
-export function formatMultipleChoiceQuestions(): void {
-  const cardBodies = document.querySelectorAll('.card-body');
+export function formatMultipleChoiceQuestions(root: ParentNode = document): void {
+  const cardBodies = root.querySelectorAll('.card-body');
+  if (cardBodies.length === 0) return;
 
   cardBodies.forEach((body) => {
     if (body.classList.contains('formatted-choices-v3')) return;

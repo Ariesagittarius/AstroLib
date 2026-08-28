@@ -11,6 +11,7 @@ import path from 'node:path';
 import { compile } from '@mdx-js/mdx';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import katex from 'katex';
 
 const args = process.argv.slice(2);
 const isDryRun = args.includes('--dry-run') || args.includes('--check');
@@ -50,27 +51,70 @@ function walk(dir, list = []) {
   return list;
 }
 
+const mathHtmlEntities = {
+  '&gt;': '>',
+  '&lt;': '<',
+  '&amp;': '&',
+  '&ge;': '\\ge ',
+  '&le;': '\\le ',
+  '&ne;': '\\neq ',
+  '&plusmn;': '\\pm ',
+  '&times;': '\\times ',
+  '&infin;': '\\infty ',
+  '&#39;': "'",
+  '&quot;': '"',
+};
+
+const greekSymbols = [
+  'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'varepsilon', 'zeta', 'eta',
+  'theta', 'vartheta', 'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'pi',
+  'varpi', 'rho', 'varrho', 'sigma', 'varsigma', 'tau', 'upsilon', 'phi',
+  'varphi', 'chi', 'psi', 'omega', 'Gamma', 'Delta', 'Theta', 'Lambda',
+  'Xi', 'Pi', 'Sigma', 'Upsilon', 'Phi', 'Psi', 'Omega'
+];
+
 export function fixMathString(mathStr) {
   let s = mathStr;
 
-  // 1. 替换公式内的 Unicode 罗马数字
+  // 1. 逆转义数学环境中的 HTML 实体
+  for (const [ent, repl] of Object.entries(mathHtmlEntities)) {
+    if (s.includes(ent)) {
+      s = s.replaceAll(ent, repl);
+    }
+  }
+
+  // 2. 替换公式内的 Unicode 罗马数字
   for (const [r, repl] of Object.entries(romanMap)) {
     if (s.includes(r)) {
       s = s.replaceAll(r, repl);
     }
   }
 
-  // 2. 修复 \tag{①} -> \tag{\textcircled{1}}
+  // 3. 修复 \tag{①} -> \tag{\textcircled{1}}
   s = s.replace(/\\tag\s*\{([①-⑳])\}/g, (m, c) => `\\tag{\\textcircled{${circledMap[c]}}}`);
 
-  // 3. 修复 \textcircled{①} -> \textcircled{1}
+  // 4. 修复 \textcircled{①} -> \textcircled{1}
   s = s.replace(/\\textcircled\s*\{([①-⑳])\}/g, (m, c) => `\\textcircled{${circledMap[c]}}`);
 
-  // 4. 修复 \underbrace{...}_{①} -> \underbrace{...}_{\textcircled{1}}
+  // 5. 修复 \underbrace{...}_{①} -> \underbrace{...}_{\textcircled{1}}
   s = s.replace(/(\\underbrace\{[^}]*\}_\s*\{?)([①-⑳])(\}?)/g, (m, p1, c, p3) => `${p1}\\textcircled{${circledMap[c]}}${p3}`);
 
-  // 5. 替换公式内其余带圈数字 (如联立方程标号、算式推导标号) -> \textcircled{n}
+  // 6. 替换公式内其余带圈数字 (如联立方程标号、算式推导标号) -> \textcircled{n}
   s = s.replace(/([①-⑳])/g, (m, c) => `\\textcircled{${circledMap[c]}}`);
+
+  // 7. 修复定界符 \right: -> \right.
+  s = s.replace(/\\right\s*:/g, '\\right.');
+
+  // 8. 修复希腊字母在 \textbf 中报错 -> \boldsymbol
+  for (const g of greekSymbols) {
+    const reg = new RegExp(`\\\\textbf\\s*\\{\\s*\\\\${g}\\s*\\}`, 'g');
+    if (reg.test(s)) {
+      s = s.replace(reg, `\\boldsymbol{\\${g}}`);
+    }
+  }
+
+  // 9. 修复双重 \tag 冲突（保留后一个有效编号）
+  s = s.replace(/\\tag\s*\{[^}]*\}\s*(\\tag\s*\{[^}]*\})/g, '$1');
 
   return s;
 }
