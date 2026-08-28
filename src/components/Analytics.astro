@@ -1,150 +1,173 @@
 ---
 /**
  * ============================================================================
- * Vercel Analytics 智能统计与配额保护组件
+ * 全站用户体验洞察与统计分析组件 (Microsoft Clarity UX Telemetry)
  * ============================================================================
  *
- * 核心配额控制与高质量行为洞察设计：
- * 1. 【beforeSend 智能拦截（零配额消耗）】：
- *    - 生产环境守卫：拦截 localhost、127.0.0.1、内网穿透隧道及本地预览，避免开发调试耗尽配额；
- *    - 机器人过滤：拦截无头自动化浏览器 (Puppeteer/Playwright/Webdriver) 与常见爬虫扫描流量；
- *    - 黑名单过滤：排除 /dev/ 内部开发文档与 /print 打印调试排版页。
- * 2. 【有效阅读防抖 (SPA Dwell-Time Throttle)】：
- *    - 针对 Starlight 客户端 SPA 快速切章 (astro:page-load)，设置 2.5 秒有效停留防抖，
- *      过滤目录走马观花连点跳章产生的无效 PV，只记录真正深度停留阅读的章节。
- * 3. 【高价值读者行为捕获 (High-Value Telemetry)】：
- *    - 全站委托监听 EPUB 电子书下载、AI 问答交互等关键动作，将配额用在核心读者转化分析上。
+ * 核心设计与数据质量保障：
+ * 1. 【Microsoft Clarity 深度用户体验洞察】：
+ *    - 永久无上限免费：提供高质量全量会话录屏 (Session Replays)、点击/滚动热力图 (Heatmaps)；
+ *    - 自动识别痛点：暴怒点击 (Rage Clicks)、死点击 (Dead Clicks)、快速回退 (Quick Backs)；
+ *    - 零侵入异步加载：不阻塞首屏渲染与 KaTeX 公式排版。
+ * 2. 【智能环境守卫 (Data Sanitization)】：
+ *    - 生产环境守卫：默认拦截 localhost、127.0.0.1 及内网调试隧道，防止本地开发污染分析看板；
+ *    - 机器人过滤：拦截无头自动化浏览器 (Puppeteer/Playwright/Webdriver) 与常见爬虫扫描；
+ *    - 黑名单过滤：排除 /dev/ 开发工具与 /print 打印排版页。
+ * 3. 【高价值读者行为追踪 (High-Value Telemetry)】：
+ *    - 全局统一事件总线 (window.__astrolibTrack) 深度对接 AI 问答、读者勘误、EPUB 下载与公式操作。
  * ============================================================================
  */
-import VercelAnalytics from '@vercel/analytics/astro';
-import type { AnalyticsProps } from '@vercel/analytics';
 import { features } from '../config/features.config.mjs';
-
-type Props = Omit<AnalyticsProps, 'framework' | 'beforeSend'>;
 
 const isEnabled = features.analytics?.enabled ?? true;
 const analyticsConfig = features.analytics?.config ?? {
+  provider: 'clarity',
+  clarityProjectId: 'y9on8roaw3',
   productionOnly: true,
   filterBots: true,
   excludePaths: ['/dev/', '/print'],
-  minDwellMs: 2500,
   trackHighValueEvents: true,
 };
+
+const clarityProjectId = analyticsConfig.clarityProjectId || 'y9on8roaw3';
 ---
 
-{isEnabled && (
+{isEnabled && clarityProjectId && (
   <>
-    <!-- 注入 Vercel beforeSend 中间件：在事件离开浏览器前进行拦截守卫，不消耗配额 -->
-    <script is:inline define:vars={{ analyticsConfig }}>
+    <!-- 客户端守卫与 Microsoft Clarity 核心注入引擎 -->
+    <script is:inline define:vars={{ analyticsConfig, clarityProjectId }}>
       (function () {
-        window.webAnalyticsBeforeSend = function (event) {
-          if (!event || !event.url) return event;
+        if (window.__astrolibClarityInjected) return;
 
+        var hostname = window.location.hostname;
+        var pathname = window.location.pathname;
+
+        // 1. 生产环境守卫：拦截本地开发与穿透调试，避免脏数据
+        if (analyticsConfig.productionOnly) {
+          var isLocal =
+            hostname === 'localhost' ||
+            hostname === '127.0.0.1' ||
+            hostname === '0.0.0.0' ||
+            hostname.endsWith('.local') ||
+            hostname.indexOf('trycloudflare.com') !== -1 ||
+            hostname.indexOf('vaiwan.com') !== -1 ||
+            hostname.indexOf('localtunnel.me') !== -1;
+
+          if (isLocal) {
+            // 本地开发环境下保留 mock 追踪函数，便于控制台调试
+            window.__astrolibTrack = function (name, data) {
+              console.log('[Analytics:DevMock]', name, data);
+            };
+            return;
+          }
+        }
+
+        // 2. 爬虫与自动化测试探针过滤
+        if (analyticsConfig.filterBots) {
+          if (navigator.webdriver) return;
+          var ua = (navigator.userAgent || '').toLowerCase();
+          var botPatterns = [
+            'bot', 'spider', 'crawler', 'headlesschrome',
+            'phantomjs', 'bytespider', 'yisouspider', 'sogou',
+            'semrush', 'ahrefs', 'petalbot', 'uptime'
+          ];
+          for (var i = 0; i < botPatterns.length; i++) {
+            if (ua.indexOf(botPatterns[i]) !== -1) {
+              return;
+            }
+          }
+        }
+
+        // 3. 黑名单路由过滤（排除开发文档、全书打印页）
+        if (Array.isArray(analyticsConfig.excludePaths)) {
+          for (var j = 0; j < analyticsConfig.excludePaths.length; j++) {
+            var prefix = analyticsConfig.excludePaths[j];
+            if (pathname.indexOf(prefix) === 0) {
+              return;
+            }
+          }
+        }
+
+        // 4. 异步加载并初始化 Microsoft Clarity
+        window.__astrolibClarityInjected = true;
+        (function (c, l, a, r, i, t, y) {
+          c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+          t = l.createElement(r);
+          t.async = 1;
+          t.src = 'https://www.clarity.ms/tag/' + i;
+          y = l.getElementsByTagName(r)[0];
+          y.parentNode.insertBefore(t, y);
+        })(window, document, 'clarity', 'script', clarityProjectId);
+
+        // 5. 注册全站统一安全埋点总线
+        window.__astrolibTrack = function (eventName, eventData) {
           try {
-            var urlObj = new URL(event.url, window.location.origin);
-            var hostname = urlObj.hostname;
-            var pathname = urlObj.pathname;
-
-            // 1. 生产环境守卫：拦截本地开发与穿透调试
-            if (analyticsConfig.productionOnly) {
-              var isLocal =
-                hostname === 'localhost' ||
-                hostname === '127.0.0.1' ||
-                hostname === '0.0.0.0' ||
-                hostname.endsWith('.local') ||
-                hostname.indexOf('trycloudflare.com') !== -1 ||
-                hostname.indexOf('vaiwan.com') !== -1 ||
-                hostname.indexOf('localtunnel.me') !== -1;
-              if (isLocal) {
-                return null;
-              }
-            }
-
-            // 2. 爬虫与自动化测试探针过滤
-            if (analyticsConfig.filterBots) {
-              if (navigator.webdriver) return null;
-              var ua = (navigator.userAgent || '').toLowerCase();
-              var botPatterns = [
-                'bot', 'spider', 'crawler', 'headlesschrome',
-                'phantomjs', 'bytespider', 'yisouspider', 'sogou',
-                'semrush', 'ahrefs', 'petalbot', 'uptime'
-              ];
-              for (var i = 0; i < botPatterns.length; i++) {
-                if (ua.indexOf(botPatterns[i]) !== -1) {
-                  return null;
+            if (window.clarity) {
+              window.clarity('event', eventName);
+              if (eventData && typeof eventData === 'object') {
+                for (var key in eventData) {
+                  if (Object.prototype.hasOwnProperty.call(eventData, key)) {
+                    window.clarity('set', key, String(eventData[key]));
+                  }
                 }
               }
             }
-
-            // 3. 黑名单路由过滤（排除开发文档、打印排版页）
-            if (Array.isArray(analyticsConfig.excludePaths)) {
-              for (var j = 0; j < analyticsConfig.excludePaths.length; j++) {
-                var prefix = analyticsConfig.excludePaths[j];
-                if (pathname.indexOf(prefix) === 0) {
-                  return null;
-                }
-              }
-            }
-
-            return event;
           } catch (e) {
-            return event;
+            // 埋点静默失败保护
           }
         };
       })();
     </script>
 
-    <VercelAnalytics {...Astro.props} />
-
-    <!-- 客户端事件调度器：有效阅读停留防抖 + 高价值事件埋点 -->
-    <script define:vars={{ minDwellMs: analyticsConfig.minDwellMs || 2500, trackHighValueEvents: analyticsConfig.trackHighValueEvents !== false }}>
-      import { pageview, track } from '@vercel/analytics';
-
-      // 1. 章节有效阅读防抖管线 (SPA Dwell-Time Throttle)
-      let dwellTimer = null;
-      let lastReportedPath = window.location.pathname;
-
-      function scheduleDwellPageview(path) {
-        if (dwellTimer) {
-          clearTimeout(dwellTimer);
-          dwellTimer = null;
-        }
-
-        dwellTimer = setTimeout(() => {
-          lastReportedPath = path;
-          pageview({ path });
-          dwellTimer = null;
-        }, minDwellMs);
-      }
-
-      // 监听 Astro / Starlight 客户端 SPA 路由切换
+    <!-- 客户端事件监听器：高价值交互与 SPA 页面切章联动 -->
+    <script define:vars={{ trackHighValueEvents: analyticsConfig.trackHighValueEvents !== false }}>
+      // 1. SPA 页面路由切换同步（Starlight astro:page-load）
       document.addEventListener('astro:page-load', () => {
-        const currentPath = window.location.pathname;
-        if (currentPath !== lastReportedPath) {
-          scheduleDwellPageview(currentPath);
+        if (window.clarity) {
+          try {
+            window.clarity('set', 'page_path', window.location.pathname);
+            window.clarity('set', 'page_title', document.title);
+          } catch (e) {}
         }
       });
 
-      // 2. 高价值读者动作追踪 (EPUB 下载等)
+      // 2. 高价值读者动作自动委托监听
       if (trackHighValueEvents) {
         document.addEventListener('click', (e) => {
-          const target = (e.target && e.target.closest) ? e.target.closest('a') : null;
+          const target = e.target;
           if (!target) return;
 
-          const href = target.getAttribute('href') || '';
-          if (href.endsWith('.epub') || target.closest('[data-feature="epub"]')) {
-            const bookSlug = href.split('/').pop()?.replace('.epub', '') || 'unknown';
-            track('epub_download', { book: bookSlug });
+          // (1) EPUB 电子书下载追踪
+          const anchor = target.closest ? target.closest('a') : null;
+          if (anchor) {
+            const href = anchor.getAttribute('href') || '';
+            if (href.endsWith('.epub') || anchor.closest('[data-feature="epub"]')) {
+              const bookSlug = href.split('/').pop()?.replace('.epub', '') || 'unknown';
+              if (window.__astrolibTrack) {
+                window.__astrolibTrack('epub_download', { book: bookSlug });
+              }
+            }
+          }
+
+          // (2) 公式快捷操作追踪 (复制 LaTeX / 导出图片)
+          const formulaBtn = target.closest ? target.closest('.katex-action-btn') : null;
+          if (formulaBtn) {
+            const actionType = formulaBtn.getAttribute('aria-label') || 'formula_action';
+            if (window.__astrolibTrack) {
+              window.__astrolibTrack('formula_action', { action: actionType });
+            }
+          }
+
+          // (3) 跨章节引用徽章点击跳转追踪
+          const crossRef = target.closest ? target.closest('.cross-ref-chip, [data-ref-id]') : null;
+          if (crossRef) {
+            const refText = crossRef.textContent?.trim() || 'cross_ref';
+            if (window.__astrolibTrack) {
+              window.__astrolibTrack('cross_ref_click', { ref: refText });
+            }
           }
         });
       }
-
-      // 3. 暴露全局安全埋点接口供应用层调用
-      window.__astrolibTrack = function (name, data) {
-        try {
-          track(name, data);
-        } catch {}
-      };
     </script>
   </>
 )}

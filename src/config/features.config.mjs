@@ -264,21 +264,22 @@ const featureDefs = {
     },
   }),
 
-  // Vercel Analytics 数据统计分析：全站访客量与高质量行为统计（带配额智能优化与防抖过滤）
+  // 数据统计与用户体验洞察分析：接入 Microsoft Clarity（会话录屏、热力图、死点击监控与高质量交互统计）
   analytics: defineFeature({
     id: 'analytics',
     cat: 'extra',
-    label: 'Vercel Analytics',
-    desc: '全站访客量与高质量行为统计（带配额智能优化与防抖过滤）',
+    label: '用户体验与访问分析',
+    desc: '全站访客洞察、热力图、录屏回放与高价值交互统计（基于 Microsoft Clarity）',
     enabled: true,
     devOnly: false,
     ui: false,
     config: {
-      productionOnly: true,     // 仅在正式生产域名上报（过滤 localhost 与本地调试隧道）
+      provider: 'clarity',
+      clarityProjectId: 'y9on8roaw3', // Microsoft Clarity 项目 ID
+      productionOnly: true,     // 仅在正式生产域名上报（过滤 localhost 与本地调试隧道，避免测试污染）
       filterBots: true,         // 过滤自动化无头浏览器与常见扫描爬虫
-      excludePaths: ['/dev/', '/print'], // 排除内部开发文档与全书打印页，配额留给读者正文
-      minDwellMs: 2500,         // 章节快刷防抖：停留 >= 2.5 秒才计为一次有效阅读
-      trackHighValueEvents: true, // 开启关键高价值动作监听（EPUB 下载等）
+      excludePaths: ['/dev/', '/print'], // 排除内部开发文档与全书打印页，保持洞察聚焦
+      trackHighValueEvents: true, // 开启关键高价值动作监听（EPUB 下载、AI问答、公式操作等）
     },
   }),
 };
