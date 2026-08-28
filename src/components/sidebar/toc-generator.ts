@@ -153,7 +153,7 @@ export function buildBookTOC(
   function makeTocEntry(
     chunk: { kind: 'heading' | 'card'; el: HTMLElement; level?: number; _tocId?: string },
     _index: number,
-    targetList: HTMLElement,
+    targetList: HTMLElement | DocumentFragment,
     links: HTMLAnchorElement[],
     isMobile: boolean
   ) {
@@ -218,10 +218,18 @@ export function buildBookTOC(
     links.push(a);
   }
 
+  // 使用 DocumentFragment 批量构建 TOC 条目，最终一次性挂载到实时 DOM，
+  // 避免逐条 appendChild 到 live DOM 引起多次重排与分阶段闪烁
+  const desktopFrag = document.createDocumentFragment();
+  const mobileFrag = mobileTocList ? document.createDocumentFragment() : null;
+
   tocEntries.forEach((chunk, index) => {
-    makeTocEntry(chunk, index, tocList, desktopLinks, false);
-    if (mobileTocList) makeTocEntry(chunk, index, mobileTocList, mobileLinks, true);
+    makeTocEntry(chunk, index, desktopFrag, desktopLinks, false);
+    if (mobileFrag) makeTocEntry(chunk, index, mobileFrag, mobileLinks, true);
   });
+
+  tocList.appendChild(desktopFrag);
+  if (mobileTocList && mobileFrag) mobileTocList.appendChild(mobileFrag);
 
   let lastSpyIndex = -1;
 
@@ -298,13 +306,13 @@ export function initPageSidebar(): void {
     const bookConfig = getBookConfig(aside);
     const globalBlockIndex = getGlobalIndex(aside);
     buildBookTOC(aside, bookConfig, globalBlockIndex);
+    renderSidebarMath();
 
     const idle = window.requestIdleCallback || ((fn) => window.setTimeout(fn, 150));
     idle(
       () => {
         linkPageElements(bookConfig, globalBlockIndex, refsMode, parseTitleFromConfig);
         initFormulaActions();
-        renderSidebarMath();
         tameInlineMathWhenReady();
       },
       { timeout: 400 }

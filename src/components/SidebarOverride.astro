@@ -152,6 +152,8 @@ if (features.epub.enabled && bookMatch) {
 
 <!-- 3. SPA 极速导航引擎：不可变内存缓存、全书空闲预热、乐观 UI、View Transitions 学术微动效 -->
 <script>
+  import { preprocessPage } from '../utils/page-preprocess';
+
   if (!window.__spaNavInstalled) {
     window.__spaNavInstalled = true;
 
@@ -254,6 +256,11 @@ if (features.epub.enabled && bookMatch) {
       if (typeof window.__renderCustomMath === 'function') {
         window.__renderCustomMath(mainPane);
       }
+
+      // 离屏预处理：在缓存前对离屏 DOM 执行所有会引起 layout shift 的同步突变
+      // （选择题格式化 / 徽章箭头占位 / 公式 host 预包裹），
+      // 确保 cloneNode 取得的副本上屏后无二次突变、零抖动
+      preprocessPage(mainPane);
 
       const record = {
         title,
