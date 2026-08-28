@@ -263,6 +263,17 @@ const featureDefs = {
       botEndpoint: 'https://astrolib-feedback-bot.2477252192.workers.dev', // Serverless Bot API 端点
     },
   }),
+
+  // Vercel Analytics 数据统计分析：全站访客与页面访问量统计
+  analytics: defineFeature({
+    id: 'analytics',
+    cat: 'extra',
+    label: 'Vercel Analytics',
+    desc: '全站访客量与页面访问量数据统计（Vercel Web Analytics）',
+    enabled: true,
+    devOnly: false,
+    ui: false,
+  }),
 };
 
 /** 全站功能表（id → manifest） */

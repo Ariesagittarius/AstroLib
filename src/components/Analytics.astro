@@ -1,0 +1,39 @@
+---
+/**
+ * ============================================================================
+ * Vercel Analytics 统计接入组件
+ * ============================================================================
+ *
+ * 1. 集中适配 Vercel Web Analytics (@vercel/analytics/astro)；
+ * 2. 遵循全站 Feature Registry (features.config.mjs) 规范，支持一键启停；
+ * 3. 兼容 Astro / Starlight 的客户端 SPA 路由切换 (astro:page-load)，自动精准上报 pageview；
+ * 4. 外部调用零配置、即插即用、高复用。
+ * ============================================================================
+ */
+import VercelAnalytics from '@vercel/analytics/astro';
+import type { AnalyticsProps } from '@vercel/analytics';
+import { features } from '../config/features.config.mjs';
+
+type Props = Omit<AnalyticsProps, 'framework' | 'beforeSend'>;
+
+const isEnabled = features.analytics?.enabled ?? true;
+---
+
+{isEnabled && (
+  <>
+    <VercelAnalytics {...Astro.props} />
+    <script>
+      import { pageview } from '@vercel/analytics';
+
+      // 监听 Astro / Starlight 客户端 SPA 路由切换，精准补发页面浏览事件
+      let lastPath = window.location.pathname;
+      document.addEventListener('astro:page-load', () => {
+        const currentPath = window.location.pathname;
+        if (currentPath !== lastPath) {
+          lastPath = currentPath;
+          pageview({ path: currentPath });
+        }
+      });
+    </script>
+  </>
+)}
