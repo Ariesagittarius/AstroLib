@@ -1,13 +1,19 @@
 ---
 /**
  * ============================================================================
- * Vercel Analytics 统计接入组件
+ * Vercel Analytics 智能统计与配额保护组件
  * ============================================================================
  *
- * 1. 集中适配 Vercel Web Analytics (@vercel/analytics/astro)；
- * 2. 遵循全站 Feature Registry (features.config.mjs) 规范，支持一键启停；
- * 3. 兼容 Astro / Starlight 的客户端 SPA 路由切换 (astro:page-load)，自动精准上报 pageview；
- * 4. 外部调用零配置、即插即用、高复用。
+ * 核心配额控制与高质量行为洞察设计：
+ * 1. 【beforeSend 智能拦截（零配额消耗）】：
+ *    - 生产环境守卫：拦截 localhost、127.0.0.1、内网穿透隧道及本地预览，避免开发调试耗尽配额；
+ *    - 机器人过滤：拦截无头自动化浏览器 (Puppeteer/Playwright/Webdriver) 与常见爬虫扫描流量；
+ *    - 黑名单过滤：排除 /dev/ 内部开发文档与 /print 打印调试排版页。
+ * 2. 【有效阅读防抖 (SPA Dwell-Time Throttle)】：
+ *    - 针对 Starlight 客户端 SPA 快速切章 (astro:page-load)，设置 2.5 秒有效停留防抖，
+ *      过滤目录走马观花连点跳章产生的无效 PV，只记录真正深度停留阅读的章节。
+ * 3. 【高价值读者行为捕获 (High-Value Telemetry)】：
+ *    - 全站委托监听 EPUB 电子书下载、AI 问答交互等关键动作，将配额用在核心读者转化分析上。
  * ============================================================================
  */
 import VercelAnalytics from '@vercel/analytics/astro';
@@ -17,23 +23,128 @@ import { features } from '../config/features.config.mjs';
 type Props = Omit<AnalyticsProps, 'framework' | 'beforeSend'>;
 
 const isEnabled = features.analytics?.enabled ?? true;
+const analyticsConfig = features.analytics?.config ?? {
+  productionOnly: true,
+  filterBots: true,
+  excludePaths: ['/dev/', '/print'],
+  minDwellMs: 2500,
+  trackHighValueEvents: true,
+};
 ---
 
 {isEnabled && (
   <>
-    <VercelAnalytics {...Astro.props} />
-    <script>
-      import { pageview } from '@vercel/analytics';
+    <!-- 注入 Vercel beforeSend 中间件：在事件离开浏览器前进行拦截守卫，不消耗配额 -->
+    <script is:inline define:vars={{ analyticsConfig }}>
+      (function () {
+        window.webAnalyticsBeforeSend = function (event) {
+          if (!event || !event.url) return event;
 
-      // 监听 Astro / Starlight 客户端 SPA 路由切换，精准补发页面浏览事件
-      let lastPath = window.location.pathname;
+          try {
+            var urlObj = new URL(event.url, window.location.origin);
+            var hostname = urlObj.hostname;
+            var pathname = urlObj.pathname;
+
+            // 1. 生产环境守卫：拦截本地开发与穿透调试
+            if (analyticsConfig.productionOnly) {
+              var isLocal =
+                hostname === 'localhost' ||
+                hostname === '127.0.0.1' ||
+                hostname === '0.0.0.0' ||
+                hostname.endsWith('.local') ||
+                hostname.indexOf('trycloudflare.com') !== -1 ||
+                hostname.indexOf('vaiwan.com') !== -1 ||
+                hostname.indexOf('localtunnel.me') !== -1;
+              if (isLocal) {
+                return null;
+              }
+            }
+
+            // 2. 爬虫与自动化测试探针过滤
+            if (analyticsConfig.filterBots) {
+              if (navigator.webdriver) return null;
+              var ua = (navigator.userAgent || '').toLowerCase();
+              var botPatterns = [
+                'bot', 'spider', 'crawler', 'headlesschrome',
+                'phantomjs', 'bytespider', 'yisouspider', 'sogou',
+                'semrush', 'ahrefs', 'petalbot', 'uptime'
+              ];
+              for (var i = 0; i < botPatterns.length; i++) {
+                if (ua.indexOf(botPatterns[i]) !== -1) {
+                  return null;
+                }
+              }
+            }
+
+            // 3. 黑名单路由过滤（排除开发文档、打印排版页）
+            if (Array.isArray(analyticsConfig.excludePaths)) {
+              for (var j = 0; j < analyticsConfig.excludePaths.length; j++) {
+                var prefix = analyticsConfig.excludePaths[j];
+                if (pathname.indexOf(prefix) === 0) {
+                  return null;
+                }
+              }
+            }
+
+            return event;
+          } catch (e) {
+            return event;
+          }
+        };
+      })();
+    </script>
+
+    <VercelAnalytics {...Astro.props} />
+
+    <!-- 客户端事件调度器：有效阅读停留防抖 + 高价值事件埋点 -->
+    <script define:vars={{ minDwellMs: analyticsConfig.minDwellMs || 2500, trackHighValueEvents: analyticsConfig.trackHighValueEvents !== false }}>
+      import { pageview, track } from '@vercel/analytics';
+
+      // 1. 章节有效阅读防抖管线 (SPA Dwell-Time Throttle)
+      let dwellTimer = null;
+      let lastReportedPath = window.location.pathname;
+
+      function scheduleDwellPageview(path) {
+        if (dwellTimer) {
+          clearTimeout(dwellTimer);
+          dwellTimer = null;
+        }
+
+        dwellTimer = setTimeout(() => {
+          lastReportedPath = path;
+          pageview({ path });
+          dwellTimer = null;
+        }, minDwellMs);
+      }
+
+      // 监听 Astro / Starlight 客户端 SPA 路由切换
       document.addEventListener('astro:page-load', () => {
         const currentPath = window.location.pathname;
-        if (currentPath !== lastPath) {
-          lastPath = currentPath;
-          pageview({ path: currentPath });
+        if (currentPath !== lastReportedPath) {
+          scheduleDwellPageview(currentPath);
         }
       });
+
+      // 2. 高价值读者动作追踪 (EPUB 下载等)
+      if (trackHighValueEvents) {
+        document.addEventListener('click', (e) => {
+          const target = (e.target && e.target.closest) ? e.target.closest('a') : null;
+          if (!target) return;
+
+          const href = target.getAttribute('href') || '';
+          if (href.endsWith('.epub') || target.closest('[data-feature="epub"]')) {
+            const bookSlug = href.split('/').pop()?.replace('.epub', '') || 'unknown';
+            track('epub_download', { book: bookSlug });
+          }
+        });
+      }
+
+      // 3. 暴露全局安全埋点接口供应用层调用
+      window.__astrolibTrack = function (name, data) {
+        try {
+          track(name, data);
+        } catch {}
+      };
     </script>
   </>
 )}

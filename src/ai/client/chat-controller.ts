@@ -1116,6 +1116,7 @@ export class AIAskElement extends HTMLElement {
     this._grow();
     this._busy = true;
     this._updateSendState();
+    try { (window as any).__astrolibTrack?.('ai_ask', { book: this._bookKey() }); } catch {}
 
     const status = this._status;
     const mode = this._answerMode();

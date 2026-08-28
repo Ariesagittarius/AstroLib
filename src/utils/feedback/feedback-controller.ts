@@ -401,6 +401,7 @@ function openErrataModal(target: BlockTarget): void {
 
     const res = await submitToBotProxy(payload, currentConfig.botEndpoint, currentConfig);
     if (res.ok && res.issueUrl) {
+      try { (window as any).__astrolibTrack?.('errata_submit', { category: payload.category }); } catch {}
       statusMsgEl.className = 'sl-fb-status-msg sl-fb-status-success';
       statusMsgEl.innerHTML = `
         ✓ 勘误 Issue 创建成功：<a href="${res.issueUrl}" target="_blank" rel="noopener">#${res.issueNumber || ''} 查看已创建的 Issue</a>
