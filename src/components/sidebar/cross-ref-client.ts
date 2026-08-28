@@ -150,9 +150,9 @@ function showDisambiguationPopover(
     item.addEventListener('click', (e) => {
       e.preventDefault();
       closeDisambiguationPopover();
-      const currentPath = window.location.pathname.replace(/\/$/, '');
+      const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
       const pathMatch = targetUrl.match(/^([^#]*)(#.*)$/);
-      const targetPath = pathMatch ? pathMatch[1].replace(/\/$/, '') : '';
+      const targetPath = (pathMatch ? pathMatch[1].replace(/\/$/, '') : targetUrl.replace(/\/$/, '')) || '/';
       const targetHash = pathMatch ? pathMatch[2] : '';
       const targetId = targetHash ? decodeURIComponent(targetHash.replace('#', '')) : '';
 
@@ -164,9 +164,19 @@ function showDisambiguationPopover(
             card.classList.add('card-ref-flash');
             setTimeout(() => card.classList.remove('card-ref-flash'), 1200);
           }
+          if (targetHash) {
+            history.pushState({ scrollY: window.scrollY }, '', targetUrl);
+          }
         }
       } else {
-        window.location.href = targetUrl;
+        const spaNav = (window as unknown as Record<string, unknown>).__spaNavigate as
+          | ((u: string) => Promise<unknown>)
+          | undefined;
+        if (typeof spaNav === 'function') {
+          spaNav(targetUrl);
+        } else {
+          window.location.href = targetUrl;
+        }
       }
     });
     list.appendChild(item);
@@ -610,8 +620,18 @@ export function attachInteractiveListeners(): void {
           card.classList.add('card-ref-flash');
           setTimeout(() => card.classList.remove('card-ref-flash'), 1200);
         }
+        if (targetHash) {
+          history.pushState({ scrollY: window.scrollY }, '', targetUrl);
+        }
       } else {
-        window.location.href = targetUrl;
+        const spaNav = (window as unknown as Record<string, unknown>).__spaNavigate as
+          | ((u: string) => Promise<unknown>)
+          | undefined;
+        if (typeof spaNav === 'function') {
+          spaNav(targetUrl);
+        } else {
+          window.location.href = targetUrl;
+        }
       }
     });
   });

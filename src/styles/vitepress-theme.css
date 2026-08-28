@@ -867,91 +867,27 @@ html:not([data-site-theme='starlight']).theme-switching *::after {
   box-shadow: 0 0 10px var(--sl-color-text-accent, #3451b2), 0 0 4px var(--sl-color-text-accent, #3451b2);
 }
 
-/* 2. 参与 View Transitions 的区域声明 */
-header,
-.header,
-.sidebar-pane,
-nav.sidebar,
-.sidebar,
-footer.sl-flex {
-  view-transition-name: none; /* 锁死顶栏、左侧栏和底部，杜绝跳闪 */
-}
-
-.main-pane {
-  view-transition-name: main-article;
-}
-
-.right-sidebar-container {
-  view-transition-name: right-toc;
-}
-
-/* 3. 关键：锁死 View Transition Group 几何形变与尺寸插值，杜绝因滚动高度/页面长度不同造成的拉伸缩放跳变 */
-::view-transition-group(main-article),
-::view-transition-group(right-toc) {
-  animation: none !important;
-}
-
-::view-transition-old(main-article),
-::view-transition-new(main-article),
-::view-transition-old(right-toc),
-::view-transition-new(right-toc) {
-  height: 100%;
-  width: 100%;
-  object-fit: none !important;
-  object-position: 50% 0 !important;
-}
-
-/* 4. View Transitions 学术风微动效关键帧（纯透明度淡入淡出 + 极微位移，杜绝跳变感知） */
-@keyframes vp-fade-out {
-  from {
-    opacity: 1;
-    transform: translateY(0);
+/* 2. 现代文档级平滑入场微动效（Scoped Micro-Transition）
+   作用域严格受控于内容流，不破坏任何侧边栏、抽屉、顶栏的 stacking context，零层级穿透与零遮挡 */
+@keyframes vp-content-enter {
+  0% {
+    opacity: 0.85;
+    transform: translateY(3px);
   }
-  to {
-    opacity: 0;
-    transform: translateY(-1px);
-  }
-}
-
-@keyframes vp-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(1px);
-  }
-  to {
+  100% {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-::view-transition-old(main-article) {
-  animation: 80ms ease-out both vp-fade-out;
+.vp-page-entering .main-pane {
+  animation: vp-content-enter 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
 }
 
-::view-transition-new(main-article) {
-  animation: 120ms ease-in both vp-fade-in;
-}
-
-::view-transition-old(right-toc) {
-  animation: 80ms ease-out both vp-fade-out;
-}
-
-::view-transition-new(right-toc) {
-  animation: 120ms ease-in both vp-fade-in;
-}
-
-/* 5. 无 View Transitions 时的降级微动效 */
-.main-pane-enter {
-  animation: vp-fade-in 120ms ease-in both;
-}
-
-/* 6. 减弱动效偏好无障碍支持 */
+/* 3. 减弱动效偏好无障碍支持 */
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(main-article),
-  ::view-transition-new(main-article),
-  ::view-transition-old(right-toc),
-  ::view-transition-new(right-toc),
-  .main-pane-enter {
+  .vp-page-entering .main-pane {
     animation: none !important;
   }
 }

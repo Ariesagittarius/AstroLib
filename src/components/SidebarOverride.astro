@@ -150,7 +150,7 @@ if (features.epub.enabled && bookMatch) {
   });
 </script>
 
-<!-- 3. SPA 极速导航引擎：不可变内存缓存、全书空闲预热、乐观 UI、View Transitions 学术微动效 -->
+<!-- 3. SPA 极速导航引擎：不可变内存缓存、全书空闲预热、乐观 UI、Scoped 优雅内容微动效 -->
 <script>
   import { preprocessPage } from '../utils/page-preprocess';
 
@@ -162,6 +162,13 @@ if (features.epub.enabled && bookMatch) {
     const inFlightRequests = new Map(); // key -> Promise<{ ... }>
     const CACHE_MAX = 60; // 覆盖单本大部头教材全部章节缓存上限
     let navToken = 0;
+
+    function normPath(p) {
+      if (!p) return '/';
+      return p === '/' ? p : p.replace(/\/+$/, '');
+    }
+
+    let currentPathname = normPath(location.pathname);
 
     // 顶栏极简微光进度条
     let progressBarEl = null;
@@ -216,8 +223,8 @@ if (features.epub.enabled && bookMatch) {
     }
 
     function isNavLink(a) {
-      if (!a || !a.getAttribute) return false;
-      if (a.hasAttribute('download')) return false;
+      if (!a || typeof a.getAttribute !== 'function') return false;
+      if (typeof a.hasAttribute === 'function' && a.hasAttribute('download')) return false;
       if (a.target && a.target !== '_self') return false;
       if ((a.getAttribute('rel') || '').split(' ').includes('external')) return false;
       try {
@@ -228,10 +235,6 @@ if (features.epub.enabled && bookMatch) {
       } catch {
         return false;
       }
-    }
-
-    function normPath(p) {
-      return p === '/' ? p : p.replace(/\/+$/, '');
     }
 
     function stripScripts(root) {
@@ -246,6 +249,9 @@ if (features.epub.enabled && bookMatch) {
       if (!mainPane) throw new Error('main-pane not found in response');
 
       stripScripts(mainPane);
+      // 清除离屏 main-pane 中将被 Portal 到 body 的多余重复组件外壳，保持母版 DOM 纯净
+      mainPane.querySelectorAll('#dsh-inspector-root, #dsh-editor-root, #dsh-feedback-root, #dsh-chat-root, #dsh-relation-graph-root').forEach((el) => el.remove());
+
       const rightSidebar = doc.querySelector('.right-sidebar-container');
       if (rightSidebar) stripScripts(rightSidebar);
       const sidebar = doc.querySelector('nav.sidebar, .sidebar-pane, .sidebar');
@@ -404,7 +410,7 @@ if (features.epub.enabled && bookMatch) {
       }
     }
 
-    // 核心页面切换执行器：支持 View Transitions 优雅微动效与 0ms 本地瞬切
+    // 核心页面切换执行器：Scoped 作用域受控微动效与 0ms 本地瞬切
     async function loadPage(url, { restoreScroll = false } = {}) {
       const token = ++navToken;
       startProgressBar();
@@ -420,64 +426,59 @@ if (features.epub.enabled && bookMatch) {
         const currentRight = document.querySelector('.right-sidebar-container');
         const currentSidebar = document.querySelector('nav.sidebar, .sidebar-pane, .sidebar');
 
-        // 在 View Transition 开始前预热字体，确保过渡开始时文字已由目标字体渲染，杜绝过渡后的 FOUT 跳变
-        await warmPageFonts(mainPane.textContent, 75);
+        // 在内容上屏前预热字体，确保过渡时文字已由目标字体渲染，杜绝 FOUT 跳变
+        await warmPageFonts(mainPane.textContent, 60);
 
-        const performDomSwap = () => {
-          document.title = title || document.title;
+        document.title = title || document.title;
 
-          // 1. 跨图书切换时若侧边栏结构不同则同步替换侧边栏
-          if (newSidebar && currentSidebar && newSidebar.innerHTML !== currentSidebar.innerHTML) {
-            currentSidebar.replaceWith(newSidebar);
-          }
-
-          // 2. 正文与右侧大纲置换
-          currentMain.replaceWith(mainPane);
-          if (rightSidebar) {
-            if (currentRight) currentRight.replaceWith(rightSidebar);
-            else flexWrap?.prepend(rightSidebar);
-          } else if (currentRight) {
-            currentRight.remove();
-          }
-
-          updateSidebarActive(url.pathname);
-          closeMobileMenu();
-
-          // 3. 滚动位置恢复
-          if (url.hash) {
-            const targetId = decodeURIComponent(url.hash.slice(1));
-            const el = document.getElementById(targetId);
-            if (el) el.scrollIntoView({ block: 'start' });
-            else window.scrollTo(0, 0);
-          } else {
-            const y = restoreScroll && history.state && typeof history.state.scrollY === 'number'
-              ? history.state.scrollY
-              : 0;
-            window.scrollTo(0, y);
-          }
-        };
-
-        const hasViewTransition =
-          typeof document.startViewTransition === 'function' &&
-          !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-        if (hasViewTransition) {
-          const transition = document.startViewTransition(() => {
-            performDomSwap();
-          });
-          await transition.finished.catch(() => {});
-        } else {
-          performDomSwap();
-          mainPane.classList.add('main-pane-enter');
-          setTimeout(() => mainPane.classList.remove('main-pane-enter'), 250);
+        // 1. 跨图书切换时若侧边栏结构不同则同步替换侧边栏
+        if (newSidebar && currentSidebar && newSidebar.innerHTML !== currentSidebar.innerHTML) {
+          currentSidebar.replaceWith(newSidebar);
         }
+
+        // 2. 正文与右侧大纲置换
+        currentMain.replaceWith(mainPane);
+        if (rightSidebar) {
+          if (currentRight) currentRight.replaceWith(rightSidebar);
+          else flexWrap?.prepend(rightSidebar);
+        } else if (currentRight) {
+          currentRight.remove();
+        }
+
+        updateSidebarActive(url.pathname);
+        closeMobileMenu();
+
+        // 3. 滚动位置恢复与目标定位
+        if (url.hash) {
+          const targetId = decodeURIComponent(url.hash.slice(1));
+          const el = document.getElementById(targetId) || document.querySelector(`[data-src-line="${targetId.replace(/^L/, '')}"]`);
+          if (el) {
+            el.scrollIntoView({ block: 'start' });
+          } else {
+            window.scrollTo(0, 0);
+          }
+        } else {
+          const y = restoreScroll && history.state && typeof history.state.scrollY === 'number'
+            ? history.state.scrollY
+            : 0;
+          window.scrollTo(0, y);
+        }
+
+        // 4. 触发平滑作用域入场微动效（Scoped Micro-Transition，零层级遮挡）
+        document.body.classList.remove('vp-page-entering');
+        // 强制重绘以重置动画
+        void document.body.offsetWidth;
+        document.body.classList.add('vp-page-entering');
+        setTimeout(() => {
+          document.body.classList.remove('vp-page-entering');
+        }, 150);
 
         finishProgressBar();
 
-        // 触发既有初始化管线（大纲重建、公式二次渲染、图文联动等）
+        // 5. 立即触发既有初始化管线（大纲重建、公式交互、图文联动等，直接在真实 live DOM 上初始化，零闪烁）
         document.dispatchEvent(new CustomEvent('astro:page-load'));
 
-        // 触发全书空闲智能预热
+        // 6. 触发全书空闲智能预热
         triggerIdlePrewarming();
 
       } catch (err) {
@@ -486,6 +487,40 @@ if (features.epub.enabled && bookMatch) {
         window.location.href = url.href;
       }
     }
+
+    // 全局统一编程式 SPA 导航 API
+    window.__spaNavigate = function spaNavigate(targetUrl, { replace = false } = {}) {
+      const url = typeof targetUrl === 'string' ? new URL(targetUrl, location.href) : targetUrl;
+      const targetPath = normPath(url.pathname);
+
+      // 同页跳转：直接滚动 + 同步地址栏，绝不触发全量换页与重绘
+      if (targetPath === currentPathname) {
+        if (url.hash) {
+          const targetId = decodeURIComponent(url.hash.slice(1));
+          const el = document.getElementById(targetId) || document.querySelector(`[data-src-line="${targetId.replace(/^L/, '')}"]`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+        if (replace) {
+          history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, '', url.href);
+        } else {
+          history.pushState({ scrollY: window.scrollY }, '', url.href);
+        }
+        return Promise.resolve();
+      }
+
+      // 跨页跳转：执行极速 SPA 导航
+      updateSidebarActive(url.pathname);
+      if (replace) {
+        history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, '', url.href);
+      } else {
+        history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, '');
+        history.pushState({ scrollY: 0 }, '', url.href);
+      }
+      currentPathname = targetPath;
+      return loadPage(url);
+    };
 
     // 全书章节空闲期智能预热引擎（Idle Pre-warming Queue）
     let prewarmQueue = [];
@@ -496,6 +531,7 @@ if (features.epub.enabled && bookMatch) {
       if (!sidebar) return;
 
       const links = Array.from(sidebar.querySelectorAll('a[href]'))
+        .filter((a) => isNavLink(a))
         .map((a) => {
           try {
             return new URL(a.getAttribute('href'), location.href);
@@ -503,7 +539,7 @@ if (features.epub.enabled && bookMatch) {
             return null;
           }
         })
-        .filter((u) => u && isNavLink({ getAttribute: () => u.href, href: u.href }) && normPath(u.pathname) !== normPath(location.pathname));
+        .filter((u) => u && normPath(u.pathname) !== normPath(location.pathname));
 
       // 提取尚未缓存且未在请求中的链接
       prewarmQueue = links.filter((u) => !pageCache.has(normPath(u.pathname)) && !inFlightRequests.has(normPath(u.pathname)));
@@ -552,22 +588,26 @@ if (features.epub.enabled && bookMatch) {
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 
       const url = new URL(a.getAttribute('href'), location.href);
-      if (normPath(url.pathname) === normPath(location.pathname)) {
-        if (!url.hash) e.preventDefault(); // 同页无锚点：阻止整页刷新
+      const targetPath = normPath(url.pathname);
+
+      if (targetPath === currentPathname) {
+        // 同页锚点或返回顶部
+        e.preventDefault();
+        if (url.hash) {
+          const targetId = decodeURIComponent(url.hash.slice(1));
+          const el = document.getElementById(targetId) || document.querySelector(`[data-src-line="${targetId.replace(/^L/, '')}"]`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+          history.pushState({ scrollY: window.scrollY }, '', url.href);
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
         return;
       }
 
       e.preventDefault();
-
-      // 1. 0ms 瞬间点亮侧边栏高亮（乐观交互，极致触感响应）
-      updateSidebarActive(url.pathname);
-
-      // 2. 立即更新地址栏历史记录
-      history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, '');
-      history.pushState({ scrollY: 0 }, '', url.href);
-
-      // 3. 极速切换
-      loadPage(url);
+      window.__spaNavigate(url);
     });
 
     // 悬停/触碰即时预取：多目标并发优化
@@ -599,10 +639,26 @@ if (features.epub.enabled && bookMatch) {
       fetchPage(url).catch(() => {});
     }, { passive: true });
 
-    // 浏览器前进/后退处理
+    // 浏览器前进/后退处理：精确区分同页 hash 变化与跨页换页
     window.addEventListener('popstate', () => {
-      const url = new URL(location.href);
-      loadPage(url, { restoreScroll: true }).catch(() => {
+      const targetPath = normPath(location.pathname);
+      if (targetPath === currentPathname) {
+        // 同页历史回退（如锚点定位）：平滑滚动定位，不重新加载页面
+        if (location.hash) {
+          const targetId = decodeURIComponent(location.hash.slice(1));
+          const el = document.getElementById(targetId) || document.querySelector(`[data-src-line="${targetId.replace(/^L/, '')}"]`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        } else {
+          const y = history.state?.scrollY || 0;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+        return;
+      }
+
+      currentPathname = targetPath;
+      loadPage(new URL(location.href), { restoreScroll: true }).catch(() => {
         location.reload();
       });
     });

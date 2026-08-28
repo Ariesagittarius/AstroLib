@@ -366,9 +366,11 @@ class ModuleInspectorController {
       const jumpBtn = target.closest<HTMLElement>('.insp-jump-btn, .insp-action-jump');
       if (jumpBtn) {
         e.stopPropagation();
-        const itemUrl = jumpBtn.getAttribute('data-url') || '';
-        const line = Number(jumpBtn.getAttribute('data-line') || '0');
-        this.navigateTo(itemUrl, '', line);
+        const row = jumpBtn.closest<HTMLElement>('.insp-item-row, .insp-card-suspicious');
+        const itemUrl = jumpBtn.getAttribute('data-url') || row?.getAttribute('data-url') || '';
+        const anchorId = jumpBtn.getAttribute('data-anchor') || row?.getAttribute('data-anchor') || '';
+        const line = Number(jumpBtn.getAttribute('data-line') || row?.getAttribute('data-line') || '0');
+        this.navigateTo(itemUrl, anchorId, line);
         return;
       }
 
@@ -1056,7 +1058,7 @@ class ModuleInspectorController {
               <span>L${item.line}</span>
             </button>
             ${editBtnHtml}
-            <button type="button" class="insp-action-btn insp-action-jump" title="定位跳转至正文卡片">
+            <button type="button" class="insp-action-btn insp-jump-btn insp-action-jump" data-url="${this.escapeHtml(item.url)}" data-anchor="${this.escapeHtml(item.anchorId)}" data-line="${item.line}" title="定位跳转至正文卡片">
               <svg class="insp-btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="7"></circle>
                 <line x1="12" y1="2" x2="12" y2="5"></line>
@@ -1109,22 +1111,28 @@ class ModuleInspectorController {
   private navigateTo(url: string, anchorId: string, line: number) {
     if (!url) return;
 
-    // 记录待高亮的目标（跨页面时在 sessionStorage 暂存）
-    const highlightTarget = { anchorId, line, timestamp: Date.now() };
-    sessionStorage.setItem('dsh-pending-highlight', JSON.stringify(highlightTarget));
-
     const targetUrl = new URL(url, location.href);
     const isSamePage = this.normalizePath(location.pathname) === this.normalizePath(targetUrl.pathname);
 
     if (isSamePage) {
+      // 同页跳转：直接滚动 + 波纹高亮 + 同步 hash 到地址栏，不触发 SPA 换页
       this.executeHighlight(anchorId, line);
+      if (targetUrl.hash) {
+        history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, '', targetUrl.href);
+      }
     } else {
-      // 跨页跳转：通过站内 SPA 导航或普通导航
-      const link = document.createElement('a');
-      link.href = url;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      // 跨页跳转：记录待高亮目标并通过 SPA 路由器平滑导航
+      const highlightTarget = { anchorId, line, timestamp: Date.now() };
+      sessionStorage.setItem('dsh-pending-highlight', JSON.stringify(highlightTarget));
+
+      const spaNav = (window as unknown as Record<string, unknown>).__spaNavigate as
+        | ((u: URL | string) => Promise<unknown>)
+        | undefined;
+      if (typeof spaNav === 'function') {
+        spaNav(targetUrl);
+      } else {
+        location.href = targetUrl.href;
+      }
     }
   }
 
@@ -1135,6 +1143,7 @@ class ModuleInspectorController {
   }
 
   private normalizePath(p: string): string {
+    if (!p) return '/';
     return p === '/' ? p : p.replace(/\/+$/, '');
   }
 
@@ -1155,6 +1164,7 @@ class ModuleInspectorController {
       targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
       targetEl.classList.remove('dsh-inspector-pulse');
       // 强制触发一次重绘以重置动画
+      void targetEl.offsetWidth;
       targetEl.classList.add('dsh-inspector-pulse');
 
       setTimeout(() => {
@@ -1171,9 +1181,11 @@ class ModuleInspectorController {
         sessionStorage.removeItem('dsh-pending-highlight');
         const target = JSON.parse(raw);
         if (target && Date.now() - target.timestamp < 10000) {
-          setTimeout(() => {
-            this.executeHighlight(target.anchorId, target.line);
-          }, 150);
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              this.executeHighlight(target.anchorId, target.line);
+            }, 60);
+          });
         }
       } catch {
         /* 忽略 */
