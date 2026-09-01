@@ -1,0 +1,58 @@
+name: Cleanup Ephemeral LaTeX Releases
+
+on:
+  schedule:
+    # 每天 UTC 03:00 (北京时间 11:00) 定时清理
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    name: Purge Expired LaTeX Job Releases (> 24h)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete Ephemeral Releases and Release Tags
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const expirationTime = 24 * 60 * 60 * 1000; // 24 hours
+            const now = Date.now();
+
+            console.log(`Searching for ephemeral job releases in ${owner}/${repo}...`);
+
+            const releases = await github.paginate(github.rest.repos.listReleases, {
+              owner,
+              repo,
+              per_page: 100
+            });
+
+            let deletedCount = 0;
+            for (const release of releases) {
+              if (release.tag_name && release.tag_name.startsWith('job-')) {
+                const ageMs = now - new Date(release.created_at).getTime();
+                if (ageMs > expirationTime) {
+                  console.log(`Purging expired release: ${release.tag_name} (${release.name})`);
+                  try {
+                    await github.rest.repos.deleteRelease({
+                      owner,
+                      repo,
+                      release_id: release.id
+                    });
+                    await github.rest.git.deleteRef({
+                      owner,
+                      repo,
+                      ref: `tags/${release.tag_name}`
+                    });
+                    deletedCount++;
+                  } catch (err) {
+                    console.error(`Failed to delete tag ${release.tag_name}:`, err.message);
+                  }
+                }
+              }
+            }
+            console.log(`Purge complete. Successfully deleted ${deletedCount} ephemeral releases.`);

@@ -1,0 +1,112 @@
+name: Compile LaTeX Document
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: 'Unique Compilation Job ID'
+        required: true
+        type: string
+      tex_b64:
+        description: 'Base64 Encoded LaTeX Source Code'
+        required: true
+        type: string
+      output_filename:
+        description: 'Target PDF Filename'
+        required: false
+        default: 'exercise.pdf'
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: latex-job-${{ github.event.inputs.job_id }}
+  cancel-in-progress: false
+
+jobs:
+  compile:
+    name: XeLaTeX Build (${{ github.event.inputs.job_id }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare LaTeX Workspace
+        id: prep
+        run: |
+          mkdir -p workspace
+          echo "${{ github.event.inputs.tex_b64 }}" | base64 -d > workspace/main.tex
+          echo "Workspace initialized with main.tex (size: $(wc -c < workspace/main.tex) bytes)"
+
+      - name: Compile Document with XeLaTeX
+        uses: xu-cheng/latex-action@v4
+        with:
+          root_file: main.tex
+          working_directory: workspace
+          compiler: latexmk
+          latexmk_use_xelatex: true
+          texlive_version: 2024
+          args: -file-line-error -interaction=nonstopmode -synctex=1
+
+      - name: Prepare Output Asset
+        if: success()
+        id: output
+        run: |
+          OUT_NAME="${{ github.event.inputs.output_filename }}"
+          if [ -z "$OUT_NAME" ]; then
+            OUT_NAME="exercise-${{ github.event.inputs.job_id }}.pdf"
+          fi
+          cp workspace/main.pdf "workspace/${OUT_NAME}"
+          echo "pdf_path=workspace/${OUT_NAME}" >> $GITHUB_OUTPUT
+          echo "filename=${OUT_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Publish PDF to GitHub Release Asset
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: job-${{ github.event.inputs.job_id }}
+          name: "LaTeX Build ${{ github.event.inputs.job_id }}"
+          body: |
+            ## Automated XeLaTeX Compilation Result
+            - **Job ID**: `${{ github.event.inputs.job_id }}`
+            - **Filename**: `${{ steps.output.outputs.filename }}`
+            - **Engine**: XeLaTeX / TeX Live 2024 (ctex / Jinwen-XU/homework)
+            - **Generated**: ${{ github.event.repository.updated_at }}
+          files: ${{ steps.output.outputs.pdf_path }}
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Capture Failure Log
+        if: failure()
+        run: |
+          if [ -f workspace/main.log ]; then
+            tail -n 120 workspace/main.log > workspace/build-error.log
+          else
+            echo "LaTeX compilation terminated before generating log." > workspace/build-error.log
+          fi
+
+      - name: Publish Failure Log to Release
+        if: failure()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: job-${{ github.event.inputs.job_id }}
+          name: "LaTeX Build FAILED ${{ github.event.inputs.job_id }}"
+          body: "LaTeX compilation failed. See attached build-error.log for compiler output."
+          files: workspace/build-error.log
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload PDF Artifact (Fallback)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pdf-${{ github.event.inputs.job_id }}
+          path: workspace/*.pdf
+          retention-days: 1
