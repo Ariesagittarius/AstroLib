@@ -480,6 +480,9 @@ export function applyButtonVisibilityPref() {
   });
 }
 
+let activeThemeObserver: MutationObserver | null = null;
+let isRelationGraphGlobalBound = false;
+
 /** 初始化关系图谱客户端控制器 */
 export function initRelationGraphClient() {
   const root = document.getElementById('book-relation-graph-root');
@@ -498,11 +501,14 @@ export function initRelationGraphClient() {
   applyButtonVisibilityPref();
 
   const prefCheckbox = document.getElementById('brg-pref-show-sidebar-btn') as HTMLInputElement;
-  prefCheckbox?.addEventListener('change', () => {
-    const newShow = prefCheckbox.checked;
-    localStorage.setItem(PREF_KEY_SHOW_BTN, newShow ? 'true' : 'false');
-    applyButtonVisibilityPref();
-  });
+  if (prefCheckbox && !prefCheckbox.dataset.bound) {
+    prefCheckbox.dataset.bound = 'true';
+    prefCheckbox.addEventListener('change', () => {
+      const newShow = prefCheckbox.checked;
+      localStorage.setItem(PREF_KEY_SHOW_BTN, newShow ? 'true' : 'false');
+      applyButtonVisibilityPref();
+    });
+  }
 
   // 2. 模态窗开关与全局快捷键绑定
   function openModal() {
@@ -518,33 +524,61 @@ export function initRelationGraphClient() {
 
   // 绑定所有触发按钮
   document.querySelectorAll('[data-open-relation-graph], .relation-graph-trigger').forEach((btn) => {
+    if ((btn as HTMLElement).dataset.bound) return;
+    (btn as HTMLElement).dataset.bound = 'true';
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       openModal();
     });
   });
 
-  // 快捷键 Alt+G 开启 / Esc 关闭
-  window.addEventListener('keydown', (e) => {
-    if ((e.altKey && e.code === 'KeyG') || (e.key === 'g' && e.altKey)) {
-      e.preventDefault();
-      if (root.classList.contains('open')) closeModal();
-      else openModal();
-    } else if (e.key === 'Escape' && root.classList.contains('open')) {
-      closeModal();
-    }
-  });
+  if (!isRelationGraphGlobalBound) {
+    isRelationGraphGlobalBound = true;
 
-  document.getElementById('brg-btn-close')?.addEventListener('click', closeModal);
-  root.querySelector('.brg-backdrop')?.addEventListener('click', closeModal);
+    // 快捷键 Alt+G 开启 / Esc 关闭
+    window.addEventListener('keydown', (e) => {
+      const modalRoot = document.getElementById('book-relation-graph-root');
+      if (!modalRoot) return;
+      if ((e.altKey && e.code === 'KeyG') || (e.key === 'g' && e.altKey)) {
+        e.preventDefault();
+        if (modalRoot.classList.contains('open')) {
+          modalRoot.classList.remove('open');
+        } else {
+          modalRoot.classList.add('open');
+          loadAndRenderData();
+        }
+      } else if (e.key === 'Escape' && modalRoot.classList.contains('open')) {
+        modalRoot.classList.remove('open');
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      echartsInstance?.resize();
+    });
+  }
+
+  const closeBtn = document.getElementById('brg-btn-close');
+  if (closeBtn && !closeBtn.dataset.bound) {
+    closeBtn.dataset.bound = 'true';
+    closeBtn.addEventListener('click', closeModal);
+  }
+
+  const backdrop = root.querySelector('.brg-backdrop') as HTMLElement;
+  if (backdrop && !backdrop.dataset.bound) {
+    backdrop.dataset.bound = 'true';
+    backdrop.addEventListener('click', closeModal);
+  }
 
   // 全屏切换
   const fullscreenBtn = document.getElementById('brg-btn-fullscreen');
-  fullscreenBtn?.addEventListener('click', () => {
-    const modal = root.querySelector('.brg-modal');
-    modal?.classList.toggle('fullscreen');
-    setTimeout(() => echartsInstance?.resize(), 200);
-  });
+  if (fullscreenBtn && !fullscreenBtn.dataset.bound) {
+    fullscreenBtn.dataset.bound = 'true';
+    fullscreenBtn.addEventListener('click', () => {
+      const modal = root.querySelector('.brg-modal');
+      modal?.classList.toggle('fullscreen');
+      setTimeout(() => echartsInstance?.resize(), 200);
+    });
+  }
 
   // 视角与层级过滤选择器
   const scopeSelect = document.getElementById('brg-scope-select') as HTMLSelectElement;
@@ -695,23 +729,29 @@ export function initRelationGraphClient() {
     }
   }
 
-  searchInput?.addEventListener('input', (e: any) => doSearch(e.target.value));
-  searchClear?.addEventListener('click', () => {
-    if (searchInput) searchInput.value = '';
-    doSearch('');
-  });
+  if (searchInput && !searchInput.dataset.bound) {
+    searchInput.dataset.bound = 'true';
+    searchInput.addEventListener('input', (e: any) => doSearch(e.target.value));
+  }
+  if (searchClear && !searchClear.dataset.bound) {
+    searchClear.dataset.bound = 'true';
+    searchClear.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      doSearch('');
+    });
+  }
 
-  // 主题变化监听
-  const themeObserver = new MutationObserver(() => {
+  // 主题变化监听（单例维护，断开旧观察者）
+  if (activeThemeObserver) {
+    activeThemeObserver.disconnect();
+    activeThemeObserver = null;
+  }
+  activeThemeObserver = new MutationObserver(() => {
     if (echartsInstance && currentGraphData && currentViewMode !== 'matrix') {
       renderChartOption(getScopedData(), currentViewMode);
     }
   });
-  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
-
-  window.addEventListener('resize', () => {
-    echartsInstance?.resize();
-  });
+  activeThemeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
 
   // 3. 加载与渲染数据
   async function loadAndRenderData() {

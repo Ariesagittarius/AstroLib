@@ -16,6 +16,7 @@ const RUNTIME_IDS = new Set([
   'fonts',
   'crossRef',
   'formulaActions',
+  'prewarm',
   'relationGraph',
   'mermaid',
   'epub',
@@ -230,10 +231,111 @@ const metaJson = JSON.stringify(featureMeta);
               <span class="ft-switch-slider"></span>
             </label>
           </div>
+
+          <!-- 6. 章节空闲预加载范围 -->
+          <div class="ft-group-block">
+            <div class="ft-row-header">
+              <div class="ft-row-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <div class="ft-row-info">
+                <span class="ft-row-name">章节后台预加载</span>
+                <span class="ft-row-desc">空闲期预加载相邻或全书章节以实现瞬间换页</span>
+              </div>
+            </div>
+            <div class="ft-segment-wrapper">
+              <div class="ft-segment-track ft-grid-5">
+                <button type="button" class="ft-prewarm-btn" data-prewarm-val="-1" title="全书全量预加载（默认）">全书</button>
+                <button type="button" class="ft-prewarm-btn" data-prewarm-val="1" title="仅前后 1 页（上一章与下一章）">前后1页</button>
+                <button type="button" class="ft-prewarm-btn" data-prewarm-val="2" title="前后紧邻 2 页">前后2页</button>
+                <button type="button" class="ft-prewarm-btn" data-prewarm-val="3" title="前后紧邻 3 页">前后3页</button>
+                <button type="button" class="ft-prewarm-btn" data-prewarm-val="0" title="禁用后台预加载，仅悬停与点击时即时加载">关闭</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- 分组二：阅读与知识工具 -->
+      <!-- 分组二：AI 学术模型与密钥 -->
+      <div class="ft-section">
+        <div class="ft-section-title">AI 服务与模型设置</div>
+        <div class="ft-list">
+          <div class="ft-group-block ft-ai-config-block">
+            <div class="ft-row-header">
+              <div class="ft-row-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 3a6 6 0 0 1 6 6c0 2.1-1 3.6-2.3 4.8-.6.5-1 1.2-1 2v.5M9 21h6"></path>
+                </svg>
+              </div>
+              <div class="ft-row-info">
+                <span class="ft-row-name">统一模型与 API Key</span>
+                <span class="ft-row-desc">书内智能问答与习题规范推导全站统一生效</span>
+              </div>
+            </div>
+
+            <!-- 模型选择 -->
+            <div class="ft-ai-field">
+              <div class="ft-ai-field-head">
+                <label class="ft-ai-label">学术推导模型</label>
+                <button type="button" class="ft-ai-custom-toggle-btn" data-action="toggle-custom-model" title="添加自定义 OpenAI 兼容模型">
+                  + 自定义模型
+                </button>
+              </div>
+              <select class="ft-ai-select ft-ai-model-select"></select>
+            </div>
+
+            <!-- 自定义模型表单 -->
+            <div class="ft-ai-custom-form hidden">
+              <div class="ft-ai-form-row">
+                <input type="text" class="ft-ai-input ft-ai-custom-id" placeholder="模型 ID（如 my-qwen）" autocomplete="off" />
+                <input type="text" class="ft-ai-input ft-ai-custom-label" placeholder="显示名称" autocomplete="off" />
+              </div>
+              <input type="text" class="ft-ai-input ft-ai-custom-ep" placeholder="OpenAI 兼容端点 URL" autocomplete="off" />
+              <div class="ft-ai-custom-actions">
+                <button type="button" class="ft-ai-btn ft-ai-btn-ghost" data-action="cancel-custom-model">取消</button>
+                <button type="button" class="ft-ai-btn ft-ai-btn-primary" data-action="add-custom-model">保存模型</button>
+              </div>
+            </div>
+
+            <!-- API Key 输入框 -->
+            <div class="ft-ai-field">
+              <div class="ft-ai-field-head">
+                <label class="ft-ai-label">API Key (当前模型 / 全局)</label>
+                <span class="ft-ai-key-badge">未配置</span>
+              </div>
+              <div class="ft-ai-key-row">
+                <input type="password" class="ft-ai-input ft-ai-key-input" placeholder="sk-..." autocomplete="off" />
+                <button type="button" class="ft-ai-icon-btn ft-ai-key-reveal" data-action="toggle-key-reveal" title="显示/隐藏密钥">
+                  <svg class="ft-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <svg class="ft-eye-closed hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- API 端点输入框 -->
+            <div class="ft-ai-field">
+              <label class="ft-ai-label">API 端点 URL (OpenAI 兼容)</label>
+              <input type="text" class="ft-ai-input ft-ai-endpoint-input" placeholder="https://api.deepseek.com/v1/chat/completions" autocomplete="off" />
+            </div>
+
+            <div class="ft-ai-tip">
+              密钥仅保存在本机浏览器 localStorage，绝不上传服务器。全站书内问答与习题推导统一调用。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分组三：阅读与知识工具 -->
       <div class="ft-section">
         <div class="ft-section-title">功能与工具</div>
         <div class="ft-list">
@@ -796,6 +898,185 @@ const metaJson = JSON.stringify(featureMeta);
     border-color: var(--sl-color-gray-5);
   }
 
+  /* ===== AI 统一服务与模型配置 ===== */
+  .ft-ai-config-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: var(--sl-color-gray-7, rgba(0, 0, 0, 0.03));
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 8px;
+    padding: 10px 10px;
+  }
+
+  .ft-ai-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ft-ai-field-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .ft-ai-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--sl-color-gray-2);
+  }
+
+  .ft-ai-key-badge {
+    font-size: 9.5px;
+    font-weight: 500;
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 1px solid var(--sl-color-hairline);
+    color: var(--sl-color-gray-3);
+  }
+
+  .ft-ai-key-badge.configured {
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.35);
+    background-color: rgba(16, 185, 129, 0.08);
+  }
+
+  .ft-ai-custom-toggle-btn {
+    border: none;
+    background: transparent;
+    color: var(--sl-color-accent);
+    font-size: 10.5px;
+    cursor: pointer;
+    padding: 0;
+    font-weight: 500;
+    transition: opacity 0.15s ease;
+  }
+  .ft-ai-custom-toggle-btn:hover {
+    opacity: 0.8;
+  }
+
+  .ft-ai-select,
+  .ft-ai-input {
+    width: 100%;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 6px;
+    border: 1px solid var(--sl-color-hairline);
+    background-color: var(--sl-color-bg);
+    color: var(--sl-color-white);
+    font-size: 11.5px;
+    font-family: inherit;
+    transition: border-color 0.15s ease;
+    box-sizing: border-box;
+  }
+
+  .ft-ai-select:focus,
+  .ft-ai-input:focus {
+    outline: none;
+    border-color: var(--sl-color-accent);
+  }
+
+  .ft-ai-key-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .ft-ai-key-input {
+    padding-right: 30px;
+  }
+
+  .ft-ai-icon-btn {
+    position: absolute;
+    right: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    background: transparent;
+    color: var(--sl-color-gray-3);
+    cursor: pointer;
+    padding: 0;
+    border-radius: 4px;
+    transition: color 0.15s ease;
+  }
+  .ft-ai-icon-btn:hover {
+    color: var(--sl-color-white);
+  }
+  .ft-ai-icon-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .ft-ai-custom-form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    background-color: var(--sl-color-bg);
+    border: 1px dashed var(--sl-color-hairline);
+    border-radius: 6px;
+    margin: 2px 0;
+  }
+  .ft-ai-custom-form.hidden {
+    display: none !important;
+  }
+
+  .ft-ai-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .ft-ai-custom-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  .ft-ai-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
+  }
+
+  .ft-ai-btn-ghost {
+    background: transparent;
+    border-color: var(--sl-color-hairline);
+    color: var(--sl-color-gray-2);
+  }
+  .ft-ai-btn-ghost:hover {
+    color: var(--sl-color-white);
+    background-color: var(--sl-color-gray-6);
+  }
+
+  .ft-ai-btn-primary {
+    background-color: var(--sl-color-accent);
+    color: var(--sl-color-text-invert, #ffffff);
+  }
+  .ft-ai-btn-primary:hover {
+    opacity: 0.9;
+  }
+
+  .ft-ai-tip {
+    font-size: 10px;
+    line-height: 1.4;
+    color: var(--sl-color-gray-3);
+    margin-top: 2px;
+  }
+
   /* ===== 分段选择器（Segmented Control · VitePress 胶囊切换） ===== */
   .ft-segment-wrapper {
     display: flex;
@@ -827,13 +1108,18 @@ const metaJson = JSON.stringify(featureMeta);
     grid-template-columns: repeat(3, 1fr);
   }
 
+  .ft-grid-5 {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
   .ft-font-btn,
-  .ft-theme-chip {
+  .ft-theme-chip,
+  .ft-prewarm-btn {
     display: flex;
     align-items: center;
     justify-content: center;
     height: 25px;
-    padding: 0 4px;
+    padding: 0 2px;
     border-radius: 5px;
     border: none;
     background: transparent;
@@ -846,12 +1132,14 @@ const metaJson = JSON.stringify(featureMeta);
   }
 
   .ft-font-btn:hover,
-  .ft-theme-chip:hover {
+  .ft-theme-chip:hover,
+  .ft-prewarm-btn:hover {
     color: var(--sl-color-white);
   }
 
   .ft-font-btn.active,
-  .ft-theme-chip.active {
+  .ft-theme-chip.active,
+  .ft-prewarm-btn.active {
     background-color: var(--sl-color-bg);
     color: var(--sl-color-accent);
     font-weight: 600;

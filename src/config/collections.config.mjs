@@ -115,7 +115,7 @@ export const collections = [
         tags: ['工科数学分析', '高等数学', '微积分', '常微分方程', '无穷级数'],
         cover: '/covers/engineering_analysis.jpg',
         entryPoint: '00_内容简介',
-        trackClasses: ['.example-card', '.knowledge-card', '.fallback-block'],
+        trackClasses: ['.example-card', '.knowledge-card', '.exercise-card', '.fallback-block'],
         modules: {
           '例': { emoji: '✍️', short: '例', aliases: ['例', '例题'], theme: 'chip-example' },
           '例题': { emoji: '✍️', short: '例', aliases: ['例', '例题'], theme: 'chip-example' },
@@ -126,6 +126,7 @@ export const collections = [
           '引理': { emoji: '🧩', short: '引', aliases: ['引理'], theme: 'chip-conclusion' },
           '命题': { emoji: '📌', short: '命', aliases: ['命题'], theme: 'chip-conclusion' },
           '公理': { emoji: '📐', short: '公', aliases: ['公理'], theme: 'chip-conclusion' },
+          '习题': { emoji: '📝', short: '习', aliases: ['习题', '真题', '练习题'], theme: 'chip-problem' },
           '图': {
             short: '图',
             aliases: ['图'],

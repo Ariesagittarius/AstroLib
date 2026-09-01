@@ -28,31 +28,59 @@ function escapeHtml(s) {
 /** 分隔符拆分：$$...$$（display）优先，其次 $...$（inline） */
 const MATH_SPLIT_RE = /(\$\$[^$]+\$\$|\$[^$]+\$)/g;
 
+/** 清理并修复 LaTeX 字符串中的控制字符与转义序列 */
+function sanitizeMathLatex(val) {
+  if (typeof val !== 'string') return '';
+  let str = val;
+  str = str.replace(/\x0c/g, '\\f');
+  str = str.replace(/\x08/g, '\\b');
+  str = str.replace(/\x0b/g, '\\v');
+  str = str.replace(/\r(?!\n)/g, '\\r');
+  str = str.replace(/\t([a-zA-Z])/g, '\\t$1');
+  str = str.replace(/(\$\$[\s\S]+?\$\$|\$[^\$\n]+?\$)/g, (m) => m.replace(/\t/g, ' '));
+  str = str.replace(/(\$\$[\s\S]+?\$\$|\$[^\$\n]+?\$)/g, (m) =>
+    m.replace(/\n(u|eq|ne|not|nabla|notin|nrightarrow|natural|nearrow|nwarrow|neg|normalsize)\b/g, '\\n$1')
+  );
+  str = str.replace(/\\iiiint_{\\Omega}/g, '\\iiint_{\\Omega}');
+  str = str.replace(/\\overparen\{([^}]+)\}/g, '\\stackrel{\\frown}{$1}');
+  str = str.replace(/\\wideparen\{([^}]+)\}/g, '\\stackrel{\\frown}{$1}');
+  return str;
+}
+
+const KATEX_OPTIONS = {
+  output: 'htmlAndMathml',
+  throwOnError: false,
+  strict: false,
+  macros: {
+    '\\overparen': '\\stackrel{\\frown}{#1}',
+    '\\wideparen': '\\stackrel{\\frown}{#1}',
+    '\\iiiint': '\\int\\!\\!\\int\\!\\!\\int\\!\\!\\int',
+  },
+};
+
 /**
  * 把可能含数学公式的标题渲染为安全 HTML。
  * @param {string|undefined} title 原始标题（保留 $...$）
  * @returns {string} 可直接 set:html 的 HTML
  */
 export function renderTitleHtml(title) {
-  const text = String(title ?? '');
+  const text = sanitizeMathLatex(String(title ?? ''));
   if (!text.includes('$')) return escapeHtml(text);
 
-  // 与客户端 auto-render 默认一致的输出（htmlAndMathml）与容错选项
-  const katexOptions = { output: 'htmlAndMathml', throwOnError: false, strict: false };
   return text
     .split(MATH_SPLIT_RE)
     .map((part) => {
       if (!part) return '';
       if (part.startsWith('$$') && part.endsWith('$$') && part.length > 4) {
         try {
-          return katex.renderToString(part.slice(2, -2), { ...katexOptions, displayMode: true });
+          return katex.renderToString(part.slice(2, -2), { ...KATEX_OPTIONS, displayMode: true });
         } catch {
           return escapeHtml(part);
         }
       }
       if (part.startsWith('$') && part.endsWith('$') && part.length > 2) {
         try {
-          return katex.renderToString(part.slice(1, -1), katexOptions);
+          return katex.renderToString(part.slice(1, -1), KATEX_OPTIONS);
         } catch {
           return escapeHtml(part);
         }

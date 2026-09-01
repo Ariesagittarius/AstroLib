@@ -35,6 +35,7 @@ Manage the server using dedicated commands (or via `node node_modules/astro/bin/
 Refer to workspace skills located in `.agents/skills/` for detailed multi-step guides:
 - `astro-project-guide` (`.agents/skills/astro-project-guide/SKILL.md`): Architecture, card components & MDX authoring.
 - `import-book` (`.agents/skills/import-book/SKILL.md`): End-to-end MinerU OCR to MDX conversion procedure.
+- `academic-content-pipeline` (`.agents/skills/academic-content-pipeline/SKILL.md`): Six-stage multi-agent pipeline for textbook typesetting, worksheet generation, and publishing QA.
 Technical design and handover docs are indexed in [docs/README.md](file:///E:/0000work/prep_project/my-astro-site/docs/README.md).
 
 ## 4. Git Commit & Distribution Standards
@@ -79,5 +80,31 @@ All Git commits must strictly follow the **Academic Restrained Conventional Spec
    ```bash
    npm run push      # or npm run update, or ./update.cmd
    ```
+
+## 5. Academic Publishing & Radical Subtraction Principles (Mandatory)
+
+### 5.1 The North Star: "The Content is the Interface"
+AstroLib produces **university-level mathematical and scientific textbooks, academic lecture notes, and formal exercise materials**.
+- **Audience**: University students, researchers, and serious learners.
+- **Philosophy**: Minimal. Academic. Quiet. Precise. Timeless.
+- **Role**: Present pristine mathematical and scientific knowledge. Do NOT evaluate, manage, or infantilize the reader.
+
+### 5.2 Explicit Anti-Patterns & Prohibited Elements
+Strictly forbidden across all outputs (MDX authoring, UI components, worksheet generation, EPUB / PDF export):
+- **No Learning Management Elements**: No scores, target scores, accuracy rates, time trackers, mastery check-boxes, self-evaluation matrices, motivational slogans, or study tips.
+- **No SaaS / App UI Tropes**: No capsule badges, pill tags, gray answer boxes, nested card borders, dashboard widgets, or progress bars.
+- **No Decorative Noise**: No unneeded icons, decorative borders, or arbitrary accent colors.
+
+### 5.3 Typographic Rigor & Negative Space
+- Sophistication MUST emerge solely from **typography, mathematical typesetting, alignment, hierarchy, proportion, and deliberate negative space**.
+- **Negative Space is an Active Element**: A blank area is allowed to remain blank. Never fill whitespace with decorative fluff.
+- **Subtractive Heuristic**: *“If removed, does the reader lose necessary academic/mathematical information? If not, remove it.”* When choosing between decoration and whitespace, choose whitespace.
+
+### 5.4 Multi-Agent Pipeline Governance
+When undertaking content restructuring, worksheet generation, or publishing redesigns:
+1. **Rule Makers vs. Executors**: Agents defining design briefs/systems MUST NOT write implementation code in the same step.
+2. **Strict Executor Constraint**: Implementation agents MUST strictly adhere to the established `DESIGN_SYSTEM.md` without inventing new visual abstractions.
+3. **Mandatory Minimalism Audit**: Include a dedicated subtractive review step to identify and eliminate superfluous visual weight.
+4. **Resolution Precedence**: `Academic Rigor > Minimalism > Readability > Decoration`.
 
 

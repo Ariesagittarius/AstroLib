@@ -2,12 +2,12 @@
 import { renderTitleHtml } from '../utils/render-title.mjs';
 import { srcAttrs } from '../utils/src-attrs.mjs';
 const { title } = Astro.props;
-const displayTitle = title || '标注说明';
-const cleanId = title ? title.trim().replace(/\s+/g, '-') : undefined;
+const displayTitle = title !== undefined ? title : '注意';
+const cleanId = displayTitle ? displayTitle.trim().replace(/\s+/g, '-') : undefined;
 ---
 
 <div class="note-block" data-title={displayTitle} id={cleanId} {...srcAttrs(Astro.props)}>
-  <div class="note-header" set:html={renderTitleHtml(displayTitle)}></div>
+  {displayTitle && <div class="note-header" set:html={renderTitleHtml(displayTitle)}></div>}
   <div class="note-content">
     <slot />
   </div>

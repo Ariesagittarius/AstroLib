@@ -1,0 +1,571 @@
+---
+/**
+ * ChapterQuiz.astro
+ * 交互式章节真题自测组件 (VitePress 优雅现代风格)
+ * 提供即时答题反馈（选择题对错判定、填空题核对、展开详细解析与考点提示）。
+ * 构建期预渲染 KaTeX 公式以保持零前端公式解析开销。
+ */
+import exercisesData from '../data/exercises/engineering_analysis_exercises.json';
+import { renderTitleHtml } from '../utils/render-title.mjs';
+
+interface Props {
+  title?: string;
+  chapter?: number;
+  section?: string;
+  limit?: number;
+  questions?: Array<any>;
+}
+
+const {
+  title = "章节真题自测与即时练习",
+  chapter = 1,
+  section,
+  limit = 10,
+  questions: customQuestions
+} = Astro.props;
+
+// 获取当前章节题目并进行精选过滤
+let questions = customQuestions;
+if (!questions || questions.length === 0) {
+  const chQuestions = ((exercisesData as any).chapters?.[String(chapter)]) || [];
+  let filtered = chQuestions;
+  
+  // 按小节进一步精细过滤（若指定了 section）
+  if (section) {
+    filtered = filtered.filter((q: any) => {
+      const map = q.mapping?.engineering_analysis;
+      return map && (map.section === section || map.section_slug?.startsWith(section));
+    });
+  }
+
+  // 挑选交互答题体验最佳的单选题与填空题
+  const choices = filtered.filter((q: any) => q.meta?.type === 'choice' && q.content?.options?.length > 0 && q.solution?.answer);
+  const blanks = filtered.filter((q: any) => q.meta?.type === 'blank' && q.solution?.answer);
+  const others = filtered.filter((q: any) => q.meta?.type !== 'choice' && q.meta?.type !== 'blank' && q.solution?.answer);
+
+  const curated: any[] = [];
+  const choiceTarget = Math.min(choices.length, Math.ceil(limit * 0.6));
+  const blankTarget = Math.min(blanks.length, limit - choiceTarget);
+  
+  curated.push(...choices.slice(0, choiceTarget));
+  curated.push(...blanks.slice(0, blankTarget));
+
+  if (curated.length < limit) {
+    const remaining = [...choices.slice(choiceTarget), ...blanks.slice(blankTarget), ...others];
+    curated.push(...remaining.slice(0, limit - curated.length));
+  }
+
+  questions = curated;
+}
+---
+
+<div class="chapter-quiz-container" data-quiz-chapter={chapter}>
+  <div class="quiz-header">
+    <div class="quiz-title">
+      <span class="quiz-badge">真题自测</span>
+      <h3 class="quiz-heading">{title}</h3>
+    </div>
+    <div class="quiz-stats">
+      <span class="stat-item">精选 <strong class="total-count">{questions.length}</strong> 题</span>
+      <span class="stat-divider">/</span>
+      <span class="stat-item">已答: <strong class="done-count">0</strong></span>
+      <span class="stat-divider">/</span>
+      <span class="stat-item">正确率: <strong class="accuracy">0%</strong></span>
+    </div>
+  </div>
+
+  <div class="quiz-list">
+    {questions.map((q: any, idx: number) => {
+      const qType = q.meta?.type || 'choice';
+      const typeLabel = qType === 'choice' ? '单选' : qType === 'blank' ? '填空' : '解答';
+      const cleanAnswer = (q.solution?.answer || '').trim();
+      const secSlug = q.mapping?.engineering_analysis?.section_slug;
+      const knowledgePoints = q.mapping?.engineering_analysis?.knowledge_points || [];
+
+      return (
+        <div class="quiz-card" data-qid={q.id} data-answer={cleanAnswer} data-type={qType}>
+          <div class="quiz-card-header">
+            <div class="q-meta-left">
+              <span class="q-num">第 {idx + 1} 题</span>
+              <span class="q-type-badge">{typeLabel}</span>
+              {secSlug && (
+                <span class="q-sec-tag" title={`对应教材小节: ${secSlug}`}>
+                  {secSlug}
+                </span>
+              )}
+              <span class="q-source-tag">{q.source?.category} · {q.source?.academic_year}</span>
+            </div>
+            <div class="q-meta-right">
+              <span class="q-score">{q.meta?.score ? `${q.meta.score} 分` : '5 分'}</span>
+            </div>
+          </div>
+
+          {/* 题干构建期 KaTeX 渲染 */}
+          <div class="quiz-stem" set:html={renderTitleHtml(q.content?.stem)}></div>
+
+          {/* 选择题选项渲染 */}
+          {qType === 'choice' && q.content?.options?.length > 0 && (
+            <div class="quiz-options">
+              {q.content.options.map((opt: any) => (
+                <button type="button" class="option-btn" data-key={opt.key}>
+                  <span class="opt-label">{opt.key}</span>
+                  <span class="opt-text" set:html={renderTitleHtml(opt.text)}></span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* 填空题输入区 */}
+          {qType === 'blank' && (
+            <div class="quiz-blank-input">
+              <input type="text" class="blank-input" placeholder="输入答案进行核对..." />
+              <button type="button" class="check-btn">核对</button>
+            </div>
+          )}
+
+          {/* 答题反馈与解析折叠 */}
+          <div class="quiz-feedback-box hidden">
+            <div class="feedback-status"></div>
+            <div class="solution-details">
+              <div class="standard-ans">
+                <span class="section-label">参考答案</span>
+                <span class="ans-text" set:html={renderTitleHtml(cleanAnswer || '详见解析')}></span>
+              </div>
+              {q.solution?.hints && (
+                <div class="hints-box">
+                  <span class="section-label">思路提示</span>
+                  <span class="hints-content" set:html={renderTitleHtml(q.solution.hints)}></span>
+                </div>
+              )}
+              {knowledgePoints.length > 0 && (
+                <div class="knowledge-tags">
+                  <span class="section-label">考察考点</span>
+                  <div class="tags-wrap">
+                    {knowledgePoints.map((tag: string) => (
+                      <span class="k-tag">{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</div>
+
+<script>
+  function initQuizWidgets() {
+    const containers = document.querySelectorAll('.chapter-quiz-container');
+
+    containers.forEach(container => {
+      let doneCount = 0;
+      let correctCount = 0;
+      
+      const doneElem = container.querySelector('.done-count');
+      const accElem = container.querySelector('.accuracy');
+
+      function updateStats() {
+        if (doneElem) doneElem.textContent = String(doneCount);
+        if (accElem) {
+          const acc = doneCount > 0 ? Math.round((correctCount / doneCount) * 100) : 0;
+          accElem.textContent = `${acc}%`;
+        }
+      }
+
+      container.querySelectorAll('.quiz-card').forEach(card => {
+        const standardAns = (card.getAttribute('data-answer') || '').trim();
+        const upperAns = standardAns.toUpperCase();
+        const letterAns = upperAns.replace(/[^A-Z]/g, '');
+        const qType = card.getAttribute('data-type');
+        const feedbackBox = card.querySelector('.quiz-feedback-box');
+        const statusElem = card.querySelector('.feedback-status');
+        let answered = false;
+
+        // 选择题点击交互
+        if (qType === 'choice') {
+          const optBtns = card.querySelectorAll('.option-btn');
+          optBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+              if (answered) return;
+              answered = true;
+              doneCount++;
+
+              const selectedKey = (btn.getAttribute('data-key') || '').trim().toUpperCase();
+              const isCorrect = selectedKey === letterAns || upperAns.includes(selectedKey);
+
+              if (isCorrect) {
+                correctCount++;
+                btn.classList.add('correct');
+                if (statusElem) statusElem.innerHTML = '<span class="status-correct">[正确] 回答正确</span>';
+              } else {
+                btn.classList.add('wrong');
+                // 标记出正确选项
+                optBtns.forEach(b => {
+                  const bKey = (b.getAttribute('data-key') || '').trim().toUpperCase();
+                  if (bKey === letterAns || upperAns.includes(bKey)) {
+                    b.classList.add('correct-target');
+                  }
+                });
+                if (statusElem) statusElem.innerHTML = `<span class="status-wrong">[错误] 正确选项为 ${standardAns}</span>`;
+              }
+
+              if (feedbackBox) feedbackBox.classList.remove('hidden');
+              updateStats();
+            });
+          });
+        }
+
+        // 填空题核对交互
+        if (qType === 'blank') {
+          const checkBtn = card.querySelector('.check-btn');
+          const input = card.querySelector('.blank-input') as HTMLInputElement;
+
+          if (checkBtn && input) {
+            const doCheck = () => {
+              if (answered) return;
+              answered = true;
+              doneCount++;
+
+              const userVal = input.value.trim();
+              const isCorrect = userVal && (userVal === standardAns || upperAns.includes(userVal.toUpperCase()));
+
+              if (isCorrect) {
+                correctCount++;
+                if (statusElem) statusElem.innerHTML = '<span class="status-correct">[正确] 回答正确</span>';
+              } else {
+                if (statusElem) statusElem.innerHTML = `<span class="status-neutral">[核对] 参考答案：${standardAns}</span>`;
+              }
+
+              if (feedbackBox) feedbackBox.classList.remove('hidden');
+              updateStats();
+            };
+
+            checkBtn.addEventListener('click', doCheck);
+            input.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter') doCheck();
+            });
+          }
+        }
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initQuizWidgets);
+  } else {
+    initQuizWidgets();
+  }
+  document.addEventListener('astro:page-load', initQuizWidgets);
+</script>
+
+<style>
+  .chapter-quiz-container {
+    margin: 2rem 0;
+    padding: 1.25rem 1.5rem;
+    border-radius: 8px;
+    background: var(--sl-color-gray-6);
+    border: 1px solid var(--sl-color-hairline);
+  }
+
+  .quiz-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--sl-color-hairline);
+    margin-bottom: 1.25rem;
+  }
+
+  .quiz-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .quiz-heading {
+    margin: 0 !important;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+
+  .quiz-badge {
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-text-accent);
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .quiz-stats {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.85rem;
+    color: var(--sl-color-gray-2);
+  }
+
+  .stat-divider {
+    color: var(--sl-color-gray-4);
+  }
+
+  .quiz-card {
+    background: var(--sl-color-bg);
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 8px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .quiz-card:hover {
+    border-color: var(--sl-color-hairline-shade);
+  }
+
+  .quiz-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .q-meta-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .q-num {
+    font-weight: 600;
+    color: var(--sl-color-text-accent);
+  }
+
+  .q-type-badge {
+    background: var(--sl-color-gray-5);
+    color: var(--sl-color-gray-2);
+    padding: 0.1rem 0.45rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+  }
+
+  .q-sec-tag {
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-text-accent);
+    padding: 0.1rem 0.45rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+  }
+
+  .q-source-tag {
+    color: var(--sl-color-gray-3);
+    font-size: 0.75rem;
+  }
+
+  .q-score {
+    color: var(--sl-color-gray-3);
+    font-size: 0.75rem;
+  }
+
+  .quiz-stem {
+    font-size: 0.98rem;
+    line-height: 1.7;
+    margin-bottom: 1rem;
+    color: var(--sl-color-gray-1);
+  }
+
+  .quiz-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .option-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 6px;
+    background: var(--sl-color-bg);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+    color: var(--sl-color-gray-1);
+    font-size: 0.92rem;
+  }
+
+  .option-btn:hover {
+    border-color: var(--sl-color-accent);
+    background: var(--sl-color-accent-low);
+  }
+
+  .option-btn.correct {
+    background: rgba(16, 185, 129, 0.12) !important;
+    border-color: #10b981 !important;
+    color: #047857 !important;
+  }
+
+  .option-btn.wrong {
+    background: rgba(239, 68, 68, 0.1) !important;
+    border-color: #ef4444 !important;
+    color: #b91c1c !important;
+  }
+
+  .option-btn.correct-target {
+    border-color: #10b981 !important;
+    border-style: dashed;
+  }
+
+  .opt-label {
+    font-weight: 600;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-2);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .quiz-blank-input {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .blank-input {
+    flex: 1;
+    padding: 0.5rem 0.85rem;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 6px;
+    background: var(--sl-color-bg);
+    color: var(--sl-color-gray-1);
+    font-size: 0.9rem;
+    transition: border-color 0.15s ease;
+  }
+
+  .blank-input:focus {
+    outline: none;
+    border-color: var(--sl-color-accent);
+  }
+
+  .check-btn {
+    padding: 0.5rem 1rem;
+    background: var(--sl-color-accent);
+    color: var(--sl-color-text-invert);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: opacity 0.15s ease;
+  }
+
+  .check-btn:hover {
+    opacity: 0.9;
+  }
+
+  .quiz-feedback-box {
+    margin-top: 0.85rem;
+    padding: 0.85rem 1rem;
+    border-radius: 6px;
+    background: var(--sl-color-gray-6);
+    border-left: 3px solid var(--sl-color-accent);
+  }
+
+  .quiz-feedback-box.hidden {
+    display: none;
+  }
+
+  .feedback-status {
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .status-correct {
+    color: #059669;
+  }
+
+  .status-wrong {
+    color: #dc2626;
+  }
+
+  .status-neutral {
+    color: var(--sl-color-gray-2);
+  }
+
+  .solution-details {
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--sl-color-gray-2);
+  }
+
+  .section-label {
+    display: inline-block;
+    font-weight: 600;
+    color: var(--sl-color-gray-1);
+    margin-right: 0.4rem;
+    font-size: 0.8rem;
+  }
+
+  .standard-ans {
+    margin-bottom: 0.35rem;
+  }
+
+  .hints-box {
+    margin-bottom: 0.35rem;
+  }
+
+  .knowledge-tags {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+  }
+
+  .tags-wrap {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .k-tag {
+    font-size: 0.75rem;
+    padding: 0.05rem 0.4rem;
+    background: var(--sl-color-gray-5);
+    color: var(--sl-color-gray-2);
+    border-radius: 3px;
+  }
+
+  /* 黑夜主题适配 */
+  :global(html[data-theme='dark']) .option-btn.correct {
+    background: rgba(16, 185, 129, 0.15) !important;
+    border-color: #10b981 !important;
+    color: #6ee7b7 !important;
+  }
+  :global(html[data-theme='dark']) .option-btn.wrong {
+    background: rgba(239, 68, 68, 0.15) !important;
+    border-color: #ef4444 !important;
+    color: #fca5a5 !important;
+  }
+  :global(html[data-theme='dark']) .status-correct {
+    color: #34d399;
+  }
+  :global(html[data-theme='dark']) .status-wrong {
+    color: #f87171;
+  }
+</style>
+

@@ -417,105 +417,77 @@ html[data-theme='dark'] .block-ref-badge[data-type="模块"] {
 
 /* --- 3. 目标插图与卡片的高亮与闪烁 (Glow & Flash Transition) --- */
 
+/* --------------------------------------------------------------------------
+   3. 引用联动与跳转高亮（克制学术风：无波纹、无形变、流畅轻盈）
+   -------------------------------------------------------------------------- */
+
 .fig-target-image, .fig-target-caption,
 .example-card, .variant-card, .summary-card, .knowledge-card, .method-card, .fallback-block, .solution-details {
-  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
-/* 插图高亮 */
+/* 插图悬停高亮：纯边框与字色，无形变位移 */
 .fig-target-image.fig-highlight {
   border-color: var(--sl-color-text-accent, #3b82f6) !important;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2) !important;
-  transform: scale(1.01);
+  box-shadow: var(--sl-shadow-sm) !important;
 }
 .fig-target-caption.fig-highlight {
   color: var(--sl-color-text-accent, #3b82f6) !important;
-  font-weight: 700;
-  transform: translateX(4px);
+  font-weight: 600;
 }
 
-/* 组件卡片高亮 */
+/* 组件卡片悬停高亮：克制轻微阴影与高亮边框，杜绝 translateY 跳动 */
 .card-ref-highlight {
-  box-shadow: 0 12px 24px -6px rgba(59, 130, 246, 0.12) !important;
-  transform: translateY(-2.5px);
+  border-color: var(--sl-color-text-accent, #3b82f6) !important;
+  box-shadow: var(--sl-shadow-sm) !important;
 }
 
-/* 大卡片点击时的弹性水波纹放大与闪烁动效关键帧 */
-@keyframes card-flash-pulse {
+/* 大卡片跳转就位动效：克制学术风强调边框与浅染色渐隐（0.65s 瞬时响应，零波纹扩散） */
+@keyframes card-flash-restrained {
   0% {
-    box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.4);
-    transform: scale(1.015);
+    background-color: var(--sl-color-accent-low, rgba(59, 130, 246, 0.12));
+    outline: 2px solid var(--sl-color-text-accent, #3b82f6);
+    outline-offset: -1px;
+  }
+  40% {
+    background-color: var(--sl-color-accent-low, rgba(59, 130, 246, 0.12));
+    outline: 2px solid var(--sl-color-text-accent, #3b82f6);
+    outline-offset: -1px;
   }
   100% {
-    box-shadow: 0 0 0 16px rgba(59, 130, 246, 0);
-    transform: scale(1);
+    background-color: transparent;
+    outline: 2px solid transparent;
+    outline-offset: -1px;
   }
 }
 .card-ref-flash {
-  animation: card-flash-pulse 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+  animation: card-flash-restrained 0.65s ease-out;
 }
 
-/* 图片点击水波闪烁动画 */
-@keyframes fig-flash-pulse {
+/* 图片与图题跳转就位动效：轻微边框与字色淡出（零波纹） */
+@keyframes fig-flash-restrained {
   0% {
-    background-color: rgba(59, 130, 246, 0.3);
-    box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.6);
+    border-color: var(--sl-color-text-accent, #3b82f6) !important;
   }
   100% {
-    background-color: transparent;
-    box-shadow: 0 0 0 16px rgba(59, 130, 246, 0);
+    border-color: transparent !important;
   }
 }
-.fig-target-image.fig-flash, .fig-target-caption.fig-flash {
-  animation: fig-flash-pulse 1s cubic-bezier(0.25, 1, 0.5, 1);
-  border-color: var(--sl-color-text-accent, #3b82f6) !important;
-}
-
-
-/* --------------------------------------------------------------------------
-   4. 插图高亮与点击水波闪烁过渡
-   -------------------------------------------------------------------------- */
 .fig-target-image {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: border-color 0.2s ease;
   border: 2px solid transparent;
   border-radius: 6px;
 }
-
 .fig-target-caption {
-  transition: all 0.3s ease;
+  transition: color 0.2s ease;
 }
-
-.fig-target-image.fig-highlight {
-  border-color: var(--sl-color-text-accent, #3b82f6) !important;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2) !important;
-  transform: scale(1.01);
-}
-
-.fig-target-caption.fig-highlight {
-  color: var(--sl-color-text-accent, #3b82f6) !important;
-  font-weight: 700;
-  transform: translateX(4px);
-}
-
-@keyframes fig-flash-pulse {
-  0% {
-    background-color: rgba(59, 130, 246, 0.3);
-    box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.6);
-  }
-  100% {
-    background-color: transparent;
-    box-shadow: 0 0 0 16px rgba(59, 130, 246, 0);
-  }
-}
-
 .fig-target-image.fig-flash {
-  animation: fig-flash-pulse 1s cubic-bezier(0.25, 1, 0.5, 1);
+  animation: fig-flash-restrained 0.65s ease-out;
   border-color: var(--sl-color-text-accent, #3b82f6) !important;
 }
-
 .fig-target-caption.fig-flash {
-  animation: fig-flash-pulse 1s cubic-bezier(0.25, 1, 0.5, 1);
   color: var(--sl-color-text-accent, #3b82f6) !important;
+  transition: color 0.65s ease-out;
 }
 
 /* ==========================================================================
@@ -602,6 +574,80 @@ html[data-theme='dark'] .block-ref-badge[data-type="模块"] {
     filter: none !important;
     background-color: transparent !important;
   }
+}
+
+/* ==========================================================================
+   正文插图与图注专有排版系统 (VitePress-Styled Figure & Caption)
+   ========================================================================== */
+.sl-markdown-content figure,
+.sl-markdown-content .vp-figure {
+  margin: 1.5rem auto;
+  text-align: center;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.sl-markdown-content figure img,
+.sl-markdown-content .vp-figure img {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.sl-markdown-content figcaption,
+.sl-markdown-content .vp-figure figcaption {
+  margin-top: 0.625rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  font-weight: 500;
+  color: var(--sl-color-gray-2);
+  text-align: center;
+  letter-spacing: 0.02em;
+  transition: color 0.2s ease;
+}
+
+/* 多子图混排网格 (Subfigure Grid) */
+.sl-markdown-content .vp-figure-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 1.25rem;
+  width: 100%;
+  margin-bottom: 0.35rem;
+}
+
+.sl-markdown-content .vp-sub-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1 1 180px;
+  max-width: 100%;
+}
+
+.sl-markdown-content .vp-sub-figure img {
+  max-width: 100%;
+  height: auto;
+}
+
+.sl-markdown-content .vp-sub-caption {
+  margin-top: 0.35rem;
+  font-size: 0.8125rem;
+  color: var(--sl-color-gray-3);
+  font-weight: 500;
+  text-align: center;
+}
+
+/* 交叉引用定位高亮 */
+.sl-markdown-content figcaption.fig-target-caption:target,
+.sl-markdown-content .fig-target-caption.is-highlighted {
+  color: var(--sl-color-text-accent);
+  font-weight: 600;
 }
 
 /* ==========================================================================
@@ -1310,5 +1356,186 @@ main sup, article sup {
   font-weight: 600;
   color: var(--sl-color-white);
 }
+
+/* ==========================================================================
+   跨页/页内跳转“返回原阅读位置”浮动返回胶囊与视线接引高亮
+   ========================================================================== */
+
+.vp-jump-back-widget {
+  position: fixed;
+  bottom: 2rem;
+  left: 2rem;
+  z-index: 2147482900;
+  display: inline-flex;
+  align-items: center;
+  background: color-mix(in srgb, var(--sl-color-bg, #ffffff) 88%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
+  border: 1px solid var(--sl-color-hairline, #e2e8f0);
+  border-radius: 9999px;
+  box-shadow: var(--sl-shadow-lg, 0 10px 25px rgba(0, 0, 0, 0.15)), 0 6px 24px rgba(0, 0, 0, 0.12);
+  padding: 0.25rem 0.4rem 0.25rem 0.75rem;
+  font-family: var(--vp-font-family-base, var(--sl-font), system-ui, -apple-system, sans-serif);
+  opacity: 0;
+  transform: translateY(12px) scale(0.96);
+  pointer-events: none;
+  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.vp-jump-back-widget.is-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.vp-jump-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--sl-color-gray-1, #1e293b);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.25rem 0.35rem;
+  border-radius: 999px;
+  transition: color 0.15s ease;
+  min-width: 0;
+}
+
+.vp-jump-action-btn:hover {
+  color: var(--sl-color-text-accent, #3b82f6);
+}
+
+.vp-jump-svg {
+  width: 14px;
+  height: 14px;
+  color: var(--sl-color-text-accent, #3b82f6);
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.vp-jump-action-btn:hover .vp-jump-svg {
+  transform: translateX(-2px);
+}
+
+.vp-jump-label {
+  font-weight: 600;
+  color: var(--sl-color-text-accent, #3b82f6);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.vp-jump-target {
+  color: var(--sl-color-white, #0f172a);
+  font-weight: 500;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.vp-jump-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: var(--sl-color-accent-low, rgba(59, 130, 246, 0.12));
+  color: var(--sl-color-text-accent, #3b82f6);
+  border-radius: 999px;
+  padding: 0 0.35rem;
+  height: 1.1rem;
+  min-width: 1.1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.vp-jump-divider {
+  width: 1px;
+  height: 0.95rem;
+  background: var(--sl-color-hairline, #e2e8f0);
+  margin: 0 0.3rem;
+  flex-shrink: 0;
+}
+
+.vp-jump-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  border: none;
+  background: transparent;
+  color: var(--sl-color-gray-3, #94a3b8);
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.vp-jump-close-btn:hover {
+  background: var(--sl-color-gray-6, #f1f5f9);
+  color: var(--sl-color-white, #0f172a);
+}
+
+.vp-jump-close-svg {
+  width: 12px;
+  height: 12px;
+}
+
+@media (max-width: 71.999rem) {
+  .vp-jump-back-widget {
+    left: 50%;
+    bottom: 1.5rem;
+    transform: translateX(-50%) translateY(12px) scale(0.96);
+    max-width: calc(100vw - 2rem);
+  }
+  .vp-jump-back-widget.is-active {
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  .vp-jump-target {
+    max-width: 140px;
+  }
+}
+
+@keyframes source-badge-restrained {
+  0% {
+    background-color: var(--sl-color-text-accent, #3b82f6) !important;
+    color: var(--sl-color-text-invert, #ffffff) !important;
+    outline-color: var(--sl-color-text-accent, #3b82f6);
+  }
+  50% {
+    background-color: var(--sl-color-text-accent, #3b82f6) !important;
+    color: var(--sl-color-text-invert, #ffffff) !important;
+    outline-color: var(--sl-color-text-accent, #3b82f6);
+  }
+  100% {
+    background-color: var(--sl-color-accent-low, rgba(59, 130, 246, 0.12));
+    color: var(--sl-color-text-accent, #3b82f6);
+    outline-color: transparent;
+  }
+}
+
+.source-jump-pulse {
+  animation: source-badge-restrained 0.65s ease-out;
+  outline: 1.5px solid var(--sl-color-text-accent, #3b82f6) !important;
+  outline-offset: 1.5px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vp-jump-back-widget {
+    transition: none !important;
+  }
+  .source-jump-pulse {
+    animation: none !important;
+  }
+}
+
 
 

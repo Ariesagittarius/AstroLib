@@ -25,6 +25,8 @@ import devEditServerPlugin from './src/utils/mdx-editor/dev-server-plugin.mjs';
 import devInspectorServerPlugin from './src/utils/module-inspector/dev-server-plugin.mjs';
 // 章节内联关系图谱：/__relation_graph__/* 实时端点（Vite dev server 插件，仅 dev 启用）
 import devRelationGraphServerPlugin from './src/utils/relation-graph/dev-server-plugin.mjs';
+// 习题模块：/api/exercise/* 源码热保存、读者反馈与社区题解端点（Vite dev server 插件，仅 dev 启用）
+import { exerciseDevServerPlugin } from './src/utils/exercise-editor/dev-server-plugin.mjs';
 // Mermaid 图表拦截插件：将 ```mermaid 代码块转化为 .mermaid-container DOM
 import rehypeMermaid from './src/utils/rehype-mermaid.mjs';
 // 图像高斯模糊占位插件：为正文图片在构建期生成微型 LQIP Base64 占位并平滑渐显
@@ -200,6 +202,8 @@ export default defineConfig({
       ...(isEffective('inspector') ? [devInspectorServerPlugin()] : []),
       // 章节内联关系图谱端点：仅 dev + relationGraph 启用时注册（生产构建不加载，零污染）
       ...(isEffective('relationGraph') ? [devRelationGraphServerPlugin()] : []),
+      // 习题模块本地 API 与源码持久化端点（仅 dev 启用）
+      exerciseDevServerPlugin(),
     ],
     resolve: {
       alias: {

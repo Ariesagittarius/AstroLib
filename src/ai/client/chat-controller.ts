@@ -2,15 +2,20 @@ import { createRetriever } from '../retriever';
 import { buildMessages, buildContext, streamChat } from '../llm';
 import { buildToolDefs, runClientTool, toolsDesc } from '../tools-client';
 import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
+import {
+  getAllAiModels,
+  getActiveAiModelId,
+  saveAiActiveModel,
+  getAiApiKey,
+  saveAiApiKey,
+  getAiEndpoint,
+  saveAiEndpoint,
+  addCustomAiModel,
+  getAiParams,
+  saveAiParams,
+  onAiConfigChange,
+} from '../ai-config';
 
-const KEY_STORE = 'dsh-aiask-key';
-const KEY_PREFIX = 'dsh-aiask-key-';
-const ENDPOINT_PREFIX = 'dsh-aiask-endpoint-';
-const CUSTOM_MODELS_STORE = 'dsh-aiask-custom-models';
-const TOPK_STORE = 'dsh-aiask-topk';
-const MAXCTX_STORE = 'dsh-aiask-maxctx';
-const MAXTOK_STORE = 'dsh-aiask-maxtok';
-const MODEL_STORE = 'dsh-aiask-model';
 const SRC_OPEN_STORE = 'dsh-aiask-src-open';
 const MODE_STORE = 'dsh-aiask-mode';
 const HISTORY_MAX = 12;
@@ -314,6 +319,7 @@ export class AIAskElement extends HTMLElement {
   _historyNew!: HTMLElement;
   _onRoute!: () => void;
   _onDocClick!: (e: MouseEvent) => void;
+  _unsubAi: (() => void) | null = null;
   _katexConfig = {
     delimiters: [
       { left: '$$', right: '$$', display: true },
@@ -343,25 +349,46 @@ export class AIAskElement extends HTMLElement {
         this._historyBtn && this._historyBtn.classList.remove('ask-settings-open');
       }
     };
+    this._onExternalQuery = (e: CustomEvent) => {
+      const { prompt, autoSubmit = true } = (e && e.detail) || {};
+      if (!prompt) return;
+      this._openWithQuestion(prompt, autoSubmit);
+    };
+
+    this._unsubAi = onAiConfigChange(() => {
+      this._rebuildModelOptions();
+    });
+
     window.addEventListener('astro:page-load', this._onRoute);
+    window.addEventListener('aiask:query', this._onExternalQuery as EventListener);
     document.addEventListener('click', this._onDocClick);
     this._route();
   }
 
   disconnectedCallback() {
     window.removeEventListener('astro:page-load', this._onRoute);
+    window.removeEventListener('aiask:query', this._onExternalQuery as EventListener);
     document.removeEventListener('click', this._onDocClick);
+    if (this._unsubAi) this._unsubAi();
     if (this._abort) this._abort.abort();
+  }
+
+  _openWithQuestion(prompt: string, autoSubmit = true) {
+    this._openPanel();
+    this._startNewThread();
+    if (this._input) {
+      this._input.value = prompt;
+      this._grow();
+      if (autoSubmit) {
+        setTimeout(() => this._ask(), 80);
+      }
+    }
   }
 
   _initDom() {
     const cfg = getConfig(this);
     this._config = cfg;
     this._bookTitle = this.getAttribute('data-book-title') || this.getAttribute('data-book') || '本书';
-    const models = this._allModels();
-    const modelOptions = models
-      .map((m: any) => `<option value="${m.id}">${m.label || m.id}</option>`)
-      .join('');
 
     this._panel = this.querySelector('.ask-panel') as HTMLElement;
     this._fab = this.querySelector('.ask-fab') as HTMLElement;
@@ -377,17 +404,6 @@ export class AIAskElement extends HTMLElement {
     this._bookEl = this.querySelector('.ask-book') as HTMLElement;
 
     const modelSelect = this.querySelector('.ask-model') as HTMLSelectElement | null;
-    if (modelSelect) {
-      modelSelect.innerHTML = modelOptions;
-      if (models.length) {
-        const saved = lsGet(MODEL_STORE, '');
-        modelSelect.value = saved || cfg.defaultModel || models[0].id;
-        if (!models.some((m: any) => m.id === modelSelect.value)) {
-          modelSelect.value = cfg.defaultModel || models[0].id;
-        }
-      }
-    }
-
     const keyInput = this.querySelector('.ask-key') as HTMLInputElement;
     const epInput = this.querySelector('.ask-endpoint') as HTMLInputElement;
     const topkInput = this.querySelector('.ask-topk') as HTMLInputElement;
@@ -395,44 +411,40 @@ export class AIAskElement extends HTMLElement {
     const maxtokInput = this.querySelector('.ask-maxtok') as HTMLInputElement;
 
     const refreshKeyForModel = () => {
-      if (!modelSelect) return;
-      const id = modelSelect.value;
-      if (keyInput) keyInput.value = lsGet(KEY_PREFIX + id, lsGet(KEY_STORE, '')) || '';
-      if (epInput) epInput.value = lsGet(ENDPOINT_PREFIX + id, '') || '';
+      const activeId = getActiveAiModelId();
+      if (modelSelect) modelSelect.value = activeId;
+      if (keyInput) keyInput.value = getAiApiKey(activeId);
+      if (epInput) epInput.value = getAiEndpoint(activeId);
     };
-    refreshKeyForModel();
-
-    if (topkInput) topkInput.value = lsGet(TOPK_STORE, String(cfg.topK ?? 8));
-    if (maxctxInput) maxctxInput.value = lsGet(MAXCTX_STORE, String(cfg.maxContextChars ?? 6000));
-    if (maxtokInput) maxtokInput.value = lsGet(MAXTOK_STORE, String(cfg.maxAnswerTokens ?? 4096));
 
     if (modelSelect) {
+      this._rebuildModelOptions(getActiveAiModelId());
       modelSelect.addEventListener('change', () => {
-        lsSet(MODEL_STORE, modelSelect.value);
+        saveAiActiveModel(modelSelect.value);
         refreshKeyForModel();
       });
     }
+
+    const currentParams = getAiParams();
+    if (topkInput) topkInput.value = String(currentParams.topK);
+    if (maxctxInput) maxctxInput.value = String(currentParams.maxContextChars);
+    if (maxtokInput) maxtokInput.value = String(currentParams.maxTokens);
+
     if (keyInput) {
-      keyInput.addEventListener('change', () => {
-        if (!modelSelect) return;
-        const id = modelSelect.value;
-        const v = keyInput.value.trim();
-        if (v) lsSet(KEY_PREFIX + id, v);
-        else { try { localStorage.removeItem(KEY_PREFIX + id); } catch {} }
+      keyInput.addEventListener('input', () => {
+        const id = getActiveAiModelId();
+        saveAiApiKey(id, keyInput.value.trim(), true);
       });
     }
     if (epInput) {
       epInput.addEventListener('change', () => {
-        if (!modelSelect) return;
-        const id = modelSelect.value;
-        const v = epInput.value.trim();
-        if (v) lsSet(ENDPOINT_PREFIX + id, v);
-        else { try { localStorage.removeItem(ENDPOINT_PREFIX + id); } catch {} }
+        const id = getActiveAiModelId();
+        saveAiEndpoint(id, epInput.value.trim());
       });
     }
-    if (topkInput) topkInput.addEventListener('change', () => lsSet(TOPK_STORE, topkInput.value));
-    if (maxctxInput) maxctxInput.addEventListener('change', () => lsSet(MAXCTX_STORE, maxctxInput.value));
-    if (maxtokInput) maxtokInput.addEventListener('change', () => lsSet(MAXTOK_STORE, maxtokInput.value));
+    if (topkInput) topkInput.addEventListener('change', () => saveAiParams({ topK: Number(topkInput.value) || 8 }));
+    if (maxctxInput) maxctxInput.addEventListener('change', () => saveAiParams({ maxContextChars: Number(maxctxInput.value) || 6000 }));
+    if (maxtokInput) maxtokInput.addEventListener('change', () => saveAiParams({ maxTokens: Number(maxtokInput.value) || 4096 }));
 
     const modeSelect = this.querySelector('.ask-mode') as HTMLSelectElement | null;
     if (modeSelect) {
@@ -871,55 +883,21 @@ export class AIAskElement extends HTMLElement {
   }
 
   _allModels(): any[] {
-    const cfg = this._config || {};
-    const base = Array.isArray(cfg.models) ? cfg.models : [];
-    let custom = [];
-    try { custom = JSON.parse(localStorage.getItem(CUSTOM_MODELS_STORE) || '[]'); } catch { custom = []; }
-    if (!Array.isArray(custom)) custom = [];
-    const seenIds = new Set();
-    const out: any[] = [];
-    for (const m of [...base, ...custom]) {
-      if (!m || !m.id || seenIds.has(m.id)) continue;
-      seenIds.add(m.id);
-      out.push(m);
-    }
-    return out;
+    return getAllAiModels();
   }
 
   _selectedModel(): any {
-    const cfg = this._config || {};
-    const models = this._allModels();
-    const sel = this.querySelector('.ask-model') as HTMLSelectElement | null;
-    const id = (sel && sel.value) || cfg.defaultModel || (models[0] && models[0].id);
-    const found = models.find((m: any) => m.id === id);
-    const override = lsGet(ENDPOINT_PREFIX + id, '');
-    const endpoint = override || (found && found.endpoint) || cfg.endpoint || '';
+    const id = getActiveAiModelId();
+    const endpoint = getAiEndpoint(id);
     return { id, model: id, endpoint };
   }
 
   _currentKey(): string {
-    const id = this._selectedModel().id;
-    return lsGet(KEY_PREFIX + id, lsGet(KEY_STORE, '')) || '';
+    return getAiApiKey(getActiveAiModelId());
   }
 
   _params(): any {
-    const cfg = getConfig(this);
-    const num = (el: HTMLInputElement | null, fb: number) => {
-      if (!el) return fb;
-      const v = Number(el.value);
-      return Number.isFinite(v) ? Math.round(v) : fb;
-    };
-    const topk = this.querySelector('.ask-topk') as HTMLInputElement | null;
-    const maxctx = this.querySelector('.ask-maxctx') as HTMLInputElement | null;
-    const maxtok = this.querySelector('.ask-maxtok') as HTMLInputElement | null;
-    const topK = Math.min(20, Math.max(1, num(topk, cfg.topK ?? 8)));
-    const maxContextChars = num(maxctx, cfg.maxContextChars ?? 6000);
-    const maxAnswerTokens = num(maxtok, cfg.maxAnswerTokens ?? 4096);
-    return {
-      topK,
-      maxContextChars: maxContextChars === -1 ? -1 : Math.max(500, maxContextChars),
-      maxAnswerTokens: maxAnswerTokens === -1 ? -1 : Math.max(64, maxAnswerTokens),
-    };
+    return getAiParams();
   }
 
   _answerMode(): string {
@@ -934,9 +912,7 @@ export class AIAskElement extends HTMLElement {
     if (!id) { idRaw && idRaw.focus(); return; }
     const ep = epEl && epEl.value.trim();
     if (!ep) { epEl && epEl.focus(); return; }
-    const custom = lsGetJson(CUSTOM_MODELS_STORE, []);
-    custom.push({ id, label: (labelEl && labelEl.value.trim()) || id, endpoint: ep });
-    lsSet(CUSTOM_MODELS_STORE, JSON.stringify(custom));
+    addCustomAiModel({ id, label: (labelEl && labelEl.value.trim()) || id, endpoint: ep });
     this._rebuildModelOptions(id);
     if (idRaw) idRaw.value = '';
     if (labelEl) labelEl.value = '';
@@ -948,15 +924,14 @@ export class AIAskElement extends HTMLElement {
   _rebuildModelOptions(selectId?: string) {
     const sel = this.querySelector('.ask-model') as HTMLSelectElement | null;
     if (!sel) return;
-    const models = this._allModels();
-    sel.innerHTML = models.map((m: any) => `<option value="${m.id}">${m.label || m.id}</option>`).join('');
-    if (selectId && models.some((m: any) => m.id === selectId)) sel.value = selectId;
-    else sel.value = models[0] && models[0].id;
-    lsSet(MODEL_STORE, sel.value);
+    const models = getAllAiModels();
+    const activeId = selectId || getActiveAiModelId();
+    sel.innerHTML = models.map((m: any) => `<option value="${m.id}" ${m.id === activeId ? 'selected' : ''}>${m.label || m.id}${m.isCustom ? ' (自定义)' : ''}</option>`).join('');
+    sel.value = activeId;
     const keyInput = this.querySelector('.ask-key') as HTMLInputElement | null;
     const epInput = this.querySelector('.ask-endpoint') as HTMLInputElement | null;
-    if (keyInput) keyInput.value = lsGet(KEY_PREFIX + sel.value, lsGet(KEY_STORE, '')) || '';
-    if (epInput) epInput.value = lsGet(ENDPOINT_PREFIX + sel.value, '') || '';
+    if (keyInput) keyInput.value = getAiApiKey(activeId);
+    if (epInput) epInput.value = getAiEndpoint(activeId);
   }
 
   _hideEmpty() {

@@ -1,3 +1,5 @@
+import { recordJump } from './jump-navigator';
+
 export function resolveIndexUrl(rel: string): string {
   if (!rel) return '';
   if (rel.startsWith('/')) return rel;
@@ -13,104 +15,177 @@ function injectPopoverStyles() {
   style.textContent = `
 .xref-disambiguation-popover {
   position: absolute;
-  z-index: 9999;
-  width: 290px;
-  max-width: 90vw;
-  background: #ffffff;
-  color: #1e293b;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  z-index: 2147483000;
+  width: 310px;
+  max-width: calc(100vw - 24px);
+  background: color-mix(in srgb, var(--sl-color-bg) 92%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
+  color: var(--sl-color-gray-1);
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 10px;
+  box-shadow: var(--sl-shadow-lg), 0 8px 30px rgba(0, 0, 0, 0.12);
   padding: 0.5rem;
-  font-family: system-ui, -apple-system, sans-serif;
-  animation: xref-popover-fade 0.15s ease-out;
+  font-family: var(--vp-font-family-base, var(--sl-font), system-ui, -apple-system, sans-serif);
+  animation: vp-popover-fade 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top left;
+  box-sizing: border-box;
 }
-:root[data-theme='dark'] .xref-disambiguation-popover {
-  background: #0f172a;
-  color: #f8fafc;
-  border-color: #334155;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+
+@keyframes vp-popover-fade {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
-@keyframes xref-popover-fade {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+
 .xref-popover-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.35rem 0.5rem;
+  padding: 0.35rem 0.5rem 0.45rem;
   margin-bottom: 0.35rem;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--sl-color-hairline);
 }
-:root[data-theme='dark'] .xref-popover-header {
-  border-bottom-color: #1e293b;
+
+.xref-popover-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
+
 .xref-popover-title {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #3b82f6;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--sl-color-white);
 }
+
+.xref-popover-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.08rem 0.4rem;
+  border-radius: 999px;
+  background: var(--sl-color-accent-low);
+  color: var(--sl-color-text-accent);
+  border: 1px solid color-mix(in srgb, var(--sl-color-text-accent) 25%, transparent);
+}
+
 .xref-popover-close {
-  background: none;
+  width: 1.5rem;
+  height: 1.5rem;
   border: none;
-  font-size: 1.1rem;
-  line-height: 1;
-  color: #94a3b8;
+  background: transparent;
+  color: var(--sl-color-gray-3);
+  border-radius: 6px;
   cursor: pointer;
-  padding: 0 0.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
+
 .xref-popover-close:hover {
-  color: #0f172a;
+  background: var(--sl-color-gray-6);
+  color: var(--sl-color-white);
 }
-:root[data-theme='dark'] .xref-popover-close:hover {
-  color: #f8fafc;
+
+.xref-popover-close-svg {
+  width: 14px;
+  height: 14px;
 }
+
 .xref-popover-list {
-  max-height: 240px;
+  max-height: 260px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.3rem;
+  padding: 0.1rem;
+  overscroll-behavior: contain;
 }
+
 .xref-popover-item {
-  display: block;
-  padding: 0.4rem 0.6rem;
-  border-radius: 5px;
-  text-decoration: none;
-  color: inherit;
-  background: rgba(241, 245, 249, 0.7);
-  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.65rem;
+  border-radius: 6px;
+  text-decoration: none !important;
+  color: var(--sl-color-gray-1);
+  background: var(--sl-color-gray-6);
+  border: 1px solid transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  cursor: pointer;
 }
-:root[data-theme='dark'] .xref-popover-item {
-  background: rgba(30, 41, 59, 0.7);
-}
+
 .xref-popover-item:hover {
-  background: rgba(59, 130, 246, 0.15);
-  border-left: 3px solid #3b82f6;
+  background: var(--sl-color-accent-low);
+  border-color: color-mix(in srgb, var(--sl-color-text-accent) 30%, transparent);
+  color: var(--sl-color-text-accent);
 }
+
+.xref-popover-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1;
+}
+
 .xref-popover-chap {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
   font-size: 0.72rem;
-  font-weight: 600;
-  color: #2563eb;
-  margin-bottom: 0.1rem;
+  font-weight: 500;
+  color: var(--sl-color-gray-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-:root[data-theme='dark'] .xref-popover-chap {
-  color: #60a5fa;
+
+.xref-popover-item:hover .xref-popover-chap {
+  color: var(--sl-color-text-accent);
 }
+
+.xref-popover-book-svg {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
 .xref-popover-target {
-  font-size: 0.75rem;
-  color: #334155;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--sl-color-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-:root[data-theme='dark'] .xref-popover-target {
-  color: #cbd5e1;
+
+.xref-popover-item:hover .xref-popover-target {
+  color: var(--sl-color-text-accent);
+}
+
+.xref-popover-arrow-svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--sl-color-gray-4);
+  margin-left: 0.5rem;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.xref-popover-item:hover .xref-popover-arrow-svg {
+  color: var(--sl-color-text-accent);
+  transform: translateX(2px);
 }
   `;
   document.head.appendChild(style);
 }
 
 let activePopover: HTMLElement | null = null;
-function closeDisambiguationPopover() {
+export function closeDisambiguationPopover() {
   if (activePopover) {
     activePopover.remove();
     activePopover = null;
@@ -130,8 +205,16 @@ function showDisambiguationPopover(
   const header = document.createElement('div');
   header.className = 'xref-popover-header';
   header.innerHTML = `
-    <span class="xref-popover-title">请选择跳转位置 (${candidates.length}处)</span>
-    <button type="button" class="xref-popover-close" aria-label="关闭">&times;</button>
+    <div class="xref-popover-title-group">
+      <span class="xref-popover-title">选择跳转目标</span>
+      <span class="xref-popover-badge">${candidates.length}处</span>
+    </div>
+    <button type="button" class="xref-popover-close" aria-label="关闭" title="关闭 (Esc)">
+      <svg class="xref-popover-close-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    </button>
   `;
   popover.appendChild(header);
 
@@ -144,12 +227,31 @@ function showDisambiguationPopover(
     const targetUrl = resolveIndexUrl(cand.url);
     item.href = targetUrl;
     item.innerHTML = `
-      <div class="xref-popover-chap">${cand.chapterTitle || '目标章节'}</div>
-      <div class="xref-popover-target">${cand.rawTitle || cand.cleanTitle}</div>
+      <div class="xref-popover-item-content">
+        <div class="xref-popover-chap">
+          <svg class="xref-popover-book-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+          </svg>
+          <span>${cand.chapterTitle || '目标章节'}</span>
+        </div>
+        <div class="xref-popover-target">${cand.rawTitle || cand.cleanTitle}</div>
+      </div>
+      <svg class="xref-popover-arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="9 18 15 12 9 6" />
+      </svg>
     `;
     item.addEventListener('click', (e) => {
       e.preventDefault();
       closeDisambiguationPopover();
+
+      // 记录跳转来源
+      recordJump({
+        badgeEl: badge,
+        sourceText: badge.textContent?.trim(),
+        targetUrl,
+      });
+
       const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
       const pathMatch = targetUrl.match(/^([^#]*)(#.*)$/);
       const targetPath = (pathMatch ? pathMatch[1].replace(/\/$/, '') : targetUrl.replace(/\/$/, '')) || '/';
@@ -162,7 +264,7 @@ function showDisambiguationPopover(
           if (card) {
             card.scrollIntoView({ behavior: 'smooth', block: 'center' });
             card.classList.add('card-ref-flash');
-            setTimeout(() => card.classList.remove('card-ref-flash'), 1200);
+            setTimeout(() => card.classList.remove('card-ref-flash'), 700);
           }
           if (targetHash) {
             history.pushState({ scrollY: window.scrollY }, '', targetUrl);
@@ -186,13 +288,22 @@ function showDisambiguationPopover(
   document.body.appendChild(popover);
 
   const rect = badge.getBoundingClientRect();
-  const popoverWidth = 290;
+  const popoverWidth = 310;
+  const popoverHeight = Math.min(320, 50 + candidates.length * 52);
+
   let left = rect.left + window.scrollX;
   let top = rect.bottom + window.scrollY + 6;
 
-  if (left + popoverWidth > window.innerWidth - 16) {
-    left = Math.max(16, window.innerWidth - popoverWidth - 16);
+  // 智能防溢出：下方空间不足时自动翻转至上方
+  if (rect.bottom + popoverHeight > window.innerHeight - 16 && rect.top > popoverHeight + 16) {
+    top = Math.max(16, rect.top + window.scrollY - popoverHeight - 6);
   }
+
+  // 左右边界 clamp
+  if (left + popoverWidth > window.innerWidth - 16) {
+    left = Math.max(12, window.innerWidth - popoverWidth - 16);
+  }
+  if (left < 12) left = 12;
 
   popover.style.left = `${left}px`;
   popover.style.top = `${top}px`;
@@ -555,15 +666,19 @@ export function attachInteractiveListeners(): void {
       e.preventDefault();
       const caption = document.getElementById(targetId);
       if (caption) {
+        recordJump({
+          badgeEl: badge as HTMLElement,
+          sourceText: badge.textContent?.trim(),
+        });
         caption.scrollIntoView({ behavior: 'smooth', block: 'center' });
         const image = document.querySelector(`.fig-target-image[data-fig-ref="${targetId}"]`);
         if (caption) {
           caption.classList.add('fig-flash');
-          setTimeout(() => caption.classList.remove('fig-flash'), 1000);
+          setTimeout(() => caption.classList.remove('fig-flash'), 700);
         }
         if (image) {
           image.classList.add('fig-flash');
-          setTimeout(() => image.classList.remove('fig-flash'), 1000);
+          setTimeout(() => image.classList.remove('fig-flash'), 700);
         }
       }
     });
@@ -613,12 +728,19 @@ export function attachInteractiveListeners(): void {
 
     badge.addEventListener('click', (e) => {
       e.preventDefault();
+      // 记录跳转来源
+      recordJump({
+        badgeEl: badge as HTMLElement,
+        sourceText: badge.textContent?.trim(),
+        targetUrl: targetUrl || `#${targetId}`,
+      });
+
       if (targetPath === '' || targetPath === currentPath) {
         const card = document.getElementById(targetId);
         if (card) {
           card.scrollIntoView({ behavior: 'smooth', block: 'center' });
           card.classList.add('card-ref-flash');
-          setTimeout(() => card.classList.remove('card-ref-flash'), 1200);
+          setTimeout(() => card.classList.remove('card-ref-flash'), 700);
         }
         if (targetHash) {
           history.pushState({ scrollY: window.scrollY }, '', targetUrl);

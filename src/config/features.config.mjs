@@ -146,6 +146,20 @@ const featureDefs = {
     config: { refs: 'interactive' },
   }),
 
+  // 章节后台空闲预加载：加载期预先在后台拉取相邻章节（默认 1 页滑动窗口），兼顾秒开与低内存
+  prewarm: defineFeature({
+    id: 'prewarm',
+    cat: 'reader',
+    label: '章节后台预加载',
+    desc: '页面加载后空闲期预先加载相邻章节以实现瞬间换页（默认 1 为前后各 1 页）',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+    config: {
+      defaultPages: 1, // 1 为前后 1 页滑动窗口（兼顾秒开与极低内存），0 为关闭，-1 为全书拉取
+    },
+  }),
+
   // 图像高斯模糊占位：正文相对路径图片构建期生成 LQIP 占位（构建消耗大，生产默认关闭）
   imageBlur: defineFeature({
     id: 'imageBlur',
@@ -280,6 +294,28 @@ const featureDefs = {
       filterBots: true,         // 过滤自动化无头浏览器与常见扫描爬虫
       excludePaths: ['/dev/', '/print'], // 排除内部开发文档与全书打印页，保持洞察聚焦
       trackHighValueEvents: true, // 开启关键高价值动作监听（EPUB 下载、AI问答、公式操作等）
+    },
+  }),
+
+  // 章节习题与真题自测：课后真题与自测练习独立模块（做题自判、本章查题、AI 联动、整卷试卷模式、社区 AI 题解共享、开发者纠错与读者反馈）
+  exercises: defineFeature({
+    id: 'exercises',
+    cat: 'reader',
+    label: '章节习题与真题自测',
+    desc: '章节课后习题与历年名校真题独立交互做题、整卷试卷刷题、AI 社区题解共享与纠错系统',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+    config: {
+      defaultMode: 'practice', // 'practice' | 'paper' | 'search'
+      communitySolutions: true, // 开启社区读者自跑 AI 题解读写共享
+      cloudDb: {
+        // 云端统一数据库端点（支持 Supabase REST / Cloudflare D1 / 本地 Dev Server 接口）
+        apiBaseUrl: '/api/exercise',
+        supabaseUrl: '',
+        supabaseAnonKey: '',
+      },
+      devSourceEditor: true, // 开启开发者源码查看与热持久化修改
     },
   }),
 };

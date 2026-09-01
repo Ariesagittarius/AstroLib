@@ -44,7 +44,7 @@ function walkMdxFiles(dir, fileList = []) {
     if (stat.isDirectory()) {
       if (file !== 'images' && file !== '.git') walkMdxFiles(fullPath, fileList);
     } else if (file.endsWith('.mdx') || file.endsWith('.md')) {
-      fileList.push(fullPath);
+      fileList.push({ fullPath, mtimeMs: stat.mtimeMs });
     }
   }
   return fileList;
@@ -71,16 +71,31 @@ function extractGroupName(title, filename) {
   return '基础与导言';
 }
 
+const relationGraphCache = new Map();
+
 /**
- * 生成指定图书的全书内联关系图谱数据
+ * 生成指定图书的全书内联关系图谱数据（带内存快照缓存）
  * @param {string} colSlug 合集 slug（如 'math'）
  * @param {string} bookSlug 图书 slug（如 'engineering_analysis'）
+ * @param {boolean} [force=false] 是否强制跳过缓存
  * @returns {object|null}
  */
-export function generateBookRelationGraph(colSlug, bookSlug) {
-  const globalIndex = buildGlobalBlockIndex(colSlug, bookSlug);
+export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
+  const bookKey = `${colSlug}/${bookSlug}`;
   const bookDir = path.resolve(`src/content/docs/collections/${colSlug}/${bookSlug}`);
   if (!fs.existsSync(bookDir)) return null;
+
+  const files = walkMdxFiles(bookDir);
+  const signature = files.map((f) => `${f.fullPath}:${f.mtimeMs}`).join('|');
+
+  if (!force && relationGraphCache.has(bookKey)) {
+    const cached = relationGraphCache.get(bookKey);
+    if (cached && cached.signature === signature) {
+      return cached.result;
+    }
+  }
+
+  const globalIndex = buildGlobalBlockIndex(colSlug, bookSlug, force);
 
   let bookConfig = null;
   for (const col of collections) {
@@ -102,11 +117,10 @@ export function generateBookRelationGraph(colSlug, bookSlug) {
   const blockRefRegex = new RegExp(`(${typePattern})\\s*(\\d+(?:\\.\\d+)*)`, 'g');
   const figRegex = new RegExp(`(图)\\s*(\\d+\\s*[-－]\\s*\\d+)`, 'g');
 
-  const files = walkMdxFiles(bookDir);
   const chapters = [];
   const groupMap = new Map(); // groupName -> categoryIndex
 
-  files.forEach((filePath, idx) => {
+  files.forEach(({ fullPath: filePath }, idx) => {
     const relativePath = path.relative('src/content/docs', filePath);
     const rawSlug = relativePath.replace(/\.mdx?$/, '').replace(/\\/g, '/');
     const cleanedSlug = cleanSlug(rawSlug);

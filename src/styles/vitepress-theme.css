@@ -892,4 +892,187 @@ html:not([data-site-theme='starlight']).theme-switching *::after {
   }
 }
 
+/* --------------------------------------------------------------------------
+   15. 跨页/页内跳转“返回原阅读位置”浮动返回胶囊与视线接引高亮
+   -------------------------------------------------------------------------- */
+
+.vp-jump-back-widget {
+  position: fixed;
+  bottom: 2rem;
+  left: 2rem;
+  z-index: 2147482900;
+  display: inline-flex;
+  align-items: center;
+  background: color-mix(in srgb, var(--sl-color-bg) 88%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 9999px;
+  box-shadow: var(--sl-shadow-lg), 0 6px 24px rgba(0, 0, 0, 0.12);
+  padding: 0.25rem 0.4rem 0.25rem 0.75rem;
+  font-family: var(--vp-font-family-base, var(--sl-font), system-ui, -apple-system, sans-serif);
+  opacity: 0;
+  transform: translateY(12px) scale(0.96);
+  pointer-events: none;
+  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.vp-jump-back-widget.is-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.vp-jump-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--sl-color-gray-1);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.25rem 0.35rem;
+  border-radius: 999px;
+  transition: color 0.15s ease;
+  min-width: 0;
+}
+
+.vp-jump-action-btn:hover {
+  color: var(--sl-color-text-accent);
+}
+
+.vp-jump-svg {
+  width: 14px;
+  height: 14px;
+  color: var(--sl-color-text-accent);
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.vp-jump-action-btn:hover .vp-jump-svg {
+  transform: translateX(-2px);
+}
+
+.vp-jump-label {
+  font-weight: 600;
+  color: var(--sl-color-text-accent);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.vp-jump-target {
+  color: var(--sl-color-white);
+  font-weight: 500;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.vp-jump-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: var(--sl-color-accent-low);
+  color: var(--sl-color-text-accent);
+  border-radius: 999px;
+  padding: 0 0.35rem;
+  height: 1.1rem;
+  min-width: 1.1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.vp-jump-divider {
+  width: 1px;
+  height: 0.95rem;
+  background: var(--sl-color-hairline);
+  margin: 0 0.3rem;
+  flex-shrink: 0;
+}
+
+.vp-jump-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  border: none;
+  background: transparent;
+  color: var(--sl-color-gray-3);
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.vp-jump-close-btn:hover {
+  background: var(--sl-color-gray-6);
+  color: var(--sl-color-white);
+}
+
+.vp-jump-close-svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* 移动端与平板端：靠底居中，不挤压内容且避开右下角其他控件 */
+@media (max-width: 71.999rem) {
+  .vp-jump-back-widget {
+    left: 50%;
+    bottom: 1.5rem;
+    transform: translateX(-50%) translateY(12px) scale(0.96);
+    max-width: calc(100vw - 2rem);
+  }
+  .vp-jump-back-widget.is-active {
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  .vp-jump-target {
+    max-width: 140px;
+  }
+}
+
+/* 视线接引微光动效关键帧（克制学术风：无波纹、无形变） */
+@keyframes source-badge-restrained {
+  0% {
+    background-color: var(--sl-color-text-accent) !important;
+    color: var(--sl-color-text-invert, #ffffff) !important;
+    outline-color: var(--sl-color-text-accent);
+  }
+  50% {
+    background-color: var(--sl-color-text-accent) !important;
+    color: var(--sl-color-text-invert, #ffffff) !important;
+    outline-color: var(--sl-color-text-accent);
+  }
+  100% {
+    background-color: var(--sl-color-accent-low);
+    color: var(--sl-color-text-accent);
+    outline-color: transparent;
+  }
+}
+
+.source-jump-pulse {
+  animation: source-badge-restrained 0.65s ease-out;
+  outline: 1.5px solid var(--sl-color-text-accent) !important;
+  outline-offset: 1.5px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vp-jump-back-widget {
+    transition: none !important;
+  }
+  .source-jump-pulse {
+    animation: none !important;
+  }
+}
+
+
 

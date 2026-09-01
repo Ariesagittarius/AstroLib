@@ -37,12 +37,51 @@ import {
 
 import { DEFAULT_SITE_THEME } from '../config/themes.config.mjs';
 import { enableFormulaActions, disableFormulaActions } from './formula/ui';
+import {
+  getAllAiModels,
+  getActiveAiModelId,
+  saveAiActiveModel,
+  getAiApiKey,
+  saveAiApiKey,
+  getAiEndpoint,
+  saveAiEndpoint,
+  addCustomAiModel,
+  onAiConfigChange,
+} from '../ai/ai-config';
 
 /** 运行时开关存储键 */
 const STORAGE_KEY = 'starlight-features';
 
 /** 主题切换动画偏好存储键：'instant'（即时切换，默认，无过渡）| 'animate'（柔和过渡） */
 const THEME_TRANSITION_KEY = 'starlight-theme-transition';
+
+/** 章节后台空闲预加载页面数存储键：1 (前后各 1 页滑动窗口，默认) | 2 | 3 | -1 (全书拉取) | 0 (关闭) */
+export const PREWARM_PAGES_KEY = 'astrolib_prewarm_pages';
+export const DEFAULT_PREWARM_PAGES = 1;
+
+/** 读取章节预加载范围配置（默认 1 为前后各 1 页滑动窗口） */
+export function loadPrewarmPref(): number {
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(PREWARM_PAGES_KEY) : null;
+    if (raw !== null && raw !== undefined && raw !== '') {
+      const val = parseInt(raw, 10);
+      if (!isNaN(val)) return val;
+    }
+    return DEFAULT_PREWARM_PAGES;
+  } catch {
+    return DEFAULT_PREWARM_PAGES;
+  }
+}
+
+/** 保存章节预加载范围配置 */
+export function savePrewarmPref(val: number): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(PREWARM_PAGES_KEY, String(val));
+    }
+    window.dispatchEvent(new CustomEvent('prewarm:config-change', { detail: { pages: val } }));
+  } catch {}
+}
 
 type FeatureMeta = { id: string; label: string; build: boolean; runtime: boolean; devOnly: boolean };
 
@@ -118,10 +157,62 @@ export function resetToggles(): void {
   // 重置 UI 风格主题
   setSiteTheme(DEFAULT_SITE_THEME);
 
+  // 重置章节预加载配置为全书拉取 (-1)
+  savePrewarmPref(DEFAULT_PREWARM_PAGES);
+
   syncAllCheckboxes();
   syncAllFontButtons();
   syncAllThemeChips();
+  syncAllPrewarmButtons();
+  syncAllAiSettings();
   apply();
+}
+
+/** 同步当前所有实例的 AI 模型与 Key 配置状态 */
+export function syncAllAiSettings(): void {
+  const models = getAllAiModels();
+  const activeId = getActiveAiModelId();
+  const key = getAiApiKey(activeId);
+  const endpoint = getAiEndpoint(activeId);
+
+  document.querySelectorAll('.ft-panel, starlight-feature-toggles').forEach((root) => {
+    const select = root.querySelector<HTMLSelectElement>('.ft-ai-model-select');
+    if (select) {
+      const currentVal = select.value || activeId;
+      select.innerHTML = models
+        .map((m) => `<option value="${m.id}" ${m.id === activeId ? 'selected' : ''}>${m.label}${m.isCustom ? ' (自定义)' : ''}</option>`)
+        .join('');
+      select.value = activeId;
+    }
+
+    const keyInput = root.querySelector<HTMLInputElement>('.ft-ai-key-input');
+    if (keyInput && document.activeElement !== keyInput) {
+      keyInput.value = key;
+    }
+
+    const keyBadge = root.querySelector<HTMLElement>('.ft-ai-key-badge');
+    if (keyBadge) {
+      const hasKey = !!key.trim();
+      keyBadge.textContent = hasKey ? '已配置' : '未配置';
+      keyBadge.classList.toggle('configured', hasKey);
+    }
+
+    const endpointInput = root.querySelector<HTMLInputElement>('.ft-ai-endpoint-input');
+    if (endpointInput && document.activeElement !== endpointInput) {
+      endpointInput.value = endpoint;
+    }
+  });
+}
+
+/** 同步当前所有实例的后台预加载范围按钮状态 */
+export function syncAllPrewarmButtons(): void {
+  const current = loadPrewarmPref();
+  document.querySelectorAll('.ft-panel .ft-prewarm-btn, starlight-feature-toggles .ft-prewarm-btn').forEach((btn) => {
+    const val = parseInt(btn.getAttribute('data-prewarm-val') || '-1', 10);
+    const active = val === current;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-selected', String(active));
+  });
 }
 
 /** 应用字体偏好：关闭 fonts 清 <html data-font-latin/…-cjk>（回系统默认）；开启则恢复读者偏好 */
@@ -267,10 +358,14 @@ class StarlightFeatureToggles extends HTMLElement {
     this.bindUI();
     this.bindFonts();
     this.bindSiteThemes();
+    this.bindPrewarm();
+    this.bindAiSettings();
 
     syncAllCheckboxes();
     syncAllFontButtons();
     syncAllThemeChips();
+    syncAllPrewarmButtons();
+    syncAllAiSettings();
     apply();
   }
 
@@ -485,6 +580,106 @@ class StarlightFeatureToggles extends HTMLElement {
     });
   }
 
+  bindPrewarm() {
+    const root = this.panel || this;
+    root.querySelectorAll<HTMLButtonElement>('.ft-prewarm-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const val = parseInt(btn.getAttribute('data-prewarm-val') || '-1', 10);
+        savePrewarmPref(val);
+        syncAllPrewarmButtons();
+      });
+    });
+  }
+
+  bindAiSettings() {
+    const root = this.panel || this;
+    const modelSelect = root.querySelector<HTMLSelectElement>('.ft-ai-model-select');
+    const keyInput = root.querySelector<HTMLInputElement>('.ft-ai-key-input');
+    const endpointInput = root.querySelector<HTMLInputElement>('.ft-ai-endpoint-input');
+    const revealBtn = root.querySelector<HTMLButtonElement>('.ft-ai-key-reveal');
+    const customToggle = root.querySelector<HTMLButtonElement>('[data-action="toggle-custom-model"]');
+    const customForm = root.querySelector<HTMLElement>('.ft-ai-custom-form');
+    const customCancel = root.querySelector<HTMLButtonElement>('[data-action="cancel-custom-model"]');
+    const customAddBtn = root.querySelector<HTMLButtonElement>('[data-action="add-custom-model"]');
+
+    if (modelSelect) {
+      modelSelect.addEventListener('change', () => {
+        const nextId = modelSelect.value;
+        saveAiActiveModel(nextId);
+        syncAllAiSettings();
+      });
+    }
+
+    if (keyInput) {
+      keyInput.addEventListener('input', () => {
+        const activeId = getActiveAiModelId();
+        saveAiApiKey(activeId, keyInput.value.trim(), true);
+        syncAllAiSettings();
+      });
+    }
+
+    if (endpointInput) {
+      endpointInput.addEventListener('change', () => {
+        const activeId = getActiveAiModelId();
+        saveAiEndpoint(activeId, endpointInput.value.trim());
+        syncAllAiSettings();
+      });
+    }
+
+    if (revealBtn && keyInput) {
+      revealBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isPassword = keyInput.type === 'password';
+        keyInput.type = isPassword ? 'text' : 'password';
+        revealBtn.querySelector('.ft-eye-open')?.classList.toggle('hidden', isPassword);
+        revealBtn.querySelector('.ft-eye-closed')?.classList.toggle('hidden', !isPassword);
+      });
+    }
+
+    if (customToggle && customForm) {
+      customToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        customForm.classList.toggle('hidden');
+      });
+    }
+
+    if (customCancel && customForm) {
+      customCancel.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        customForm.classList.add('hidden');
+      });
+    }
+
+    if (customAddBtn && customForm) {
+      customAddBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const idInput = customForm.querySelector<HTMLInputElement>('.ft-ai-custom-id');
+        const labelInput = customForm.querySelector<HTMLInputElement>('.ft-ai-custom-label');
+        const epInput = customForm.querySelector<HTMLInputElement>('.ft-ai-custom-ep');
+
+        const id = idInput?.value.trim();
+        const label = labelInput?.value.trim() || id;
+        const ep = epInput?.value.trim();
+
+        if (!id) { idInput?.focus(); return; }
+        if (!ep) { epInput?.focus(); return; }
+
+        addCustomAiModel({ id, label: label || id, endpoint: ep });
+        if (idInput) idInput.value = '';
+        if (labelInput) labelInput.value = '';
+        if (epInput) epInput.value = '';
+        customForm.classList.add('hidden');
+        syncAllAiSettings();
+      });
+    }
+  }
+
   openPanel() {
     // 互斥：打开当前面板前先关闭其它所有实例
     document
@@ -506,6 +701,8 @@ class StarlightFeatureToggles extends HTMLElement {
     syncAllCheckboxes();
     syncAllFontButtons();
     syncAllThemeChips();
+    syncAllPrewarmButtons();
+    syncAllAiSettings();
   }
 
   closePanel() {
@@ -542,11 +739,17 @@ export function initFeatureToggles(): void {
     customElements.define('starlight-feature-toggles', StarlightFeatureToggles);
   }
 
+  onAiConfigChange(() => {
+    syncAllAiSettings();
+  });
+
   document.addEventListener('astro:page-load', () => {
     apply();
     syncAllCheckboxes();
     syncAllFontButtons();
     syncAllThemeChips();
+    syncAllPrewarmButtons();
+    syncAllAiSettings();
   });
 
   window.addEventListener('site-theme-change', () => {
@@ -558,6 +761,10 @@ export function initFeatureToggles(): void {
       loadToggles();
       syncAllCheckboxes();
       apply();
+    } else if (e.key === PREWARM_PAGES_KEY) {
+      syncAllPrewarmButtons();
+    } else if (e.key?.startsWith('astrolib_ai_') || e.key?.startsWith('dsh-aiask-')) {
+      syncAllAiSettings();
     }
   });
 }

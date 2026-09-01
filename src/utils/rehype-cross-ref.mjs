@@ -392,7 +392,7 @@ export function rehypeCrossRef(options = {}) {
     const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const typePattern = allAliases.map(escapeRegExp).join('|');
     const blockRefRegex = new RegExp(`(${typePattern})\\s*(\\d+(?:\\.\\d+)*)`, 'g');
-    const figRegex = new RegExp(`(图)\\s*(\\d+\\s*[-－]\\s*\\d+)`, 'g');
+    const figRegex = new RegExp(`(图)\\s*(\\d+(?:\\.\\d+)*|\\d+\\s*[-－]\\s*\\d+)`, 'g');
 
     // 2. 同页 localTargets：本书 trackClasses 对应的 MDX 卡片组件 + Solution
     const trackSelectors = book.trackClasses && book.trackClasses.length
@@ -446,30 +446,28 @@ export function rehypeCrossRef(options = {}) {
       }
     });
 
-    // 2c. figcaption / 目标段落：分配图 id 并标记图片（仅普通 HTML 元素）
+    // 2c. figcaption / 目标段落：自动将普通段落插图+图注提升为语义化 <figure class="vp-figure"><figcaption>
     visit(tree, 'element', (node, index, parent) => {
       if (parent) parentMap.set(node, parent);
       const tag = node.tagName;
       const classes = getClasses(node);
       if (tag !== 'p' && tag !== 'div' && tag !== 'figcaption') return;
       const text = collectText(node).trim();
-      const captionMatch = text.match(/^图\s*(\d+\s*[-－]\s*\d+)$/);
+      const captionMatch = text.match(/^图\s*(\d+(?:\.\d+)*|\d+\s*[-－]\s*\d+)(?:\s+.*)?$/);
       if (!captionMatch) return;
-      const figNum = captionMatch[1].replace(/\s+/g, '');
+      const figNum = captionMatch[1].replace(/[-－]/g, '-').replace(/\s+/g, '');
       const figId = `图-${figNum}`;
-      node.properties.id = figId;
-      if (!classes.includes('fig-target-caption')) {
-        node.properties.className = [...classes, 'fig-target-caption'];
-      }
-      figIdSet.add(figId);
-      // 前一个 element 兄弟中的 img 标记为目标图
-      const holder = parentMap.get(node);
-      if (holder) {
-        const idx = holder.children.indexOf(node);
-        for (let i = idx - 1; i >= 0; i--) {
-          const prev = holder.children[i];
-          if (prev.type !== 'element') continue;
-          const img = prev.tagName === 'img' ? prev : findFirstImg(prev);
+
+      // 情况 A: 节点本身已经是 <figcaption>
+      if (tag === 'figcaption') {
+        node.properties.id = figId;
+        if (!classes.includes('fig-target-caption')) {
+          node.properties.className = [...classes, 'fig-target-caption'];
+        }
+        figIdSet.add(figId);
+        const holder = parentMap.get(node);
+        if (holder) {
+          const img = findFirstImg(holder);
           if (img) {
             const imgClasses = getClasses(img);
             if (!imgClasses.includes('fig-target-image')) {
@@ -477,9 +475,85 @@ export function rehypeCrossRef(options = {}) {
             }
             img.properties.dataFigRef = figId;
           }
+        }
+        return;
+      }
+
+      // 情况 B: 节点为 <p> 或 <div>，且内部同时包含 <img> 与 图注文本（如 ![](images/xxx.jpg) \n 图1.12）
+      const innerImg = findFirstImg(node);
+      if (innerImg) {
+        node.tagName = 'figure';
+        node.properties.className = [...classes.filter(c => c !== 'fig-target-caption'), 'vp-figure'];
+        delete node.properties.id;
+
+        const figCaptionNode = {
+          type: 'element',
+          tagName: 'figcaption',
+          properties: {
+            id: figId,
+            className: ['fig-target-caption']
+          },
+          children: [{ type: 'text', value: text }]
+        };
+
+        const imgClasses = getClasses(innerImg);
+        if (!imgClasses.includes('fig-target-image')) {
+          innerImg.properties.className = [...imgClasses, 'fig-target-image'];
+        }
+        innerImg.properties.dataFigRef = figId;
+
+        node.children = [innerImg, figCaptionNode];
+        figIdSet.add(figId);
+        return;
+      }
+
+      // 情况 C: 节点为独立图注段落 <p>图1.12</p>，前一个兄弟元素为包含图片的段落 <p><img ...></p>
+      const holder = parentMap.get(node);
+      if (holder && holder.children) {
+        const idx = holder.children.indexOf(node);
+        for (let i = idx - 1; i >= 0; i--) {
+          const prev = holder.children[i];
+          if (!prev || prev.type !== 'element') continue;
+          const prevImg = prev.tagName === 'img' ? prev : findFirstImg(prev);
+          if (prevImg && (prev.tagName === 'p' || prev.tagName === 'div')) {
+            prev.tagName = 'figure';
+            prev.properties.className = [...getClasses(prev).filter(c => c !== 'fig-target-caption'), 'vp-figure'];
+            
+            const figCaptionNode = {
+              type: 'element',
+              tagName: 'figcaption',
+              properties: {
+                id: figId,
+                className: ['fig-target-caption']
+              },
+              children: [{ type: 'text', value: text }]
+            };
+
+            const imgClasses = getClasses(prevImg);
+            if (!imgClasses.includes('fig-target-image')) {
+              prevImg.properties.className = [...imgClasses, 'fig-target-image'];
+            }
+            prevImg.properties.dataFigRef = figId;
+
+            prev.children = [prevImg, figCaptionNode];
+            figIdSet.add(figId);
+
+            // 清空并隐藏当前单独图注段落
+            node.tagName = 'span';
+            node.properties = { style: 'display:none;' };
+            node.children = [];
+            return;
+          }
           break;
         }
       }
+
+      // 兜底：分配 id 与 class
+      node.properties.id = figId;
+      if (!classes.includes('fig-target-caption')) {
+        node.properties.className = [...classes, 'fig-target-caption'];
+      }
+      figIdSet.add(figId);
     });
 
     // 3. 文本节点替换（收集-替换，避免遍历被新插入节点干扰）

@@ -37,13 +37,39 @@ type DraftOp = {
 const CARD_KINDS = new Set([
   'example', 'variant', 'knowledge', 'note', 'solution',
   'block', 'method', 'guide', 'exercise', 'summary', 'analysis',
+  'qrcodevideo',
 ]);
 
 const KIND_NAMES: Record<string, string> = {
   example: '例题', variant: '变式', knowledge: '知识点', note: '注释', solution: '解答',
   block: '模块', method: '方法', guide: '导读', exercise: '练习', summary: '总结', analysis: '思路分析',
+  qrcodevideo: '讲解视频',
   paragraph: '段落', heading: '标题', list: '列表', table: '表格', quote: '引用',
   code: '代码块', formula: '独立公式', hr: '分隔线',
+};
+
+// VitePress Academic SVG Icons (Lucide-style vectors, no emojis)
+const ICONS = {
+  up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>',
+  down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>',
+  move: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="15 19 12 22 9 19"></polyline><polyline points="19 9 22 12 19 15"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg>',
+  title: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>',
+  switch: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"></path><path d="M4 20L21 3"></path><path d="M21 16v5h-5"></path><path d="M15 15l6 6"></path><path d="M4 4l5 5"></path></svg>',
+  unwrap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"></path><path d="M1 3h22v5H1z"></path><path d="M10 12h4"></path></svg>',
+  wrap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>',
+  extract: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>',
+  merge: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h10"></path><path d="M6 12h12"></path><path d="M4 18h14"></path></svg>',
+  code: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>',
+  formula: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="4" x2="20" y2="4"></line><line x1="4" y1="4" x2="13" y2="12"></line><line x1="13" y1="12" x2="4" y2="20"></line><line x1="4" y1="20" x2="20" y2="20"></line></svg>',
+  enMath: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10.5-10.5a2.828 2.828 0 1 0-4-4L4 16v4z"></path><line x1="13.5" y1="6.5" x2="17.5" y2="10.5"></line></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>',
+  undo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>',
+  save: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>',
+  log: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>',
+  close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
+  expand: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>',
+  collapse: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>',
+  sparkles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3m0 12v3M3 12h3m12 0h3m-2.9-6.1l-2.1 2.1m-8 8l-2.1 2.1m0-12.2l2.1 2.1m8 8l2.1 2.1"></path></svg>',
 };
 
 /** “包成卡片 / 切换卡片类型”的候选类型 */
@@ -60,6 +86,50 @@ const WRAP_TYPES: Array<{ value: string; label: string }> = [
   { value: 'exercise', label: '练习 (Exercise)' },
   { value: 'summary', label: '总结 (Summary)' },
 ];
+
+/** 将普通文本中的非公式独立英文词块包装为行内公式 $...$（严格保护 imports, exports, JSX, LaTeX 与代码） */
+function convertEnglishToMath(text: string): { text: string; count: number } {
+  // 匹配所有需严格保护的结构：
+  // 1. Frontmatter: ^---\n...\n---
+  // 2. ESM import/export 语句: import ... from '...'; 或 export ...
+  // 3. 行间公式: $$...$$
+  // 4. 行内公式: $...$
+  // 5. 代码块: ```...```
+  // 6. 行内代码: `...`
+  // 7. JSX / HTML 标签与组件 (含跨行与属性): <Tag ...> 或 </Tag> 或 <Tag />
+  // 8. Markdown 图片: ![alt](url)
+  // 9. Markdown 链接: [text](url)
+  // 10. HTML 注释: <!-- ... -->
+  // 11. HTML 实体: &...;
+  const pattern = /(^---\r?\n[\s\S]*?\r?\n---|(?:^|\n)\s*(?:import|export)\s+[\s\S]*?(?:;(?=\r?\n|$)|(?=\r?\n\r?\n|$))|\$\$[\s\S]*?\$\$|\$(?:\\\$|[^\$\n])+?\$|```[\s\S]*?```|`[^`\n]+?`|<(?:\/?[a-zA-Z][a-zA-Z0-9_\-\.:]*)(?:\s+[\s\S]*?)?>|!\[[^\]]*\]\([^)]+\)|\[[^\]]+\]\([^)]+\)|<!--[\s\S]*?-->|&[a-zA-Z0-9#]+;)/g;
+  let lastIdx = 0;
+  const segments: Array<{ type: 'protected' | 'text'; val: string }> = [];
+  let m: RegExpExecArray | null;
+  let count = 0;
+  while ((m = pattern.exec(text)) !== null) {
+    if (m.index > lastIdx) {
+      segments.push({ type: 'text', val: text.slice(lastIdx, m.index) });
+    }
+    segments.push({ type: 'protected', val: m[0] });
+    lastIdx = m.index + m[0].length;
+  }
+  if (lastIdx < text.length) {
+    segments.push({ type: 'text', val: text.slice(lastIdx) });
+  }
+
+  const enRegex = /([a-zA-Z]+(?:'[a-zA-Z]+)?)/g;
+  const result = segments
+    .map((seg) => {
+      if (seg.type === 'protected') return seg.val;
+      return seg.val.replace(enRegex, (match) => {
+        count++;
+        return `$${match}$`;
+      });
+    })
+    .join('');
+
+  return { text: result, count };
+}
 
 /* ---------------- 状态 ---------------- */
 
@@ -297,59 +367,212 @@ function selectRange(startInfo: BlockInfo, endInfo: BlockInfo): void {
   updatePanel();
 }
 
+function divider(): HTMLElement {
+  const d = document.createElement('div');
+  d.className = 'dsh-toolbar-divider';
+  return d;
+}
+
+function toolbarBtn(opts: {
+  icon?: string;
+  label?: string;
+  title: string;
+  onClick?: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+}): HTMLButtonElement {
+  const b = document.createElement('button');
+  b.type = 'button';
+  if (opts.icon) {
+    b.innerHTML = `${opts.icon}<span>${opts.label || ''}</span>`;
+  } else {
+    b.textContent = opts.label || '';
+  }
+  b.title = opts.title;
+  if (opts.danger) b.classList.add('dsh-btn-danger');
+  b.disabled = !!opts.disabled;
+  if (!b.disabled && opts.onClick) b.addEventListener('click', opts.onClick);
+  return b;
+}
+
 function renderToolbar(info: BlockInfo): void {
   if (!toolbar) return;
   const isCard = CARD_KINDS.has(info.kind);
+  const isVideo = info.kind === 'qrcodevideo';
   const siblings = siblingBlocks(info.el);
   const idx = siblings.indexOf(info.el);
 
-  const items: Array<{ label: string; title: string; onClick?: () => void; disabled?: boolean }> = [
-    { label: '↑', title: '上移（同层相邻块）', disabled: idx <= 0, onClick: () => void doMove(info, readBlock(siblings[idx - 1])!, 'before') },
-    { label: '↓', title: '下移（同层相邻块）', disabled: idx === -1 || idx >= siblings.length - 1, onClick: () => void doMove(info, readBlock(siblings[idx + 1])!, 'after') },
-  ];
+  toolbar.innerHTML = '';
 
-  if (isCard) {
-    items.push({ label: '改标题', title: '修改卡片标题', onClick: () => openEditTitleModal(info) });
-    items.push({ label: '换类型', title: '一键更换卡片类型（如 Note ↔ Example）', onClick: () => openChangeTypeModal(info) });
-    items.push({ label: '转为正文', title: '剥掉卡片外壳，内容直接作为正文', onClick: () => void doUnwrap(info) });
-  } else if (!info.parentKind) {
-    items.push({ label: '移入卡片', title: '把该块插入到某张卡片末尾', onClick: () => void openInsertIntoCardModal(info) });
-    items.push({ label: '包成卡片', title: '把该块包成卡片', onClick: () => openWrapModal(info) });
+  // 1. 块类型与行号信息徽章
+  const infoSpan = document.createElement('span');
+  infoSpan.className = 'dsh-toolbar-info';
+  infoSpan.innerHTML = `<strong>${esc(KIND_NAMES[info.kind] || info.kind)}</strong> · L${info.line}`;
+  toolbar.appendChild(infoSpan);
+
+  // Group 1: 排序与移动
+  const gMove = document.createElement('div');
+  gMove.className = 'dsh-toolbar-group';
+  gMove.appendChild(
+    toolbarBtn({
+      icon: ICONS.up,
+      label: '上移',
+      title: '上移至同层上一个相邻块之前',
+      disabled: idx <= 0,
+      onClick: () => void doMove(info, readBlock(siblings[idx - 1])!, 'before'),
+    })
+  );
+  gMove.appendChild(
+    toolbarBtn({
+      icon: ICONS.down,
+      label: '下移',
+      title: '下移至同层下一个相邻块之后',
+      disabled: idx === -1 || idx >= siblings.length - 1,
+      onClick: () => void doMove(info, readBlock(siblings[idx + 1])!, 'after'),
+    })
+  );
+  gMove.appendChild(
+    toolbarBtn({
+      icon: ICONS.move,
+      label: '定位',
+      title: '把该块移动到指定行号之前/之后',
+      onClick: () => openMoveToLineModal(info),
+    })
+  );
+  toolbar.appendChild(gMove);
+  toolbar.appendChild(divider());
+
+  // Group 2: 结构与卡片
+  const gStruct = document.createElement('div');
+  gStruct.className = 'dsh-toolbar-group';
+  if (isCard && !isVideo) {
+    gStruct.appendChild(
+      toolbarBtn({
+        icon: ICONS.title,
+        label: '改标题',
+        title: '修改卡片标题',
+        onClick: () => openEditTitleModal(info),
+      })
+    );
+    gStruct.appendChild(
+      toolbarBtn({
+        icon: ICONS.switch,
+        label: '换类型',
+        title: '一键更换卡片类型（如 Note ↔ Example）',
+        onClick: () => openChangeTypeModal(info),
+      })
+    );
+    gStruct.appendChild(
+      toolbarBtn({
+        icon: ICONS.unwrap,
+        label: '转正文',
+        title: '剥掉卡片外壳，内容直接作为正文',
+        onClick: () => void doUnwrap(info),
+      })
+    );
+  } else if (info.parentKind) {
+    gStruct.appendChild(
+      toolbarBtn({
+        icon: ICONS.extract,
+        label: '移出卡片',
+        title: '把该块移到卡片之后（正文）',
+        onClick: () => void doExtract(info),
+      })
+    );
     if (idx < siblings.length - 1) {
-      items.push({ label: '向下合并', title: '与下一个相邻块合并为单段落', onClick: () => void doMergeWithNeighbor(info, readBlock(siblings[idx + 1])) });
+      gStruct.appendChild(
+        toolbarBtn({
+          icon: ICONS.merge,
+          label: '向下合并',
+          title: '与卡片内下一个相邻块合并为单段落',
+          onClick: () => void doMergeWithNeighbor(info, readBlock(siblings[idx + 1])),
+        })
+      );
     }
-  } else {
-    items.push({ label: '移出卡片', title: '把该块移到卡片之后（正文）', onClick: () => void doExtract(info) });
+  } else if (!isCard) {
+    gStruct.appendChild(
+      toolbarBtn({
+        icon: ICONS.extract,
+        label: '移入卡片',
+        title: '把该块插入到某张卡片末尾',
+        onClick: () => void openInsertIntoCardModal(info),
+      })
+    );
+    gStruct.appendChild(
+      toolbarBtn({
+        icon: ICONS.wrap,
+        label: '包成卡片',
+        title: '把该块包裹为卡片',
+        onClick: () => openWrapModal(info),
+      })
+    );
     if (idx < siblings.length - 1) {
-      items.push({ label: '向下合并', title: '与卡片内下一个相邻块合并为单段落', onClick: () => void doMergeWithNeighbor(info, readBlock(siblings[idx + 1])) });
+      gStruct.appendChild(
+        toolbarBtn({
+          icon: ICONS.merge,
+          label: '向下合并',
+          title: '与下一个相邻块合并为单段落',
+          onClick: () => void doMergeWithNeighbor(info, readBlock(siblings[idx + 1])),
+        })
+      );
     }
   }
+  if (gStruct.children.length > 0) {
+    toolbar.appendChild(gStruct);
+    toolbar.appendChild(divider());
+  }
 
-  items.push({ label: '移动到行号', title: '把该块移到指定行号之前/之后', onClick: () => openMoveToLineModal(info) });
+  // Group 3: 内容与精修
+  const gEdit = document.createElement('div');
+  gEdit.className = 'dsh-toolbar-group';
+  gEdit.appendChild(
+    toolbarBtn({
+      icon: ICONS.code,
+      label: '源码',
+      title: '直接修改该块的 MDX 源码',
+      onClick: () => void openSourceEditor(info),
+    })
+  );
 
   const hasKatex = !!info.el.querySelector('.katex[data-latex], .katex-display[data-latex]');
   if (hasKatex || info.kind === 'formula') {
-    items.push({ label: '编辑公式', title: '编辑公式 LaTeX 源码', onClick: () => openFirstFormula(info) });
+    gEdit.appendChild(
+      toolbarBtn({
+        icon: ICONS.formula,
+        label: '公式',
+        title: '编辑公式 LaTeX 源码',
+        onClick: () => openFirstFormula(info),
+      })
+    );
   }
 
-  items.push({ label: '编辑源码', title: '直接修改该块的 MDX 源码', onClick: () => void openSourceEditor(info) });
-  items.push({ label: '删除', title: '删除该块', onClick: () => confirmDelete(info) });
-
-  toolbar.innerHTML = '';
-  const infoSpan = document.createElement('span');
-  infoSpan.className = 'dsh-toolbar-info';
-  infoSpan.textContent = `${KIND_NAMES[info.kind] || info.kind} · L${info.line}`;
-  toolbar.appendChild(infoSpan);
-
-  for (const it of items) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = it.label;
-    b.title = it.title;
-    b.disabled = !!it.disabled;
-    if (!b.disabled && it.onClick) b.addEventListener('click', it.onClick);
-    toolbar.appendChild(b);
+  if (!isCard && (info.kind === 'paragraph' || info.kind === 'quote' || info.kind === 'list')) {
+    gEdit.appendChild(
+      toolbarBtn({
+        icon: ICONS.enMath,
+        label: '英文转公式',
+        title: '把当前段落中所有非公式独立英文词（如 love, ya 等）批量转换为行内公式（$love$, $ya$）',
+        onClick: () => void doConvertEnMath(info),
+      })
+    );
   }
+  toolbar.appendChild(gEdit);
+  toolbar.appendChild(divider());
+
+  // Group 4: 危险区
+  const gDanger = document.createElement('div');
+  gDanger.className = 'dsh-toolbar-group';
+  gDanger.appendChild(
+    toolbarBtn({
+      icon: ICONS.trash,
+      label: '删除',
+      title: '删除该块',
+      danger: true,
+      onClick: () => confirmDelete(info),
+    })
+  );
+  toolbar.appendChild(gDanger);
+
   positionToolbar();
 }
 
@@ -359,25 +582,64 @@ function renderRangeToolbar(range: RangeSelection): void {
 
   const infoSpan = document.createElement('span');
   infoSpan.className = 'dsh-toolbar-info';
-  infoSpan.textContent = `选中 L${range.startLine}-L${range.endLine}（共 ${range.blocks.length} 块）`;
+  infoSpan.innerHTML = `<strong>选区</strong> · L${range.startLine}-L${range.endLine} (${range.blocks.length} 块)`;
   toolbar.appendChild(infoSpan);
 
-  const items = [
-    { label: '📦 合并包成卡片', title: '将选中的所有连续块整体包裹为指定卡片（题干+公式+图片等）', onClick: () => openWrapRangeModal(range) },
-    { label: '📥 批量移入卡片', title: '将选中的所有块整体移入某张卡片末尾', onClick: () => void openInsertRangeModal(range) },
-    { label: '🔗 合并为一段', title: '将选中的连续文字块合并为一个段落', onClick: () => void doMergeBlocks(range.startLine, range.endLine) },
-    { label: '🗑 批量删除', title: '删除选中的所有块', onClick: () => confirmDeleteRange(range.startLine, range.endLine) },
-    { label: '✕ 取消选择', title: '清除当前选区', onClick: clearSelection },
-  ];
+  const g1 = document.createElement('div');
+  g1.className = 'dsh-toolbar-group';
+  g1.appendChild(
+    toolbarBtn({
+      icon: ICONS.wrap,
+      label: '合并包成卡片',
+      title: '将选中的所有连续块整体包裹为指定卡片（题干+公式+图片等）',
+      onClick: () => openWrapRangeModal(range),
+    })
+  );
+  g1.appendChild(
+    toolbarBtn({
+      icon: ICONS.extract,
+      label: '批量移入卡片',
+      title: '将选中的所有块整体移入某张卡片末尾',
+      onClick: () => void openInsertRangeModal(range),
+    })
+  );
+  toolbar.appendChild(g1);
+  toolbar.appendChild(divider());
 
-  for (const it of items) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = it.label;
-    b.title = it.title;
-    if (it.onClick) b.addEventListener('click', it.onClick);
-    toolbar.appendChild(b);
-  }
+  const g2 = document.createElement('div');
+  g2.className = 'dsh-toolbar-group';
+  g2.appendChild(
+    toolbarBtn({
+      icon: ICONS.merge,
+      label: '合并为一段',
+      title: '将选中的连续文字块合并为一个段落',
+      onClick: () => void doMergeBlocks(range.startLine, range.endLine),
+    })
+  );
+  toolbar.appendChild(g2);
+  toolbar.appendChild(divider());
+
+  const g3 = document.createElement('div');
+  g3.className = 'dsh-toolbar-group';
+  g3.appendChild(
+    toolbarBtn({
+      icon: ICONS.trash,
+      label: '批量删除',
+      title: '删除选中的所有块',
+      danger: true,
+      onClick: () => confirmDeleteRange(range.startLine, range.endLine),
+    })
+  );
+  g3.appendChild(
+    toolbarBtn({
+      icon: ICONS.close,
+      label: '取消',
+      title: '清除当前选区',
+      onClick: clearSelection,
+    })
+  );
+  toolbar.appendChild(g3);
+
   positionToolbar();
 }
 
@@ -468,6 +730,49 @@ function toggleAllSolutions(): void {
   updatePanel();
 }
 
+async function doConvertEnMath(info: BlockInfo): Promise<void> {
+  const freshEl = findBlockByLine(info.line);
+  if (!freshEl) return;
+  const freshInfo = readBlock(freshEl);
+  if (!freshInfo) return;
+
+  const rawText = await getBlockText(freshInfo);
+  const { text: newText, count } = convertEnglishToMath(rawText);
+  if (count === 0) {
+    toast('该段落未发现非公式独立英文词');
+    return;
+  }
+
+  const ok = await doTextEdit('convert-en-math', { line: freshInfo.line }, freshInfo, `段落英文转公式（${count}处）`);
+  if (ok) {
+    toast(`已将当前段落 ${count} 处英文转换为行内公式`);
+  }
+}
+
+async function doConvertAllEnMath(): Promise<void> {
+  const file = selected?.file || currentFile;
+  if (!file) {
+    toast('未定位到当前文档');
+    return;
+  }
+  if (!window.confirm('确认要把整篇文档正文段落中的非公式独立英文词（如 love, ya 等）批量转换为行内公式（$love$, $ya$）吗？\n（已严格保护代码、公式、组件标签与模块导入，且转换后可随时点击顶部面板「撤销」回滚）')) {
+    return;
+  }
+
+  const r = await api('/__edit__/apply', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ file, op: 'convert-all-en-math', payload: {} }),
+  });
+  if (r?.ok) {
+    toast('全篇英文词已成功转为行内公式（若需还原可点击顶部「撤销」）');
+    const ok2 = await refreshContent();
+    if (!ok2) toast('转换已写入文件，请刷新页面查看', true);
+  } else {
+    toast('全篇转换失败：' + (r?.message || '未知错误'));
+  }
+}
+
 function updatePanel(): void {
   if (!panel) return;
   if (!enabled) {
@@ -478,33 +783,66 @@ function updatePanel(): void {
   panel.innerHTML = '';
   const file = selected?.file || currentFile;
 
-  const title = document.createElement('span');
-  title.className = 'dsh-panel-title';
-  title.textContent = draftOps.length ? `精修模式 · 未保存 ${draftOps.length}` : '精修模式';
-  if (draftOps.length) title.classList.add('dsh-panel-title-dirty');
+  const badgeSpan = document.createElement('span');
+  badgeSpan.className = 'dsh-panel-badge' + (draftOps.length ? ' dsh-panel-badge-dirty' : '');
+  badgeSpan.innerHTML = draftOps.length
+    ? `<span>精修模式</span><span style="opacity:0.85">· 待保存 ${draftOps.length}</span>`
+    : `<span>精修模式</span>`;
 
   const fileSpan = document.createElement('span');
   fileSpan.className = 'dsh-panel-file';
-  fileSpan.textContent = file || '（未定位到文件）';
+  fileSpan.textContent = file ? file.split('/').slice(-2).join('/') : '（未定位文件）';
   fileSpan.title = file;
 
-  const toggleDetailsBtn = btn(allSolutionsExpanded ? '收起全部折叠' : '展开全部折叠', toggleAllSolutions);
-  toggleDetailsBtn.title = '一键展开/收起当前页面全部 <Solution> 解答折叠框，方便直接点选编辑内部公式与段落';
+  const actions = document.createElement('div');
+  actions.className = 'dsh-panel-actions';
 
-  const undoBtn = btn('撤销', () => void undo());
-  undoBtn.title = draftOps.length ? '撤销最后一条草稿修改' : '撤销最近一次写回（按文件）';
+  const toggleDetailsBtn = toolbarBtn({
+    icon: allSolutionsExpanded ? ICONS.collapse : ICONS.expand,
+    label: allSolutionsExpanded ? '收起折叠' : '展开折叠',
+    title: '一键展开/收起当前页面全部 <Solution> 解答折叠框，方便直接点选编辑内部公式与段落',
+    onClick: toggleAllSolutions,
+  });
 
-  const logBtn = btn('日志', () => void openLog());
+  const convertAllBtn = toolbarBtn({
+    icon: ICONS.enMath,
+    label: '全文英文转公式',
+    title: '将整篇文档所有段落的非公式独立英文词（如 love, ya 等）批量转为行内公式（$love$, $ya$）',
+    onClick: () => void doConvertAllEnMath(),
+  });
 
-  const saveBtn = btn(draftOps.length ? `保存并刷新 (${draftOps.length})` : '保存并刷新', () => void saveDraft());
+  const undoBtn = toolbarBtn({
+    icon: ICONS.undo,
+    label: '撤销',
+    title: draftOps.length ? '撤销最后一条草稿修改' : '撤销最近一次写回（按文件）',
+    onClick: () => void undo(),
+  });
+
+  const logBtn = toolbarBtn({
+    icon: ICONS.log,
+    label: '日志',
+    title: '查看会话操作历史',
+    onClick: () => void openLog(),
+  });
+
+  const saveBtn = toolbarBtn({
+    icon: ICONS.save,
+    label: draftOps.length ? `保存刷新 (${draftOps.length})` : '保存并刷新',
+    title: '把全部草稿修改一次性写入源文件并刷新页面',
+    disabled: !draftOps.length,
+    onClick: () => void saveDraft(),
+  });
   saveBtn.className = 'dsh-panel-save' + (draftOps.length ? ' dsh-panel-save-dirty' : '');
-  saveBtn.disabled = !draftOps.length;
-  saveBtn.title = '把全部草稿修改一次性写入源文件并刷新页面（快捷无缝更新）';
 
-  const exitBtn = btn('退出', () => setEnabled(false));
-  exitBtn.title = '退出精修模式（快捷键 E）';
+  const exitBtn = toolbarBtn({
+    icon: ICONS.close,
+    label: '退出',
+    title: '退出精修模式（快捷键 E）',
+    onClick: () => setEnabled(false),
+  });
 
-  panel.append(title, fileSpan, toggleDetailsBtn, undoBtn, logBtn, saveBtn, exitBtn);
+  actions.append(toggleDetailsBtn, convertAllBtn, undoBtn, logBtn, saveBtn, exitBtn);
+  panel.append(badgeSpan, fileSpan, actions);
 }
 
 function syncCurrentFile(): void {
@@ -792,14 +1130,27 @@ async function doUnwrap(info: BlockInfo): Promise<void> {
   const moved = blocks.length ? blocks : (Array.from(cardBody.children) as HTMLElement[]);
 
   const title = (cardEl.getAttribute('data-title') || '').trim();
+  const kind = (cardEl.getAttribute('data-src-kind') || '').toLowerCase();
+  const isNote = kind === 'note';
+  const isGeneric = !title || ['标注说明', '注意', '注', '说明', '提示', '想一想', '警告'].includes(title);
+
   const pieces: HTMLElement[] = [];
-  if (title) {
+  if (!isNote && !isGeneric && title) {
     const h2 = document.createElement('h2');
     h2.setAttribute('data-src-file', freshInfo.file);
     h2.setAttribute('data-src-line', String(freshInfo.line));
     h2.setAttribute('data-src-kind', 'heading');
     h2.textContent = title;
     pieces.push(h2);
+  } else if (title && title !== '标注说明') {
+    if (moved.length && moved[0].tagName === 'P') {
+      const firstP = moved[0];
+      if (!firstP.textContent?.trim().startsWith(title)) {
+        const strong = document.createElement('strong');
+        strong.textContent = title + '：';
+        firstP.prepend(strong);
+      }
+    }
   }
   pieces.push(...moved);
   cardEl.replaceWith(...pieces);
@@ -1541,29 +1892,36 @@ function onClick(e: MouseEvent): void {
 
   const block = blockFrom(target);
   if (!block) return;
-
-  // 2. 公式点击：若直接点击了具体的数学公式（且未按住 Shift 多选），弹窗编辑 LaTeX
-  const katex = target.closest('.katex[data-latex], .katex-display[data-latex]');
   const info = readBlock(block);
   if (!info) return;
 
-  if (katex && !e.shiftKey) {
-    e.preventDefault();
-    clearSelection();
-    openFormulaEditor(katex, info);
-    return;
-  }
-
   e.preventDefault();
 
-  // 3. Shift + 点击：连续范围多选
+  // 2. Shift + 点击：连续范围多选
   if (e.shiftKey && selected) {
     selectRange(selected, info);
     return;
   }
 
-  // 4. 普通单选
+  // 3. 普通单选（段落、卡片、独立行间公式、讲解视频统一选中，支持平级移动/编辑）
   selectBlock(info);
+}
+
+function onDblClick(e: MouseEvent): void {
+  if (!enabled) return;
+  const target = e.target as Element | null;
+  if (!target || !(target instanceof Element)) return;
+  if (root && root.contains(target)) return;
+
+  const katex = target.closest('.katex[data-latex], .katex-display[data-latex]');
+  const block = blockFrom(target);
+  if (katex && block) {
+    const info = readBlock(block);
+    if (info) {
+      e.preventDefault();
+      openFormulaEditor(katex, info);
+    }
+  }
 }
 
 /* ---------------- 初始化 ---------------- */
@@ -1586,6 +1944,7 @@ export function initEditor(): void {
   document.addEventListener('mouseover', onMouseOver, true);
   document.addEventListener('mouseout', onMouseOut, true);
   document.addEventListener('click', onClick, true);
+  document.addEventListener('dblclick', onDblClick, true);
 
   const reposition = (): void => {
     if (enabled && (selected || rangeSelected)) positionToolbar();

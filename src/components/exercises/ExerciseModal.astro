@@ -1,0 +1,791 @@
+---
+/**
+ * ExerciseModal.astro
+ * 章节课后真题自测、历年试卷整卷刷题、社区 AI 题解共享与开发者纠错中心
+ * 采用 VitePress 优雅学术排版，零 Emoji，纯 SVG 矢量图标
+ */
+import { features } from '../../config/features.config.mjs';
+import './exercise-theme.css';
+
+const { enabled = true } = features.exercises || {};
+if (!enabled) return;
+---
+
+<div id="exercise-modal-root" class="ex-modal-root" aria-label="章节习题与真题自测中心">
+  <div class="ex-modal-backdrop"></div>
+  <div class="ex-modal-window" role="dialog" aria-modal="true" aria-label="真题自测、试卷整卷与题库检索">
+    <!-- 模态窗顶部 Header -->
+    <header class="ex-header">
+      <div class="ex-header-left">
+        <!-- 章节选择下拉 (自测模式使用) -->
+        <select class="ex-chapter-select" title="选择要练习的章节">
+          <option value="1">第1章 极限与连续</option>
+          <option value="2">第2章 一元函数微分学</option>
+          <option value="3">第3章 一元函数积分学</option>
+          <option value="4">第4章 常微分方程</option>
+          <option value="5">第5章 多元函数微分学</option>
+          <option value="6">第6章 多元函数积分学</option>
+          <option value="7">第7章 无穷级数</option>
+        </select>
+
+        <!-- 试卷选择下拉 (整卷模式使用) -->
+        <select class="ex-paper-select hidden" title="选择要浏览的期中/期末试卷">
+          <option value="loading">正在加载试卷列表...</option>
+        </select>
+      </div>
+
+      <!-- 模式切换 Tab -->
+      <div class="ex-header-center">
+        <button type="button" class="ex-mode-tab active" data-mode="practice" title="按章节教材目录自测练习">
+          <span>章节自测</span>
+        </button>
+        <button type="button" class="ex-mode-tab" data-mode="paper" title="按真实期末/期中试卷整卷刷题">
+          <span>试卷整卷</span>
+        </button>
+        <button type="button" class="ex-mode-tab" data-mode="search" title="跨全书题目与考点极速搜索">
+          <span>题库检索</span>
+        </button>
+      </div>
+
+      <!-- 窗口控制操作 -->
+      <div class="ex-header-right">
+        <button type="button" class="ex-secondary-btn" id="ex-open-latex-btn" title="导出学术 LaTeX 练习册 / 考场试卷" aria-label="导出 LaTeX 文档">
+          <span>导出 LaTeX</span>
+        </button>
+        <button type="button" class="ex-icon-btn ex-fullscreen-btn" title="全屏/窗口切换 (F)" aria-label="全屏切换">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+          </svg>
+        </button>
+        <button type="button" class="ex-icon-btn ex-close-btn" title="关闭 (Esc)" aria-label="关闭">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- 工具栏：统计与多维筛选 -->
+    <div class="ex-toolbar">
+      <div class="ex-toolbar-top">
+        <div class="ex-stats-row">
+          <span class="ex-stat-item">共 <strong class="ex-stat-total">0</strong> 题</span>
+        </div>
+
+        <div class="ex-toolbar-actions">
+          <div class="ex-search-box">
+            <svg class="ex-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+              <circle cx="8.5" cy="8.5" r="5.5" />
+              <path d="M12.5 12.5L17 17" />
+            </svg>
+            <input type="text" class="ex-search-input" placeholder="输入题干关键字、LaTeX 或考点..." autocomplete="off" />
+            <button type="button" class="ex-search-clear" title="清空检索" aria-label="清空检索">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+                <line x1="12" y1="4" x2="4" y2="12" />
+                <line x1="4" y1="4" x2="12" y2="12" />
+              </svg>
+            </button>
+          </div>
+
+          <button type="button" class="ex-toolbar-toggle-btn" id="ex-toolbar-toggle-btn" title="收起/展开筛选" aria-label="收起/展开筛选">
+            <span class="ex-toggle-label">收起筛选</span>
+            <svg class="ex-toggle-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M4 10L8 6L12 10" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="ex-filter-row">
+        <!-- 小节快捷筛选 (自测模式) -->
+        <div class="ex-nav-flow ex-section-pills"></div>
+
+        <!-- 试卷大纲结构导航 (整卷模式) -->
+        <div class="ex-nav-flow ex-paper-outline-bar hidden"></div>
+
+        <!-- 题型筛选 -->
+        <div class="ex-nav-flow ex-type-pills">
+          <button type="button" class="ex-nav-item active" data-type="all">全部题型</button>
+          <button type="button" class="ex-nav-item" data-type="choice">单选</button>
+          <button type="button" class="ex-nav-item" data-type="blank">填空</button>
+          <button type="button" class="ex-nav-item" data-type="calc">计算</button>
+          <button type="button" class="ex-nav-item" data-type="proof">证明</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 题目列表滚动视口 -->
+    <div class="ex-body"></div>
+  </div>
+
+  <!-- 1. 读者题目勘误反馈子模态窗 -->
+  <div id="ex-feedback-modal" class="ex-submodal-overlay hidden" role="dialog" aria-modal="true" aria-label="读者题目勘误反馈">
+    <div class="ex-submodal-box">
+      <div class="ex-submodal-header">
+        <div class="ex-submodal-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>题目勘误与读者反馈</span>
+        </div>
+        <button type="button" class="ex-submodal-close" data-action="close-feedback-modal" aria-label="关闭">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="ex-submodal-body">
+        <div class="ex-field-row">
+          <span class="ex-field-label">当前题目：</span>
+          <span class="ex-field-badge" id="ex-fb-qid-badge">QID</span>
+          <span class="ex-field-hint" id="ex-fb-source-hint"></span>
+        </div>
+
+        <div class="ex-field-group">
+          <label class="ex-field-label">错误类型 <span class="ex-req">*</span></label>
+          <div class="ex-fb-error-types">
+            <label class="ex-checkbox-label">
+              <input type="checkbox" name="fb-err" value="stem" checked /> 题干文字/条件错漏
+            </label>
+            <label class="ex-checkbox-label">
+              <input type="checkbox" name="fb-err" value="formula" /> KaTeX 公式显示异常/代码错误
+            </label>
+            <label class="ex-checkbox-label">
+              <input type="checkbox" name="fb-err" value="answer" /> 参考答案或选项有误
+            </label>
+            <label class="ex-checkbox-label">
+              <input type="checkbox" name="fb-err" value="kp" /> 考点分类或小节归属不准
+            </label>
+            <label class="ex-checkbox-label">
+              <input type="checkbox" name="fb-err" value="other" /> 其他体验优化
+            </label>
+          </div>
+        </div>
+
+        <div class="ex-field-group">
+          <label class="ex-field-label" for="ex-fb-desc-input">问题详情描述 <span class="ex-req">*</span></label>
+          <textarea id="ex-fb-desc-input" class="ex-textarea" rows="3" placeholder="请具体描述错误位置或有疑问的推导步骤..."></textarea>
+        </div>
+
+        <div class="ex-field-group">
+          <label class="ex-field-label" for="ex-fb-sugg-input">正确答案或修正建议（选填）</label>
+          <textarea id="ex-fb-sugg-input" class="ex-textarea" rows="2" placeholder="可在此附上正确结果、正确 LaTeX 公式或参考解法..."></textarea>
+        </div>
+
+        <div class="ex-field-group">
+          <label class="ex-field-label" for="ex-fb-reporter-input">您的称呼 / GitHub 账号（选填）</label>
+          <input type="text" id="ex-fb-reporter-input" class="ex-input" placeholder="例如：@username 或 热心读者" />
+        </div>
+      </div>
+      <div class="ex-submodal-footer">
+        <button type="button" class="ex-btn ex-btn-secondary" data-action="close-feedback-modal">取消</button>
+        <button type="button" class="ex-btn ex-btn-primary" id="ex-fb-submit-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span>提交反馈</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 开发者源码查看与修改子模态窗 -->
+  <div id="ex-source-editor-modal" class="ex-submodal-overlay hidden" role="dialog" aria-modal="true" aria-label="题目源码查看与修改">
+    <div class="ex-submodal-box ex-editor-box">
+      <div class="ex-submodal-header">
+        <div class="ex-submodal-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="16 18 22 12 16 6" />
+            <polyline points="8 6 2 12 8 18" />
+          </svg>
+          <span>题目源码查看与热持久化编辑器</span>
+          <span class="ex-dev-tag">Developer Mode</span>
+        </div>
+        <div class="ex-header-actions">
+          <button type="button" class="ex-icon-btn" id="ex-src-copy-btn" title="复制完整 JSON 源码">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+          </button>
+          <button type="button" class="ex-submodal-close" data-action="close-source-modal" aria-label="关闭">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="ex-submodal-body">
+        <div class="ex-editor-toolbar">
+          <span class="ex-editor-tip">提示：支持实时修改题干 LaTeX、选项、参考答案、推导解析与考点映射。点击保存将通过 Dev-Server 直接热持久化写回本地题库源文件。</span>
+        </div>
+        <textarea id="ex-src-editor-textarea" class="ex-code-editor" spellcheck="false" autocomplete="off"></textarea>
+      </div>
+      <div class="ex-submodal-footer">
+        <div class="ex-footer-status" id="ex-src-status-msg"></div>
+        <button type="button" class="ex-btn ex-btn-secondary" data-action="close-source-modal">取消</button>
+        <button type="button" class="ex-btn ex-btn-primary" id="ex-src-save-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+            <polyline points="17 21 17 13 7 13 7 21" />
+            <polyline points="7 3 7 8 15 8" />
+          </svg>
+          <span>保存修改并热重载</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 读者分享 AI 题解子模态窗 -->
+  <div id="ex-ai-upload-modal" class="ex-submodal-overlay hidden" role="dialog" aria-modal="true" aria-label="分享我的 AI 题解">
+    <div class="ex-submodal-box">
+      <div class="ex-submodal-header">
+        <div class="ex-submodal-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+          </svg>
+          <span>分享我的 AI 规范题解</span>
+        </div>
+        <button type="button" class="ex-submodal-close" data-action="close-upload-modal" aria-label="关闭">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="ex-submodal-body">
+        <div class="ex-field-row">
+          <span class="ex-field-label">题目编号：</span>
+          <span class="ex-field-badge" id="ex-ai-upload-qid">QID</span>
+        </div>
+
+        <div class="ex-form-grid">
+          <div class="ex-field-group">
+            <label class="ex-field-label" for="ex-ai-model-input">推导模型名称 <span class="ex-req">*</span></label>
+            <input type="text" id="ex-ai-model-input" class="ex-input" placeholder="例如：DeepSeek-R1, Claude 3.7 Sonnet, GPT-4o..." value="DeepSeek-R1" />
+          </div>
+          <div class="ex-field-group">
+            <label class="ex-field-label" for="ex-ai-author-input">贡献者昵称</label>
+            <input type="text" id="ex-ai-author-input" class="ex-input" placeholder="热心读者" value="热心读者" />
+          </div>
+        </div>
+
+        <div class="ex-field-group">
+          <label class="ex-field-label" for="ex-ai-solution-textarea">AI 题解推导 Markdown / LaTeX 内容 <span class="ex-req">*</span></label>
+          <textarea id="ex-ai-solution-textarea" class="ex-textarea ex-code-font" rows="8" placeholder="粘贴您用 AI 生成的规范数学推导 Markdown 内容（支持 $$...$$ 与 $...$ 公式）..."></textarea>
+        </div>
+
+        <div class="ex-field-group">
+          <label class="ex-field-label" for="ex-ai-remarks-input">解题要点 / 补充备注（选填）</label>
+          <input type="text" id="ex-ai-remarks-input" class="ex-input" placeholder="例如：包含 Taylor 展开与等价无穷小两种解法" />
+        </div>
+      </div>
+      <div class="ex-submodal-footer">
+        <button type="button" class="ex-btn ex-btn-secondary" data-action="close-upload-modal">取消</button>
+        <button type="button" class="ex-btn ex-btn-primary" id="ex-ai-upload-submit-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="16 16 12 12 8 16" />
+            <line x1="12" y1="12" x2="12" y2="21" />
+            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+          </svg>
+          <span>上传并全网共享</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 生产级 LaTeX 练习文档 / 考场试卷导出配置与 PDF 交付模态窗 -->
+  <div id="ex-latex-modal" class="ex-submodal-overlay hidden" role="dialog" aria-modal="true" aria-label="导出学术 LaTeX 练习文档与试卷">
+    <div class="ex-submodal-box ex-typst-modal-box">
+      <!-- 模态窗顶栏: 学术标题与配置工具入口 -->
+      <div class="ex-submodal-header">
+        <div class="ex-submodal-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+          </svg>
+          <div class="ex-submodal-title-wrap">
+            <span class="ex-submodal-title-text">导出学术 LaTeX / PDF</span>
+            <span class="ex-submodal-title-sub" id="ex-latex-modal-meta">当前选定题量加载中...</span>
+          </div>
+        </div>
+        <div class="ex-header-actions">
+          <button type="button" class="ex-submodal-tool-btn" id="ex-latex-open-settings-btn" title="配置 GitHub Actions 编译池凭证" aria-label="设置">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            <span>编译配置</span>
+          </button>
+          <button type="button" class="ex-submodal-close" data-action="close-latex-modal" aria-label="关闭" title="关闭 (Esc)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- 阶段 1：排版参数配置视图 (Configuration View)                      -->
+      <!-- ================================================================= -->
+      <div id="ex-latex-config-view" class="ex-latex-view-container">
+        <div class="ex-submodal-body ex-typst-body-split">
+          <!-- 左侧：排版参数设置 (按语义建立清晰层级，杜绝无意义卡片堆叠) -->
+          <div class="ex-typst-config-pane">
+            <!-- 1. 排版版式选择 -->
+            <div class="ex-typst-section">
+              <div class="ex-typst-sec-header">
+                <span class="ex-typst-sec-num">01</span>
+                <span class="ex-typst-sec-title">排版版式</span>
+              </div>
+              <div class="ex-segmented-control" role="tablist">
+                <button type="button" class="ex-segmented-btn active" data-template="handout" role="tab" aria-selected="true">学术讲义练习本</button>
+                <button type="button" class="ex-segmented-btn" data-template="exam" role="tab" aria-selected="false">课程自测试卷</button>
+              </div>
+              <div class="ex-template-hint" id="ex-template-hint">大学数学教材体例 · 经典双线页眉 · 纯正学术出版排版</div>
+            </div>
+
+            <!-- 2. 卷头与元数据控制 (精准去商业化，自由节省打印空间) -->
+            <div class="ex-typst-section">
+              <div class="ex-typst-sec-header">
+                <span class="ex-typst-sec-num">02</span>
+                <span class="ex-typst-sec-title">卷头与元数据</span>
+              </div>
+              <!-- 卷头模式单选 -->
+              <div class="ex-typst-radio-group">
+                <label class="ex-typst-radio-item">
+                  <input type="radio" name="ex-latex-header-mode" value="standard" checked />
+                  <span class="ex-radio-mark"></span>
+                  <span class="ex-radio-text">
+                    <strong>标准学术卷头</strong>
+                    <small>包含主标题、副标题、CC 协议注记与日期</small>
+                  </span>
+                </label>
+                <label class="ex-typst-radio-item">
+                  <input type="radio" name="ex-latex-header-mode" value="compact" />
+                  <span class="ex-radio-mark"></span>
+                  <span class="ex-radio-text">
+                    <strong>紧凑单行卷头</strong>
+                    <small>居中紧凑小标题与细线，节省约 80% 卷头空间</small>
+                  </span>
+                </label>
+                <label class="ex-typst-radio-item">
+                  <input type="radio" name="ex-latex-header-mode" value="none" />
+                  <span class="ex-radio-mark"></span>
+                  <span class="ex-radio-text">
+                    <strong>无卷头纯题面</strong>
+                    <small>首题直接顶格排版，黑白打印最大化节约纸张</small>
+                  </span>
+                </label>
+              </div>
+
+              <!-- 卷头元数据细节开关与编辑 -->
+              <div class="ex-header-meta-details" id="ex-header-meta-details">
+                <div class="ex-control-group">
+                  <label for="ex-latex-title-input">文档主标题</label>
+                  <input type="text" id="ex-latex-title-input" class="ex-input" placeholder="例如：工科数学分析 · 第 1 章 极限与连续" />
+                </div>
+
+                <div class="ex-control-group" id="ex-header-subtitle-group">
+                  <div class="ex-meta-toggle-row">
+                    <label class="ex-checkbox-label">
+                      <input type="checkbox" id="ex-latex-show-subtitle-check" checked /> 包含副标题 / 考试说明
+                    </label>
+                  </div>
+                  <input type="text" id="ex-latex-subtitle-input" class="ex-input" placeholder="例如：名校期中与期末真题精选习题册" />
+                </div>
+
+                <div class="ex-meta-options-row">
+                  <label class="ex-checkbox-label" title="在卷头标注遵循知识共享 CC BY-NC-SA 4.0 许可协议">
+                    <input type="checkbox" id="ex-latex-show-license-check" checked /> 标注 CC BY-NC-SA 4.0 协议
+                  </label>
+                  <label class="ex-checkbox-label">
+                    <input type="checkbox" id="ex-latex-show-date-check" checked /> 包含生成日期
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. 页面规格与学术字体 -->
+            <div class="ex-typst-section">
+              <div class="ex-typst-sec-header">
+                <span class="ex-typst-sec-num">03</span>
+                <span class="ex-typst-sec-title">页面与字体</span>
+              </div>
+              <div class="ex-typst-controls-grid">
+                <div class="ex-control-group">
+                  <label for="ex-latex-paper-size">纸张尺寸</label>
+                  <select id="ex-latex-paper-size" class="ex-select">
+                    <option value="a4" selected>A4 (210 × 297 mm · 标准印刷)</option>
+                    <option value="b5">B5 (176 × 250 mm · 教材尺寸)</option>
+                  </select>
+                </div>
+
+                <div class="ex-control-group">
+                  <label for="ex-latex-font-family">正文字体</label>
+                  <select id="ex-latex-font-family" class="ex-select">
+                    <option value="serif" selected>学术衬线 (思源宋体 / FandolSong)</option>
+                    <option value="sans">现代无衬线 (思源黑体 / FandolHei)</option>
+                  </select>
+                </div>
+
+                <div class="ex-control-group full-width">
+                  <label for="ex-latex-math-font">数学公式字体</label>
+                  <select id="ex-latex-math-font" class="ex-select">
+                    <option value="typst" selected>现代学术 (New Computer Modern Math)</option>
+                    <option value="modern">经典 LaTeX (Latin Modern Math)</option>
+                    <option value="pagella">TeX Gyre Pagella (典雅帕拉蒂诺风格)</option>
+                    <option value="times">TeX Gyre Termes (Times 泰晤士体)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. 作答书写留白空间 -->
+            <div class="ex-typst-section">
+              <div class="ex-typst-sec-header">
+                <span class="ex-typst-sec-num">04</span>
+                <span class="ex-typst-sec-title">作答书写留白</span>
+              </div>
+              <div class="ex-typst-radio-group">
+                <label class="ex-typst-radio-item">
+                  <input type="radio" name="ex-latex-writing-space" value="comfortable" checked />
+                  <span class="ex-radio-mark"></span>
+                  <span class="ex-radio-text">
+                    <strong>充裕留白</strong>
+                    <small>手写演算 · 题间自适应 3~8cm 空行</small>
+                  </span>
+                </label>
+                <label class="ex-typst-radio-item">
+                  <input type="radio" name="ex-latex-writing-space" value="compact" />
+                  <span class="ex-radio-mark"></span>
+                  <span class="ex-radio-text">
+                    <strong>紧凑排版</strong>
+                    <small>节省纸张 · 紧凑题间行距</small>
+                  </span>
+                </label>
+                <label class="ex-typst-radio-item">
+                  <input type="radio" name="ex-latex-writing-space" value="none" />
+                  <span class="ex-radio-mark"></span>
+                  <span class="ex-radio-text">
+                    <strong>无留白</strong>
+                    <small>纯题面密集排版</small>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 5. 参考答案与题解附录 -->
+            <div class="ex-typst-section">
+              <div class="ex-typst-sec-header">
+                <span class="ex-typst-sec-num">05</span>
+                <span class="ex-typst-sec-title">参考答案附录</span>
+              </div>
+              <div class="ex-typst-radio-group">
+                <label class="ex-typst-radio-item">
+                  <input type="radio" name="ex-latex-answer-mode" value="appendix" checked />
+                  <span class="ex-radio-mark"></span>
+                  <span class="ex-radio-text">
+                    <strong>独立文末附录</strong>
+                    <small>另起新页附录全部详尽解答</small>
+                  </span>
+                </label>
+                <label class="ex-typst-radio-item">
+                  <input type="radio" name="ex-latex-answer-mode" value="inline" />
+                  <span class="ex-radio-mark"></span>
+                  <span class="ex-radio-text">
+                    <strong>随题附解</strong>
+                    <small>题干下方紧跟答案与解析（讲义模式）</small>
+                  </span>
+                </label>
+                <label class="ex-typst-radio-item">
+                  <input type="radio" name="ex-latex-answer-mode" value="none" />
+                  <span class="ex-radio-mark"></span>
+                  <span class="ex-radio-text">
+                    <strong>不输出答案</strong>
+                    <small>纯题目集 · 模拟测验与小测</small>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 6. 高级排版选项 (默认收拢，保持界面干净) -->
+            <details class="ex-advanced-details" id="ex-advanced-details">
+              <summary class="ex-advanced-summary">
+                <span class="ex-advanced-title">高级排版设置</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ex-advanced-arrow">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </summary>
+              <div class="ex-advanced-content">
+                <div class="ex-typst-controls-grid">
+                  <div class="ex-control-group">
+                    <label for="ex-latex-font-size">正文字号</label>
+                    <select id="ex-latex-font-size" class="ex-select">
+                      <option value="10">10 pt (紧凑排版)</option>
+                      <option value="11" selected>11 pt (标准五号 · 推荐)</option>
+                      <option value="12">12 pt (易读大字号)</option>
+                    </select>
+                  </div>
+                  <div class="ex-control-group">
+                    <label for="ex-latex-page-numbering">页码展示格式</label>
+                    <select id="ex-latex-page-numbering" class="ex-select">
+                      <option value="simple" selected>纯净页码 (第 1 页)</option>
+                      <option value="total">总页数比 (第 1 页 / 共 12 页)</option>
+                      <option value="none">无页码 (用于单张自测试卷)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </details>
+          </div>
+
+          <!-- 右侧：源码与排版概览副视图 (不与 PDF 预览挤在同一阶段) -->
+          <div class="ex-typst-preview-pane">
+            <div class="ex-pipeline-header">
+              <div class="ex-typst-preview-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="16 18 22 12 16 6" />
+                  <polyline points="8 6 2 12 8 18" />
+                </svg>
+                <span>LaTeX 源码预览</span>
+              </div>
+              <div class="ex-typst-stats">
+                <span class="ex-stat-pill" id="ex-latex-stat-qcount">题目：0 题</span>
+                <span class="ex-stat-pill" id="ex-latex-stat-lines">代码：0 行</span>
+              </div>
+            </div>
+
+            <div class="ex-cloud-source-panel">
+              <div class="ex-typst-editor-wrapper">
+                <textarea id="ex-latex-code-textarea" class="ex-code-editor ex-typst-code-view" readonly spellcheck="false" autocomplete="off"></textarea>
+              </div>
+              <div class="ex-typst-compile-tip">
+                <div class="ex-compile-tip-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                  </svg>
+                </div>
+                <div class="ex-compile-tip-text">
+                  <strong>CTAN 标准 homework 宏包规范：</strong>
+                  <span>源码支持在终端通过 <code>xelatex</code> 本地一键编译，亦可直接导入 Overleaf 在线编译。</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 配置阶段底部操作栏 -->
+        <div class="ex-submodal-footer ex-typst-footer">
+          <div class="ex-typst-footer-left">
+            <span class="ex-typst-filename-badge" id="ex-latex-filename-badge">output.tex</span>
+            <span class="ex-pipeline-engine-badge">XeLaTeX 2024</span>
+          </div>
+          <div class="ex-typst-footer-right">
+            <!-- 二级下拉菜单：更多导出方式 -->
+            <div class="ex-dropdown-wrapper" id="ex-more-export-wrapper">
+              <button type="button" class="ex-btn ex-btn-secondary" id="ex-more-export-btn" aria-haspopup="true" aria-expanded="false" title="更多导出选项">
+                <span>其他导出</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ex-dropdown-arrow">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              <div class="ex-dropdown-menu hidden" id="ex-more-export-menu">
+                <button type="button" class="ex-dropdown-item" id="ex-latex-overleaf-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" /></svg>
+                  <span>在 Overleaf 中排版</span>
+                </button>
+                <button type="button" class="ex-dropdown-item" id="ex-latex-copy-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                  <span>复制 LaTeX 源码</span>
+                </button>
+                <button type="button" class="ex-dropdown-item" id="ex-latex-download-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                  <span>下载 .tex 源码</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 主 CTA: 开始编译生成 PDF -->
+            <button type="button" class="ex-btn ex-btn-primary" id="ex-latex-start-compile-btn" title="发起云端编译排版并预览 PDF">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="12" y1="18" x2="12" y2="12" />
+                <line x1="9" y1="15" x2="12" y2="18" />
+                <line x1="15" y1="15" x2="12" y2="18" />
+              </svg>
+              <span>开始生成 PDF →</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- 阶段 2：编译交付与 PDF 结果预览视图 (Compilation & Delivery View)  -->
+      <!-- ================================================================= -->
+      <div id="ex-latex-result-view" class="ex-latex-view-container hidden">
+        <!-- 交付顶栏导航 -->
+        <div class="ex-result-header">
+          <button type="button" class="ex-btn ex-btn-secondary ex-btn-sm" id="ex-latex-back-config-btn" title="返回修改排版参数">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            <span>返回修改配置</span>
+          </button>
+          <div class="ex-result-status-wrap">
+            <span class="ex-status-pill idle" id="ex-pipeline-status-pill">就绪</span>
+            <span class="ex-status-desc" id="ex-pipeline-status-desc">准备编译</span>
+            <span class="ex-timer-badge hidden" id="ex-pipeline-timer">00:00</span>
+            <span class="ex-job-badge hidden" id="ex-pipeline-job-id">job-id</span>
+          </div>
+        </div>
+
+        <!-- 交付主视窗 (PDF 预览为绝对主内容) -->
+        <div class="ex-result-body">
+          <div class="ex-pipeline-viewer" id="ex-pipeline-viewer">
+            <!-- 编译等待动效卡片 -->
+            <div class="ex-pipeline-loading hidden" id="ex-pipeline-loading-card">
+              <div class="ex-pipeline-spinner"></div>
+              <div class="ex-pipeline-loading-title" id="ex-loading-title">正在排版生成 PDF...</div>
+              <div class="ex-pipeline-loading-sub" id="ex-loading-sub">GitHub Actions 正在载入 TeX Live 2024 环境并编译宏包</div>
+              <div class="ex-pipeline-progress-track">
+                <div class="ex-pipeline-progress-bar" id="ex-pipeline-progress-bar"></div>
+              </div>
+            </div>
+
+            <!-- 耗时较长挂起卡片 -->
+            <div class="ex-pipeline-timeout hidden" id="ex-pipeline-timeout-card">
+              <div class="ex-pipeline-timeout-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <div class="ex-pipeline-timeout-title">云端编译仍在进行中</div>
+              <div class="ex-pipeline-timeout-desc" id="ex-pipeline-timeout-desc">
+                GitHub Actions 节点正在排队或编译。任务在云端持续执行中，您可以继续等待或直接检查结果。
+              </div>
+              <div class="ex-pipeline-timeout-actions">
+                <button type="button" class="ex-btn ex-btn-primary" id="ex-continue-wait-btn">继续等待编译 (2分钟)</button>
+                <button type="button" class="ex-btn ex-btn-secondary" id="ex-check-result-now-btn">检查编译结果</button>
+              </div>
+            </div>
+
+            <!-- 编译成功：高清全屏 PDF 预览视窗 -->
+            <div class="ex-pipeline-preview-frame hidden" id="ex-pipeline-preview-frame">
+              <iframe id="ex-latex-pdf-iframe" class="ex-pdf-iframe" title="PDF 打印预览" loading="lazy"></iframe>
+            </div>
+          </div>
+
+          <!-- 折叠诊断日志 (排查编译问题时可展开查看) -->
+          <details class="ex-pipeline-log-drawer" id="ex-pipeline-log-drawer">
+            <summary class="ex-log-summary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="4 17 10 11 4 5" />
+                <line x1="12" y1="19" x2="20" y2="19" />
+              </svg>
+              <span>查看 XeLaTeX 编译诊断日志</span>
+            </summary>
+            <pre class="ex-log-terminal" id="ex-latex-log-pre">等待编译启动...</pre>
+          </details>
+        </div>
+
+        <!-- 交付阶段底部操作栏 -->
+        <div class="ex-submodal-footer ex-typst-footer">
+          <div class="ex-typst-footer-left">
+            <span class="ex-typst-filename-badge" id="ex-latex-pdf-filename-badge">output.pdf</span>
+            <span class="ex-pipeline-engine-badge">XeLaTeX 2024</span>
+          </div>
+          <div class="ex-typst-footer-right">
+            <!-- 编译中取消 -->
+            <button type="button" class="ex-btn ex-btn-secondary hidden" id="ex-latex-cancel-compile-btn" title="取消当前排版">
+              <span>取消编译</span>
+            </button>
+
+            <!-- 编译就绪次级打印 -->
+            <button type="button" class="ex-btn ex-btn-secondary hidden" id="ex-latex-print-btn" title="调起系统打印面板">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 6 2 18 2 18 9" />
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                <rect x="6" y="14" width="12" height="8" />
+              </svg>
+              <span>调起打印</span>
+            </button>
+
+            <!-- 编译就绪主 CTA: 下载 PDF -->
+            <button type="button" class="ex-btn ex-btn-primary" id="ex-latex-download-pdf-btn" title="下载高清矢量 PDF 文件">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              <span id="ex-latex-download-pdf-text">下载 PDF</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 编译池与凭证配置独立二级弹窗 (修复 z-index 与不透明背景) -->
+  <div id="ex-latex-settings-modal" class="ex-submodal-overlay hidden" role="dialog" aria-modal="true" aria-label="GitHub Actions 编译池配置">
+    <div class="ex-submodal-box ex-settings-dialog-box">
+      <div class="ex-submodal-header">
+        <div class="ex-submodal-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+          <span>GitHub Actions 编译池凭证设置</span>
+        </div>
+        <button type="button" class="ex-submodal-close" id="ex-close-settings-modal-btn" aria-label="关闭">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="ex-settings-dialog-body">
+        <div class="ex-settings-field">
+          <label for="ex-gh-token-input">
+            <span>GitHub Personal Access Token (PAT)</span>
+            <a href="https://github.com/settings/tokens/new?scopes=repo,workflow" target="_blank" rel="noopener noreferrer" class="ex-link-tip">获取 Token ↗</a>
+          </label>
+          <input type="password" id="ex-gh-token-input" class="ex-input" placeholder="ghp_xxxxxxxxxxxx (需具备 actions:write 权限)" autocomplete="off" />
+          <span class="ex-field-hint">私密凭证，仅保存在当前浏览器的 LocalStorage，绝不经过本站后端服务器</span>
+        </div>
+        <div class="ex-settings-field">
+          <label for="ex-gh-repo-input">编译调度仓库 (Owner / Repo)</label>
+          <input type="text" id="ex-gh-repo-input" class="ex-input" placeholder="Ariesagittarius/AstroLib" value="Ariesagittarius/AstroLib" />
+          <span class="ex-field-hint">公开仓库标准 Runner 完全免费，不计分钟额度</span>
+        </div>
+        <div class="ex-settings-note">
+          提示：配置具备 actions:write 权限的 PAT 后，即可通过 GitHub Actions 并发算力池直接排版出矢量 PDF。
+        </div>
+      </div>
+      <div class="ex-submodal-footer ex-settings-dialog-footer">
+        <button type="button" class="ex-btn ex-btn-secondary" id="ex-cancel-settings-btn">取消</button>
+        <button type="button" class="ex-btn ex-btn-primary" id="ex-gh-save-config-btn">保存并应用</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全局 Toast 提示容器 -->
+  <div id="ex-toast-box" class="ex-toast-box" aria-live="polite"></div>
+</div>
+
+<script>
+  import './exercise-controller';
+</script>

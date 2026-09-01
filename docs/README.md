@@ -16,6 +16,7 @@
 | [精修工具交接.md](./精修工具交接.md) | **在线可视化 MDX 精修工具**：dev 模式下源码位置注入（AST 标记）与 Vite dev server 写回端点设计。 | `src/utils/mdx-editor/dev-server-plugin.mjs`<br>`src/utils/editor.ts`<br>`src/components/EditorMode.astro` |
 | [模块查重与巡检工具.md](./模块查重与巡检工具.md) | **书籍模块巡检与查重工具**：dev 模式下快速查看与搜索全书模块、同章/全书查重、异常拆分标记与一键精准定位跳转。 | `src/utils/module-inspector/`<br>`src/components/ModuleInspector.astro` |
 | [公式末尾编号-tag-重叠问题修复记录.md](./公式末尾编号-tag-重叠问题修复记录.md) | **KaTeX 编号与排版排错**：独立行公式 `\tag{...}` 在移动端和窄屏下与公式内容重叠的 CSS 定位修复。 | `src/styles/custom.css` |
+| [大邮数学集题库结构化与分章习题交接文档.md](./大邮数学集题库结构化与分章习题交接文档.md) | **全量真题题库抽取与分章习题建设**：173套试卷/2765道题结构化抽取、Unicode规范化、KaTeX公式平衡与工科数分分章自测页集成。 | `scripts/lib/math_archive/`<br>`src/data/exercises/`<br>`src/components/ChapterQuiz.astro` |
 
 ---
 

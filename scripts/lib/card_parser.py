@@ -7,7 +7,17 @@ class CardParser:
 
     EX_RE = re.compile(r'^(?:#{0,6}\s*)?(?:例|例题)\s*(\d+(?:\.\d+)*)\s*(.*)$')
     KN_RE = re.compile(r'^(?:#{0,6}\s*)?(定理|定义|性质|推论|引理|命题|公理)\s*(\d+(?:\.\d+)*)\s*(.*)$')
-    NOTE_RE = re.compile(r'^(?:#{0,6}\s*)?(注意(?![到])|警告|注|想一想)\s*[:：，,]?\s*(.*)$')
+    NOTE_RE = re.compile(
+        r'^(?:'
+        r'(?:#{1,6}\s*|[*_]{2}|【|\[)(注意|警告|注|想一想|提示)'
+        r'(?:\s*(?:\d+(?:\.\d+)*|[（(]\s*\d+\s*[）)]|[一二三四五六七八九十]+|[①②③④⑤⑥⑦⑧⑨⑩]))?'
+        r'(?:[*_]{2}|】|\])?(?:\s*[:：\.\s]\s*(.*)|$)'
+        r'|'
+        r'(注意|警告|注|想一想|提示)'
+        r'(?:\s*(?:\d+(?:\.\d+)*|[（(]\s*\d+\s*[）)]|[一二三四五六七八九十]+|[①②③④⑤⑥⑦⑧⑨⑩]))?'
+        r'(?:\s*[:：\.]\s*(.*)|\s+(?!\s*[,，到])(.*))'
+        r')$'
+    )
     SOL_RE = re.compile(
         r'^(?:#{0,6}\s*)?(?:\*|\\?\*)?(证明|证|解|证法[一二三四五六七八九十\d]+|解法[一二三四五六七八九十\d]+)'
         r'(?:[:：\s]+(.*)|(?=[（(]\s*[\d一二三四五六七八九十]+\s*[）)])(.*)|$)'
@@ -69,12 +79,12 @@ class CardParser:
         def flush():
             nonlocal cur
             flush_sol()
-            if cur:
+            if cur is not None:
                 if cur[0] == 'card':
                     strip_trailing_empty(cur[3])
-                elif cur[0] in ('note', 'para'):
+                elif cur[0] == 'para':
                     strip_trailing_empty(cur[1])
-                elif cur[0] in ('solution', 'block'):
+                elif cur[0] in ('solution', 'block', 'note'):
                     strip_trailing_empty(cur[2])
                 tokens.append(cur)
                 cur = None
@@ -94,9 +104,9 @@ class CardParser:
                             cur_sol[1].append('')
                         else:
                             cur[3].append('')
-                    elif cur[0] in ('note', 'para'):
+                    elif cur[0] == 'para':
                         cur[1].append('')
-                    elif cur[0] in ('solution', 'block'):
+                    elif cur[0] in ('solution', 'block', 'note'):
                         cur[2].append('')
                 continue
 
@@ -113,9 +123,9 @@ class CardParser:
                 elif cur[0] == 'card':
                     target = cur_sol[1] if cur_sol else cur[3]
                     add_line(target, raw)
-                elif cur[0] in ('note', 'para'):
+                elif cur[0] == 'para':
                     add_line(cur[1], raw)
-                elif cur[0] in ('solution', 'block'):
+                elif cur[0] in ('solution', 'block', 'note'):
                     add_line(cur[2], raw)
                 prev_line_empty = False
                 continue
@@ -183,9 +193,14 @@ class CardParser:
             # 注意 / 警告 / 注 / 想一想
             m = self.NOTE_RE.match(s)
             if m:
+                raw_keyword = (m.group(1) or m.group(3) or '注意').strip()
+                first_line = (m.group(2) or m.group(4) or m.group(5) or '').strip()
+                matched_header = s[:len(s) - len(first_line)].strip().rstrip(':：.、')
+                clean_title = re.sub(r'^[#*_\s【\[]+|[#*_\s】\]]+$', '', matched_header).strip()
+                if not clean_title:
+                    clean_title = raw_keyword
                 flush()
-                first_line = m.group(2).strip() if m.group(2) else ''
-                cur = ('note', [first_line] if first_line else [])
+                cur = ('note', clean_title, [first_line] if first_line else [])
                 prev_line_empty = False
                 continue
 
@@ -219,9 +234,9 @@ class CardParser:
                     elif cur[0] == 'card':
                         target = cur_sol[1] if cur_sol else cur[3]
                         add_line(target, raw)
-                    elif cur[0] in ('note', 'para'):
+                    elif cur[0] == 'para':
                         add_line(cur[1], raw)
-                    elif cur[0] in ('solution', 'block'):
+                    elif cur[0] in ('solution', 'block', 'note'):
                         add_line(cur[2], raw)
                     prev_line_empty = False
                     continue
@@ -247,9 +262,9 @@ class CardParser:
                     add_line(cur_sol[1], raw)
                 else:
                     add_line(cur[3], raw)
-            elif cur[0] in ('note', 'para'):
+            elif cur[0] == 'para':
                 add_line(cur[1], raw)
-            elif cur[0] in ('solution', 'block'):
+            elif cur[0] in ('solution', 'block', 'note'):
                 add_line(cur[2], raw)
 
             prev_line_empty = False
@@ -271,9 +286,10 @@ class CardParser:
                 esc_title = MdxSanitizer.fn_mark_to_sup(self.sanitizer.sanitize_line(txt))
                 out.append(f"{prefix} {esc_title}")
             elif kind == 'note':
-                body = self.sanitizer.sanitize_body(tok[1]).strip()
+                title = tok[1] or '注意'
+                body = self.sanitizer.sanitize_body(tok[2]).strip()
                 if body:
-                    out.append(f"<Note>\n{body}\n</Note>")
+                    out.append(f'<Note title="{title}">\n{body}\n</Note>')
             elif kind == 'solution':
                 body = self.sanitizer.sanitize_body(tok[2]).strip()
                 if body:

@@ -125,7 +125,15 @@ export function fixContent(content) {
   const newLines = [];
   let inBlock = false;
 
-  for (let line of lines) {
+  // 预处理：将独立成行的单 $ 修正为标准块级公式定界符 $$
+  const preprocessedLines = lines.map(line => {
+    if (line.trim() === '$') {
+      return line.replace('$', () => '$$');
+    }
+    return line;
+  });
+
+  for (let line of preprocessedLines) {
     const trimmed = line.trim();
     if (trimmed.startsWith('$$')) {
       inBlock = !inBlock;

@@ -157,10 +157,10 @@ if (features.epub.enabled && bookMatch) {
   if (!window.__spaNavInstalled) {
     window.__spaNavInstalled = true;
 
-    // 不可变页面缓存：保存预解析清洗的母版 DOM 节点，导航时通过 cloneNode(true) 取用，支持无限次极速重入
-    const pageCache = new Map(); // key -> { title: string, mainPane: HTMLElement, rightSidebar: HTMLElement | null, sidebar: HTMLElement | null }
+    // 不可变页面缓存：保存预解析清洗的母版 DOM 节点，导航时通过 cloneNode(true) 取用，采用精简 LRU 淘汰策略
+    const pageCache = new Map(); // key -> { title: string, mainPane: HTMLElement | null, rightSidebar: HTMLElement | null, sidebar: HTMLElement | null }
     const inFlightRequests = new Map(); // key -> Promise<{ ... }>
-    const CACHE_MAX = 60; // 覆盖单本大部头教材全部章节缓存上限
+    const CACHE_MAX = 10; // 精简 LRU 缓存上限（10页足以保障前进后退与临近秒开，大幅降低内存）
     let navToken = 0;
 
     function normPath(p) {
@@ -242,7 +242,7 @@ if (features.epub.enabled && bookMatch) {
       root.querySelectorAll('script').forEach((s) => s.remove());
     }
 
-    // 解析与清洗 HTML，构建不可变母版缓存项
+    // 解析与清洗 HTML，构建不可变母版缓存项（严格维护 LRU 顺序与内存回收）
     function parseAndCache(key, htmlText) {
       const doc = new DOMParser().parseFromString(htmlText, 'text/html');
       const mainPane = doc.querySelector('.main-pane');
@@ -264,8 +264,6 @@ if (features.epub.enabled && bookMatch) {
       }
 
       // 离屏预处理：在缓存前对离屏 DOM 执行所有会引起 layout shift 的同步突变
-      // （选择题格式化 / 徽章箭头占位 / 公式 host 预包裹），
-      // 确保 cloneNode 取得的副本上屏后无二次突变、零抖动
       preprocessPage(mainPane);
 
       const record = {
@@ -275,9 +273,21 @@ if (features.epub.enabled && bookMatch) {
         sidebar
       };
 
+      if (pageCache.has(key)) {
+        pageCache.delete(key);
+      }
       pageCache.set(key, record);
-      if (pageCache.size > CACHE_MAX) {
-        pageCache.delete(pageCache.keys().next().value);
+
+      // LRU 淘汰：清理最旧的缓存节点，解除 DOM 引用释放内存
+      while (pageCache.size > CACHE_MAX) {
+        const oldestKey = pageCache.keys().next().value;
+        const oldRecord = pageCache.get(oldestKey);
+        if (oldRecord) {
+          oldRecord.mainPane = null;
+          oldRecord.rightSidebar = null;
+          oldRecord.sidebar = null;
+        }
+        pageCache.delete(oldestKey);
       }
       return record;
     }
@@ -386,6 +396,7 @@ if (features.epub.enabled && bookMatch) {
       const sample = text.length > 2500 ? text.slice(0, 2500) : text;
       const hashKey = sample.slice(0, 100);
       if (warmedFontsCache.has(hashKey)) return;
+      if (warmedFontsCache.size > 50) warmedFontsCache.clear();
       warmedFontsCache.add(hashKey);
 
       const fontCjk = document.documentElement.dataset.fontCjk || 'sans';
@@ -453,7 +464,9 @@ if (features.epub.enabled && bookMatch) {
           const targetId = decodeURIComponent(url.hash.slice(1));
           const el = document.getElementById(targetId) || document.querySelector(`[data-src-line="${targetId.replace(/^L/, '')}"]`);
           if (el) {
-            el.scrollIntoView({ block: 'start' });
+            el.scrollIntoView({ block: 'center' });
+            el.classList.add('card-ref-flash');
+            setTimeout(() => el.classList.remove('card-ref-flash'), 700);
           } else {
             window.scrollTo(0, 0);
           }
@@ -499,7 +512,9 @@ if (features.epub.enabled && bookMatch) {
           const targetId = decodeURIComponent(url.hash.slice(1));
           const el = document.getElementById(targetId) || document.querySelector(`[data-src-line="${targetId.replace(/^L/, '')}"]`);
           if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('card-ref-flash');
+            setTimeout(() => el.classList.remove('card-ref-flash'), 700);
           }
         }
         if (replace) {
@@ -522,15 +537,33 @@ if (features.epub.enabled && bookMatch) {
       return loadPage(url);
     };
 
-    // 全书章节空闲期智能预热引擎（Idle Pre-warming Queue）
+    // 智能预热引擎（Configurable Pre-warming Queue）
     let prewarmQueue = [];
     let isPrewarmingActive = false;
 
     function triggerIdlePrewarming() {
+      const isDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname.endsWith('.localhost');
+      // 1. 读取用户预加载偏好设置（1: 前后1页 [默认] | -1: 全书拉取 | 0: 关闭 | 1..N: 前后 N 页）
+      // 在本地 Dev 模式下默认不自动全量扫全书，避免每次刷新触发 Vite 全量 SSR 编译
+      let prewarmPages = isDev ? 0 : 1;
+      try {
+        const saved = localStorage.getItem('astrolib_prewarm_pages');
+        if (saved !== null && saved !== undefined && saved !== '') {
+          const parsed = parseInt(saved, 10);
+          if (!isNaN(parsed)) prewarmPages = parsed;
+        }
+      } catch {}
+
+      // 若用户设置为 0 则完全关闭后台空闲预热（鼠标悬停即时预取依然生效）
+      if (prewarmPages === 0) {
+        prewarmQueue = [];
+        return;
+      }
+
       const sidebar = document.querySelector('nav.sidebar, .sidebar');
       if (!sidebar) return;
 
-      const links = Array.from(sidebar.querySelectorAll('a[href]'))
+      const rawLinks = Array.from(sidebar.querySelectorAll('a[href]'))
         .filter((a) => isNavLink(a))
         .map((a) => {
           try {
@@ -539,10 +572,34 @@ if (features.epub.enabled && bookMatch) {
             return null;
           }
         })
-        .filter((u) => u && normPath(u.pathname) !== normPath(location.pathname));
+        .filter(Boolean);
+
+      const currentPath = normPath(location.pathname);
+      let targetLinks = [];
+
+      if (prewarmPages === -1) {
+        // -1: 全书全量拉取
+        targetLinks = rawLinks.filter((u) => normPath(u.pathname) !== currentPath);
+      } else {
+        // > 0: 按前后指定页数切片（滑动窗口）
+        const curIdx = rawLinks.findIndex((u) => normPath(u.pathname) === currentPath);
+        if (curIdx !== -1) {
+          const start = Math.max(0, curIdx - prewarmPages);
+          const end = Math.min(rawLinks.length, curIdx + prewarmPages + 1);
+          targetLinks = rawLinks.slice(start, end).filter((u) => normPath(u.pathname) !== currentPath);
+        } else {
+          // 若不在侧边栏中（如首页），尝试使用 pagination-links 或取前 N 个
+          const paginationLinks = Array.from(document.querySelectorAll('.pagination-links a[href]'))
+            .map((a) => {
+              try { return new URL(a.getAttribute('href'), location.href); } catch { return null; }
+            })
+            .filter((u) => u && normPath(u.pathname) !== currentPath);
+          targetLinks = paginationLinks.length > 0 ? paginationLinks : rawLinks.slice(0, prewarmPages * 2);
+        }
+      }
 
       // 提取尚未缓存且未在请求中的链接
-      prewarmQueue = links.filter((u) => !pageCache.has(normPath(u.pathname)) && !inFlightRequests.has(normPath(u.pathname)));
+      prewarmQueue = targetLinks.filter((u) => !pageCache.has(normPath(u.pathname)) && !inFlightRequests.has(normPath(u.pathname)));
       if (prewarmQueue.length === 0) return;
 
       if (!isPrewarmingActive) {
@@ -624,6 +681,7 @@ if (features.epub.enabled && bookMatch) {
       const url = new URL(a.getAttribute('href'), location.href);
       const key = normPath(url.pathname);
       if (key === normPath(location.pathname) || prefetchMap.has(key)) return;
+      if (prefetchMap.size > 40) prefetchMap.clear();
       prefetchMap.add(key);
       fetchPage(url).catch(() => {});
     }, { passive: true });
@@ -661,6 +719,11 @@ if (features.epub.enabled && bookMatch) {
       loadPage(new URL(location.href), { restoreScroll: true }).catch(() => {
         location.reload();
       });
+    });
+
+    // 监听用户在偏好设置中实时调整预加载配置
+    window.addEventListener('prewarm:config-change', () => {
+      triggerIdlePrewarming();
     });
 
     // 初始页面就绪后，排队启动全书空闲智能预热

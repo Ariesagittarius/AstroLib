@@ -24,7 +24,7 @@
 
 import { compile } from '@mdx-js/mdx';
 import remarkMath from 'remark-math';
-import { parseFile, lineOffsets, linesText, detectEol } from './parse.mjs';
+import { parseFile, lineOffsets, linesText, detectEol, FM_RE } from './parse.mjs';
 import { locateBlock, isCardKind } from './locate-block.mjs';
 
 /** 卡片 kind → 组件名（wrap 生成 JSX 时用） */
@@ -40,6 +40,7 @@ const COMPONENT_BY_KIND = {
   exercise: 'Exercise',
   summary: 'Summary',
   analysis: 'Analysis',
+  qrcodevideo: 'QRCodeVideo',
 };
 
 /** MDX JSX 属性值转义：花括号会触发表达式解析，引号需转义 */
@@ -237,7 +238,7 @@ async function opUnwrap(content, payload) {
   if (inner == null) return err('卡片源码结构无法解析');
   if (!inner.trim()) return err('卡片内容为空，无法转为正文');
 
-  // 卡片标题 → 正文 h2 标题
+  // 提取卡片标题
   let title = '';
   for (const a of cardLoc?.node?.attributes || []) {
     if (a.type === 'mdxJsxAttribute' && a.name === 'title' && typeof a.value === 'string') {
@@ -246,7 +247,22 @@ async function opUnwrap(content, payload) {
     }
   }
   title = unescapeAttr(title).trim();
-  const newText = title ? `## ${title}\n\n${inner}` : inner;
+
+  let newText;
+  const isNoteKind = cardLoc.kind === 'note' || comp.toLowerCase() === 'note';
+  const isGenericTitle = !title || ['标注说明', '注意', '注', '说明', '提示', '想一想', '警告'].includes(title);
+
+  if (isNoteKind || isGenericTitle) {
+    // 标注说明 / 注意 / 注 等不作为二级标题转出，而是转为普通正文段落
+    if (title && title !== '标注说明' && !inner.startsWith(title)) {
+      newText = `**${title}**：${inner}`;
+    } else {
+      newText = inner;
+    }
+  } else {
+    newText = title ? `## ${title}\n\n${inner}` : inner;
+  }
+
   return opReplaceBlock(content, { line: cardLoc.startLine, newText });
 }
 
@@ -567,7 +583,80 @@ async function opInsertRangeIntoCard(content, payload) {
     if (lines[idx] === '' && lines[idx - 1] === '') lines.splice(idx, 1);
     else if (lines[idx] === '' && lines[idx + 1] === '') lines.splice(idx, 1);
   }
-  return ok(fromLines({ eol, lines }));
+  return { ok: true, content: lines.join(eol) };
+}
+
+/**
+ * 把一段文本中的非公式独立英文词块包装为行内公式 $...$
+ * 严格保护已有数学公式、代码块、行内代码、ESM import/export 语句、JSX/HTML 标签与属性、Markdown 链接与图片
+ */
+export function convertEnglishToMath(text) {
+  // 匹配所有需严格保护的结构：
+  // 1. Frontmatter: ^---\n...\n---
+  // 2. ESM import/export 语句: import ... from '...'; 或 export ...
+  // 3. 行间公式: $$...$$
+  // 4. 行内公式: $...$
+  // 5. 代码块: ```...```
+  // 6. 行内代码: `...`
+  // 7. JSX / HTML 标签与组件 (含跨行与属性): <Tag ...> 或 </Tag> 或 <Tag />
+  // 8. Markdown 图片: ![alt](url)
+  // 9. Markdown 链接: [text](url)
+  // 10. HTML 注释: <!-- ... -->
+  // 11. HTML 实体: &...;
+  const pattern = /(^---\r?\n[\s\S]*?\r?\n---|(?:^|\n)\s*(?:import|export)\s+[\s\S]*?(?:;(?=\r?\n|$)|(?=\r?\n\r?\n|$))|\$\$[\s\S]*?\$\$|\$(?:\\\$|[^\$\n])+?\$|```[\s\S]*?```|`[^`\n]+?`|<(?:\/?[a-zA-Z][a-zA-Z0-9_\-\.:]*)(?:\s+[\s\S]*?)?>|!\[[^\]]*\]\([^)]+\)|\[[^\]]+\]\([^)]+\)|<!--[\s\S]*?-->|&[a-zA-Z0-9#]+;)/g;
+
+  let lastIdx = 0;
+  const segments = [];
+  let m;
+  let count = 0;
+  while ((m = pattern.exec(text)) !== null) {
+    if (m.index > lastIdx) {
+      segments.push({ type: 'text', val: text.slice(lastIdx, m.index) });
+    }
+    segments.push({ type: 'protected', val: m[0] });
+    lastIdx = m.index + m[0].length;
+  }
+  if (lastIdx < text.length) {
+    segments.push({ type: 'text', val: text.slice(lastIdx) });
+  }
+
+  // 匹配英文字词（如 love, ya, a, b, f, x, sin 等，可含单引号如 isn't）
+  const enRegex = /([a-zA-Z]+(?:'[a-zA-Z]+)?)/g;
+
+  const result = segments
+    .map((seg) => {
+      if (seg.type === 'protected') return seg.val;
+      return seg.val.replace(enRegex, (match) => {
+        count++;
+        return `$${match}$`;
+      });
+    })
+    .join('');
+
+  return { text: result, count };
+}
+
+async function opConvertEnMath(content, payload) {
+  const { line } = payload;
+  const loc = locateBlock(content, line);
+  if (!loc) return err(`第 ${line} 行未命中任何块`);
+  const { text: newBlockText, count } = convertEnglishToMath(loc.text);
+  if (count === 0) {
+    return err('该块内未发现可转换的非公式独立英文词');
+  }
+  return opReplaceBlock(content, { line, newText: newBlockText });
+}
+
+async function opConvertAllEnMath(content, payload) {
+  const { body, offset } = parseFile(content);
+  const { text: newBody, count } = convertEnglishToMath(body);
+  if (count === 0) {
+    return err('全篇未发现可转换的非公式独立英文词');
+  }
+  const fmMatch = content.match(FM_RE);
+  const fm = fmMatch ? fmMatch[0] : '';
+  const newContent = fm + newBody;
+  return ok(newContent);
 }
 
 const OPS = {
@@ -585,6 +674,8 @@ const OPS = {
   'delete-range': opDeleteRange,
   'insert-into-card': opInsertIntoCard,
   'insert-range-into-card': opInsertRangeIntoCard,
+  'convert-en-math': opConvertEnMath,
+  'convert-all-en-math': opConvertAllEnMath,
 };
 
 const err = (message) => ({ ok: false, message });

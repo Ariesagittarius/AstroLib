@@ -29,6 +29,7 @@ const NODE_KIND = {
 export const CARD_KINDS = new Set([
   'example', 'variant', 'knowledge', 'note', 'solution',
   'block', 'method', 'guide', 'exercise', 'summary', 'analysis',
+  'qrcodevideo',
 ]);
 
 /** 是否卡片节点（mdxJsxFlowElement 一律视为卡片块） */

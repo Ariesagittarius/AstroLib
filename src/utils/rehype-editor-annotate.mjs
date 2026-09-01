@@ -32,6 +32,7 @@ const CARD_COMPONENTS = {
   Exercise: 'exercise',
   Summary: 'summary',
   Analysis: 'analysis',
+  QRCodeVideo: 'qrcodevideo',
 };
 
 /** 正文块级 HTML 标签 → 块 kind */

@@ -4,6 +4,7 @@ import { formatMultipleChoiceQuestions } from './question-formatter';
 import { setupVPLocalNav, setMobileTocOpen } from './local-nav';
 import { tameOverflowingInlineMath } from './scroll-spy';
 import { linkPageElements } from './cross-ref-client';
+import { initJumpNavigator, recordJump } from './jump-navigator';
 
 declare global {
   interface Window {
@@ -209,6 +210,15 @@ export function buildBookTOC(
       const navH = parseFloat(rootStyle.getPropertyValue('--sl-nav-height')) || 56;
       const tocH = parseFloat(rootStyle.getPropertyValue('--sl-mobile-toc-height')) || 0;
       const top = target.getBoundingClientRect().top + window.scrollY - navH - tocH - 16;
+
+      // 若页内大纲跳转垂直位移较大 (> 350px)，记录跳转来源方便读者一键原路返回
+      if (Math.abs(top - window.scrollY) > 350) {
+        recordJump({
+          sourceText: rawTitle,
+          targetUrl: `#${encodeURIComponent(id)}`,
+        });
+      }
+
       window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
       history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, '', `#${encodeURIComponent(id)}`);
     });
@@ -297,6 +307,7 @@ export function tameInlineMathWhenReady(): void {
  */
 export function initPageSidebar(): void {
   formatMultipleChoiceQuestions();
+  initJumpNavigator();
 
   const aside = document.querySelector('.custom-page-sidebar') as HTMLElement | null;
   const refsMode = aside?.getAttribute('data-refs-mode') || 'interactive';
