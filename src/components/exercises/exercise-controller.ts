@@ -169,6 +169,8 @@ function renderInlineStyle(s: string): string {
 
 export interface SlimQuestionItem {
   id: string;
+  source_type?: 'exam' | 'textbook';
+  group?: 'A' | 'B' | string;
   type: 'choice' | 'blank' | 'calc' | 'proof';
   score: number;
   sec: string;
@@ -190,6 +192,7 @@ export interface SlimQuestionItem {
   stem_html: string;
   stem_raw: string;
   options?: Array<{ key: string; text_html: string; text_raw: string }>;
+  sub_questions?: Array<{ sub_id: string; stem_raw: string; stem_html: string }>;
   answer: string;
   answer_html: string;
   hints_html?: string;
@@ -259,6 +262,8 @@ class ExerciseCenterController {
   private windowEl: HTMLElement | null = null;
   private chapterSelect: HTMLSelectElement | null = null;
   private paperSelect: HTMLSelectElement | null = null;
+  private sourcePillsContainer: HTMLElement | null = null;
+  private groupPillsContainer: HTMLElement | null = null;
   private sectionPillsContainer: HTMLElement | null = null;
   private paperOutlineContainer: HTMLElement | null = null;
   private typePillsContainer: HTMLElement | null = null;
@@ -326,8 +331,12 @@ class ExerciseCenterController {
   private checkResultNowBtn: HTMLButtonElement | null = null;
   private latexPrintBtn: HTMLButtonElement | null = null;
   private latexCancelCompileBtn: HTMLButtonElement | null = null;
-  private latexMainCtaBtn: HTMLButtonElement | null = null;
-  private latexMainCtaText: HTMLElement | null = null;
+  private latexConfigView: HTMLElement | null = null;
+  private latexResultView: HTMLElement | null = null;
+  private latexStartCompileBtn: HTMLButtonElement | null = null;
+  private latexBackConfigBtn: HTMLButtonElement | null = null;
+  private latexDownloadPdfBtn: HTMLButtonElement | null = null;
+  private latexDownloadPdfText: HTMLElement | null = null;
 
   private currentCompiledPdfUrl: string | null = null;
   private currentCompileJobId: string | null = null;
@@ -350,6 +359,8 @@ class ExerciseCenterController {
   private currentMode: 'practice' | 'paper' | 'search' = 'practice';
   private currentChapter = 1;
   private currentPaperId = 1;
+  private currentSource: 'all' | 'textbook' | 'exam' = 'all';
+  private currentGroup: 'all' | 'A' | 'B' = 'all';
   private currentSection = 'all';
   private currentPaperSection = 'all';
   private currentType = 'all';
@@ -393,6 +404,8 @@ class ExerciseCenterController {
       this.windowEl = this.root.querySelector('.ex-modal-window');
       this.chapterSelect = this.root.querySelector('.ex-chapter-select');
       this.paperSelect = this.root.querySelector('.ex-paper-select');
+      this.sourcePillsContainer = this.root.querySelector('.ex-source-pills');
+      this.groupPillsContainer = this.root.querySelector('.ex-group-pills');
       this.sectionPillsContainer = this.root.querySelector('.ex-section-pills');
       this.paperOutlineContainer = this.root.querySelector('.ex-paper-outline-bar');
       this.typePillsContainer = this.root.querySelector('.ex-type-pills');
@@ -458,8 +471,12 @@ class ExerciseCenterController {
       this.checkResultNowBtn = this.root.querySelector('#ex-check-result-now-btn');
       this.latexPrintBtn = this.root.querySelector('#ex-latex-print-btn');
       this.latexCancelCompileBtn = this.root.querySelector('#ex-latex-cancel-compile-btn');
-      this.latexMainCtaBtn = this.root.querySelector('#ex-latex-main-cta-btn');
-      this.latexMainCtaText = this.root.querySelector('#ex-latex-main-cta-text');
+      this.latexConfigView = this.root.querySelector('#ex-latex-config-view');
+      this.latexResultView = this.root.querySelector('#ex-latex-result-view');
+      this.latexStartCompileBtn = this.root.querySelector('#ex-latex-start-compile-btn');
+      this.latexBackConfigBtn = this.root.querySelector('#ex-latex-back-config-btn');
+      this.latexDownloadPdfBtn = this.root.querySelector('#ex-latex-download-pdf-btn');
+      this.latexDownloadPdfText = this.root.querySelector('#ex-latex-download-pdf-text');
 
       this.totalStatEl = this.root.querySelector('.ex-stat-total');
       this.doneStatEl = this.root.querySelector('.ex-stat-done');
@@ -649,6 +666,40 @@ class ExerciseCenterController {
       });
     }
 
+    if (this.sourcePillsContainer) {
+      this.sourcePillsContainer.addEventListener('click', (e) => {
+        const pill = (e.target as HTMLElement).closest('.ex-nav-item');
+        if (!pill) return;
+        this.sourcePillsContainer?.querySelectorAll('.ex-nav-item').forEach((p) => p.classList.remove('active'));
+        pill.classList.add('active');
+        const src = (pill.getAttribute('data-source') || 'all') as any;
+        this.currentSource = src;
+        if (this.currentSource === 'textbook') {
+          this.groupPillsContainer?.classList.remove('hidden');
+        } else {
+          this.groupPillsContainer?.classList.add('hidden');
+        }
+        this.currentGroup = 'all';
+        this.groupPillsContainer?.querySelectorAll('.ex-nav-item').forEach((p) => {
+          p.classList.toggle('active', p.getAttribute('data-group') === 'all');
+        });
+        this.displayedLimit = PAGE_SIZE;
+        this.filterAndRender();
+      });
+    }
+
+    if (this.groupPillsContainer) {
+      this.groupPillsContainer.addEventListener('click', (e) => {
+        const pill = (e.target as HTMLElement).closest('.ex-nav-item');
+        if (!pill) return;
+        this.groupPillsContainer?.querySelectorAll('.ex-nav-item').forEach((p) => p.classList.remove('active'));
+        pill.classList.add('active');
+        this.currentGroup = (pill.getAttribute('data-group') || 'all') as any;
+        this.displayedLimit = PAGE_SIZE;
+        this.filterAndRender();
+      });
+    }
+
     if (this.bodyContainer) {
       this.bindBodyDelegatedInteractions(this.bodyContainer);
     }
@@ -667,12 +718,20 @@ class ExerciseCenterController {
     if (mode === 'practice') {
       this.chapterSelect?.classList.remove('hidden');
       this.paperSelect?.classList.add('hidden');
+      this.sourcePillsContainer?.classList.remove('hidden');
+      if (this.currentSource === 'textbook') {
+        this.groupPillsContainer?.classList.remove('hidden');
+      } else {
+        this.groupPillsContainer?.classList.add('hidden');
+      }
       this.sectionPillsContainer?.classList.remove('hidden');
       this.paperOutlineContainer?.classList.add('hidden');
       this.loadChapter(this.currentChapter);
     } else if (mode === 'paper') {
       this.chapterSelect?.classList.add('hidden');
       this.paperSelect?.classList.remove('hidden');
+      this.sourcePillsContainer?.classList.add('hidden');
+      this.groupPillsContainer?.classList.add('hidden');
       this.sectionPillsContainer?.classList.add('hidden');
       this.paperOutlineContainer?.classList.remove('hidden');
       this.ensurePaperListLoaded().then(() => {
@@ -681,6 +740,8 @@ class ExerciseCenterController {
     } else if (mode === 'search') {
       this.chapterSelect?.classList.remove('hidden');
       this.paperSelect?.classList.add('hidden');
+      this.sourcePillsContainer?.classList.remove('hidden');
+      this.groupPillsContainer?.classList.add('hidden');
       this.sectionPillsContainer?.classList.add('hidden');
       this.paperOutlineContainer?.classList.add('hidden');
       this.ensureAllQuestionsLoaded().then(() => {
@@ -820,11 +881,27 @@ class ExerciseCenterController {
 
       if (this.paperSelect && this.paperListSummary.length > 0) {
         let optionsHtml = '';
-        this.paperListSummary.forEach((p) => {
-          const isSelected = p.paper_id === this.currentPaperId;
-          const scoreText = p.total_score ? `[${p.total_score}分 / ${p.total_questions}题]` : `[${p.total_questions}题]`;
-          optionsHtml += `<option value="${p.paper_id}" ${isSelected ? 'selected' : ''}>${p.clean_title} ${scoreText}</option>`;
-        });
+        const tbPapers = this.paperListSummary.filter((p) => p.category === '教材课后习题');
+        const examPapers = this.paperListSummary.filter((p) => p.category !== '教材课后习题');
+
+        if (tbPapers.length > 0) {
+          optionsHtml += `<optgroup label="📚 教材分章课后习题集（${tbPapers.length}套）">`;
+          tbPapers.forEach((p) => {
+            const isSelected = p.paper_id === this.currentPaperId;
+            optionsHtml += `<option value="${p.paper_id}" ${isSelected ? 'selected' : ''}>${p.clean_title} [${p.total_questions}题]</option>`;
+          });
+          optionsHtml += `</optgroup>`;
+        }
+
+        if (examPapers.length > 0) {
+          optionsHtml += `<optgroup label="🎓 北京邮电大学历年真题试卷（${examPapers.length}套）">`;
+          examPapers.forEach((p) => {
+            const isSelected = p.paper_id === this.currentPaperId;
+            const scoreText = p.total_score ? `[${p.total_score}分 / ${p.total_questions}题]` : `[${p.total_questions}题]`;
+            optionsHtml += `<option value="${p.paper_id}" ${isSelected ? 'selected' : ''}>${p.clean_title} ${scoreText}</option>`;
+          });
+          optionsHtml += `</optgroup>`;
+        }
         this.paperSelect.innerHTML = optionsHtml;
       }
     } catch (err) {
@@ -1008,6 +1085,14 @@ class ExerciseCenterController {
       filtered = filtered.filter((q) => q.section_type === this.currentPaperSection);
     }
 
+    if (this.currentSource !== 'all') {
+      filtered = filtered.filter((q) => (q.source_type || 'exam') === this.currentSource);
+    }
+
+    if (this.currentGroup !== 'all') {
+      filtered = filtered.filter((q) => q.group === this.currentGroup);
+    }
+
     if (this.currentType !== 'all') {
       filtered = filtered.filter((q) => q.type === this.currentType);
     }
@@ -1138,6 +1223,9 @@ class ExerciseCenterController {
           <div class="ex-q-meta-left">
             <span class="ex-q-num">第 ${idx + 1} 题</span>
             <span class="ex-q-type-label">· ${typeLabel}</span>
+            ${q.source_type === 'textbook'
+              ? `<span class="ex-q-source-badge textbook">教材 · ${q.group || 'A'}组</span>`
+              : `<span class="ex-q-source-badge exam">名校真题</span>`}
             ${scoreText ? `<span class="ex-q-score">（${scoreText}）</span>` : ''}
           </div>
           <div class="ex-q-meta-right">
@@ -1150,7 +1238,19 @@ class ExerciseCenterController {
           </div>
         </div>
 
-        <div class="ex-q-stem">${q.stem_html}</div>
+        <div class="ex-q-stem">
+          ${q.stem_html}
+          ${q.sub_questions && q.sub_questions.length > 0 ? `
+            <div class="ex-sub-questions">
+              ${q.sub_questions.map((sub) => `
+                <div class="ex-sub-q-item">
+                  <span class="ex-sub-id">${sub.sub_id}</span>
+                  <div class="ex-sub-stem">${sub.stem_html}</div>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
 
         <div class="ex-interactive-wrap">
           ${this.renderInteractiveArea(q, record)}
@@ -1158,7 +1258,7 @@ class ExerciseCenterController {
 
         <div class="ex-q-source-row">
           <button type="button" class="ex-source-link" data-action="jump-to-paper" data-paper-id="${q.paper_id}" data-qid="${qid}" title="点击秒切至该试卷【${this.esc(q.paper_title)}】查看整卷所有题目">
-            <span>${this.esc(q.paper_title)} · 原卷第 ${paperQNum} 题</span>
+            <span>${this.esc(q.source || `${q.paper_title} · 原卷第 ${paperQNum} 题`)}</span>
           </button>
           ${secSlug ? `<span class="ex-source-sec">· ${secSlug}</span>` : ''}
         </div>
@@ -1643,7 +1743,7 @@ class ExerciseCenterController {
 注意：
 不需要输出任何额外格式信息。
 【题目信息】
-来源：${q.paper_title}（原卷第 ${q.paper_q_num} 题）
+来源：${q.source || `${q.paper_title}（原卷第 ${q.paper_q_num} 题）`}
 小节：${q.sec_title || q.sec}
 题型：${q.type}
 题干：
@@ -2024,25 +2124,36 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
       this.ghSaveConfigBtn.addEventListener('click', () => this.saveCompilerSettings());
     }
 
-    // 标签页切换：云端编译 vs 源码查看
-    if (this.tabCloudBtn) {
-      this.tabCloudBtn.addEventListener('click', () => this.switchLatexView('cloud'));
-    }
-    if (this.tabSourceBtn) {
-      this.tabSourceBtn.addEventListener('click', () => this.switchLatexView('source'));
+    // 阶段 1 主 CTA 按钮: 开始生成 PDF
+    if (this.latexStartCompileBtn) {
+      this.latexStartCompileBtn.addEventListener('click', () => {
+        const config = getStoredCompilerConfig();
+        if (!config.token) {
+          this.openSettingsModal();
+          this.showToast('请先配置具备 actions:write 权限的 GitHub Token');
+          return;
+        }
+        this.switchLatexStage('result');
+        this.startCloudCompilation();
+      });
     }
 
-    // 核心主 CTA 按钮 (动态推进：生成 PDF / 下载 PDF / 继续等待)
-    if (this.latexMainCtaBtn) {
-      this.latexMainCtaBtn.addEventListener('click', () => {
+    // 阶段 2 返回修改配置按钮
+    if (this.latexBackConfigBtn) {
+      this.latexBackConfigBtn.addEventListener('click', () => {
+        this.switchLatexStage('config');
+      });
+    }
+
+    // 阶段 2 主 CTA: 下载 PDF 文件
+    if (this.latexDownloadPdfBtn) {
+      this.latexDownloadPdfBtn.addEventListener('click', () => {
         if (this.currentCompiledPdfUrl) {
           this.downloadCompiledPdf();
         } else if (this.pipelineTimeoutCard && !this.pipelineTimeoutCard.classList.contains('hidden')) {
           this.continueWaitingCompilation();
-        } else if (this.isCompiling) {
-          // 正在编译中，主按钮禁用
         } else {
-          this.startCloudCompilation();
+          this.showToast('尚未生成可下载的 PDF');
         }
       });
     }
@@ -2333,8 +2444,12 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     if (this.ghTokenInput) this.ghTokenInput.value = cfg.token;
     if (this.ghRepoInput) this.ghRepoInput.value = `${cfg.owner}/${cfg.repo}`;
 
-    // 默认展示 PDF 预览标签页
-    this.switchLatexView('cloud');
+    // 默认展示排版配置视图（若已有生成结果则直达预览）
+    if (this.currentCompiledPdfUrl || this.isCompiling) {
+      this.switchLatexStage('result');
+    } else {
+      this.switchLatexStage('config');
+    }
 
     this.refreshLatexPreview();
     if (!this.currentCompiledPdfUrl) {
@@ -2384,17 +2499,13 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     this.showToast('✓ 已保存 GitHub Actions 编译凭证配置');
   }
 
-  private switchLatexView(mode: 'cloud' | 'source') {
-    if (mode === 'cloud') {
-      this.tabCloudBtn?.classList.add('active');
-      this.tabSourceBtn?.classList.remove('active');
-      this.latexCloudPanel?.classList.remove('hidden');
-      this.latexSourcePanel?.classList.add('hidden');
+  private switchLatexStage(stage: 'config' | 'result') {
+    if (stage === 'config') {
+      this.latexConfigView?.classList.remove('hidden');
+      this.latexResultView?.classList.add('hidden');
     } else {
-      this.tabSourceBtn?.classList.add('active');
-      this.tabCloudBtn?.classList.remove('active');
-      this.latexSourcePanel?.classList.remove('hidden');
-      this.latexCloudPanel?.classList.add('hidden');
+      this.latexConfigView?.classList.add('hidden');
+      this.latexResultView?.classList.remove('hidden');
     }
   }
 
@@ -2429,7 +2540,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
       this.currentCompiledPdfUrl = null;
       if (this.compileTimerInterval) clearInterval(this.compileTimerInterval);
 
-      this.pipelineEmptyCard?.classList.remove('hidden');
       this.pipelineLoadingCard?.classList.add('hidden');
       this.pipelineTimeoutCard?.classList.add('hidden');
       this.pipelinePreviewFrame?.classList.add('hidden');
@@ -2443,17 +2553,20 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
         this.pipelineStatusPill.textContent = '就绪';
       }
       if (this.pipelineStatusDesc) {
-        this.pipelineStatusDesc.textContent = message || '点击「生成 PDF」发起云端 XeLaTeX 编译与排版';
+        this.pipelineStatusDesc.textContent = message || '就绪中，点击「开始生成 PDF」发起云端 XeLaTeX 编译排版';
       }
-      if (this.latexMainCtaBtn) {
-        this.latexMainCtaBtn.disabled = false;
+      if (this.latexStartCompileBtn) {
+        this.latexStartCompileBtn.disabled = false;
       }
-      if (this.latexMainCtaText) {
-        this.latexMainCtaText.textContent = '生成 PDF';
+      if (this.latexDownloadPdfBtn) {
+        this.latexDownloadPdfBtn.disabled = true;
+      }
+      if (this.latexDownloadPdfText) {
+        this.latexDownloadPdfText.textContent = '下载 PDF';
       }
     } else if (state === 'compiling') {
       this.isCompiling = true;
-      this.pipelineEmptyCard?.classList.add('hidden');
+      this.switchLatexStage('result');
       this.pipelineLoadingCard?.classList.remove('hidden');
       this.pipelineTimeoutCard?.classList.add('hidden');
       this.pipelinePreviewFrame?.classList.add('hidden');
@@ -2469,17 +2582,20 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
       if (this.pipelineStatusDesc) {
         this.pipelineStatusDesc.textContent = message || '正在调度云端算力节点并排版生成 PDF...';
       }
-      if (this.latexMainCtaBtn) {
-        this.latexMainCtaBtn.disabled = true;
+      if (this.latexStartCompileBtn) {
+        this.latexStartCompileBtn.disabled = true;
       }
-      if (this.latexMainCtaText) {
-        this.latexMainCtaText.textContent = '正在生成 PDF...';
+      if (this.latexDownloadPdfBtn) {
+        this.latexDownloadPdfBtn.disabled = true;
+      }
+      if (this.latexDownloadPdfText) {
+        this.latexDownloadPdfText.textContent = '正在排版...';
       }
     } else if (state === 'ready') {
       this.isCompiling = false;
+      this.switchLatexStage('result');
       if (this.compileTimerInterval) clearInterval(this.compileTimerInterval);
 
-      this.pipelineEmptyCard?.classList.add('hidden');
       this.pipelineLoadingCard?.classList.add('hidden');
       this.pipelineTimeoutCard?.classList.add('hidden');
       this.pipelinePreviewFrame?.classList.remove('hidden');
@@ -2491,19 +2607,22 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
         this.pipelineStatusPill.textContent = '✓ 已生成';
       }
       if (this.pipelineStatusDesc) {
-        this.pipelineStatusDesc.textContent = message || '✓ 编译成功！文档已生成，可直接下载或调起打印';
+        this.pipelineStatusDesc.textContent = message || '✓ 编译成功！高清矢量 PDF 已就绪，可直接预览或下载';
       }
-      if (this.latexMainCtaBtn) {
-        this.latexMainCtaBtn.disabled = false;
+      if (this.latexStartCompileBtn) {
+        this.latexStartCompileBtn.disabled = false;
       }
-      if (this.latexMainCtaText) {
-        this.latexMainCtaText.textContent = '下载 PDF';
+      if (this.latexDownloadPdfBtn) {
+        this.latexDownloadPdfBtn.disabled = false;
+      }
+      if (this.latexDownloadPdfText) {
+        this.latexDownloadPdfText.textContent = '下载 PDF';
       }
     } else if (state === 'timeout') {
       this.isCompiling = false;
+      this.switchLatexStage('result');
       if (this.compileTimerInterval) clearInterval(this.compileTimerInterval);
 
-      this.pipelineEmptyCard?.classList.add('hidden');
       this.pipelineLoadingCard?.classList.add('hidden');
       this.pipelineTimeoutCard?.classList.remove('hidden');
       this.pipelinePreviewFrame?.classList.add('hidden');
@@ -2520,17 +2639,20 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
       if (this.pipelineTimeoutDesc && message) {
         this.pipelineTimeoutDesc.textContent = message;
       }
-      if (this.latexMainCtaBtn) {
-        this.latexMainCtaBtn.disabled = false;
+      if (this.latexStartCompileBtn) {
+        this.latexStartCompileBtn.disabled = false;
       }
-      if (this.latexMainCtaText) {
-        this.latexMainCtaText.textContent = '继续等待编译';
+      if (this.latexDownloadPdfBtn) {
+        this.latexDownloadPdfBtn.disabled = true;
+      }
+      if (this.latexDownloadPdfText) {
+        this.latexDownloadPdfText.textContent = '继续等待编译';
       }
     } else if (state === 'failed') {
       this.isCompiling = false;
+      this.switchLatexStage('result');
       if (this.compileTimerInterval) clearInterval(this.compileTimerInterval);
 
-      this.pipelineEmptyCard?.classList.remove('hidden');
       this.pipelineLoadingCard?.classList.add('hidden');
       this.pipelineTimeoutCard?.classList.add('hidden');
       this.pipelinePreviewFrame?.classList.add('hidden');
@@ -2544,11 +2666,14 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
       if (this.pipelineStatusDesc) {
         this.pipelineStatusDesc.textContent = message || '编译未完成，请展开下方诊断日志查看原因';
       }
-      if (this.latexMainCtaBtn) {
-        this.latexMainCtaBtn.disabled = false;
+      if (this.latexStartCompileBtn) {
+        this.latexStartCompileBtn.disabled = false;
       }
-      if (this.latexMainCtaText) {
-        this.latexMainCtaText.textContent = '重新生成 PDF';
+      if (this.latexDownloadPdfBtn) {
+        this.latexDownloadPdfBtn.disabled = true;
+      }
+      if (this.latexDownloadPdfText) {
+        this.latexDownloadPdfText.textContent = '重新生成 PDF';
       }
       if (this.latexLogDrawer) {
         this.latexLogDrawer.open = true;
@@ -2576,8 +2701,8 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     this.compileAbortController = new AbortController();
     this.compileStartTime = Date.now();
 
-    // 确保切换到云端 PDF 预览标签页
-    this.switchLatexView('cloud');
+    // 确保切换到编译交付与 PDF 预览阶段
+    this.switchLatexStage('result');
     this.setLatexExportState('compiling', '正在向 GitHub Actions 算力池调度编译任务...');
 
     if (this.pipelineJobId) {

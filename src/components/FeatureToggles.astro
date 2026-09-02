@@ -1,5 +1,5 @@
 ---
-// 站点与阅读偏好设置面板（VitePress 现代极简风格 · 面向读者与开发者）
+// 站点与阅读设置面板（极简学术风格 · 面向读者与研究者）
 // -----------------------------------------------------------------------------
 // 挂载：ThemeSelectOverride.astro 在顶栏右侧动作区引入（桌面 header / 移动端抽屉
 // 底部各渲染一个 <starlight-feature-toggles>，各自管理自己的开合与下拉面板）。
@@ -35,12 +35,12 @@ const featureMeta = Object.entries(features).map(([id, f]) => ({
 const metaJson = JSON.stringify(featureMeta);
 ---
 
-<starlight-feature-toggles data-meta={metaJson} aria-label="偏好与功能设置">
+<starlight-feature-toggles data-meta={metaJson} aria-label="设置">
   <button
     type="button"
     class="ft-toggle-btn"
-    title="偏好与功能设置"
-    aria-label="打开偏好与功能设置面板"
+    title="设置"
+    aria-label="打开设置面板"
     aria-haspopup="dialog"
     aria-expanded="false"
   >
@@ -54,13 +54,13 @@ const metaJson = JSON.stringify(featureMeta);
   <div class="ft-backdrop" aria-hidden="true"></div>
 
   <!-- 设置面板主体 (移动端向上滑出 Bottom Sheet，桌面端右上角悬浮面板) -->
-  <div class="ft-panel" role="dialog" aria-label="偏好与功能设置面板" aria-hidden="true">
+  <div class="ft-panel" role="dialog" aria-label="设置面板" aria-hidden="true">
     <!-- 移动端顶部拖拽手柄条 -->
     <div class="ft-sheet-handle" aria-hidden="true"></div>
 
     <div class="ft-panel-head">
-      <span class="ft-panel-title">偏好设置</span>
-      <button type="button" class="ft-close" title="关闭设置面板" aria-label="关闭">
+      <span class="ft-panel-title">设置</span>
+      <button type="button" class="ft-close" title="关闭设置" aria-label="关闭">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -69,140 +69,99 @@ const metaJson = JSON.stringify(featureMeta);
     </div>
 
     <div class="ft-panel-body">
-      <!-- 分组一：排版与外观 -->
-      <div class="ft-section">
-        <div class="ft-section-title">排版与外观</div>
-        <div class="ft-list">
-          <!-- 1. 字体排版设置 -->
-          {
-            features.fonts.enabled && (
-              <div class="ft-group-block">
-                <div class="ft-row-header">
-                  <div class="ft-row-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <polyline points="4 7 4 4 20 4 20 7"></polyline>
-                      <line x1="9" y1="20" x2="15" y2="20"></line>
-                      <line x1="12" y1="4" x2="12" y2="20"></line>
-                    </svg>
-                  </div>
-                  <div class="ft-row-info">
-                    <span class="ft-row-name">字体排版</span>
-                    <span class="ft-row-desc">正文与公式独立渲染适配</span>
-                  </div>
-                </div>
-
-                <!-- 中文字体 -->
-                <div class="ft-segment-wrapper">
-                  <div class="ft-segment-label">中文字体</div>
-                  <div class="ft-segment-track ft-grid-2">
-                    {CJK_PRESETS.map((opt) => (
-                      <button
-                        type="button"
-                        class="ft-font-btn"
-                        data-font-setting="cjk"
-                        data-font-val={opt.value}
-                        title={opt.label}
-                      >
-                        <span class={`ft-font-preview ft-cjk-${opt.value}`}>{opt.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <!-- 英文字体 -->
-                <div class="ft-segment-wrapper">
-                  <div class="ft-segment-label">英文字体</div>
-                  <div class="ft-segment-track ft-grid-3">
-                    {LATIN_PRESETS.map((opt) => (
-                      <button
-                        type="button"
-                        class="ft-font-btn"
-                        data-font-setting="latin"
-                        data-font-val={opt.value}
-                        title={opt.label}
-                      >
-                        <span class={`ft-font-preview ft-latin-${opt.value}`}>{opt.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )
-          }
-
-          <!-- 2. UI 界面风格主题 -->
-          {
-            features.theme.enabled && siteThemes && siteThemes.length > 1 && (
-              <div class="ft-group-block">
-                <div class="ft-row-header">
-                  <div class="ft-row-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <path d="M12 21a9 9 0 1 1 0-18c4.97 0 9 3.58 9 8 0 2.76-2.24 5-5 5h-1.7c-.55 0-1 .45-1 1 0 .28.11.53.29.71.3.3.48.71.48 1.16 0 .9-.73 1.63-1.63 1.63-1.03 0-1.87-.84-1.87-1.87 0-.45.16-.87.44-1.19" />
-                      <circle cx="7.5" cy="10.5" r="1.2" fill="currentColor" />
-                      <circle cx="12" cy="7.5" r="1.2" fill="currentColor" />
-                      <circle cx="16.5" cy="10.5" r="1.2" fill="currentColor" />
-                    </svg>
-                  </div>
-                  <div class="ft-row-info">
-                    <span class="ft-row-name">界面风格</span>
-                    <span class="ft-row-desc">文档外观与配色主题</span>
-                  </div>
-                </div>
+      <!-- 分组一：字体 -->
+      {
+        features.fonts.enabled && (
+          <div class="ft-section">
+            <div class="ft-section-title">字体</div>
+            <div class="ft-stack">
+              <!-- 中文字体 -->
+              <div class="ft-segment-wrapper">
+                <div class="ft-sub-label">中文</div>
                 <div class="ft-segment-track ft-grid-2">
-                  {siteThemes.map((st) => (
+                  {CJK_PRESETS.map((opt) => (
                     <button
                       type="button"
-                      class="ft-theme-chip"
-                      data-site-theme-val={st.id}
-                      title={st.desc}
+                      class="ft-font-btn"
+                      data-font-setting="cjk"
+                      data-font-val={opt.value}
+                      title={opt.label}
                     >
-                      <span>{st.label}</span>
+                      <span class={`ft-font-preview ft-cjk-${opt.value}`}>{opt.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
-            )
-          }
 
-          <!-- 3. 主题平滑过渡动画 -->
-          <div class="ft-item-row">
-            <div class="ft-row-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="5"></circle>
-                <line x1="12" y1="1" x2="12" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="23"></line>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                <line x1="1" y1="12" x2="3" y2="12"></line>
-                <line x1="21" y1="12" x2="23" y2="12"></line>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-              </svg>
-            </div>
-            <div class="ft-row-info">
-              <span class="ft-row-name">亮暗主题平滑过渡</span>
-              <span class="ft-row-desc">切换色彩时呈现淡入淡出动效</span>
-            </div>
-            <label class="ft-switch" title="切换平滑主题过渡">
-              <input type="checkbox" data-theme-transition />
-              <span class="ft-switch-slider"></span>
-            </label>
-          </div>
-
-          <!-- 4. 知识引用联动 -->
-          <div class="ft-item-row">
-            <div class="ft-row-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-              </svg>
-            </div>
-            <div class="ft-row-info">
-              <div class="ft-row-title-line">
-                <span class="ft-row-name">定理与例题引用联动</span>
-                {!features.crossRef.enabled && <span class="ft-badge">未启用</span>}
+              <!-- 英文字体与公式字体 -->
+              <div class="ft-segment-wrapper">
+                <div class="ft-sub-label">英文与公式</div>
+                <div class="ft-segment-track ft-grid-3">
+                  {LATIN_PRESETS.map((opt) => (
+                    <button
+                      type="button"
+                      class="ft-font-btn"
+                      data-font-setting="latin"
+                      data-font-val={opt.value}
+                      title={opt.label}
+                    >
+                      <span class={`ft-font-preview ft-latin-${opt.value}`}>{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <span class="ft-row-desc">正文知识锚点浮动卡片与双向跳转</span>
+            </div>
+          </div>
+        )
+      }
+
+      <!-- 分组二：界面 -->
+      {
+        features.theme.enabled && (
+          <div class="ft-section">
+            <div class="ft-section-title">界面</div>
+            <div class="ft-stack">
+              {siteThemes && siteThemes.length > 1 && (
+                <div class="ft-segment-wrapper">
+                  <div class="ft-sub-label">主题</div>
+                  <div class="ft-segment-track ft-grid-2">
+                    {siteThemes.map((st) => (
+                      <button
+                        type="button"
+                        class="ft-theme-chip"
+                        data-site-theme-val={st.id}
+                        title={st.desc}
+                      >
+                        <span>{st.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <!-- 主题平滑过渡动画 -->
+              <div class="ft-item-row">
+                <div class="ft-row-info">
+                  <span class="ft-row-name">主题过渡</span>
+                </div>
+                <label class="ft-switch" title="切换平滑主题过渡">
+                  <input type="checkbox" data-theme-transition />
+                  <span class="ft-switch-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      <!-- 分组三：功能 -->
+      <div class="ft-section">
+        <div class="ft-section-title">功能</div>
+        <div class="ft-stack">
+          <!-- 1. 定理联动 -->
+          <div class="ft-item-row">
+            <div class="ft-row-info">
+              <span class="ft-row-name">定理联动</span>
             </div>
             <label class="ft-switch" title="启用/禁用知识引用联动">
               <input type="checkbox" data-feature-id="crossRef" disabled={!features.crossRef.enabled} />
@@ -210,83 +169,81 @@ const metaJson = JSON.stringify(featureMeta);
             </label>
           </div>
 
-          <!-- 5. 公式操作与图片导出 -->
+          <!-- 2. 公式操作 -->
           <div class="ft-item-row">
-            <div class="ft-row-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M3 13h2l2 7 4-14h10"></path>
-                <path d="M16 13v6"></path>
-                <path d="m13 16 3 3 3-3"></path>
-              </svg>
-            </div>
             <div class="ft-row-info">
-              <div class="ft-row-title-line">
-                <span class="ft-row-name">公式操作与图片导出</span>
-                {!features.formulaActions.enabled && <span class="ft-badge">未启用</span>}
-              </div>
-              <span class="ft-row-desc">正文公式快捷复制 LaTeX 与导出 SVG/PNG 图片</span>
+              <span class="ft-row-name">公式操作</span>
             </div>
-            <label class="ft-switch" title="启用/禁用公式操作与图片导出">
+            <label class="ft-switch" title="启用/禁用公式操作">
               <input type="checkbox" data-feature-id="formulaActions" disabled={!features.formulaActions.enabled} />
               <span class="ft-switch-slider"></span>
             </label>
           </div>
 
-          <!-- 6. 章节空闲预加载范围 -->
-          <div class="ft-group-block">
-            <div class="ft-row-header">
-              <div class="ft-row-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-              </div>
-              <div class="ft-row-info">
-                <span class="ft-row-name">章节后台预加载</span>
-                <span class="ft-row-desc">空闲期预加载相邻或全书章节以实现瞬间换页</span>
-              </div>
-            </div>
-            <div class="ft-segment-wrapper">
-              <div class="ft-segment-track ft-grid-5">
-                <button type="button" class="ft-prewarm-btn" data-prewarm-val="-1" title="全书全量预加载（默认）">全书</button>
-                <button type="button" class="ft-prewarm-btn" data-prewarm-val="1" title="仅前后 1 页（上一章与下一章）">前后1页</button>
-                <button type="button" class="ft-prewarm-btn" data-prewarm-val="2" title="前后紧邻 2 页">前后2页</button>
-                <button type="button" class="ft-prewarm-btn" data-prewarm-val="3" title="前后紧邻 3 页">前后3页</button>
-                <button type="button" class="ft-prewarm-btn" data-prewarm-val="0" title="禁用后台预加载，仅悬停与点击时即时加载">关闭</button>
-              </div>
+          <!-- 3. 章节预加载 -->
+          <div class="ft-segment-wrapper">
+            <div class="ft-sub-label">章节预加载</div>
+            <div class="ft-segment-track ft-grid-5">
+              <button type="button" class="ft-prewarm-btn" data-prewarm-val="-1" title="全书预加载">全书</button>
+              <button type="button" class="ft-prewarm-btn" data-prewarm-val="1" title="前后各 1 页">前后1页</button>
+              <button type="button" class="ft-prewarm-btn" data-prewarm-val="2" title="前后各 2 页">前后2页</button>
+              <button type="button" class="ft-prewarm-btn" data-prewarm-val="3" title="前后各 3 页">前后3页</button>
+              <button type="button" class="ft-prewarm-btn" data-prewarm-val="0" title="关闭预加载">关闭</button>
             </div>
           </div>
+
+          <!-- 4. 模块速查 -->
+          {
+            features.inspector.enabled && (
+              <div class="ft-item-row">
+                <div class="ft-row-info">
+                  <div class="ft-row-title-line">
+                    <span class="ft-row-name">模块速查</span>
+                    <button type="button" class="ft-open-inspector-btn" data-inspector-trigger title="立即打开书籍模块速查 (Alt+M)">
+                      Alt+M
+                    </button>
+                  </div>
+                </div>
+                <label class="ft-switch" title="启用/禁用模块速查">
+                  <input type="checkbox" data-feature-id="inspector" />
+                  <span class="ft-switch-slider"></span>
+                </label>
+              </div>
+            )
+          }
+
+          <!-- 5. 离线 EPUB -->
+          {
+            features.epub.enabled && (
+              <div class="ft-item-row">
+                <div class="ft-row-info">
+                  <span class="ft-row-name">离线 EPUB</span>
+                </div>
+                <label class="ft-switch" title="启用/禁用 EPUB 离线下载">
+                  <input type="checkbox" data-feature-id="epub" />
+                  <span class="ft-switch-slider"></span>
+                </label>
+              </div>
+            )
+          }
         </div>
       </div>
 
-      <!-- 分组二：AI 学术模型与密钥 -->
+      <!-- 分组四：AI 服务与功能 -->
       <div class="ft-section">
-        <div class="ft-section-title">AI 服务与模型设置</div>
-        <div class="ft-list">
-          <div class="ft-group-block ft-ai-config-block">
-            <div class="ft-row-header">
-              <div class="ft-row-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M12 3a6 6 0 0 1 6 6c0 2.1-1 3.6-2.3 4.8-.6.5-1 1.2-1 2v.5M9 21h6"></path>
-                </svg>
-              </div>
-              <div class="ft-row-info">
-                <span class="ft-row-name">统一模型与 API Key</span>
-                <span class="ft-row-desc">书内智能问答与习题规范推导全站统一生效</span>
-              </div>
+        <div class="ft-section-title">AI</div>
+        <div class="ft-stack">
+          <!-- 1. 模型与服务 -->
+          <div class="ft-ai-block">
+            <div class="ft-sub-label">
+              <span>模型与服务</span>
+              <button type="button" class="ft-ai-custom-toggle-btn" data-action="toggle-custom-model" title="添加自定义 OpenAI 兼容模型">
+                + 自定义
+              </button>
             </div>
 
             <!-- 模型选择 -->
-            <div class="ft-ai-field">
-              <div class="ft-ai-field-head">
-                <label class="ft-ai-label">学术推导模型</label>
-                <button type="button" class="ft-ai-custom-toggle-btn" data-action="toggle-custom-model" title="添加自定义 OpenAI 兼容模型">
-                  + 自定义模型
-                </button>
-              </div>
-              <select class="ft-ai-select ft-ai-model-select"></select>
-            </div>
+            <select class="ft-ai-select ft-ai-model-select"></select>
 
             <!-- 自定义模型表单 -->
             <div class="ft-ai-custom-form hidden">
@@ -301,10 +258,10 @@ const metaJson = JSON.stringify(featureMeta);
               </div>
             </div>
 
-            <!-- API Key 输入框 -->
+            <!-- API Key -->
             <div class="ft-ai-field">
               <div class="ft-ai-field-head">
-                <label class="ft-ai-label">API Key (当前模型 / 全局)</label>
+                <span class="ft-ai-mini-label">API Key</span>
                 <span class="ft-ai-key-badge">未配置</span>
               </div>
               <div class="ft-ai-key-row">
@@ -322,36 +279,27 @@ const metaJson = JSON.stringify(featureMeta);
               </div>
             </div>
 
-            <!-- API 端点输入框 -->
+            <!-- API 端点 -->
             <div class="ft-ai-field">
-              <label class="ft-ai-label">API 端点 URL (OpenAI 兼容)</label>
+              <span class="ft-ai-mini-label">API 端点</span>
               <input type="text" class="ft-ai-input ft-ai-endpoint-input" placeholder="https://api.deepseek.com/v1/chat/completions" autocomplete="off" />
             </div>
 
-            <div class="ft-ai-tip">
-              密钥仅保存在本机浏览器 localStorage，绝不上传服务器。全站书内问答与习题推导统一调用。
+            <!-- 测试连接行 -->
+            <div class="ft-ai-test-row">
+              <button type="button" class="ft-ai-test-btn" data-action="test-ai-connection" title="测试当前 API Key 与端点连通性">
+                测试连接
+              </button>
+              <span class="ft-ai-test-status" aria-live="polite"></span>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- 分组三：阅读与知识工具 -->
-      <div class="ft-section">
-        <div class="ft-section-title">功能与工具</div>
-        <div class="ft-list">
-          <!-- 1. AI 智能问答 -->
+          <!-- 2. AI 功能开关 -->
+          <div class="ft-sub-label" style="margin-top: 4px;">AI 功能</div>
+          <!-- 书内问答 -->
           <div class="ft-item-row">
-            <div class="ft-row-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M12 3a6 6 0 0 1 6 6c0 2.1-1 3.6-2.3 4.8-.6.5-1 1.2-1 2v.5M9 21h6"></path>
-              </svg>
-            </div>
             <div class="ft-row-info">
-              <div class="ft-row-title-line">
-                <span class="ft-row-name">AI 书内问答助手</span>
-                {!features.aiAsk.enabled && <span class="ft-badge">未启用</span>}
-              </div>
-              <span class="ft-row-desc">基于当前图书知识库的检索与解答</span>
+              <span class="ft-row-name">书内问答</span>
             </div>
             <label class="ft-switch" title="启用/禁用 AI 智能问答">
               <input type="checkbox" data-feature-id="aiAsk" disabled={!features.aiAsk.enabled} />
@@ -359,23 +307,10 @@ const metaJson = JSON.stringify(featureMeta);
             </label>
           </div>
 
-          <!-- 2. 章节关系图谱 -->
+          <!-- 章节关系图谱 -->
           <div class="ft-item-row">
-            <div class="ft-row-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="6" cy="6" r="3"></circle>
-                <circle cx="6" cy="18" r="3"></circle>
-                <circle cx="18" cy="12" r="3"></circle>
-                <line x1="8.59" y1="7.49" x2="15.42" y2="10.51"></line>
-                <line x1="8.59" y1="16.51" x2="15.42" y2="13.49"></line>
-              </svg>
-            </div>
             <div class="ft-row-info">
-              <div class="ft-row-title-line">
-                <span class="ft-row-name">章节关系图谱</span>
-                {!features.relationGraph.enabled && <span class="ft-badge">未启用</span>}
-              </div>
-              <span class="ft-row-desc">全书知识拓扑与章节内联导图</span>
+              <span class="ft-row-name">章节关系图谱</span>
             </div>
             <label class="ft-switch" title="启用/禁用章节关系图谱">
               <input type="checkbox" data-feature-id="relationGraph" disabled={!features.relationGraph.enabled} />
@@ -383,108 +318,31 @@ const metaJson = JSON.stringify(featureMeta);
             </label>
           </div>
 
-          <!-- 3. Mermaid 图表 -->
+          <!-- Mermaid 图表 -->
           <div class="ft-item-row">
-            <div class="ft-row-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-              </svg>
-            </div>
             <div class="ft-row-info">
-              <div class="ft-row-title-line">
-                <span class="ft-row-name">Mermaid 图表渲染</span>
-                {!features.mermaid.enabled && <span class="ft-badge">未启用</span>}
-              </div>
-              <span class="ft-row-desc">流程图、时序图与状态图动态解析</span>
+              <span class="ft-row-name">Mermaid 图表</span>
             </div>
             <label class="ft-switch" title="启用/禁用 Mermaid 图表">
               <input type="checkbox" data-feature-id="mermaid" disabled={!features.mermaid.enabled} />
               <span class="ft-switch-slider"></span>
             </label>
           </div>
-
-          <!-- 4. 模块索引与速查 -->
-          <div class="ft-group-block">
-            <div class="ft-item-row ft-item-row-nested">
-              <div class="ft-row-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                  <circle cx="12" cy="10" r="2.5"></circle>
-                  <path d="M14 12l2.5 2.5"></path>
-                </svg>
-              </div>
-              <div class="ft-row-info">
-                <div class="ft-row-title-line">
-                  <span class="ft-row-name">模块索引与速查</span>
-                  {!features.inspector.enabled && <span class="ft-badge">未启用</span>}
-                </div>
-                <span class="ft-row-desc">全书例题/定理索引速查与定位</span>
-              </div>
-              <label class="ft-switch" title="启用/禁用模块速查">
-                <input type="checkbox" data-feature-id="inspector" disabled={!features.inspector.enabled} />
-                <span class="ft-switch-slider"></span>
-              </label>
-            </div>
-            <div class="ft-inspector-action-row">
-              <button type="button" class="ft-open-inspector-btn" data-inspector-trigger title="立即打开书籍模块速查抽屉 (Alt+M)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <line x1="10" y1="14" x2="21" y2="3"></line>
-                </svg>
-                <span>打开模块速查 (Alt+M)</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- 5. EPUB 导出 -->
-          <div class="ft-item-row">
-            <div class="ft-row-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="3" x2="12" y2="15"></line>
-              </svg>
-            </div>
-            <div class="ft-row-info">
-              <div class="ft-row-title-line">
-                <span class="ft-row-name">离线 EPUB 导出</span>
-                {!features.epub.enabled && <span class="ft-badge">未启用</span>}
-              </div>
-              <span class="ft-row-desc">侧边栏与首页提供离线电子书下载</span>
-            </div>
-            <label class="ft-switch" title="启用/禁用 EPUB 离线下载">
-              <input type="checkbox" data-feature-id="epub" disabled={!features.epub.enabled} />
-              <span class="ft-switch-slider"></span>
-            </label>
-          </div>
         </div>
       </div>
 
-      <!-- 分组三：开发者选项（仅 dev 模式展示） -->
+      <!-- 分组五：开发者选项（仅 dev 模式展示） -->
       {
         isDev && (
           <div class="ft-section ft-section-dev">
             <div class="ft-section-title">开发者选项</div>
-            <div class="ft-list">
-              <!-- 在线精修 -->
+            <div class="ft-stack">
               <div class="ft-item-row">
-                <div class="ft-row-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                  </svg>
-                </div>
                 <div class="ft-row-info">
                   <div class="ft-row-title-line">
-                    <span class="ft-row-name">MDX 在线精修工具</span>
+                    <span class="ft-row-name">MDX 在线精修</span>
                     <span class="ft-badge ft-badge-dev">DEV</span>
                   </div>
-                  <span class="ft-row-desc">反查组件源码位置并热更新写回</span>
                 </div>
                 <label class="ft-switch" title="启用/禁用在线精修">
                   <input type="checkbox" data-feature-id="editor" />
@@ -499,7 +357,7 @@ const metaJson = JSON.stringify(featureMeta);
 
     <!-- 底部状态与重置 -->
     <div class="ft-panel-footer">
-      <span class="ft-footer-hint">偏好已自动保存在本地</span>
+      <span class="ft-footer-hint">设置保存在此浏览器</span>
       <button type="button" class="ft-reset-btn" data-action="reset-defaults" title="恢复所有选项至默认配置">
         恢复默认
       </button>
@@ -508,7 +366,7 @@ const metaJson = JSON.stringify(featureMeta);
 </starlight-feature-toggles>
 
 <style is:global>
-  /* ===== 站点与阅读偏好设置面板（VitePress 风格极简设计） ===== */
+  /* ===== AstroLib 设置面板（极简学术风格 · 精确与减法） ===== */
 
   /* 页面中由功能开关控制的 [data-feature] 元素在关闭时隐藏 */
   .dsh-feature-off {
@@ -669,16 +527,16 @@ const metaJson = JSON.stringify(featureMeta);
       position: absolute;
       top: calc(100% + 0.5rem);
       right: 0;
-      width: 350px;
-      max-height: min(82vh, 600px);
+      width: 368px;
+      max-height: min(84vh, 620px);
       display: none;
       flex-direction: column;
-      background-color: var(--sl-color-bg);
+      background-color: var(--sl-color-bg, #ffffff) !important;
       color: var(--sl-color-white);
       border: 1px solid var(--sl-color-hairline);
       border-radius: 12px;
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
-      z-index: 2147483001;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18), 0 3px 10px rgba(0, 0, 0, 0.08);
+      z-index: 2147483001 !important;
       overflow: hidden;
       visibility: visible;
       transform: none;
@@ -708,14 +566,14 @@ const metaJson = JSON.stringify(featureMeta);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px 10px;
+    padding: 10px 14px 9px;
     border-bottom: 1px solid var(--sl-color-hairline);
-    background-color: var(--sl-color-bg);
+    background-color: var(--sl-color-bg, #ffffff) !important;
     flex-shrink: 0;
   }
 
   .ft-panel-title {
-    font-size: 13.5px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--sl-color-white);
     letter-spacing: -0.01em;
@@ -725,8 +583,8 @@ const metaJson = JSON.stringify(featureMeta);
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     border: none;
     background: transparent;
     cursor: pointer;
@@ -741,9 +599,15 @@ const metaJson = JSON.stringify(featureMeta);
     height: 14px;
   }
 
-  .ft-close:hover {
+  .ft-close:hover,
+  .ft-close:focus-visible {
     color: var(--sl-color-white);
     background-color: var(--sl-color-gray-6);
+  }
+
+  .ft-close:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 1px;
   }
 
   /* 面板主体内容区 */
@@ -754,9 +618,12 @@ const metaJson = JSON.stringify(featureMeta);
     overscroll-behavior: contain;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
     flex: 1;
     min-height: 0;
+    background-color: var(--sl-color-bg, #ffffff) !important;
+    scrollbar-width: thin;
+    scrollbar-color: var(--sl-color-gray-5) transparent;
   }
 
   @media (max-width: 49.999rem) {
@@ -768,11 +635,14 @@ const metaJson = JSON.stringify(featureMeta);
 
   /* 极简精致滚动条 */
   .ft-panel-body::-webkit-scrollbar {
-    width: 4px;
+    width: 3px;
+  }
+  .ft-panel-body::-webkit-scrollbar-track {
+    background: transparent;
   }
   .ft-panel-body::-webkit-scrollbar-thumb {
     background: var(--sl-color-gray-5);
-    border-radius: 4px;
+    border-radius: 3px;
   }
 
   /* 分组 */
@@ -786,23 +656,35 @@ const metaJson = JSON.stringify(featureMeta);
     font-size: 11px;
     font-weight: 600;
     color: var(--sl-color-gray-3);
-    letter-spacing: 0.04em;
-    padding-left: 4px;
+    letter-spacing: 0.03em;
+    padding-left: 2px;
   }
 
-  .ft-list {
+  .ft-stack {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
   }
 
-  /* 单行特性项（无多余边框卡片堆叠，清爽 VitePress 列表行） */
+  .ft-sub-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--sl-color-gray-3);
+    padding-left: 2px;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* 单行特性项 */
   .ft-item-row {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 10px;
-    padding: 7px 8px;
-    border-radius: 8px;
+    padding: 5px 6px;
+    border-radius: 6px;
     background-color: transparent;
     transition: background-color 0.15s ease;
   }
@@ -811,56 +693,12 @@ const metaJson = JSON.stringify(featureMeta);
     background-color: var(--sl-color-gray-6);
   }
 
-  .ft-item-row-nested {
-    padding: 0;
-  }
-  .ft-item-row-nested:hover {
-    background-color: transparent;
-  }
-
-  /* 复合组（字体与主题、巡检组合） */
-  .ft-group-block {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 7px 8px;
-    border-radius: 8px;
-    transition: background-color 0.15s ease;
-  }
-
-  .ft-group-block:hover {
-    background-color: var(--sl-color-gray-6);
-  }
-
-  .ft-row-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  /* 极简单色行图标（无高饱和度彩块背景） */
-  .ft-row-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    color: var(--sl-color-gray-2);
-    flex-shrink: 0;
-  }
-
-  .ft-row-icon svg {
-    width: 15px;
-    height: 15px;
-  }
-
   /* 行信息 */
   .ft-row-info {
     flex: 1;
     min-width: 0;
     display: flex;
-    flex-direction: column;
-    gap: 1.5px;
+    align-items: center;
   }
 
   .ft-row-title-line {
@@ -870,16 +708,10 @@ const metaJson = JSON.stringify(featureMeta);
   }
 
   .ft-row-name {
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: 500;
     color: var(--sl-color-white);
     line-height: 1.3;
-  }
-
-  .ft-row-desc {
-    font-size: 11px;
-    line-height: 1.35;
-    color: var(--sl-color-gray-3);
   }
 
   /* 极简徽章 */
@@ -899,20 +731,20 @@ const metaJson = JSON.stringify(featureMeta);
   }
 
   /* ===== AI 统一服务与模型配置 ===== */
-  .ft-ai-config-block {
+  .ft-ai-block {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    background-color: var(--sl-color-gray-7, rgba(0, 0, 0, 0.03));
+    gap: 8px;
+    background-color: var(--sl-color-gray-6, rgba(0, 0, 0, 0.03));
     border: 1px solid var(--sl-color-hairline);
     border-radius: 8px;
-    padding: 10px 10px;
+    padding: 8px 10px;
   }
 
   .ft-ai-field {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
   }
 
   .ft-ai-field-head {
@@ -921,16 +753,16 @@ const metaJson = JSON.stringify(featureMeta);
     justify-content: space-between;
   }
 
-  .ft-ai-label {
-    font-size: 11px;
+  .ft-ai-mini-label {
+    font-size: 10.5px;
     font-weight: 500;
-    color: var(--sl-color-gray-2);
+    color: var(--sl-color-gray-3);
   }
 
   .ft-ai-key-badge {
     font-size: 9.5px;
     font-weight: 500;
-    padding: 1px 5px;
+    padding: 1px 4px;
     border-radius: 4px;
     border: 1px solid var(--sl-color-hairline);
     color: var(--sl-color-gray-3);
@@ -955,13 +787,18 @@ const metaJson = JSON.stringify(featureMeta);
   .ft-ai-custom-toggle-btn:hover {
     opacity: 0.8;
   }
+  .ft-ai-custom-toggle-btn:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 1px;
+    border-radius: 2px;
+  }
 
   .ft-ai-select,
   .ft-ai-input {
     width: 100%;
-    height: 28px;
+    height: 27px;
     padding: 0 8px;
-    border-radius: 6px;
+    border-radius: 5px;
     border: 1px solid var(--sl-color-hairline);
     background-color: var(--sl-color-bg);
     color: var(--sl-color-white);
@@ -984,12 +821,12 @@ const metaJson = JSON.stringify(featureMeta);
   }
 
   .ft-ai-key-input {
-    padding-right: 30px;
+    padding-right: 28px;
   }
 
   .ft-ai-icon-btn {
     position: absolute;
-    right: 4px;
+    right: 3px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1006,9 +843,13 @@ const metaJson = JSON.stringify(featureMeta);
   .ft-ai-icon-btn:hover {
     color: var(--sl-color-white);
   }
+  .ft-ai-icon-btn:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 1px;
+  }
   .ft-ai-icon-btn svg {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
   }
 
   .ft-ai-custom-form {
@@ -1042,7 +883,7 @@ const metaJson = JSON.stringify(featureMeta);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 24px;
+    height: 23px;
     padding: 0 8px;
     border-radius: 4px;
     font-size: 11px;
@@ -1050,6 +891,11 @@ const metaJson = JSON.stringify(featureMeta);
     cursor: pointer;
     border: 1px solid transparent;
     transition: background-color 0.15s ease, opacity 0.15s ease;
+  }
+
+  .ft-ai-btn:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 1px;
   }
 
   .ft-ai-btn-ghost {
@@ -1070,32 +916,83 @@ const metaJson = JSON.stringify(featureMeta);
     opacity: 0.9;
   }
 
-  .ft-ai-tip {
-    font-size: 10px;
-    line-height: 1.4;
-    color: var(--sl-color-gray-3);
+  /* 测试连接行 */
+  .ft-ai-test-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     margin-top: 2px;
+  }
+
+  .ft-ai-test-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 23px;
+    padding: 0 8px;
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 4px;
+    border: 1px solid var(--sl-color-hairline);
+    background: var(--sl-color-bg);
+    color: var(--sl-color-gray-2);
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+    flex-shrink: 0;
+  }
+
+  .ft-ai-test-btn:hover {
+    color: var(--sl-color-white);
+    border-color: var(--sl-color-gray-4);
+    background-color: var(--sl-color-gray-6);
+  }
+
+  .ft-ai-test-btn:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 1px;
+  }
+
+  .ft-ai-test-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+
+  .ft-ai-test-status {
+    font-size: 10.5px;
+    line-height: 1.2;
+    color: var(--sl-color-gray-3);
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 220px;
+  }
+
+  .ft-ai-test-status.status-ok {
+    color: #10b981;
+  }
+
+  .ft-ai-test-status.status-err {
+    color: #ef4444;
+  }
+
+  .ft-ai-test-status.status-loading {
+    color: var(--sl-color-accent);
   }
 
   /* ===== 分段选择器（Segmented Control · VitePress 胶囊切换） ===== */
   .ft-segment-wrapper {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-  }
-
-  .ft-segment-label {
-    font-size: 10px;
-    font-weight: 500;
-    color: var(--sl-color-gray-3);
-    padding-left: 2px;
+    gap: 2px;
   }
 
   .ft-segment-track {
     display: grid;
     gap: 3px;
     padding: 2px;
-    border-radius: 7px;
+    border-radius: 6px;
     background-color: var(--sl-color-gray-6);
     border: 1px solid var(--sl-color-hairline);
   }
@@ -1118,9 +1015,9 @@ const metaJson = JSON.stringify(featureMeta);
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 25px;
+    height: 24px;
     padding: 0 2px;
-    border-radius: 5px;
+    border-radius: 4px;
     border: none;
     background: transparent;
     color: var(--sl-color-gray-2);
@@ -1137,6 +1034,13 @@ const metaJson = JSON.stringify(featureMeta);
     color: var(--sl-color-white);
   }
 
+  .ft-font-btn:focus-visible,
+  .ft-theme-chip:focus-visible,
+  .ft-prewarm-btn:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 1px;
+  }
+
   .ft-font-btn.active,
   .ft-theme-chip.active,
   .ft-prewarm-btn.active {
@@ -1151,54 +1055,47 @@ const metaJson = JSON.stringify(featureMeta);
     text-overflow: ellipsis;
   }
 
-  /* 字体族预设 */
+  /* 字体族预设直接作用于按钮文字，实现所见即所得预览 */
   .ft-cjk-sans { font-family: var(--font-cjk-sans, sans-serif); }
   .ft-cjk-serif { font-family: var(--font-cjk-serif, serif); }
-  .ft-cjk-han-sans { font-family: 'Noto Sans SC Variable', sans-serif; }
-  .ft-cjk-han-serif { font-family: 'Noto Serif SC Variable', serif; }
+  .ft-cjk-han-sans { font-family: 'Noto Sans SC Variable', var(--font-cjk-sans, sans-serif); }
+  .ft-cjk-han-serif { font-family: 'Noto Serif SC Variable', var(--font-cjk-serif, serif); }
   .ft-latin-sans { font-family: var(--font-latin-sans, sans-serif); }
   .ft-latin-serif { font-family: var(--font-latin-serif, serif); }
   .ft-latin-katex { font-family: var(--font-latin-katex, KaTeX_Main, serif); }
 
-  /* 巡检抽屉唤起按钮 */
-  .ft-inspector-action-row {
-    padding-left: 30px;
-  }
-
+  /* 巡检快捷键按钮 */
   .ft-open-inspector-btn {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    height: 26px;
-    padding: 0 8px;
-    border-radius: 6px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 4px;
     border: 1px solid var(--sl-color-hairline);
     background-color: var(--sl-color-bg);
-    color: var(--sl-color-gray-2);
-    font-size: 11px;
+    color: var(--sl-color-gray-3);
+    font-size: 10px;
     font-weight: 500;
     cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
-  }
-
-  .ft-open-inspector-btn svg {
-    width: 12px;
-    height: 12px;
-    color: currentColor;
+    transition: color 0.15s ease, border-color 0.15s ease;
   }
 
   .ft-open-inspector-btn:hover {
     border-color: var(--sl-color-gray-3);
     color: var(--sl-color-white);
-    background-color: var(--sl-color-gray-6);
+  }
+
+  .ft-open-inspector-btn:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 1px;
   }
 
   /* ===== VitePress 标准 Switch 开关 ===== */
   .ft-switch {
     position: relative;
     display: inline-block;
-    width: 36px;
-    height: 20px;
+    width: 34px;
+    height: 18px;
     flex-shrink: 0;
     cursor: pointer;
   }
@@ -1213,7 +1110,7 @@ const metaJson = JSON.stringify(featureMeta);
   .ft-switch-slider {
     position: absolute;
     inset: 0;
-    border-radius: 10px;
+    border-radius: 9px;
     background-color: var(--sl-color-gray-5);
     border: 1px solid var(--sl-color-hairline);
     transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
@@ -1225,8 +1122,8 @@ const metaJson = JSON.stringify(featureMeta);
     position: absolute;
     left: 1px;
     top: 1px;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
     background-color: #ffffff;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
@@ -1257,9 +1154,9 @@ const metaJson = JSON.stringify(featureMeta);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 9px 16px;
+    padding: 8px 14px;
     border-top: 1px solid var(--sl-color-hairline);
-    background-color: var(--sl-color-bg);
+    background-color: var(--sl-color-bg, #ffffff) !important;
     flex-shrink: 0;
   }
 
@@ -1270,7 +1167,7 @@ const metaJson = JSON.stringify(featureMeta);
   }
 
   .ft-footer-hint {
-    font-size: 11px;
+    font-size: 10.5px;
     color: var(--sl-color-gray-3);
   }
 
@@ -1288,6 +1185,11 @@ const metaJson = JSON.stringify(featureMeta);
 
   .ft-reset-btn:hover {
     color: var(--sl-color-accent);
+  }
+
+  .ft-reset-btn:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 1px;
   }
 </style>
 

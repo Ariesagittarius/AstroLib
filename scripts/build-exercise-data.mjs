@@ -1,11 +1,10 @@
 // scripts/build-exercise-data.mjs
-// 构建期：为全站题库预渲染 KaTeX 数学公式并进行数据瘦身
+// 构建期：为全站题库（名校历年真题与教材课后习题）预渲染 KaTeX 数学公式并进行数据瘦身
 // 输出到:
-//   - public/data/exercises/engineering_analysis/ch{1..7}.json (按章节划分)
-//   - public/data/exercises/engineering_analysis/papers.json (全部试卷索引大纲)
-//   - public/data/exercises/engineering_analysis/papers/p{paper_id}.json (单张试卷全量题目)
+//   - public/data/exercises/engineering_analysis/ch{1..7}.json (按章节划分，统一包含教材习题与真题)
+//   - public/data/exercises/engineering_analysis/papers.json (全部试卷索引大纲：教材分章习题集 + 历年真题)
+//   - public/data/exercises/engineering_analysis/papers/p{paper_id}.json (单张试卷/单章习题集全量题目)
 //   - public/data/exercises/engineering_analysis/meta.json (汇总统计)
-// （astro build 会把 public/ 原样拷贝至 dist/，供客户端在生产环境下零运行时公式解析开销高速加载）。
 //
 // 开关：src/config/features.config.mjs 里 features.exercises.enabled —— 关闭则跳过生成。
 // 用法：
@@ -19,7 +18,8 @@ import { features } from '../src/config/features.config.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
-const SRC_DATA = path.join(ROOT, 'src', 'data', 'exercises', 'engineering_analysis_exercises.json');
+const SRC_EXAM_DATA = path.join(ROOT, 'src', 'data', 'exercises', 'engineering_analysis_exercises.json');
+const SRC_TEXTBOOK_DATA = path.join(ROOT, 'src', 'data', 'exercises', 'engineering_analysis_textbook_exercises.json');
 const OUT_DIR = path.join(ROOT, 'public', 'data', 'exercises', 'engineering_analysis');
 const PAPERS_OUT_DIR = path.join(OUT_DIR, 'papers');
 
@@ -76,41 +76,64 @@ const KATEX_BUILD_OPTIONS = {
 
 /**
  * 将混排 Markdown/纯文本与 LaTeX 数学公式的字符串编译为静态 HTML。
- * - 公式段采用 KaTeX output: 'html' 编译，紧凑且零 MathML 冗余；
- * - 普通文本段做 HTML 转义与换行处理。
+ * - 支持 Markdown 图片语法 ![](/data/exercises/...) 转换为自适应响应式 <img>
+ * - 公式段采用 KaTeX output: 'html' 编译，紧凑且零 MathML 冗余
+ * - 普通文本段做 HTML 转义与换行处理
  */
 function renderMathText(text) {
   if (!text) return '';
   const str = sanitizeMathLatex(String(text)).trim();
   if (!str) return '';
 
-  if (!str.includes('$')) {
-    return escapeHtml(str).replace(/\n/g, '<br/>');
+  // 1. 保护 Markdown 图片标记，防止被公式拆分或 HTML 转义破坏
+  const images = [];
+  const textWithImagePlaceholders = str.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, url) => {
+    const idx = images.length;
+    images.push({ alt, url });
+    return `___EX_IMAGE_TOKEN_${idx}___`;
+  });
+
+  let htmlOut = '';
+  if (!textWithImagePlaceholders.includes('$')) {
+    htmlOut = escapeHtml(textWithImagePlaceholders).replace(/\n/g, '<br/>');
+  } else {
+    const parts = textWithImagePlaceholders.split(MATH_SPLIT_RE);
+    const out = [];
+    for (const part of parts) {
+      if (!part) continue;
+      if (part.startsWith('$$') && part.endsWith('$$') && part.length >= 4) {
+        try {
+          const math = part.slice(2, -2).trim();
+          out.push(katex.renderToString(math, { ...KATEX_BUILD_OPTIONS, displayMode: true }));
+        } catch (e) {
+          out.push(escapeHtml(part));
+        }
+      } else if (part.startsWith('$') && part.endsWith('$') && part.length >= 2) {
+        try {
+          const math = part.slice(1, -1).trim();
+          out.push(katex.renderToString(math, { ...KATEX_BUILD_OPTIONS, displayMode: false }));
+        } catch (e) {
+          out.push(escapeHtml(part));
+        }
+      } else {
+        out.push(escapeHtml(part).replace(/\n/g, '<br/>'));
+      }
+    }
+    htmlOut = out.join('');
   }
 
-  const parts = str.split(MATH_SPLIT_RE);
-  const out = [];
-  for (const part of parts) {
-    if (!part) continue;
-    if (part.startsWith('$$') && part.endsWith('$$') && part.length >= 4) {
-      try {
-        const math = part.slice(2, -2).trim();
-        out.push(katex.renderToString(math, { ...KATEX_BUILD_OPTIONS, displayMode: true }));
-      } catch (e) {
-        out.push(escapeHtml(part));
-      }
-    } else if (part.startsWith('$') && part.endsWith('$') && part.length >= 2) {
-      try {
-        const math = part.slice(1, -1).trim();
-        out.push(katex.renderToString(math, { ...KATEX_BUILD_OPTIONS, displayMode: false }));
-      } catch (e) {
-        out.push(escapeHtml(part));
-      }
-    } else {
-      out.push(escapeHtml(part).replace(/\n/g, '<br/>'));
-    }
+  // 2. 还原图片为学术风格 HTML
+  if (images.length > 0) {
+    htmlOut = htmlOut.replace(/___EX_IMAGE_TOKEN_(\d+)___/g, (_, idxStr) => {
+      const img = images[parseInt(idxStr, 10)];
+      if (!img) return '';
+      const altAttr = escapeHtml(img.alt || '题图');
+      const figCaption = img.alt ? `<span class="ex-img-caption">${escapeHtml(img.alt)}</span>` : '';
+      return `<div class="ex-figure"><img src="${escapeHtml(img.url)}" alt="${altAttr}" class="ex-img" loading="lazy" />${figCaption}</div>`;
+    });
   }
-  return out.join('');
+
+  return htmlOut;
 }
 
 function cleanPaperTitle(rawTitle) {
@@ -135,34 +158,49 @@ function main() {
     return;
   }
 
-  if (!fs.existsSync(SRC_DATA)) {
-    console.error(`[exercise-data] 找不到题库源文件: ${SRC_DATA}`);
+  if (!fs.existsSync(SRC_EXAM_DATA)) {
+    console.error(`[exercise-data] 找不到真题库源文件: ${SRC_EXAM_DATA}`);
     process.exit(1);
   }
 
   const startTime = Date.now();
-  console.log('[exercise-data] 开始编译《工科数学分析》题库公式与试卷索引...');
+  console.log('[exercise-data] 开始统一编译《工科数学分析》题库（大邮真题 + 教材课后习题）...');
   fs.mkdirSync(OUT_DIR, { recursive: true });
   fs.mkdirSync(PAPERS_OUT_DIR, { recursive: true });
 
-  const rawData = JSON.parse(fs.readFileSync(SRC_DATA, 'utf-8'));
-  const chapters = rawData.chapters || {};
+  const rawExamData = JSON.parse(fs.readFileSync(SRC_EXAM_DATA, 'utf-8'));
+  const examChapters = rawExamData.chapters || {};
+
+  let rawTbData = { chapters: {} };
+  if (fs.existsSync(SRC_TEXTBOOK_DATA)) {
+    rawTbData = JSON.parse(fs.readFileSync(SRC_TEXTBOOK_DATA, 'utf-8'));
+  }
+  const tbChapters = rawTbData.chapters || {};
 
   const metaData = {
     book: 'engineering_analysis',
     title: '工科数学分析基础（第三版）',
     total_questions: 0,
     total_papers: 0,
+    total_exam_questions: 0,
+    total_textbook_questions: 0,
     chapters: {},
     papers: {}
   };
 
   let totalQuestionsCount = 0;
+  let examQuestionsCount = 0;
+  let tbQuestionsCount = 0;
   const papersMap = new Map(); // paper_id -> paperObj
 
-  // 第一遍：遍历全书所有题目，生成按章节 Slim 题目与按试卷汇总
-  for (const [chKey, qList] of Object.entries(chapters)) {
-    const chId = parseInt(chKey, 10);
+  // 第一遍：遍历全书 1~7 章，将每章的教材习题与真题合并
+  for (let chId = 1; chId <= 7; chId++) {
+    const chKey = String(chId);
+    const tbList = tbChapters[chKey] || [];
+    const examList = examChapters[chKey] || [];
+    // 教材习题优先排在前面，便于学生按节针对性复习教材
+    const qList = [...tbList, ...examList];
+
     const slimQuestions = [];
     const sectionCounts = {};
     const sectionSlugs = {};
@@ -173,10 +211,17 @@ function main() {
 
     for (const q of qList) {
       totalQuestionsCount++;
+      const isTb = q.source_type === 'textbook';
+      if (isTb) {
+        tbQuestionsCount++;
+      } else {
+        examQuestionsCount++;
+      }
+
       const qType = q.meta?.type || 'calc';
       typeCounts[qType] = (typeCounts[qType] || 0) + 1;
 
-      const category = q.source?.category || '期末真题';
+      const category = q.source?.category || (isTb ? '教材课后习题' : '期末真题');
       sourceCounts[category] = (sourceCounts[category] || 0) + 1;
 
       const eaMap = q.mapping?.engineering_analysis || {};
@@ -193,13 +238,14 @@ function main() {
       if (secTitle) sectionTitles[sec] = secTitle;
 
       // 试卷元信息
-      const paperId = q.source?.paper_id ?? 1;
+      const paperId = q.source?.paper_id ?? (isTb ? 1000 + chId : 1);
       const rawTitle = q.source?.raw_title || '';
       const cleanTitle = cleanPaperTitle(rawTitle) || `${q.source?.academic_year || ''} ${category}`;
       const orderInPaper = q.meta?.order_in_paper || 1;
-      const paperQNum = extractPaperQuestionNum(q.id, orderInPaper);
+      const paperQNum = q.meta?.paper_q_num || extractPaperQuestionNum(q.id, orderInPaper);
       const sectionType = q.meta?.section_type || '';
       const score = q.meta?.score ?? 5;
+      const group = q.meta?.group || (isTb ? 'A' : '');
 
       // 预编译公式 HTML 与清洗原始文本
       const stemRawClean = sanitizeMathLatex(q.content?.stem || '');
@@ -214,12 +260,16 @@ function main() {
       const hintsHtml = q.solution?.hints ? renderMathText(q.solution.hints) : '';
       const stepsHtml = q.solution?.steps ? renderMathText(q.solution.steps) : '';
 
-      // 规范化来源标签
-      const sourceStr = `${cleanTitle} · 原卷第 ${paperQNum} 题`.trim();
+      // 规范化出处标签
+      const sourceStr = isTb
+        ? (q.source?.source_desc || `${cleanTitle} · ${sectionType}第 ${paperQNum} 题`)
+        : `${cleanTitle} · 原卷第 ${paperQNum} 题`.trim();
 
       // 构建用于极速全文检索的纯文本索引小写串
       const searchRaw = [
         q.id,
+        q.source_type || 'exam',
+        group ? `${group}组` : '',
         stemRawClean,
         ...((q.content?.options || []).map(o => `${o.key} ${o.text}`)),
         answerRaw,
@@ -235,6 +285,8 @@ function main() {
 
       const slimItem = {
         id: q.id,
+        source_type: q.source_type || 'exam',
+        group: group,
         type: qType,
         score: score,
         sec,
@@ -248,9 +300,9 @@ function main() {
         paper_q_num: paperQNum,
         order_in_paper: orderInPaper,
         section_type: sectionType,
-        academic_year: q.source?.academic_year || '',
+        academic_year: q.source?.academic_year || (isTb ? '教材配套' : ''),
         paper_category: category,
-        paper_type: q.source?.paper_type || '综合',
+        paper_type: q.source?.paper_type || (isTb ? '教材原题' : '综合'),
         source: sourceStr,
         kps,
         stem_html: stemHtml,
@@ -263,6 +315,13 @@ function main() {
       if (options.length > 0) slimItem.options = options;
       if (hintsHtml) slimItem.hints_html = hintsHtml;
       if (stepsHtml) slimItem.steps_html = stepsHtml;
+      if (q.content?.sub_questions && q.content.sub_questions.length > 0) {
+        slimItem.sub_questions = q.content.sub_questions.map(sub => ({
+          sub_id: sub.sub_id,
+          stem_raw: sub.stem,
+          stem_html: renderMathText(sub.stem)
+        }));
+      }
 
       slimQuestions.push(slimItem);
 
@@ -273,11 +332,11 @@ function main() {
           raw_title: rawTitle,
           clean_title: cleanTitle,
           category: category,
-          course_name: q.source?.course_name || '数学分析',
-          academic_year: q.source?.academic_year || '',
-          term: q.source?.term || 1,
-          exam_type: q.source?.exam_type || 'exam',
-          paper_type: q.source?.paper_type || '综合',
+          course_name: q.source?.course_name || '工科数学分析基础',
+          academic_year: q.source?.academic_year || (isTb ? '教材配套' : ''),
+          term: q.source?.term || (chId <= 4 ? 1 : 2),
+          exam_type: q.source?.exam_type || (isTb ? 'textbook' : 'exam'),
+          paper_type: q.source?.paper_type || (isTb ? '教材原题' : '综合'),
           page_start: q.source?.page_start,
           page_end: q.source?.page_end,
           total_questions: 0,
@@ -333,14 +392,14 @@ function main() {
     };
 
     const outSizeKb = (fs.statSync(outFile).size / 1024).toFixed(1);
-    console.log(`  [build] 第 ${chId} 章: ${chapterTitle} (${slimQuestions.length} 题) -> ch${chId}.json [${outSizeKb} KB]`);
+    console.log(`  [build] 第 ${chId} 章: ${chapterTitle} (${slimQuestions.length} 题 [教材:${tbList.length}, 真题:${examList.length}]) -> ch${chId}.json [${outSizeKb} KB]`);
   }
 
   // 第二遍：处理所有试卷并输出单卷文件及总试卷索引
   const papersSummaryList = [];
 
   for (const [paperId, paperObj] of papersMap.entries()) {
-    // 按试卷内题号 (paper_q_num) 严格升序排序
+    // 试卷内排序
     paperObj.questions.sort((a, b) => {
       if (a.paper_q_num !== b.paper_q_num) {
         return a.paper_q_num - b.paper_q_num;
@@ -391,8 +450,13 @@ function main() {
     papersSummaryList.push(summaryItem);
   }
 
-  // 试卷排序：按学年倒序、学期、paper_id 排序
+  // 试卷排序：教材习题卷优先排在最前 (1001..1007)，历年真题按学年倒序与 paper_id 排序
   papersSummaryList.sort((a, b) => {
+    const isTbA = a.category === '教材课后习题';
+    const isTbB = b.category === '教材课后习题';
+    if (isTbA && !isTbB) return -1;
+    if (!isTbA && isTbB) return 1;
+    if (isTbA && isTbB) return a.paper_id - b.paper_id;
     const yearA = parseInt((a.academic_year || '').slice(0, 4), 10) || 0;
     const yearB = parseInt((b.academic_year || '').slice(0, 4), 10) || 0;
     if (yearA !== yearB) return yearB - yearA;
@@ -408,12 +472,15 @@ function main() {
 
   metaData.total_questions = totalQuestionsCount;
   metaData.total_papers = papersSummaryList.length;
+  metaData.total_exam_questions = examQuestionsCount;
+  metaData.total_textbook_questions = tbQuestionsCount;
+  metaData.total_exam_papers = 85;
+  metaData.total_textbook_papers = 7;
   const metaFile = path.join(OUT_DIR, 'meta.json');
   fs.writeFileSync(metaFile, JSON.stringify(metaData, null, 2), 'utf-8');
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-  console.log(`\n[exercise-data] 题库与试卷大纲构建完成：7 个章节、85 套真题卷、共 ${totalQuestionsCount} 道题目已编译静态 HTML -> ${path.relative(ROOT, OUT_DIR)}/ (耗时: ${elapsed}s)`);
+  console.log(`\n[exercise-data] 题库构建完成：7 个章节、${papersSummaryList.length} 套试卷（7套教材分章习题卷 + 85套历年真题卷）、共 ${totalQuestionsCount} 道题目（教材:${tbQuestionsCount}, 真题:${examQuestionsCount}）已编译静态 HTML -> ${path.relative(ROOT, OUT_DIR)}/ (耗时: ${elapsed}s)`);
 }
 
 main();
-

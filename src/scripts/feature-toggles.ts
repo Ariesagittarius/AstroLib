@@ -47,6 +47,7 @@ import {
   saveAiEndpoint,
   addCustomAiModel,
   onAiConfigChange,
+  testAiConnection,
 } from '../ai/ai-config';
 
 /** 运行时开关存储键 */
@@ -603,11 +604,21 @@ class StarlightFeatureToggles extends HTMLElement {
     const customForm = root.querySelector<HTMLElement>('.ft-ai-custom-form');
     const customCancel = root.querySelector<HTMLButtonElement>('[data-action="cancel-custom-model"]');
     const customAddBtn = root.querySelector<HTMLButtonElement>('[data-action="add-custom-model"]');
+    const testBtn = root.querySelector<HTMLButtonElement>('[data-action="test-ai-connection"]');
+    const testStatus = root.querySelector<HTMLElement>('.ft-ai-test-status');
+
+    const clearTestStatus = () => {
+      if (testStatus) {
+        testStatus.textContent = '';
+        testStatus.className = 'ft-ai-test-status';
+      }
+    };
 
     if (modelSelect) {
       modelSelect.addEventListener('change', () => {
         const nextId = modelSelect.value;
         saveAiActiveModel(nextId);
+        clearTestStatus();
         syncAllAiSettings();
       });
     }
@@ -616,6 +627,7 @@ class StarlightFeatureToggles extends HTMLElement {
       keyInput.addEventListener('input', () => {
         const activeId = getActiveAiModelId();
         saveAiApiKey(activeId, keyInput.value.trim(), true);
+        clearTestStatus();
         syncAllAiSettings();
       });
     }
@@ -624,7 +636,11 @@ class StarlightFeatureToggles extends HTMLElement {
       endpointInput.addEventListener('change', () => {
         const activeId = getActiveAiModelId();
         saveAiEndpoint(activeId, endpointInput.value.trim());
+        clearTestStatus();
         syncAllAiSettings();
+      });
+      endpointInput.addEventListener('input', () => {
+        clearTestStatus();
       });
     }
 
@@ -636,6 +652,31 @@ class StarlightFeatureToggles extends HTMLElement {
         keyInput.type = isPassword ? 'text' : 'password';
         revealBtn.querySelector('.ft-eye-open')?.classList.toggle('hidden', isPassword);
         revealBtn.querySelector('.ft-eye-closed')?.classList.toggle('hidden', !isPassword);
+      });
+    }
+
+    if (testBtn && testStatus) {
+      testBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        testBtn.disabled = true;
+        testStatus.textContent = '测试中...';
+        testStatus.className = 'ft-ai-test-status status-loading';
+
+        try {
+          const activeId = getActiveAiModelId();
+          const keyVal = keyInput ? keyInput.value.trim() : undefined;
+          const epVal = endpointInput ? endpointInput.value.trim() : undefined;
+          const result = await testAiConnection(activeId, keyVal, epVal);
+
+          testStatus.textContent = result.message;
+          testStatus.className = `ft-ai-test-status ${result.ok ? 'status-ok' : 'status-err'}`;
+        } catch (err: unknown) {
+          testStatus.textContent = (err as Error)?.message || '连接失败';
+          testStatus.className = 'ft-ai-test-status status-err';
+        } finally {
+          testBtn.disabled = false;
+        }
       });
     }
 
@@ -675,6 +716,7 @@ class StarlightFeatureToggles extends HTMLElement {
         if (labelInput) labelInput.value = '';
         if (epInput) epInput.value = '';
         customForm.classList.add('hidden');
+        clearTestStatus();
         syncAllAiSettings();
       });
     }

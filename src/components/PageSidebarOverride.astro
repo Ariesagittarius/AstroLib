@@ -38,8 +38,8 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
   <!-- VitePress outline-marker：跟随滚动高亮项的 2px 品牌色指示条（JS 更新 top） -->
   <div class="outline-marker" aria-hidden="true"></div>
   <div class="toc-container">
-    <div class="toc-header-row">
-      <h2 class="toc-title">本节导航大纲</h2>
+    <div class="toc-header-block">
+      <h2 class="toc-title">本节大纲</h2>
       <div class="toc-header-actions">
         {features.exercises?.enabled && (
           <button type="button" class="sidebar-action-btn exercise-trigger" data-feature="exercises" data-exercise-trigger title="查看本章课后真题与自测练习 (Alt+E)">
@@ -153,17 +153,17 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     display: none;
   }
 
-  /* 2. 仅在桌面端 (>= 72rem) 显示并接管右侧固定位置 */
+  /* 2. 仅在桌面端 (>= 72rem) 显示并置于右栏内部黏性跟随，杜绝超宽屏漂移 */
   @media (min-width: 72rem) {
     .custom-page-sidebar {
       display: block;
-      position: fixed;
+      position: sticky;
       top: var(--sl-nav-height);
-      right: 0;
-      width: var(--sl-sidebar-width);
-      height: calc(100vh - var(--sl-nav-height));
+      width: 100%;
+      height: auto;
+      max-height: calc(100vh - var(--sl-nav-height));
       overflow-y: auto;
-      padding: 1.5rem 1rem 1.5rem 0.5rem;
+      padding: 1.5rem 0.5rem 2rem 1rem;
       font-size: var(--sl-text-xs);
       z-index: 1;
     }
@@ -183,21 +183,19 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     z-index: 1;
   }
 
-  .toc-header-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.75rem;
-    gap: 0.3rem;
+  .toc-header-block {
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.55rem;
+    border-bottom: 1px solid var(--sl-color-hairline);
   }
 
   .toc-title {
-    font-size: var(--sl-text-xs);
+    font-size: 0.78rem;
     font-weight: 700;
     color: var(--sl-color-white);
-    margin: 0;
+    margin: 0 0 0.45rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     white-space: nowrap;
   }
 
@@ -205,28 +203,29 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     display: flex;
     align-items: center;
     gap: 0.3rem;
+    flex-wrap: wrap;
   }
 
   .sidebar-action-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.2rem;
-    padding: 0.15rem 0.4rem;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    background-color: var(--sl-color-gray-6, #f6f6f7);
-    color: var(--sl-color-text-accent, #3451b2);
-    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    gap: 0.15rem;
+    padding: 0.15rem 0.35rem;
+    border-radius: 3px;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    background-color: var(--sl-color-bg-inline-code);
+    color: var(--sl-color-gray-2);
+    border: 1px solid var(--sl-color-hairline);
     cursor: pointer;
     transition: all 0.15s ease;
     white-space: nowrap;
   }
 
   .sidebar-action-btn:hover {
-    background-color: var(--sl-color-accent-low, rgba(52, 81, 178, 0.1));
-    border-color: var(--sl-color-text-accent, #3451b2);
-    transform: translateY(-1px);
+    background-color: var(--sl-color-accent-low);
+    border-color: var(--sl-color-text-accent);
+    color: var(--sl-color-text-accent);
   }
 
   .action-btn-icon {
@@ -246,20 +245,25 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
   .vp-local-nav-actions {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.3rem;
   }
 
   .vp-local-nav-btn-link {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.2rem;
     font-size: 0.75rem;
     font-weight: 500;
-    color: var(--sl-color-text-accent, #3451b2);
+    color: var(--sl-color-gray-2);
     background: transparent;
     border: none;
     cursor: pointer;
-    padding: 0;
+    padding: 0.1rem 0.25rem;
+    border-radius: 3px;
+  }
+  .vp-local-nav-btn-link:hover {
+    color: var(--sl-color-text-accent);
+    background: var(--sl-color-gray-6);
   }
 
   .toc-list {
@@ -268,7 +272,7 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.2rem;
   }
 
   .toc-item {
@@ -278,19 +282,20 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
 
   :global(.toc-link) {
     display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    color: var(--sl-color-gray-3);
+    align-items: baseline;
+    gap: 0.35rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    color: var(--sl-color-gray-2);
     text-decoration: none;
-    transition: all 0.15s ease;
-    line-height: 1.3;
+    transition: color 0.15s ease;
+    line-height: 1.5;
+    font-size: 0.8125rem;
   }
 
   :global(.toc-link:hover) {
     color: var(--sl-color-white);
-    background-color: var(--sl-color-gray-6);
+    background-color: transparent;
   }
 
   :global(.toc-link.active) {
@@ -298,16 +303,62 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     font-weight: 600;
   }
 
+  /* 章节标题：明显区分、合理留白 */
+  :global(.toc-heading.toc-level-2) {
+    margin-top: 0.85rem;
+    margin-bottom: 0.2rem;
+    font-size: 0.835rem;
+    font-weight: 700;
+    color: var(--sl-color-white);
+    line-height: 1.45;
+  }
+  .toc-item:first-child :global(.toc-heading.toc-level-2) {
+    margin-top: 0;
+  }
+  :global(.toc-heading.toc-level-3) {
+    margin-top: 0.35rem;
+    padding-left: 0.65rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--sl-color-gray-1);
+  }
+  :global(.toc-heading.toc-level-4) {
+    padding-left: 1.15rem;
+    font-size: 0.75rem;
+    color: var(--sl-color-gray-2);
+  }
+
+  /* 子条目（定理/例题/定义等卡片块）微缩进，视觉从属于章节 */
+  :global(.toc-link:not(.toc-heading)) {
+    padding-left: 0.75rem;
+    font-size: 0.78rem;
+    line-height: 1.6;
+  }
+
+  /* 模块标签微徽章：定理、定义、性质、例题、推论等 */
   :global(.toc-chip) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.1rem 0.35rem;
-    border-radius: 3px;
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--sl-color-text-accent);
+    background-color: var(--sl-color-accent-low) !important;
+    border-radius: 3px !important;
+    padding: 0.05rem 0.25rem !important;
+    margin-right: 0.25rem !important;
+    line-height: 1.3 !important;
     flex-shrink: 0;
+  }
+  :global(.toc-link.active .toc-chip) {
+    color: #ffffff !important;
+    background-color: var(--sl-color-text-accent) !important;
+    font-weight: 700 !important;
+  }
+  :global([data-theme='dark'] .toc-link.active .toc-chip) {
+    color: #0b0f19 !important;
+    background-color: var(--sl-color-text-accent) !important;
+    font-weight: 700 !important;
   }
 
   :global(.toc-number) {
@@ -316,57 +367,9 @@ const globalIndexJson = JSON.stringify(globalBlockIndex);
     text-overflow: ellipsis;
   }
 
-  :global(.toc-heading) {
-    font-size: 0.85em;
-    font-weight: 500;
-    color: var(--sl-color-gray-2);
-  }
-  :global(.toc-heading.toc-level-3) {
-    padding-left: 1.1rem;
-    font-size: 0.8em;
-  }
-  :global(.toc-heading.toc-level-4) {
-    padding-left: 1.7rem;
-    font-size: 0.75em;
-    opacity: 0.85;
-  }
-  :global(.toc-heading.active) {
-    color: var(--sl-color-text-accent);
-    font-weight: 600;
-  }
-
   .toc-loading {
     color: var(--sl-color-gray-4);
     font-style: italic;
-  }
-
-  :global(.chip-example) {
-    background-color: rgba(59, 130, 246, 0.12);
-    color: #3b82f6;
-  }
-  :global(.chip-knowledge) {
-    background-color: rgba(16, 185, 129, 0.12);
-    color: #10b981;
-  }
-  :global(.chip-method) {
-    background-color: rgba(245, 158, 11, 0.12);
-    color: #f59e0b;
-  }
-  :global(.chip-conclusion) {
-    background-color: rgba(236, 72, 153, 0.12);
-    color: #ec4899;
-  }
-  :global(.chip-summary) {
-    background-color: rgba(100, 116, 139, 0.12);
-    color: #475569;
-  }
-  :global(.chip-problem) {
-    background-color: rgba(139, 92, 246, 0.12);
-    color: #7c3aed;
-  }
-  :global(.chip-default) {
-    background-color: rgba(100, 116, 139, 0.12);
-    color: #475569;
   }
 </style>
 

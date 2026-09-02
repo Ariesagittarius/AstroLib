@@ -420,3 +420,84 @@ export function getEffectiveAiClientConfig(): EffectiveAiConfig {
     topK: params.topK,
   };
 }
+
+export interface TestAiResult {
+  ok: boolean;
+  latencyMs: number;
+  message: string;
+  statusCode?: number;
+}
+
+/**
+ * 测试 AI 端点与密钥连通性
+ */
+export async function testAiConnection(
+  modelId?: string,
+  explicitKey?: string,
+  explicitEndpoint?: string
+): Promise<TestAiResult> {
+  const targetId = modelId || getActiveAiModelId();
+  const apiKey = (explicitKey !== undefined ? explicitKey : getAiApiKey(targetId)).trim();
+  const endpoint = (explicitEndpoint !== undefined ? explicitEndpoint : getAiEndpoint(targetId)).trim();
+
+  if (!apiKey) {
+    return { ok: false, latencyMs: 0, message: '请先填写 API Key' };
+  }
+  if (!endpoint) {
+    return { ok: false, latencyMs: 0, message: '请填写端点 URL' };
+  }
+
+  const t0 = performance.now();
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: targetId,
+        messages: [{ role: 'user', content: 'hi' }],
+        max_tokens: 1,
+        stream: false,
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    const latencyMs = Math.round(performance.now() - t0);
+
+    if (res.ok) {
+      return {
+        ok: true,
+        latencyMs,
+        statusCode: res.status,
+        message: `连接成功 · ${latencyMs}ms`,
+      };
+    } else {
+      let errDetail = '';
+      try {
+        const errJson = await res.json();
+        errDetail = errJson?.error?.message || errJson?.message || '';
+      } catch {
+        errDetail = res.statusText;
+      }
+      return {
+        ok: false,
+        latencyMs,
+        statusCode: res.status,
+        message: `HTTP ${res.status}${errDetail ? `: ${errDetail.slice(0, 36)}` : ''}`,
+      };
+    }
+  } catch (err: unknown) {
+    const latencyMs = Math.round(performance.now() - t0);
+    const error = err as Error;
+    if (error?.name === 'AbortError') {
+      return { ok: false, latencyMs, message: '请求超时 (12s)' };
+    }
+    return { ok: false, latencyMs, message: error?.message || '网络连接失败' };
+  }
+}

@@ -172,7 +172,10 @@ export function buildBookTOC(
     const { type, number } = parseTitleFromConfig(rawTitle, modules);
     const modMeta = modules[type] || {};
     const chipClass = modMeta.theme || 'chip-default';
-    const labelText = modMeta.short || type;
+    // 学术环境标准显示名：定理、定义、性质、推论等保留规范全名，例题简称为“例”
+    const displayLabel = (type === '定理' || type === '定义' || type === '性质' || type === '推论' || type === '引理' || type === '命题' || type === '公理')
+      ? type
+      : (modMeta.short || type);
 
     const li = document.createElement('li');
     li.className = 'toc-item';
@@ -188,15 +191,16 @@ export function buildBookTOC(
       headingText.textContent = rawTitle;
       a.appendChild(headingText);
     } else {
-      const chipSpan = document.createElement('span');
-      chipSpan.className = `toc-chip ${chipClass}`;
-      chipSpan.textContent = labelText;
+      if (displayLabel && (!number || !number.startsWith(displayLabel))) {
+        const chipSpan = document.createElement('span');
+        chipSpan.className = 'toc-chip';
+        chipSpan.textContent = displayLabel;
+        a.appendChild(chipSpan);
+      }
 
       const numSpan = document.createElement('span');
       numSpan.className = 'toc-number';
-      numSpan.textContent = number;
-
-      a.appendChild(chipSpan);
+      numSpan.textContent = number || rawTitle;
       a.appendChild(numSpan);
     }
 

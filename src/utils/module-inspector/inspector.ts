@@ -162,6 +162,7 @@ class ModuleInspectorController {
   private currentRenderMode: 'flat' | 'same_dups' | 'all_dups' | 'suspicious' | 'formula_errors' = 'flat';
   private currentItems: (ModuleItem | DuplicateGroup | FormulaErrorItem)[] = [];
   private currentRenderedCount = 0;
+  private locatedItemId: string | null = null;
 
   init() {
     this.rootEl = document.getElementById('dsh-inspector-root');
@@ -370,17 +371,21 @@ class ModuleInspectorController {
         const itemUrl = jumpBtn.getAttribute('data-url') || row?.getAttribute('data-url') || '';
         const anchorId = jumpBtn.getAttribute('data-anchor') || row?.getAttribute('data-anchor') || '';
         const line = Number(jumpBtn.getAttribute('data-line') || row?.getAttribute('data-line') || '0');
-        this.navigateTo(itemUrl, anchorId, line);
+        const itemId = row?.getAttribute('data-id') || '';
+        if (itemId) this.setLocatedItem(itemId);
+        this.navigateTo(itemUrl, anchorId, line, itemId);
         return;
       }
 
-      // 卡片点击跳转定位
+      // 列表条目点击跳转定位
       const cardRow = target.closest<HTMLElement>('.insp-item-row, .insp-card-suspicious');
       if (cardRow) {
         const itemUrl = cardRow.getAttribute('data-url') || '';
         const anchorId = cardRow.getAttribute('data-anchor') || '';
         const line = Number(cardRow.getAttribute('data-line') || '0');
-        this.navigateTo(itemUrl, anchorId, line);
+        const itemId = cardRow.getAttribute('data-id') || '';
+        if (itemId) this.setLocatedItem(itemId);
+        this.navigateTo(itemUrl, anchorId, line, itemId);
       }
     });
   }
@@ -633,10 +638,12 @@ class ModuleInspectorController {
   private renderAll() {
     if (!this.scanData) return;
 
-    // 1. 更新标题
+    // 1. 更新标题（以书名为主体，突出学术教材属性）
     const titleEl = this.rootEl?.querySelector('.insp-header-title');
     if (titleEl) {
-      titleEl.textContent = `模块速查 · ${this.scanData.bookTitle || this.scanData.bookSlug}`;
+      const bookTitle = this.scanData.bookTitle || this.scanData.bookSlug;
+      titleEl.textContent = bookTitle;
+      titleEl.title = bookTitle;
     }
 
     // 2. 单趟计算过滤状态与各维度计数
@@ -801,33 +808,34 @@ class ModuleInspectorController {
       return;
     }
 
-    // 构建头部统计
+    // 构建头部统计与筛选说明
     const isFiltered = !!this.searchQuery || this.selectedChapter !== 'all' || this.selectedKind !== 'all';
-    let filterPills = '';
+    let filterDetails = '';
     if (this.searchQuery) {
-      filterPills += `<span class="insp-status-badge">“${this.escapeHtml(this.searchQuery)}”</span>`;
+      filterDetails += `<span class="insp-status-badge">“${this.escapeHtml(this.searchQuery)}”</span>`;
     }
     if (this.selectedKind !== 'all' && (this.currentRenderMode === 'flat' || this.currentRenderMode === 'suspicious')) {
-      filterPills += `<span class="insp-status-badge">${this.escapeHtml(KIND_LABEL_MAP[this.selectedKind] || this.selectedKind)}</span>`;
+      const kindLabel = KIND_LABEL_MAP[this.selectedKind] || this.selectedKind;
+      filterDetails += (filterDetails ? ' · ' : '') + `<span class="insp-status-badge">${this.escapeHtml(kindLabel)}</span>`;
     }
 
     let countDesc = '';
     if (this.currentRenderMode === 'flat') {
       const bookTotal = this.scanData?.totalModules || 0;
       countDesc = isFiltered
-        ? `<div class="insp-count-status"><span class="insp-count-highlight">已筛选 <strong>${totalCount}</strong> 个</span><span class="insp-count-total-hint">共 ${bookTotal} 个模块</span>${filterPills}</div>`
-        : `<div class="insp-count-status"><span class="insp-count-normal">全书共 <strong>${bookTotal}</strong> 个模块</span></div>`;
+        ? `<div class="insp-count-status"><span class="insp-count-highlight">匹配 ${totalCount} 项</span><span class="insp-count-total-hint">（全书 ${bookTotal}）</span>${filterDetails ? ` · ${filterDetails}` : ''}</div>`
+        : `<div class="insp-count-status"><span class="insp-count-normal">全书共 ${bookTotal} 个模块条目</span></div>`;
     } else if (this.currentRenderMode === 'same_dups') {
-      countDesc = `<div class="insp-count-status"><span class="insp-count-highlight">检出 <strong>${totalCount}</strong> 组同章冲突</span>${filterPills}</div><span>建议核对序号</span>`;
+      countDesc = `<div class="insp-count-status"><span class="insp-count-highlight">检出 ${totalCount} 组同章冲突</span></div>`;
     } else if (this.currentRenderMode === 'all_dups') {
-      countDesc = `<div class="insp-count-status"><span class="insp-count-highlight">全书聚合 <strong>${totalCount}</strong> 组同名条目</span>${filterPills}</div><span>跨章节索引</span>`;
+      countDesc = `<div class="insp-count-status"><span class="insp-count-highlight">跨章聚合 ${totalCount} 组同名条目</span></div>`;
     } else if (this.currentRenderMode === 'suspicious') {
-      countDesc = `<div class="insp-count-status"><span class="insp-count-highlight">检出 <strong>${totalCount}</strong> 处结构异常</span>${filterPills}</div><span>疑似切分误伤</span>`;
+      countDesc = `<div class="insp-count-status"><span class="insp-count-highlight">审查发现 ${totalCount} 处结构异常</span></div>`;
     } else if (this.currentRenderMode === 'formula_errors') {
-      countDesc = `<div class="insp-count-status"><span class="insp-count-highlight">发现 <strong>${totalCount}</strong> 处公式异常</span>${filterPills}</div><span>KaTeX 语法</span>`;
+      countDesc = `<div class="insp-count-status"><span class="insp-count-highlight">检出 ${totalCount} 处公式语法异常</span></div>`;
     }
 
-    let html = `<div class="insp-items-count-hint">${countDesc}<span class="insp-count-book-tag">${this.escapeHtml(this.scanData?.bookTitle || '')}</span></div>`;
+    let html = `<div class="insp-items-count-hint">${countDesc}</div>`;
 
     // 仅生成首屏批次（CHUNK_SIZE = 40），挂载时间控制在 3ms 以内
     const initialSlice = this.currentItems.slice(0, CHUNK_SIZE);
@@ -908,18 +916,70 @@ class ModuleInspectorController {
     return html;
   }
 
+  private setLocatedItem(itemId: string) {
+    if (!itemId) return;
+    this.locatedItemId = itemId;
+    const listEl = this.rootEl?.querySelector('.insp-list');
+    if (!listEl) return;
+    listEl.querySelectorAll('.insp-item-row.is-located').forEach((el) => {
+      el.classList.remove('is-located');
+    });
+    const rows = listEl.querySelectorAll<HTMLElement>('.insp-item-row');
+    for (const r of rows) {
+      if (r.getAttribute('data-id') === itemId) {
+        r.classList.add('is-located');
+        break;
+      }
+    }
+  }
+
+  /**
+   * 将原始标题智能拆解为【条目头（类型+序号）】与【语义标题】两层学术排版结构
+   * 例："例 1 变速直线运动的瞬时速度" -> kicker: "例题 1", title: "变速直线运动的瞬时速度"
+   * 例："定理 1.1 极限四则运算" -> kicker: "定理 1.1", title: "极限四则运算"
+   * 例："柯西收敛准则" -> kicker: "定理", title: "柯西收敛准则"
+   * 例："例 1" -> kicker: "例题 1", title: ""
+   */
+  private parseTitleParts(cleanTitle: string, typeLabel: string): { kicker: string; title: string } {
+    const clean = (cleanTitle || '').trim();
+    if (clean.startsWith('[未命名') && clean.endsWith(']')) {
+      return { kicker: typeLabel || '模块', title: '' };
+    }
+
+    // 匹配如 "例 1", "例1", "例 1.2", "例1-1", "定理 1", "定理1.1", "定义 2", "习题 3", "引理 1", "性质 2", "推论 1" 等前缀
+    const prefixRegex = /^(例|例题|定理|定义|性质|推论|引理|命题|公理|准则|习题|练习|微课)\s*([0-9]+(?:\.[0-9]+)*(?:-[0-9]+)?|[一二三四五六七八九十]+)\b\s*(.*)$/;
+    const m = clean.match(prefixRegex);
+    if (m) {
+      const typeName = m[1] === '例' ? '例题' : m[1];
+      const num = m[2];
+      const rest = (m[3] || '').trim();
+      const kicker = `${typeName} ${num}`;
+      return { kicker, title: rest };
+    }
+
+    // 若直接以数字或编号开头，如 "1. 变速直线运动" 或 "1.1 极限"
+    const numRegex = /^([0-9]+(?:\.[0-9]+)*)\s*(.*)$/;
+    const nm = clean.match(numRegex);
+    if (nm && typeLabel) {
+      return { kicker: `${typeLabel} ${nm[1]}`, title: nm[2].trim() };
+    }
+
+    // 若标题就是 "例题"、"定理"、"解析" 等单独分类词
+    if (clean === typeLabel || clean === '解析' || clean === '思路分析' || clean === '标注说明' || clean === '教学导引') {
+      return { kicker: clean, title: '' };
+    }
+
+    // 其他情况：如果有语义标题但无明确编号，kicker 为 typeLabel，title 为原标题
+    return { kicker: typeLabel || '条目', title: clean };
+  }
+
   private renderSameDupGroupHtml(group: DuplicateGroup): string {
     return `
       <div class="insp-dup-group">
         <div class="insp-dup-group-head">
           <div class="insp-dup-group-title">
-            <svg class="insp-dup-head-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-              <line x1="12" y1="9" x2="12" y2="13"></line>
-              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
             <span class="insp-dup-title-text">${this.highlightText(group.title, this.searchQuery)}</span>
-            <span class="insp-dup-count-chip">${group.count} 处重复</span>
+            <span class="insp-dup-count-chip">${group.count} 处冲突</span>
           </div>
           <div class="insp-dup-chapter">${this.escapeHtml(group.chapterTitle || group.filename || '')}</div>
         </div>
@@ -935,14 +995,9 @@ class ModuleInspectorController {
       <div class="insp-dup-group">
         <div class="insp-dup-group-head">
           <div class="insp-dup-group-title">
-            <svg class="insp-dup-head-svg" style="color: var(--insp-brand);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-              <polyline points="2 17 12 22 22 17"></polyline>
-              <polyline points="2 12 12 17 22 12"></polyline>
-            </svg>
             <span class="insp-dup-title-text">${this.highlightText(group.title, this.searchQuery)}</span>
-            <span class="insp-dup-count-chip" style="color: var(--insp-brand); background: var(--insp-brand-soft); border-color: transparent;">${group.count} 次引用</span>
-            <span class="insp-dup-chapters-chip">跨 ${group.chaptersCount || 1} 章节</span>
+            <span class="insp-dup-count-chip" style="color: var(--insp-brand);">${group.count} 次引用</span>
+            <span class="insp-dup-chapters-chip">跨 ${group.chaptersCount || 1} 章</span>
           </div>
         </div>
         <div class="insp-dup-group-body">
@@ -955,62 +1010,40 @@ class ModuleInspectorController {
   private renderFormulaErrorCardHtml(item: FormulaErrorItem): string {
     const filePos = `${item.file}:L${item.line}`;
     const editUrl = `${item.chapterUrl}?edit=1#L${item.line}`;
+    const isLocated = this.locatedItemId === item.id;
+    const isLocatedClass = isLocated ? 'is-located' : '';
 
     return `
-      <div class="insp-card insp-card-suspicious insp-item-row" data-url="${this.escapeHtml(item.url)}" data-slug="${this.escapeHtml(item.chapterSlug)}" data-line="${item.line}">
-        <div class="insp-card-main">
-          <div class="insp-item-top">
-            <div class="insp-item-badge-wrap">
-              <span class="insp-item-chip chip-problem" style="font-family: var(--insp-font-mono);">
-                <span class="insp-badge-code">${this.escapeHtml(item.typeLabel)}</span>
-              </span>
-              <span class="insp-item-title">${this.escapeHtml(item.chapterTitle)}:L${item.line}</span>
-            </div>
-            <div class="insp-item-actions">
-              <button type="button" class="insp-action-btn insp-copy-pos-btn" title="复制坐标" data-pos="${this.escapeHtml(filePos)}">
-                <svg class="insp-btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-                <span>L${item.line}</span>
-              </button>
-              ${
-                this.isDev
-                  ? `
-                <a href="${this.escapeHtml(editUrl)}" class="insp-action-btn insp-edit-link" title="在在线精修工具中打开">
-                  <svg class="insp-btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                  </svg>
-                  <span>精修</span>
-                </a>
-              `
-                  : ''
-              }
-              <button type="button" class="insp-action-btn insp-jump-btn insp-action-jump" title="定位跳转至错误位置" data-url="${this.escapeHtml(item.url)}" data-line="${item.line}">
-                <svg class="insp-btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="7"></circle>
-                  <line x1="12" y1="2" x2="12" y2="5"></line>
-                  <line x1="12" y1="19" x2="12" y2="22"></line>
-                </svg>
-                <span>定位</span>
-              </button>
-            </div>
+      <div class="insp-item-row ${isLocatedClass}" data-id="${this.escapeHtml(item.id)}" data-url="${this.escapeHtml(item.url)}" data-slug="${this.escapeHtml(item.chapterSlug)}" data-line="${item.line}">
+        <div class="insp-item-top">
+          <div class="insp-item-heading">
+            <span class="insp-item-kicker">公式异常 · ${this.escapeHtml(item.typeLabel)}</span>
+            <h3 class="insp-item-title">${this.escapeHtml(item.chapterTitle)}:L${item.line}</h3>
           </div>
-
-          <div class="insp-item-reasons" style="margin-top: 5px;">
-            <span class="insp-reason-tag">
-              <svg class="insp-reason-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-              </svg>
-              ${this.escapeHtml(item.error)}
-            </span>
+          <div class="insp-item-actions">
+            <button type="button" class="insp-action-btn insp-copy-pos-btn" title="复制坐标" data-pos="${this.escapeHtml(filePos)}">
+              <span>L${item.line}</span>
+            </button>
+            ${
+              this.isDev
+                ? `
+              <a href="${this.escapeHtml(editUrl)}" class="insp-action-btn insp-edit-link" title="在在线精修工具中打开">
+                <span>精修</span>
+              </a>
+            `
+                : ''
+            }
+            <button type="button" class="insp-action-btn insp-jump-btn insp-action-jump" title="定位跳转至错误位置" data-url="${this.escapeHtml(item.url)}" data-line="${item.line}">
+              <span>定位 ↗</span>
+            </button>
           </div>
-
-          <div class="insp-item-snippet" style="font-family: var(--insp-font-mono); font-size: 11px; margin-top: 5px;">${this.highlightText(item.snippet, this.searchQuery)}</div>
         </div>
+
+        <div class="insp-item-reasons">
+          <span class="insp-reason-tag">${this.escapeHtml(item.error)}</span>
+        </div>
+
+        <div class="insp-item-snippet" style="font-family: var(--insp-font-mono); font-size: 11px; margin-top: 3px;">${this.highlightText(item.snippet, this.searchQuery)}</div>
       </div>
     `;
   }
@@ -1019,76 +1052,48 @@ class ModuleInspectorController {
     const reasonsHtml =
       this.isDev && showReasons && item.suspiciousReasons.length > 0
         ? `<div class="insp-item-reasons">${item.suspiciousReasons
-            .map(
-              (r) =>
-                `<span class="insp-reason-tag"><svg class="insp-reason-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg><span>${this.escapeHtml(r)}</span></span>`
-            )
+            .map((r) => `<span class="insp-reason-tag"><span>${this.escapeHtml(r)}</span></span>`)
             .join('')}</div>`
         : '';
 
     const editBtnHtml = this.isDev
-      ? `<button type="button" class="insp-action-btn" data-action="edit" data-url="${this.escapeHtml(item.url)}" data-line="${item.line}" title="在在线精修工具中定位源码">
-          <svg class="insp-btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 20h9"></path>
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-          </svg>
+      ? `<button type="button" class="insp-action-btn insp-edit-link" data-action="edit" data-url="${this.escapeHtml(item.url)}" data-line="${item.line}" title="在在线精修工具中定位源码">
           <span>精修</span>
         </button>`
       : '';
 
-    const highlightedTitle = this.highlightText(item.cleanTitle, this.searchQuery);
-    const highlightedSnippet = this.highlightText(item.snippet || '（无正文描述）', this.searchQuery);
+    const { kicker, title } = this.parseTitleParts(item.cleanTitle, item.typeLabel);
+    const highlightedKicker = this.highlightText(kicker, this.searchQuery);
+    const highlightedTitle = title ? this.highlightText(title, this.searchQuery) : '';
+    const highlightedSnippet = item.snippet ? this.highlightText(item.snippet, this.searchQuery) : '';
+    const isLocated = this.locatedItemId === item.id;
+    const isLocatedClass = isLocated ? 'is-located' : '';
 
     return `
-      <div class="insp-item-row" data-url="${this.escapeHtml(item.url)}" data-chapter-url="${this.escapeHtml(item.chapterUrl)}" data-anchor="${this.escapeHtml(item.anchorId)}" data-line="${item.line}" data-file="${this.escapeHtml(item.file)}">
+      <article class="insp-item-row ${isLocatedClass}" data-id="${this.escapeHtml(item.id)}" data-url="${this.escapeHtml(item.url)}" data-chapter-url="${this.escapeHtml(item.chapterUrl)}" data-anchor="${this.escapeHtml(item.anchorId)}" data-line="${item.line}" data-file="${this.escapeHtml(item.file)}">
         <div class="insp-item-top">
-          <div class="insp-item-badge-wrap">
-            <span class="insp-item-chip ${item.theme || 'chip-default'}">
-              <span class="insp-badge-code">${item.code || 'BLK'}</span>
-              <span class="insp-badge-label">${item.typeLabel || item.tagName}</span>
-            </span>
-            <span class="insp-item-title">${highlightedTitle}</span>
+          <div class="insp-item-heading">
+            <span class="insp-item-kicker">${highlightedKicker}</span>
+            ${title ? `<h3 class="insp-item-title">${highlightedTitle}</h3>` : ''}
           </div>
           <div class="insp-item-actions">
-            <button type="button" class="insp-action-btn" data-action="copy" data-location="${this.escapeHtml(item.file)}:${item.line}" title="复制坐标 ${this.escapeHtml(item.filename)}:L${item.line}">
-              <svg class="insp-btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
+            <button type="button" class="insp-action-btn insp-copy-pos-btn" data-action="copy" data-location="${this.escapeHtml(item.file)}:${item.line}" title="复制坐标 ${this.escapeHtml(item.filename)}:L${item.line}">
               <span>L${item.line}</span>
             </button>
             ${editBtnHtml}
             <button type="button" class="insp-action-btn insp-jump-btn insp-action-jump" data-url="${this.escapeHtml(item.url)}" data-anchor="${this.escapeHtml(item.anchorId)}" data-line="${item.line}" title="定位跳转至正文卡片">
-              <svg class="insp-btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="7"></circle>
-                <line x1="12" y1="2" x2="12" y2="5"></line>
-                <line x1="12" y1="19" x2="12" y2="22"></line>
-                <line x1="2" y1="12" x2="5" y2="12"></line>
-                <line x1="19" y1="12" x2="22" y2="12"></line>
-              </svg>
-              <span>定位</span>
+              <span>定位 ↗</span>
             </button>
           </div>
         </div>
         ${reasonsHtml}
-        <div class="insp-item-snippet">${highlightedSnippet}</div>
-        <div class="insp-item-meta">
-          <span class="insp-meta-chapter" title="${this.escapeHtml(item.chapterTitle)}">
-            <svg class="insp-meta-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-            </svg>
-            ${this.escapeHtml(item.chapterTitle)}
-          </span>
-          <span class="insp-meta-file" title="${this.escapeHtml(item.file)}">
-            <svg class="insp-meta-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-            </svg>
-            ${this.escapeHtml(item.filename)}:L${item.line}
-          </span>
-        </div>
-      </div>
+        ${item.snippet ? `<p class="insp-item-snippet">${highlightedSnippet}</p>` : ''}
+        <footer class="insp-item-meta">
+          <span class="insp-meta-chapter" title="${this.escapeHtml(item.chapterTitle)}">${this.escapeHtml(item.chapterTitle)}</span>
+          <span class="insp-meta-dot">·</span>
+          <span class="insp-meta-file">L${item.line}</span>
+        </footer>
+      </article>
     `;
   }
 
@@ -1107,8 +1112,8 @@ class ModuleInspectorController {
       .join('');
   }
 
-  /** 跳转并执行波纹脉冲高亮 */
-  private navigateTo(url: string, anchorId: string, line: number) {
+  /** 跳转并执行波纹脉冲高亮与定位状态同步 */
+  private navigateTo(url: string, anchorId: string, line: number, itemId?: string) {
     if (!url) return;
 
     const targetUrl = new URL(url, location.href);
@@ -1122,7 +1127,7 @@ class ModuleInspectorController {
       }
     } else {
       // 跨页跳转：记录待高亮目标并通过 SPA 路由器平滑导航
-      const highlightTarget = { anchorId, line, timestamp: Date.now() };
+      const highlightTarget = { anchorId, line, itemId: itemId || this.locatedItemId, timestamp: Date.now() };
       sessionStorage.setItem('dsh-pending-highlight', JSON.stringify(highlightTarget));
 
       const spaNav = (window as unknown as Record<string, unknown>).__spaNavigate as
@@ -1181,9 +1186,15 @@ class ModuleInspectorController {
         sessionStorage.removeItem('dsh-pending-highlight');
         const target = JSON.parse(raw);
         if (target && Date.now() - target.timestamp < 10000) {
+          if (target.itemId) {
+            this.locatedItemId = target.itemId;
+          }
           requestAnimationFrame(() => {
             setTimeout(() => {
               this.executeHighlight(target.anchorId, target.line);
+              if (target.itemId) {
+                this.setLocatedItem(target.itemId);
+              }
             }, 60);
           });
         }

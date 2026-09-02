@@ -59,6 +59,17 @@ if (features.epub.enabled && bookMatch) {
 <SidebarPersister>
   <SidebarSublist sublist={filteredSidebar} />
 </SidebarPersister>
+<script is:inline>
+  (() => {
+    try {
+      const top = parseInt(sessionStorage.getItem('astrolib_sidebar_scroll') || '', 10);
+      const scroller = document.getElementById('starlight__sidebar');
+      if (scroller && !isNaN(top) && top > 0) {
+        scroller.scrollTop = top;
+      }
+    } catch {}
+  })();
+</script>
 
 {features.epub.enabled && epubHref && (
   <div class="epub-entry" data-feature="epub">
@@ -321,6 +332,60 @@ if (features.epub.enabled && bookMatch) {
       };
     }
 
+    const SIDEBAR_SCROLL_KEY = 'astrolib_sidebar_scroll';
+
+    function getSidebarScroller() {
+      return document.getElementById('starlight__sidebar') || document.querySelector('.sidebar-pane');
+    }
+
+    function saveSidebarScroll() {
+      const scroller = getSidebarScroller();
+      if (scroller) {
+        sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(scroller.scrollTop));
+      }
+    }
+
+    function restoreSidebarScroll() {
+      const scroller = getSidebarScroller();
+      if (!scroller) return;
+
+      const saved = sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
+      if (saved !== null && saved !== '') {
+        const top = parseInt(saved, 10);
+        if (!isNaN(top) && top >= 0) {
+          scroller.scrollTop = top;
+          return;
+        }
+      }
+
+      // 若未记录过滚动条位置（如首次直接访问该 URL），自动将当前章节滚动到可视区域中央
+      const active = scroller.querySelector('a[aria-current="page"]');
+      if (active) {
+        active.scrollIntoView({ block: 'center', behavior: 'instant' });
+      }
+    }
+
+    function bindSidebarScrollTracker() {
+      const scroller = getSidebarScroller();
+      if (!scroller || scroller.__hasScrollTracker) return;
+      scroller.__hasScrollTracker = true;
+
+      // 实时记录左栏滚动偏好
+      let scrollTimer = 0;
+      scroller.addEventListener('scroll', () => {
+        clearTimeout(scrollTimer);
+        scrollTimer = window.setTimeout(saveSidebarScroll, 50);
+      }, { passive: true });
+
+      // 点击章节链接前立即精准记录
+      scroller.addEventListener('click', (e) => {
+        const target = e.target;
+        if (target instanceof Element && target.closest('a[href]')) {
+          saveSidebarScroll();
+        }
+      }, { capture: true });
+    }
+
     // 更新左侧栏当前页高亮，并展开所属分组
     function updateSidebarActive(pathname) {
       const sidebar = document.querySelector('nav.sidebar, .sidebar');
@@ -442,9 +507,15 @@ if (features.epub.enabled && bookMatch) {
 
         document.title = title || document.title;
 
-        // 1. 跨图书切换时若侧边栏结构不同则同步替换侧边栏
-        if (newSidebar && currentSidebar && newSidebar.innerHTML !== currentSidebar.innerHTML) {
+        // 1. 跨图书切换时若侧边栏结构不同则同步替换侧边栏（同书导航保留侧边栏 DOM 避免滚动条弹回顶部）
+        const currentBookKey = currentPathname.match(/\/collections\/([^/]+)\/([^/]+)/)?.[0];
+        const targetBookKey = normPath(url.pathname).match(/\/collections\/([^/]+)\/([^/]+)/)?.[0];
+        const isSameBook = Boolean(currentBookKey && targetBookKey && currentBookKey === targetBookKey);
+
+        if (newSidebar && currentSidebar && !isSameBook && newSidebar.innerHTML !== currentSidebar.innerHTML) {
           currentSidebar.replaceWith(newSidebar);
+          bindSidebarScrollTracker();
+          restoreSidebarScroll();
         }
 
         // 2. 正文与右侧大纲置换
@@ -724,6 +795,20 @@ if (features.epub.enabled && bookMatch) {
     // 监听用户在偏好设置中实时调整预加载配置
     window.addEventListener('prewarm:config-change', () => {
       triggerIdlePrewarming();
+    });
+
+    // 侧边栏滚动位置持久化：初始化绑定与视口恢复
+    bindSidebarScrollTracker();
+    restoreSidebarScroll();
+
+    document.addEventListener('astro:page-load', () => {
+      bindSidebarScrollTracker();
+      restoreSidebarScroll();
+    });
+
+    window.addEventListener('beforeunload', saveSidebarScroll);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') saveSidebarScroll();
     });
 
     // 初始页面就绪后，排队启动全书空闲智能预热

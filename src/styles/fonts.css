@@ -34,8 +34,8 @@
   --font-latin-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial;
   /* 品牌英文展示字体（Logo、大标题、Hero，跨端一致的高品质几何无衬线） */
   --font-brand: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  /* 衬线拉丁段（纯拉丁字符；汉字归中文段处理） */
-  --font-latin-serif: Georgia, 'Times New Roman';
+  /* 衬线拉丁段（纯拉丁字符；KaTeX_Main 与公式同源，汉字归中文段处理） */
+  --font-latin-serif: 'KaTeX_Main', 'Times New Roman', Georgia;
   /* KaTeX 公式字体段：KaTeX_Main（Computer Modern 衬线），与页面公式同款；缺字体回退常规衬线 */
   --font-latin-katex: 'KaTeX_Main', 'Times New Roman', Georgia;
   /* 无衬线中文段（系统字体，零下载） */
@@ -45,17 +45,23 @@
 }
 
 /* --------------------------------------------------------------------------
-   2. 各段当前值 —— 由 data-font-latin / data-font-cjk 驱动（无属性 = 默认无衬线）
+   2. 各段当前值 —— 由 data-font-latin / data-font-cjk 驱动（默认学术衬线体系）
    -------------------------------------------------------------------------- */
 :root {
+  --font-latin: var(--font-latin-serif);
+  --font-cjk: 'Noto Serif SC Variable', var(--font-cjk-serif);
+}
+:root[data-font-latin='sans'] {
   --font-latin: var(--font-latin-sans);
-  --font-cjk: var(--font-cjk-sans);
 }
 :root[data-font-latin='serif'] {
   --font-latin: var(--font-latin-serif);
 }
 :root[data-font-latin='katex'] {
   --font-latin: var(--font-latin-katex);
+}
+:root[data-font-cjk='sans'] {
+  --font-cjk: var(--font-cjk-sans);
 }
 :root[data-font-cjk='serif'] {
   --font-cjk: var(--font-cjk-serif);
@@ -91,10 +97,12 @@
   --font-reading: var(--font-latin), var(--font-cjk);
 }
 
-/* 正文阅读字体：与界面分离，作用于文章内容容器（含卡片、表格、引用块）。
+/* 正文阅读字体：与界面分离，作用于大标题（h1）与文章内容容器（含卡片、表格、引用块）。
    行内代码/代码块仍走 --sl-font-mono，KaTeX 公式仍走 KaTeX 自带字体，均不受影响。 */
+.main-pane h1,
+#_top,
 .sl-markdown-content {
-  font-family: var(--font-reading);
+  font-family: var(--font-reading) !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
