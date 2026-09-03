@@ -1,5 +1,6 @@
 ---
 import '@fontsource-variable/noto-sans-sc';
+import '@fontsource-variable/noto-serif-sc';
 import '@fontsource-variable/plus-jakarta-sans';
 import VpNav from '../components/VpNav.astro';
 import Analytics from '../components/Analytics.astro';
@@ -13,6 +14,15 @@ const allBooks = getAllBooks().map(book => ({
 
 const totalBooks = allBooks.length;
 const totalCollections = collections.length;
+
+// 按学科分类组织教材
+const collectionsWithBooks = collections.map(col => ({
+  ...col,
+  books: col.books.map(book => ({
+    ...book,
+    readUrl: `/collections/${col.slug}/${book.slug}/${cleanSlug(book.entryPoint)}/`,
+  })),
+}));
 ---
 
 <!DOCTYPE html>
@@ -20,62 +30,53 @@ const totalCollections = collections.length;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AstroLib · 数理典籍数字化整理与检索系统</title>
-    <meta name="description" content="AstroLib 数理典籍数字化整理与检索系统，收录初高中及大学本科理科（数学、物理）核心教材与文献，提供规范化 LaTeX 公式排版、结构化卡片解构与章节检索。" />
+    <title>AstroLib · 数学与物理教材</title>
+    <meta name="description" content="AstroLib：收录大学与中学数学、物理教材，支持 LaTeX 公式排版与章节检索。" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <style>
       :root {
-        --font-cjk: 'Noto Sans SC Variable', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        --font-brand: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        --font-serif: 'KaTeX_Main', Georgia, 'Times New Roman', serif;
+        --font-sans: 'Noto Sans SC Variable', 'Noto Sans SC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        --font-serif: 'Noto Serif SC Variable', 'Noto Serif SC', 'Songti SC', 'Source Han Serif SC', STSong, Georgia, serif;
+        --font-brand: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, sans-serif;
+        --font-math: 'KaTeX_Main', Georgia, 'Times New Roman', serif;
 
-        /* VitePress Light Theme */
-        --vp-c-bg: #ffffff;
-        --vp-c-bg-alt: #f6f6f7;
-        --vp-c-bg-soft: #f6f6f7;
+        /* Light Theme */
+        --vp-c-bg: #fafafa;
+        --vp-c-bg-alt: #f4f4f5;
+        --vp-c-bg-soft: #f0f0f2;
         --vp-c-bg-elv: #ffffff;
-        --vp-c-divider: #e2e2e3;
-        --vp-c-border: #e2e2e3;
-        --vp-c-text-1: #3c3c43;
-        --vp-c-text-2: #67676c;
-        --vp-c-text-3: #929295;
+        --vp-c-divider: #e4e4e7;
+        --vp-c-border: #e4e4e7;
+        --vp-c-text-1: #18181b;
+        --vp-c-text-2: #52525b;
+        --vp-c-text-3: #71717a;
         --vp-c-brand-1: #3451b2;
-        --vp-c-brand-2: #3a5ccc;
-        --vp-c-brand-3: #5672cd;
-        --vp-c-brand-soft: rgba(100, 108, 255, 0.14);
-        --vp-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
-        --vp-shadow-2: 0 3px 12px rgba(0, 0, 0, 0.07), 0 1px 4px rgba(0, 0, 0, 0.07);
-        --vp-shadow-3: 0 12px 32px -4px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
-        
-        /* Subtle Mathematical Watermark Tone */
-        --math-watermark-color: #3451b2;
-        --math-watermark-opacity: 0.045;
-        --math-grid-color: rgba(52, 81, 178, 0.06);
+        --vp-c-brand-2: #284094;
+        --vp-c-brand-soft: rgba(52, 81, 178, 0.08);
+
+        /* Mathematical Watermark Tone */
+        --math-watermark-color: #27272a;
+        --math-watermark-opacity: 0.02;
       }
 
       :root[data-theme='dark'] {
-        /* VitePress Dark Theme */
-        --vp-c-bg: #1b1b1f;
-        --vp-c-bg-alt: #161618;
-        --vp-c-bg-soft: #202127;
-        --vp-c-bg-elv: #202127;
-        --vp-c-divider: #2e2e32;
-        --vp-c-border: #2e2e32;
-        --vp-c-text-1: #dfdfd6;
-        --vp-c-text-2: #98989f;
-        --vp-c-text-3: #6a6a71;
-        --vp-c-brand-1: #a8b1ff;
-        --vp-c-brand-2: #5c73e7;
-        --vp-c-brand-3: #3e63dd;
-        --vp-c-brand-soft: rgba(100, 108, 255, 0.16);
-        --vp-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.24);
-        --vp-shadow-2: 0 3px 12px rgba(0, 0, 0, 0.28), 0 1px 4px rgba(0, 0, 0, 0.24);
-        --vp-shadow-3: 0 12px 32px -4px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.24);
+        /* Dark Theme */
+        --vp-c-bg: #121214;
+        --vp-c-bg-alt: #18181b;
+        --vp-c-bg-soft: #1a1a1e;
+        --vp-c-bg-elv: #202024;
+        --vp-c-divider: rgba(255, 255, 255, 0.08);
+        --vp-c-border: rgba(255, 255, 255, 0.09);
+        --vp-c-text-1: #ececed;
+        --vp-c-text-2: #a1a1aa;
+        --vp-c-text-3: #71717a;
+        --vp-c-brand-1: #818cf8;
+        --vp-c-brand-2: #6366f1;
+        --vp-c-brand-soft: rgba(129, 140, 248, 0.12);
 
         /* Subtle Mathematical Watermark Tone */
-        --math-watermark-color: #a8b1ff;
-        --math-watermark-opacity: 0.07;
-        --math-grid-color: rgba(168, 177, 255, 0.08);
+        --math-watermark-color: #e4e4e7;
+        --math-watermark-opacity: 0.03;
       }
 
       * {
@@ -83,7 +84,7 @@ const totalCollections = collections.length;
       }
       body {
         margin: 0;
-        font-family: var(--font-cjk);
+        font-family: var(--font-sans);
         background-color: var(--vp-c-bg);
         color: var(--vp-c-text-1);
         -webkit-font-smoothing: antialiased;
@@ -96,13 +97,13 @@ const totalCollections = collections.length;
       }
 
       .vp-container {
-        max-width: 1152px;
+        max-width: 1040px;
         margin: 0 auto;
         padding: 0 1.5rem;
       }
 
       /* ==========================================================================
-         Hero Section with Mathematical Watermark Background
+         Hero Section — Quiet STEM Header
          ========================================================================== */
       .vp-hero-wrapper {
         position: relative;
@@ -111,7 +112,6 @@ const totalCollections = collections.length;
         background-color: var(--vp-c-bg);
       }
 
-      /* Subtle Math Watermark & Geometry Plane */
       .math-watermark-plane {
         position: absolute;
         inset: 0;
@@ -135,156 +135,60 @@ const totalCollections = collections.length;
       .vp-hero {
         position: relative;
         z-index: 1;
-        padding: 4.5rem 0 3.75rem;
+        padding: 2.75rem 0 2.25rem;
         display: flex;
         flex-direction: column;
         align-items: flex-start;
       }
 
-      /* Scholarly Badge */
-      .vp-hero-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8125rem;
-        font-weight: 500;
-        color: var(--vp-c-brand-1);
-        background-color: var(--vp-c-brand-soft);
-        border: 1px solid rgba(52, 81, 178, 0.2);
-        margin-bottom: 1.25rem;
+      .vp-hero-header {
+        margin-bottom: 1.35rem;
       }
-      :root[data-theme='dark'] .vp-hero-badge {
-        border-color: rgba(168, 177, 255, 0.25);
-      }
-      .vp-badge-icon {
-        font-family: var(--font-serif);
-        font-size: 0.95rem;
-        font-weight: 600;
-        line-height: 1;
-      }
-
-      /* Title & Brand */
-      .vp-hero-clip-title {
-        font-family: var(--font-brand);
-        font-size: clamp(2.6rem, 6.5vw, 4.5rem);
-        font-weight: 800;
-        letter-spacing: -0.035em;
-        line-height: 1.08;
-        margin: 0 0 0.4rem;
-        background: linear-gradient(120deg, var(--vp-c-brand-1) 20%, var(--vp-c-brand-2) 90%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        display: inline-block;
-        text-rendering: optimizeLegibility;
-      }
-
-      .vp-hero-subtitle {
-        font-size: clamp(1.35rem, 3vw, 1.95rem);
-        font-weight: 700;
-        letter-spacing: -0.015em;
-        line-height: 1.3;
-        color: var(--vp-c-text-1);
-        margin: 0 0 1.15rem;
+      .vp-hero-brand-line {
         display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-      }
-      .vp-hero-subtitle-tag {
-        font-size: 0.8125rem;
-        font-weight: 500;
-        color: var(--vp-c-text-3);
-        border: 1px solid var(--vp-c-divider);
-        padding: 0.1rem 0.45rem;
-        border-radius: 4px;
-        vertical-align: middle;
-      }
-
-      .vp-hero-tagline {
-        margin: 0 0 1.85rem;
-        font-size: 1.025rem;
-        line-height: 1.7;
-        color: var(--vp-c-text-2);
-        max-width: 740px;
-      }
-
-      /* Action Buttons */
-      .vp-hero-actions {
-        display: flex;
-        flex-wrap: wrap;
+        align-items: baseline;
         gap: 0.75rem;
-        margin-bottom: 2rem;
       }
-
-      .vp-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.35rem;
-        padding: 0 1.25rem;
-        height: 2.5rem;
-        border-radius: 20px;
-        font-size: 0.875rem;
-        font-weight: 600;
-        line-height: 1;
-        transition: color 0.25s, border-color 0.25s, background-color 0.25s, transform 0.15s;
-        cursor: pointer;
-        user-select: none;
-      }
-      .vp-btn:hover {
-        transform: translateY(-1px);
-      }
-
-      .vp-btn-brand {
-        background-color: var(--vp-c-brand-1);
-        border: 1px solid var(--vp-c-brand-1);
-        color: #ffffff;
-      }
-      :root[data-theme='dark'] .vp-btn-brand {
-        color: #1b1b1f;
-      }
-      .vp-btn-brand:hover {
-        background-color: var(--vp-c-brand-2);
-        border-color: var(--vp-c-brand-2);
-      }
-
-      .vp-btn-alt {
-        background-color: var(--vp-c-bg-soft);
-        border: 1px solid var(--vp-c-divider);
+      .vp-hero-title {
+        font-family: var(--font-brand);
+        font-size: clamp(1.85rem, 4vw, 2.5rem);
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        line-height: 1.1;
+        margin: 0;
         color: var(--vp-c-text-1);
       }
-      .vp-btn-alt:hover {
-        background-color: var(--vp-c-bg-alt);
-        border-color: var(--vp-c-brand-1);
-        color: var(--vp-c-brand-1);
+      .vp-hero-subtitle {
+        font-family: var(--font-sans);
+        font-size: clamp(0.95rem, 1.8vw, 1.125rem);
+        font-weight: 400;
+        color: var(--vp-c-text-3);
       }
 
-      /* Search Box & Quick Jump Tags */
+      /* Search Bar */
       .vp-hero-search {
         width: 100%;
-        max-width: 650px;
+        max-width: 680px;
+        margin-bottom: 0.9rem;
       }
       .vp-search-form {
         display: flex;
         align-items: center;
-        border: 1px solid var(--vp-c-divider);
-        border-radius: 8px;
+        border: 1px solid var(--vp-c-border);
+        border-radius: 4px;
         background-color: var(--vp-c-bg-soft);
-        padding: 0.35rem 0.35rem 0.35rem 0.85rem;
-        transition: border-color 0.25s, background-color 0.25s, box-shadow 0.25s;
+        padding: 0.35rem 0.5rem 0.35rem 0.75rem;
+        transition: border-color 0.15s, background-color 0.15s;
       }
       .vp-search-form:focus-within {
         border-color: var(--vp-c-brand-1);
         background-color: var(--vp-c-bg);
-        box-shadow: 0 0 0 3px var(--vp-c-brand-soft);
       }
       .vp-search-icon {
-        width: 1.1rem;
-        height: 1.1rem;
+        width: 1rem;
+        height: 1rem;
         color: var(--vp-c-text-3);
-        margin-right: 0.65rem;
+        margin-right: 0.5rem;
         flex-shrink: 0;
       }
       .vp-search-input {
@@ -295,436 +199,286 @@ const totalCollections = collections.length;
         font-size: 0.9rem;
         color: var(--vp-c-text-1);
         font-family: inherit;
+        padding: 0.2rem 0;
       }
       .vp-search-input::placeholder {
         color: var(--vp-c-text-3);
       }
       .vp-search-submit {
-        background-color: var(--vp-c-brand-1);
-        color: #ffffff;
-        border: none;
-        border-radius: 6px;
-        padding: 0.5rem 1.1rem;
-        font-size: 0.85rem;
-        font-weight: 500;
+        background: transparent;
+        color: var(--vp-c-text-2);
+        border: 1px solid var(--vp-c-border);
+        border-radius: 3px;
+        padding: 0.2rem 0.55rem;
+        font-size: 0.775rem;
+        font-family: inherit;
         cursor: pointer;
-        transition: background-color 0.2s;
-      }
-      :root[data-theme='dark'] .vp-search-submit {
-        color: #1b1b1f;
+        transition: color 0.15s, border-color 0.15s;
       }
       .vp-search-submit:hover {
-        background-color: var(--vp-c-brand-2);
+        color: var(--vp-c-brand-1);
+        border-color: var(--vp-c-brand-1);
       }
 
-      /* Quick search keywords */
-      .vp-quick-tags {
+      /* Discipline Navigation */
+      .vp-discipline-nav {
         display: flex;
         align-items: center;
         flex-wrap: wrap;
-        gap: 0.4rem;
-        margin-top: 0.75rem;
-        font-size: 0.775rem;
+        gap: 0.45rem;
+        font-size: 0.825rem;
         color: var(--vp-c-text-3);
       }
-      .vp-quick-tag-link {
+      .vp-discipline-link {
         color: var(--vp-c-text-2);
-        background-color: var(--vp-c-bg-soft);
-        padding: 0.15rem 0.5rem;
-        border-radius: 4px;
-        border: 1px solid var(--vp-c-divider);
-        transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+        transition: color 0.15s;
       }
-      .vp-quick-tag-link:hover {
+      .vp-discipline-link:hover {
         color: var(--vp-c-brand-1);
-        border-color: var(--vp-c-brand-1);
-        background-color: var(--vp-c-bg);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .vp-discipline-dot {
+        opacity: 0.35;
       }
 
       /* ==========================================================================
-         Section Common Styles
+         Recent Reading — Simple Banner
          ========================================================================== */
-      .vp-section {
-        padding: 4.5rem 0;
+      .recent-reading-wrapper {
         border-bottom: 1px solid var(--vp-c-divider);
+        background-color: var(--vp-c-bg-alt);
+        padding: 0.65rem 0;
+        font-size: 0.825rem;
       }
-      .vp-section-header {
-        margin-bottom: 2.25rem;
+      .recent-reading-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
       }
-      .vp-section-tag {
-        font-size: 0.8rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--vp-c-brand-1);
-        margin-bottom: 0.4rem;
+      .recent-reading-left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--vp-c-text-2);
+        min-width: 0;
       }
-      .vp-section-title {
-        font-size: clamp(1.5rem, 3.2vw, 2rem);
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        line-height: 1.25;
-        margin: 0 0 0.5rem;
+      .recent-reading-label {
+        font-weight: 500;
+        color: var(--vp-c-text-3);
+      }
+      .recent-reading-book {
+        font-weight: 500;
         color: var(--vp-c-text-1);
       }
-      .vp-section-desc {
-        font-size: 0.95rem;
-        line-height: 1.6;
+      .recent-reading-chapter {
         color: var(--vp-c-text-2);
-        max-width: 680px;
-        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .recent-reading-sep {
+        opacity: 0.35;
+      }
+      .recent-reading-cta {
+        color: var(--vp-c-brand-1);
+        font-weight: 500;
+        white-space: nowrap;
+      }
+      .recent-reading-cta:hover {
+        text-decoration: underline;
+        text-underline-offset: 3px;
       }
 
       /* ==========================================================================
-         Curated Books Showcase Grid
+         Catalogue Section
          ========================================================================== */
-      .books-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
-        gap: 1.25rem;
+      .catalogue-section {
+        padding: 2.75rem 0 4.5rem;
       }
-      .book-card {
+      .catalogue-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding-bottom: 0.85rem;
+        border-bottom: 1px solid var(--vp-c-divider);
+        margin-bottom: 2rem;
+      }
+      .catalogue-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        margin: 0;
+        color: var(--vp-c-text-1);
+      }
+      .search-filter-status {
+        font-size: 0.8rem;
+        color: var(--vp-c-brand-1);
+      }
+
+      /* Collection Groups */
+      .collection-group {
+        margin-bottom: 2.75rem;
+      }
+      .collection-header {
+        margin-bottom: 0.5rem;
+      }
+      .collection-title {
+        font-size: 1.05rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--vp-c-text-2);
+        letter-spacing: 0.02em;
+      }
+
+      /* Bibliographic Entries List */
+      .biblio-list {
         display: flex;
         flex-direction: column;
-        border: 1px solid var(--vp-c-divider);
-        border-radius: 8px;
-        background-color: var(--vp-c-bg);
-        overflow: hidden;
-        transition: border-color 0.25s, transform 0.2s, box-shadow 0.25s;
+        border-top: 1px solid var(--vp-c-divider);
       }
-      .book-card:hover {
-        border-color: var(--vp-c-brand-1);
-        transform: translateY(-2px);
-        box-shadow: var(--vp-shadow-2);
-      }
-      .book-card-top {
+
+      .biblio-entry {
         display: flex;
-        gap: 1rem;
-        padding: 1.25rem;
-        background-color: var(--vp-c-bg-soft);
+        align-items: flex-start;
+        gap: 1.15rem;
+        padding: 1.15rem 0;
         border-bottom: 1px solid var(--vp-c-divider);
       }
-      .book-cover-wrap {
-        width: 72px;
-        height: 100px;
+
+      /* Small Cover Thumbnail */
+      .biblio-cover-col {
         flex-shrink: 0;
-        border-radius: 4px;
-        overflow: hidden;
-        border: 1px solid var(--vp-c-divider);
-        background-color: var(--vp-c-bg);
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
       }
-      .book-cover-img {
+      .biblio-cover-wrap {
+        width: 50px;
+        height: 70px;
+        border-radius: 2px;
+        overflow: hidden;
+        border: 1px solid var(--vp-c-border);
+        background-color: var(--vp-c-bg-soft);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .biblio-cover-img {
         width: 100%;
         height: 100%;
         object-fit: cover;
         display: block;
       }
-      .book-top-info {
+
+      /* Metadata & Content */
+      .biblio-main-col {
         flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
         min-width: 0;
       }
-      .book-badges {
+      .biblio-headline {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 0.25rem;
+        flex-wrap: wrap;
+      }
+      .biblio-title {
+        font-family: var(--font-serif);
+        font-size: 1.075rem;
+        font-weight: 600;
+        line-height: 1.35;
+        margin: 0;
+        color: var(--vp-c-text-1);
+      }
+      .biblio-title a {
+        color: inherit;
+        transition: color 0.15s;
+      }
+      .biblio-title a:hover {
+        color: var(--vp-c-brand-1);
+      }
+
+      .biblio-tags {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.725rem;
+        color: var(--vp-c-text-3);
+      }
+      .biblio-tag {
+        border: 1px solid var(--vp-c-border);
+        border-radius: 2px;
+        padding: 0.05rem 0.3rem;
+        background-color: var(--vp-c-bg-soft);
+      }
+
+      /* Citation Meta Line */
+      .biblio-meta-line {
+        font-size: 0.8rem;
+        color: var(--vp-c-text-3);
+        margin-bottom: 0.4rem;
         display: flex;
         flex-wrap: wrap;
-        gap: 0.35rem;
-        margin-bottom: 0.4rem;
+        align-items: center;
+        gap: 0.4rem;
       }
-      .badge-pill {
-        font-size: 0.7rem;
-        padding: 0.1rem 0.4rem;
-        border-radius: 3px;
-        border: 1px solid var(--vp-c-divider);
-        color: var(--vp-c-text-2);
-        background-color: var(--vp-c-bg);
-        white-space: nowrap;
-      }
-      .badge-pill-brand {
-        color: var(--vp-c-brand-1);
-        border-color: var(--vp-c-brand-1);
-        background-color: var(--vp-c-brand-soft);
-        font-weight: 500;
-      }
-      .book-title-heading {
-        margin: 0 0 0.35rem;
-        font-size: 1.05rem;
-        font-weight: 700;
-        line-height: 1.35;
-        color: var(--vp-c-text-1);
-      }
-      .book-title-heading a:hover {
-        color: var(--vp-c-brand-1);
-      }
-      .book-author-line {
-        font-size: 0.8125rem;
-        color: var(--vp-c-text-2);
-        margin: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+      .biblio-meta-sep {
+        opacity: 0.4;
       }
 
-      .book-card-body {
-        padding: 1.15rem 1.25rem;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-      }
-      .book-desc-snippet {
-        font-size: 0.85rem;
-        line-height: 1.6;
-        color: var(--vp-c-text-2);
-        margin: 0 0 1rem;
-        flex: 1;
-      }
-      .book-meta-specs {
-        font-size: 0.775rem;
-        color: var(--vp-c-text-3);
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
-        padding-top: 0.65rem;
-        border-top: 1px dashed var(--vp-c-divider);
-        margin-bottom: 1rem;
-      }
-
-      .book-card-actions {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin-top: auto;
-      }
-      .btn-book-read {
-        flex: 1;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        height: 2rem;
-        font-size: 0.8125rem;
-        font-weight: 500;
-        color: #ffffff;
-        background-color: var(--vp-c-brand-1);
-        border-radius: 4px;
-        transition: background-color 0.2s;
-      }
-      :root[data-theme='dark'] .btn-book-read {
-        color: #1b1b1f;
-      }
-      .btn-book-read:hover {
-        background-color: var(--vp-c-brand-2);
-      }
-      .btn-book-detail {
-        padding: 0 0.65rem;
-        height: 2rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.8125rem;
-        color: var(--vp-c-text-2);
-        border: 1px solid var(--vp-c-divider);
-        border-radius: 4px;
-        background-color: var(--vp-c-bg);
-        transition: color 0.15s, border-color 0.15s;
-      }
-      .btn-book-detail:hover {
-        color: var(--vp-c-brand-1);
-        border-color: var(--vp-c-brand-1);
-      }
-
-      /* ==========================================================================
-         Structured Mathematical Taxonomy Section
-         ========================================================================== */
-      .taxonomy-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.25rem;
-        margin-bottom: 2rem;
-      }
-      .tax-card {
-        padding: 1.35rem;
-        border: 1px solid var(--vp-c-divider);
-        border-radius: 8px;
-        background-color: var(--vp-c-bg);
-        transition: border-color 0.2s, box-shadow 0.2s;
-      }
-      .tax-card:hover {
-        border-color: var(--vp-c-brand-1);
-        box-shadow: var(--vp-shadow-1);
-      }
-      .tax-icon-wrap {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 2.25rem;
-        height: 2.25rem;
-        border-radius: 6px;
-        background-color: var(--vp-c-brand-soft);
-        color: var(--vp-c-brand-1);
-        margin-bottom: 0.85rem;
-      }
-      .tax-svg-icon {
-        width: 1.25rem;
-        height: 1.25rem;
-        color: var(--vp-c-brand-1);
-        display: block;
-      }
-      .tax-card-title {
-        font-size: 1rem;
-        font-weight: 700;
-        margin: 0 0 0.4rem;
-        color: var(--vp-c-text-1);
-      }
-      .tax-card-desc {
-        font-size: 0.85rem;
+      .biblio-desc {
+        font-size: 0.835rem;
         line-height: 1.55;
         color: var(--vp-c-text-2);
-        margin: 0;
-      }
-
-      /* Interactive Live Demo Preview Box */
-      .demo-preview-box {
-        border: 1px solid var(--vp-c-divider);
-        border-radius: 8px;
-        background-color: var(--vp-c-bg-soft);
-        padding: 1.5rem;
-        position: relative;
-      }
-      .demo-preview-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid var(--vp-c-divider);
-      }
-      .demo-label {
-        font-size: 0.8125rem;
-        font-weight: 600;
-        color: var(--vp-c-text-2);
-      }
-      .demo-sample-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.25rem;
-      }
-      .sample-card-item {
-        background-color: var(--vp-c-bg);
-        border: 1px solid var(--vp-c-divider);
-        border-radius: 6px;
-        padding: 1rem 1.15rem;
-      }
-      .sample-badge-head {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.85rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-      }
-      .sample-chip {
-        font-size: 0.7rem;
-        padding: 0.1rem 0.35rem;
-        border-radius: 3px;
-        font-weight: 600;
-      }
-      .chip-theorem {
-        background-color: rgba(52, 81, 178, 0.1);
-        color: var(--vp-c-brand-1);
-        border: 1px solid rgba(52, 81, 178, 0.25);
-      }
-      .chip-example {
-        background-color: rgba(16, 185, 129, 0.1);
-        color: #059669;
-        border: 1px solid rgba(16, 185, 129, 0.25);
-      }
-      :root[data-theme='dark'] .chip-example {
-        color: #34d399;
-      }
-      .sample-text {
-        font-size: 0.835rem;
-        line-height: 1.6;
-        color: var(--vp-c-text-2);
-        margin: 0;
-      }
-      .sample-formula-box {
-        margin-top: 0.5rem;
-        padding: 0.4rem 0.6rem;
-        background-color: var(--vp-c-bg-soft);
-        border-radius: 4px;
-        font-family: var(--font-serif);
-        font-size: 0.95rem;
-        color: var(--vp-c-text-1);
-        text-align: center;
-      }
-
-      /* ==========================================================================
-         Platform Pillars Section
-         ========================================================================== */
-      .pillars-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1.5rem;
-      }
-      .pillar-item {
-        padding: 1.5rem;
-        border: 1px solid var(--vp-c-divider);
-        border-radius: 8px;
-        background-color: var(--vp-c-bg);
-      }
-      .pillar-icon {
-        width: 2rem;
-        height: 2rem;
-        color: var(--vp-c-brand-1);
-        margin-bottom: 0.85rem;
-      }
-      .pillar-title {
-        font-size: 1.05rem;
-        font-weight: 700;
         margin: 0 0 0.5rem;
-        color: var(--vp-c-text-1);
-      }
-      .pillar-desc {
-        font-size: 0.85rem;
-        line-height: 1.6;
-        color: var(--vp-c-text-2);
-        margin: 0;
       }
 
-      /* ==========================================================================
-         Academic Epigraph & Quote Section
-         ========================================================================== */
-      .epigraph-section {
-        padding: 3.5rem 0;
-        background-color: var(--vp-c-bg-soft);
-        border-bottom: 1px solid var(--vp-c-divider);
+      /* Reading Action Link */
+      .biblio-action-row {
+        display: flex;
+        align-items: center;
+      }
+      .biblio-read-link {
+        font-size: 0.825rem;
+        color: var(--vp-c-brand-1);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+      }
+      .biblio-read-link:hover {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      /* Catalogue Empty State */
+      .catalogue-empty {
+        padding: 2.5rem 1.5rem;
         text-align: center;
-      }
-      .epigraph-quote {
-        font-size: clamp(1.05rem, 2.2vw, 1.25rem);
-        line-height: 1.65;
-        color: var(--vp-c-text-1);
-        font-style: normal;
-        margin: 0 auto 0.75rem;
-        max-width: 800px;
-        font-weight: 500;
-      }
-      .epigraph-author {
-        font-size: 0.85rem;
+        font-size: 0.875rem;
         color: var(--vp-c-text-3);
-        margin: 0;
+        border: 1px dashed var(--vp-c-divider);
+        border-radius: 3px;
+        background-color: var(--vp-c-bg-alt);
+        margin-top: 1rem;
+      }
+      .catalogue-empty a {
+        color: var(--vp-c-brand-1);
+        text-decoration: underline;
+        text-underline-offset: 3px;
       }
 
       /* ==========================================================================
          Footer
          ========================================================================== */
       .site-footer {
-        padding: 3rem 0 2.5rem;
+        padding: 2.5rem 0 2rem;
         background-color: var(--vp-c-bg);
-        font-size: 0.825rem;
+        font-size: 0.8rem;
         color: var(--vp-c-text-3);
+        border-top: 1px solid var(--vp-c-divider);
       }
       .footer-inner {
         display: flex;
@@ -732,13 +486,10 @@ const totalCollections = collections.length;
         align-items: center;
         flex-wrap: wrap;
         gap: 1rem;
-        padding-bottom: 1.5rem;
+        padding-bottom: 1.25rem;
         border-bottom: 1px solid var(--vp-c-divider);
       }
       .footer-brand {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
         font-weight: 600;
         color: var(--vp-c-text-1);
       }
@@ -746,43 +497,44 @@ const totalCollections = collections.length;
         display: flex;
         gap: 1.25rem;
       }
+      .footer-links a {
+        color: var(--vp-c-text-2);
+        transition: color 0.15s;
+      }
       .footer-links a:hover {
         color: var(--vp-c-brand-1);
       }
       .footer-bottom {
-        padding-top: 1.25rem;
+        padding-top: 1rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 0.75rem;
+        gap: 0.5rem;
       }
 
       /* ==========================================================================
          Responsive Breakpoints
          ========================================================================== */
-      @media (max-width: 860px) {
-        .pillars-grid {
-          grid-template-columns: 1fr;
-        }
-        .demo-sample-row {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      @media (max-width: 640px) {
+      @media (max-width: 680px) {
         .vp-hero {
-          padding: 3rem 0 2.5rem;
+          padding: 2rem 0 1.75rem;
         }
-        .vp-section {
-          padding: 3rem 0;
+        .catalogue-section {
+          padding: 2rem 0 3rem;
         }
-        .books-grid {
-          grid-template-columns: 1fr;
+        .biblio-entry {
+          gap: 0.85rem;
+          padding: 1rem 0;
+        }
+        .biblio-cover-wrap {
+          width: 44px;
+          height: 62px;
         }
         .footer-inner, .footer-bottom {
           flex-direction: column;
           align-items: flex-start;
+          gap: 0.75rem;
         }
       }
     </style>
@@ -793,10 +545,9 @@ const totalCollections = collections.length;
 
     <!-- Hero Section -->
     <section class="vp-hero-wrapper">
-      <!-- Mathematical Watermark & Geometric Coordinate Plane -->
+      <!-- Watermark Background -->
       <div class="math-watermark-plane" aria-hidden="true">
         <svg class="math-watermark-svg" viewBox="0 0 1200 600" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Fine Grid and Coordinate Lines -->
           <g stroke="currentColor" stroke-width="0.75" stroke-dasharray="3 6">
             <line x1="100" y1="0" x2="100" y2="600" />
             <line x1="300" y1="0" x2="300" y2="600" />
@@ -808,364 +559,278 @@ const totalCollections = collections.length;
             <line x1="0" y1="280" x2="1200" y2="280" />
             <line x1="0" y1="440" x2="1200" y2="440" />
           </g>
-
-          <!-- Coordinate Corner Crosses -->
-          <g stroke="currentColor" stroke-width="1.2">
-            <path d="M495 120H505M500 115V125" />
-            <path d="M695 280H705M700 275V285" />
-            <path d="M895 120H905M900 115V125" />
-            <path d="M895 440H905M900 435V445" />
-            <path d="M1095 280H1105M1100 275V285" />
-          </g>
-
-          <!-- Subtle Euclidean / Differential Geometry Curves -->
           <g stroke="currentColor" stroke-width="1" stroke-linecap="round">
-            <!-- Normal Distribution Bell Curve -->
             <path d="M620 480C700 480 750 470 780 410C810 350 830 200 860 200C890 200 910 350 940 410C970 470 1020 480 1100 480" stroke-width="1.2" />
-            <!-- Manifold Spiral Arc -->
             <path d="M750 300A180 180 0 0 1 930 120A120 120 0 0 1 1050 240A80 80 0 0 1 970 320" stroke-dasharray="4 4" />
-            <!-- Unit Circle & Tangent Vectors -->
             <circle cx="950" cy="380" r="90" stroke-width="0.8" />
             <line x1="950" y1="290" x2="1080" y2="290" stroke-width="1.2" />
             <line x1="950" y1="380" x2="1013" y2="316" stroke-width="1" />
-            <path d="M980 380A30 30 0 0 0 971 359" stroke-width="0.8" />
           </g>
-
-          <!-- Core Mathematical Glyphs (Academic Serif Watermarks) -->
           <g fill="currentColor" font-family="KaTeX_Main, Georgia, 'Times New Roman', serif" font-size="28" font-style="italic">
             <text x="680" y="100" font-size="44" font-style="normal">∫</text>
             <text x="705" y="90" font-size="16">∞</text>
             <text x="698" y="125" font-size="14">-∞</text>
             <text x="730" y="100">e<tspan dy="-10" font-size="18">-x²</tspan><tspan dy="10"> dx = √π</tspan></text>
-
             <text x="820" y="270" font-size="36" font-style="normal">∑</text>
             <text x="825" y="245" font-size="14">n=1</text>
             <text x="830" y="295" font-size="16">∞</text>
             <text x="865" y="270">1/nˢ</text>
-
             <text x="620" y="220" font-size="22">lim <tspan font-size="14" dy="8">x→0</tspan><tspan dy="-8"> (sin x)/x = 1</tspan></text>
-            
             <text x="960" y="170" font-size="24">∇ × B = μ₀J + μ₀ε₀(∂E/∂t)</text>
             <text x="720" y="380" font-size="22">ds² = g<tspan dy="6" font-size="14">μν</tspan><tspan dy="-6"> dx</tspan><tspan dy="-6" font-size="14">μ</tspan><tspan dy="6"> dx</tspan><tspan dy="-6" font-size="14">ν</tspan></text>
-            
             <text x="560" y="340" font-size="32" font-style="normal">ℝⁿ</text>
             <text x="640" y="440" font-size="26">∂Ω</text>
             <text x="840" y="520" font-size="22">∀ε &gt; 0, ∃δ &gt; 0</text>
-            <text x="1020" y="510" font-size="26" font-style="normal">∮<tspan font-style="italic" font-size="20">_C F · dr</tspan></text>
-            <text x="1080" y="100" font-size="26" font-style="normal">ℵ₀</text>
           </g>
         </svg>
       </div>
 
-      <!-- Hero Main Content -->
       <div class="vp-container">
         <div class="vp-hero">
-          <!-- Academic Badge -->
-          <div class="vp-hero-badge">
-            <span class="vp-badge-icon">∫</span>
-            <span>数理文献数字化 · 典籍重构计划</span>
+          <div class="vp-hero-header">
+            <div class="vp-hero-brand-line">
+              <h1 class="vp-hero-title">AstroLib</h1>
+              <span class="vp-hero-subtitle">数学与物理教材</span>
+            </div>
           </div>
 
-          <!-- Main Brand & Heading -->
-          <h1 class="vp-hero-clip-title">AstroLib</h1>
-          <div class="vp-hero-subtitle">
-            <span>数理教材数字化整理与检索系统</span>
-            <span class="vp-hero-subtitle-tag">MinerU & Astro Starlight</span>
-          </div>
-
-          <!-- Tagline -->
-          <p class="vp-hero-tagline">
-            收录高等数学、数学分析、工科数学分析、线性代数、概率统计与大学物理核心典籍与教材。结合规范化 LaTeX 公式排版、结构化卡片解构与段落级语义检索，构建现代与经典交融的数理知识数字图书馆。
-          </p>
-
-          <!-- Action Buttons -->
-          <div class="vp-hero-actions">
-            <a href="/library/" class="vp-btn vp-btn-brand">
-              进入书库目录 →
-            </a>
-            <a href="#curated-books" class="vp-btn vp-btn-alt">
-              馆藏书目 ({totalBooks})
-            </a>
-            <a href="/dev/" class="vp-btn vp-btn-alt">
-              开发文档
-            </a>
-          </div>
-
-          <!-- Integrated Academic Search Box -->
+          <!-- Search Input -->
           <div class="vp-hero-search">
-            <form action="/library/" method="GET" class="vp-search-form">
-              <svg class="vp-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+            <form action="/library/" method="GET" class="vp-search-form" id="search-form">
+              <svg class="vp-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                 <circle cx="8.5" cy="8.5" r="5.5" />
                 <path d="M12.5 12.5L17 17" stroke-linecap="round" />
               </svg>
               <input
                 type="text"
                 name="q"
+                id="homepage-search-input"
                 class="vp-search-input"
-                placeholder="检索书名、编著者、ISBN、定理或学科关键词..."
+                placeholder="搜索书名、作者、ISBN 或章节……"
                 autocomplete="off"
               />
-              <button type="submit" class="vp-search-submit">Search</button>
+              <button type="submit" class="vp-search-submit">搜索</button>
             </form>
-            <!-- Quick Jump Keywords -->           
           </div>
+
+          <!-- Quick Navigation Links -->
+          <nav class="vp-discipline-nav" aria-label="分类导航">
+            <a href="#collection-math" class="vp-discipline-link">数学</a>
+            <span class="vp-discipline-dot">·</span>
+            <a href="#collection-science" class="vp-discipline-link">物理</a>
+            <span class="vp-discipline-dot">·</span>
+            <a href="#book-math-analysis" class="vp-discipline-link">数学分析</a>
+            <span class="vp-discipline-dot">·</span>
+            <a href="#book-engineering-analysis" class="vp-discipline-link">工科分析</a>
+            <span class="vp-discipline-dot">·</span>
+            <a href="#book-linear-algebra" class="vp-discipline-link">线性代数</a>
+            <span class="vp-discipline-dot">·</span>
+            <a href="#book-probability-statistics" class="vp-discipline-link">概率统计</a>
+          </nav>
         </div>
       </div>
     </section>
 
-    <!-- Main Content Container -->
-    <main class="vp-container">
-      <!-- Section 1: Curated Books Showcase -->
-      <section id="curated-books" class="vp-section">
-        <div class="vp-section-header">
-          <div class="vp-section-tag">Collections</div>
-          <h2 class="vp-section-title">馆藏典籍与核心教材</h2>
-          <p class="vp-section-desc">
-            收录初高中及大学本科理科（数学、物理）核心教材、教辅与配套习题，全文经过规范化 LaTeX 深度重构。
-          </p>
+    <!-- Recent Reading (Client-side populated) -->
+    <section id="recent-reading-section" class="recent-reading-wrapper" style="display: none;">
+      <div class="vp-container">
+        <div class="recent-reading-bar">
+          <div class="recent-reading-left">
+            <span class="recent-reading-label">最近阅读：</span>
+            <span class="recent-reading-book" id="recent-reading-book"></span>
+            <span class="recent-reading-sep" aria-hidden="true">·</span>
+            <span class="recent-reading-chapter" id="recent-reading-chapter"></span>
+          </div>
+          <a id="recent-reading-link" href="#" class="recent-reading-cta">继续阅读 →</a>
         </div>
+      </div>
+    </section>
 
-        <div class="books-grid">
-          {allBooks.map(book => (
-            <article class="book-card">
-              <div class="book-card-top">
-                <div class="book-cover-wrap">
-                  <img src={book.cover} alt={book.title} class="book-cover-img" loading="lazy" />
-                </div>
-                <div class="book-top-info">
-                  <div class="book-badges">
-                    <span class="badge-pill badge-pill-brand">{book.stageLabel}</span>
-                    <span class="badge-pill">{book.categoryLabel}</span>
-                    <span class="badge-pill">{book.subjectLabel}</span>
-                  </div>
-                  <h3 class="book-title-heading">
-                    <a href={book.readUrl}>{book.title}</a>
-                  </h3>
-                  <p class="book-author-line">著者：{book.author}</p>
-                </div>
+    <!-- Main Content: Catalogue -->
+    <main class="vp-container">
+      <section class="catalogue-section">
+        <!-- Section Header -->
+        <header class="catalogue-header">
+          <h2 class="catalogue-title">教材目录</h2>
+          <div id="search-filter-status" class="search-filter-status" aria-live="polite"></div>
+        </header>
+
+        <!-- Catalogue Entries Grouped by Discipline -->
+        <div id="catalogue-groups">
+          {collectionsWithBooks.map(col => (
+            <div class="collection-group" id={`collection-${col.id}`} data-collection-id={col.id}>
+              <div class="collection-header">
+                <h3 class="collection-title">{col.title}</h3>
               </div>
 
-              <div class="book-card-body">
-                <p class="book-desc-snippet">{book.description}</p>
-                
-                <div class="book-meta-specs">
-                  <span>出版：{book.publisher} {book.edition ? `(${book.edition})` : ''}</span>
-                  {book.isbn && <span>标准书号：{book.isbn}</span>}
-                </div>
+              <div class="biblio-list">
+                {col.books.map(book => (
+                  <article
+                    class="biblio-entry"
+                    id={`book-${book.id}`}
+                    data-search-text={`${book.title} ${book.author} ${book.publisher} ${book.edition || ''} ${book.isbn || ''} ${book.description} ${(book.tags || []).join(' ')}`.toLowerCase()}
+                  >
+                    <!-- Left: Cover Thumbnail -->
+                    <div class="biblio-cover-col">
+                      <div class="biblio-cover-wrap">
+                        <img src={book.cover} alt={book.title} class="biblio-cover-img" loading="lazy" />
+                      </div>
+                    </div>
 
-                <div class="book-card-actions">
-                  <a href={book.readUrl} class="btn-book-read">
-                    开始阅读 →
-                  </a>
-                  <a href={`/library/?q=${encodeURIComponent(book.title)}`} class="btn-book-detail">
-                    书目检索
-                  </a>
-                </div>
+                    <!-- Right: Bibliographic Citation and Abstract -->
+                    <div class="biblio-main-col">
+                      <div class="biblio-headline">
+                        <h4 class="biblio-title">
+                          <a href={book.readUrl}>{book.title}</a>
+                        </h4>
+                        <div class="biblio-tags">
+                          <span class="biblio-tag">{book.stageLabel}</span>
+                          <span class="biblio-tag">{book.categoryLabel}</span>
+                        </div>
+                      </div>
+
+                      <div class="biblio-meta-line">
+                        <span>{book.author}</span>
+                        <span class="biblio-meta-sep">·</span>
+                        <span>{book.publisher} {book.edition ? `(${book.edition})` : ''}</span>
+                        {book.isbn && (
+                          <>
+                            <span class="biblio-meta-sep">·</span>
+                            <span>ISBN {book.isbn}</span>
+                          </>
+                        )}
+                      </div>
+
+                      <p class="biblio-desc">{book.description}</p>
+
+                      <div class="biblio-action-row">
+                        <a href={book.readUrl} class="biblio-read-link">
+                          阅读 →
+                        </a>
+                      </div>
+                    </div>
+                  </article>
+                ))}
               </div>
-            </article>
+            </div>
           ))}
         </div>
-      </section>
 
-      <!-- Section 2: Structured Mathematical Taxonomy -->
-      <section class="vp-section">
-        <div class="vp-section-header">
-          <div class="vp-section-tag">Architecture</div>
-          <h2 class="vp-section-title">结构化数理知识解构体系</h2>
-          <p class="vp-section-desc">
-            突破传统 PDF 平铺阅读的局限，将数理典籍重塑为可检索、可精确定位、可双向联动的结构化卡片单元。
+        <!-- Empty Match State -->
+        <div id="catalogue-empty" class="catalogue-empty" style="display: none;">
+          <p style="margin: 0 0 0.35rem;">未找到匹配教材。</p>
+          <p style="margin: 0; font-size: 0.825rem;">
+            可尝试简化关键词，或按回车进入 <a id="catalogue-empty-link" href="/library/">检索页</a>。
           </p>
-        </div>
-
-        <!-- 4 Taxonomy Modules Cards -->
-        <div class="taxonomy-grid">
-          <div class="tax-card">
-            <div class="tax-icon-wrap">
-              <svg class="tax-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 21H3L21 3V21Z" />
-                <path d="M15 15H9L15 9V15Z" />
-                <line x1="7" y1="21" x2="7" y2="19" />
-                <line x1="11" y1="21" x2="11" y2="19" />
-                <line x1="21" y1="7" x2="19" y2="7" />
-                <line x1="21" y1="11" x2="19" y2="11" />
-              </svg>
-            </div>
-            <h3 class="tax-card-title">定理与公理体系</h3>
-            <p class="tax-card-desc">
-              规范化命题表达与严格逻辑推导，附带全书唯一定理编号与跨章节交叉引用胶囊。
-            </p>
-          </div>
-
-          <div class="tax-card">
-            <div class="tax-icon-wrap">
-              <svg class="tax-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                <path d="M15 5l3 3" />
-              </svg>
-            </div>
-            <h3 class="tax-card-title">典型例题与变式</h3>
-            <p class="tax-card-desc">
-              分层解析题干、知识点、考点与思路剖析，搭配一键折叠式参考答案与选择题等宽网格。
-            </p>
-          </div>
-
-          <div class="tax-card">
-            <div class="tax-icon-wrap">
-              <svg class="tax-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 18h6" />
-                <path d="M10 22h4" />
-                <path d="M12 2a7 7 0 0 0-4 12.7V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.3A7 7 0 0 0 12 2z" />
-                <path d="M12 6v4" />
-              </svg>
-            </div>
-            <h3 class="tax-card-title">方法与规律总结</h3>
-            <p class="tax-card-desc">
-              解题通法归纳、核心思想升华与易错点警示，将散落经验沉淀为模块化知识芯片。
-            </p>
-          </div>
-
-          <div class="tax-card">
-            <div class="tax-icon-wrap">
-              <svg class="tax-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-              </svg>
-            </div>
-            <h3 class="tax-card-title">图文公式双向联动</h3>
-            <p class="tax-card-desc">
-              构建期徽章下沉，正文提及的例题、插图与定理支持悬浮微动效、点击平滑滚动与闪烁高亮。
-            </p>
-          </div>
-        </div>
-
-        <!-- Live Interactive Preview Box -->
-        <div class="demo-preview-box">
-          <div class="demo-preview-header">
-            <span class="demo-label">数理组件排版实景预览</span>
-            <span class="badge-pill badge-pill-brand">LaTeX + MDX</span>
-          </div>
-
-          <div class="demo-sample-row">
-            <!-- Sample Theorem -->
-            <div class="sample-card-item">
-              <div class="sample-badge-head">
-                <span class="sample-chip chip-theorem">理</span>
-                <span>定理 3.2 (微积分基本定理 / Newton-Leibniz 公式)</span>
-              </div>
-              <p class="sample-text">
-                设函数 f(x) 在闭区间 [a, b] 上连续，F(x) 是 f(x) 在 [a, b] 上的任意一个原函数，则定积分满足：
-              </p>
-              <div class="sample-formula-box">
-                ∫_a^b f(x) dx = F(b) - F(a) = F(x)|_a^b
-              </div>
-            </div>
-
-            <!-- Sample Example -->
-            <div class="sample-card-item">
-              <div class="sample-badge-head">
-                <span class="sample-chip chip-example">例</span>
-                <span>例题 2.14 (多元复合函数求导法则)</span>
-              </div>
-              <p class="sample-text">
-                设 z = f(u, v) 具有二阶连续偏导数，且 u = x² + y², v = xy，求 ∂²z / ∂x²。
-              </p>
-              <div class="sample-formula-box">
-                ∂z/∂x = f_u · 2x + f_v · y
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Section 3: Platform Pillars -->
-      <section class="vp-section">
-        <div class="vp-section-header">
-          <div class="vp-section-tag">Core Features</div>
-          <h2 class="vp-section-title">数字图书馆三大支柱</h2>
-          <p class="vp-section-desc">
-            从公式排版、离线研读到智能化检索，专为数理专业学者与学子打造的现代化阅读基础设施。
-          </p>
-        </div>
-
-        <div class="pillars-grid">
-          <div class="pillar-item">
-            <svg class="pillar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-              <path d="M12 6v6" />
-              <path d="M9 9h6" />
-            </svg>
-            <h3 class="pillar-title">全量 LaTeX 源码保真</h3>
-            <p class="pillar-desc">
-              采用原生 KaTeX 高精度排版引擎，行间公式支持横向自适应滚动；所有公式均支持一键复制 LaTeX 原始源码与导出高精 SVG 矢量图。
-            </p>
-          </div>
-
-          <div class="pillar-item">
-            <svg class="pillar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-              <line x1="8" y1="21" x2="16" y2="21" />
-              <line x1="12" y1="17" x2="12" y2="21" />
-            </svg>
-            <h3 class="pillar-title">EPUB 全书离线导出</h3>
-            <p class="pillar-desc">
-              内置全自动电子书编译管线，可一键将整部教辅与配套习题打包生成标准 EPUB 电子书，支持在墨水屏阅读器与平板设备上离线沉浸研读。
-            </p>
-          </div>
-
-          <div class="pillar-item">
-            <svg class="pillar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              <circle cx="9" cy="10" r="1" />
-              <circle cx="12" cy="10" r="1" />
-              <circle cx="15" cy="10" r="1" />
-            </svg>
-            <h3 class="pillar-title">AI 书内问答与深度检索</h3>
-            <p class="pillar-desc">
-              集成段落级数理 RAG 索引与智能语义检索，能够直接定位至教材特定定理推导与课后习题步骤，精准解答概念疑难。
-            </p>
-          </div>
         </div>
       </section>
     </main>
 
-    <!-- Academic Epigraph Section -->
-    <section class="epigraph-section">
-      <div class="vp-container">
-        <blockquote class="epigraph-quote">
-          “自然之书是用数学语言写成的，它的字母是三角形、圆以及其他几何图形，没有它们的帮助，人们便无法理解其中的一个字。”
-        </blockquote>
-        <p class="epigraph-author">—— 伽利略·伽利莱《试金者》(Galileo Galilei, <i>Il Saggiatore</i>, 1623)</p>
-      </div>
-    </section>
-
-    <!-- Classical Footer -->
+    <!-- Footer -->
     <footer class="site-footer">
       <div class="vp-container">
         <div class="footer-inner">
           <div class="footer-brand">
-            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" style="width: 1.25rem; height: 1.25rem; color: var(--vp-c-brand-1);">
-              <path d="M4 22.5C4 22.5 8.5 20.5 16 20.5C23.5 20.5 28 22.5 28 22.5V9.5C28 9.5 23.5 7.5 16 7.5C8.5 7.5 4 9.5 4 9.5V22.5Z" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-              <path d="M16 7.5V20.5" stroke-width="2" stroke-linecap="round"/>
-              <path d="M16 1.5L17.2 5.3L21 6.5L17.2 7.7L16 11.5L14.8 7.7L11 6.5L14.8 5.3L16 1.5Z" fill="currentColor" stroke="none"/>
-            </svg>
-            <span>AstroLib · 数理典籍数字图书馆</span>
+            <span>AstroLib</span>
           </div>
 
           <div class="footer-links">
-            <a href="/library/">书目索引</a>
+            <a href="/library/">目录</a>
+            <a href="/library/?focus=search">搜索</a>
             <a href="/dev/">开发文档</a>
             <a href="https://github.com/withastro/starlight" target="_blank" rel="noopener noreferrer">GitHub</a>
           </div>
         </div>
 
         <div class="footer-bottom">
-          <span>馆藏规模：{totalBooks} 部数理典籍教材 · {totalCollections} 大学科分类</span>
-          <span>AstroLib 文献数字化整理项目 · 保留所有权利</span>
+          <span>数学与物理教材数字化整理</span>
+          <span>© {new Date().getFullYear()} AstroLib</span>
         </div>
       </div>
     </footer>
+
+    <!-- Client-Side Recent Reading & Real-Time Catalogue Filter -->
+    <script is:inline>
+      (() => {
+        // 1. 读取并渲染最近阅读记录
+        try {
+          const raw = localStorage.getItem('astrolib_recent_reading');
+          if (raw) {
+            const data = JSON.parse(raw);
+            if (data && data.url && data.chapterTitle) {
+              const sec = document.getElementById('recent-reading-section');
+              const bookEl = document.getElementById('recent-reading-book');
+              const chapterEl = document.getElementById('recent-reading-chapter');
+              const linkEl = document.getElementById('recent-reading-link');
+
+              if (sec && chapterEl && linkEl) {
+                if (bookEl) {
+                  const slugNames = {
+                    'math_senior': '新高考数学',
+                    'math_analysis': '数学分析',
+                    'engineering_analysis': '工科数学分析基础',
+                    'linear_algebra': '线性代数及其应用',
+                    'probability_statistics': '概率论与数理统计教程',
+                    'university_physics': '大学物理学'
+                  };
+                  bookEl.textContent = slugNames[data.bookSlug] || '章节';
+                }
+                chapterEl.textContent = data.chapterTitle;
+                linkEl.href = data.url;
+                sec.style.display = 'block';
+              }
+            }
+          }
+        } catch {}
+
+        // 2. 首页目录即时过滤交互
+        const searchInput = document.getElementById('homepage-search-input');
+        const filterStatus = document.getElementById('search-filter-status');
+        const emptyBox = document.getElementById('catalogue-empty');
+        const emptyLink = document.getElementById('catalogue-empty-link');
+        const entries = Array.from(document.querySelectorAll('.biblio-entry'));
+        const groups = Array.from(document.querySelectorAll('.collection-group'));
+
+        if (searchInput && entries.length > 0) {
+          searchInput.addEventListener('input', () => {
+            const query = (searchInput.value || '').trim().toLowerCase();
+
+            if (!query) {
+              entries.forEach(el => { el.style.display = ''; });
+              groups.forEach(g => { g.style.display = ''; });
+              if (filterStatus) filterStatus.textContent = '';
+              if (emptyBox) emptyBox.style.display = 'none';
+              return;
+            }
+
+            let matchCount = 0;
+            entries.forEach(el => {
+              const text = el.getAttribute('data-search-text') || '';
+              const matched = text.includes(query);
+              el.style.display = matched ? '' : 'none';
+              if (matched) matchCount++;
+            });
+
+            groups.forEach(g => {
+              const visibleEntries = g.querySelectorAll('.biblio-entry:not([style*="display: none"])');
+              g.style.display = visibleEntries.length > 0 ? '' : 'none';
+            });
+
+            if (filterStatus) {
+              filterStatus.textContent = matchCount > 0 ? `找到 ${matchCount} 本教材` : '';
+            }
+
+            if (emptyBox) {
+              emptyBox.style.display = matchCount === 0 ? 'block' : 'none';
+              if (emptyLink) {
+                emptyLink.href = `/library/?q=${encodeURIComponent(query)}`;
+              }
+            }
+          });
+        }
+      })();
+    </script>
+
     <Analytics />
   </body>
 </html>

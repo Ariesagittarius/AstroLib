@@ -34,10 +34,15 @@ function card(className, tag, title) {
 
 function qrVideoBlock(id, title, url) {
   const cleanTitle = (title || '').replace(/^二维码\s*\d+(\.\d+)*\s*/, '').replace(/[\.\。\s]+$/, '').trim();
-  const fullTitle = id ? `${id} ${cleanTitle}`.trim() : cleanTitle || '微课讲解';
+  let category = '数字资源';
+  if (/课件|讲义|PPT/i.test(cleanTitle)) category = '教学课件';
+  else if (/视频|微课|讲解/i.test(cleanTitle)) category = '微课视频';
+  else if (/演示|仿真|动画/i.test(cleanTitle)) category = '动态演示';
+
+  const fullTitle = id ? `${id} ${cleanTitle}`.trim() : cleanTitle || '配套资源';
   const fullTitleHtml = renderTitleMath(fullTitle);
-  const linkHtml = url ? ` <a href="${escAttr(url)}" class="qr-video-link" target="_blank">[查看视频]</a>` : '';
-  return `<div class="qr-video-card"><div class="qr-video-inner"><span class="qr-video-tag">微课</span><span class="qr-video-title">${fullTitleHtml}</span>${linkHtml}</div></div>`;
+  const linkHtml = url ? ` <a href="${escAttr(url)}" class="academic-resource-link qr-video-link" target="_blank">[查看资源]</a>` : '';
+  return `<div class="academic-resource-card qr-video-card"><div class="academic-resource-inner qr-video-inner"><span class="academic-resource-category qr-video-tag">${category}</span><span class="academic-resource-title qr-video-title">${fullTitleHtml}</span>${linkHtml}</div></div>`;
 }
 
 // 组件名 -> [open, close]
@@ -89,6 +94,10 @@ const COMPONENT_MAP = {
     ];
   },
   QRCodeVideo: (t, node) => [
+    qrVideoBlock(attrValue(node, 'id'), attrValue(node, 'title') || t, attrValue(node, 'url')),
+    '',
+  ],
+  DigitalResource: (t, node) => [
     qrVideoBlock(attrValue(node, 'id'), attrValue(node, 'title') || t, attrValue(node, 'url')),
     '',
   ],

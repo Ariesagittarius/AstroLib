@@ -1,0 +1,137 @@
+---
+import { srcAttrs } from '../utils/src-attrs.mjs';
+import { generateArtisticQRSvg, resolveAcademicSymbol } from '../utils/artistic-qr.mjs';
+
+interface Props {
+  id?: string;
+  title?: string;
+  url?: string;
+  type?: 'auto' | 'video' | 'courseware' | 'demo' | 'resource';
+}
+
+const { id = '', title = '', url = '', type = 'auto' } = Astro.props;
+
+// 清理标题：去除 "二维码 1.1.3" 前缀及末尾标点
+let cleanTitle = title.replace(/^二维码\s*\d+(\.\d+)*\s*/, '').replace(/[\.\。\s]+$/, '').trim();
+let codeId = id;
+
+if (!codeId) {
+  const match = title.match(/^二维码\s*(\d+(\.\d+)*)/);
+  if (match) {
+    codeId = match[1];
+  }
+}
+
+// 智能识别资源分类（支持微课视频、教学课件、动态仿真等，摆脱纯视频单一命名）
+let categoryName = '数字资源';
+if (type === 'courseware' || /课件|讲义|PPT|演示文稿/i.test(cleanTitle)) {
+  categoryName = '教学课件';
+} else if (type === 'video' || /视频|微课|讲解|录像/i.test(cleanTitle)) {
+  categoryName = '微课视频';
+} else if (type === 'demo' || /动画|演示|仿真|几何画板|GeoGebra/i.test(cleanTitle)) {
+  categoryName = '动态演示';
+}
+
+const displayTag = codeId ? `${categoryName} ${codeId}` : categoryName;
+const displayTitle = cleanTitle || '配套数字化资源';
+const popoverId = `res-popover-${codeId ? codeId.replace(/\./g, '-') : Math.random().toString(36).substring(2, 9)}`;
+
+let qrSvg = '';
+if (url) {
+  try {
+    qrSvg = await generateArtisticQRSvg(url, {
+      title: cleanTitle,
+      moduleStyle: 'sharp',
+      margin: 3.6,
+      scale: 16,
+    });
+  } catch (err) {
+    console.error('[DigitalResource] Failed to generate artistic QR SVG:', err);
+  }
+}
+---
+
+<div class="academic-resource-card qr-video-card" {...srcAttrs(Astro.props)}>
+  <div class="academic-resource-inner qr-video-inner">
+    <div class="academic-resource-left qr-video-left">
+      <!-- 规范学术数字化资源发丝图标 -->
+      <span class="academic-resource-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path>
+          <path d="M6 6h10"></path>
+          <path d="M6 10h7"></path>
+        </svg>
+      </span>
+      <span class="academic-resource-category">{displayTag}</span>
+      <span class="academic-resource-divider" aria-hidden="true">·</span>
+      <span class="academic-resource-title qr-video-title" title={displayTitle}>{displayTitle}</span>
+    </div>
+
+    <!-- 右侧数字化资源触发按钮 -->
+    <div class="academic-resource-trigger-wrapper qr-trigger-wrapper">
+      <button
+        type="button"
+        class="academic-resource-btn qr-video-btn js-resource-trigger js-qr-trigger"
+        data-popover-id={popoverId}
+        aria-expanded="false"
+        aria-haspopup="dialog"
+        title="查看配套数字化资源"
+      >
+        <svg class="academic-resource-qr-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+          <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+          <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+          <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+          <line x1="7" y1="7" x2="7.01" y2="7"></line>
+          <line x1="18" y1="7" x2="18.01" y2="7"></line>
+          <line x1="7" y1="18" x2="7.01" y2="18"></line>
+          <line x1="18" y1="18" x2="18.01" y2="18"></line>
+        </svg>
+        <span class="academic-resource-btn-text qr-btn-text">查看资源</span>
+      </button>
+
+      <!-- 极简学术资源弹层 (彻底剔除 AI SaaS 营销风格) -->
+      <div id={popoverId} class="academic-resource-popover qr-popover js-resource-popover js-qr-popover" role="dialog" aria-modal="false" hidden>
+        <div class="academic-resource-arrow qr-popover-arrow" aria-hidden="true"></div>
+        
+        <div class="academic-resource-pop-header qr-popover-header">
+          <div class="academic-resource-pop-title qr-popover-title">
+            <span>{displayTag}</span>
+          </div>
+          <button type="button" class="academic-resource-pop-close qr-popover-close js-resource-close js-qr-close" aria-label="关闭">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="academic-resource-pop-body qr-popover-body">
+          {displayTitle && <div class="academic-resource-pop-subtitle qr-popover-subtitle">{displayTitle}</div>}
+          
+          <div class="academic-resource-qr-box qr-svg-wrapper">
+            {qrSvg ? (
+              <div class="academic-resource-qr-svg qr-svg-box" set:html={qrSvg} />
+            ) : (
+              <div class="academic-resource-error qr-error-box">二维码无法生成</div>
+            )}
+          </div>
+          <p class="academic-resource-tip qr-tip">手机扫码 或 在线查阅</p>
+        </div>
+
+        {url && (
+          <div class="academic-resource-pop-footer qr-popover-footer">
+            <a href={url} target="_blank" rel="noopener noreferrer" class="academic-resource-link qr-action-btn">
+              <span>在浏览器中打开资源</span>
+              <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</div>

@@ -166,12 +166,34 @@ if (features.epub.enabled && bookMatch) {
     }
   };
 
+  function updateRecentReading() {
+    try {
+      const match = location.pathname.match(/\/collections\/([^/]+)\/([^/]+)/);
+      if (match) {
+        const titleEl = document.querySelector('h1');
+        const chapterTitle = titleEl ? (titleEl.textContent || '').trim() : '';
+        if (chapterTitle) {
+          const item = {
+            url: location.pathname,
+            chapterTitle,
+            collectionSlug: match[1],
+            bookSlug: match[2],
+            timestamp: Date.now()
+          };
+          localStorage.setItem('astrolib_recent_reading', JSON.stringify(item));
+        }
+      }
+    } catch {}
+  }
+
   // 页面初次加载时执行一次
   window.__renderCustomMath();
+  updateRecentReading();
 
   // 监听 Astro 页面过渡和加载事件，确保在路由切换后依然生效
   document.addEventListener('astro:page-load', () => {
     window.__renderCustomMath();
+    updateRecentReading();
   });
 </script>
 
@@ -291,11 +313,17 @@ if (features.epub.enabled && bookMatch) {
       // 离屏预处理：在缓存前对离屏 DOM 执行所有会引起 layout shift 的同步突变
       preprocessPage(mainPane);
 
+      // 提取 head 中的额外样式表 link[rel="stylesheet"]
+      const headLinks = Array.from(doc.querySelectorAll('head link[rel="stylesheet"]'))
+        .map((l) => l.getAttribute('href'))
+        .filter(Boolean);
+
       const record = {
         title,
         mainPane,
         rightSidebar,
-        sidebar
+        sidebar,
+        headLinks
       };
 
       if (pageCache.has(key)) {
@@ -543,6 +571,18 @@ if (features.epub.enabled && bookMatch) {
           else flexWrap?.prepend(rightSidebar);
         } else if (currentRight) {
           currentRight.remove();
+        }
+
+        // 同步 head 中的新增样式表 (保障含有专属组件的页面通过 SPA 瞬切时样式完整)
+        if (pageData.headLinks && pageData.headLinks.length > 0) {
+          pageData.headLinks.forEach((href) => {
+            if (!document.querySelector(`head link[href="${href}"]`)) {
+              const l = document.createElement('link');
+              l.rel = 'stylesheet';
+              l.href = href;
+              document.head.appendChild(l);
+            }
+          });
         }
 
         updateSidebarActive(url.pathname);
@@ -835,5 +875,82 @@ if (features.epub.enabled && bookMatch) {
     } else {
       window.addEventListener('load', () => triggerIdlePrewarming(), { once: true });
     }
+  }
+
+  // 全局数字资源弹层事件委托 (零生命周期依赖，无论初次加载还是 SPA 换页均即刻响应)
+  if (!window.__academicResourceBound) {
+    window.__academicResourceBound = true;
+
+    function closeAllResourcePopovers() {
+      document.querySelectorAll('.js-resource-popover:not([hidden]), .js-qr-popover:not([hidden])').forEach((pop) => {
+        pop.setAttribute('hidden', '');
+        pop.classList.remove('is-open');
+        const trigger = pop.closest('.academic-resource-trigger-wrapper, .qr-trigger-wrapper')?.querySelector('.js-resource-trigger, .js-qr-trigger');
+        if (trigger) {
+          trigger.setAttribute('aria-expanded', 'false');
+          trigger.classList.remove('is-active');
+        }
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+
+      // 1. 点击关闭按钮
+      const closeBtn = target.closest('.js-resource-close, .js-qr-close');
+      if (closeBtn) {
+        e.stopPropagation();
+        const popover = closeBtn.closest('.js-resource-popover, .js-qr-popover');
+        if (popover) {
+          popover.setAttribute('hidden', '');
+          popover.classList.remove('is-open');
+          const trigger = popover.closest('.academic-resource-trigger-wrapper, .qr-trigger-wrapper')?.querySelector('.js-resource-trigger, .js-qr-trigger');
+          if (trigger) {
+            trigger.setAttribute('aria-expanded', 'false');
+            trigger.classList.remove('is-active');
+          }
+        }
+        return;
+      }
+
+      // 2. 点击触发按钮
+      const triggerBtn = target.closest('.js-resource-trigger, .js-qr-trigger');
+      if (triggerBtn) {
+        e.stopPropagation();
+        const popoverId = triggerBtn.getAttribute('data-popover-id');
+        if (!popoverId) return;
+        const popover = document.getElementById(popoverId);
+        if (!popover) return;
+
+        const isCurrentlyOpen = !popover.hasAttribute('hidden') && popover.classList.contains('is-open');
+
+        closeAllResourcePopovers();
+
+        if (!isCurrentlyOpen) {
+          popover.removeAttribute('hidden');
+          requestAnimationFrame(() => {
+            popover.classList.add('is-open');
+          });
+          triggerBtn.setAttribute('aria-expanded', 'true');
+          triggerBtn.classList.add('is-active');
+        }
+        return;
+      }
+
+      // 3. 点击在 popover 内部：阻止冒泡关闭
+      if (target.closest('.js-resource-popover, .js-qr-popover')) {
+        return;
+      }
+
+      // 4. 点击其他任何区域：收起所有打开的 popover
+      closeAllResourcePopovers();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeAllResourcePopovers();
+      }
+    });
   }
 </script>

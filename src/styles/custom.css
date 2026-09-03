@@ -27,31 +27,49 @@
   background-color: transparent;
 }
 
-/* 关键修复：KaTeX 默认将公式在 .katex-display 中居中，一旦公式比容器宽，
-   左侧会被裁掉且无法滚动到（移动端尤为致命）。
-   这里让 .katex 子盒保持 block（保证溢出能被外层滚动容器感知），
-   宽度取 max-content 并配合 margin:auto 居中：
-   - 公式放得下时：盒子=公式宽度，自动居中，观感与原来一致；
-   - 公式放不下时：盒子被 max-width:100% 压到容器宽度，
-     内容贴左溢出，外层 overflow-x:auto 出现横向滚动，左右两端都能看全。 */
+/* 关键重构：KaTeX 块级公式居中与学术编号（\tag）标准右对齐治理
+   1. 外层 .katex-display 作为滚动容器，支持横向滚动与留白；
+   2. .katex 采用 min-width: 100%，确保公式主体在版心严格居中；
+   3. .tag 绝对定位靠右 (right: 0.25rem)，采用衬线数字与克制弱化色，
+      达到大学教材/学术出版级别的公式排版质感；
+   4. 当公式超宽触发滚动时，min-width: 100% 保证公式横向滚动且编号始终处于
+      最右侧，绝不与公式内容重叠。 */
 .katex-display > .katex {
   display: block;
+  min-width: 100%;
   width: max-content;
-  max-width: 100%;
-  margin-inline: auto;
-  text-align: left;
+  position: relative;
+  text-align: center;
 }
 
-/* 公式末尾编号（\tag）修复：KaTeX 默认把编号绝对定位（right:0）在 .katex-html
-   右缘，而 .katex 盒子只取公式自身宽度（max-content），于是编号永远压在公式
-   末尾字符上；公式一旦比容器宽被压窄，重叠就更严重。
-   这里把编号改为流内定位：紧跟公式末尾（留 0.75em 间距），
-   - 公式放得下时：公式+编号整体居中，编号不再叠字；
-   - 公式放不下时：编号随公式一起横向滚动，永不与公式重叠。 */
+.katex-display > .katex > .katex-html {
+  display: block;
+  position: relative;
+  width: 100%;
+  text-align: center;
+}
+
+/* 公式末尾编号（\tag）：标准学术版心右对齐 */
 .katex-display > .katex > .katex-html > .tag {
-  position: static;
-  margin-left: 0.75em;
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
   white-space: nowrap;
+  font-family: var(--font-latin-serif);
+  font-size: 0.95em;
+  color: var(--sl-color-gray-3, #94a3b8);
+  user-select: none;
+  padding-left: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .katex-display > .katex > .katex-html > .tag {
+    position: static;
+    float: right;
+    margin-left: 1rem;
+    transform: none;
+  }
 }
 
 /* 行内公式：仅限制最大宽度，不轻易改动行内盒模型（99% 的短公式保持原生排版） */
@@ -1443,5 +1461,344 @@ main sup, article sup {
   }
 }
 
+/* ==========================================================================
+   学术出版物数字化配套资源组件 (Academic Digital Resource)
+   ========================================================================== */
 
+.academic-resource-card {
+  position: relative;
+  margin: 1.15rem 0;
+  padding: 0.45rem 0.85rem;
+  background-color: var(--sl-color-gray-6, #f8f9fa);
+  border: 1px solid var(--sl-color-hairline, #e2e8f0);
+  border-left: 2.5px solid var(--sl-color-gray-4, #94a3b8);
+  border-radius: 4px;
+  font-family: var(--sl-font, inherit);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
 
+.academic-resource-card:hover {
+  border-color: var(--sl-color-gray-4, #cbd5e1);
+  border-left-color: var(--sl-color-text-accent, #1e3a8a);
+}
+
+.academic-resource-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.academic-resource-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.academic-resource-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--sl-color-gray-3, #64748b);
+  flex-shrink: 0;
+}
+
+.academic-resource-category {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sl-color-gray-2, #475569);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.academic-resource-divider {
+  color: var(--sl-color-gray-4, #cbd5e1);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.academic-resource-title {
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--sl-color-white, #1e293b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.academic-resource-trigger-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.academic-resource-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 26px;
+  padding: 0 0.55rem;
+  color: var(--sl-color-gray-2, #475569);
+  background: var(--sl-color-bg, #ffffff);
+  border: 1px solid var(--sl-color-hairline, #e2e8f0);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.academic-resource-btn:hover,
+.academic-resource-btn.is-active {
+  color: var(--sl-color-text-accent, #1e3a8a);
+  border-color: var(--sl-color-gray-4, #94a3b8);
+  background: var(--sl-color-bg, #ffffff);
+}
+
+.academic-resource-btn-text {
+  line-height: 1;
+  font-family: inherit;
+}
+
+/* --------------------------------------------------------------------------
+   学术数字资源弹层面板 (Restrained Academic Popover)
+   -------------------------------------------------------------------------- */
+.academic-resource-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 99;
+  width: 236px;
+  max-width: calc(100vw - 2rem);
+  background: var(--sl-color-bg, #ffffff);
+  border: 1px solid var(--sl-color-hairline, #e2e8f0);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.academic-resource-popover.is-open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.academic-resource-popover[hidden] {
+  display: none !important;
+}
+
+/* 顶部微型箭头对齐触发按钮 */
+.academic-resource-arrow {
+  position: absolute;
+  top: -5px;
+  right: 20px;
+  width: 8px;
+  height: 8px;
+  background: var(--sl-color-bg, #ffffff);
+  border-left: 1px solid var(--sl-color-hairline, #e2e8f0);
+  border-top: 1px solid var(--sl-color-hairline, #e2e8f0);
+  transform: rotate(45deg);
+  z-index: 1;
+}
+
+.academic-resource-pop-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--sl-color-hairline, #e2e8f0);
+  background: var(--sl-color-gray-6, #f8f9fa);
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+
+.academic-resource-pop-title {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--sl-color-white, #1e293b);
+  letter-spacing: 0.01em;
+}
+
+.academic-resource-pop-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--sl-color-gray-3, #94a3b8);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.academic-resource-pop-close:hover {
+  color: var(--sl-color-white, #0f172a);
+  background: var(--sl-color-gray-5, #e2e8f0);
+}
+
+.academic-resource-pop-body {
+  padding: 0.7rem 0.75rem 0.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.academic-resource-pop-subtitle {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--sl-color-gray-2, #475569);
+  margin-bottom: 0.55rem;
+  line-height: 1.35;
+  word-break: break-word;
+  max-width: 210px;
+}
+
+.academic-resource-qr-box {
+  background: #ffffff !important;
+  padding: 6px;
+  border: 1px solid var(--sl-color-hairline, #e2e8f0);
+  border-radius: 4px;
+}
+
+.academic-resource-qr-svg {
+  width: 154px;
+  height: 154px;
+}
+
+.academic-resource-qr-svg svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.academic-resource-error {
+  width: 154px;
+  height: 154px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: var(--sl-color-gray-3, #64748b);
+}
+
+.academic-resource-tip {
+  font-size: 0.72rem;
+  color: var(--sl-color-gray-3, #94a3b8);
+  margin-top: 0.45rem;
+  margin-bottom: 0;
+}
+
+.academic-resource-pop-footer {
+  padding: 0.45rem 0.75rem 0.6rem 0.75rem;
+  text-align: center;
+  border-top: 1px solid var(--sl-color-hairline, #e2e8f0);
+}
+
+.academic-resource-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.3rem 0.5rem;
+  background: transparent;
+  border: 1px solid var(--sl-color-hairline, #e2e8f0);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: var(--sl-color-text-accent, #1e3a8a);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.academic-resource-link:hover {
+  background: var(--sl-color-gray-6, #f8f9fa);
+  border-color: var(--sl-color-gray-4, #cbd5e1);
+  text-decoration: none;
+}
+
+/* --------------------------------------------------------------------------
+   暗色模式适配 (Dark Mode)
+   -------------------------------------------------------------------------- */
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-card,
+html[data-theme='dark'] .academic-resource-card {
+  background-color: var(--sl-color-gray-6, #1f2024);
+  border-color: var(--sl-color-hairline, #28282c);
+  border-left-color: var(--sl-color-gray-4, #3f3f44);
+}
+
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-card:hover,
+html[data-theme='dark'] .academic-resource-card:hover {
+  border-color: var(--sl-color-gray-4, #3f3f44);
+  border-left-color: var(--sl-color-accent, #93b4ff);
+}
+
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-popover,
+html[data-theme='dark'] .academic-resource-popover {
+  background: var(--sl-color-bg, #17171a);
+  border-color: var(--sl-color-hairline, #28282c);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-arrow,
+html[data-theme='dark'] .academic-resource-arrow {
+  background: var(--sl-color-bg, #17171a);
+  border-left-color: var(--sl-color-hairline, #28282c);
+  border-top-color: var(--sl-color-hairline, #28282c);
+}
+
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-pop-header,
+html[data-theme='dark'] .academic-resource-pop-header {
+  background: var(--sl-color-gray-7, #161618);
+  border-bottom-color: var(--sl-color-hairline, #28282c);
+}
+
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-link,
+html[data-theme='dark'] .academic-resource-link {
+  border-color: var(--sl-color-hairline, #28282c);
+  color: var(--sl-color-accent, #93b4ff);
+}
+
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-link:hover,
+html[data-theme='dark'] .academic-resource-link:hover {
+  background: var(--sl-color-gray-6, #1f2024);
+  border-color: var(--sl-color-gray-4, #3f3f44);
+}
+
+/* 响应式移动端适配 */
+@media (max-width: 640px) {
+  .academic-resource-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .academic-resource-left {
+    width: 100%;
+  }
+  .academic-resource-trigger-wrapper {
+    align-self: flex-end;
+  }
+  .academic-resource-popover {
+    right: 0;
+    width: min(236px, calc(100vw - 2.5rem));
+  }
+}

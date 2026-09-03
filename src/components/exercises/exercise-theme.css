@@ -1727,7 +1727,7 @@
 .ex-typst-body-split {
   flex: 1;
   display: grid;
-  grid-template-columns: 460px 1fr;
+  grid-template-columns: 440px 1fr;
   overflow: hidden;
   padding: 0 !important;
   min-height: 0;
@@ -1735,20 +1735,32 @@
 
 @media (max-width: 960px) {
   .ex-typst-body-split {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    min-height: 0;
   }
 }
 
 /* 左侧：排版配置面板 */
 .ex-typst-config-pane {
-  padding: 1.2rem 1.35rem;
+  padding: 1.25rem 1.4rem;
   overflow-y: auto;
   border-right: 1px solid var(--ex-border);
   background: var(--ex-bg);
   display: flex;
   flex-direction: column;
-  gap: 1.15rem;
+  gap: 1.2rem;
+}
+
+@media (max-width: 960px) {
+  .ex-typst-config-pane {
+    border-right: none;
+    border-bottom: 1px solid var(--ex-border);
+    overflow-y: visible;
+    flex-shrink: 0;
+    padding: 1.1rem 1.2rem;
+  }
 }
 
 .ex-typst-section {
@@ -1763,19 +1775,10 @@
   gap: 0.45rem;
 }
 
-.ex-typst-sec-num {
-  font-size: 0.72rem;
-  font-weight: 700;
-  font-family: var(--sl-font-mono, monospace);
-  color: var(--ex-brand);
-  background: var(--ex-brand-soft);
-  padding: 0.1rem 0.35rem;
-  border-radius: 3px;
-}
-
 .ex-typst-sec-title {
   font-size: 0.86rem;
   font-weight: 600;
+  letter-spacing: 0.01em;
   color: var(--ex-text-1);
 }
 
@@ -2026,136 +2029,265 @@
   background: var(--ex-bg);
 }
 
-/* 右侧：源码与概览副面板 */
-.ex-typst-preview-pane {
+/* 右侧：文档交付与学术导出指引面板 */
+.ex-latex-delivery-pane {
   display: flex;
   flex-direction: column;
   background: var(--ex-bg-soft);
-  overflow: hidden;
+  overflow-y: auto;
   min-width: 0;
+  padding: 1.25rem 1.4rem;
 }
 
-.ex-pipeline-header {
+@media (max-width: 960px) {
+  .ex-latex-delivery-pane {
+    padding: 1.1rem 1.2rem;
+    overflow-y: visible;
+  }
+}
+
+.ex-delivery-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-width: 580px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* 学术交付卡片 */
+.ex-delivery-card {
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
+  border-radius: 6px;
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: border-color 0.15s ease;
+}
+
+.ex-delivery-card:hover {
+  border-color: var(--ex-border-hover, #cbd5e1);
+}
+
+.ex-delivery-card-primary {
+  border-color: var(--ex-brand);
+  background: var(--ex-bg);
+}
+
+.ex-delivery-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ex-delivery-badge {
+  align-self: flex-start;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--ex-brand);
+  background: var(--ex-brand-soft);
+  padding: 0.12rem 0.45rem;
+  border-radius: 3px;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.1rem;
+}
+
+.ex-delivery-card-header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.65rem 1.15rem;
-  border-bottom: 1px solid var(--ex-border);
-  background: var(--ex-bg);
-  flex-shrink: 0;
+  gap: 0.5rem;
 }
 
-.ex-typst-preview-title {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-size: 0.84rem;
+.ex-delivery-card-title {
+  font-size: 0.88rem;
   font-weight: 600;
   color: var(--ex-text-1);
+  margin: 0;
 }
 
-.ex-typst-preview-title svg {
-  width: 1rem;
-  height: 1rem;
+.ex-delivery-card-desc {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--ex-text-2);
+  margin: 0;
+}
+
+.ex-delivery-card-desc code {
+  font-family: var(--sl-font-mono, monospace);
+  font-size: 0.75rem;
+  background: var(--ex-bg-mute);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  border: 1px solid var(--ex-border);
   color: var(--ex-brand);
 }
 
-.ex-typst-stats {
+.ex-delivery-card-action {
+  display: flex;
+  align-items: center;
+}
+
+.ex-delivery-actions-row {
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.ex-card-cfg-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: transparent;
+  border: none;
+  color: var(--ex-text-3);
+  font-size: 0.74rem;
+  cursor: pointer;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.ex-card-cfg-link:hover {
+  color: var(--ex-text-1);
+  background: var(--ex-bg-mute);
+}
+
+.ex-card-cfg-link svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+/* 按需折叠：LaTeX 源码抽屉 */
+.ex-latex-code-drawer {
+  background: var(--ex-bg);
+  border: 1px solid var(--ex-border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 0.15rem;
+}
+
+.ex-latex-code-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.95rem;
+  cursor: pointer;
+  user-select: none;
+  background: var(--ex-bg-mute);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ex-text-2);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ex-latex-code-summary:hover {
+  color: var(--ex-text-1);
+  background: var(--ex-bg-soft);
+}
+
+.ex-drawer-summary-title {
   display: flex;
   align-items: center;
   gap: 0.45rem;
 }
 
-.ex-stat-pill {
-  font-size: 0.74rem;
+.ex-drawer-summary-title svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  color: var(--ex-text-3);
+}
+
+.ex-drawer-summary-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ex-code-stat-text {
   font-family: var(--sl-font-mono, monospace);
-  padding: 0.15rem 0.45rem;
-  border-radius: 4px;
-  background: var(--ex-bg-mute);
-  color: var(--ex-text-2);
-  border: 1px solid var(--ex-border);
+  font-size: 0.72rem;
+  color: var(--ex-text-3);
 }
 
-.ex-cloud-source-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+.ex-drawer-arrow {
+  width: 0.85rem;
+  height: 0.85rem;
+  color: var(--ex-text-3);
+  transition: transform 0.2s ease;
+}
+
+.ex-latex-code-drawer[open] .ex-drawer-arrow {
+  transform: rotate(180deg);
+}
+
+.ex-latex-code-body {
+  padding: 0.85rem;
+  border-top: 1px solid var(--ex-border);
   background: var(--ex-bg);
-  min-height: 0;
-}
-
-.ex-typst-editor-wrapper {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  gap: 0.55rem;
 }
 
-.ex-typst-code-view {
-  flex: 1 !important;
+.ex-latex-code-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ex-code-filename-text {
+  font-family: var(--sl-font-mono, monospace);
+  font-size: 0.74rem;
+  color: var(--ex-text-3);
+}
+
+.ex-code-copy-link {
+  background: transparent;
+  border: none;
+  font-size: 0.74rem;
+  color: var(--ex-brand);
+  cursor: pointer;
+  padding: 0.15rem 0.35rem;
+  border-radius: 3px;
+}
+
+.ex-code-copy-link:hover {
+  text-decoration: underline;
+}
+
+.ex-latex-code-drawer .ex-typst-code-view {
+  height: 180px !important;
+  max-height: 220px !important;
   width: 100% !important;
-  height: 100% !important;
   min-height: 0 !important;
   margin: 0 !important;
   background: var(--ex-bg-mute) !important;
   border: 1px solid var(--ex-border) !important;
   border-radius: 6px !important;
-  padding: 0.75rem !important;
-  font-size: 0.8rem !important;
-  line-height: 1.55 !important;
+  padding: 0.65rem !important;
+  font-size: 0.78rem !important;
+  line-height: 1.5 !important;
   tab-size: 2 !important;
   font-family: var(--sl-font-mono, monospace) !important;
   color: var(--ex-text-1) !important;
-  resize: none !important;
+  resize: vertical !important;
   outline: none !important;
 }
 
-.ex-typst-compile-tip {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-  padding: 0.75rem 1.15rem;
-  background: var(--ex-bg);
-  border-top: 1px solid var(--ex-border);
-  flex-shrink: 0;
+.ex-latex-ctan-hint {
+  font-size: 0.72rem;
+  color: var(--ex-text-3);
+  line-height: 1.4;
 }
 
-.ex-compile-tip-icon {
-  width: 1.1rem;
-  height: 1.1rem;
-  color: var(--ex-brand);
-  flex-shrink: 0;
-  margin-top: 0.1rem;
+.ex-latex-ctan-hint code {
+  font-family: var(--sl-font-mono, monospace);
+  font-size: 0.72rem;
 }
 
-.ex-compile-tip-icon svg {
-  width: 100%;
-  height: 100%;
-}
-
-.ex-compile-tip-text {
-  font-size: 0.76rem;
-  color: var(--ex-text-2);
-  line-height: 1.45;
-}
-
-.ex-compile-tip-text strong {
-  color: var(--ex-text-1);
-}
-
-.ex-compile-tip-text code {
-  padding: 0.1rem 0.3rem;
-  font-size: 0.74rem;
-  background: var(--ex-bg-mute);
-  border: 1px solid var(--ex-border);
-  border-radius: 3px;
-  color: var(--ex-brand);
-}
-
-/* 底部状态与操作栏 */
+/* 底部状态与操作栏 (极简学术体例) */
 .ex-typst-footer {
   display: flex;
   align-items: center;
@@ -2172,24 +2304,10 @@
   gap: 0.45rem;
 }
 
-.ex-typst-filename-badge {
-  font-size: 0.78rem;
-  font-family: var(--sl-font-mono, monospace);
-  color: var(--ex-text-2);
-  background: var(--ex-bg-mute);
-  padding: 0.2rem 0.55rem;
-  border-radius: 4px;
-  border: 1px solid var(--ex-border);
-}
-
-.ex-pipeline-engine-badge {
-  font-size: 0.74rem;
-  font-family: var(--sl-font-mono, monospace);
-  color: var(--ex-brand);
-  background: var(--ex-brand-soft);
-  padding: 0.15rem 0.45rem;
-  border-radius: 4px;
-  border: 1px solid var(--ex-border);
+.ex-footer-spec-text {
+  font-size: 0.75rem;
+  color: var(--ex-text-3);
+  letter-spacing: 0.01em;
 }
 
 .ex-typst-footer-right {

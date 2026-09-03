@@ -1,194 +1,193 @@
+<div align="center">
+
 # AstroLib
 
-AstroLib 是一个基于 Astro 与 Starlight 框架构建的高精度理科（数学、物理）学术文献与教材数字化发布系统。该系统专注于教材内容的语义结构化抽取、KaTeX 公式排版、跨章节知识拓扑关联、端侧检索增强生成（RAG）以及学术级离线出版物分发。
+**面向大学理工科教材与学术资料的数字化阅读与自测系统**
+
+A modern, quiet, and typographic reading system for university mathematics and science textbooks.
+
+<p align="center">
+  <a href="https://astro.build"><img src="https://img.shields.io/badge/Astro-v7.0-bc52ee?style=flat-square&logo=astro&logoColor=white" alt="Astro" /></a>
+  <a href="https://starlight.astro.build"><img src="https://img.shields.io/badge/Starlight-v0.41-purple?style=flat-square" alt="Starlight" /></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Node-%3E%3D20.0-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node" /></a>
+  <a href="https://katex.org"><img src="https://img.shields.io/badge/KaTeX-Fast_Math-00d084?style=flat-square&logo=latex&logoColor=white" alt="KaTeX" /></a>
+  <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/"><img src="https://img.shields.io/badge/Dataset_License-CC_BY--NC--SA_4.0-blue?style=flat-square" alt="CC License" /></a>
+  <a href="https://github.com/Ariesagittarius/AstroLib/releases"><img src="https://img.shields.io/badge/EPUB3-Offline_Export-orange?style=flat-square" alt="EPUB" /></a>
+</p>
+
+<p align="center">
+  <a href="#about">关于项目</a> •
+  <a href="#features">核心特性</a> •
+  <a href="#textbooks">收录教材</a> •
+  <a href="#quickstart">快速开始</a> •
+  <a href="#copyright">版权说明</a>
+</p>
+
+</div>
 
 ---
 
-## 1. 核心架构设计
+<!-- TODO: Add screenshots -->
+<!--
+建议捕获并放置 1-2 张无外框、高精度的界面实景图：
+1. 桌面端阅读界面（包含侧边栏、长公式与定理卡片）
+2. 习题弹窗界面（即时答题、公式推导折叠与 LaTeX 导出预览）
+-->
 
-系统设计遵循关注点分离、编译期计算下沉与单一可信源原则，确保在大规模公式与长篇幅章节场景下依然具备极低的渲染负载与高效的浏览体验。
+<a id="about"></a>
+## 📖 关于项目
 
-### 1.1 中央元数据驱动 (Central Metadata Driver)
-* `src/config/collections.config.mjs` 作为全站合集（Collections）、图书（Books）与卡片模块（Modules）的唯一数据源（Single Source of Truth）。
-* 统一维护书籍 ISBN、出版信息、阅读入口、模块卡片类别（如定义、定理、例题、习题）及跨页识别特征。
+做 AstroLib 的初衷非常简单：
 
-### 1.2 全站特性注册表 (Feature Registry)
-* `src/config/features.config.mjs` 集中管理全站功能（如 KaTeX、主题、自托管字体、引用联动、图谱、AI 问答、EPUB 导出、在线精修等）的构建开关与运行参数。
-* 构建阶段依据注册表动态挂载 Remark/Rehype 插件、Vite 端点与样式表。未启用的功能在编译阶段被完全剥离，实现零打包体积开销（Zero Bundle Overhead）。
+纸质理工科教材在数字化时常常面临两难。扫描版 PDF 在小屏或移动设备上难以阅读；而通用的知识库或博客系统又缺乏对教材级排版的严肃支持——公式缩放掉帧、长篇定理缺乏清晰层级、跨章节交叉引用频繁导致读者迷失，课后习题也往往与理论脱节。
 
-### 1.3 编译期计算下沉管线 (Build-time Lowering Pipeline)
-* **LaTeX 源码双向绑定**：通过自定义 Rehype 插件在 AST 处理阶段将原始 LaTeX 语法注入元素属性（`data-latex`），为前端公式复制提供完整支持。
-* **交叉引用静态下沉**：正文中出现的定理、例题与图表编号在构建期由 `rehype-cross-ref` 插件自动转换为标准超链接与语义徽章，消除了客户端单页跳转时的 DOM 扫描开销。
-* **公式体积优化**：KaTeX 采用纯 HTML 模式输出（`output: 'html'`），剔除 MathML 冗余标记，大幅压缩单页 HTML 体积。
+AstroLib 尝试在**经典纸质书的严谨排版**与**现代 Web 的流畅交互**之间寻找平衡。我们信奉 **“内容即界面（The Content is the Interface）”**：
 
-### 1.4 路由与侧边栏隔离
-* **自然排序生成**：侧边栏自动解析章节编号（如 1.1 至 10.1）进行自然排序。
-* **Slug 规范化**：所有内部链接统一通过 `cleanSlug()` 进行字符过滤与归一化，防止特殊字符与大小写导致的 404 路由异常。
-* **单书渲染作用域**：服务端仅渲染当前正在阅读的图书目录树，避免跨书全量渲染带来的首屏性能退化。
+- **无多余噪声**：摒弃积分打卡、营销徽章、繁杂嵌套边框等干扰思考的设计。
+- **排版至上**：通过精心调优的思源宋黑字体、自适应行距与公式基线对齐，还原沉稳、克制的纸书质感。
+- **性能下沉**：将复杂的符号提取、定理引用联动和索引分块全部前置到编译期，让前端页面始终轻盈迅捷。
 
 ---
 
-## 2. 核心功能与技术实现
+<a id="features"></a>
+## ✨ 核心特性
 
-### 2.1 数学公式与排版引擎
-* 深度集成 KaTeX 渲染管线，支持行内公式（`$...$`）与独立块级公式（`$$...$$`）。
-* 针对公式末尾编号（`\tag{...}`）在移动端与窄屏设备下的排版冲突，提供了专用 CSS 弹性定位方案，杜绝内容重叠。
-* 支持公式一键复制 LaTeX 原始源码。
-
-### 2.2 结构化语义卡片系统
-* 提供标准化的 MDX 卡片组件库，用于对教材内容进行原子化封装：
-  * 知识与概念：`<Knowledge>`（知识点）、`<Note>`（注解/说明）
-  * 理论推演：`<Block type="theorem">`（定理）、`<Block type="definition">`（定义）、`<Block type="lemma">`（引理）、`<Block type="corollary">`（推论）
-  * 实践解析：`<Example>`（例题）、`<Variant>`（变式训练）、`<Method>`（方法总结）、`<Solution>`（解题步骤）、`<Exercise>`（课后习题）
-* 卡片支持统一的折叠交互、主题色绑定以及大纲动态索引关联。
-
-### 2.3 书内检索增强问答 (Book-Scoped RAG)
-* **构建期语义切片**：`scripts/build-ai-index.mjs` 扫描书籍 MDX 内容，按卡片与标题切分为语义块并生成独立的 JSON 索引文件。
-* **端侧按需检索**：支持关键词检索（Keyword）与混合检索（Hybrid），严格限制召回片段数量（Top-K）与上下文长度（Max Context Chars）。
-* **客户端直连 (BYOK)**：用户自备 API Key（存储于本地 LocalStorage），基于 OpenAI 兼容流式接口直接与大语言模型通信，保障数据隐私与服务端零负载。无 Key 状态下自动平滑降级为纯本地目录检索。
-
-### 2.4 关系图谱与拓扑可视化
-* 集成 ECharts 与 Mermaid，支持教材内知识节点引用拓扑、章节依赖脉络与流程时序图的可视化展示。
-* 提供动态关系图谱提取端点，辅助读者建立结构化知识体系。
-
-### 2.5 开发期精修与巡检体系 (Dev-Only)
-* **可视化在线精修**：在开发环境下注入 AST 源码定位标记，支持在浏览器中点击文本直接定位并写回 MDX 源文件。
-* **模块查重与巡检**：提供模块索引速查、同章重名冲突预警与异常拆分定位工具，保障海量教材数字化转换的质量。
-
-### 2.6 学术级 EPUB3 导出管线
-* 依托 `scripts/generate-epub.mjs` 实现从 MDX 源文档到标准 EPUB3 电子书的自动化编译转换，完整保留目录层级、公式标记与嵌入式矢量资源。
+AstroLib 深度集成 KaTeX 排版引擎与原子化 MDX 语义卡片体系（涵盖定理、定义、引理、例题、方法与可折叠推导细节），通过编译期静态计算下沉实现零客户端开销的跨章节交叉引用与公式源码一键复制；内置由北京邮电大学开源团队整理的《大邮数学集》173 套名校历年真题（CC BY-NC-SA 4.0 协议，2900+ 题）与交互式双模式自测面板，支持即时判题与推导折叠；集成基于 `Jinwen-XU/homework` 宏包的印刷级 LaTeX 讲义导出与 GitHub Actions 云端直出 PDF 工作流，并提供全书离线 EPUB3 打包管线与端侧隐私优先的知识检索辅助。
 
 ---
 
-## 3. 代码库组织结构
+<a id="textbooks"></a>
+## 📚 已收录教材与题库
 
-```
-.
-├── astro.config.mjs               # Astro 与 Starlight 核心配置（插件装配、侧边栏、主题覆盖）
-├── package.json                   # 项目依赖与运行脚本
-├── AGENTS.md                      # 智能体开发规范与 Git 提交约束
-├── docs/                          # 架构设计、性能优化与技术交接文档
-│   ├── README.md                  # 交接文档全量索引
-│   ├── 特性模块与插件系统.md
-│   ├── AI 书内问答模块实现交接.md
-│   ├── AI 赋能模块设计.md
-│   ├── 文章切换性能优化交接文档.md
-│   ├── VitePress主题改造交接文档.md
-│   ├── 精修工具交接.md
-│   └── 模块查重与巡检工具.md
-├── scripts/                       # 构建管线、语法校验与数据索引脚本
-│   ├── build-ai-index.mjs         # AI 问答语义分块索引构建脚本
-│   ├── build-inspector-data.mjs   # 模块巡检数据预构建
-│   ├── build-relation-graphs.mjs  # 知识关系拓扑图谱预构建
-│   ├── generate-epub.mjs          # EPUB3 电子书构建生成器
-│   ├── scan-mdx.mjs               # MDX 语法极速校验工具
-│   ├── fix-katex-metrics.mjs      # KaTeX 指标与公式排版修正
-│   └── git-clean-push.mjs         # 生产分发代码注释剥离与同步工具
-├── src/
-│   ├── config/
-│   │   ├── collections.config.mjs # 中央书库与模块映射配置 (Single Source of Truth)
-│   │   └── features.config.mjs    # 全站功能注册表 (Feature Registry)
-│   ├── ai/                        # 端侧 RAG、检索控制器与 LLM 客户端通信模块
-│   ├── components/                # 语义卡片组件与 Starlight 视图插槽覆盖组件
-│   ├── styles/                    # 样式表（VitePress 风格主题、思源字体体系、自定义排版）
-│   ├── utils/                     # 编译期 Remark/Rehype 插件、Slug 净化与编辑器服务
-│   └── content/docs/
-│       ├── dev/                   # 系统内置开发者指南与技术规范
-│       └── collections/           # 数字化教材 MDX 章节存储目录
-│           ├── math/              # 数学合集
-│           └── science/           # 物理合集
-└── public/                        # 静态资源、自托管字体切片与构建期生成的索引数据
-```
+| 领域 | 书目 / 资料名称 | 版次 / 主编 | 状态 |
+| :--- | :--- | :--- | :---: |
+| **数学** | 《工科数学分析基础》 | 第三版 · 王绵森、马知恩 / 高等教育出版社 | 全章上线 · 配套自测 |
+| **数学** | 《数学分析》 | 第五版 · 华东师范大学数学系 / 高等教育出版社 | 全章上线 |
+| **数学** | 《线性代数及其应用》 | 原书第 5 版 · David C. Lay / 机械工业出版社 | 全章上线 |
+| **数学** | 《概率论与数理统计教程》 | 第三版 · 茆诗松、程依明、濮晓龙 / 高等教育出版社 | 全章上线 |
+| **数学** | 《新高考数学你真的掌握了吗》 | 第二版 · 清华大学出版社教研团队 | 全章上线 |
+| **物理** | 《大学物理学》 | 第七版 · 赵近芳、王登龙 / 北京邮电大学出版社 | 全章上线 · 配套习题 |
+| **题库** | **《大邮数学集》真题库** | 173 套名校历年真题（CC BY-NC-SA 4.0） | 2915 题全量结构化 |
 
 ---
 
-## 4. 运行环境与开发指令
+<a id="quickstart"></a>
+## 🚀 快速开始
 
-### 4.1 环境要求
-* **Node.js**: >= 18.0.0
-* **包管理器**: npm 或 pnpm
-* **Python** (可选，仅在执行 OCR 原始产物导入管线时需要): Python 3.9+
+### 1. 环境准备
+- **Node.js**：`>= 20.0.0`
+- **包管理器**：`npm`（推荐，与仓库 lockfile 保持一致）
+- **Python**（可选）：`>= 3.9`（仅在维护 OCR 抽取流水线时需要）
 
-### 4.2 常用开发指令
-
-#### 服务启动与进程管理
-开发服务器支持以后台守护进程模式运行：
+### 2. 本地运行
 
 ```bash
-# 启动开发服务器（默认端口 4321）
+# 克隆仓库
+git clone https://github.com/Ariesagittarius/AstroLib.git
+cd AstroLib
+
+# 安装依赖
+npm install
+
+# 启动本地开发服务
 npm run dev
-
-# 以后台守护进程模式启动
-astro dev --background
-
-# 查询开发服务器运行状态与端口
-astro dev status
-
-# 查看开发服务器实时日志
-astro dev logs
-
-# 安全终止开发服务器进程
-astro dev stop
 ```
 
-#### 语法验证与静态构建
+启动完成后，打开浏览器访问 `http://localhost:4321` 即可体验。
+
+> [!TIP]
+> 你也可以使用后台守护模式运行开发服务器，避免占用终端：
+> ```bash
+> npx astro dev --background  # 启动后台守护
+> npx astro dev status        # 查询运行状态
+> npx astro dev stop          # 安全退出
+> ```
+
+### 3. 生产构建与本地预览
+
 ```bash
-# 快速校验指定书籍目录下的 MDX 语法正确性（推荐在提交前执行）
-node scripts/scan-mdx.mjs src/content/docs/collections/math/math_analysis
-
-# 校验 KaTeX 排版指标
-npm run check:katex
-
-# 完整静态站点生产构建（包含索引生成与页面渲染）
+# 全量构建（包含习题数据预编译、检索索引构建与静态站点生成）
 npm run build
 
-# 本地预览生产构建产物
+# 预览生产构建产物
 npm run preview
-
-# 单独构建全书离线 EPUB 产物
-npm run epub
 ```
 
----
-
-## 5. 工程规范与版本控制
-
-### 5.1 学术化 Commit 规范 (Academic Restrained Convention)
-项目要求所有 Git 提交日志采用严谨、客观、学术风格的英文叙述，禁止使用非 ASCII 字符、Emoji 表情符号及夸大营销词汇。
-
-* **格式规范**：`<type>(<scope>): <imperative summary>`
-* **允许的 Type**：`feat`, `fix`, `perf`, `refactor`, `docs`, `style`, `chore`, `test`, `release`, `ci`, `build`
-* **允许的 Scope**：`(content)`, `(katex)`, `(ui)`, `(ai)`, `(epub)`, `(sidebar)`, `(header)`, `(render)`, `(editor)`, `(ci)`, `(core)`
-* **提交示例**：
-  * `feat(content): import linear algebra textbook and chapter exercises`
-  * `fix(layout): prevent math formula overflow on mobile viewport`
-  * `perf(render): pre-render heading formulas during build time`
-  * `refactor(sidebar): decouple book traversal from state manager`
-
-### 5.2 双仓库分发机制 (Dual-Repository Pipeline)
-* **本地与私有仓库**：完整保留所有架构解析、设计推导与源码注释。
-* **公开仓库**：通过自动脱敏流水线去除内部注释与私有开发资产（`.agents/`, `.dsh/`, `CLAUDE.md` 等），请通过以下指令进行代码推送：
+### 4. 辅助工具与导出命令
 
 ```bash
-# 推送至公开仓库（自动过滤注释与私有资产）
-npm run push:clean
+# 一键生成全书离线 EPUB3 电子书
+npm run epub
 
-# 推送至私有完整备份仓库
-npm run push:private
+# 检查全站公式的 KaTeX 规范性
+npm run check:katex
 
-# 双端同步推送
-npm run push:all
+# 快速验证指定书籍目录下的 MDX 语法
+node scripts/scan-mdx.mjs src/content/docs/collections/math/math_analysis
 ```
 
 ---
 
-## 6. 技术文档索引
+## ⚙️ 环境变量说明
 
-详细的技术架构、性能优化推演及新书导入流程请参阅以下技术交接文档：
+AstroLib 作为纯静态架构（SSG），**日常浏览、学习与生产打包均无需配置任何环境变量**，即开即用。
 
-* 架构与插件系统：[docs/特性模块与插件系统.md](docs/特性模块与插件系统.md)
-* 渲染性能与跨页引用优化：[docs/文章切换性能优化交接文档.md](docs/文章切换性能优化交接文档.md)
-* AI 问答架构与 MCP 规范：[docs/AI 赋能模块设计.md](docs/AI%20赋能模块设计.md) 与 [docs/AI 书内问答模块实现交接.md](docs/AI%20书内问答模块实现交接.md)
-* UI 与主题体系改造：[docs/VitePress主题改造交接文档.md](docs/VitePress主题改造交接文档.md)
-* 数字化新书导入规范：[项目内置技能 import-book](.agents/skills/import-book/SKILL.md)
+如需执行特殊离线数据处理或维护可选的独立微服务，可按需配置：
 
+| 环境变量 | 是否必需 | 说明 |
+| :--- | :---: | :--- |
+| `AI_PYTHON` | 否 | 执行本地 MCP 工具时的 Python 解释器路径（默认 `python`） |
+| `GEMINI_API_KEY` | 否 | 运行离线多模态修复脚本时调用的 Gemini API 密钥 |
+| `GITHUB_TOKEN` | 否 | 部署 Serverless 读者勘误代发 Worker 时的鉴权 Token |
+
+---
+
+## 🗂️ 项目结构一览
+
+```text
+.
+├── astro.config.mjs               # Astro / Starlight 主配置与插件挂载
+├── AGENTS.md                      # 工程规范与学术 Commit 约束说明
+├── docs/                          # 核心架构设计与详细交接文档全集
+├── scripts/                       # 构建管线、题库编译与校验脚本
+│   ├── build-exercise-data.mjs    # 题库公式预编译与瘦身脚本
+│   ├── build-ai-index.mjs         # 离线检索索引构建脚本
+│   ├── generate-epub.mjs          # EPUB3 自动化打包流水线
+│   └── lib/math_archive/          # 真题题库解析与清洗算法库
+├── src/
+│   ├── config/
+│   │   ├── collections.config.mjs # 中央书库配置（全站书籍元数据与模块映射单源）
+│   │   └── features.config.mjs    # 全站功能注册表（构建装配与零打包开销控制）
+│   ├── content/docs/
+│   │   ├── dev/                   # 内置开发者手册与设计指南
+│   │   └── collections/           # 数字化教材 MDX 章节存储目录
+│   ├── components/                # 语义卡片、答题组件与 Starlight 覆盖层
+│   │   └── exercises/             # 习题系统交互核心与 LaTeX 导出前端
+│   ├── utils/
+│   │   └── latex/                 # LaTeX 学术练习册生成引擎
+│   └── data/exercises/            # 2900+ 题标准化真题与章节倒排索引
+└── public/                        # 静态资源、自托管字体切片与构建缓存
+```
+
+---
+
+<a id="copyright"></a>
+## ⚖️ 内容与版权声明
+
+本项目严格区分**系统源代码**与**数字化教材/真题数据**的权利归属：
+
+1. **教材正文与原书习题**：
+   - 仓库内收录的高校教材章节与插图，版权归原作者及对应出版社（高等教育出版社、清华大学出版社、机械工业出版社、北京邮电大学出版社等）所有。
+   - 内容仅供个人学习交流与排版技术研究，不具任何商业属性。若需系统研读，请务必支持正版纸质出版物。
+2. **历年真题题库**：
+   - 试卷数据库提取自北京邮电大学开源团队维护的《大邮数学集》。
+   - 真题数据遵循 **[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans)** 协议。任何衍生使用均需注明出处、保持非商业用途并以相同方式共享。
+3. **开源字体**：
+   - 思源黑体、思源宋体与 Plus Jakarta Sans 均遵循 [SIL Open Font License 1.1](https://openfontlicense.org/) 协议。
+
+---
+
+## 📜 License
+
+- **系统源代码**：遵循开源理念构建，具体条款以仓库补充的 `LICENSE` 为准。
+- **教材与题目数据**：受各自知识产权或 CC 协议约束，**代码许可不适用于任何教材原文与试卷数据**。

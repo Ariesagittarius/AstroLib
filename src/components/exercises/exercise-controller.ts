@@ -2913,7 +2913,7 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     const linesCount = this.currentGeneratedLatexCode.split('\n').length;
 
     if (qCountEl) qCountEl.textContent = `题目：${questions.length} 题`;
-    if (linesEl) linesEl.textContent = `代码：${linesCount} 行`;
+    if (linesEl) linesEl.textContent = `${linesCount} 行代码`;
 
     // 更新建议下载文件名
     const defaultFilename = this.getLatexExportFilename();

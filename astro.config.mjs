@@ -12,6 +12,8 @@ import { generateBookSidebar } from './src/utils/sidebar.mjs';
 import { features, isEffective, crossRefRefs } from './src/config/features.config.mjs';
 // 公式源码回填插件：让每个 KaTeX 公式携带 data-latex 原始源码（供前端一键复制）
 import { rehypeKatexAnnotate, rehypeKatexPromote } from './src/utils/rehype-katex-source.mjs';
+// 数学变量智能提升插件：构建期提升正文漏网单字母变量与简式为 KaTeX 公式
+import rehypeMathPromote from './src/utils/rehype-math-promote.mjs';
 // 构建期引用徽章下沉插件（方案 B）：把“例题 1.74 / 图 3-48 → badge”的匹配逻辑
 // 从客户端 SPA 切换时扫描下沉到构建期，客户端切换零扫描（详见 docs/文章切换性能优化交接文档）
 import { rehypeCrossRef } from './src/utils/rehype-cross-ref.mjs';
@@ -115,11 +117,16 @@ if (features.katex.enabled) {
   // strict/throwOnError 关闭保证 OCR 出的部分不严谨 LaTeX 不阻断构建。
   // rehypeKatexAnnotate / rehypeKatexPromote 夹在 rehype-katex 前后，
   // 把原始 LaTeX 源码写进成品公式的 data-latex 属性（供前端复制）。
-  rehypePlugins.push(
+  const katexGroup = [];
+  if (features.mathPromote?.enabled) {
+    katexGroup.push(rehypeMathPromote);
+  }
+  katexGroup.push(
     rehypeKatexAnnotate,
     [rehypeKatex, { output: 'html', strict: false, throwOnError: false }],
     rehypeKatexPromote,
   );
+  rehypePlugins.push(...katexGroup);
 }
 if (features.crossRef.enabled) {
   // 方案 B：构建期徽章下沉，须在 KaTeX 相关插件之后执行（依赖公式结构已定型）。

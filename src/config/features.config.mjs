@@ -99,6 +99,18 @@ const featureDefs = {
     ui: false,
   }),
 
+  // 数学变量智能提升：构建期智能提升正文漏网单字母数学变量与简式为 KaTeX 公式
+  mathPromote: defineFeature({
+    id: 'mathPromote',
+    cat: 'reader',
+    label: '数学变量智能提升',
+    desc: '构建期智能提升正文孤立单字母数学变量与简式为 KaTeX 公式',
+    enabled: true,
+    devOnly: false,
+    ui: false,
+    requires: ['katex'],
+  }),
+
   // 公式操作与导出：正文公式快捷复制 LaTeX 源码与导出高清 SVG/PNG 图片
   formulaActions: defineFeature({
     id: 'formulaActions',
