@@ -82,4 +82,15 @@ export function setupVPLocalNav(): void {
     setMobileTocOpen(false);
     window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
   });
+
+  nav.querySelector('[data-close-mobile-toc]')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    setMobileTocOpen(false);
+  });
+
+  nav.querySelectorAll('[data-exercise-trigger], [data-inspector-trigger], [data-open-relation-graph], [data-feedback-trigger]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setMobileTocOpen(false);
+    });
+  });
 }

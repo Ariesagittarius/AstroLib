@@ -302,12 +302,12 @@ const featureDefs = {
     id: 'exercises',
     cat: 'reader',
     label: '章节习题与真题自测',
-    desc: '章节课后习题与历年名校真题独立交互做题、整卷试卷刷题、AI 社区题解共享与纠错系统',
+    desc: '章节课后习题与《大邮数学集》（CC协议）历年真题独立交互做题、整卷试卷刷题、AI 社区题解共享与纠错系统',
     enabled: true,
     devOnly: false,
     ui: true,
     config: {
-      defaultMode: 'practice', // 'practice' | 'paper' | 'search'
+      defaultMode: 'practice', // 'practice' | 'paper'
       communitySolutions: true, // 开启社区读者自跑 AI 题解读写共享
       cloudDb: {
         // 云端统一数据库端点（支持 Supabase REST / Cloudflare D1 / 本地 Dev Server 接口）

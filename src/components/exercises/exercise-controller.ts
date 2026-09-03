@@ -353,10 +353,11 @@ class ExerciseCenterController {
   private doneStatEl: HTMLElement | null = null;
   private accStatEl: HTMLElement | null = null;
 
-  private isBound = false;
+  private boundRoot: HTMLElement | null = null;
   private isOpen = false;
   private isFullscreen = false;
-  private currentMode: 'practice' | 'paper' | 'search' = 'practice';
+  private isGlobalSearch = false;
+  private currentMode: 'practice' | 'paper' = 'practice';
   private currentChapter = 1;
   private currentPaperId = 1;
   private currentSource: 'all' | 'textbook' | 'exam' = 'all';
@@ -385,6 +386,7 @@ class ExerciseCenterController {
   private activeFeedbackQuestion: SlimQuestionItem | null = null;
   private activeEditorQuestion: SlimQuestionItem | null = null;
   private activeUploadQuestionId: string = '';
+  private scopeToggleBtn: HTMLElement | null = null;
 
   constructor() {
     this.init();
@@ -394,8 +396,21 @@ class ExerciseCenterController {
     if (typeof document === 'undefined') return;
 
     const setup = () => {
-      this.root = document.getElementById('exercise-modal-root');
-      if (!this.root) return;
+      // 路由换页安全清理：若存在多个 root 节点，移除多余的旧节点
+      const allRoots = document.querySelectorAll('#exercise-modal-root');
+      if (allRoots.length > 1) {
+        allRoots.forEach((node, idx) => {
+          if (idx < allRoots.length - 1) node.remove();
+        });
+      }
+
+      const newRoot = document.getElementById('exercise-modal-root');
+      if (!newRoot) return;
+
+      if (this.root && this.root !== newRoot) {
+        this.root.remove();
+      }
+      this.root = newRoot;
 
       if (this.root.parentElement !== document.body) {
         document.body.appendChild(this.root);
@@ -411,6 +426,7 @@ class ExerciseCenterController {
       this.typePillsContainer = this.root.querySelector('.ex-type-pills');
       this.searchInput = this.root.querySelector('.ex-search-input');
       this.searchClearBtn = this.root.querySelector('.ex-search-clear');
+      this.scopeToggleBtn = this.root.querySelector('#ex-scope-toggle-btn');
       this.bodyContainer = this.root.querySelector('.ex-body');
       this.fullscreenBtn = this.root.querySelector('.ex-fullscreen-btn');
       this.closeBtn = this.root.querySelector('.ex-close-btn');
@@ -485,8 +501,11 @@ class ExerciseCenterController {
       this.toolbarEl = this.root.querySelector('.ex-toolbar');
       this.toolbarToggleBtn = this.root.querySelector('#ex-toolbar-toggle-btn');
       try {
-        const savedCollapsed = localStorage.getItem('astro_exercise_filter_collapsed') === '1';
-        if (savedCollapsed) {
+        const savedCollapsed = localStorage.getItem('astro_exercise_filter_collapsed');
+        const isMobileScreen = typeof window !== 'undefined' && window.innerWidth <= 640;
+        // 规范第九条：移动端优先进入「沉浸做题态」，筛选默认收起；桌面端遵从用户记忆
+        const shouldCollapse = savedCollapsed !== null ? savedCollapsed === '1' : isMobileScreen;
+        if (shouldCollapse) {
           this.setFilterCollapsed(true);
         }
       } catch {}
@@ -592,8 +611,8 @@ class ExerciseCenterController {
   }
 
   private bindEvents() {
-    if (!this.root || this.isBound) return;
-    this.isBound = true;
+    if (!this.root || this.boundRoot === this.root) return;
+    this.boundRoot = this.root;
 
     const backdrop = this.root.querySelector('.ex-modal-backdrop');
     if (backdrop) backdrop.addEventListener('click', () => this.close());
@@ -601,6 +620,25 @@ class ExerciseCenterController {
     if (this.closeBtn) this.closeBtn.addEventListener('click', () => this.close());
     if (this.fullscreenBtn) this.fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
     if (this.toolbarToggleBtn) this.toolbarToggleBtn.addEventListener('click', () => this.toggleFilterCollapse());
+
+    const mobileConfirmBtn = this.root.querySelector('#ex-mobile-confirm-btn');
+    if (mobileConfirmBtn) {
+      mobileConfirmBtn.addEventListener('click', () => {
+        this.setFilterCollapsed(true);
+        if (this.bodyContainer) this.bodyContainer.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
+    if (this.toolbarEl) {
+      this.toolbarEl.addEventListener('click', (e) => {
+        if (window.innerWidth <= 640 && !this.isFilterCollapsed) {
+          const filterRow = this.toolbarEl?.querySelector('.ex-filter-row');
+          if (filterRow && !filterRow.contains(e.target as Node) && !this.toolbarToggleBtn?.contains(e.target as Node)) {
+            this.setFilterCollapsed(true);
+          }
+        }
+      });
+    }
 
     if (this.chapterSelect) {
       this.chapterSelect.addEventListener('change', (e) => {
@@ -627,9 +665,26 @@ class ExerciseCenterController {
     if (this.modeTabs) {
       this.modeTabs.forEach((tab) => {
         tab.addEventListener('click', () => {
-          const mode = (tab.getAttribute('data-mode') || 'practice') as any;
+          const mode = (tab.getAttribute('data-mode') || 'practice') as 'practice' | 'paper';
           this.switchMode(mode);
         });
+      });
+    }
+
+    if (this.scopeToggleBtn) {
+      this.scopeToggleBtn.addEventListener('click', async () => {
+        this.isGlobalSearch = !this.isGlobalSearch;
+        this.scopeToggleBtn?.classList.toggle('active', this.isGlobalSearch);
+        if (this.searchInput) {
+          this.searchInput.placeholder = this.isGlobalSearch
+            ? '全库检索题目、LaTeX 或考点...'
+            : '输入题干关键字、LaTeX 或考点...';
+        }
+        if (this.isGlobalSearch) {
+          await this.ensureAllQuestionsLoaded();
+        }
+        this.displayedLimit = PAGE_SIZE;
+        this.filterAndRender();
       });
     }
 
@@ -637,8 +692,11 @@ class ExerciseCenterController {
       let debounceTimer: any = null;
       this.searchInput.addEventListener('input', (e) => {
         clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
+        debounceTimer = setTimeout(async () => {
           this.searchQuery = (e.target as HTMLInputElement).value.trim();
+          if (this.isGlobalSearch) {
+            await this.ensureAllQuestionsLoaded();
+          }
           this.displayedLimit = PAGE_SIZE;
           this.filterAndRender();
         }, 50);
@@ -707,7 +765,7 @@ class ExerciseCenterController {
     this.bindSubmodalEvents();
   }
 
-  private switchMode(mode: 'practice' | 'paper' | 'search') {
+  private switchMode(mode: 'practice' | 'paper') {
     this.currentMode = mode;
     this.displayedLimit = PAGE_SIZE;
 
@@ -736,16 +794,6 @@ class ExerciseCenterController {
       this.paperOutlineContainer?.classList.remove('hidden');
       this.ensurePaperListLoaded().then(() => {
         this.loadPaper(this.currentPaperId);
-      });
-    } else if (mode === 'search') {
-      this.chapterSelect?.classList.remove('hidden');
-      this.paperSelect?.classList.add('hidden');
-      this.sourcePillsContainer?.classList.remove('hidden');
-      this.groupPillsContainer?.classList.add('hidden');
-      this.sectionPillsContainer?.classList.add('hidden');
-      this.paperOutlineContainer?.classList.add('hidden');
-      this.ensureAllQuestionsLoaded().then(() => {
-        this.filterAndRender();
       });
     }
   }
@@ -894,7 +942,7 @@ class ExerciseCenterController {
         }
 
         if (examPapers.length > 0) {
-          optionsHtml += `<optgroup label="🎓 北京邮电大学历年真题试卷（${examPapers.length}套）">`;
+          optionsHtml += `<optgroup label="🎓 《大邮数学集》历年真题试卷（CC协议 · ${examPapers.length}套）">`;
           examPapers.forEach((p) => {
             const isSelected = p.paper_id === this.currentPaperId;
             const scoreText = p.total_score ? `[${p.total_score}分 / ${p.total_questions}题]` : `[${p.total_questions}题]`;
@@ -1058,14 +1106,14 @@ class ExerciseCenterController {
 
     let sourceList: SlimQuestionItem[] = [];
 
-    if (this.currentMode === 'practice') {
+    if (this.isGlobalSearch) {
+      sourceList = this.allQuestionsCache.length > 0 ? this.allQuestionsCache : (this.chapterCache.get(this.currentChapter)?.questions || []);
+    } else if (this.currentMode === 'practice') {
       const data = this.chapterCache.get(this.currentChapter);
       sourceList = data?.questions || [];
     } else if (this.currentMode === 'paper') {
       const data = this.paperCache.get(this.currentPaperId);
       sourceList = data?.questions || [];
-    } else if (this.currentMode === 'search') {
-      sourceList = this.allQuestionsCache.length > 0 ? this.allQuestionsCache : (this.chapterCache.get(this.currentChapter)?.questions || []);
     }
 
     if (sourceList.length === 0 && !this.isLoading) {
@@ -1075,13 +1123,13 @@ class ExerciseCenterController {
 
     let filtered = sourceList;
 
-    if (this.currentMode === 'practice' && this.currentSection !== 'all') {
+    if (!this.isGlobalSearch && this.currentMode === 'practice' && this.currentSection !== 'all') {
       filtered = filtered.filter((q) => {
         return q.sec === this.currentSection || q.sec_slug?.startsWith(this.currentSection);
       });
     }
 
-    if (this.currentMode === 'paper' && this.currentPaperSection !== 'all') {
+    if (!this.isGlobalSearch && this.currentMode === 'paper' && this.currentPaperSection !== 'all') {
       filtered = filtered.filter((q) => q.section_type === this.currentPaperSection);
     }
 
@@ -1089,7 +1137,7 @@ class ExerciseCenterController {
       filtered = filtered.filter((q) => (q.source_type || 'exam') === this.currentSource);
     }
 
-    if (this.currentGroup !== 'all') {
+    if (this.currentSource === 'textbook' && this.currentGroup !== 'all') {
       filtered = filtered.filter((q) => q.group === this.currentGroup);
     }
 
@@ -1195,7 +1243,6 @@ class ExerciseCenterController {
     const qType = q.type;
     const typeLabel = qType === 'choice' ? '单选' : qType === 'blank' ? '填空' : qType === 'proof' ? '证明' : '解答';
     const record = this.practiceRecords.get(qid) || { answered: false };
-    const scoreText = q.score ? `${q.score} 分` : '';
     const secSlug = q.sec_slug || '';
     const knowledgePoints = q.kps || [];
     const hasLocalAiSolution = this.aiSolutions.has(qid);
@@ -1225,8 +1272,7 @@ class ExerciseCenterController {
             <span class="ex-q-type-label">· ${typeLabel}</span>
             ${q.source_type === 'textbook'
               ? `<span class="ex-q-source-badge textbook">教材 · ${q.group || 'A'}组</span>`
-              : `<span class="ex-q-source-badge exam">名校真题</span>`}
-            ${scoreText ? `<span class="ex-q-score">（${scoreText}）</span>` : ''}
+              : `<span class="ex-q-source-badge exam" title="来源：《大邮数学集》（CC BY-NC-SA 4.0）">大邮数学集 · CC协议</span>`}
           </div>
           <div class="ex-q-meta-right">
             <button type="button" class="ex-text-link-btn" data-action="open-feedback" data-qid="${qid}" title="向开发团队报告题干/公式/答案错误">
@@ -1240,16 +1286,6 @@ class ExerciseCenterController {
 
         <div class="ex-q-stem">
           ${q.stem_html}
-          ${q.sub_questions && q.sub_questions.length > 0 ? `
-            <div class="ex-sub-questions">
-              ${q.sub_questions.map((sub) => `
-                <div class="ex-sub-q-item">
-                  <span class="ex-sub-id">${sub.sub_id}</span>
-                  <div class="ex-sub-stem">${sub.stem_html}</div>
-                </div>
-              `).join('')}
-            </div>
-          ` : ''}
         </div>
 
         <div class="ex-interactive-wrap">
@@ -1448,106 +1484,110 @@ class ExerciseCenterController {
 
   private bindBodyDelegatedInteractions(body: HTMLElement) {
     body.addEventListener('click', async (e) => {
-      const target = e.target as HTMLElement;
-      const btn = target.closest('[data-action]') as HTMLElement;
-      if (!btn) return;
+      try {
+        const target = e.target as HTMLElement;
+        const btn = target.closest('[data-action]') as HTMLElement;
+        if (!btn) return;
 
-      const action = btn.getAttribute('data-action');
-      const qid = btn.getAttribute('data-qid') || '';
+        const action = btn.getAttribute('data-action');
+        const qid = btn.getAttribute('data-qid') || '';
 
-      if (action === 'jump-to-paper') {
-        const paperId = parseInt(btn.getAttribute('data-paper-id') || '1', 10);
-        this.openPaper(paperId, qid);
-        return;
-      }
+        if (action === 'jump-to-paper') {
+          const paperId = parseInt(btn.getAttribute('data-paper-id') || '1', 10);
+          this.openPaper(paperId, qid);
+          return;
+        }
 
-      if (action === 'open-feedback') {
-        this.openFeedbackModal(qid);
-        return;
-      }
+        if (action === 'open-feedback') {
+          this.openFeedbackModal(qid);
+          return;
+        }
 
-      if (action === 'open-source-editor') {
-        this.openSourceEditorModal(qid);
-        return;
-      }
+        if (action === 'open-source-editor') {
+          this.openSourceEditorModal(qid);
+          return;
+        }
 
-      if (action === 'open-ai-upload') {
-        this.openAiUploadModal(qid);
-        return;
-      }
+        if (action === 'open-ai-upload') {
+          this.openAiUploadModal(qid);
+          return;
+        }
 
-      if (action === 'switch-ai-ver') {
-        const ver = btn.getAttribute('data-ver') || 'local';
-        this.switchAiVersion(qid, ver);
-        return;
-      }
+        if (action === 'switch-ai-ver') {
+          const ver = btn.getAttribute('data-ver') || 'local';
+          this.switchAiVersion(qid, ver);
+          return;
+        }
 
-      if (action === 'upvote-sol') {
-        const solId = btn.getAttribute('data-sol-id') || '';
-        this.upvoteSolution(qid, solId);
-        return;
-      }
+        if (action === 'upvote-sol') {
+          const solId = btn.getAttribute('data-sol-id') || '';
+          this.upvoteSolution(qid, solId);
+          return;
+        }
 
-      if (action === 'select-option') {
-        const optKey = btn.getAttribute('data-key') || '';
-        this.handleOptionSelect(qid, optKey);
-        return;
-      }
+        if (action === 'select-option') {
+          const optKey = btn.getAttribute('data-key') || '';
+          this.handleOptionSelect(qid, optKey);
+          return;
+        }
 
-      if (action === 'check-blank') {
-        this.handleBlankCheck(qid);
-        return;
-      }
+        if (action === 'check-blank') {
+          this.handleBlankCheck(qid);
+          return;
+        }
 
-      if (action === 'toggle-steps') {
-        this.toggleSteps(qid);
-        return;
-      }
+        if (action === 'toggle-steps') {
+          this.toggleSteps(qid);
+          return;
+        }
 
-      if (action === 'toggle-hints') {
-        this.toggleHints(qid);
-        return;
-      }
+        if (action === 'toggle-hints') {
+          this.toggleHints(qid);
+          return;
+        }
 
-      if (action === 'master') {
-        this.toggleMaster(qid);
-        return;
-      }
+        if (action === 'master') {
+          this.toggleMaster(qid);
+          return;
+        }
 
-      if (action === 'ask-ai') {
-        this.handleAskAi(qid);
-        return;
-      }
+        if (action === 'ask-ai') {
+          this.handleAskAi(qid);
+          return;
+        }
 
-      if (action === 'retry-ai') {
-        this.handleAskAi(qid, true);
-        return;
-      }
+        if (action === 'retry-ai') {
+          this.handleAskAi(qid, true);
+          return;
+        }
 
-      if (action === 'stop-ai') {
-        this.stopAiStream(qid);
-        return;
-      }
+        if (action === 'stop-ai') {
+          this.stopAiStream(qid);
+          return;
+        }
 
-      if (action === 'copy-ai') {
-        this.copyAiSolution(qid);
-        return;
-      }
+        if (action === 'copy-ai') {
+          this.copyAiSolution(qid);
+          return;
+        }
 
-      if (action === 'toggle-ai-box') {
-        this.toggleAiBox(qid);
-        return;
-      }
+        if (action === 'toggle-ai-box') {
+          this.toggleAiBox(qid);
+          return;
+        }
 
-      if (action === 'save-ai-key') {
-        this.saveAiKey(qid);
-        return;
-      }
+        if (action === 'save-ai-key') {
+          this.saveAiKey(qid);
+          return;
+        }
 
-      if (action === 'load-more') {
-        this.displayedLimit += PAGE_SIZE;
-        this.renderQuestionSlice();
-        return;
+        if (action === 'load-more') {
+          this.displayedLimit += PAGE_SIZE;
+          this.renderQuestionSlice();
+          return;
+        }
+      } catch (err) {
+        console.error('[ExerciseController] Click action error:', err);
       }
     });
 

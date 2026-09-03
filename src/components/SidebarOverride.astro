@@ -147,8 +147,22 @@ if (features.epub.enabled && bookMatch) {
 
     // 页面大标题每个新页面都不同，按需重新渲染
     const mainTitle = root?.querySelector ? root.querySelector('h1') : null;
-    if (mainTitle && mainTitle.textContent?.includes('$')) {
-      renderMathInElement(mainTitle, katexConfig);
+    if (mainTitle) {
+      // 容错：若标题含有未闭合或裸露的 LaTeX 宏（如 \mathbf{R}^n），自动补全行内定界符
+      if (!mainTitle.textContent?.includes('$') && /\\(mathbf|boldsymbol|pmb|mathbb|text)\{/.test(mainTitle.innerHTML)) {
+        mainTitle.innerHTML = mainTitle.innerHTML.replace(/(\\(?:mathbf|boldsymbol|pmb|mathbb|text)\{[^}]+\}(?:\^\{?[^}\s]+\}?)?)/g, '$$$1$$');
+      }
+      if (mainTitle.textContent?.includes('$') || mainTitle.textContent?.includes('\\')) {
+        renderMathInElement(mainTitle, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false },
+            { left: '\\(', right: '\\)', display: false },
+            { left: '\\[', right: '\\]', display: true },
+          ],
+          throwOnError: false
+        });
+      }
     }
   };
 
@@ -421,6 +435,8 @@ if (features.epub.enabled && bookMatch) {
     function closeMobileMenu() {
       const btn = document.querySelector('starlight-menu-button button');
       if (btn && document.body.hasAttribute('data-mobile-menu-expanded')) btn.click();
+      document.body.removeAttribute('data-mobile-menu-expanded');
+      document.getElementById('vp-sidebar-toggle-btn')?.setAttribute('aria-expanded', 'false');
     }
 
     // 移动端左侧抽屉：点击抽屉外区域关闭
@@ -429,6 +445,8 @@ if (features.epub.enabled && bookMatch) {
       const target = e.target;
       if (!(target instanceof Element)) return;
       if (
+        target.closest('#vp-sidebar-toggle-btn') ||
+        target.closest('.vp-sidebar-toggle-btn') ||
         target.closest('starlight-menu-button') ||
         target.closest('.sidebar-pane') ||
         target.closest('.ft-panel') ||

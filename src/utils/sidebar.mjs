@@ -20,7 +20,16 @@ export function naturalSort(a, b) {
 export function cleanSlug(slug) {
   return slug
     .split('/')
-    .map(segment => githubSlug(segment))
+    .map(segment => {
+      // 剥离 LaTeX 宏与特殊字符（如 \mathbf{R}^n、\boldsymbol{x}、数学特殊定界符），避免反斜杠和裸代码泄露入 URL
+      const sanitized = segment
+        .replace(/\\(?:mathbf|boldsymbol|pmb|text|mathbb|mathrm)\{([^}]+)\}/g, '$1')
+        .replace(/mathbf([A-Za-z])/g, '$1')
+        .replace(/\\[a-zA-Z]+/g, '')
+        .replace(/[\$\{\}\^\\]/g, '')
+        .trim();
+      return githubSlug(sanitized);
+    })
     .join('/')
     .normalize();
 }

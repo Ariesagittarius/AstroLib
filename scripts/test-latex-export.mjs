@@ -248,7 +248,7 @@ const examLatex = generateLatexDocument(sampleQuestions, {
 const handoutLatex = generateLatexDocument(sampleQuestions, {
   template: 'handout',
   title: '工科数学分析 · 第 1 章 极限与连续',
-  subtitle: '名校期中与期末真题精选习题册',
+  subtitle: '《大邮数学集》期中与期末真题精选习题册',
   courseName: '工科数学分析',
   writingSpace: 'comfortable',
   answerPlacement: 'appendix'

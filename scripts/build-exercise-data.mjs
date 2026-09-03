@@ -1,5 +1,5 @@
 // scripts/build-exercise-data.mjs
-// 构建期：为全站题库（名校历年真题与教材课后习题）预渲染 KaTeX 数学公式并进行数据瘦身
+// 构建期：为全站题库（《大邮数学集》历年真题与教材课后习题）预渲染 KaTeX 数学公式并进行数据瘦身
 // 输出到:
 //   - public/data/exercises/engineering_analysis/ch{1..7}.json (按章节划分，统一包含教材习题与真题)
 //   - public/data/exercises/engineering_analysis/papers.json (全部试卷索引大纲：教材分章习题集 + 历年真题)
@@ -315,7 +315,8 @@ function main() {
       if (options.length > 0) slimItem.options = options;
       if (hintsHtml) slimItem.hints_html = hintsHtml;
       if (stepsHtml) slimItem.steps_html = stepsHtml;
-      if (q.content?.sub_questions && q.content.sub_questions.length > 0) {
+      // 避免题干与小问双重重复：教材习题的 stem_html 已完整包含所有小问，不再额外注入冗余 sub_questions
+      if (!isTb && q.content?.sub_questions && q.content.sub_questions.length > 0) {
         slimItem.sub_questions = q.content.sub_questions.map(sub => ({
           sub_id: sub.sub_id,
           stem_raw: sub.stem,

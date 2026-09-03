@@ -14,8 +14,28 @@ const shouldRenderSearch =
 ---
 
 <div class="vp-header-inner">
-	<!-- Brand & Existing Logo Icon (为手机端侧滑栏按钮留出边距，防止重叠) -->
+	<!-- Brand & Existing Logo Icon -->
 	<div class="vp-brand-wrapper">
+		<!-- 移动端原生侧滑栏切换按钮（集成在顶栏内部流中，彻底解决定位飘移与颜色不可见问题） -->
+		<button
+			type="button"
+			class="vp-sidebar-toggle-btn"
+			id="vp-sidebar-toggle-btn"
+			aria-label="打开全书章节目录"
+			aria-expanded="false"
+			aria-controls="starlight__sidebar"
+		>
+			<svg class="vp-icon-bars" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<line x1="3" y1="6" x2="21" y2="6" />
+				<line x1="3" y1="12" x2="21" y2="12" />
+				<line x1="3" y1="18" x2="21" y2="18" />
+			</svg>
+			<svg class="vp-icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<line x1="18" y1="6" x2="6" y2="18" />
+				<line x1="6" y1="6" x2="18" y2="18" />
+			</svg>
+		</button>
+
 		<a href="/" class="vp-brand-link" aria-label="AstroLib 首页">
 			<div class="vp-logo-wrap" aria-hidden="true">
 				<svg class="vp-logo-svg" viewBox="0 0 32 32" fill="none" stroke="currentColor">
@@ -71,10 +91,52 @@ const shouldRenderSearch =
 		flex-shrink: 0;
 	}
 
-	/* 移动端 (<50rem) 为左侧 fixed 菜单按钮 (0.75rem + 2.5rem) 留足让位，杜绝重叠 */
+	.vp-sidebar-toggle-btn {
+		display: none;
+	}
+
 	@media (max-width: 49.999rem) {
-		.vp-brand-wrapper {
-			padding-left: 2.85rem;
+		.vp-sidebar-toggle-btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 2.25rem;
+			height: 2.25rem;
+			padding: 0.35rem;
+			margin-right: 0.45rem;
+			border-radius: 4px;
+			border: none;
+			background: transparent;
+			color: var(--sl-color-gray-1, #2c3e50);
+			cursor: pointer;
+			flex-shrink: 0;
+			transition: background-color 0.15s ease, color 0.15s ease;
+		}
+
+		:global([data-theme='dark']) .vp-sidebar-toggle-btn {
+			color: var(--sl-color-gray-2, #e2e8f0);
+		}
+
+		.vp-sidebar-toggle-btn:hover {
+			background-color: var(--sl-color-gray-6, rgba(125, 125, 125, 0.1));
+			color: var(--sl-color-text-accent);
+		}
+
+		.vp-sidebar-toggle-btn svg {
+			width: 1.25rem;
+			height: 1.25rem;
+		}
+
+		.vp-sidebar-toggle-btn .vp-icon-close {
+			display: none;
+		}
+
+		:global(body[data-mobile-menu-expanded]) .vp-sidebar-toggle-btn .vp-icon-bars {
+			display: none;
+		}
+
+		:global(body[data-mobile-menu-expanded]) .vp-sidebar-toggle-btn .vp-icon-close {
+			display: block;
 		}
 	}
 
@@ -181,3 +243,37 @@ const shouldRenderSearch =
 		flex-shrink: 0;
 	}
 </style>
+
+<script>
+	function setupMobileSidebarToggle() {
+		const btn = document.getElementById('vp-sidebar-toggle-btn');
+		if (!btn || btn.dataset.bound) return;
+		btn.dataset.bound = 'true';
+
+		btn.addEventListener('click', () => {
+			const starlightBtn = document.querySelector('starlight-menu-button button') as HTMLButtonElement | null;
+			if (starlightBtn) {
+				starlightBtn.click();
+			} else {
+				const isExpanded = document.body.hasAttribute('data-mobile-menu-expanded');
+				document.body.toggleAttribute('data-mobile-menu-expanded', !isExpanded);
+			}
+			const expanded = document.body.hasAttribute('data-mobile-menu-expanded');
+			btn.setAttribute('aria-expanded', String(expanded));
+		});
+
+		// 监听 body 的 data-mobile-menu-expanded 属性变化，实时同步按钮状态
+		const observer = new MutationObserver(() => {
+			const expanded = document.body.hasAttribute('data-mobile-menu-expanded');
+			btn.setAttribute('aria-expanded', String(expanded));
+		});
+		observer.observe(document.body, { attributes: true, attributeFilter: ['data-mobile-menu-expanded'] });
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', setupMobileSidebarToggle);
+	} else {
+		setupMobileSidebarToggle();
+	}
+	document.addEventListener('astro:page-load', setupMobileSidebarToggle);
+</script>
