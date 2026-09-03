@@ -5,9 +5,6 @@ declare global {
   }
 }
 
-/**
- * 移动端大纲 popup 开关（以 <body> 上的 .mobile-toc-open 类为唯一状态源）
- */
 export function setMobileTocOpen(open: boolean): void {
   document.body.classList.toggle('mobile-toc-open', open);
   const nav = document.querySelector('.vp-local-nav');
@@ -22,9 +19,6 @@ export function setMobileTocOpen(open: boolean): void {
   }
 }
 
-/**
- * 移动端本地导航 VPLocalNav 装配
- */
 export function setupVPLocalNav(): void {
   document.querySelectorAll('.vp-local-nav.vp-local-nav-teleported').forEach((n) => n.remove());
   document.body.classList.remove('mobile-toc-open');

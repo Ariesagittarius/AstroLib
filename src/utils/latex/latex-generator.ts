@@ -1,31 +1,23 @@
-/**
- * src/utils/latex/latex-generator.ts
- * 生产级大学数学教材/学术练习册 LaTeX 源码生成引擎
- * 基于 CTAN / TeX Live 官方收录的 Jinwen-XU/homework 宏包标准架构开发
- * 遵循极简学术排版哲学：The content is the design. The mathematics is the interface.
- * 原生直出 LaTeX/KaTeX 数学公式，零转译损耗，100% 还原公式韵律。
- */
-
 import type { SlimQuestionItem } from '../../components/exercises/exercise-controller';
 
 export interface LatexExportConfig {
-  template: 'handout' | 'exam'; // 学术讲义练习册 vs 课程自测试卷
+  template: 'handout' | 'exam';
   paperSize: 'a4' | 'b5';
   fontSize: 10 | 10.5 | 11 | 12;
   fontFamily: 'serif' | 'sans';
-  mathFont: 'typst' | 'modern' | 'times' | 'pagella'; // 现代 Typst 风格 (New Computer Modern) vs 经典 LaTeX (Latin Modern) vs Times vs Pagella
-  removeQed: boolean; // 是否去除题干右侧方框 QED 符号（还原纯正教材/试卷质感）
-  pageNumbering: 'total' | 'simple' | 'none'; // 完整页码 vs 简洁纯数字页码 vs 无页码
-  writingSpace: 'comfortable' | 'compact' | 'none'; // 留白：充裕(手写演算) / 紧凑(节约纸张) / 纯题干(无留白)
-  answerPlacement: 'appendix' | 'inline' | 'none'; // 答案位置：文末附录 / 题下紧随 / 纯题卷无答案
-  coloredSolution: boolean; // 是否彩色题解 (Jinwen-XU/homework 原生 colored solution 特性)
-  // 卷头与元数据控制 (Header & Metadata)
-  headerMode: 'standard' | 'compact' | 'none'; // 标准学术卷头 / 紧凑单行 / 无卷头省纸
+  mathFont: 'typst' | 'modern' | 'times' | 'pagella';
+  removeQed: boolean;
+  pageNumbering: 'total' | 'simple' | 'none';
+  writingSpace: 'comfortable' | 'compact' | 'none';
+  answerPlacement: 'appendix' | 'inline' | 'none';
+  coloredSolution: boolean;
+
+  headerMode: 'standard' | 'compact' | 'none';
   title: string;
   subtitle?: string;
   showSubtitle: boolean;
-  showLicense: boolean; // CC BY-NC-SA 4.0 协议
-  licenseText: string;  // 默认为 'CC BY-NC-SA 4.0'
+  showLicense: boolean;
+  licenseText: string;
   showDate: boolean;
   date?: string;
   courseName?: string;
@@ -55,9 +47,6 @@ export const DEFAULT_LATEX_CONFIG: LatexExportConfig = {
   author: '',
 };
 
-/**
- * HTML 实体解码与清理
- */
 function decodeHtmlEntities(str: string): string {
   if (!str) return '';
   return str
@@ -75,16 +64,11 @@ function decodeHtmlEntities(str: string): string {
     .replace(/&infin;/g, '\\infty ');
 }
 
-/**
- * 清理 HTML 标签与规范化 Markdown 语法为 LaTeX 语法
- * 保护数学公式 ($...$ 与 $$...$$) 内部不被错误处理
- */
 export function formatLatexContent(text: string): string {
   if (!text) return '';
 
   let raw = decodeHtmlEntities(text);
 
-  // 1. 规范化 HTML 换行与段落
   raw = raw.replace(/<br\s*\/?>/gi, '\n');
   raw = raw.replace(/<\/p>/gi, '\n\n');
   raw = raw.replace(/<p[^>]*>/gi, '');
@@ -97,10 +81,8 @@ export function formatLatexContent(text: string): string {
   raw = raw.replace(/<em[^>]*>([\s\S]*?)<\/em>/gi, '\\textit{$1}');
   raw = raw.replace(/<i[^>]*>([\s\S]*?)<\/i>/gi, '\\textit{$1}');
 
-  // 2. 占位保护公式块 ($$ 与 $)
   const mathBlocks: string[] = [];
 
-  // 保护 display math: $$...$$ 与 \[...\]
   raw = raw.replace(/\$\$([\s\S]*?)\$\$/g, (_m, inner) => {
     mathBlocks.push(`\\[\n${inner.trim()}\n\\]`);
     return `§§MATH_BLOCK_${mathBlocks.length - 1}§§`;
@@ -110,7 +92,6 @@ export function formatLatexContent(text: string): string {
     return `§§MATH_BLOCK_${mathBlocks.length - 1}§§`;
   });
 
-  // 保护 inline math: $...$ 与 \(...\)
   raw = raw.replace(/\\?\(([\s\S]*?)\\?\)/g, (m, inner) => {
     if (m.startsWith('\\(')) {
       mathBlocks.push(`$${inner.trim()}$`);
@@ -120,7 +101,7 @@ export function formatLatexContent(text: string): string {
   });
 
   raw = raw.replace(/\$([^\$\n]+?)\$/g, (_m, inner) => {
-    // 填空题下划线保护
+
     let mathContent = inner;
     mathContent = mathContent.replace(/\\underline\{\s*(\\quad)*\s*\}/g, '\\underline{\\hspace{3.5em}}');
     mathContent = mathContent.replace(/_{3,}/g, '\\underline{\\hspace{3.5em}}');
@@ -128,19 +109,15 @@ export function formatLatexContent(text: string): string {
     return `§§MATH_BLOCK_${mathBlocks.length - 1}§§`;
   });
 
-  // 3. 处理文本段 Markdown 标记与填空题下划线
-  // 填空下划线
   raw = raw.replace(/\\underline\{\s*(\\quad)*\s*\}/g, '\\underline{\\hspace{3.5em}}');
   raw = raw.replace(/\\underline\{\s*\}/g, '\\underline{\\hspace{3.5em}}');
   raw = raw.replace(/_{3,}/g, '\\underline{\\hspace{3.5em}}');
   raw = raw.replace(/（\s*）/g, '（\\quad）');
   raw = raw.replace(/\(\s*\)/g, '(\\quad)');
 
-  // Markdown 加粗与斜体
   raw = raw.replace(/\*\*([^*]+)\*\*/g, '\\textbf{$1}');
   raw = raw.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1\\textit{$2}');
 
-  // 带圈数字转换 (支持中西文排版标准)
   const circledMap: Record<string, string> = {
     '①': '\\textcircled{\\scriptsize 1}',
     '②': '\\textcircled{\\scriptsize 2}',
@@ -155,15 +132,11 @@ export function formatLatexContent(text: string): string {
   };
   raw = raw.replace(/[①②③④⑤⑥⑦⑧⑨⑩]/g, (m) => circledMap[m] || m);
 
-  // 4. 还原公式块
   raw = raw.replace(/§§MATH_BLOCK_(\d+)§§/g, (_m, idx) => mathBlocks[Number(idx)] || '');
 
   return raw.trim();
 }
 
-/**
- * 精准测量中西文混排视觉渲染宽度 (中文字符/全角标点记为 2，半角字符记为 1)
- */
 export function getVisualWidth(str: string): number {
   if (!str) return 0;
   const plain = str.replace(/\\[a-zA-Z]+/g, '').replace(/[{}\$]/g, '');
@@ -183,21 +156,18 @@ export function getVisualWidth(str: string): number {
   return w;
 }
 
-/**
- * 格式化选择题选项，生成 tasks 宏包标准语法
- */
 function formatChoiceTasks(options: Array<{ key: string; text_raw?: string; text_html?: string }>): string {
   if (!options || options.length === 0) return '';
 
   const cleanedOptions = options.map((opt) => {
     let t = (opt.text_raw || opt.text_html || '').trim();
-    // 去除选项前可能自带的 A. B. C. D. 避免重复编号
+
     t = t.replace(/^[A-Da-d][\.\、\s]\s*/, '');
     return formatLatexContent(t);
   });
 
   const maxVisualWidth = Math.max(...cleanedOptions.map((o) => getVisualWidth(o)));
-  // 精准列数计算：长选项 (>=30) 排 1 列，中等 (>=10) 排 2 列，短选项 (<10) 排 4 列
+
   const cols = maxVisualWidth >= 30 ? 1 : maxVisualWidth >= 10 ? 2 : 4;
 
   let code = `\\begin{tasks}(${cols})\n`;
@@ -208,9 +178,6 @@ function formatChoiceTasks(options: Array<{ key: string; text_raw?: string; text
   return code;
 }
 
-/**
- * 获取自然书写留白空间对应的 LaTeX 命令
- */
 function getSpaceLatex(type: string, writingSpace: 'comfortable' | 'compact' | 'none'): string {
   if (writingSpace === 'none' || type === 'choice') return '';
 
@@ -221,16 +188,12 @@ function getSpaceLatex(type: string, writingSpace: 'comfortable' | 'compact' | '
     return '\\vspace{3.0cm}\n';
   }
 
-  // comfortable
   if (type === 'blank') return '\\vspace{1.2cm}\n';
   if (type === 'calc') return '\\vspace{6.0cm}\n';
   if (type === 'proof') return '\\vspace{8.5cm}\n';
   return '\\vspace{4.5cm}\n';
 }
 
-/**
- * LaTeX 特殊字符转义（用于标题、课程名等纯文本元数据）
- */
 function escapeLatexMeta(str: string): string {
   if (!str) return '';
   return str
@@ -240,16 +203,12 @@ function escapeLatexMeta(str: string): string {
     .replace(/\^/g, '\\textasciicircum{}');
 }
 
-/**
- * 主生成函数：根据题目列表与配置生成纯正 Jinwen-XU/homework 宏包标准的 LaTeX 源码
- */
 export function generateLatexDocument(
   questions: SlimQuestionItem[],
   userConfig: Partial<LatexExportConfig> = {}
 ): string {
   const config: LatexExportConfig = { ...DEFAULT_LATEX_CONFIG, ...userConfig };
 
-  // 题型分组统计
   const typeGroups: Record<string, SlimQuestionItem[]> = {
     choice: [],
     blank: [],
@@ -267,7 +226,6 @@ export function generateLatexDocument(
   const paperOption = config.paperSize === 'b5' ? 'b5paper' : 'a4paper';
   const fontPt = `${config.fontSize === 10.5 ? '10.5pt' : `${config.fontSize}pt`}`;
 
-  // 构建 documentclass options (严格遵循 Jinwen-XU/homework 宏包规范)
   const classOptions: string[] = [
     paperOption,
     fontPt === '10.5pt' ? '11pt' : fontPt,
@@ -291,7 +249,6 @@ export function generateLatexDocument(
     classOptions.push('colored solution');
   }
 
-  // 数学公式字体配置
   let mathFontCode = '';
   if (config.mathFont === 'typst') {
     mathFontCode = '% 公式字体：现代学术 Typst 同款字体 (New Computer Modern Math)\n\\setmathfont{NewCMMath-Book.otf}\n';
@@ -303,7 +260,6 @@ export function generateLatexDocument(
     mathFontCode = '% 公式字体：优雅数学教材 Pagella 风格字体 (TeX Gyre Pagella Math)\n\\setmathfont{texgyrepagella-math.otf}\n';
   }
 
-  // 页码设置
   let pageNumberCode = '';
   if (config.pageNumbering === 'simple') {
     pageNumberCode = `
@@ -365,9 +321,6 @@ ${mathFontCode}${pageNumberCode}
 }
 `;
 
-  // -------------------------------------------------------------------------
-  // 卷头与元数据 (Header & Metadata Control)
-  // -------------------------------------------------------------------------
   if (config.headerMode === 'standard') {
     const titleSub = config.showSubtitle && config.subtitle && config.subtitle.trim()
       ? ` \\\\\n  \\large\\normalfont ${escapeLatexMeta(config.subtitle)}`
@@ -419,15 +372,12 @@ ${dateCode}
 \\vspace{0.3em}\\hrule\\vspace{1.0em}
 `;
   } else {
-    // headerMode === 'none' (无卷头纯题面，最大化节约纸张)
+
     code += `
 \\begin{document}
 `;
   }
 
-  // -------------------------------------------------------------------------
-  // 题目正文列表渲染
-  // -------------------------------------------------------------------------
   const sectionRoman = ['一', '二', '三', '四', '五', '六', '七', '八'];
   let currentSectionIdx = 0;
 
@@ -457,12 +407,10 @@ ${dateCode}
       code += `\\begin{problem}\n`;
       code += `  ${stemLatex}\n`;
 
-      // 选择题选项排版 (tasks 宏包)
       if (q.type === 'choice' && q.options && q.options.length > 0) {
         code += `\n  ${formatChoiceTasks(q.options)}\n`;
       }
 
-      // 如果是随题附答案模式 (inline solution)
       if (config.answerPlacement === 'inline') {
         const ans = formatLatexContent(q.answer || '');
         const steps = formatLatexContent(q.steps_html || q.hints_html || '');
@@ -476,7 +424,7 @@ ${dateCode}
         }
         code += `\\end{solution}\n\n`;
       } else {
-        // 纯题干留白空间
+
         if (spaceCmd) {
           code += `\n  ${spaceCmd}`;
         }
@@ -485,11 +433,8 @@ ${dateCode}
     });
   });
 
-  // -------------------------------------------------------------------------
-  // 参考答案与详细推导附录 (Appendix Mode)
-  // -------------------------------------------------------------------------
   if (config.answerPlacement === 'appendix') {
-    // 按照大题顺序组装题目列表，保证题号严格一一对应
+
     const orderedQuestions: SlimQuestionItem[] = [];
     typeOrder.forEach(({ type }) => {
       const list = typeGroups[type] || [];
@@ -502,7 +447,6 @@ ${dateCode}
     code += `\\clearpage\n`;
     code += `\\section*{参考答案与详细推导}\n\n`;
 
-    // 1. 答案速查三线表 (booktabs)
     code += `\\subsection*{一、参考答案速查}\n\n`;
     code += `\\begin{center}\n`;
     code += `\\begin{tabular}{c p{5.5cm} c p{5.5cm}}\n`;
@@ -544,7 +488,6 @@ ${dateCode}
     code += `\\end{tabular}\n`;
     code += `\\end{center}\n\n`;
 
-    // 2. 详细解答与证明过程 (按 Jinwen-XU/homework 的 solution 环境)
     code += `\\subsection*{二、详细推导与证明过程}\n\n`;
 
     let qIdx = 1;

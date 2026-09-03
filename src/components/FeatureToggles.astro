@@ -1,16 +1,10 @@
 ---
-// 站点与阅读设置面板（极简学术风格 · 面向读者与研究者）
-// -----------------------------------------------------------------------------
-// 挂载：ThemeSelectOverride.astro 在顶栏右侧动作区引入（桌面 header / 移动端抽屉
-// 底部各渲染一个 <starlight-feature-toggles>，各自管理自己的开合与下拉面板）。
-// -----------------------------------------------------------------------------
 import { features } from '../config/features.config.mjs';
 import { siteThemes } from '../config/themes.config.mjs';
 import { CJK_PRESETS, LATIN_PRESETS } from '../scripts/font-presets';
 
 const isDev = import.meta.env.DEV;
 
-// 可在运行时被用户/读者切换的功能
 const RUNTIME_IDS = new Set([
   'theme',
   'fonts',
@@ -50,12 +44,10 @@ const metaJson = JSON.stringify(featureMeta);
     </svg>
   </button>
 
-  <!-- 全局遮罩 (移动端 BottomSheet 遮罩与点击关闭) -->
   <div class="ft-backdrop" aria-hidden="true"></div>
 
-  <!-- 设置面板主体 (移动端向上滑出 Bottom Sheet，桌面端右上角悬浮面板) -->
   <div class="ft-panel" role="dialog" aria-label="设置面板" aria-hidden="true">
-    <!-- 移动端顶部拖拽手柄条 -->
+
     <div class="ft-sheet-handle" aria-hidden="true"></div>
 
     <div class="ft-panel-head">
@@ -69,13 +61,13 @@ const metaJson = JSON.stringify(featureMeta);
     </div>
 
     <div class="ft-panel-body">
-      <!-- 分组一：字体 -->
+
       {
         features.fonts.enabled && (
           <div class="ft-section">
             <div class="ft-section-title">字体</div>
             <div class="ft-stack">
-              <!-- 中文字体 -->
+
               <div class="ft-segment-wrapper">
                 <div class="ft-sub-label">中文</div>
                 <div class="ft-segment-track ft-grid-2">
@@ -93,7 +85,6 @@ const metaJson = JSON.stringify(featureMeta);
                 </div>
               </div>
 
-              <!-- 英文字体与公式字体 -->
               <div class="ft-segment-wrapper">
                 <div class="ft-sub-label">英文与公式</div>
                 <div class="ft-segment-track ft-grid-3">
@@ -115,7 +106,6 @@ const metaJson = JSON.stringify(featureMeta);
         )
       }
 
-      <!-- 分组二：界面 -->
       {
         features.theme.enabled && (
           <div class="ft-section">
@@ -139,7 +129,6 @@ const metaJson = JSON.stringify(featureMeta);
                 </div>
               )}
 
-              <!-- 主题平滑过渡动画 -->
               <div class="ft-item-row">
                 <div class="ft-row-info">
                   <span class="ft-row-name">主题过渡</span>
@@ -154,11 +143,10 @@ const metaJson = JSON.stringify(featureMeta);
         )
       }
 
-      <!-- 分组三：功能 -->
       <div class="ft-section">
         <div class="ft-section-title">功能</div>
         <div class="ft-stack">
-          <!-- 1. 定理联动 -->
+
           <div class="ft-item-row">
             <div class="ft-row-info">
               <span class="ft-row-name">定理联动</span>
@@ -169,7 +157,6 @@ const metaJson = JSON.stringify(featureMeta);
             </label>
           </div>
 
-          <!-- 2. 公式操作 -->
           <div class="ft-item-row">
             <div class="ft-row-info">
               <span class="ft-row-name">公式操作</span>
@@ -180,7 +167,6 @@ const metaJson = JSON.stringify(featureMeta);
             </label>
           </div>
 
-          <!-- 3. 章节预加载 -->
           <div class="ft-segment-wrapper">
             <div class="ft-sub-label">章节预加载</div>
             <div class="ft-segment-track ft-grid-5">
@@ -192,7 +178,6 @@ const metaJson = JSON.stringify(featureMeta);
             </div>
           </div>
 
-          <!-- 4. 模块速查 -->
           {
             features.inspector.enabled && (
               <div class="ft-item-row">
@@ -212,7 +197,6 @@ const metaJson = JSON.stringify(featureMeta);
             )
           }
 
-          <!-- 5. 离线 EPUB -->
           {
             features.epub.enabled && (
               <div class="ft-item-row">
@@ -229,11 +213,10 @@ const metaJson = JSON.stringify(featureMeta);
         </div>
       </div>
 
-      <!-- 分组四：AI 服务与功能 -->
       <div class="ft-section">
         <div class="ft-section-title">AI</div>
         <div class="ft-stack">
-          <!-- 1. 模型与服务 -->
+
           <div class="ft-ai-block">
             <div class="ft-sub-label">
               <span>模型与服务</span>
@@ -242,10 +225,8 @@ const metaJson = JSON.stringify(featureMeta);
               </button>
             </div>
 
-            <!-- 模型选择 -->
             <select class="ft-ai-select ft-ai-model-select"></select>
 
-            <!-- 自定义模型表单 -->
             <div class="ft-ai-custom-form hidden">
               <div class="ft-ai-form-row">
                 <input type="text" class="ft-ai-input ft-ai-custom-id" placeholder="模型 ID（如 my-qwen）" autocomplete="off" />
@@ -258,7 +239,6 @@ const metaJson = JSON.stringify(featureMeta);
               </div>
             </div>
 
-            <!-- API Key -->
             <div class="ft-ai-field">
               <div class="ft-ai-field-head">
                 <span class="ft-ai-mini-label">API Key</span>
@@ -279,13 +259,11 @@ const metaJson = JSON.stringify(featureMeta);
               </div>
             </div>
 
-            <!-- API 端点 -->
             <div class="ft-ai-field">
               <span class="ft-ai-mini-label">API 端点</span>
               <input type="text" class="ft-ai-input ft-ai-endpoint-input" placeholder="https://api.deepseek.com/v1/chat/completions" autocomplete="off" />
             </div>
 
-            <!-- 测试连接行 -->
             <div class="ft-ai-test-row">
               <button type="button" class="ft-ai-test-btn" data-action="test-ai-connection" title="测试当前 API Key 与端点连通性">
                 测试连接
@@ -294,9 +272,8 @@ const metaJson = JSON.stringify(featureMeta);
             </div>
           </div>
 
-          <!-- 2. AI 功能开关 -->
           <div class="ft-sub-label" style="margin-top: 4px;">AI 功能</div>
-          <!-- 书内问答 -->
+
           <div class="ft-item-row">
             <div class="ft-row-info">
               <span class="ft-row-name">书内问答</span>
@@ -307,7 +284,6 @@ const metaJson = JSON.stringify(featureMeta);
             </label>
           </div>
 
-          <!-- 章节关系图谱 -->
           <div class="ft-item-row">
             <div class="ft-row-info">
               <span class="ft-row-name">章节关系图谱</span>
@@ -318,7 +294,6 @@ const metaJson = JSON.stringify(featureMeta);
             </label>
           </div>
 
-          <!-- Mermaid 图表 -->
           <div class="ft-item-row">
             <div class="ft-row-info">
               <span class="ft-row-name">Mermaid 图表</span>
@@ -331,7 +306,6 @@ const metaJson = JSON.stringify(featureMeta);
         </div>
       </div>
 
-      <!-- 分组五：开发者选项（仅 dev 模式展示） -->
       {
         isDev && (
           <div class="ft-section ft-section-dev">
@@ -355,7 +329,6 @@ const metaJson = JSON.stringify(featureMeta);
       }
     </div>
 
-    <!-- 底部状态与重置 -->
     <div class="ft-panel-footer">
       <span class="ft-footer-hint">设置保存在此浏览器</span>
       <button type="button" class="ft-reset-btn" data-action="reset-defaults" title="恢复所有选项至默认配置">
@@ -365,15 +338,10 @@ const metaJson = JSON.stringify(featureMeta);
   </div>
 </starlight-feature-toggles>
 
-<style is:global>
-  /* ===== AstroLib 设置面板（极简学术风格 · 精确与减法） ===== */
-
-  /* 页面中由功能开关控制的 [data-feature] 元素在关闭时隐藏 */
-  .dsh-feature-off {
+<style is:global>.dsh-feature-off {
     display: none !important;
   }
 
-  /* 引用联动关闭时：禁用徽章交互，恢复中性展示 */
   .dsh-crossref-off .interactive-badge {
     pointer-events: none !important;
     cursor: default !important;
@@ -381,12 +349,10 @@ const metaJson = JSON.stringify(featureMeta);
     opacity: 0.88;
   }
 
-  /* 移动端全屏防滚动穿透 */
   html.ft-scroll-lock {
     overflow: hidden !important;
   }
 
-  /* 宿主控件 */
   starlight-feature-toggles {
     position: relative;
     display: inline-flex;
@@ -398,7 +364,6 @@ const metaJson = JSON.stringify(featureMeta);
     box-sizing: border-box;
   }
 
-  /* 顶栏与抽屉触发按钮（VitePress 36px/40px 极简图标按钮） */
   starlight-feature-toggles .ft-toggle-btn {
     display: flex;
     align-items: center;
@@ -430,9 +395,6 @@ const metaJson = JSON.stringify(featureMeta);
     height: 1.15rem;
   }
 
-  /* ==========================================================================
-     移动端 Bottom Sheet 模式 (< 800px) —— 独立全屏/底栏 Fragment 体验
-     ========================================================================== */
   @media (max-width: 49.999rem) {
     .ft-backdrop {
       position: fixed;
@@ -514,9 +476,6 @@ const metaJson = JSON.stringify(featureMeta);
     }
   }
 
-  /* ==========================================================================
-     桌面端 Popover 浮层模式 (>= 800px)
-     ========================================================================== */
   @media (min-width: 50rem) {
     .ft-backdrop,
     .ft-sheet-handle {
@@ -561,7 +520,6 @@ const metaJson = JSON.stringify(featureMeta);
     }
   }
 
-  /* 面板头部 */
   .ft-panel-head {
     display: flex;
     align-items: center;
@@ -610,7 +568,6 @@ const metaJson = JSON.stringify(featureMeta);
     outline-offset: 1px;
   }
 
-  /* 面板主体内容区 */
   .ft-panel-body {
     padding: 12px 14px;
     overflow-y: auto;
@@ -633,7 +590,6 @@ const metaJson = JSON.stringify(featureMeta);
     }
   }
 
-  /* 极简精致滚动条 */
   .ft-panel-body::-webkit-scrollbar {
     width: 3px;
   }
@@ -645,7 +601,6 @@ const metaJson = JSON.stringify(featureMeta);
     border-radius: 3px;
   }
 
-  /* 分组 */
   .ft-section {
     display: flex;
     flex-direction: column;
@@ -677,7 +632,6 @@ const metaJson = JSON.stringify(featureMeta);
     justify-content: space-between;
   }
 
-  /* 单行特性项 */
   .ft-item-row {
     display: flex;
     align-items: center;
@@ -693,7 +647,6 @@ const metaJson = JSON.stringify(featureMeta);
     background-color: var(--sl-color-gray-6);
   }
 
-  /* 行信息 */
   .ft-row-info {
     flex: 1;
     min-width: 0;
@@ -714,7 +667,6 @@ const metaJson = JSON.stringify(featureMeta);
     line-height: 1.3;
   }
 
-  /* 极简徽章 */
   .ft-badge {
     font-size: 9.5px;
     font-weight: 500;
@@ -730,7 +682,6 @@ const metaJson = JSON.stringify(featureMeta);
     border-color: var(--sl-color-gray-5);
   }
 
-  /* ===== AI 统一服务与模型配置 ===== */
   .ft-ai-block {
     display: flex;
     flex-direction: column;
@@ -916,7 +867,6 @@ const metaJson = JSON.stringify(featureMeta);
     opacity: 0.9;
   }
 
-  /* 测试连接行 */
   .ft-ai-test-row {
     display: flex;
     align-items: center;
@@ -981,7 +931,6 @@ const metaJson = JSON.stringify(featureMeta);
     color: var(--sl-color-accent);
   }
 
-  /* ===== 分段选择器（Segmented Control · VitePress 胶囊切换） ===== */
   .ft-segment-wrapper {
     display: flex;
     flex-direction: column;
@@ -1055,7 +1004,6 @@ const metaJson = JSON.stringify(featureMeta);
     text-overflow: ellipsis;
   }
 
-  /* 字体族预设直接作用于按钮文字，实现所见即所得预览 */
   .ft-cjk-sans { font-family: var(--font-cjk-sans, sans-serif); }
   .ft-cjk-serif { font-family: var(--font-cjk-serif, serif); }
   .ft-cjk-han-sans { font-family: 'Noto Sans SC Variable', var(--font-cjk-sans, sans-serif); }
@@ -1064,7 +1012,6 @@ const metaJson = JSON.stringify(featureMeta);
   .ft-latin-serif { font-family: var(--font-latin-serif, serif); }
   .ft-latin-katex { font-family: var(--font-latin-katex, KaTeX_Main, serif); }
 
-  /* 巡检快捷键按钮 */
   .ft-open-inspector-btn {
     display: inline-flex;
     align-items: center;
@@ -1090,7 +1037,6 @@ const metaJson = JSON.stringify(featureMeta);
     outline-offset: 1px;
   }
 
-  /* ===== VitePress 标准 Switch 开关 ===== */
   .ft-switch {
     position: relative;
     display: inline-block;
@@ -1149,7 +1095,6 @@ const metaJson = JSON.stringify(featureMeta);
     outline-offset: 2px;
   }
 
-  /* 面板底部工具栏 */
   .ft-panel-footer {
     display: flex;
     align-items: center;
@@ -1193,12 +1138,10 @@ const metaJson = JSON.stringify(featureMeta);
   }
 </style>
 
-<script>
-  import { initFeatureToggles } from '../scripts/feature-toggles';
+<script>import { initFeatureToggles } from '../scripts/feature-toggles';
   try {
     initFeatureToggles();
   } catch (e) {
     console.error('[feature-toggles] 初始化失败：', e);
   }
 </script>
-

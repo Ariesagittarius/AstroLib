@@ -1,10 +1,4 @@
 ---
-// 书籍模块巡检与结构校验开发工具 · 服务端表现层组件（仅 dev 渲染）
-// -----------------------------------------------------------------------------
-// 目的：在开发期为图书清洗校对提供全书模块索引速查、同章序号冲突、跨章同名聚合、
-// 异常拆分审查与一键跳转定位能力，辅助图书开发者高效纠偏。
-// 挂载：由 FooterOverride.astro 引入，开发时渲染，生产构建零输出。
-// -----------------------------------------------------------------------------
 import { features } from '../config/features.config.mjs';
 const isDev = import.meta.env.DEV;
 ---
@@ -14,7 +8,7 @@ const isDev = import.meta.env.DEV;
     <div id="dsh-inspector-root" class="insp-root" data-is-dev={isDev ? 'true' : 'false'} aria-label="书籍模块索引与巡检速查工具">
       <div class="insp-backdrop"></div>
       <aside class="insp-panel" role="dialog" aria-label="模块巡检抽屉面板">
-        <!-- 头部 -->
+
         <header class="insp-header">
           <div class="insp-header-left">
             <div class="insp-header-title-box">
@@ -43,7 +37,6 @@ const isDev = import.meta.env.DEV;
           </div>
         </header>
 
-        <!-- 工具栏：检索与章节筛选 -->
         <div class="insp-toolbar">
           <div class="insp-search-box">
             <svg class="insp-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -63,7 +56,6 @@ const isDev = import.meta.env.DEV;
           </div>
         </div>
 
-        <!-- 视图标签栏 -->
         <nav class="insp-tabs" aria-label="巡检视图切换">
           <button type="button" class="insp-tab active" data-tab="all">
             <span>全量索引</span>
@@ -93,12 +85,10 @@ const isDev = import.meta.env.DEV;
           )}
         </nav>
 
-        <!-- 卡片类型筛选 Chips -->
         <div class="insp-kind-chips-wrap">
           <div class="insp-kind-chips"></div>
         </div>
 
-        <!-- 主体列表容器 -->
         <main class="insp-body">
           <div class="insp-list">
             <div class="insp-empty-state">
@@ -109,7 +99,6 @@ const isDev = import.meta.env.DEV;
           </div>
         </main>
 
-        <!-- 底部快捷操作与提示 -->
         <footer class="insp-footer">
           <div class="insp-footer-tip">
             <span class="insp-tip-desktop">快捷键：<kbd>Alt+M</kbd> 展开/收起 · <kbd>Esc</kbd> 关闭</span>
@@ -122,9 +111,7 @@ const isDev = import.meta.env.DEV;
   )
 }
 
-<style is:global>
-  /* ===== 模块索引速查抽屉 · 学术排版视觉系统（Scholarly Index） ===== */
-  :root {
+<style is:global>:root {
     --insp-brand: var(--sl-color-accent, #1e3a8a);
     --insp-brand-hover: var(--sl-color-accent-high, #1e40af);
     --insp-brand-soft: var(--sl-color-accent-low, rgba(30, 58, 138, 0.06));
@@ -151,7 +138,6 @@ const isDev = import.meta.env.DEV;
     --insp-border: var(--sl-color-hairline, #28282c);
   }
 
-  /* 宿主容器（Portal 提升至 document.body，层级最高） */
   .insp-root {
     position: fixed;
     inset: 0;
@@ -163,7 +149,6 @@ const isDev = import.meta.env.DEV;
     box-sizing: border-box;
   }
 
-  /* 遮罩背景：轻度暗化，彻底移除 blur 模糊，让读者感知原书页依然在背后 */
   .insp-backdrop {
     position: fixed;
     inset: 0;
@@ -181,7 +166,6 @@ const isDev = import.meta.env.DEV;
     pointer-events: auto;
   }
 
-  /* 抽屉面板：学术索引侧栏宽度（约 410px），轻量 1px 细线边框与极微弱投影 */
   .insp-panel {
     position: fixed;
     top: 0;
@@ -209,7 +193,6 @@ const isDev = import.meta.env.DEV;
     pointer-events: auto;
   }
 
-  /* 头部区域：书名为主体，模块索引为定性说明 */
   .insp-header {
     display: flex;
     align-items: flex-start;
@@ -321,7 +304,6 @@ const isDev = import.meta.env.DEV;
     to { transform: rotate(360deg); }
   }
 
-  /* 工具栏：检索输入框与章节选择 */
   .insp-toolbar {
     padding: 8px 16px;
     display: flex;
@@ -412,7 +394,6 @@ const isDev = import.meta.env.DEV;
     border-color: var(--insp-brand);
   }
 
-  /* 一级分类 Tabs：极简学术下划线式，数字伴随于文字后，无胶囊药丸 */
   .insp-tabs {
     display: flex;
     padding: 0 16px;
@@ -466,7 +447,6 @@ const isDev = import.meta.env.DEV;
     color: #dc2626 !important;
   }
 
-  /* 二级分类 Filter：单行轻量横向滚动，去除厚重胶囊边框 */
   .insp-kind-chips-wrap {
     padding: 6px 16px;
     border-bottom: 1px solid var(--insp-border);
@@ -516,7 +496,6 @@ const isDev = import.meta.env.DEV;
     opacity: 0.85;
   }
 
-  /* 主体列表容器：纯白/深色纸底，0 间距连续学术索引流 */
   .insp-body {
     flex: 1;
     overflow-y: auto;
@@ -559,7 +538,6 @@ const isDev = import.meta.env.DEV;
     display: none;
   }
 
-  /* 学术索引列表条目：消除卡片形态，采用 1px 细线分隔，hover 仅极淡底色 */
   .insp-item-row {
     background: var(--insp-bg);
     border: none;
@@ -578,13 +556,11 @@ const isDev = import.meta.env.DEV;
     background: var(--insp-bg-soft);
   }
 
-  /* 当前定位激活状态：极细品牌色左竖线 + 极淡雅背景，无大面积蓝色 */
   .insp-item-row.is-located {
     background: var(--insp-brand-soft);
     border-left-color: var(--insp-brand);
   }
 
-  /* 搜索关键词高亮 */
   .insp-search-match {
     background: var(--insp-brand-soft);
     color: var(--insp-brand);
@@ -593,7 +569,6 @@ const isDev = import.meta.env.DEV;
     font-weight: 600;
   }
 
-  /* 条目头部排版与幽灵操作栏 */
   .insp-item-top {
     display: flex;
     align-items: flex-start;
@@ -626,7 +601,6 @@ const isDev = import.meta.env.DEV;
     word-break: break-word;
   }
 
-  /* 幽灵文字操作按钮组（非强色块） */
   .insp-item-actions {
     display: flex;
     align-items: center;
@@ -674,7 +648,6 @@ const isDev = import.meta.env.DEV;
     font-weight: 600;
   }
 
-  /* 正文摘录：纯净段落文本，去除灰色底框与粗竖线 */
   .insp-item-snippet {
     font-size: 11.5px;
     line-height: 1.5;
@@ -693,7 +666,6 @@ const isDev = import.meta.env.DEV;
     -webkit-box-orient: vertical;
   }
 
-  /* 元信息：安静的一行式章节与文件坐标 */
   .insp-item-meta {
     display: flex;
     align-items: center;
@@ -716,7 +688,6 @@ const isDev = import.meta.env.DEV;
     white-space: nowrap;
   }
 
-  /* 审查原因提示（克制警示色，无彩色胶囊） */
   .insp-item-reasons {
     display: flex;
     flex-wrap: wrap;
@@ -739,7 +710,6 @@ const isDev = import.meta.env.DEV;
     flex-shrink: 0;
   }
 
-  /* 重复/聚合分组标头 */
   .insp-dup-group {
     border-bottom: 1px solid var(--insp-border);
   }
@@ -793,7 +763,6 @@ const isDev = import.meta.env.DEV;
     padding-left: 20px;
   }
 
-  /* 滚动分块加载哨兵 */
   .insp-sentinel {
     height: 26px;
     display: flex;
@@ -805,7 +774,6 @@ const isDev = import.meta.env.DEV;
     margin: 2px 0;
   }
 
-  /* 空状态 */
   .insp-empty-state {
     padding: 44px 16px;
     text-align: center;
@@ -840,7 +808,6 @@ const isDev = import.meta.env.DEV;
     margin-bottom: 4px;
   }
 
-  /* 底部状态 */
   .insp-footer {
     padding: 7px 16px;
     background: var(--insp-bg);
@@ -867,7 +834,6 @@ const isDev = import.meta.env.DEV;
     letter-spacing: 0.04em;
   }
 
-  /* Toast 浮层提示 */
   .insp-toast {
     position: absolute;
     bottom: 34px;
@@ -895,7 +861,6 @@ const isDev = import.meta.env.DEV;
     transform: translateX(-50%) translateY(0);
   }
 
-  /* ===== 模块跳转波纹脉冲高亮动画（左侧正文内） ===== */
   @keyframes dsh-inspector-pulse-glow {
     0% {
       outline: 2px solid var(--insp-brand);
@@ -917,7 +882,6 @@ const isDev = import.meta.env.DEV;
     animation: dsh-inspector-pulse-glow 2s ease-out !important;
   }
 
-  /* ===== 移动端与不同视口响应式适配 ===== */
   @media (max-width: 48rem) {
     .insp-panel {
       width: 100vw;
@@ -975,7 +939,6 @@ const isDev = import.meta.env.DEV;
     }
   }
 
-  /* 极窄屏视口 (< 36rem / 576px) */
   @media (max-width: 36rem) {
     .insp-toolbar {
       flex-direction: column;
@@ -997,8 +960,7 @@ const isDev = import.meta.env.DEV;
   }
 </style>
 
-<script>
-  import { initModuleInspector } from '../utils/module-inspector/inspector';
+<script>import { initModuleInspector } from '../utils/module-inspector/inspector';
   try {
     initModuleInspector();
   } catch (e) {

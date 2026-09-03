@@ -1,26 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/ai_fix_figures.mjs
- * -----------------------------------------------------------------------------
- * 图像与图注智能纠偏与排版升级流水线 (Gemini AI Figure & Caption Pipeline)
- *
- * 核心机制：
- * 1. 语法与语义双修复：
- *    - 修复因图注突兀插入而被腰斩的正文断句；
- *    - 将分离的图片与图注就近重新绑定，组装为符合 VitePress 风格的语义化 <figure> 结构；
- *    - 智能处理 (a)/(b) 多子图排版网格。
- * 2. 极致稳健的防御机制：
- *    - 图片哈希防丢校验：严格校验 LLM 返回的内容中是否包含窗口内原有所有图片路径；
- *    - 语法安全编译校验：拆分替换后经 @mdx-js/mdx + remarkMath + rehypeKatex 严格编译测试；
- *    - 多模型回退：gemini-3.5-flash-lite -> gemini-3.1-flash-lite -> gemini-flash-lite-latest -> gemini-3.6-flash；
- * 3. 命令行参数：
- *    - --file <path>   单文件测试
- *    - --book <slug>   指定书处理
- *    - --all           全量处理
- *    - --dry-run       仅输出识别报告与 Diff，不写盘（默认）
- *    - --apply         校验通过后真实写回 MDX 文件
- * =============================================================================
- */
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -41,16 +19,12 @@ const MODELS = [
   'gemini-3.6-flash'
 ];
 
-// 命令行参数解析
 const args = process.argv.slice(2);
 const isApply = args.includes('--apply');
 const isDryRun = !isApply || args.includes('--dry-run');
 const singleFileArg = args.find((_, i, arr) => arr[i - 1] === '--file');
 const bookSlugArg = args.find((_, i, arr) => arr[i - 1] === '--book');
 
-/**
- * 递归收集 MDX 文件
- */
 function getMdxFiles(targetPath) {
   if (!fs.existsSync(targetPath)) return [];
   const stat = fs.statSync(targetPath);
@@ -71,9 +45,6 @@ function getMdxFiles(targetPath) {
   return files;
 }
 
-/**
- * 提取文本中出现的图片路径集合
- */
 function getImageSet(text) {
   const set = new Set();
   const mdRegex = /!\[.*?\]\((images\/[^)]+)\)/g;
@@ -88,9 +59,6 @@ function getImageSet(text) {
   return set;
 }
 
-/**
- * 容错解析含 LaTeX 反斜杠的 JSON
- */
 function parseSafeJson(rawText) {
   let cleaned = rawText.trim();
   cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
@@ -108,9 +76,6 @@ function parseSafeJson(rawText) {
 
 import katex from 'katex';
 
-/**
- * 校验 MDX 是否能通过 Unified AST 与 KaTeX 编译
- */
 async function validateMdx(content, filePath) {
   try {
     const body = content.replace(/^---[\s\S]*?---\r?\n?/, '');
@@ -120,7 +85,6 @@ async function validateMdx(content, filePath) {
       jsx: true
     });
 
-    // KaTeX 块级公式严格校验
     const displayMatches = content.matchAll(/\$\$([\s\S]+?)\$\$/g);
     for (const m of displayMatches) {
       const raw = m[1].trim();
@@ -134,9 +98,6 @@ async function validateMdx(content, filePath) {
   }
 }
 
-/**
- * 调用 Gemini API 修复图像与图注区块
- */
 async function queryGeminiFix(windowItems) {
   const systemInstruction = `You are an expert textbook MDX typography and structure editor.
 In Chinese STEM textbooks converted from OCR/PDF, figure captions (e.g. "图 1.1", "图 1.22", "图1.4", "Figure 1.1") often got misplaced or separated from images:
@@ -249,7 +210,7 @@ Output strictly JSON adhering to schema:
 
       return res;
     } catch (err) {
-      // 切换模型继续尝试
+
       continue;
     }
   }
@@ -257,9 +218,6 @@ Output strictly JSON adhering to schema:
   throw new Error('All Gemini models failed or quota exceeded.');
 }
 
-/**
- * 主执行流程
- */
 async function main() {
   console.log('===============================================================');
   console.log('⚡ Gemini 驱动的图像与图注智能纠偏流水线 (Figure & Caption Rectifier)');
@@ -289,7 +247,7 @@ async function main() {
     const lines = content.split(/\r?\n/);
 
     const audit = analyzeMdxFile(file);
-    // 优先处理 SEPARATED_PAIR 与 ORPHAN_CAPTION
+
     const targetAnomalies = audit.anomalies.filter(a => a.type === 'SEPARATED_PAIR' || a.type === 'ORPHAN_CAPTION');
 
     if (targetAnomalies.length === 0) {
@@ -302,7 +260,6 @@ async function main() {
     let newContent = content.replace(/\r\n/g, '\n');
     const windowItems = [];
 
-    // 合并重叠窗口
     const windows = [];
     for (let i = 0; i < targetAnomalies.length; i++) {
       const a = targetAnomalies[i];
@@ -329,7 +286,6 @@ async function main() {
       });
     }
 
-    // 批量调用 Gemini
     const batchSize = 3;
     let fileModified = false;
 
@@ -344,14 +300,13 @@ async function main() {
 
           const originalText = item.rawText;
           let repairedText = (res.repaired_block || '').trim();
-          // 自动修复未自闭合的 HTML <img> 标签以兼容 MDX/JSX
+
           repairedText = repairedText.replace(/<img\b([^>]*?)(?<!\/)>/gi, '<img$1 />');
-          // 自动修复单美元结尾的块级公式 ($$ ... \n $) -> ($$ ... \n $$)
+
           repairedText = repairedText.replace(/^(\$\$[\s\S]*?)\r?\n\$(?!\$)/gm, '$1\n$$');
 
           if (!repairedText) continue;
 
-          // 1. 防御校验：检查图片哈希是否完整保留
           const origImages = getImageSet(originalText);
           const repImages = getImageSet(repairedText);
 
@@ -383,7 +338,6 @@ async function main() {
           totalFixedWindows++;
         }
 
-        // 微延迟平滑 QPS
         await new Promise(r => setTimeout(r, 600));
       } catch (err) {
         console.error(`  ❌ Gemini 处理失败: ${err.message}`);

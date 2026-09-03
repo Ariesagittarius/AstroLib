@@ -1,4 +1,3 @@
-// M1 验证：在副本文件上测试 locateBlock + applyOp 全部操作（每用例独立，避免行号漂移）
 import fs from 'node:fs';
 import { parseFile } from '../src/utils/mdx-editor/parse.mjs';
 import { locateBlock } from '../src/utils/mdx-editor/locate-block.mjs';
@@ -14,11 +13,10 @@ function check(name, cond, extra = '') {
   if (cond) { pass++; console.log(`  ✓ ${name}`); }
   else { fail++; console.log(`  ✗ ${name} ${extra}`); }
 }
-const fresh = () => fs.readFileSync(TMP, 'utf8'); // 每次重读原始副本
-// 全文行号 → body 行号（locateBlock 与注入插件均用 body 空间）
+const fresh = () => fs.readFileSync(TMP, 'utf8');
+
 const B = (content, fullLine) => fullLine - parseFile(content).offset;
-// 全文行号（取自真实文件）：
-//   16 顶层段落 | 20 含 lim 公式段落 | 48-50 行间公式 | 207 <Block> | 209 卡片内段落
+
 const CARD = 207, CARD_PARA = 209, TOP_PARA = 16, LIM_LINE = 20, FORMULA = 49;
 
 try {
@@ -112,7 +110,7 @@ try {
   check('extract 成功', r.ok, r.message);
   if (r.ok) {
     content = r.content;
-    // 段落应出现在卡片闭标签之后（作为正文）
+
     const closeIdx = content.indexOf('</Block>');
     check('段落已移到卡片之后', closeIdx !== -1 && content.indexOf('按极限定义证明', closeIdx) !== -1, '');
     const cardAfter = locateBlock(content, B(content, CARD));
@@ -126,7 +124,7 @@ try {
   check('move 成功', r.ok, r.message);
   if (r.ok) {
     content = r.content;
-    // 原卡片位置之后应出现被移动的段落（卡片区域行数可能变化，按文本查找）
+
     check('被移动段落存在', content.includes('成立不等式'), '');
     check('reparse 校验通过', (await validateMdx(content)) === null);
   }
@@ -164,10 +162,10 @@ try {
   check('insert 成功', r.ok, r.message);
   if (r.ok) {
     content = r.content;
-    // 段落文本应出现在 </Block> 之前（卡片 children 内）
+
     const closeIdx = content.indexOf('</Block>');
     check('段落已进入卡片', closeIdx !== -1 && content.indexOf('成立不等式', 0) !== -1 && content.indexOf('成立不等式') < closeIdx, '');
-    // 正文中不应再有该段落（已从原位置移除）
+
     const afterClose = content.indexOf('</Block>') + '</Block>'.length;
     check('正文中已移除该段落', content.slice(afterClose).includes('成立不等式') === false, '');
     check('reparse 校验通过', (await validateMdx(content)) === null);
@@ -187,10 +185,10 @@ try {
   r = await applyOp(content, 'wrap', { line: B(content, TOP_PARA), cardType: 'example', title: '例 0.1' });
   check('前置 wrap 成功', r.ok, r.message);
   if (r.ok) {
-    // wrap 后行号变化：重新定位"含 \\lim 的段落"（原 LIM_LINE 内容）与新建卡片
+
     const cardLoc = locateBlock(r.content, B(r.content, TOP_PARA));
     check('wrap 后卡片可定位', cardLoc && cardLoc.kind === 'example', JSON.stringify(cardLoc && { kind: cardLoc.kind }));
-    // 遍历找含 \lim 的顶层段落
+
     let paraLine = null;
     const { mdast, offset: off2 } = parseFile(r.content);
     (function find(node) {

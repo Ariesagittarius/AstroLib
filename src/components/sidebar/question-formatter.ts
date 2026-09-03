@@ -1,6 +1,3 @@
-/**
- * HTML 标签安全分词器
- */
 export function extractOptionsSafely(html: string): Array<{ label: string; content: string }> {
   html = html.replace(/([A-D])．/g, '$1.');
 
@@ -28,9 +25,6 @@ export function extractOptionsSafely(html: string): Array<{ label: string; conte
   return options;
 }
 
-/**
- * 智能提取选择题，自适应重构为响应式 MD3 选项卡片 (DOM 节点流版本)
- */
 export function formatMultipleChoiceQuestions(root: ParentNode = document): void {
   const cardBodies = root.querySelectorAll('.card-body');
   if (cardBodies.length === 0) return;
@@ -70,7 +64,6 @@ export function formatMultipleChoiceQuestions(root: ParentNode = document): void
           isProcessingTrailing = true;
         }
 
-        // 后置图片阻断机制
         if (foundA && !isProcessingTrailing) {
           const hasImg = el.tagName === 'IMG' || el.querySelector('img') !== null;
           const text = el.textContent || '';

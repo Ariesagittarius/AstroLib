@@ -1,10 +1,4 @@
 ---
-/**
- * ChapterQuiz.astro
- * 交互式章节真题自测组件 (VitePress 优雅现代风格)
- * 提供即时答题反馈（选择题对错判定、填空题核对、展开详细解析与考点提示）。
- * 构建期预渲染 KaTeX 公式以保持零前端公式解析开销。
- */
 import exercisesData from '../data/exercises/engineering_analysis_exercises.json';
 import { renderTitleHtml } from '../utils/render-title.mjs';
 
@@ -24,13 +18,11 @@ const {
   questions: customQuestions
 } = Astro.props;
 
-// 获取当前章节题目并进行精选过滤
 let questions = customQuestions;
 if (!questions || questions.length === 0) {
   const chQuestions = ((exercisesData as any).chapters?.[String(chapter)]) || [];
   let filtered = chQuestions;
-  
-  // 按小节进一步精细过滤（若指定了 section）
+
   if (section) {
     filtered = filtered.filter((q: any) => {
       const map = q.mapping?.engineering_analysis;
@@ -38,7 +30,6 @@ if (!questions || questions.length === 0) {
     });
   }
 
-  // 挑选交互答题体验最佳的单选题与填空题
   const choices = filtered.filter((q: any) => q.meta?.type === 'choice' && q.content?.options?.length > 0 && q.solution?.answer);
   const blanks = filtered.filter((q: any) => q.meta?.type === 'blank' && q.solution?.answer);
   const others = filtered.filter((q: any) => q.meta?.type !== 'choice' && q.meta?.type !== 'blank' && q.solution?.answer);
@@ -46,7 +37,7 @@ if (!questions || questions.length === 0) {
   const curated: any[] = [];
   const choiceTarget = Math.min(choices.length, Math.ceil(limit * 0.6));
   const blankTarget = Math.min(blanks.length, limit - choiceTarget);
-  
+
   curated.push(...choices.slice(0, choiceTarget));
   curated.push(...blanks.slice(0, blankTarget));
 
@@ -100,10 +91,8 @@ if (!questions || questions.length === 0) {
             </div>
           </div>
 
-          {/* 题干构建期 KaTeX 渲染 */}
           <div class="quiz-stem" set:html={renderTitleHtml(q.content?.stem)}></div>
 
-          {/* 选择题选项渲染 */}
           {qType === 'choice' && q.content?.options?.length > 0 && (
             <div class="quiz-options">
               {q.content.options.map((opt: any) => (
@@ -115,7 +104,6 @@ if (!questions || questions.length === 0) {
             </div>
           )}
 
-          {/* 填空题输入区 */}
           {qType === 'blank' && (
             <div class="quiz-blank-input">
               <input type="text" class="blank-input" placeholder="输入答案进行核对..." />
@@ -123,7 +111,6 @@ if (!questions || questions.length === 0) {
             </div>
           )}
 
-          {/* 答题反馈与解析折叠 */}
           <div class="quiz-feedback-box hidden">
             <div class="feedback-status"></div>
             <div class="solution-details">
@@ -155,14 +142,13 @@ if (!questions || questions.length === 0) {
   </div>
 </div>
 
-<script>
-  function initQuizWidgets() {
+<script>function initQuizWidgets() {
     const containers = document.querySelectorAll('.chapter-quiz-container');
 
     containers.forEach(container => {
       let doneCount = 0;
       let correctCount = 0;
-      
+
       const doneElem = container.querySelector('.done-count');
       const accElem = container.querySelector('.accuracy');
 
@@ -183,7 +169,6 @@ if (!questions || questions.length === 0) {
         const statusElem = card.querySelector('.feedback-status');
         let answered = false;
 
-        // 选择题点击交互
         if (qType === 'choice') {
           const optBtns = card.querySelectorAll('.option-btn');
           optBtns.forEach(btn => {
@@ -201,7 +186,7 @@ if (!questions || questions.length === 0) {
                 if (statusElem) statusElem.innerHTML = '<span class="status-correct">[正确] 回答正确</span>';
               } else {
                 btn.classList.add('wrong');
-                // 标记出正确选项
+
                 optBtns.forEach(b => {
                   const bKey = (b.getAttribute('data-key') || '').trim().toUpperCase();
                   if (bKey === letterAns || upperAns.includes(bKey)) {
@@ -217,7 +202,6 @@ if (!questions || questions.length === 0) {
           });
         }
 
-        // 填空题核对交互
         if (qType === 'blank') {
           const checkBtn = card.querySelector('.check-btn');
           const input = card.querySelector('.blank-input') as HTMLInputElement;
@@ -260,8 +244,7 @@ if (!questions || questions.length === 0) {
   document.addEventListener('astro:page-load', initQuizWidgets);
 </script>
 
-<style>
-  .chapter-quiz-container {
+<style>.chapter-quiz-container {
     margin: 2rem 0;
     padding: 1.25rem 1.5rem;
     border-radius: 8px;
@@ -550,7 +533,6 @@ if (!questions || questions.length === 0) {
     border-radius: 3px;
   }
 
-  /* 黑夜主题适配 */
   :global(html[data-theme='dark']) .option-btn.correct {
     background: rgba(16, 185, 129, 0.15) !important;
     border-color: #10b981 !important;
@@ -568,4 +550,3 @@ if (!questions || questions.length === 0) {
     color: #f87171;
   }
 </style>
-

@@ -1,12 +1,3 @@
-/**
- * src/utils/exercise-db/exercise-db-client.ts
- * 统一数据库客户端：处理社区 AI 题解共享、读者勘误反馈与点赞
- * 支持：
- * 1. 远程 Cloud BaaS (Supabase REST / 自建 REST API)
- * 2. 本地 Dev Server 中间件 API (/api/exercise/*)
- * 3. LocalStorage 离线降级与点赞记录去重
- */
-
 import { features } from '../../config/features.config.mjs';
 
 export interface CommunityAiSolution {
@@ -28,7 +19,7 @@ export interface ExerciseFeedbackPayload {
   chapter?: number;
   section?: string;
   question_type?: string;
-  error_types: string[]; // ['stem', 'formula', 'answer', 'kp', 'other']
+  error_types: string[];
   description: string;
   suggestion?: string;
   reporter_name?: string;
@@ -78,13 +69,9 @@ class ExerciseDbClient {
     return this.upvotedSolutions.has(solutionId);
   }
 
-  /**
-   * 拉取某道题目的所有社区 AI 题解
-   */
   public async fetchCommunitySolutions(questionId: string): Promise<CommunityAiSolution[]> {
     const baseUrl = this.config.apiBaseUrl || '/api/exercise';
 
-    // 1. 若配置了 Supabase 直连
     if (this.config.supabaseUrl && this.config.supabaseAnonKey) {
       try {
         const url = `${this.config.supabaseUrl}/rest/v1/exercise_ai_solutions?question_id=eq.${encodeURIComponent(questionId)}&order=upvotes.desc,created_at.desc`;
@@ -103,7 +90,6 @@ class ExerciseDbClient {
       }
     }
 
-    // 2. Dev-Server API / 标准 REST API
     try {
       const res = await fetch(`${baseUrl}/community-solutions?question_id=${encodeURIComponent(questionId)}`);
       if (res.ok) {
@@ -111,16 +97,12 @@ class ExerciseDbClient {
         return Array.isArray(data) ? data : [];
       }
     } catch (err) {
-      // 离线环境 fallback 到 LocalStorage
+
     }
 
-    // 3. LocalStorage 离线降级
     return this.getLocalSolutions(questionId);
   }
 
-  /**
-   * 上传读者自跑的 AI 题解
-   */
   public async uploadCommunitySolution(payload: {
     question_id: string;
     model_name: string;
@@ -141,7 +123,6 @@ class ExerciseDbClient {
       remarks: payload.remarks || '',
     };
 
-    // 1. Supabase 写入
     if (this.config.supabaseUrl && this.config.supabaseAnonKey) {
       try {
         const url = `${this.config.supabaseUrl}/rest/v1/exercise_ai_solutions`;
@@ -164,7 +145,6 @@ class ExerciseDbClient {
       }
     }
 
-    // 2. Dev-Server API / 标准 REST API
     const baseUrl = this.config.apiBaseUrl || '/api/exercise';
     try {
       const res = await fetch(`${baseUrl}/community-solutions`, {
@@ -178,14 +158,10 @@ class ExerciseDbClient {
       }
     } catch {}
 
-    // 3. LocalStorage 离线存储
     this.saveLocalSolution(newSolution);
     return { success: true, data: newSolution, message: '已保存至本地题解库' };
   }
 
-  /**
-   * 社区题解点赞
-   */
   public async upvoteSolution(solutionId: string): Promise<{ success: boolean; newUpvotes: number }> {
     if (this.upvotedSolutions.has(solutionId)) {
       return { success: false, newUpvotes: 0 };
@@ -210,9 +186,6 @@ class ExerciseDbClient {
     return { success: true, newUpvotes: 1 };
   }
 
-  /**
-   * 提交读者题目勘误与反馈
-   */
   public async submitFeedback(payload: ExerciseFeedbackPayload): Promise<{ success: boolean; message?: string }> {
     const feedbackItem = {
       id: `fb_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
@@ -221,7 +194,6 @@ class ExerciseDbClient {
       status: 'pending',
     };
 
-    // 1. Supabase 写入
     if (this.config.supabaseUrl && this.config.supabaseAnonKey) {
       try {
         const url = `${this.config.supabaseUrl}/rest/v1/exercise_feedbacks`;
@@ -240,7 +212,6 @@ class ExerciseDbClient {
       } catch {}
     }
 
-    // 2. Dev Server API / 标准 REST API
     const baseUrl = this.config.apiBaseUrl || '/api/exercise';
     try {
       const res = await fetch(`${baseUrl}/feedback`, {
@@ -253,14 +224,10 @@ class ExerciseDbClient {
       }
     } catch {}
 
-    // 3. 本地存储降级
     this.saveLocalFeedback(feedbackItem);
     return { success: true, message: '勘误已记录在本地反馈列表中，感谢您的贡献！' };
   }
 
-  /**
-   * 开发者保存修改源码 (Dev-Only 热持久化)
-   */
   public async saveQuestionSource(payload: SaveSourcePayload): Promise<{ success: boolean; message?: string }> {
     const baseUrl = this.config.apiBaseUrl || '/api/exercise';
     try {
@@ -280,7 +247,6 @@ class ExerciseDbClient {
     }
   }
 
-  // --- LocalStorage 离线工具 ---
   private getLocalSolutions(questionId: string): CommunityAiSolution[] {
     if (typeof localStorage === 'undefined') return [];
     try {

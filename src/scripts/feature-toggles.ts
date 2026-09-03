@@ -1,20 +1,3 @@
-/**
- * feature-toggles —— 前端运行时「功能与偏好设置」模块
- *
- * 结构：自包含 <starlight-feature-toggles> 自定义元素。挂载于顶栏 ThemeSelect 槽位
- * （桌面 header 右侧动作区 / 移动端抽屉底部），页面上可同时渲染多个实例，各自管理
- * 自己的 ⚙ 开合与下拉面板/底部抽屉；构建层元数据由各实例的 data-meta 注入（跨实例内容一致）。
- *
- * 契约：
- *   · 有效启用 = 构建层 enabled（由实例注入的 data-meta 提供） && 运行时未关闭
- *     （本模块读 localStorage 'starlight-features'）。
- *   · build=false 的功能即便运行时也无法开启（产物里没有）。
- *   · 通过 [data-feature="<id>"] 标记的元素做显隐（面板样式 .dsh-feature-off 隐藏）；
- *     fonts 关闭时清 <html data-font-latin / data-font-cjk>，重新打开时恢复读者字体偏好。
- *   · editor：设置 window.__dshFeatureEditorAllowed（editor.ts 据此放行/禁止编辑模式）。
- *   · 每次变化 dispatch 'dsh:feature-change'，供其它脚本联动。
- */
-
 import {
   applyFontPref,
   clearFontPref,
@@ -50,17 +33,13 @@ import {
   testAiConnection,
 } from '../ai/ai-config';
 
-/** 运行时开关存储键 */
 const STORAGE_KEY = 'starlight-features';
 
-/** 主题切换动画偏好存储键：'instant'（即时切换，默认，无过渡）| 'animate'（柔和过渡） */
 const THEME_TRANSITION_KEY = 'starlight-theme-transition';
 
-/** 章节后台空闲预加载页面数存储键：1 (前后各 1 页滑动窗口，默认) | 2 | 3 | -1 (全书拉取) | 0 (关闭) */
 export const PREWARM_PAGES_KEY = 'astrolib_prewarm_pages';
 export const DEFAULT_PREWARM_PAGES = 1;
 
-/** 读取章节预加载范围配置（默认 1 为前后各 1 页滑动窗口） */
 export function loadPrewarmPref(): number {
   try {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(PREWARM_PAGES_KEY) : null;
@@ -74,7 +53,6 @@ export function loadPrewarmPref(): number {
   }
 }
 
-/** 保存章节预加载范围配置 */
 export function savePrewarmPref(val: number): void {
   try {
     if (typeof localStorage !== 'undefined') {
@@ -86,14 +64,12 @@ export function savePrewarmPref(val: number): void {
 
 type FeatureMeta = { id: string; label: string; build: boolean; runtime: boolean; devOnly: boolean };
 
-/** 最近一次从任一实例读取的构建层元数据（跨实例内容一致，供全局 apply() 使用） */
 let meta: FeatureMeta[] = [];
-/** 用户显式的运行时开关；缺省视为开启 */
+
 let toggles: Record<string, boolean> = {};
 
 const metaOf = (id: string): FeatureMeta | undefined => meta.find((m) => m.id === id);
 
-/** 从自定义元素的 data-meta 解析构建层元数据（容错：解析失败 → 空数组） */
 function parseMeta(el: HTMLElement | null): FeatureMeta[] {
   try {
     return JSON.parse(el?.getAttribute('data-meta') || '[]') as FeatureMeta[];
@@ -115,11 +91,10 @@ function saveToggles(): void {
   try {
     if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY, JSON.stringify(toggles));
   } catch {
-    /* 忽略（隐私模式等） */
+
   }
 }
 
-/** 读取主题切换动画偏好（默认 'instant'，即默认关闭过渡、即时切换） */
 function loadThemeTransition(): string {
   try {
     return localStorage.getItem(THEME_TRANSITION_KEY) || 'instant';
@@ -128,20 +103,17 @@ function loadThemeTransition(): string {
   }
 }
 
-/** 该功能是否可运行时切换（构建层允许 && 面板标记为可切换） */
 export function isRuntimeSwitchable(id: string): boolean {
   const m = metaOf(id);
   return !!m && m.runtime && m.build;
 }
 
-/** 有效启用：构建层 enabled && 运行时未关闭 */
 export function isEnabled(id: string): boolean {
   const m = metaOf(id);
   if (!m || !m.build) return false;
   return toggles[id] !== false;
 }
 
-/** 重置所有功能与偏好为系统默认值 */
 export function resetToggles(): void {
   toggles = {};
   try {
@@ -151,14 +123,11 @@ export function resetToggles(): void {
     }
   } catch {}
 
-  // 重置字体偏好
   saveFontPref(DEFAULT_PREF);
   applyFontPref(DEFAULT_PREF);
 
-  // 重置 UI 风格主题
   setSiteTheme(DEFAULT_SITE_THEME);
 
-  // 重置章节预加载配置为全书拉取 (-1)
   savePrewarmPref(DEFAULT_PREWARM_PAGES);
 
   syncAllCheckboxes();
@@ -169,7 +138,6 @@ export function resetToggles(): void {
   apply();
 }
 
-/** 同步当前所有实例的 AI 模型与 Key 配置状态 */
 export function syncAllAiSettings(): void {
   const models = getAllAiModels();
   const activeId = getActiveAiModelId();
@@ -205,7 +173,6 @@ export function syncAllAiSettings(): void {
   });
 }
 
-/** 同步当前所有实例的后台预加载范围按钮状态 */
 export function syncAllPrewarmButtons(): void {
   const current = loadPrewarmPref();
   document.querySelectorAll('.ft-panel .ft-prewarm-btn, starlight-feature-toggles .ft-prewarm-btn').forEach((btn) => {
@@ -216,7 +183,6 @@ export function syncAllPrewarmButtons(): void {
   });
 }
 
-/** 应用字体偏好：关闭 fonts 清 <html data-font-latin/…-cjk>（回系统默认）；开启则恢复读者偏好 */
 function applyFont(): void {
   if (!isEnabled('fonts')) {
     clearFontPref();
@@ -225,19 +191,16 @@ function applyFont(): void {
   }
 }
 
-/** 设置编辑器放行标志（editor.ts 会读取 window.__dshFeatureEditorAllowed） */
 function applyEditorAllowed(): void {
   (window as unknown as Record<string, unknown>).__dshFeatureEditorAllowed = isEnabled('editor');
 }
 
-/** 应用引用联动与样式控制 */
 function applyCrossRef(): void {
   const root = document.documentElement;
   const enabled = isEnabled('crossRef');
   root.classList.toggle('dsh-crossref-off', !enabled);
 }
 
-/** 应用公式操作与图片导出开关（关闭时完全卸载 DOM 还原原生排版） */
 function applyFormulaActions(): void {
   if (isEnabled('formulaActions')) {
     enableFormulaActions();
@@ -246,7 +209,6 @@ function applyFormulaActions(): void {
   }
 }
 
-/** 应用到页面：显隐 [data-feature] 元素 + 字体 + 引用联动 + 编辑器放行 + 广播 */
 export function apply(): void {
   if (meta.length === 0) return;
 
@@ -255,7 +217,6 @@ export function apply(): void {
     el.classList.toggle('dsh-feature-off', !isEnabled(id));
   }
 
-  // 主题切换动画子选项：仅当 theme 功能启用时可调（避免无意义交互）
   document.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-theme-transition]').forEach((cb) => {
     cb.disabled = !isEnabled('theme');
   });
@@ -267,7 +228,6 @@ export function apply(): void {
   document.dispatchEvent(new CustomEvent('dsh:feature-change'));
 }
 
-/** 同步当前所有实例的复选框/滑块状态 */
 function syncAllCheckboxes(): void {
   document
     .querySelectorAll<HTMLInputElement>('.ft-panel input[type="checkbox"][data-feature-id], starlight-feature-toggles input[type="checkbox"][data-feature-id]')
@@ -285,7 +245,6 @@ function syncAllCheckboxes(): void {
     });
 }
 
-/** 同步当前所有实例的字体高亮按钮状态 */
 function syncAllFontButtons(): void {
   const pref = loadFontPref();
   document.querySelectorAll('.ft-panel .ft-font-btn, starlight-feature-toggles .ft-font-btn').forEach((btn) => {
@@ -297,7 +256,6 @@ function syncAllFontButtons(): void {
   });
 }
 
-/** 同步当前所有实例的 UI 风格主题高亮 Chips */
 function syncAllThemeChips(): void {
   const theme = loadSiteTheme();
   document.querySelectorAll('.ft-panel .ft-theme-chip, starlight-feature-toggles .ft-theme-chip').forEach((chip) => {
@@ -308,7 +266,6 @@ function syncAllThemeChips(): void {
   });
 }
 
-/** 绑定「点击面板外收起」到 document（只注册一次，兼容多实例与 Portal） */
 let documentBound = false;
 function bindDocument(): void {
   if (documentBound) return;
@@ -317,7 +274,7 @@ function bindDocument(): void {
   document.addEventListener('click', (e) => {
     const t = e.target;
     if (!(t instanceof Element)) return;
-    // 点击面板本体或触发按钮时不收起
+
     if (t.closest('.ft-panel') || t.closest('.ft-toggle-btn')) return;
     document.querySelectorAll<StarlightFeatureToggles>('starlight-feature-toggles').forEach((host) => {
       host.closePanel();
@@ -332,14 +289,12 @@ function bindDocument(): void {
   });
 }
 
-/** 任意值 → 合法拉丁档（非法回退 'sans'） */
 const parseLatin = (v: unknown): LatinFont =>
   LATIN_PRESETS.some((p) => p.value === v) ? (v as LatinFont) : 'sans';
-/** 任意值 → 合法中文档（非法回退 'sans'） */
+
 const parseCjk = (v: unknown): CjkFont =>
   CJK_PRESETS.some((p) => p.value === v) ? (v as CjkFont) : 'sans';
 
-/** 各实例自包含的开关逻辑：绑定 ⚙ 开合、关闭钮、面板复选框与重置操作 */
 class StarlightFeatureToggles extends HTMLElement {
   panel: HTMLElement | null = null;
   backdrop: HTMLElement | null = null;
@@ -386,13 +341,13 @@ class StarlightFeatureToggles extends HTMLElement {
     if (!this.panel || !this.backdrop) return;
 
     if (isMobile) {
-      // 移动端：将 panel 和 backdrop 移入 document.body，彻底逃逸 .sidebar-pane 的 transform / overflow-y 裁剪
+
       if (this.panel.parentElement !== document.body) {
         document.body.appendChild(this.backdrop);
         document.body.appendChild(this.panel);
       }
     } else {
-      // 桌面端：放回本 host 内部，使 position: absolute 可以基于顶栏按钮精准定位
+
       if (this.panel.parentElement === document.body) {
         this.appendChild(this.backdrop);
         this.appendChild(this.panel);
@@ -415,7 +370,6 @@ class StarlightFeatureToggles extends HTMLElement {
       this.closePanel();
     });
 
-    // 遮罩点击关闭
     this.backdrop?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.closePanel();
@@ -434,9 +388,9 @@ class StarlightFeatureToggles extends HTMLElement {
     let isDragging = false;
 
     const onPointerDown = (e: PointerEvent) => {
-      // 仅在移动端 Bottom Sheet 模式下激活顶部拖拽
+
       if (!window.matchMedia('(max-width: 49.999rem)').matches) return;
-      // 忽略关闭按钮上的点击
+
       if ((e.target as Element)?.closest('.ft-close')) return;
 
       isDragging = true;
@@ -460,7 +414,7 @@ class StarlightFeatureToggles extends HTMLElement {
       const dy = e.clientY - startY;
 
       if (dy > 0) {
-        // 向下拖动：1:1 跟随手指/指针
+
         currentDeltaY = dy;
         this.panel.style.transform = `translateY(${dy}px)`;
         if (this.backdrop) {
@@ -468,7 +422,7 @@ class StarlightFeatureToggles extends HTMLElement {
           this.backdrop.style.opacity = `${opacity}`;
         }
       } else {
-        // 向上拖动：增加弹性阻尼，防止无限上拉
+
         currentDeltaY = dy * 0.2;
         this.panel.style.transform = `translateY(${currentDeltaY}px)`;
       }
@@ -489,11 +443,10 @@ class StarlightFeatureToggles extends HTMLElement {
       const duration = Date.now() - startTime;
       const velocity = currentDeltaY / Math.max(duration, 1);
 
-      // 下拉超过 90px 或快速滑脱（velocity > 0.4 且 dy > 30px）触发关闭
       if (currentDeltaY > 90 || (currentDeltaY > 30 && velocity > 0.4)) {
         this.closePanel();
       } else {
-        // 否则弹性弹回展开位置
+
         this.panel.style.transform = '';
         if (this.backdrop) this.backdrop.style.opacity = '';
       }
@@ -539,7 +492,6 @@ class StarlightFeatureToggles extends HTMLElement {
       });
     });
 
-    // 模块巡检一键打开按钮：点击时先关闭设置面板，让巡检抽屉无遮挡打开
     root.querySelectorAll<HTMLButtonElement>('[data-inspector-trigger]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -723,7 +675,7 @@ class StarlightFeatureToggles extends HTMLElement {
   }
 
   openPanel() {
-    // 互斥：打开当前面板前先关闭其它所有实例
+
     document
       .querySelectorAll<StarlightFeatureToggles>('starlight-feature-toggles')
       .forEach((el) => el !== this && el.closePanel());
@@ -770,9 +722,6 @@ class StarlightFeatureToggles extends HTMLElement {
   }
 }
 
-/**
- * 初始化：注册自定义元素（幂等）+ 首次应用到页面 + 订阅 SPA 路由/跨标签页。
- */
 export function initFeatureToggles(): void {
   bindDocument();
   loadToggles();

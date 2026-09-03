@@ -1,25 +1,3 @@
-/**
- * inspector.ts —— 书籍模块巡检与结构校验开发工具 · 前端客户端控制器
- *
- * 职责：
- *   1. 自动根据当前 URL 识别当前图书，通过 /__inspector__/modules 端点获取全书模块扫描数据。
- *   2. 支持实时切换书籍、手动重新扫描全书。
- *   3. 提供多 Tab 查重与结构巡检视图：
- *      - 全量索引：全量模块索引（支持按卡片类型/章节过滤与全文实时检索）
- *      - 同章冲突：同章节内出现的重复同名模块分组
- *      - 跨章聚合：全书范围内同名模块聚合与跨章节分布统计
- *      - 结构审查：标记缺少标题、标题过长、空壳卡片等数据清洗异常
- *      - 公式异常：KaTeX 公式语法异常定位
- *   4. 一键跳转定位（Jump & Pulse）：
- *      - 同页内平滑滚动至对应卡片，附加 2s 典雅品牌色聚焦波纹高亮；
- *      - 跨章节利用 SPA 路由导航并在页面载入后精确定位与高亮。
- *   5. 极速高性能渲染：
- *      - 渐进式流式分块渲染（Incremental Chunk Rendering），首屏仅渲染 40 项，配合 IntersectionObserver 滚动无感加载；
- *      - 80ms 输入智能防抖与 rAF 极速调度；
- *      - 单趟极速聚合统计（Single-pass Aggregation）；
- *      - 消除 forced reflow 与无效 DOM 重建。
- */
-
 export interface ModuleItem {
   id: string;
   kind: string;
@@ -157,7 +135,6 @@ class ModuleInspectorController {
   private renderRafId = 0;
   private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // 分块流式渲染状态
   private observer: IntersectionObserver | null = null;
   private currentRenderMode: 'flat' | 'same_dups' | 'all_dups' | 'suspicious' | 'formula_errors' = 'flat';
   private currentItems: (ModuleItem | DuplicateGroup | FormulaErrorItem)[] = [];
@@ -170,9 +147,6 @@ class ModuleInspectorController {
 
     this.isDev = this.rootEl.getAttribute('data-is-dev') === 'true';
 
-    // 关键：将 inspector 根节点直接提升挂载到 document.body 下，
-    // 彻底摆脱 Starlight 内部 main-pane / main-frame / footer 的层叠上下文限制，
-    // 保证 z-index 高于全站 header（顶栏）与 custom-page-sidebar（右侧大纲栏）。
     if (this.rootEl.parentElement !== document.body) {
       document.body.appendChild(this.rootEl);
     }
@@ -182,11 +156,9 @@ class ModuleInspectorController {
     this.bindUIEvents();
     this.setupPageLoadHighlight();
 
-    // 初始识别书籍
     const detected = this.detectCurrentBookKey();
     this.currentBookKey = detected || 'math/math_senior';
 
-    // 监听特性开关联动（若被禁用则关闭面板）
     document.addEventListener('dsh:feature-change', () => {
       const allowed = (window as unknown as Record<string, unknown>).__dshFeatureInspectorAllowed !== false;
       if (!allowed && this.isOpen) {
@@ -194,13 +166,11 @@ class ModuleInspectorController {
       }
     });
 
-    // 监听外部打开事件
     document.addEventListener('dsh:open-inspector', () => {
       this.open();
     });
   }
 
-  /** 从当前 URL 识别当前所在合集/书籍（如 /collections/math/math_senior/...） */
   private detectCurrentBookKey(): string | null {
     const match = location.pathname.match(/\/collections\/([^/]+)\/([^/]+)/);
     if (match) {
@@ -219,21 +189,18 @@ class ModuleInspectorController {
           target.tagName === 'SELECT' ||
           target.isContentEditable);
 
-      // Alt+M / Option+M 随时开关
       if (e.altKey && (e.key === 'm' || e.key === 'M' || e.code === 'KeyM')) {
         e.preventDefault();
         this.toggle();
         return;
       }
 
-      // 非输入状态下按 M 快捷键打开
       if (!isInput && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && (e.key === 'm' || e.key === 'M')) {
         e.preventDefault();
         this.toggle();
         return;
       }
 
-      // Esc 关闭
       if (e.key === 'Escape' && this.isOpen) {
         e.preventDefault();
         this.close();
@@ -242,7 +209,7 @@ class ModuleInspectorController {
   }
 
   private bindTriggerButtons() {
-    // 监听全局巡检工具触发按钮
+
     document.addEventListener('click', (e) => {
       const target = e.target as HTMLElement | null;
       const btn = target?.closest<HTMLButtonElement>('[data-inspector-trigger]');
@@ -256,22 +223,18 @@ class ModuleInspectorController {
   private bindUIEvents() {
     if (!this.rootEl) return;
 
-    // 遮罩点击关闭
     this.rootEl.querySelector('.insp-backdrop')?.addEventListener('click', () => {
       this.close();
     });
 
-    // 关闭按钮
     this.rootEl.querySelector('.insp-close')?.addEventListener('click', () => {
       this.close();
     });
 
-    // 刷新按钮（强制全量重扫）
     this.rootEl.querySelector('.insp-refresh-btn')?.addEventListener('click', () => {
       this.loadData(true);
     });
 
-    // 书籍切换下拉
     const bookSelect = this.rootEl.querySelector<HTMLSelectElement>('.insp-book-select');
     bookSelect?.addEventListener('change', () => {
       if (bookSelect.value) {
@@ -280,7 +243,6 @@ class ModuleInspectorController {
       }
     });
 
-    // 检索输入与清空（80ms 防抖 + rAF 极速调度）
     const searchInput = this.rootEl.querySelector<HTMLInputElement>('.insp-search-input');
     const searchClear = this.rootEl.querySelector<HTMLButtonElement>('.insp-search-clear');
 
@@ -305,7 +267,6 @@ class ModuleInspectorController {
       }, 80);
     });
 
-    // 检索清除（即时响应无防抖）
     searchClear?.addEventListener('click', (e) => {
       e.stopPropagation();
       if (searchInput) {
@@ -318,7 +279,6 @@ class ModuleInspectorController {
       this.renderAll();
     });
 
-    // Tab 切换
     this.rootEl.querySelectorAll<HTMLButtonElement>('.insp-tab').forEach((tabBtn) => {
       tabBtn.addEventListener('click', () => {
         const tab = tabBtn.getAttribute('data-tab') as typeof this.activeTab;
@@ -331,20 +291,17 @@ class ModuleInspectorController {
       });
     });
 
-    // 章节选择下拉
     const chapterSelect = this.rootEl.querySelector<HTMLSelectElement>('.insp-chapter-select');
     chapterSelect?.addEventListener('change', () => {
       this.selectedChapter = chapterSelect.value;
       this.renderAll();
     });
 
-    // 事件代理：列表内部操作（跳转 / 复制 / 编辑）
     const listContainer = this.rootEl.querySelector('.insp-body');
     listContainer?.addEventListener('click', (e) => {
       const target = e.target as HTMLElement | null;
       if (!target) return;
 
-      // 复制路径坐标
       const copyBtn = target.closest<HTMLElement>('[data-action="copy"], .insp-copy-pos-btn');
       if (copyBtn) {
         e.stopPropagation();
@@ -353,7 +310,6 @@ class ModuleInspectorController {
         return;
       }
 
-      // 在编辑器中编辑
       const editBtn = target.closest<HTMLElement>('[data-action="edit"], .insp-edit-link');
       if (editBtn) {
         e.stopPropagation();
@@ -363,7 +319,6 @@ class ModuleInspectorController {
         return;
       }
 
-      // 独立跳转定位按钮
       const jumpBtn = target.closest<HTMLElement>('.insp-jump-btn, .insp-action-jump');
       if (jumpBtn) {
         e.stopPropagation();
@@ -377,7 +332,6 @@ class ModuleInspectorController {
         return;
       }
 
-      // 列表条目点击跳转定位
       const cardRow = target.closest<HTMLElement>('.insp-item-row, .insp-card-suspicious');
       if (cardRow) {
         const itemUrl = cardRow.getAttribute('data-url') || '';
@@ -396,7 +350,6 @@ class ModuleInspectorController {
     this.rootEl.classList.add('insp-open');
     document.body.classList.add('insp-drawer-open');
 
-    // 每次打开同步检测是否切换了书籍
     const detected = this.detectCurrentBookKey();
     if (detected && detected !== this.currentBookKey) {
       this.currentBookKey = detected;
@@ -408,7 +361,6 @@ class ModuleInspectorController {
       this.renderAll();
     }
 
-    // 聚焦搜索框
     setTimeout(() => {
       this.rootEl?.querySelector<HTMLInputElement>('.insp-search-input')?.focus();
     }, 120);
@@ -430,7 +382,6 @@ class ModuleInspectorController {
     else this.open();
   }
 
-  /** 加载书籍与模块扫描数据 */
   private async loadData(force = false) {
     if (this.loading) return;
     this.loading = true;
@@ -438,7 +389,7 @@ class ModuleInspectorController {
     this.renderLoading(true);
 
     try {
-      // 1. 获取书籍列表（若尚未获取，优先走 Dev 端点，生产走静态 books.json）
+
       if (!this.booksList.length) {
         let bRes = await fetch('/__inspector__/books').catch(() => null);
         if (!bRes || !bRes.ok) {
@@ -451,13 +402,11 @@ class ModuleInspectorController {
         }
       }
 
-      // 2. 解析合集与图书 slug
       const [col, book] = this.currentBookKey.split('/');
       if (!col || !book) {
         throw new Error('未指定有效的图书标识');
       }
 
-      // 优先请求 Dev 中间件动态扫描；若失败/非 Dev 则请求静态预生成的 json
       let res = await fetch(
         `/__inspector__/modules?col=${encodeURIComponent(col)}&book=${encodeURIComponent(book)}&force=${force}&t=${force ? Date.now() : 0}`
       ).catch(() => null);
@@ -473,7 +422,6 @@ class ModuleInspectorController {
 
       this.scanData = await res.json();
 
-      // 预编译扁平化全文搜索索引（提升过滤性能为极速单次比对）
       if (this.scanData) {
         for (const m of this.scanData.modules) {
           m._searchIndex = `${m.cleanTitle} ${m.rawTitle} ${m.snippet || ''} ${m.chapterTitle} ${m.typeLabel} ${m.kind} ${m.code || ''} ${m.filename} ${m.line}`.toLowerCase();
@@ -492,7 +440,6 @@ class ModuleInspectorController {
         }
       }
 
-      // 重置章节与分类选择
       this.selectedChapter = 'all';
       this.renderChapterOptions();
       this.renderAll();
@@ -540,10 +487,6 @@ class ModuleInspectorController {
     `;
   }
 
-  /**
-   * 单趟极速聚合过滤算法（Single-pass Aggregation）
-   * 避免对 2,000+ 项数组进行 6 次冗余循环计算
-   */
   private computeFilteredState(): FilteredState {
     if (!this.scanData) {
       return {
@@ -566,19 +509,15 @@ class ModuleInspectorController {
     const kindCounts: Record<string, number> = {};
     let totalMatchedKindCount = 0;
 
-    // 1. 单趟遍历全量模块
     for (const m of this.scanData.modules) {
-      // 章节匹配
+
       if (chapter !== 'all' && m.chapterSlug !== chapter) continue;
 
-      // 关键词匹配
       if (q && m._searchIndex && !m._searchIndex.includes(q)) continue;
 
-      // 统计匹配当前搜索条件的各分类计数
       totalMatchedKindCount++;
       kindCounts[m.kind] = (kindCounts[m.kind] || 0) + 1;
 
-      // 类型匹配
       if (kind !== 'all' && m.kind !== kind) continue;
 
       filteredModules.push(m);
@@ -587,7 +526,6 @@ class ModuleInspectorController {
       }
     }
 
-    // 2. 过滤同章冲突
     const filteredSameChapterDups: DuplicateGroup[] = [];
     for (const g of this.scanData.sameChapterDuplicates) {
       if (chapter !== 'all' && g.chapterSlug !== chapter) continue;
@@ -602,7 +540,6 @@ class ModuleInspectorController {
       }
     }
 
-    // 3. 过滤全书聚合
     const filteredAllDups: DuplicateGroup[] = [];
     for (const g of this.scanData.allDuplicates) {
       if (q && g._searchIndex && !g._searchIndex.includes(q)) continue;
@@ -616,7 +553,6 @@ class ModuleInspectorController {
       }
     }
 
-    // 4. 过滤公式异常
     const filteredFormulaErrors: FormulaErrorItem[] = [];
     for (const e of this.scanData.formulaErrors || []) {
       if (chapter !== 'all' && e.chapterSlug !== chapter) continue;
@@ -638,7 +574,6 @@ class ModuleInspectorController {
   private renderAll() {
     if (!this.scanData) return;
 
-    // 1. 更新标题（以书名为主体，突出学术教材属性）
     const titleEl = this.rootEl?.querySelector('.insp-header-title');
     if (titleEl) {
       const bookTitle = this.scanData.bookTitle || this.scanData.bookSlug;
@@ -646,16 +581,12 @@ class ModuleInspectorController {
       titleEl.title = bookTitle;
     }
 
-    // 2. 单趟计算过滤状态与各维度计数
     const state = this.computeFilteredState();
 
-    // 3. 渲染分类 Chips
     this.renderKindFilterChips(state.kindCounts, state.totalMatchedKindCount);
 
-    // 4. 更新 Tab 徽章数字（无 forced reflow）
     this.updateTabBadges(state);
 
-    // 5. 渐进式流式渲染主体列表
     this.renderList(state);
   }
 
@@ -691,7 +622,6 @@ class ModuleInspectorController {
     const byKind = this.scanData.stats.byKind || {};
     const kinds = Object.keys(byKind);
 
-    // 如果还没有生成 chips 结构，初始化渲染；若已存在则直接更新数字
     const existingChips = container.querySelectorAll<HTMLButtonElement>('.insp-chip');
     if (existingChips.length !== kinds.length + 1) {
       let html = `<button type="button" class="insp-chip ${this.selectedKind === 'all' ? 'active' : ''}" data-kind="all"><span>全部</span> <span class="insp-chip-count">${totalMatched}</span></button>`;
@@ -741,14 +671,10 @@ class ModuleInspectorController {
     select.innerHTML = html;
   }
 
-  /**
-   * 渐进式流式渲染调度中心
-   */
   private renderList(state: FilteredState) {
     const listEl = this.rootEl?.querySelector('.insp-list');
     if (!listEl || !this.scanData) return;
 
-    // 清理旧的滚动监听观察者
     if (this.observer) {
       this.observer.disconnect();
       this.observer = null;
@@ -777,9 +703,6 @@ class ModuleInspectorController {
     }
   }
 
-  /**
-   * 构建首屏批次并挂载 IntersectionObserver 哨兵
-   */
   private renderInitialChunk(listEl: Element, emptyText: string, showReasons = false) {
     const totalCount = this.currentItems.length;
 
@@ -808,7 +731,6 @@ class ModuleInspectorController {
       return;
     }
 
-    // 构建头部统计与筛选说明
     const isFiltered = !!this.searchQuery || this.selectedChapter !== 'all' || this.selectedKind !== 'all';
     let filterDetails = '';
     if (this.searchQuery) {
@@ -837,11 +759,9 @@ class ModuleInspectorController {
 
     let html = `<div class="insp-items-count-hint">${countDesc}</div>`;
 
-    // 仅生成首屏批次（CHUNK_SIZE = 40），挂载时间控制在 3ms 以内
     const initialSlice = this.currentItems.slice(0, CHUNK_SIZE);
     html += this.renderChunkHtml(initialSlice, showReasons);
 
-    // 若有未加载完的项，追加哨兵节点
     if (totalCount > CHUNK_SIZE) {
       html += `<div class="insp-sentinel" data-sentinel="true" style="height: 24px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--insp-text-3); opacity: 0.6;">向下滚动加载更多...</div>`;
     }
@@ -849,7 +769,6 @@ class ModuleInspectorController {
     listEl.innerHTML = html;
     this.currentRenderedCount = initialSlice.length;
 
-    // 挂载 IntersectionObserver 监听哨兵进入视口
     if (totalCount > CHUNK_SIZE) {
       const sentinelEl = listEl.querySelector('.insp-sentinel');
       const bodyEl = this.rootEl?.querySelector('.insp-body');
@@ -867,9 +786,6 @@ class ModuleInspectorController {
     }
   }
 
-  /**
-   * 增量流式追加下一个批次（30-40 项）
-   */
   private appendNextChunk(listEl: Element, sentinelEl: Element, showReasons: boolean) {
     if (this.currentRenderedCount >= this.currentItems.length) {
       if (this.observer) this.observer.disconnect();
@@ -933,20 +849,12 @@ class ModuleInspectorController {
     }
   }
 
-  /**
-   * 将原始标题智能拆解为【条目头（类型+序号）】与【语义标题】两层学术排版结构
-   * 例："例 1 变速直线运动的瞬时速度" -> kicker: "例题 1", title: "变速直线运动的瞬时速度"
-   * 例："定理 1.1 极限四则运算" -> kicker: "定理 1.1", title: "极限四则运算"
-   * 例："柯西收敛准则" -> kicker: "定理", title: "柯西收敛准则"
-   * 例："例 1" -> kicker: "例题 1", title: ""
-   */
   private parseTitleParts(cleanTitle: string, typeLabel: string): { kicker: string; title: string } {
     const clean = (cleanTitle || '').trim();
     if (clean.startsWith('[未命名') && clean.endsWith(']')) {
       return { kicker: typeLabel || '模块', title: '' };
     }
 
-    // 匹配如 "例 1", "例1", "例 1.2", "例1-1", "定理 1", "定理1.1", "定义 2", "习题 3", "引理 1", "性质 2", "推论 1" 等前缀
     const prefixRegex = /^(例|例题|定理|定义|性质|推论|引理|命题|公理|准则|习题|练习|微课)\s*([0-9]+(?:\.[0-9]+)*(?:-[0-9]+)?|[一二三四五六七八九十]+)\b\s*(.*)$/;
     const m = clean.match(prefixRegex);
     if (m) {
@@ -957,19 +865,16 @@ class ModuleInspectorController {
       return { kicker, title: rest };
     }
 
-    // 若直接以数字或编号开头，如 "1. 变速直线运动" 或 "1.1 极限"
     const numRegex = /^([0-9]+(?:\.[0-9]+)*)\s*(.*)$/;
     const nm = clean.match(numRegex);
     if (nm && typeLabel) {
       return { kicker: `${typeLabel} ${nm[1]}`, title: nm[2].trim() };
     }
 
-    // 若标题就是 "例题"、"定理"、"解析" 等单独分类词
     if (clean === typeLabel || clean === '解析' || clean === '思路分析' || clean === '标注说明' || clean === '教学导引') {
       return { kicker: clean, title: '' };
     }
 
-    // 其他情况：如果有语义标题但无明确编号，kicker 为 typeLabel，title 为原标题
     return { kicker: typeLabel || '条目', title: clean };
   }
 
@@ -1097,7 +1002,6 @@ class ModuleInspectorController {
     `;
   }
 
-  /** XSS 安全的关键词高亮 */
   private highlightText(text: string, query: string): string {
     if (!text || !query) return this.escapeHtml(text);
     const escapedQ = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1112,7 +1016,6 @@ class ModuleInspectorController {
       .join('');
   }
 
-  /** 跳转并执行波纹脉冲高亮与定位状态同步 */
   private navigateTo(url: string, anchorId: string, line: number, itemId?: string) {
     if (!url) return;
 
@@ -1120,13 +1023,13 @@ class ModuleInspectorController {
     const isSamePage = this.normalizePath(location.pathname) === this.normalizePath(targetUrl.pathname);
 
     if (isSamePage) {
-      // 同页跳转：直接滚动 + 波纹高亮 + 同步 hash 到地址栏，不触发 SPA 换页
+
       this.executeHighlight(anchorId, line);
       if (targetUrl.hash) {
         history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, '', targetUrl.href);
       }
     } else {
-      // 跨页跳转：记录待高亮目标并通过 SPA 路由器平滑导航
+
       const highlightTarget = { anchorId, line, itemId: itemId || this.locatedItemId, timestamp: Date.now() };
       sessionStorage.setItem('dsh-pending-highlight', JSON.stringify(highlightTarget));
 
@@ -1168,7 +1071,7 @@ class ModuleInspectorController {
     if (targetEl) {
       targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
       targetEl.classList.remove('dsh-inspector-pulse');
-      // 强制触发一次重绘以重置动画
+
       void targetEl.offsetWidth;
       targetEl.classList.add('dsh-inspector-pulse');
 
@@ -1199,7 +1102,7 @@ class ModuleInspectorController {
           });
         }
       } catch {
-        /* 忽略 */
+
       }
     };
 
@@ -1245,7 +1148,7 @@ class ModuleInspectorController {
 }
 
 export function initModuleInspector() {
-  // 如果 body 下已经有运行中的实例，清理页面新插入的重复壳
+
   const existingInBody = document.querySelector('body > #dsh-inspector-root');
   const allInstances = document.querySelectorAll('#dsh-inspector-root');
   if (existingInBody && allInstances.length > 1) {
@@ -1262,12 +1165,10 @@ export function initModuleInspector() {
     controller.init();
     (window as unknown as Record<string, unknown>).__dshModuleInspector = controller;
   } else {
-    // 确保已有 controller 的 rootEl 在 body 下
+
     const rootEl = document.getElementById('dsh-inspector-root');
     if (rootEl && rootEl.parentElement !== document.body) {
       document.body.appendChild(rootEl);
     }
   }
 }
-
-

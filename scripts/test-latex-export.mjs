@@ -18,7 +18,6 @@ console.log('================================================================');
 console.log('🧪 开始运行 LaTeX 练习册与试卷导出引擎全量校验 (Jinwen-XU/homework)');
 console.log('================================================================\n');
 
-// 1. 测试典型公式转换
 console.log('--- [阶段 1] 测试典型复杂公式格式化 ---');
 const testFormulas = [
   '已知非负数列 $\\{a_n\\}, \\{b_n\\}, \\{c_n\\}$．且 $\\lim_{n \\to \\infty} a_n = 0$, $\\lim_{n \\to \\infty} b_n = 1$, $\\lim_{n \\to \\infty} c_n = +\\infty$，则 ( )．',
@@ -36,28 +35,23 @@ testFormulas.forEach((tf, idx) => {
 });
 console.log('✅ 典型公式格式化完成！\n');
 
-// 2. 检查 LaTeX 语法平衡辅助函数
 function validateLatexSyntax(latexCode, docId) {
   const errors = [];
 
-  // 占位符残留
   if (/§§|___MATH/.test(latexCode)) {
     errors.push('包含未还原的占位符');
   }
 
-  // HTML 标签残留
   const htmlMatch = latexCode.match(/<\/?[a-z][a-z0-9]*[^<>]*>/i);
   if (htmlMatch) {
     errors.push(`包含残留 HTML 标签: ${htmlMatch[0]}`);
   }
 
-  // HTML 实体残留
   const entityMatch = latexCode.match(/&(?:nbsp|amp|lt|gt|quot|#39);/);
   if (entityMatch) {
     errors.push(`包含残留 HTML 实体: ${entityMatch[0]}`);
   }
 
-  // 环境闭合检查
   const envs = ['problem', 'solution', 'tasks', 'document', 'tabular', 'center'];
   envs.forEach(env => {
     const beginMatches = (latexCode.match(new RegExp(`\\\\begin\\{${env}\\}`, 'g')) || []).length;
@@ -70,7 +64,6 @@ function validateLatexSyntax(latexCode, docId) {
   return errors;
 }
 
-// 3. 工科数学分析 7 个章节全量生成测试
 console.log('--- [阶段 2] 工科数学分析 1511 题按章节测试 ---');
 let chPassed = 0;
 let chFailed = 0;
@@ -91,7 +84,7 @@ for (const [ch, qList] of Object.entries(rawEx.chapters)) {
   }));
 
   try {
-    // 测试 handout 模板 (附录答案)
+
     const docHandout = generateLatexDocument(sample, {
       template: 'handout',
       title: `工科数学分析 · 第 ${ch} 章 练习册`,
@@ -104,7 +97,6 @@ for (const [ch, qList] of Object.entries(rawEx.chapters)) {
       throw new Error(errHandout.join('; '));
     }
 
-    // 测试 exam 模板 (纯题自测)
     const docExam = generateLatexDocument(sample, {
       template: 'exam',
       title: `工科数学分析 · 第 ${ch} 章 课程自测试卷`,
@@ -126,7 +118,6 @@ for (const [ch, qList] of Object.entries(rawEx.chapters)) {
   }
 }
 
-// 3.5 卷头与空间节省模式专项测试 (standard / compact / none)
 console.log('--- [阶段 2.5] 卷头与元数据模式专项测试 ---');
 const sampleHeaderQ = [{
   id: 'test-q-1',
@@ -141,7 +132,6 @@ const sampleHeaderQ = [{
   score: 5
 }];
 
-// 测试 1: 无卷头极简省纸模式
 const docNone = generateLatexDocument(sampleHeaderQ, {
   headerMode: 'none',
   pageNumbering: 'none'
@@ -154,7 +144,6 @@ if (!/\\pagestyle\{empty\}/.test(docNone)) {
 }
 console.log('✅ 无卷头省纸模式测试通过 (0 卷头占用)');
 
-// 测试 2: 紧凑单行小卷头模式
 const docCompact = generateLatexDocument(sampleHeaderQ, {
   headerMode: 'compact',
   title: '高等数学阶段测试'
@@ -164,7 +153,6 @@ if (!/\{\\large\\bfseries 高等数学阶段测试\}/.test(docCompact)) {
 }
 console.log('✅ 紧凑单行卷头模式测试通过');
 
-// 测试 3: 标准学术卷头 + CC BY-NC-SA 4.0 许可协议
 const docStandard = generateLatexDocument(sampleHeaderQ, {
   headerMode: 'standard',
   title: '工科数学分析 · 期末测试',
@@ -221,7 +209,6 @@ for (let i = 0; i < dbQuestions.length; i += 100) {
   }
 }
 
-// 5. 保存代表性输出文件至 public 目录
 const sampleQuestions = rawEx.chapters['1'].slice(0, 15).map(q => ({
   id: q.id,
   type: q.meta?.type || 'calc',

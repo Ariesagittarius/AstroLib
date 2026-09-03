@@ -31,7 +31,7 @@ function lsSet(k: string, v: string): void { try { localStorage.setItem(k, v); }
 function decorateFootnotes(html: string, decorate = true): string {
   if (!decorate || !html) return html || '';
   const protectedBlocks: string[] = [];
-  // 保护 pre, code, a 标签，以及包含数学公式的标签与 HTML 属性，避免数学公式下标被误换为链接
+
   let safe = html.replace(/(<(?:pre|code|a|p\s+class="md-math")[^>]*>[\s\S]*?<\/(?:pre|code|a|p)>|<[^>]+>)/gi, (m) => {
     protectedBlocks.push(m);
     return `___FN_PROT_${protectedBlocks.length - 1}___`;
@@ -118,7 +118,6 @@ function safeLink(url: string): string {
   u = u.replace(/&amp;/g, '&');
   if (/^javascript:/i.test(u) || /^data:/i.test(u) || /^vbscript:/i.test(u)) return '';
 
-  // 剔除可能被误捕获的尾部标点（如右括号、句号、分号等）
   u = u.replace(/[),.，。；;!?！？、]+$/, '').trim();
   if (!u) return '';
 
@@ -170,8 +169,6 @@ function renderInline(s: string, openNew = true): string {
   const rel = openNew ? 'rel="noopener"' : '';
   const placeholders: string[] = [];
 
-  // 1. Markdown 链接 [text](url "title") 或 [text]( <url> )
-  // 兼容括号内首尾空白、换行、尖括号包围及可选引号 title
   s = s.replace(/\[([^\]\n]+)\]\(\s*<?([^)\s>]+)>?(?:\s+["'][^"']*["'])?\s*\)/g, (_m, text, url) => {
     const href = safeLink(url);
     if (!href) return esc(`[${text}](${url})`);
@@ -185,7 +182,6 @@ function renderInline(s: string, openNew = true): string {
     return `___LINK_PLACEHOLDER_${placeholders.length - 1}___`;
   });
 
-  // 2. 裸路径/各类畸形 collections 链接（含 https://collections/...、//collections/...、/collections/...）
   s = s.replace(/(^|[^\w"'/=])((?:https?:)?\/\/[^\s<>"']*collections\/[^\s<>"']+|\/?collections\/[^\s<>"']+)/gi, (fullMatch, prefix, rawUrl) => {
     let cleanUrl = rawUrl.replace(/[),.，。；;!?！？、]+$/, '');
     const trailing = rawUrl.slice(cleanUrl.length);
@@ -196,13 +192,11 @@ function renderInline(s: string, openNew = true): string {
     return `${prefix}___LINK_PLACEHOLDER_${placeholders.length - 1}___${trailing}`;
   });
 
-  // 3. 行内基础 Markdown 格式
   s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
   s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
 
-  // 4. 还原所有链接占位符
   s = s.replace(/___LINK_PLACEHOLDER_(\d+)___/g, (_m, idx) => placeholders[Number(idx)]);
 
   return s;
@@ -229,7 +223,7 @@ function mdToHtml(md: string, openNew = true): string {
       out.push(`<pre><code>${buf.join('\n')}</code></pre>`);
       continue;
     }
-    // $$ 数学块（支持单行与多行，含流式截断未闭合 $$ 的自动兜底闭合）
+
     if (/^\s*\$\$/.test(line)) {
       const buf = [line.trim()];
       if (/^\s*\$\$.*\$\$\s*$/.test(line) && line.trim().length > 4) {

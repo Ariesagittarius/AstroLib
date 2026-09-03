@@ -1,10 +1,3 @@
-/**
- * Reader Feedback & Errata System · Client Controller
- *
- * Implements paragraph/formula selection, keyboard shortcut handling (Alt+F),
- * VitePress-themed dialog interaction, and dual-mode issue dispatching.
- */
-
 import {
   type ErrataPayload,
   type FeedbackConfig,
@@ -32,7 +25,6 @@ let currentConfig: FeedbackConfig = {
   botEndpoint: '',
 };
 
-// UI Element references
 let rootEl: HTMLElement | null = null;
 let bannerEl: HTMLElement | null = null;
 let badgeEl: HTMLElement | null = null;
@@ -62,7 +54,6 @@ function getPageMetadata(): { bookTitle: string; bookSlug: string; chapterTitle:
   const h1 = document.querySelector('h1')?.textContent?.trim() || '';
   const pageTitle = document.title.split('|')[0].split('—')[0].trim() || 'AstroLib Documentation';
 
-  // Derive book title from sidebar or path if available
   const aside = document.querySelector('aside.custom-page-sidebar');
   const bookKey = aside?.getAttribute('data-book-key') || '';
   const [colSlug = '', bookSlug = ''] = bookKey.split('/');
@@ -82,7 +73,6 @@ function extractTargetData(el: HTMLElement, rawTarget?: Element | null): BlockTa
   const file = el.getAttribute('data-src-file') || guessFile();
   const kind = el.getAttribute('data-src-kind') || 'paragraph';
 
-  // Check if click was directly on a KaTeX formula
   const katexEl = rawTarget?.closest('.katex[data-latex], .katex-display[data-latex]');
   if (katexEl) {
     const latex = katexEl.getAttribute('data-latex') || '';
@@ -96,7 +86,6 @@ function extractTargetData(el: HTMLElement, rawTarget?: Element | null): BlockTa
     };
   }
 
-  // If the block itself is a display formula
   if (kind === 'formula') {
     const latex = el.getAttribute('data-latex') || el.querySelector('[data-latex]')?.getAttribute('data-latex') || '';
     return {
@@ -109,7 +98,6 @@ function extractTargetData(el: HTMLElement, rawTarget?: Element | null): BlockTa
     };
   }
 
-  // Plain text excerpt (trim and limit length to reasonable snippet)
   let excerpt = el.innerText?.trim() || el.textContent?.trim() || '';
   if (excerpt.length > 800) {
     excerpt = excerpt.slice(0, 800) + '...';
@@ -124,8 +112,6 @@ function extractTargetData(el: HTMLElement, rawTarget?: Element | null): BlockTa
     isFormula: false,
   };
 }
-
-/* ---------------- UI Construction ---------------- */
 
 function ensureUI(): HTMLElement {
   if (rootEl) return rootEl;
@@ -205,8 +191,6 @@ function hideBadge(): void {
   if (badgeEl) badgeEl.style.display = 'none';
 }
 
-/* ---------------- Errata Dialog ---------------- */
-
 function openErrataModal(target: BlockTarget): void {
   ensureUI();
   if (!modalEl) return;
@@ -218,7 +202,6 @@ function openErrataModal(target: BlockTarget): void {
   const box = document.createElement('div');
   box.className = 'sl-fb-modal-box';
 
-  // Modal Header
   const header = document.createElement('div');
   header.className = 'sl-fb-modal-head';
   header.innerHTML = `
@@ -230,7 +213,6 @@ function openErrataModal(target: BlockTarget): void {
   `;
   header.querySelector('.sl-fb-modal-close')?.addEventListener('click', closeErrataModal);
 
-  // Modal Body
   const body = document.createElement('div');
   body.className = 'sl-fb-modal-body';
 
@@ -282,14 +264,12 @@ function openErrataModal(target: BlockTarget): void {
     <div class="sl-fb-status-msg" style="display: none;"></div>
   `;
 
-  // Dynamic category switch
   const catSelect = body.querySelector('#sl-fb-cat-select') as HTMLSelectElement;
   const customCatField = body.querySelector('.sl-fb-custom-cat-field') as HTMLElement;
   catSelect.addEventListener('change', () => {
     customCatField.style.display = catSelect.value === 'custom' ? 'block' : 'none';
   });
 
-  // Modal Footer Actions
   const foot = document.createElement('div');
   foot.className = 'sl-fb-modal-foot';
 
@@ -315,7 +295,6 @@ function openErrataModal(target: BlockTarget): void {
   foot.appendChild(btnGithubUrl);
   foot.appendChild(btnSubmitBot);
 
-  // Helper to gather form payload
   const gatherPayload = (): ErrataPayload | null => {
     const descInput = body.querySelector('#sl-fb-desc') as HTMLTextAreaElement;
     const desc = descInput.value.trim();
@@ -354,7 +333,6 @@ function openErrataModal(target: BlockTarget): void {
     };
   };
 
-  // Action: Copy Markdown
   btnCopy.addEventListener('click', async () => {
     const payload = gatherPayload();
     if (!payload) return;
@@ -367,7 +345,6 @@ function openErrataModal(target: BlockTarget): void {
     }
   });
 
-  // Action: Open in GitHub URL
   btnGithubUrl.addEventListener('click', () => {
     const payload = gatherPayload();
     if (!payload) return;
@@ -377,7 +354,6 @@ function openErrataModal(target: BlockTarget): void {
     setFeedbackActive(false);
   });
 
-  // Action: Submit via Bot Proxy
   btnSubmitBot.addEventListener('click', async () => {
     const payload = gatherPayload();
     if (!payload) return;
@@ -389,10 +365,10 @@ function openErrataModal(target: BlockTarget): void {
     btnSubmitBot.disabled = true;
 
     if (!currentConfig.botEndpoint) {
-      // If endpoint is not configured, fall back gracefully to URL submission
+
       statusMsgEl.className = 'sl-fb-status-msg sl-fb-status-warn';
       statusMsgEl.innerHTML = `
-        当前站点未配置 Serverless Bot API 端点，已为您无缝切换至 
+        当前站点未配置 Serverless Bot API 端点，已为您无缝切换至
         <a href="${buildGithubIssueUrl(payload, currentConfig)}" target="_blank" rel="noopener">GitHub 预填提交页</a>。
       `;
       btnSubmitBot.disabled = false;
@@ -424,7 +400,6 @@ function openErrataModal(target: BlockTarget): void {
   modalEl.appendChild(box);
   modalEl.style.display = 'flex';
 
-  // Focus description input
   const descInput = body.querySelector('#sl-fb-desc') as HTMLTextAreaElement;
   descInput?.focus();
 }
@@ -439,8 +414,6 @@ function closeErrataModal(): void {
 function isModalOpen(): boolean {
   return !!modalEl && modalEl.style.display !== 'none';
 }
-
-/* ---------------- State Management ---------------- */
 
 export function setFeedbackActive(enable: boolean): void {
   active = enable;
@@ -465,8 +438,6 @@ export function setFeedbackActive(enable: boolean): void {
 export function toggleFeedback(): void {
   setFeedbackActive(!active);
 }
-
-/* ---------------- Event Handlers ---------------- */
 
 function onKeyDown(e: KeyboardEvent): void {
   const isAltF = (e.altKey || e.metaKey) && (e.key === 'f' || e.key === 'F');
@@ -520,7 +491,6 @@ function onClick(e: MouseEvent): void {
   if (!target) return;
   if (rootEl && rootEl.contains(target)) return;
 
-  // Don't intercept clicks inside details summary navigation
   if (target.closest('summary')) return;
 
   const block = findBlock(target);
@@ -531,8 +501,6 @@ function onClick(e: MouseEvent): void {
     openErrataModal(data);
   }
 }
-
-/* ---------------- Public Initializer ---------------- */
 
 export function initFeedback(config?: Partial<FeedbackConfig>): void {
   const w = window as any;
@@ -550,7 +518,6 @@ export function initFeedback(config?: Partial<FeedbackConfig>): void {
   document.addEventListener('mouseout', onMouseOut, true);
   document.addEventListener('click', onClick, true);
 
-  // Global trigger buttons hook (data-feedback-trigger)
   document.addEventListener('click', (e) => {
     const btn = (e.target as Element | null)?.closest('[data-feedback-trigger]');
     if (btn) {
@@ -559,7 +526,6 @@ export function initFeedback(config?: Partial<FeedbackConfig>): void {
     }
   });
 
-  // Page lifecycle synchronization
   const resetOnPageChange = (): void => {
     if (active) setFeedbackActive(false);
   };

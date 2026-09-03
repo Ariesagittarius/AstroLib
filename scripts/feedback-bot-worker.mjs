@@ -1,19 +1,6 @@
-/**
- * AstroLib Errata Feedback · Serverless Bot Proxy Worker
- *
- * Cloudflare Worker / Serverless Edge Function implementation for silent
- * GitHub Issue creation on behalf of readers.
- *
- * Deployment (Cloudflare Workers):
- *   1. Paste this script into Cloudflare Workers dashboard.
- *   2. Set environment secret: GITHUB_TOKEN (Personal Access Token with `issues:write` or `public_repo` permission).
- *   3. Optional secret: ALLOWED_ORIGIN (e.g. "https://astrolib.site" or "*" for dev).
- *   4. Paste the worker URL into `src/config/features.config.mjs` -> `features.feedback.config.botEndpoint`.
- */
-
 export default {
   async fetch(request, env, ctx) {
-    // 1. Resolve Environment Variables (Multi-runtime fallback)
+
     const githubToken =
       env?.GITHUB_TOKEN ||
       (typeof GITHUB_TOKEN !== 'undefined' ? GITHUB_TOKEN : undefined) ||
@@ -24,14 +11,13 @@ export default {
       (typeof ALLOWED_ORIGIN !== 'undefined' ? ALLOWED_ORIGIN : undefined) ||
       '*';
 
-    // 2. Handle CORS Headers (Intelligent multi-origin & local development support)
     const origin = request.headers.get('Origin') || '';
     let corsOrigin = '*';
 
     if (allowedOrigin && allowedOrigin !== '*') {
       const allowedList = allowedOrigin.split(',').map((s) => s.trim().toLowerCase());
       const lowerOrigin = origin.toLowerCase();
-      // Allow if explicit match, or local dev (localhost / 127.0.0.1), or Vercel preview
+
       if (
         !origin ||
         allowedList.includes(lowerOrigin) ||
@@ -76,7 +62,6 @@ export default {
       });
     }
 
-    // 3. Validate GitHub Token
     if (!githubToken) {
       return new Response(
         JSON.stringify({
@@ -87,7 +72,6 @@ export default {
       );
     }
 
-    // 3. Parse Request Payload
     let body;
     try {
       body = await request.json();
@@ -109,7 +93,6 @@ export default {
       );
     }
 
-    // 4. Dispatch to GitHub API
     try {
       const ghRes = await fetch(`https://api.github.com/repos/${repo}/issues`, {
         method: 'POST',

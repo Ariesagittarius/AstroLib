@@ -1,29 +1,3 @@
-/**
- * src/ai/llm.mjs
- * -----------------------------------------------------------------------------
- * 能力层原语：生成层 —— 客户端直连 OpenAI 兼容流式接口（BYOK）。
- *
- * 仅在浏览器运行（依赖 fetch / ReadableStream / TextDecoder）。为“书内智能问答”
- * 组装上下文与提示词，并支持：
- *   · 多轮对话（history 逐条拼进 messages）；
- *   · 工具调用（OpenAI function-calling：tools/tool_choice + tool_calls 解析），
- *     以便告诉模型“可用工具查找”，并让宿主执行后回传（供多轮工具循环）；
- *   · max_tokens（回答最大 token 上限）；
- *   · 编号式来源引用（buildContext 给每段标 [1]…[n]，系统提示要求以 [n] 上标引用）。
- *
- * 安全：key 由使用方从 localStorage 读取传入，绝不写入代码或随构建产物暴露；
- * 建议使用方在服务商侧绑定受限 key（低配额/链白域名）。未配置 key 时上层应降级为
- * “仅检索 + 跳转”，不调用本模块。
- * =============================================================================
- */
-
-/**
- * 把 topK 片段拼成供 LLM 使用的上下文块，并给每段标注来源编号 [1][2]…（用于脚注引用）。
- * 每段附带「来源 url」供模型生成指向原文的 markdown 链接；带截断标记。
- * 按字符上限截断（成本硬约束）。
- * @param {Array<{ type?:string, title?:string, text?:string, url?:string }>} chunks
- * @param {number} capChars
- */
 export function buildContext(chunks = [], capChars = 6000) {
   const parts = chunks.map((c, i) => {
     const meta = `【${c.type || '正文'}｜${c.title || ''}】`;
@@ -32,20 +6,11 @@ export function buildContext(chunks = [], capChars = 6000) {
     return `[${i + 1}] ${meta}${url}\n${c.text || ''}${trunc}`;
   });
   let ctx = parts.join('\n\n');
-  // capChars 为 0 或负数表示不设限制（-1 = 用户“不限制上下文”），否则按字符上限截断（成本硬约束）。
+
   if (capChars > 0 && ctx.length > capChars) ctx = `${ctx.slice(0, capChars)}\n…（上下文过长已截断）`;
   return ctx;
 }
 
-/**
- * 系统提示：针对「书中内容」给出**总结性回答**、可溯源、用中文、公式用 $..$；引用用 [编号] 上标。
- * 关键约束（对应真实反馈）：
- *   · 不要只是告诉读者“去某处找”——要把书中相关内容**总结出来直接讲给读者**；
- *   · 鼓励为书中具体内容附上**指向原文件的 markdown 链接**（用片段/工具结果里的来源 url）。
- * discussion=true 时走“自由讨论/深度思考”模式：基于理解深入讲解，需要原文时按需查书。
- * @param {string} bookTitle
- * @param {{ toolsDesc?:string, discussion?:boolean }} opts
- */
 export function buildSystemPrompt(bookTitle = '本书', opts = {}) {
   const common = [
     `你是「${bookTitle}」相关学科的讲解与讨论助手。`,
@@ -91,11 +56,6 @@ export function buildSystemPrompt(bookTitle = '本书', opts = {}) {
   return lines.join('\n');
 }
 
-/**
- * 组装初始 messages：system + 历史（多轮） + 当前用户问题。
- * 返回数组后可被调用方继续 push assistant(tool_calls) / tool 消息，构成工具循环。
- * @param {{ question:string, context:string, bookTitle?:string, history?:Array<{role:string,content:string}>, toolsDesc?:string, discussion?:boolean }} params
- */
 export function buildMessages({ question, context, bookTitle = '本书', history = [], toolsDesc = '', discussion = false }) {
   const messages = [{ role: 'system', content: buildSystemPrompt(bookTitle, { toolsDesc, discussion }) }];
   for (const h of history || []) {
@@ -105,7 +65,7 @@ export function buildMessages({ question, context, bookTitle = '本书', history
   }
   messages.push({
     role: 'user',
-    // discussion：不注入片段上下文，只带问题本身（AI 基于理解与历史讨论；能否检索由模型按需决定）。
+
     content: discussion
       ? question
       : `书中片段（每段有来源编号与“来源 url”，可据此引用并生成指向原文的链接）：\n\n${context}\n\n请根据以上片段回答下面的问题，给出**总结性回答**；引用来源在句末用上标 [编号] 标注，并可为书中具体内容附上指向原文的 markdown 链接：\n${question}`,
@@ -113,17 +73,6 @@ export function buildMessages({ question, context, bookTitle = '本书', history
   return messages;
 }
 
-/**
- * 发起流式对话，逐段回调 onDelta；返回 { text, toolCalls }。
- * - stream 模式下支持 tools / tool_choice / max_tokens；
- * - 若模型请求调用工具，会响应 delta.tool_calls；这里按 index 聚合拼接 arguments，
- *   并在结束时返回 [{ id, name, arguments(object) }]。
- * @param {{
- *   endpoint:string, apiKey?:string, model:string,
- *   messages:Array, onDelta?:(t:string)=>void, signal?:AbortSignal,
- *   tools?:Array, toolChoice?:string|object, maxTokens?:number,
- * }} opts
- */
 export async function streamChat({
   endpoint, apiKey, model, messages, onDelta, signal,
   tools, toolChoice, maxTokens,
@@ -152,7 +101,7 @@ export async function streamChat({
   const decoder = new TextDecoder();
   let buffer = '';
   let full = '';
-  const callAcc = new Map(); // index -> { id, name, arguments }
+  const callAcc = new Map();
   let callSeq = 0;
 
   function absorbToolCalls(toolCalls) {
@@ -192,12 +141,11 @@ export async function streamChat({
           absorbToolCalls(delta.tool_calls);
         }
       } catch {
-        /* 忽略单个不完整 chunk */
+
       }
     }
   }
 
-  // 补齐流式尾部解码与 buffer flush，避免末尾 chunk 遗漏
   buffer += decoder.decode();
   if (buffer) {
     const remainingLines = buffer.split('\n');

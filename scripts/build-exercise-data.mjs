@@ -1,15 +1,3 @@
-// scripts/build-exercise-data.mjs
-// 构建期：为全站题库（《大邮数学集》历年真题与教材课后习题）预渲染 KaTeX 数学公式并进行数据瘦身
-// 输出到:
-//   - public/data/exercises/engineering_analysis/ch{1..7}.json (按章节划分，统一包含教材习题与真题)
-//   - public/data/exercises/engineering_analysis/papers.json (全部试卷索引大纲：教材分章习题集 + 历年真题)
-//   - public/data/exercises/engineering_analysis/papers/p{paper_id}.json (单张试卷/单章习题集全量题目)
-//   - public/data/exercises/engineering_analysis/meta.json (汇总统计)
-//
-// 开关：src/config/features.config.mjs 里 features.exercises.enabled —— 关闭则跳过生成。
-// 用法：
-//   node scripts/build-exercise-data.mjs
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,7 +11,6 @@ const SRC_TEXTBOOK_DATA = path.join(ROOT, 'src', 'data', 'exercises', 'engineeri
 const OUT_DIR = path.join(ROOT, 'public', 'data', 'exercises', 'engineering_analysis');
 const PAPERS_OUT_DIR = path.join(OUT_DIR, 'papers');
 
-/** HTML 实体安全转义 */
 function escapeHtml(s) {
   return String(s || '')
     .replace(/&/g, '&amp;')
@@ -32,30 +19,28 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
-/** 分隔符拆分：$$...$$（display）优先，其次 $...$（inline/multiline） */
 const MATH_SPLIT_RE = /(\$\$[\s\S]+?\$\$|\$[^\$]+?\$)/g;
 
-/** 清理并修复 LaTeX 字符串中的控制字符与转义序列 */
 function sanitizeMathLatex(val) {
   if (typeof val !== 'string') return '';
   let str = val;
-  // 1. FormFeed (0x0C) -> \f
+
   str = str.replace(/\x0c/g, '\\f');
-  // 2. Backspace (0x08) -> \b
+
   str = str.replace(/\x08/g, '\\b');
-  // 3. Vertical Tab (0x0B) -> \v
+
   str = str.replace(/\x0b/g, '\\v');
-  // 4. Carriage Return (not followed by \n) -> \r
+
   str = str.replace(/\r(?!\n)/g, '\\r');
-  // 5. Tab before letters -> \t
+
   str = str.replace(/\t([a-zA-Z])/g, '\\t$1');
-  // 6. Standalone tabs in math -> space
+
   str = str.replace(/(\$\$[\s\S]+?\$\$|\$[^\$\n]+?\$)/g, (m) => m.replace(/\t/g, ' '));
-  // 7. Linefeed before math commands
+
   str = str.replace(/(\$\$[\s\S]+?\$\$|\$[^\$\n]+?\$)/g, (m) =>
     m.replace(/\n(u|eq|ne|not|nabla|notin|nrightarrow|natural|nearrow|nwarrow|neg|normalsize)\b/g, '\\n$1')
   );
-  // 8. 针对已知宏定义与特殊符号容错
+
   str = str.replace(/\\iiiint_{\\Omega}/g, '\\iiint_{\\Omega}');
   str = str.replace(/\\overparen\{([^}]+)\}/g, '\\stackrel{\\frown}{$1}');
   str = str.replace(/\\wideparen\{([^}]+)\}/g, '\\stackrel{\\frown}{$1}');
@@ -74,18 +59,11 @@ const KATEX_BUILD_OPTIONS = {
   },
 };
 
-/**
- * 将混排 Markdown/纯文本与 LaTeX 数学公式的字符串编译为静态 HTML。
- * - 支持 Markdown 图片语法 ![](/data/exercises/...) 转换为自适应响应式 <img>
- * - 公式段采用 KaTeX output: 'html' 编译，紧凑且零 MathML 冗余
- * - 普通文本段做 HTML 转义与换行处理
- */
 function renderMathText(text) {
   if (!text) return '';
   const str = sanitizeMathLatex(String(text)).trim();
   if (!str) return '';
 
-  // 1. 保护 Markdown 图片标记，防止被公式拆分或 HTML 转义破坏
   const images = [];
   const textWithImagePlaceholders = str.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, url) => {
     const idx = images.length;
@@ -122,7 +100,6 @@ function renderMathText(text) {
     htmlOut = out.join('');
   }
 
-  // 2. 还原图片为学术风格 HTML
   if (images.length > 0) {
     htmlOut = htmlOut.replace(/___EX_IMAGE_TOKEN_(\d+)___/g, (_, idxStr) => {
       const img = images[parseInt(idxStr, 10)];
@@ -191,14 +168,13 @@ function main() {
   let totalQuestionsCount = 0;
   let examQuestionsCount = 0;
   let tbQuestionsCount = 0;
-  const papersMap = new Map(); // paper_id -> paperObj
+  const papersMap = new Map();
 
-  // 第一遍：遍历全书 1~7 章，将每章的教材习题与真题合并
   for (let chId = 1; chId <= 7; chId++) {
     const chKey = String(chId);
     const tbList = tbChapters[chKey] || [];
     const examList = examChapters[chKey] || [];
-    // 教材习题优先排在前面，便于学生按节针对性复习教材
+
     const qList = [...tbList, ...examList];
 
     const slimQuestions = [];
@@ -237,7 +213,6 @@ function main() {
       sectionSlugs[sec] = secSlug;
       if (secTitle) sectionTitles[sec] = secTitle;
 
-      // 试卷元信息
       const paperId = q.source?.paper_id ?? (isTb ? 1000 + chId : 1);
       const rawTitle = q.source?.raw_title || '';
       const cleanTitle = cleanPaperTitle(rawTitle) || `${q.source?.academic_year || ''} ${category}`;
@@ -247,7 +222,6 @@ function main() {
       const score = q.meta?.score ?? 5;
       const group = q.meta?.group || (isTb ? 'A' : '');
 
-      // 预编译公式 HTML 与清洗原始文本
       const stemRawClean = sanitizeMathLatex(q.content?.stem || '');
       const stemHtml = renderMathText(stemRawClean);
       const options = (q.content?.options || []).map((opt) => ({
@@ -260,12 +234,10 @@ function main() {
       const hintsHtml = q.solution?.hints ? renderMathText(q.solution.hints) : '';
       const stepsHtml = q.solution?.steps ? renderMathText(q.solution.steps) : '';
 
-      // 规范化出处标签
       const sourceStr = isTb
         ? (q.source?.source_desc || `${cleanTitle} · ${sectionType}第 ${paperQNum} 题`)
         : `${cleanTitle} · 原卷第 ${paperQNum} 题`.trim();
 
-      // 构建用于极速全文检索的纯文本索引小写串
       const searchRaw = [
         q.id,
         q.source_type || 'exam',
@@ -315,7 +287,7 @@ function main() {
       if (options.length > 0) slimItem.options = options;
       if (hintsHtml) slimItem.hints_html = hintsHtml;
       if (stepsHtml) slimItem.steps_html = stepsHtml;
-      // 避免题干与小问双重重复：教材习题的 stem_html 已完整包含所有小问，不再额外注入冗余 sub_questions
+
       if (!isTb && q.content?.sub_questions && q.content.sub_questions.length > 0) {
         slimItem.sub_questions = q.content.sub_questions.map(sub => ({
           sub_id: sub.sub_id,
@@ -326,7 +298,6 @@ function main() {
 
       slimQuestions.push(slimItem);
 
-      // 归集到试卷 Map
       if (!papersMap.has(paperId)) {
         papersMap.set(paperId, {
           paper_id: paperId,
@@ -356,7 +327,6 @@ function main() {
       paperObj.questions.push(slimItem);
     }
 
-    // 组织小节列表
     const sections = Object.keys(sectionCounts)
       .sort((a, b) => {
         const na = parseFloat(a) || 999;
@@ -396,11 +366,10 @@ function main() {
     console.log(`  [build] 第 ${chId} 章: ${chapterTitle} (${slimQuestions.length} 题 [教材:${tbList.length}, 真题:${examList.length}]) -> ch${chId}.json [${outSizeKb} KB]`);
   }
 
-  // 第二遍：处理所有试卷并输出单卷文件及总试卷索引
   const papersSummaryList = [];
 
   for (const [paperId, paperObj] of papersMap.entries()) {
-    // 试卷内排序
+
     paperObj.questions.sort((a, b) => {
       if (a.paper_q_num !== b.paper_q_num) {
         return a.paper_q_num - b.paper_q_num;
@@ -408,7 +377,6 @@ function main() {
       return (a.order_in_paper || 0) - (b.order_in_paper || 0);
     });
 
-    // 统计试卷题型
     const paperTypeCounts = { choice: 0, blank: 0, calc: 0, proof: 0 };
     paperObj.questions.forEach((q) => {
       paperTypeCounts[q.type] = (paperTypeCounts[q.type] || 0) + 1;
@@ -451,7 +419,6 @@ function main() {
     papersSummaryList.push(summaryItem);
   }
 
-  // 试卷排序：教材习题卷优先排在最前 (1001..1007)，历年真题按学年倒序与 paper_id 排序
   papersSummaryList.sort((a, b) => {
     const isTbA = a.category === '教材课后习题';
     const isTbB = b.category === '教材课后习题';

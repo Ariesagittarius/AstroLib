@@ -8,7 +8,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 
-// 1. 查找 Git 可执行文件路径
 function getGitPath() {
   const candidates = [
     'git',
@@ -20,7 +19,7 @@ function getGitPath() {
       execSync(`"${cmd}" --version`, { stdio: 'ignore' });
       return cmd;
     } catch {
-      // try next candidate
+
     }
   }
   throw new Error('未找到 Git 可执行程序，请确认系统已安装 Git！');
@@ -33,12 +32,11 @@ function runGit(args, cwd = PROJECT_ROOT, options = {}) {
   return execSync(cmd, { cwd, encoding: 'utf8', stdio: options.stdio || 'pipe', ...options });
 }
 
-// 2. 解析 CLI 参数
 function parseArgs() {
   const args = process.argv.slice(2);
   const options = {
     message: '',
-    mode: 'all', // 'clean', 'private', 'all'
+    mode: 'all',
     force: false,
     dryRun: false,
     help: false,
@@ -96,7 +94,6 @@ function showHelp() {
 `);
 }
 
-// 3. 智能生成学术规范 Conventional Commit 提交信息
 function generateSmartCommitMessage(statusLines) {
   const filePaths = statusLines.map((line) => line.slice(3).trim());
 
@@ -153,16 +150,13 @@ function generateSmartCommitMessage(statusLines) {
   return `${type}(${scope}): ${desc}`;
 }
 
-// 4. 校验提交信息格式是否符合项目规范
 function normalizeCommitMessage(rawMsg, statusLines) {
   let msg = (rawMsg || '').trim();
 
-  // 如果未提供，自动生成
   if (!msg) {
     return generateSmartCommitMessage(statusLines);
   }
 
-  // 移除非 ASCII 字符（如中文或 emoji）
   const asciiClean = msg.replace(/[^\x00-\x7F]/g, '').trim();
 
   const conventionalPattern =
@@ -172,7 +166,6 @@ function normalizeCommitMessage(rawMsg, statusLines) {
     return asciiClean;
   }
 
-  // 如果提供了描述但不符合常规前缀，智能包裹为 feat(core): <desc>
   const sanitized = asciiClean.replace(/^[^a-zA-Z0-9]+/, '');
   if (sanitized.length > 0) {
     return `feat(core): ${sanitized.toLowerCase()}`;
@@ -181,7 +174,6 @@ function normalizeCommitMessage(rawMsg, statusLines) {
   return generateSmartCommitMessage(statusLines);
 }
 
-// 5. 主执行逻辑
 async function main() {
   const options = parseArgs();
   if (options.help) {
@@ -193,7 +185,6 @@ async function main() {
   console.log('  🚀 AstroLib 一键自动同步与推送 (One-Click Update & Push)');
   console.log('===================================================================\n');
 
-  // 1. 检查 Git 仓库状态
   const branch = runGit('rev-parse --abbrev-ref HEAD').trim();
   const remotes = runGit('remote').split(/\r?\n/).filter(Boolean);
   const statusOutput = runGit('status --porcelain').trim();
@@ -202,7 +193,6 @@ async function main() {
   console.log(`📌 当前分支: \x1b[36m${branch}\x1b[0m`);
   console.log(`🔗 已配置远程仓库: \x1b[33m${remotes.join(', ') || '无'}\x1b[0m`);
 
-  // 2. 处理工作区变动
   if (statusLines.length > 0) {
     console.log(`\n📦 检测到 \x1b[32m${statusLines.length}\x1b[0m 个未提交的文件变动:`);
     const preview = statusLines.slice(0, 8);
@@ -231,7 +221,6 @@ async function main() {
     console.log('\n✨ 本地工作区整洁，无未提交更改。');
   }
 
-  // 3. 执行远程推送
   console.log('\n-------------------------------------------------------------------');
   console.log('📡 正在调用远程发布管线 (scripts/git-clean-push.mjs)...');
   console.log('-------------------------------------------------------------------');

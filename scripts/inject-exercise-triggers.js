@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const path = require('path');
 
 const dir = 'src/content/docs/collections/math/engineering_analysis';
@@ -25,9 +25,8 @@ sectionFiles.forEach(file => {
     secTitle = titleMatch[1];
   }
 
-  // 1. 确保导入 ExerciseTrigger
   if (!content.includes('ExerciseTrigger')) {
-    // 找到 frontmatter 结束位置 ---
+
     const fmEnd = content.indexOf('---', 3);
     if (fmEnd !== -1) {
       const insertPos = fmEnd + 3;
@@ -35,7 +34,6 @@ sectionFiles.forEach(file => {
     }
   }
 
-  // 2. 确保包含 ExerciseTrigger 标签
   if (!content.includes('<ExerciseTrigger')) {
     const triggerTag = `\n\n<ExerciseTrigger chapter={${ch}} section="${sec}" title="${secTitle} 课后真题与自测练习" />\n`;
     content = content.trimEnd() + triggerTag;

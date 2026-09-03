@@ -172,7 +172,7 @@ export function buildBookTOC(
     const { type, number } = parseTitleFromConfig(rawTitle, modules);
     const modMeta = modules[type] || {};
     const chipClass = modMeta.theme || 'chip-default';
-    // 学术环境标准显示名：定理、定义、性质、推论等保留规范全名，例题简称为“例”
+
     const displayLabel = (type === '定理' || type === '定义' || type === '性质' || type === '推论' || type === '引理' || type === '命题' || type === '公理')
       ? type
       : (modMeta.short || type);
@@ -215,7 +215,6 @@ export function buildBookTOC(
       const tocH = parseFloat(rootStyle.getPropertyValue('--sl-mobile-toc-height')) || 0;
       const top = target.getBoundingClientRect().top + window.scrollY - navH - tocH - 16;
 
-      // 若页内大纲跳转垂直位移较大 (> 350px)，记录跳转来源方便读者一键原路返回
       if (Math.abs(top - window.scrollY) > 350) {
         recordJump({
           sourceText: rawTitle,
@@ -232,8 +231,6 @@ export function buildBookTOC(
     links.push(a);
   }
 
-  // 使用 DocumentFragment 批量构建 TOC 条目，最终一次性挂载到实时 DOM，
-  // 避免逐条 appendChild 到 live DOM 引起多次重排与分阶段闪烁
   const desktopFrag = document.createDocumentFragment();
   const mobileFrag = mobileTocList ? document.createDocumentFragment() : null;
 
@@ -306,9 +303,6 @@ export function tameInlineMathWhenReady(): void {
   }
 }
 
-/**
- * 每次导航初始化入口
- */
 export function initPageSidebar(): void {
   formatMultipleChoiceQuestions();
   initJumpNavigator();

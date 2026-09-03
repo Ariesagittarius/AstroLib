@@ -245,7 +245,6 @@ function showDisambiguationPopover(
       e.preventDefault();
       closeDisambiguationPopover();
 
-      // 记录跳转来源
       recordJump({
         badgeEl: badge,
         sourceText: badge.textContent?.trim(),
@@ -294,12 +293,10 @@ function showDisambiguationPopover(
   let left = rect.left + window.scrollX;
   let top = rect.bottom + window.scrollY + 6;
 
-  // 智能防溢出：下方空间不足时自动翻转至上方
   if (rect.bottom + popoverHeight > window.innerHeight - 16 && rect.top > popoverHeight + 16) {
     top = Math.max(16, rect.top + window.scrollY - popoverHeight - 6);
   }
 
-  // 左右边界 clamp
   if (left + popoverWidth > window.innerWidth - 16) {
     left = Math.max(12, window.innerWidth - popoverWidth - 16);
   }
@@ -407,9 +404,6 @@ export function upgradeStaticBadges(root: ParentNode, globalBlockIndex: Record<s
   });
 }
 
-/**
- * 客户端全时无条件高阶联动引擎
- */
 export function linkPageElements(
   bookConfig: any,
   globalBlockIndex: Record<string, any>,
@@ -638,7 +632,7 @@ export function linkPageElements(
 }
 
 export function attachInteractiveListeners(): void {
-  // 1. 图文联动
+
   document.querySelectorAll('.fig-ref-badge.interactive-badge').forEach((badge) => {
     if (badge.classList.contains('listeners-attached')) return;
     badge.classList.add('listeners-attached');
@@ -684,7 +678,6 @@ export function attachInteractiveListeners(): void {
     });
   });
 
-  // 2. 块组件联动
   document.querySelectorAll('.block-ref-badge.interactive-badge').forEach((badge) => {
     if (badge.classList.contains('listeners-attached')) return;
     badge.classList.add('listeners-attached');
@@ -728,7 +721,7 @@ export function attachInteractiveListeners(): void {
 
     badge.addEventListener('click', (e) => {
       e.preventDefault();
-      // 记录跳转来源
+
       recordJump({
         badgeEl: badge as HTMLElement,
         sourceText: badge.textContent?.trim(),
@@ -758,4 +751,3 @@ export function attachInteractiveListeners(): void {
     });
   });
 }
-

@@ -1,10 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-/**
- * 语法状态机：剥离 JavaScript / TypeScript / JSONC 格式中的注释
- * 精确处理单双引号、模板字符串（支持多层 ${...} 嵌套）、正则表达式字面量
- */
 export function stripJsTsComments(code) {
   let output = '';
   const len = code.length;
@@ -19,7 +15,7 @@ export function stripJsTsComments(code) {
     const currentState = stateStack.length > 0 ? stateStack[stateStack.length - 1] : 'DEFAULT';
 
     if (currentState === 'DEFAULT' || currentState === 'TEMPLATE_EXPR') {
-      // 1. 单行注释 //
+
       if (ch === '/' && next === '/') {
         i += 2;
         while (i < len && code[i] !== '\n' && code[i] !== '\r') {
@@ -28,7 +24,6 @@ export function stripJsTsComments(code) {
         continue;
       }
 
-      // 2. 多行注释 /* ... */
       if (ch === '/' && next === '*') {
         i += 2;
         while (i < len && !(code[i] === '*' && i + 1 < len && code[i + 1] === '/')) {
@@ -38,7 +33,6 @@ export function stripJsTsComments(code) {
         continue;
       }
 
-      // 3. 单引号字符串
       if (ch === "'") {
         output += ch;
         i++;
@@ -57,7 +51,6 @@ export function stripJsTsComments(code) {
         continue;
       }
 
-      // 4. 双引号字符串
       if (ch === '"') {
         output += ch;
         i++;
@@ -76,7 +69,6 @@ export function stripJsTsComments(code) {
         continue;
       }
 
-      // 5. 模板字符串 `...`
       if (ch === '`') {
         output += ch;
         i++;
@@ -84,7 +76,6 @@ export function stripJsTsComments(code) {
         continue;
       }
 
-      // 6. 正则表达式判断
       if (ch === '/') {
         if (isRegExpStart(output)) {
           output += ch;
@@ -114,7 +105,6 @@ export function stripJsTsComments(code) {
         }
       }
 
-      // 7. 处理模板表达式花括号闭合
       if (currentState === 'TEMPLATE_EXPR' && ch === '}') {
         stateStack.pop();
         output += ch;

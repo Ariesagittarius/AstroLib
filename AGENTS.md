@@ -106,5 +106,3 @@ When undertaking content restructuring, worksheet generation, or publishing rede
 2. **Strict Executor Constraint**: Implementation agents MUST strictly adhere to the established `DESIGN_SYSTEM.md` without inventing new visual abstractions.
 3. **Mandatory Minimalism Audit**: Include a dedicated subtractive review step to identify and eliminate superfluous visual weight.
 4. **Resolution Precedence**: `Academic Rigor > Minimalism > Readability > Decoration`.
-
-

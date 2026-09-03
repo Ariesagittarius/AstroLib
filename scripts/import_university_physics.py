@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+
 """
 把 task/ 中《大学物理学》(第7版, 赵近芳/王登龙, 北京邮电大学出版社) 的 MinerU 产物
 批量转换为站点 MDX。
@@ -40,7 +40,6 @@ SUMMARY_RE = re.compile(r'^本章提要\s*$')
 TITLELIKE_RE = re.compile(r'^#{1,6}\s+\S')
 SUBSEC_RE = re.compile(r'^#{1,6}\s*\\?\*?\d+\.\d+\.\d+')
 EX_HEAD_RE = re.compile(r'^#{1,6}\s*(例|例题)\s*\d')
-
 
 def split_physics_chapters(lines, converter):
     """把一卷正文切分为 {章号: {'intro': [...], 'sections': {节号: [...]}, 'tail': [...]}}。"""
@@ -171,7 +170,6 @@ def split_physics_chapters(lines, converter):
     close()
     return chapters, order
 
-
 def main():
     converter = BookConverter(
         book_slug='university_physics',
@@ -185,7 +183,6 @@ def main():
     v2a = converter.read_task_lines(V2A)
     v2b = converter.read_task_lines(V2B)
 
-    # ---- 上册 ----
     intro_lines = converter.chunker.extract_between(v1a, r'^##\s*内容简介\s*$', r'^##\s*图书在版编目')
     intro_sec = converter.chunker.find_heading_index(v1a, r'^##\s*绪论\s*$')
     jl_lines = converter.chunker.extract_between(v1a, r'^##\s*绪论\s*$', r'^##\s*目录\s*$')
@@ -198,7 +195,6 @@ def main():
     if cloud_idx is not None:
         appendix_lines = appendix_lines[:cloud_idx]
 
-    # ---- 下册 ----
     v2a_start = converter.chunker.find_heading_index(v2a, r'^#\s*电磁学\s*$')
     v2a_body = v2a[v2a_start:]
     v2b_end = converter.chunker.find_heading_index(v2b, CLOUD_RE)
@@ -208,7 +204,6 @@ def main():
     vol2, order2 = split_physics_chapters(v2a_body + v2b_body, converter)
     print(f"上册章节: {order1} | 下册章节: {order2}")
 
-    # ---------- 00 内容简介 ----------
     intro_body = (
         '\n\n'.join(intro_lines).strip()
         + '\n\n本书第 7 版分上、下两册出版：上册（第 1—8 章）包括力学基础（质点运动学、'
@@ -218,10 +213,8 @@ def main():
     )
     converter.write_intro('内容简介', intro_body)
 
-    # ---------- 01 绪论 ----------
     converter.write_preface('绪论', converter.card_parser.render_body(jl_lines))
 
-    # ---------- 章节 ----------
     all_chapters = [(ch, vol1.get(ch)) for ch in order1] + [(ch, vol2.get(ch)) for ch in order2]
     for ch, info in all_chapters:
         sections = info['sections']
@@ -258,13 +251,11 @@ def main():
                 first = False
             converter.write_section(ch, sec, sec_title, body)
 
-        # ---------- 章末习题（按题型分页） ----------
         if tail:
             ans_chunk = converter.chunker.extract_answer_chunk(tail)
             types = converter.chunker.split_tail_by_type(tail)
             converter.write_tail_exercises_by_type(ch, last_sec + 1, types, ans_chunk=ans_chunk)
 
-    # ---------- 上册附录 ----------
     table_idx = converter.chunker.find_heading_index(appendix_lines, r'<table')
     if appendix_lines and table_idx is not None:
         a1 = appendix_lines[:table_idx]
@@ -272,7 +263,6 @@ def main():
         converter.write_appendix('a1', '附录1_矢量', converter.card_parser.render_body(a1))
         converter.write_appendix('a2', '附录2_常用基本物理常量表', converter.card_parser.render_body(a2))
 
-    # ---------- 资产拷贝 ----------
     print('== 拷贝图片与生成封面 ==')
     converter.copy_images()
     converter.generate_cover(
@@ -282,7 +272,6 @@ def main():
         publisher='北京邮电大学出版社',
     )
     print('== 完成 ==')
-
 
 if __name__ == '__main__':
     sys.exit(main())

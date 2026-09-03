@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+
 """
 大邮数学集 (BUPT Math Archive) 全量解析与题库构建调度脚本 (支持多线程高精视觉并发 + 全量聚合)
 用法:
@@ -27,16 +27,13 @@ from lib.math_archive.pdf_extractor import BUPTMathExtractor
 from lib.math_archive.mdx_generator import ChapterMDXGenerator
 from lib.math_archive.models import QuestionItem, PaperItem
 
-
 PDF_SOURCE_PATH = ".agents/src/大邮数学集-1.4.2.pdf"
 DATA_OUTPUT_DIR = "src/data/exercises"
 MDX_OUTPUT_DIR = "src/content/docs/collections/math/engineering_analysis"
 
-
 def process_single_paper(extractor, meta: Dict[str, Any], force: bool = False) -> PaperItem:
     """单个试卷处理函数（线程安全）"""
     return extractor.extract_paper(meta, force_recompute=force)
-
 
 def main():
     parser = argparse.ArgumentParser(description="Process BUPT Math Archive PDF into JSON Database & MDX")
@@ -72,7 +69,6 @@ def main():
     all_meta = extractor.get_all_papers_meta()
     print(f"📚 勘察到全书总计 {len(all_meta)} 套试卷目录索引")
 
-    # 筛选待抽取的试卷列表
     papers_to_process = all_meta
     if args.paper_ids:
         target_ids = {int(x.strip()) for x in args.paper_ids.split(",") if x.strip().isdigit()}
@@ -84,14 +80,12 @@ def main():
 
     print(f"🎯 本次待处理目标试卷数: {len(papers_to_process)} 套")
 
-    # 统计已有缓存数量
     cached_count = sum(
         1 for m in papers_to_process
         if os.path.exists(os.path.join(raw_cache_dir, f"paper_{m['paper_id']:03d}.json"))
     )
     print(f"📦 已命中磁盘断点缓存: {cached_count}/{len(papers_to_process)} 套，待调用模型转录: {len(papers_to_process) - cached_count} 套")
 
-    # 多线程并发提取
     total_target = len(papers_to_process)
     completed_count = 0
     failed_papers = []
@@ -132,7 +126,6 @@ def main():
         print(f"⚠️ 失败试卷清单: {', '.join(str(p[0]) for p in failed_papers)}")
     print("----------------------------------------------------------------")
 
-    # 全量数据聚合：扫描并汇总全部已有的 173 套（或当前全部已缓存）试卷
     print("\n📊 正在进行全量题库数据聚合与知识图谱归并...")
 
     all_papers_dict = []
@@ -147,7 +140,6 @@ def main():
         "probability_statistics": {}
     }
 
-    # 遍历所有 173 套试卷元数据
     for meta in all_meta:
         p_id = meta["paper_id"]
         cache_file = os.path.join(raw_cache_dir, f"paper_{p_id:03d}.json")
@@ -178,20 +170,17 @@ def main():
             for q in questions:
                 all_questions.append(q)
 
-                # 工科数分映射
                 ea_map = q.mapping.get("engineering_analysis")
                 if ea_map and any(x in meta["category"] for x in ["分析上", "分析下", "工数"]):
                     ea_questions_by_chapter[ea_map.chapter].append(q)
                     sec_key = ea_map.section_slug
                     inverted_index["engineering_analysis"].setdefault(sec_key, []).append(q.id)
 
-                # 线性代数映射
                 la_map = q.mapping.get("linear_algebra")
                 if la_map or any(x in meta["category"] for x in ["线代", "高代", "矩阵论"]):
                     la_questions.append(q)
                     inverted_index["linear_algebra"].setdefault(meta["category"], []).append(q.id)
 
-                # 概率统计映射
                 ps_map = q.mapping.get("probability_statistics")
                 if ps_map or any(x in meta["category"] for x in ["概统", "概随", "研概随"]):
                     ps_questions.append(q)
@@ -211,7 +200,6 @@ def main():
     print(f"  • 《概率论与数理统计》题量: {len(ps_questions)} 道")
     print("----------------------------------------------------------------")
 
-    # 1. 导出全量题库 JSON
     full_db_path = os.path.join(args.data_dir, "bupt_math_full_database.json")
     full_payload = {
         "version": "1.4.2",
@@ -225,7 +213,6 @@ def main():
         json.dump(full_payload, f, ensure_ascii=False, indent=2)
     print(f"💾 已导出题库数据库: {full_db_path}")
 
-    # 2. 导出工科数学分析专项题库
     ea_db_path = os.path.join(args.data_dir, "engineering_analysis_exercises.json")
     ea_flat_questions = [q.to_dict() for q_list in ea_questions_by_chapter.values() for q in q_list]
     ea_payload = {
@@ -241,13 +228,11 @@ def main():
         json.dump(ea_payload, f, ensure_ascii=False, indent=2)
     print(f"💾 已导出《工科数学分析》专项题库: {ea_db_path}")
 
-    # 3. 导出倒排索引
     index_path = os.path.join(args.data_dir, "chapter_index.json")
     with open(index_path, "w", encoding="utf-8") as f:
         json.dump(inverted_index, f, ensure_ascii=False, indent=2)
     print(f"💾 已导出章节检索倒排索引: {index_path}")
 
-    # 4. 生成 MDX 章节真题页面
     if args.generate_mdx and any(ea_questions_by_chapter.values()):
         print("\n📝 正在生成《工科数学分析》各章课后真题自测 MDX 页面...")
         mdx_gen = ChapterMDXGenerator(MDX_OUTPUT_DIR)
@@ -255,7 +240,6 @@ def main():
         print("✅ MDX 章节页面生成完毕！")
 
     print(f"\n🎉 处理完成！总耗时: {time.time() - start_time:.1f}s")
-
 
 if __name__ == "__main__":
     main()

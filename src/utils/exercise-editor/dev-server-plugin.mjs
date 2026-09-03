@@ -1,6 +1,3 @@
-// src/utils/exercise-editor/dev-server-plugin.mjs
-// Vite Dev Server 插件：为习题模块提供源码热保存、读者反馈持久化与本地社区 AI 题解读写接口
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -87,7 +84,6 @@ export function exerciseDevServerPlugin() {
           return res.end();
         }
 
-        // 1. 开发者保存修改源码 (POST /api/exercise/save-source)
         if (pathname === '/api/exercise/save-source' && req.method === 'POST') {
           try {
             const body = await parseJsonBody(req);
@@ -107,17 +103,16 @@ export function exerciseDevServerPlugin() {
 
             const cleanQuestionData = sanitizeLatexValue(question_data);
 
-            // 定位并替换题目
             const chKeys = chapter ? [String(chapter)] : Object.keys(chapters);
             for (const chKey of chKeys) {
               const qList = chapters[chKey] || [];
               const idx = qList.findIndex((q) => q.id === question_id);
               if (idx !== -1) {
-                // 合并/覆盖题目数据，保留结构完整
+
                 qList[idx] = {
                   ...qList[idx],
                   ...cleanQuestionData,
-                  id: question_id, // 确保 ID 不被意外篡改
+                  id: question_id,
                 };
                 found = true;
                 break;
@@ -128,10 +123,8 @@ export function exerciseDevServerPlugin() {
               return sendJson(res, 404, { error: `未在题库中找到题目: ${question_id}` });
             }
 
-            // 写回源 JSON
             fs.writeFileSync(SRC_DATA, JSON.stringify(rawData, null, 2), 'utf-8');
 
-            // 触发题库轻量增量编译
             try {
               execSync('node scripts/build-exercise-data.mjs', { cwd: ROOT, stdio: 'pipe' });
             } catch (buildErr) {
@@ -149,7 +142,6 @@ export function exerciseDevServerPlugin() {
           }
         }
 
-        // 2. 读者勘误反馈 (POST /api/exercise/feedback)
         if (pathname === '/api/exercise/feedback' && req.method === 'POST') {
           try {
             const body = await parseJsonBody(req);
@@ -168,7 +160,6 @@ export function exerciseDevServerPlugin() {
           }
         }
 
-        // 3. 社区 AI 题解读取 (GET /api/exercise/community-solutions)
         if (pathname === '/api/exercise/community-solutions' && req.method === 'GET') {
           try {
             const questionId = url.searchParams.get('question_id');
@@ -187,7 +178,6 @@ export function exerciseDevServerPlugin() {
           }
         }
 
-        // 4. 社区 AI 题解上传 (POST /api/exercise/community-solutions)
         if (pathname === '/api/exercise/community-solutions' && req.method === 'POST') {
           try {
             const body = await parseJsonBody(req);
@@ -206,7 +196,6 @@ export function exerciseDevServerPlugin() {
           }
         }
 
-        // 5. 社区 AI 题解点赞 (POST /api/exercise/community-solutions/upvote)
         if (pathname === '/api/exercise/community-solutions/upvote' && req.method === 'POST') {
           try {
             const body = await parseJsonBody(req);

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Unicode 数学字符规范化模块
 将从 Typst / PDF 中提取的 Unicode 数学斜体、黑板粗体、希腊字母与数学符号规范化为标准 LaTeX / ASCII 表达式。
@@ -6,38 +5,35 @@ Unicode 数学字符规范化模块
 
 import re
 
-# 数学斜体英文字母映射
 MATH_ITALIC_MAP = {
-    # 大写 A-Z (0x1D434 - 0x1D44D)
+
     **{chr(0x1D434 + i): chr(ord('A') + i) for i in range(26)},
-    # 小写 a-z (0x1D44E - 0x1D467)
+
     **{chr(0x1D44E + i): chr(ord('a') + i) for i in range(26)},
-    # 特殊普朗克常数 h
+
     '\u210e': 'h',
-    # 黑体大写 A-Z (0x1D400 - 0x1D419)
+
     **{chr(0x1D400 + i): chr(ord('A') + i) for i in range(26)},
-    # 黑体小写 a-z (0x1D41A - 0x1D433)
+
     **{chr(0x1D41A + i): chr(ord('a') + i) for i in range(26)},
-    # 粗斜体大写 A-Z (0x1D468 - 0x1D481)
+
     **{chr(0x1D468 + i): chr(ord('A') + i) for i in range(26)},
-    # 粗斜体小写 a-z (0x1D482 - 0x1D49B)
+
     **{chr(0x1D482 + i): chr(ord('a') + i) for i in range(26)},
-    # 无衬线大写 A-Z (0x1D5A0 - 0x1D5B9)
+
     **{chr(0x1D5A0 + i): chr(ord('A') + i) for i in range(26)},
-    # 无衬线小写 a-z (0x1D5BA - 0x1D5D3)
+
     **{chr(0x1D5BA + i): chr(ord('a') + i) for i in range(26)},
 }
 
-# 黑板粗体集合
 BLACKBOARD_BOLD_MAP = {
-    '\u211d': r'\mathbf{R}',  # ℝ
-    '\u2115': r'\mathbf{N}',  # ℕ
-    '\u2124': r'\mathbf{Z}',  # ℤ
-    '\u211a': r'\mathbf{Q}',  # ℚ
-    '\u2102': r'\mathbf{C}',  # ℂ
+    '\u211d': r'\mathbf{R}',
+    '\u2115': r'\mathbf{N}',
+    '\u2124': r'\mathbf{Z}',
+    '\u211a': r'\mathbf{Q}',
+    '\u2102': r'\mathbf{C}',
 }
 
-# 希腊字母斜体及标准希腊字母映射
 GREEK_MAP = {
     '\U0001d6fc': r'\alpha',
     '\U0001d6fd': r'\beta',
@@ -64,8 +60,8 @@ GREEK_MAP = {
     '\U0001d712': r'\chi',
     '\U0001d713': r'\psi',
     '\U0001d714': r'\omega',
-    '\U0001d715': r'\partial',  # 𝜕
-    
+    '\U0001d715': r'\partial',
+
     '\u03b1': r'\alpha',
     '\u03b2': r'\beta',
     '\u03b3': r'\gamma',
@@ -94,12 +90,11 @@ GREEK_MAP = {
     '\u03a9': r'\Omega',
 }
 
-# 数学运算符与符号映射
 SYMBOL_MAP = {
-    '−': '-',           # 0x2212 minus
-    '–': '-',           # en dash
-    '—': '-',           # em dash
-    '⋅': r'\cdot ',     # 0x22c5 dot
+    '−': '-',
+    '–': '-',
+    '—': '-',
+    '⋅': r'\cdot ',
     '×': r'\times ',
     '÷': r'\div ',
     '≤': r'\le ',
@@ -144,7 +139,7 @@ def normalize_math_unicode(text: str) -> str:
     """将文本中的数学斜体与特殊符号转换为标准 ASCII 及 LaTeX 记号。"""
     if not text:
         return ''
-    
+
     chars = []
     for ch in text:
         if ch in MATH_ITALIC_MAP:
@@ -157,7 +152,7 @@ def normalize_math_unicode(text: str) -> str:
             chars.append(SYMBOL_MAP[ch])
         else:
             chars.append(ch)
-            
+
     res = ''.join(chars)
     res = re.sub(r' +', ' ', res)
     return res

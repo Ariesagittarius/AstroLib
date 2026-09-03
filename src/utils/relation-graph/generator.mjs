@@ -1,39 +1,15 @@
-/**
- * ============================================================================
- * 全书各章节内联关系与知识导图生成器 (Book Relation Graph Generator)
- * ============================================================================
- * 
- * 职责：
- *   1. 扫描指定书籍（colSlug / bookSlug）下的全部 MDX 章节；
- *   2. 提取各章元数据、定义的知识卡片（例/定理/定义/方法/习题等）；
- *   3. 识别正文中的交叉引用（Block & Figure 引用），通过全局索引建立有向依赖图；
- *   4. 生成拓扑网络图数据（Force/Circular Nodes & Links）、层级导图数据（Mindmap Tree）
- *      与章节关联双向追溯矩阵（Inbound & Outbound Matrix）。
- * 
- * 特性：
- *   - 纯 ESM 无副作用模块，供构建期脚本 scripts/build-relation-graphs.mjs 
- *     与开发期 Vite 插件 dev-server-plugin.mjs 共同调用；
- *   - 严格调用 cleanSlug，保证 URL 绝对精准无 404；
- *   - 零自造轮子：直接输出标准 Apache ECharts 5 兼容的 Graph & Tree 图表数据结构。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { collections } from '../../config/collections.config.mjs';
 import { cleanSlug, naturalSort } from '../sidebar.mjs';
 import { buildGlobalBlockIndex } from '../cross-ref-indexer.mjs';
 
-/** ECharts 节点分类和谐配色板（对齐 VitePress 调色） */
 const CATEGORY_COLORS = [
   '#3451b2', '#059669', '#d97706', '#0284c7', '#0d9488',
   '#7c3aed', '#e11d48', '#4f46e5', '#ca8a04', '#0891b2',
   '#65a30d', '#c026d3', '#9333ea', '#64748b'
 ];
 
-/**
- * 递归收集目录下的所有 MDX 文件并按自然数排序
- */
 function walkMdxFiles(dir, fileList = []) {
   if (!fs.existsSync(dir)) return fileList;
   const files = fs.readdirSync(dir);
@@ -50,9 +26,6 @@ function walkMdxFiles(dir, fileList = []) {
   return fileList;
 }
 
-/**
- * 提取章节所属的主分组（如 "第1章", "第2章", "附录", "前言" 等）
- */
 function extractGroupName(title, filename) {
   const match = title.match(/^(第[0-9一二三四五六七八九十百]+章|[0-9]+\.[0-9]+|[0-9]+|附录[A-Za-z0-9\-_]*)/);
   if (match) {
@@ -73,13 +46,6 @@ function extractGroupName(title, filename) {
 
 const relationGraphCache = new Map();
 
-/**
- * 生成指定图书的全书内联关系图谱数据（带内存快照缓存）
- * @param {string} colSlug 合集 slug（如 'math'）
- * @param {string} bookSlug 图书 slug（如 'engineering_analysis'）
- * @param {boolean} [force=false] 是否强制跳过缓存
- * @returns {object|null}
- */
 export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
   const bookKey = `${colSlug}/${bookSlug}`;
   const bookDir = path.resolve(`src/content/docs/collections/${colSlug}/${bookSlug}`);
@@ -118,7 +84,7 @@ export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
   const figRegex = new RegExp(`(图)\\s*(\\d+\\s*[-－]\\s*\\d+)`, 'g');
 
   const chapters = [];
-  const groupMap = new Map(); // groupName -> categoryIndex
+  const groupMap = new Map();
 
   files.forEach(({ fullPath: filePath }, idx) => {
     const relativePath = path.relative('src/content/docs', filePath);
@@ -128,7 +94,6 @@ export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
     const filename = path.basename(filePath);
     const content = fs.readFileSync(filePath, 'utf-8');
 
-    // 提取 Frontmatter 标题
     const titleMatch = content.match(/^---\s*\n([\s\S]*?)\n---/);
     let title = path.basename(filePath, path.extname(filePath));
     if (titleMatch) {
@@ -141,7 +106,6 @@ export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
       groupMap.set(groupName, groupMap.size);
     }
 
-    // 扫描本章内部定义的知识卡片
     const cardTagRegex = /<(Example|Variant|Knowledge|Summary|Method|Conclusion|Block|Exercise|Solution)\s+title=["'](.*?)["']/g;
     const localCards = [];
     let cm;
@@ -172,17 +136,15 @@ export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
     });
   });
 
-  // 扫描每个章节引用的外部/内部目标
-  const linksMap = new Map(); // "sourceIndex->targetIndex"
+  const linksMap = new Map();
   let totalCrossReferences = 0;
   let totalIntraReferences = 0;
   let totalFigReferences = 0;
 
   chapters.forEach((chap) => {
-    // 剔除 frontmatter 和行间公式内部文本，避免误匹配
+
     const text = chap.content.replace(/^---\s*[\s\S]*?\n---/, '');
 
-    // 1. 扫描块引用
     let m;
     blockRefRegex.lastIndex = 0;
     while ((m = blockRefRegex.exec(text)) !== null) {
@@ -205,7 +167,6 @@ export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
         ? [{ url: rawCandidates, chapterTitle: '', rawTitle: keyNoSpace, cleanTitle: keyNoSpace }]
         : [];
 
-      // 优先校验是否属于本章内部卡片
       const hasLocalCard = chap.cards.some((card) => {
         const cardClean = card.title.replace(/\s+/g, '');
         return cardClean.startsWith(keyNoSpace) || cardClean.startsWith(masterKeyNoSpace);
@@ -271,7 +232,7 @@ export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
           totalIntraReferences++;
         }
       } else if (candidates.length > 1) {
-        // 存在多章歧义的模糊引用（如纯例 5），仅当含显式章节/小数编号（如 1.5）时才计入跨章图
+
         if (matchedNum.includes('.')) {
           const scopeMatch = matchedNum.match(/^(\d+)\./);
           if (scopeMatch) {
@@ -329,7 +290,6 @@ export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
       }
     }
 
-    // 2. 扫描图引用
     figRegex.lastIndex = 0;
     while ((m = figRegex.exec(text)) !== null) {
       totalFigReferences++;
@@ -345,17 +305,15 @@ export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
     }
   });
 
-  // 构建 ECharts 分类字典
   const categories = Array.from(groupMap.keys()).map((gName, idx) => ({
     name: gName,
     itemStyle: { color: CATEGORY_COLORS[idx % CATEGORY_COLORS.length] },
   }));
 
-  // 计算节点大小（根据被引用入度与包含卡片数进行对数缩放）
   const nodes = chapters.map((c) => {
     const inDegree = c.inReferences.length;
     const outDegree = c.outReferences.filter(r => r.isCrossChapter).length;
-    // 基础尺寸 16px，根据入度（被引用越多次越大）和卡片数放大
+
     const symbolSize = Math.max(16, Math.min(52, 16 + Math.round(Math.sqrt(inDegree) * 6 + Math.log2(c.cardCount + 1) * 3)));
 
     return {
@@ -371,18 +329,17 @@ export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
       inDegree,
       outDegree,
       intraRefCount: c.outReferences.filter(r => !r.isCrossChapter).length,
-      cards: c.cards.slice(0, 30), // 取前 30 个核心卡片
+      cards: c.cards.slice(0, 30),
     };
   });
 
-  // 构建 ECharts 有向边列表
   const links = Array.from(linksMap.values()).map((l) => ({
     source: l.source,
     target: l.target,
     value: l.value,
     lineStyle: {
       width: Math.min(6, 1 + l.value * 0.8),
-      curveness: 0.22, // 微弧线，防止双向边重叠
+      curveness: 0.22,
     },
     label: {
       show: false,
@@ -395,7 +352,6 @@ export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
     targetTitle: l.targetTitle,
   }));
 
-  // 构建 Mindmap 思维导图树（Book -> Group -> Chapter -> Cards）
   const treeGroups = new Map();
   chapters.forEach((c) => {
     if (!treeGroups.has(c.groupName)) {
@@ -421,7 +377,6 @@ export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
     })),
   };
 
-  // 章节关联速查矩阵（供列表筛选与双向检索）
   const matrix = chapters.map((c) => ({
     id: c.id,
     title: c.title,
@@ -434,7 +389,6 @@ export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
     inReferences: c.inReferences,
   }));
 
-  // 核心枢纽章节排行（按被引用次数降序）
   const topHubs = [...nodes]
     .sort((a, b) => b.inDegree - a.inDegree)
     .slice(0, 6)
@@ -445,7 +399,6 @@ export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
       groupName: n.groupName,
     }));
 
-  // 构建按篇章/大章聚合的数据 (Group Aggregation)
   const groupNodesMap = new Map();
   const groupLinksMap = new Map();
 
@@ -471,7 +424,6 @@ export function generateBookRelationGraph(colSlug, bookSlug, force = false) {
     gNode.chapters.push({ title: c.title, url: c.url });
   });
 
-  // 计算篇章组间引用边
   links.forEach((l) => {
     const sourceChap = chapters.find(c => c.id === l.source);
     const targetChap = chapters.find(c => c.id === l.target);

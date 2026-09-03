@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 知识点图谱与多教材分章映射分类器 (Curriculum Classifier)
 支持《工科数学分析》《线性代数》《概率论与数理统计》《新高考数学》等多本教材的精准知识点对齐。
@@ -8,8 +7,6 @@ import re
 from typing import Dict, List, Tuple, Optional
 from .models import BookChapterMapping, QuestionItem
 
-
-# 《工科数学分析基础》（王绵森/马知恩）
 ENGINEERING_ANALYSIS_CURRICULUM = {
     1: {
         "title": "第1章 极限与连续",
@@ -93,7 +90,6 @@ ENGINEERING_ANALYSIS_CURRICULUM = {
     }
 }
 
-# 《线性代数及其应用》
 LINEAR_ALGEBRA_CURRICULUM = {
     1: {"title": "第1章 线性方程组与矩阵", "slug": "1.1_线性方程组", "keywords": ["线性方程组", "行化简", "阶梯形", "增广矩阵", "主元", "自由变量", "相容性"]},
     2: {"title": "第2章 矩阵代数", "slug": "2.1_矩阵运算", "keywords": ["矩阵乘法", "逆矩阵", "分块矩阵", "初等矩阵", "可逆矩阵定理", "LU分解"]},
@@ -104,7 +100,6 @@ LINEAR_ALGEBRA_CURRICULUM = {
     7: {"title": "第7章 对称矩阵与二次型", "slug": "7.1_对称矩阵的对角化", "keywords": ["对称矩阵", "正交对角化", "二次型", "正定", "负定", "奇异值分解", "SVD"]}
 }
 
-# 《概率论与数理统计教程》
 PROBABILITY_STATISTICS_CURRICULUM = {
     1: {"title": "第1章 随机事件与概率", "slug": "1.1_随机事件及其运算", "keywords": ["随机事件", "样本空间", "古典概型", "条件概率", "乘法公式", "全概率公式", "贝叶斯公式", "独立性"]},
     2: {"title": "第2章 随机变量及其分布", "slug": "2.1_随机变量及其分布", "keywords": ["随机变量", "分布律", "概率密度", "分布函数", "0-1分布", "二项分布", "泊松分布", "均匀分布", "指数分布", "正态分布"]},
@@ -114,7 +109,6 @@ PROBABILITY_STATISTICS_CURRICULUM = {
     6: {"title": "第6章 统计量与抽样分布", "slug": "6.1_总体与样本", "keywords": ["总体", "样本", "统计量", "卡方分布", "t分布", "F分布", "分位数"]},
     7: {"title": "第7章 参数估计与假设检验", "slug": "7.1_点估计", "keywords": ["点估计", "矩估计", "最大似然估计", "无偏性", "有效性", "区间估计", "置信区间", "假设检验", "显著性水平", "拒绝域"]}
 }
-
 
 class CurriculumClassifier:
     """智能知识点与教材章节映射分类器"""
@@ -127,16 +121,14 @@ class CurriculumClassifier:
     def classify_question(self, question: QuestionItem) -> Optional[BookChapterMapping]:
         """根据试卷大类及题目语义，分配至目标教材与章节。"""
         cat = question.source.get("category", "")
-        
-        # 判断所属教材体系
+
         if any(x in cat for x in ["分析上", "分析下", "工数"]):
             return self._classify_engineering_analysis(question)
         elif any(x in cat for x in ["线代", "高代", "矩阵论"]):
             return self._classify_linear_algebra(question)
         elif any(x in cat for x in ["概统", "概随", "研概随"]):
             return self._classify_probability(question)
-        
-        # 默认回退到微积分/工数分体系
+
         return self._classify_engineering_analysis(question)
 
     def _classify_engineering_analysis(self, question: QuestionItem) -> BookChapterMapping:
@@ -156,7 +148,7 @@ class CurriculumClassifier:
             ch_data = self.ea_curriculum.get(ch_id)
             if not ch_data:
                 continue
-            
+
             for sec_id, sec_data in ch_data["sections"].items():
                 matched_kws = []
                 score = 0.0
@@ -165,8 +157,7 @@ class CurriculumClassifier:
                     if kw_lower in full_text:
                         matched_kws.append(kw)
                         score += 3.0 if len(kw) >= 3 else 1.5
-                
-                # 强特征加权
+
                 if sec_id == "1.5" and ("间断点" in full_text or "连续点" in full_text):
                     score += 5.0
                 elif sec_id == "2.4" and ("罗尔" in full_text or "拉格朗日" in full_text or "中值定理" in full_text):

@@ -1,6 +1,3 @@
-// 批量修复：在文件顶部 import 块之后补一个空行（保留原行尾风格）
-// 原因：MDX 的 ESM 解析器会把“import 行 + 后续无空行内容”整体当作 JS 解析，
-// 导致组件内 $...$ 公式的 { } 被当成 JSX 表达式而编译失败。
 import fs from 'node:fs';
 import path from 'node:path';
 import { compile } from '@mdx-js/mdx';

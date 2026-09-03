@@ -12,7 +12,6 @@ const compiler = NodeCompiler.create();
 const rawData = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
 console.log('Total chapters:', Object.keys(rawData.chapters).length);
 
-// 1. 测试单题公式转换
 console.log('--- 测试典型公式转换 ---');
 const testCases = [
   '已知非负数列 $\\{a_n\\}, \\{b_n\\}, \\{c_n\\}$．且 $\\lim_{n \\to \\infty} a_n = 0$, $\\lim_{n \\to \\infty} b_n = 1$, $\\lim_{n \\to \\infty} c_n = +\\infty$，则 ( )．',
@@ -30,7 +29,6 @@ testCases.forEach((tc, idx) => {
   console.log('');
 });
 
-// 2. 批量测试全量题库转换无致命语法错误
 console.log('--- 全量扫描题库 ---');
 let totalQuestions = 0;
 let errors = [];
@@ -58,7 +56,6 @@ if (errors.length > 0) {
   console.log('✅ 全量题目转换通过，零占位符残留！');
 }
 
-// 3. 测试生成完整模考卷 (exam) 与练习本 (handout) 并调用 Typst 编译器验证
 const sampleQuestions = rawData.chapters['1'].slice(0, 15).map(q => ({
   id: q.id,
   type: q.meta?.type || 'calc',
