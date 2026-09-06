@@ -1,8 +1,6 @@
-import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
 import { initFormulaActions } from '../../scripts/formula-actions';
 import { formatMultipleChoiceQuestions } from './question-formatter';
 import { setupVPLocalNav, setMobileTocOpen } from './local-nav';
-import { tameOverflowingInlineMath } from './scroll-spy';
 import { linkPageElements } from './cross-ref-client';
 import { initJumpNavigator, recordJump } from './jump-navigator';
 
@@ -21,6 +19,50 @@ export function getBookConfig(aside: HTMLElement | null): any {
   const cfg = JSON.parse(aside?.getAttribute('data-book-config') || '{}');
   bookConfigCache.set(key, cfg);
   return cfg;
+}
+
+const inFlightIndexFetches = new Map<string, Promise<Record<string, any>>>();
+
+export async function fetchGlobalIndex(aside: HTMLElement | null): Promise<Record<string, any>> {
+  const key = aside?.getAttribute('data-book-key') || '';
+  if (!key) return {};
+  if (globalIndexCache.has(key)) return globalIndexCache.get(key)!;
+  if (inFlightIndexFetches.has(key)) return inFlightIndexFetches.get(key)!;
+
+  // Fallback to data-global-index if present
+  const raw = aside?.getAttribute('data-global-index');
+  if (raw && raw !== '{}') {
+    try {
+      const idx = JSON.parse(raw);
+      globalIndexCache.set(key, idx);
+      return idx;
+    } catch {}
+  }
+
+  // Fetch static JSON generated at build time
+  const [col, book] = key.split('/');
+  if (col && book) {
+    const fetchPromise = (async () => {
+      try {
+        const res = await fetch(`/data/cross-ref/${col}-${book}.json`);
+        if (res.ok) {
+          const idx = await res.json();
+          globalIndexCache.set(key, idx);
+          return idx;
+        }
+      } catch (e) {
+        console.warn('[cross-ref] Failed to fetch index:', e);
+      } finally {
+        inFlightIndexFetches.delete(key);
+      }
+      return {};
+    })();
+
+    inFlightIndexFetches.set(key, fetchPromise);
+    return fetchPromise;
+  }
+
+  return {};
 }
 
 export function getGlobalIndex(aside: HTMLElement | null): Record<string, string> {
@@ -188,7 +230,7 @@ export function buildBookTOC(
       a.classList.add('toc-heading', `toc-level-${chunk.level}`);
       const headingText = document.createElement('span');
       headingText.className = 'toc-heading-text';
-      headingText.textContent = rawTitle;
+      headingText.innerHTML = el.innerHTML;
       a.appendChild(headingText);
     } else {
       if (displayLabel && (!number || !number.startsWith(displayLabel))) {
@@ -200,7 +242,12 @@ export function buildBookTOC(
 
       const numSpan = document.createElement('span');
       numSpan.className = 'toc-number';
-      numSpan.textContent = number || rawTitle;
+      const headerEl = el.querySelector('.card-header, .fallback-header, .guide-header');
+      if (headerEl) {
+        numSpan.innerHTML = headerEl.innerHTML;
+      } else {
+        numSpan.textContent = number || rawTitle;
+      }
       a.appendChild(numSpan);
     }
 
@@ -279,31 +326,25 @@ export function buildBookTOC(
     lastSpyIndex = activeIndex;
   }
 
+  let ticking = false;
+  function handleSpyScrollThrottled() {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(() => {
+        handleSpyScroll();
+        ticking = false;
+      });
+    }
+  }
+
   if (window.__slScrollSpy) window.removeEventListener('scroll', window.__slScrollSpy);
-  window.__slScrollSpy = handleSpyScroll;
-  window.addEventListener('scroll', window.__slScrollSpy);
+  window.__slScrollSpy = handleSpyScrollThrottled;
+  window.addEventListener('scroll', window.__slScrollSpy, { passive: true });
   handleSpyScroll();
 }
 
 export function renderSidebarMath(): void {
-  const sidebar = document.querySelector('.custom-page-sidebar');
-  if (sidebar && sidebar.textContent?.includes('$')) {
-    renderMathInElement(sidebar as HTMLElement, katexConfig);
-  }
-  const mobileNav = document.querySelector('.vp-local-nav');
-  if (mobileNav && mobileNav.textContent?.includes('$')) {
-    renderMathInElement(mobileNav as HTMLElement, katexConfig);
-  }
-}
-
-export function tameInlineMathWhenReady(): void {
-  tameOverflowingInlineMath();
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(() => {
-      const schedule = window.requestIdleCallback || ((fn) => window.setTimeout(fn, 60));
-      schedule(() => tameOverflowingInlineMath(), { timeout: 200 });
-    });
-  }
+  // no-op: 大纲与卡片公式直接继承构建期转译的静态 HTML，客户端零解析
 }
 
 /**
@@ -319,16 +360,17 @@ export function initPageSidebar(): void {
   const raf = window.requestAnimationFrame || ((fn) => window.setTimeout(fn, 16));
   raf(() => {
     const bookConfig = getBookConfig(aside);
-    const globalBlockIndex = getGlobalIndex(aside);
-    buildBookTOC(aside, bookConfig, globalBlockIndex);
+    buildBookTOC(aside, bookConfig, {});
     renderSidebarMath();
 
     const idle = window.requestIdleCallback || ((fn) => window.setTimeout(fn, 150));
     idle(
-      () => {
-        linkPageElements(bookConfig, globalBlockIndex, refsMode, parseTitleFromConfig);
+      async () => {
+        if (refsMode !== 'static') {
+          const globalBlockIndex = await fetchGlobalIndex(aside);
+          linkPageElements(bookConfig, globalBlockIndex, refsMode, parseTitleFromConfig);
+        }
         initFormulaActions();
-        tameInlineMathWhenReady();
       },
       { timeout: 400 }
     );

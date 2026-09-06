@@ -5,7 +5,7 @@ import { compile } from '@mdx-js/mdx';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import katex from 'katex';
-import rehypeImageBlur from '../src/utils/rehype-image-blur.mjs';
+import rehypeImageBlur from '../src/plugins/rehype/rehype-image-blur.mjs';
 
 const detailFile = process.argv.find(a => a.startsWith('--detail='))?.split('=')[1];
 const showLines = process.argv.includes('--lines');

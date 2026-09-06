@@ -1,56 +1,17 @@
 /**
- * 计算一个元素的“可视最右缘”
+ * scroll-spy.ts
+ *
+ * 性能重构说明：
+ * 原有的 tameOverflowingInlineMath() 与 visibleContentRight() 已彻底移除。
+ * 行内公式超长横向滚动已迁移至 src/styles/custom.css 纯 CSS 解决，
+ * 彻底消除了移动端遍历 60,000+ span 节点读取 getBoundingClientRect() 导致的强制同步重排（Layout Thrashing）。
  */
-export function visibleContentRight(el: Element): number {
-  let max = el.getBoundingClientRect().right;
-  const walker = document.createTreeWalker(el, NodeFilter.SHOW_ELEMENT, {
-    acceptNode(node) {
-      if ((node as Element).namespaceURI === 'http://www.w3.org/2000/svg') return NodeFilter.FILTER_REJECT;
-      return NodeFilter.FILTER_ACCEPT;
-    },
-  });
-  while (walker.nextNode()) {
-    const n = walker.currentNode as Element;
-    const r = n.getBoundingClientRect();
-    if (r.width > 0 && r.right > max) max = r.right;
-  }
-  el.querySelectorAll('svg').forEach((svg) => {
-    const r = svg.getBoundingClientRect();
-    if (r.width > 0 && r.right > max) max = r.right;
-  });
-  return max;
+
+// 保留空导出以确保向后兼容与类型安全
+export function tameOverflowingInlineMath(): void {
+  // no-op: 由纯 CSS .sl-markdown-content .katex 接管
 }
 
-/**
- * 长行内公式“胶囊化”（移动端友好）
- */
-export function tameOverflowingInlineMath(): void {
-  const main = document.querySelector('main');
-  if (!main) return;
-
-  if (!window.matchMedia('(max-width: 1024px)').matches) return;
-
-  const lineSelector = [
-    '.sl-markdown-content',
-    '.card-body',
-    '.card-header',
-    '.solution-content',
-    '.analysis-content',
-    '.note-content',
-    '.fallback-content',
-    '.fallback-header',
-    '.guide-content',
-    '.guide-header',
-    '.question-stem',
-    '.option-chip-content',
-  ].join(', ');
-
-  main.querySelectorAll('.katex:not(.katex-display .katex)').forEach((el) => {
-    if (el.classList.contains('katex-scroll-capsule')) return;
-    const line = el.closest(lineSelector);
-    if (!line) return;
-    if (visibleContentRight(el) > line.getBoundingClientRect().right + 1) {
-      el.classList.add('katex-scroll-capsule');
-    }
-  });
+export function visibleContentRight(_el: Element): number {
+  return 0;
 }

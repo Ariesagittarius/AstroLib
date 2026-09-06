@@ -1,8 +1,17 @@
 import { streamChat } from '../../ai/llm.mjs';
 import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
 import { exerciseDb, type CommunityAiSolution, type ExerciseFeedbackPayload } from '../../utils/exercise-db/exercise-db-client';
+import type {
+  SlimQuestionItem,
+  ChapterData,
+  PaperSummary,
+  SinglePaperData,
+  QuestionOption,
+  SubQuestion,
+  ChapterSectionSummary,
+} from '../../types/exercises';
 
-import { generateLatexDocument, type LatexExportConfig, DEFAULT_LATEX_CONFIG } from '../../utils/latex/latex-generator';
+import { generateLatexDocument, type LatexExportConfig, DEFAULT_LATEX_CONFIG } from '../../publishing/latex/latex-generator';
 import {
   generateJobId,
   getStoredCompilerConfig,
@@ -167,84 +176,15 @@ function renderInlineStyle(s: string): string {
     .replace(/`([^`]+)`/g, '<code>$1</code>');
 }
 
-export interface SlimQuestionItem {
-  id: string;
-  source_type?: 'exam' | 'textbook';
-  group?: 'A' | 'B' | string;
-  type: 'choice' | 'blank' | 'calc' | 'proof';
-  score: number;
-  sec: string;
-  sec_slug: string;
-  sec_title: string;
-  chapter: number;
-  chapter_title: string;
-  paper_id: number;
-  paper_title: string;
-  paper_raw_title?: string;
-  paper_q_num: number;
-  order_in_paper: number;
-  section_type: string;
-  academic_year: string;
-  paper_category: string;
-  paper_type: string;
-  source: string;
-  kps: string[];
-  stem_html: string;
-  stem_raw: string;
-  options?: Array<{ key: string; text_html: string; text_raw: string }>;
-  sub_questions?: Array<{ sub_id: string; stem_raw: string; stem_html: string }>;
-  answer: string;
-  answer_html: string;
-  hints_html?: string;
-  steps_html?: string;
-  search: string;
-}
-
-export interface ChapterData {
-  chapter: number;
-  chapter_title: string;
-  total: number;
-  sections: Array<{
-    section: string;
-    section_title: string;
-    section_slug: string;
-    count: number;
-  }>;
-  type_counts: Record<string, number>;
-  source_counts: Record<string, number>;
-  questions: SlimQuestionItem[];
-}
-
-export interface PaperSummary {
-  paper_id: number;
-  clean_title: string;
-  category: string;
-  course_name: string;
-  academic_year: string;
-  term: number;
-  exam_type: string;
-  total_questions: number;
-  total_score: number;
-  type_counts: Record<string, number>;
-  sections_count: number;
-}
-
-export interface SinglePaperData {
-  paper_id: number;
-  clean_title: string;
-  raw_title: string;
-  category: string;
-  course_name: string;
-  academic_year: string;
-  term: number;
-  exam_type: string;
-  paper_type: string;
-  total_questions: number;
-  total_score: number;
-  type_counts: Record<string, number>;
-  sections_order: string[];
-  questions: SlimQuestionItem[];
-}
+export type {
+  SlimQuestionItem,
+  ChapterData,
+  PaperSummary,
+  SinglePaperData,
+  QuestionOption,
+  SubQuestion,
+  ChapterSectionSummary,
+};
 
 interface UserPracticeRecord {
   answered: boolean;

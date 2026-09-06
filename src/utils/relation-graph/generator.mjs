@@ -21,8 +21,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { collections } from '../../config/collections.config.mjs';
-import { cleanSlug, naturalSort } from '../sidebar.mjs';
-import { buildGlobalBlockIndex } from '../cross-ref-indexer.mjs';
+import { cleanSlug } from '../slug.mjs';
+import { naturalSort } from '../natural-sort.mjs';
+import { buildGlobalBlockIndex } from '../../core/indexing/cross-ref-indexer.mjs';
 
 /** ECharts 节点分类和谐配色板（对齐 VitePress 调色） */
 const CATEGORY_COLORS = [

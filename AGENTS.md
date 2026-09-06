@@ -14,21 +14,43 @@ Manage the server using dedicated commands (or via `node node_modules/astro/bin/
 
 ## 2. Core Architecture Rules & Constraints
 
-1. **Central Configuration**:
-   - `src/config/collections.config.mjs` is the **single source of truth** for books, collections, and card module themes.
-   - `src/config/features.config.mjs` is the **Feature Registry** controlling build-time plugins and UI toggles (`katex`, `theme`, `fonts`, `crossRef`, `epub`, `editor`, `aiAsk`).
-   - ⚠️ `src/config/books.config.mjs` is an obsolete/dead file. Do not edit it.
-2. **Routing & Clean Slugs**:
-   - Every generated link pointing to a book chapter MUST use `cleanSlug()` from `src/utils/sidebar.mjs`. Never hardcode raw filenames into URL strings.
-3. **MDX Syntax Validation**:
-   - To validate MDX changes quickly and accurately, run:
-     ```bash
-     node scripts/scan-mdx.mjs src/content/docs/collections/<collection>/<book>
-     ```
-4. **Performance & Sidebar Constraints**:
-   - Left sidebar renders only the current book to keep HTML size minimal (`SidebarOverride.astro`).
-   - Right sidebar outline builds cross-reference index scoped to the current book (`PageSidebarOverride.astro`).
-   - KaTeX uses `output: 'html'` to minimize payload size.
+### 2.1 Central Architecture Invariants (The 10 Tenets)
+
+1. **Rule 1 — UI is not a domain model**:
+   `components/` must NEVER serve as the source of domain data models or type definitions for other systems. Shared models/types belong in dedicated models/types layers.
+2. **Rule 2 — Publishing is independent**:
+   Publishing and export systems (LaTeX / Typst / EPUB / PDF) must NOT depend on UI components or client controllers. They must remain pure, headless compilers/formatters.
+3. **Rule 3 — Source of Truth**:
+   Any generated data must NEVER become a Source of Truth. `collections.config.mjs`, `features.config.mjs`, and raw input texts/databases are sources of truth.
+4. **Rule 4 — Generated Data**:
+   All regenerable data (indices, pre-rendered JSON, topology graphs) must explicitly indicate its generator script and source input.
+5. **Rule 5 — Public Directory Hygiene**:
+   `public/` is strictly reserved for static assets directly served to the browser.
+   Strictly forbidden in `public/`:
+   - Test outputs (`test_*.pdf`, `test_*.tex`, `test_*.typ`)
+   - Compiler artifacts and intermediate build files (`*.aux`, `*.idx`, `*.mst`)
+   - Logs (`*.log`)
+   - Temporary files
+6. **Rule 6 — Feature Isolation**:
+   The primary logic of a business feature (UI, state, client logic, and feature configs) should reside within that feature's cohesive boundary.
+7. **Rule 7 — Utils Purity**:
+   Do NOT add new modules with explicit business semantics to `utils/`.
+   Code belonging to AI, Exercise, Editor, Publishing, Inspector, Relation Graph, or Feedback must go to its corresponding Feature / Service. `utils/` is reserved strictly for pure, stateless, reusable helpers.
+8. **Rule 8 — Scripts Boundary**:
+   `scripts/` is exclusively responsible for build, import, export, maintenance, and test automation. Business runtime logic must NOT depend on `scripts/`.
+9. **Rule 9 — Runtime must not mutate source**:
+   Development servers, Vite plugins, and runtime endpoints must NEVER directly mutate Source Data on disk (e.g. overwriting tracked JSONs or executing synchronous shell scripts).
+10. **Rule 10 — Small Migrations (No Big Bang Rewrite)**:
+    Architectural refactoring must strictly follow:
+    > **one boundary → one migration → one verification**
+    Big Bang Rewrites are strictly prohibited.
+
+### 2.2 Operational Constraints
+
+- **Single Sources of Truth**: `src/config/collections.config.mjs` (books/collections) and `src/config/features.config.mjs` (Feature Registry). ⚠️ `src/config/books.config.mjs` is obsolete.
+- **Routing & Clean Slugs**: Every generated link pointing to a book chapter MUST use `cleanSlug()` from `src/utils/sidebar.mjs`. Never hardcode raw filenames into URL strings.
+- **MDX Syntax Validation**: Run `node scripts/scan-mdx.mjs src/content/docs/collections/<collection>/<book>` before committing.
+- **Sidebar & Performance**: Left sidebar renders only current book (`SidebarOverride.astro`). KaTeX uses `output: 'html'`.
 
 ## 3. Project Skills & Documentation
 

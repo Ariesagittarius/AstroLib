@@ -1,7 +1,33 @@
-import { createRetriever } from '../retriever';
-import { buildMessages, buildContext, streamChat } from '../llm';
-import { buildToolDefs, runClientTool, toolsDesc } from '../tools-client';
-import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
+let _renderMath: any = null;
+async function getMathRenderer() {
+  if (!_renderMath) {
+    const mod = await import('katex/dist/contrib/auto-render.mjs');
+    _renderMath = mod.default || mod;
+  }
+  return _renderMath;
+}
+
+let _aiCoreModules: any = null;
+async function getAiCoreModules() {
+  if (!_aiCoreModules) {
+    const [retrieverMod, llmMod, toolsMod] = await Promise.all([
+      import('../retriever'),
+      import('../llm'),
+      import('../tools-client'),
+    ]);
+    _aiCoreModules = {
+      createRetriever: retrieverMod.createRetriever,
+      buildMessages: llmMod.buildMessages,
+      buildContext: llmMod.buildContext,
+      streamChat: llmMod.streamChat,
+      buildToolDefs: toolsMod.buildToolDefs,
+      runClientTool: toolsMod.runClientTool,
+      toolsDesc: toolsMod.toolsDesc,
+    };
+  }
+  return _aiCoreModules;
+}
+
 import {
   getAllAiModels,
   getActiveAiModelId,
@@ -561,7 +587,9 @@ export class AIAskElement extends HTMLElement {
 
   _openPanel() {
     this._panel.classList.add('ask-open');
-    this._input && this._input.focus();
+    requestAnimationFrame(() => {
+      this._input && this._input.focus({ preventScroll: true });
+    });
   }
   _closePanel() {
     this._panel.classList.remove('ask-open');
@@ -1048,8 +1076,10 @@ export class AIAskElement extends HTMLElement {
 
   _typeMath(el: HTMLElement) {
     if (!el) return;
-    try { renderMathInElement(el, this._katexConfig); }
-    catch (e) {}
+    getMathRenderer().then((renderer) => {
+      try { renderer(el, this._katexConfig); }
+      catch (e) {}
+    }).catch(() => {});
   }
 
   _jsonHtml(v: any, cap = 1400): string {
@@ -1109,9 +1139,10 @@ export class AIAskElement extends HTMLElement {
     try {
       let idx = null;
       let hits: any[] = [];
+      const ai = await getAiCoreModules();
       if (!discussion) {
         idx = await this._getIndex();
-        const retriever = createRetriever(idx.chunks);
+        const retriever = ai.createRetriever(idx.chunks);
         hits = retriever.search(q, { topK: params.topK });
         if (!hits.length) {
           this._appendMdBlock(blocksEl, '没有在本书中找到相关内容。');
@@ -1167,14 +1198,15 @@ export class AIAskElement extends HTMLElement {
     const modelDef = this._selectedModel();
     const { mode = 'retrieve', idx = null, hits = [], question } = opts || {};
     const discussion = mode === 'discussion';
-    const toolDefs = buildToolDefs();
-    const context = discussion ? '' : buildContext(hits.map((h: any) => h.chunk), params.maxContextChars);
-    const messages = buildMessages({
+    const ai = await getAiCoreModules();
+    const toolDefs = ai.buildToolDefs();
+    const context = discussion ? '' : ai.buildContext(hits.map((h: any) => h.chunk), params.maxContextChars);
+    const messages = ai.buildMessages({
       question,
       context,
       bookTitle: (idx && idx.meta && idx.meta.title) || this._bookTitle,
       history: this._historyFromThread(this._activeThread),
-      toolsDesc: toolsDesc(),
+      toolsDesc: ai.toolsDesc(),
       discussion,
     });
     const toolCtx = { index: discussion ? null : idx, bookList: (cfg.bookList || []), col: this._col, book: this._book };
@@ -1223,7 +1255,7 @@ export class AIAskElement extends HTMLElement {
       for (let turn = 0; turn < maxTurns; turn++) {
         curText = '';
         curTextEl = null;
-        const res = await streamChat({
+        const res = await ai.streamChat({
           endpoint, apiKey, model, messages,
           tools: toolDefs, toolChoice: 'auto', maxTokens: params.maxAnswerTokens,
           signal: this._abort.signal,
@@ -1250,7 +1282,7 @@ export class AIAskElement extends HTMLElement {
             let out: any, summary: string;
             try {
               if (!toolCtx.index && tc.name !== 'list_books') toolCtx.index = await this._getIndex();
-              out = await runClientTool(tc.name, tc.arguments, toolCtx);
+              out = await ai.runClientTool(tc.name, tc.arguments, toolCtx);
               summary = toolSummary(tc.name, out);
             } catch (e: any) {
               out = { error: e.message || String(e) };

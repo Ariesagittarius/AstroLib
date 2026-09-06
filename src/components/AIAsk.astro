@@ -37,5 +37,27 @@ const bookTitle = currentBook ? currentBook.title : '';
 </ai-ask>
 
 <script>
-  import '../ai/client/chat-controller';
+  let loaded = false;
+  async function loadAiAsk() {
+    if (!loaded) {
+      loaded = true;
+      await import('../ai/client/chat-controller');
+    }
+  }
+
+  // 点击右下角 AI 悬浮球 (ask-fab) 时按需加载控制器
+  document.addEventListener('click', (e) => {
+    const fab = (e.target as HTMLElement)?.closest('.ask-fab');
+    if (fab) {
+      loadAiAsk().then(() => {
+        const el = document.querySelector('ai-ask') as any;
+        if (el && typeof el._openPanel === 'function') el._openPanel();
+      });
+    }
+  });
+
+  // 监听外部查询事件
+  window.addEventListener('aiask:query', () => {
+    loadAiAsk();
+  });
 </script>

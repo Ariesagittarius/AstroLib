@@ -7,7 +7,7 @@
  *   · 成本：一切工具都只返回“薄切片”（片段/行/少数 chunk），绝不一次把整本书
  *     或超长原文塞进模型上下文；默认带 limit / topK / 文本上限。
  *   · 复用现成轮子：图书目录来自 collections.config.mjs、TOC 复用
- *     generateBookSidebar、切片复用 indexer/chunker、打分复用 retriever、
+ *     buildBookCatalog、切片复用 indexer/chunker、打分复用 retriever、
  *     slug 复用 cleanSlug —— 不另造向量库或解析器。
  *
  * 每个工具：{ name, description, inputSchema（JSON Schema), run(args) }。
@@ -18,7 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { collections } from '../../config/collections.config.mjs';
-import { generateBookSidebar } from '../../utils/sidebar.mjs';
+import { buildBookCatalog } from '../../core/catalog/book-catalog.mjs';
 import { buildBookIndex, walkDir } from '../indexer.mjs';
 import { createRetriever } from '../retriever.mjs';
 import { CHUNK_TEXT_CAP, mdToText } from '../chunker.mjs';
@@ -114,7 +114,7 @@ export const TOOLS = [
     },
     run: (args) => {
       const meta = resolveBook(args.col, args.book);
-      return { title: meta.title, toc: generateBookSidebar(meta.dir) };
+      return { title: meta.title, toc: buildBookCatalog(meta.dir) };
     },
   },
   {

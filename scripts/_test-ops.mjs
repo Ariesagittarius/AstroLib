@@ -1,8 +1,8 @@
 // M1 验证：在副本文件上测试 locateBlock + applyOp 全部操作（每用例独立，避免行号漂移）
 import fs from 'node:fs';
-import { parseFile } from '../src/utils/mdx-editor/parse.mjs';
-import { locateBlock } from '../src/utils/mdx-editor/locate-block.mjs';
-import { applyOp, validateMdx } from '../src/utils/mdx-editor/apply-op.mjs';
+import { parseFile } from '../src/features/mdx-editor/core/parse.mjs';
+import { locateBlock } from '../src/features/mdx-editor/core/locate-block.mjs';
+import { applyOp, validateMdx } from '../src/features/mdx-editor/core/apply-op.mjs';
 
 const SRC = 'src/content/docs/collections/math/math_analysis/2.1_数列极限的基本概念.mdx';
 const TMP = 'scripts/_tmp_test.mdx';

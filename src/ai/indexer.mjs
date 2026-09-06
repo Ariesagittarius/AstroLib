@@ -16,7 +16,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { cleanSlug } from '../utils/sidebar.mjs';
+import { cleanSlug } from '../utils/slug.mjs';
 import { chunkMdx } from './chunker.mjs';
 
 /** 递归收集目录下的 .mdx/.md 文件（复用首页/侧边栏同一套遍历） */

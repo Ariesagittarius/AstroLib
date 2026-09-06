@@ -998,10 +998,34 @@ const isDev = import.meta.env.DEV;
 </style>
 
 <script>
-  import { initModuleInspector } from '../utils/module-inspector/inspector';
-  try {
-    initModuleInspector();
-  } catch (e) {
-    console.error('[module-inspector] 初始化失败：', e);
+  let loaded = false;
+  async function loadAndOpen() {
+    if (!loaded) {
+      loaded = true;
+      const { initModuleInspector } = await import('../utils/module-inspector/inspector');
+      initModuleInspector();
+      const ctrl = (window as any).__dshModuleInspector;
+      if (ctrl && !ctrl.isOpen) ctrl.open();
+    } else {
+      const ctrl = (window as any).__dshModuleInspector;
+      if (ctrl) ctrl.open();
+    }
   }
+
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement | null)?.closest('[data-inspector-trigger]');
+    if (btn) {
+      e.preventDefault();
+      loadAndOpen();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey && (e.key === 'm' || e.key === 'M')) {
+      e.preventDefault();
+      loadAndOpen();
+    }
+  });
+
+  window.addEventListener('inspector:open', () => loadAndOpen());
 </script>

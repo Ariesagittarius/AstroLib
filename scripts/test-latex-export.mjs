@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import {
   generateLatexDocument,
   formatLatexContent
-} from '../src/utils/latex/latex-generator.ts';
+} from '../src/publishing/latex/latex-generator.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -254,11 +254,13 @@ const handoutLatex = generateLatexDocument(sampleQuestions, {
   answerPlacement: 'appendix'
 });
 
-fs.writeFileSync(path.join(ROOT, 'public', 'test_exam_output.tex'), examLatex, 'utf8');
-fs.writeFileSync(path.join(ROOT, 'public', 'test_handout_output.tex'), handoutLatex, 'utf8');
+const testOutDir = path.join(ROOT, '.tmp', 'test-output');
+fs.mkdirSync(testOutDir, { recursive: true });
+fs.writeFileSync(path.join(testOutDir, 'test_exam_output.tex'), examLatex, 'utf8');
+fs.writeFileSync(path.join(testOutDir, 'test_handout_output.tex'), handoutLatex, 'utf8');
 console.log('\n✅ 代表性测试文件已写入:');
-console.log('   - public/test_exam_output.tex');
-console.log('   - public/test_handout_output.tex');
+console.log('   - .tmp/test-output/test_exam_output.tex');
+console.log('   - .tmp/test-output/test_handout_output.tex');
 
 console.log('\n======================================================');
 console.log(`工科数分章节汇总: ${chPassed} 题通过, ${chFailed} 题失败`);

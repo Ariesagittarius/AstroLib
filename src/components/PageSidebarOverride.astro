@@ -1,9 +1,8 @@
 ---
 // 自定义右侧侧边栏组件 - 替代 Starlight 的 PageSidebar.astro
-// 模块化架构：逻辑解耦至 src/components/sidebar/ 与 src/utils/cross-ref-indexer.mjs
+// 模块化架构：逻辑解耦至 src/components/sidebar/ 与 src/core/indexing/cross-ref-indexer.mjs
 import { collections } from '../config/collections.config.mjs';
 import { features, crossRefRefs } from '../config/features.config.mjs';
-import { buildGlobalBlockIndex } from '../utils/cross-ref-indexer.mjs';
 
 // 引用联动模式：'interactive'（默认，可点击/跨页联动）| 'static'（统一静态 chip）。
 const refsMode = crossRefRefs() === 'static' ? 'static' : 'interactive';
@@ -28,13 +27,9 @@ if (!currentBook) {
   currentBook = collections[0].books[0];
 }
 const bookConfigJson = JSON.stringify(currentBook);
-
-// 3. 构建期递归扫描提取当前图书的全局跨页路由索引
-const globalBlockIndex = refsMode === 'interactive' ? buildGlobalBlockIndex(currentCol?.slug, currentBook?.slug) : {};
-const globalIndexJson = JSON.stringify(globalBlockIndex);
 ---
 
-<aside class="custom-page-sidebar" data-book-key={`${currentCol.slug}/${currentBook.slug}`} data-refs-mode={refsMode} data-book-config={bookConfigJson} data-global-index={globalIndexJson}>
+<aside class="custom-page-sidebar" data-book-key={`${currentCol.slug}/${currentBook.slug}`} data-refs-mode={refsMode} data-book-config={bookConfigJson}>
   <!-- VitePress outline-marker：跟随滚动高亮项的 2px 品牌色指示条（JS 更新 top） -->
   <div class="outline-marker" aria-hidden="true"></div>
   <div class="toc-container">

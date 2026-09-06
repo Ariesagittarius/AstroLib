@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeCompiler } from '@myriaddreamin/typst-ts-node-compiler';
-import { generateTypstDocument, convertLatexToTypst, convertLatexMathToTypst } from '../src/utils/typst/typst-generator.ts';
+import { generateTypstDocument, convertLatexToTypst, convertLatexMathToTypst } from '../src/publishing/typst/typst-generator.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -76,9 +76,11 @@ const sampleQuestions = rawData.chapters['1'].slice(0, 15).map(q => ({
 const examTypst = generateTypstDocument(sampleQuestions, { template: 'exam', title: '期末模拟自测试卷', courseName: '工科数学分析' });
 const handoutTypst = generateTypstDocument(sampleQuestions, { template: 'handout', title: '第 1 章 极限与连续', courseName: '工科数学分析' });
 
-fs.writeFileSync(path.join(ROOT, 'public', 'test_exam_output.typ'), examTypst, 'utf8');
-fs.writeFileSync(path.join(ROOT, 'public', 'test_handout_output.typ'), handoutTypst, 'utf8');
-console.log('✅ 已生成测试文件至 public/test_exam_output.typ 和 public/test_handout_output.typ');
+const testOutDir = path.join(ROOT, '.tmp', 'test-output');
+fs.mkdirSync(testOutDir, { recursive: true });
+fs.writeFileSync(path.join(testOutDir, 'test_exam_output.typ'), examTypst, 'utf8');
+fs.writeFileSync(path.join(testOutDir, 'test_handout_output.typ'), handoutTypst, 'utf8');
+console.log('✅ 已生成测试文件至 .tmp/test-output/test_exam_output.typ 和 .tmp/test-output/test_handout_output.typ');
 
 console.log('--- 运行原生 Typst 编译器进行排版与编译验证 ---');
 try {

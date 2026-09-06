@@ -1,0 +1,626 @@
+---
+// 在线可视化精修工具 · 服务端壳（M2 + M3）
+// 仅 dev 渲染（import.meta.env.DEV），生产构建输出为空，零污染。
+// 挂载：由 FooterOverride.astro 在页面底部引入（SPA 导航不替换 footer，脚本只执行一次）。
+// UI 元素由 ../client/editor-controller.ts 动态创建，本组件只负责样式与脚本入口。
+// 样式遵循 VitePress 视觉语言（品牌绿 #42b883 / #3eaf7c、细边框、轻阴影、少 emoji）。
+const isDev = import.meta.env.DEV;
+---
+
+{
+  isDev && (
+    <>
+      <div id="dsh-editor-root" aria-label="在线精修工具（开发模式）"></div>
+
+      <style is:global>
+        /* ===== 在线精修工具 UI（仅 dev 输出；VitePress 风格） ===== */
+        :root {
+          --dsh-brand: var(--sl-color-text-accent, #10b981);
+          --dsh-brand-2: #059669;
+          --dsh-brand-soft: rgba(16, 185, 129, 0.12);
+          --dsh-bg: rgba(255, 255, 255, 0.94);
+          --dsh-bg-solid: #ffffff;
+          --dsh-bg-soft: #f8fafc;
+          --dsh-bg-hover: #f1f5f9;
+          --dsh-text-1: #1e293b;
+          --dsh-text-2: #64748b;
+          --dsh-border: #e2e8f0;
+          --dsh-hairline: rgba(226, 232, 240, 0.85);
+          --dsh-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+          --dsh-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+          --dsh-shadow-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.05);
+          --dsh-danger: #ef4444;
+          --dsh-danger-soft: rgba(239, 68, 68, 0.1);
+        }
+        html[data-theme='dark'] {
+          --dsh-brand: #34d399;
+          --dsh-brand-2: #10b981;
+          --dsh-brand-soft: rgba(52, 211, 153, 0.15);
+          --dsh-bg: rgba(26, 27, 30, 0.94);
+          --dsh-bg-solid: #1a1b1e;
+          --dsh-bg-soft: #222327;
+          --dsh-bg-hover: #2e2f36;
+          --dsh-text-1: #f1f5f9;
+          --dsh-text-2: #94a3b8;
+          --dsh-border: #33353c;
+          --dsh-hairline: rgba(51, 53, 60, 0.85);
+          --dsh-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+          --dsh-shadow: 0 6px 24px -2px rgba(0, 0, 0, 0.5), 0 2px 8px -1px rgba(0, 0, 0, 0.3);
+          --dsh-shadow-lg: 0 16px 36px -4px rgba(0, 0, 0, 0.6), 0 6px 16px rgba(0, 0, 0, 0.4);
+          --dsh-danger: #f87171;
+          --dsh-danger-soft: rgba(248, 113, 113, 0.18);
+        }
+
+        #dsh-editor-root {
+          position: fixed;
+          inset: 0;
+          z-index: 2147483000;
+          pointer-events: none;
+          font-family: var(--vp-font-family-base, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', sans-serif);
+          -webkit-font-smoothing: antialiased;
+        }
+        #dsh-editor-root * {
+          box-sizing: border-box;
+          pointer-events: auto;
+        }
+        #dsh-editor-root button {
+          font: inherit;
+        }
+
+        /* 编辑模式下正文块可点 */
+        body.dsh-edit-mode main [data-src-line] {
+          cursor: pointer;
+          transition: outline-color 0.15s ease, background-color 0.15s ease;
+        }
+
+        /* 块高亮（outline 不占布局） */
+        .dsh-block-hover {
+          outline: 2px dashed var(--dsh-brand) !important;
+          outline-offset: 3px !important;
+          border-radius: 4px;
+        }
+        .dsh-block-selected {
+          outline: 2px solid var(--dsh-brand) !important;
+          outline-offset: 3px !important;
+          background-color: var(--dsh-brand-soft) !important;
+          border-radius: 4px;
+        }
+        /* 草稿已修改标记 */
+        .dsh-dirty {
+          position: relative;
+          outline: 2px solid var(--dsh-brand) !important;
+          outline-offset: 3px !important;
+          background-color: var(--dsh-brand-soft) !important;
+          border-radius: 4px;
+        }
+        .dsh-dirty::after {
+          content: '已修改';
+          position: absolute;
+          top: -2px;
+          right: -2px;
+          font-size: 10px;
+          line-height: 1;
+          padding: 3px 6px;
+          color: #fff;
+          font-weight: 600;
+          background: var(--dsh-brand);
+          border-radius: 0 0 0 6px;
+          box-shadow: var(--dsh-shadow-sm);
+        }
+
+        /* hover 类型徽标 */
+        .dsh-badge {
+          position: fixed;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 2px 8px;
+          font-size: 11px;
+          font-weight: 600;
+          line-height: 1.5;
+          border-radius: 6px;
+          background: var(--dsh-brand);
+          color: #fff;
+          pointer-events: none !important;
+          white-space: nowrap;
+          box-shadow: var(--dsh-shadow-sm);
+          z-index: 1;
+          backdrop-filter: blur(8px);
+        }
+
+        /* 浮动工具栏 (VitePress 风格毛玻璃胶囊浮层) */
+        .dsh-toolbar {
+          position: fixed;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 5px 8px;
+          background: var(--dsh-bg);
+          color: var(--dsh-text-1);
+          border: 1px solid var(--dsh-border);
+          border-radius: 10px;
+          box-shadow: var(--dsh-shadow);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          z-index: 2;
+          max-width: calc(100vw - 20px);
+          flex-wrap: nowrap;
+          transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease;
+        }
+
+        .dsh-toolbar-info {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 3px 8px;
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--dsh-brand);
+          background: var(--dsh-brand-soft);
+          border-radius: 6px;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+
+        .dsh-toolbar-group {
+          display: inline-flex;
+          align-items: center;
+          gap: 2px;
+        }
+
+        .dsh-toolbar-divider {
+          width: 1px;
+          height: 18px;
+          margin: 0 3px;
+          background: var(--dsh-border);
+          flex-shrink: 0;
+        }
+
+        .dsh-toolbar button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          border: 1px solid transparent;
+          background: transparent;
+          color: var(--dsh-text-1);
+          padding: 4px 8px;
+          height: 28px;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 500;
+          white-space: nowrap;
+          transition: all 0.15s ease;
+        }
+
+        .dsh-toolbar button svg {
+          width: 14px;
+          height: 14px;
+          flex-shrink: 0;
+        }
+
+        .dsh-toolbar button:hover:not(:disabled) {
+          background: var(--dsh-bg-hover);
+          color: var(--dsh-brand);
+          border-color: var(--dsh-hairline);
+        }
+
+        .dsh-toolbar button.dsh-btn-danger:hover:not(:disabled) {
+          background: var(--dsh-danger-soft);
+          color: var(--dsh-danger);
+          border-color: transparent;
+        }
+
+        .dsh-toolbar button:disabled {
+          opacity: 0.35;
+          cursor: not-allowed;
+        }
+
+        /* 顶部面板（VitePress Header 工具栏） */
+        .dsh-panel {
+          position: fixed;
+          top: 14px;
+          right: 16px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 12px;
+          background: var(--dsh-bg);
+          color: var(--dsh-text-1);
+          border: 1px solid var(--dsh-border);
+          border-radius: 10px;
+          box-shadow: var(--dsh-shadow);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          z-index: 3;
+          max-width: min(82vw, 800px);
+        }
+
+        .dsh-panel-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 3px 8px;
+          border-radius: 6px;
+          background: var(--dsh-brand-soft);
+          color: var(--dsh-brand);
+          font-weight: 700;
+          font-size: 12px;
+          white-space: nowrap;
+        }
+
+        .dsh-panel-badge-dirty {
+          background: var(--dsh-brand);
+          color: #ffffff;
+        }
+
+        .dsh-panel-file {
+          font-size: 11px;
+          font-family: var(--vp-font-family-mono, monospace);
+          color: var(--dsh-text-2);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          direction: rtl;
+          text-align: left;
+          max-width: 180px;
+        }
+
+        .dsh-panel-actions {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .dsh-panel button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          border: 1px solid var(--dsh-border);
+          background: var(--dsh-bg-solid);
+          color: var(--dsh-text-1);
+          padding: 4px 10px;
+          height: 28px;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 500;
+          white-space: nowrap;
+          transition: all 0.15s ease;
+          box-shadow: var(--dsh-shadow-sm);
+        }
+
+        .dsh-panel button svg {
+          width: 13px;
+          height: 13px;
+          flex-shrink: 0;
+        }
+
+        .dsh-panel button:hover:not(:disabled) {
+          border-color: var(--dsh-brand);
+          color: var(--dsh-brand);
+          background: var(--dsh-bg-hover);
+        }
+
+        .dsh-panel button:disabled {
+          opacity: 0.45;
+          cursor: not-allowed;
+        }
+
+        .dsh-panel .dsh-panel-save {
+          border-color: var(--dsh-border);
+          color: var(--dsh-text-2);
+        }
+
+        .dsh-panel .dsh-panel-save-dirty {
+          background: var(--dsh-brand);
+          border-color: var(--dsh-brand);
+          color: #ffffff !important;
+          font-weight: 600;
+          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+        }
+
+        .dsh-panel .dsh-panel-save-dirty:hover:not(:disabled) {
+          background: var(--dsh-brand-2);
+          border-color: var(--dsh-brand-2);
+        }
+
+        /* 弹窗 (VitePress 现代对话框) */
+        .dsh-modal {
+          position: fixed;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(0, 0, 0, 0.45);
+          backdrop-filter: blur(4px);
+          z-index: 4;
+          animation: dshFadeIn 0.15s ease-out;
+        }
+
+        @keyframes dshFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        .dsh-modal-box {
+          width: min(92vw, 680px);
+          max-height: 86vh;
+          display: flex;
+          flex-direction: column;
+          background: var(--dsh-bg-solid);
+          color: var(--dsh-text-1);
+          border: 1px solid var(--dsh-border);
+          border-radius: 12px;
+          box-shadow: var(--dsh-shadow-lg);
+          overflow: hidden;
+          transform: translateY(0);
+          animation: dshScaleIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes dshScaleIn {
+          from { opacity: 0; transform: scale(0.96) translateY(6px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .dsh-modal-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 16px;
+          font-weight: 700;
+          font-size: 14px;
+          border-bottom: 1px solid var(--dsh-border);
+          background: var(--dsh-bg-soft);
+        }
+
+        .dsh-modal-close {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 26px;
+          height: 26px;
+          border: none;
+          background: transparent;
+          cursor: pointer;
+          color: var(--dsh-text-2);
+          border-radius: 6px;
+          transition: all 0.15s ease;
+        }
+
+        .dsh-modal-close:hover {
+          background: var(--dsh-bg-hover);
+          color: var(--dsh-text-1);
+        }
+
+        .dsh-modal-body {
+          padding: 16px;
+          overflow: auto;
+        }
+
+        .dsh-modal-textarea {
+          width: 100%;
+          min-height: 220px;
+          font-family: var(--vp-font-family-mono, ui-monospace, SFMono-Regular, Consolas, monospace);
+          font-size: 13px;
+          line-height: 1.6;
+          border: 1px solid var(--dsh-border);
+          border-radius: 8px;
+          padding: 12px;
+          resize: vertical;
+          background: var(--dsh-bg-soft);
+          color: var(--dsh-text-1);
+          transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .dsh-modal-input,
+        .dsh-modal-select {
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid var(--dsh-border);
+          border-radius: 8px;
+          font-size: 13px;
+          background: var(--dsh-bg-solid);
+          color: var(--dsh-text-1);
+          transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .dsh-modal-input:focus,
+        .dsh-modal-select:focus,
+        .dsh-modal-textarea:focus {
+          outline: none;
+          border-color: var(--dsh-brand);
+          box-shadow: 0 0 0 3px var(--dsh-brand-soft);
+        }
+
+        .dsh-modal-field {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 12px;
+        }
+
+        .dsh-modal-label {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--dsh-text-2);
+          width: 80px;
+          flex-shrink: 0;
+        }
+
+        .dsh-modal-hint {
+          font-size: 12px;
+          color: var(--dsh-text-2);
+          margin-bottom: 10px;
+          line-height: 1.6;
+        }
+
+        .dsh-modal-foot {
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+          padding: 12px 16px;
+          border-top: 1px solid var(--dsh-border);
+          background: var(--dsh-bg-soft);
+        }
+
+        .dsh-modal-foot button {
+          padding: 6px 16px;
+          border-radius: 6px;
+          border: 1px solid var(--dsh-border);
+          background: var(--dsh-bg-solid);
+          color: var(--dsh-text-1);
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 500;
+          transition: all 0.15s ease;
+        }
+
+        .dsh-modal-foot button:hover {
+          border-color: var(--dsh-brand);
+          color: var(--dsh-brand);
+        }
+
+        .dsh-modal-foot .dsh-modal-save {
+          background: var(--dsh-brand);
+          border-color: var(--dsh-brand);
+          color: #ffffff;
+          font-weight: 600;
+        }
+
+        .dsh-modal-foot .dsh-modal-save:hover {
+          background: var(--dsh-brand-2);
+          border-color: var(--dsh-brand-2);
+          color: #ffffff;
+        }
+
+        /* 卡片选择列表 */
+        .dsh-card-pick {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          max-height: 46vh;
+          overflow: auto;
+          margin-bottom: 4px;
+        }
+
+        .dsh-card-pick-item {
+          display: flex;
+          align-items: baseline;
+          gap: 10px;
+          width: 100%;
+          text-align: left;
+          padding: 8px 12px;
+          border: 1px solid var(--dsh-border);
+          border-radius: 8px;
+          background: var(--dsh-bg-solid);
+          color: var(--dsh-text-1);
+          cursor: pointer;
+          font-size: 12px;
+          line-height: 1.5;
+          transition: all 0.15s ease;
+        }
+
+        .dsh-card-pick-item:hover {
+          background: var(--dsh-brand-soft);
+          border-color: var(--dsh-brand);
+        }
+
+        .dsh-card-pick-line {
+          font-family: var(--vp-font-family-mono, monospace);
+          color: var(--dsh-brand);
+          font-weight: 600;
+          flex-shrink: 0;
+        }
+
+        .dsh-card-pick-preview {
+          color: var(--dsh-text-2);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          flex: 1;
+        }
+
+        /* 预览占位卡片 */
+        .dsh-preview-card {
+          border: 1px dashed var(--dsh-brand);
+          border-radius: 8px;
+          margin: 1.5rem 0;
+          overflow: hidden;
+          background: var(--dsh-brand-soft);
+        }
+
+        .dsh-preview-card-title {
+          padding: 0.6rem 1rem;
+          font-weight: 700;
+          font-size: 13px;
+          color: var(--dsh-brand);
+          border-bottom: 1px dashed var(--dsh-brand);
+        }
+
+        .dsh-preview-card-body {
+          padding: 0.8rem 1rem;
+        }
+
+        /* 日志 */
+        .dsh-log-list {
+          font-size: 12px;
+          line-height: 1.8;
+          max-height: 52vh;
+          overflow: auto;
+        }
+
+        .dsh-log-item {
+          border-bottom: 1px dashed var(--dsh-border);
+          padding: 6px 4px;
+          font-family: var(--vp-font-family-mono, monospace);
+          color: var(--dsh-text-1);
+        }
+
+        /* Toast 浮动通知 */
+        .dsh-toast-box {
+          position: fixed;
+          bottom: 24px;
+          right: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          z-index: 5;
+          pointer-events: none;
+        }
+
+        .dsh-toast {
+          padding: 10px 16px;
+          background: var(--dsh-bg-solid);
+          color: var(--dsh-text-1);
+          border: 1px solid var(--dsh-border);
+          border-left: 4px solid var(--dsh-brand);
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 500;
+          box-shadow: var(--dsh-shadow-lg);
+          max-width: 420px;
+          transition: opacity 0.25s ease, transform 0.25s ease;
+          pointer-events: auto;
+        }
+
+        .dsh-toast-click {
+          cursor: pointer;
+          text-decoration: underline;
+        }
+
+        .dsh-toast-out {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+      </style>
+
+      <script>
+        import { initEditor } from '../client/editor-controller';
+        initEditor();
+      </script>
+    </>
+  )
+}

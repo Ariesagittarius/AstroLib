@@ -1,6 +1,6 @@
 ---
 import SidebarPersister from '@astrojs/starlight/components/SidebarPersister.astro';
-import SidebarSublist from '@astrojs/starlight/components/SidebarSublist.astro';
+import SidebarSublist from './sidebar/CustomSidebarSublist.astro';
 import MobileMenuFooter from 'virtual:starlight/components/MobileMenuFooter';
 import fs from 'node:fs';
 import { features } from '../config/features.config.mjs';
@@ -119,52 +119,10 @@ if (features.epub.enabled && bookMatch) {
   }
 </style>
 
-<!-- 2. 注入客户端脚本，同时渲染“侧边栏”与“页面大标题 (h1)”中的数学公式 -->
+<!-- 2. 注入客户端脚本：最近阅读记录维护（标题与侧栏公式已在构建期完成静态转译，客户端零解析） -->
 <script>
-  // @ts-ignore
-  import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
-  // 注意：katex.min.css 已通过 astro.config.mjs 的 customCss 全局引入，这里不再重复引入。
-
-  // 侧边栏公式只渲染一次：SPA 局部导航后侧边栏 DOM 并未变化，无需重复渲染
-  let sidebarMathRendered = false;
-
-  window.__renderCustomMath = function renderCustomMath(root = document) {
-    const katexConfig = {
-      delimiters: [
-        { left: '$$', right: '$$', display: true },
-        { left: '$', right: '$', display: false },
-      ],
-      throwOnError: false
-    };
-
-    if (!sidebarMathRendered) {
-      const sidebar = document.querySelector('.sidebar') || document.querySelector('aside');
-      if (sidebar && sidebar.textContent?.includes('$')) {
-        renderMathInElement(sidebar, katexConfig);
-        sidebarMathRendered = true;
-      }
-    }
-
-    // 页面大标题每个新页面都不同，按需重新渲染
-    const mainTitle = root?.querySelector ? root.querySelector('h1') : null;
-    if (mainTitle) {
-      // 容错：若标题含有未闭合或裸露的 LaTeX 宏（如 \mathbf{R}^n），自动补全行内定界符
-      if (!mainTitle.textContent?.includes('$') && /\\(mathbf|boldsymbol|pmb|mathbb|text)\{/.test(mainTitle.innerHTML)) {
-        mainTitle.innerHTML = mainTitle.innerHTML.replace(/(\\(?:mathbf|boldsymbol|pmb|mathbb|text)\{[^}]+\}(?:\^\{?[^}\s]+\}?)?)/g, '$$$1$$');
-      }
-      if (mainTitle.textContent?.includes('$') || mainTitle.textContent?.includes('\\')) {
-        renderMathInElement(mainTitle, {
-          delimiters: [
-            { left: '$$', right: '$$', display: true },
-            { left: '$', right: '$', display: false },
-            { left: '\\(', right: '\\)', display: false },
-            { left: '\\[', right: '\\]', display: true },
-          ],
-          throwOnError: false
-        });
-      }
-    }
-  };
+  // 保持全局兼容性桩函数（构建期已完成转译，运行期无需操作）
+  window.__renderCustomMath = function renderCustomMath() {};
 
   function updateRecentReading() {
     try {
@@ -186,13 +144,9 @@ if (features.epub.enabled && bookMatch) {
     } catch {}
   }
 
-  // 页面初次加载时执行一次
-  window.__renderCustomMath();
+  // 页面初次加载与路由切换时更新阅读历史
   updateRecentReading();
-
-  // 监听 Astro 页面过渡和加载事件，确保在路由切换后依然生效
   document.addEventListener('astro:page-load', () => {
-    window.__renderCustomMath();
     updateRecentReading();
   });
 </script>
@@ -207,7 +161,7 @@ if (features.epub.enabled && bookMatch) {
     // 不可变页面缓存：保存预解析清洗的母版 DOM 节点，导航时通过 cloneNode(true) 取用，采用精简 LRU 淘汰策略
     const pageCache = new Map(); // key -> { title: string, mainPane: HTMLElement | null, rightSidebar: HTMLElement | null, sidebar: HTMLElement | null }
     const inFlightRequests = new Map(); // key -> Promise<{ ... }>
-    const CACHE_MAX = 10; // 精简 LRU 缓存上限（10页足以保障前进后退与临近秒开，大幅降低内存）
+    const CACHE_MAX = 5; // 精简 LRU 缓存上限（5页保障前进后退瞬开，同时将 DOM 内存占用减半）
     let navToken = 0;
 
     function normPath(p) {
@@ -318,12 +272,14 @@ if (features.epub.enabled && bookMatch) {
         .map((l) => l.getAttribute('href'))
         .filter(Boolean);
 
+      // 性能突破：缓存序列化后的 HTML 字符串与文本切片，杜绝脱体 DOM 节点在 Blink C++ 内存中常驻
       const record = {
         title,
-        mainPane,
-        rightSidebar,
-        sidebar,
-        headLinks
+        mainHtml: mainPane.outerHTML,
+        rightHtml: rightSidebar ? rightSidebar.outerHTML : null,
+        sidebarHtml: sidebar ? sidebar.outerHTML : null,
+        headLinks,
+        textSnippet: (mainPane.textContent || '').slice(0, 2500)
       };
 
       if (pageCache.has(key)) {
@@ -331,15 +287,9 @@ if (features.epub.enabled && bookMatch) {
       }
       pageCache.set(key, record);
 
-      // LRU 淘汰：清理最旧的缓存节点，解除 DOM 引用释放内存
+      // LRU 淘汰：清理最旧的缓存字符串，释放内存
       while (pageCache.size > CACHE_MAX) {
         const oldestKey = pageCache.keys().next().value;
-        const oldRecord = pageCache.get(oldestKey);
-        if (oldRecord) {
-          oldRecord.mainPane = null;
-          oldRecord.rightSidebar = null;
-          oldRecord.sidebar = null;
-        }
         pageCache.delete(oldestKey);
       }
       return record;
@@ -364,13 +314,25 @@ if (features.epub.enabled && bookMatch) {
       return p;
     }
 
-    // 从不可变母版中克隆独立的一套 DOM 节点供当前页面挂载
+    // 从不可变 HTML 字符串缓存中反序列化 DOM 节点供当前页面挂载（按需即时生成，杜绝脱体 DOM 泄漏）
     function getPageNodes(record) {
+      if (record.mainPane) {
+        return {
+          title: record.title,
+          mainPane: record.mainPane.cloneNode(true),
+          rightSidebar: record.rightSidebar ? record.rightSidebar.cloneNode(true) : null,
+          sidebar: record.sidebar ? record.sidebar.cloneNode(true) : null,
+        };
+      }
+      const parser = new DOMParser();
+      const wrapHtml = `<div id="__astrolib_spa_wrap">${record.mainHtml || ''}${record.rightHtml || ''}${record.sidebarHtml || ''}</div>`;
+      const doc = parser.parseFromString(wrapHtml, 'text/html');
+      const wrap = doc.getElementById('__astrolib_spa_wrap');
       return {
         title: record.title,
-        mainPane: record.mainPane.cloneNode(true),
-        rightSidebar: record.rightSidebar ? record.rightSidebar.cloneNode(true) : null,
-        sidebar: record.sidebar ? record.sidebar.cloneNode(true) : null,
+        mainPane: wrap?.querySelector('.main-pane') || null,
+        rightSidebar: wrap?.querySelector('.right-sidebar-container') || null,
+        sidebar: wrap?.querySelector('nav.sidebar, .sidebar-pane, .sidebar') || null,
       };
     }
 
@@ -749,8 +711,8 @@ if (features.epub.enabled && bookMatch) {
           const targetUrl = prewarmQueue.shift();
           if (targetUrl && !pageCache.has(normPath(targetUrl.pathname))) {
             fetchPage(targetUrl).then((record) => {
-              if (record && record.mainPane) {
-                warmPageFonts(record.mainPane.textContent, 0);
+              if (record && record.textSnippet) {
+                warmPageFonts(record.textSnippet, 0);
               }
             }).catch(() => {});
             break; // 每次执行拉取 1 个，平滑让出主线程与网络带宽

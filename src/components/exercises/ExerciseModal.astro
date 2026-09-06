@@ -846,5 +846,42 @@ if (!enabled) return;
 </div>
 
 <script>
-  import './exercise-controller';
+  let loaded = false;
+  async function loadAndOpen(detail?: any) {
+    if (!loaded) {
+      loaded = true;
+      const { exerciseController } = await import('./exercise-controller');
+      if (detail) {
+        if (detail.mode === 'paper') {
+          exerciseController.openPaper(detail.paperId || 1, detail.targetQid);
+        } else {
+          exerciseController.open(detail.chapter || 1, detail.section || 'all');
+        }
+      } else {
+        exerciseController.open();
+      }
+    }
+  }
+
+  // 监听触发事件（点击 [data-exercise-trigger] 或按 Alt+E）
+  document.addEventListener('click', (e) => {
+    const trigger = (e.target as HTMLElement)?.closest('[data-exercise-trigger]');
+    if (trigger) {
+      e.preventDefault();
+      const ch = parseInt(trigger.getAttribute('data-chapter') || '1', 10);
+      const sec = trigger.getAttribute('data-section') || 'all';
+      loadAndOpen({ chapter: ch, section: sec });
+    }
+  });
+
+  window.addEventListener('exercises:open', (e: any) => {
+    loadAndOpen(e.detail);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey && (e.key === 'e' || e.key === 'E')) {
+      e.preventDefault();
+      loadAndOpen();
+    }
+  });
 </script>

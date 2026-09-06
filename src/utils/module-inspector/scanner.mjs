@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import katex from 'katex';
-import { cleanSlug, naturalSort } from '../sidebar.mjs';
+import { cleanSlug } from '../slug.mjs';
+import { naturalSort } from '../natural-sort.mjs';
 import { collections } from '../../config/collections.config.mjs';
 
 /**

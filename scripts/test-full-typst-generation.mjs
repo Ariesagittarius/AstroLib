@@ -6,7 +6,7 @@ import {
   generateTypstDocument,
   convertLatexToTypst,
   convertLatexMathToTypst
-} from '../src/utils/typst/typst-generator.ts';
+} from '../src/publishing/typst/typst-generator.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');

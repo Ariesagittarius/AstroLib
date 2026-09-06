@@ -7,8 +7,8 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import fs from 'node:fs';
 import path from 'node:path';
-import { rehypeKatexAnnotate, rehypeKatexPromote } from '../src/utils/rehype-katex-source.mjs';
-import { rehypeCrossRef } from '../src/utils/rehype-cross-ref.mjs';
+import { rehypeKatexAnnotate, rehypeKatexPromote } from '../src/plugins/rehype/rehype-katex-source.mjs';
+import { rehypeCrossRef } from '../src/plugins/rehype/rehype-cross-ref.mjs';
 import { collections } from '../src/config/collections.config.mjs';
 
 const target = process.argv[2] || 'src/content/docs/collections/math/engineering_analysis/1.5_连续函数.mdx';

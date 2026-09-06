@@ -6,33 +6,34 @@ import rehypeKatex from 'rehype-katex';
 
 // 导入多合集配置和我们的自然排序侧边栏生成器
 import { collections } from './src/config/collections.config.mjs';
-import { generateBookSidebar } from './src/utils/sidebar.mjs';
+import { generateStarlightBookSidebar } from './src/server/adapters/starlight-sidebar.mjs';
+
 // 全站功能注册表：统一声明各功能 enabled/devOnly/ui，并动态装配下方配置。
 // 关闭某功能即从构建产物中彻底移除（插件/CSS/组件/生成脚本），实现性能最大化。
 import { features, isEffective, crossRefRefs } from './src/config/features.config.mjs';
 // 公式源码回填插件：让每个 KaTeX 公式携带 data-latex 原始源码（供前端一键复制）
-import { rehypeKatexAnnotate, rehypeKatexPromote } from './src/utils/rehype-katex-source.mjs';
+import { rehypeKatexAnnotate, rehypeKatexPromote } from './src/plugins/rehype/rehype-katex-source.mjs';
 // 数学变量智能提升插件：构建期提升正文漏网单字母变量与简式为 KaTeX 公式
-import rehypeMathPromote from './src/utils/rehype-math-promote.mjs';
+import rehypeMathPromote from './src/plugins/rehype/rehype-math-promote.mjs';
 // 构建期引用徽章下沉插件（方案 B）：把“例题 1.74 / 图 3-48 → badge”的匹配逻辑
 // 从客户端 SPA 切换时扫描下沉到构建期，客户端切换零扫描（详见 docs/文章切换性能优化交接文档）
-import { rehypeCrossRef } from './src/utils/rehype-cross-ref.mjs';
+import { rehypeCrossRef } from './src/plugins/rehype/rehype-cross-ref.mjs';
 // 在线可视化精修工具：源码位置注入（仅 dev 启用，见 M1 设计）
-import rehypeEditorAnnotate from './src/utils/rehype-editor-annotate.mjs';
+import rehypeEditorAnnotate from './src/plugins/rehype/rehype-editor-annotate.mjs';
 // 在线可视化精修工具：/__edit__/* 写回端点（Vite dev server 插件，仅 dev 启用）。
 // 不用 Astro middleware：dev 下 /__edit__/* 会匹配到 prerendered 路由，Astro 构造
 // Request 时清空 query、丢弃 body（见 dev-server-plugin.mjs 头部说明）。
-import devEditServerPlugin from './src/utils/mdx-editor/dev-server-plugin.mjs';
+import devEditServerPlugin from './src/features/mdx-editor/server/dev-server-plugin.mjs';
 // 书籍模块巡检与查重工具：/__inspector__/* 扫描端点（Vite dev server 插件，仅 dev 启用）
-import devInspectorServerPlugin from './src/utils/module-inspector/dev-server-plugin.mjs';
+import devInspectorServerPlugin from './src/server/plugins/module-inspector/dev-server-plugin.mjs';
 // 章节内联关系图谱：/__relation_graph__/* 实时端点（Vite dev server 插件，仅 dev 启用）
-import devRelationGraphServerPlugin from './src/utils/relation-graph/dev-server-plugin.mjs';
+import devRelationGraphServerPlugin from './src/server/plugins/relation-graph/dev-server-plugin.mjs';
 // 习题模块：/api/exercise/* 源码热保存、读者反馈与社区题解端点（Vite dev server 插件，仅 dev 启用）
-import { exerciseDevServerPlugin } from './src/utils/exercise-editor/dev-server-plugin.mjs';
+import { exerciseDevServerPlugin } from './src/server/plugins/exercise-editor/dev-server-plugin.mjs';
 // Mermaid 图表拦截插件：将 ```mermaid 代码块转化为 .mermaid-container DOM
-import rehypeMermaid from './src/utils/rehype-mermaid.mjs';
+import rehypeMermaid from './src/plugins/rehype/rehype-mermaid.mjs';
 // 图像高斯模糊占位插件：为正文图片在构建期生成微型 LQIP Base64 占位并平滑渐显
-import rehypeImageBlur from './src/utils/rehype-image-blur.mjs';
+import rehypeImageBlur from './src/plugins/rehype/rehype-image-blur.mjs';
 
 // 项目开发文档侧边栏
 const devDocsSidebarGroup = {
@@ -95,7 +96,7 @@ const dynamicSidebar = [
       label: book.title,
       collapsed: true,
       // 调用生成器，就地读取目录并进行 1.1 -> 10.1 排序，取代鸡肋的默认 autogenerate
-      items: generateBookSidebar(`src/content/docs/collections/${col.slug}/${book.slug}`)
+      items: generateStarlightBookSidebar(`src/content/docs/collections/${col.slug}/${book.slug}`)
     }))
   }))
 ];
@@ -171,6 +172,7 @@ const componentOverrides = {
   PageSidebar: './src/components/PageSidebarOverride.astro', // 右侧多合集自适应大纲与卡片修补
   Pagination: './src/components/PaginationOverride.astro', // 文章底部翻页 → VitePress pager 结构
   Footer: './src/components/FooterOverride.astro', // 底部：原翻页/编辑链接 + 在线精修工具壳（仅 dev）
+  PageTitle: './src/components/PageTitleOverride.astro', // 页面大标题 H1 构建期数学公式转译（零客户端 KaTeX）
 };
 if (features.theme.enabled) {
   componentOverrides.ThemeSelect = './src/components/ThemeSelectOverride.astro'; // VitePress 纯图标主题切换按钮

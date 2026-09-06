@@ -982,12 +982,62 @@ const bookSlug = currentBook.slug;
 </style>
 
 <script>
-  import { initRelationGraphClient } from '../utils/relation-graph/relation-graph-client';
+  // Apply saved preference for trigger button visibility without loading heavy bundle
+  try {
+    if (localStorage.getItem('astro-show-relation-graph-btn') === 'false') {
+      document.querySelectorAll('.relation-graph-trigger').forEach((btn) => {
+        (btn as HTMLElement).style.display = 'none';
+      });
+    }
+  } catch {}
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => initRelationGraphClient());
-  } else {
-    initRelationGraphClient();
+  let relationGraphLoaded = false;
+  let relationGraphLoading: Promise<void> | null = null;
+
+  async function activateRelationGraph() {
+    if (!relationGraphLoading) {
+      relationGraphLoading = (async () => {
+        const { initRelationGraphClient } = await import('../utils/relation-graph/relation-graph-client');
+        initRelationGraphClient();
+        relationGraphLoaded = true;
+      })();
+    }
+    await relationGraphLoading;
+    window.openBookRelationGraph?.();
   }
-  document.addEventListener('astro:page-load', () => initRelationGraphClient());
+
+  window.openBookRelationGraph = activateRelationGraph;
+
+  // Preload on mouseover/pointerenter on relation graph trigger buttons
+  document.addEventListener(
+    'pointerenter',
+    (e) => {
+      if (relationGraphLoaded || relationGraphLoading) return;
+      if ((e.target as Element | null)?.closest('[data-open-relation-graph], .relation-graph-trigger')) {
+        import('../utils/relation-graph/relation-graph-client');
+      }
+    },
+    { capture: true, passive: true }
+  );
+
+  document.addEventListener('click', (e) => {
+    if (relationGraphLoaded) return;
+    const btn = (e.target as Element | null)?.closest('[data-open-relation-graph], .relation-graph-trigger');
+    if (btn) {
+      e.preventDefault();
+      activateRelationGraph();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (relationGraphLoaded) return;
+    if ((e.altKey && e.code === 'KeyG') || (e.altKey && (e.key === 'g' || e.key === 'G'))) {
+      e.preventDefault();
+      activateRelationGraph();
+    }
+  });
+
+  window.addEventListener('relation-graph:open', () => {
+    activateRelationGraph();
+  });
 </script>

@@ -456,17 +456,61 @@ const configJson = JSON.stringify(config);
 </style>
 
 <script>
-  import { initFeedback } from '../utils/feedback/feedback-controller';
+  let feedbackLoaded = false;
+  let feedbackLoading: Promise<void> | null = null;
 
-  const anchor = document.getElementById('sl-feedback-anchor');
-  let config = {};
-  if (anchor) {
-    try {
-      config = JSON.parse(anchor.getAttribute('data-feedback-config') || '{}');
-    } catch {
-      // Fallback
+  async function activateFeedback() {
+    if (feedbackLoaded) return;
+    if (!feedbackLoading) {
+      feedbackLoading = (async () => {
+        const anchor = document.getElementById('sl-feedback-anchor');
+        let config = {};
+        if (anchor) {
+          try {
+            config = JSON.parse(anchor.getAttribute('data-feedback-config') || '{}');
+          } catch {
+            // Fallback
+          }
+        }
+        const { initFeedback, toggleFeedback } = await import('../utils/feedback/feedback-controller');
+        initFeedback(config);
+        feedbackLoaded = true;
+        toggleFeedback();
+      })();
     }
+    await feedbackLoading;
   }
 
-  initFeedback(config);
+  // Preload on mouseover/pointerenter on feedback trigger buttons
+  document.addEventListener(
+    'pointerenter',
+    (e) => {
+      if (feedbackLoaded || feedbackLoading) return;
+      if ((e.target as Element | null)?.closest('[data-feedback-trigger]')) {
+        import('../utils/feedback/feedback-controller');
+      }
+    },
+    { capture: true, passive: true }
+  );
+
+  document.addEventListener('click', (e) => {
+    if (feedbackLoaded) return;
+    const btn = (e.target as Element | null)?.closest('[data-feedback-trigger]');
+    if (btn) {
+      e.preventDefault();
+      activateFeedback();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (feedbackLoaded) return;
+    if (e.altKey && (e.key === 'f' || e.key === 'F')) {
+      e.preventDefault();
+      activateFeedback();
+    }
+  });
+
+  window.addEventListener('feedback:open', () => {
+    activateFeedback();
+  });
 </script>
