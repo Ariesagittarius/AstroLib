@@ -99,19 +99,192 @@ function cleanMathFormula(inner: string): string {
   return res;
 }
 
+const UNICODE_MATH_MAP: Record<string, string> = {
+  '𝜋': '\\pi',
+  'π': '\\pi',
+  '𝛼': '\\alpha',
+  'α': '\\alpha',
+  '𝛽': '\\beta',
+  'β': '\\beta',
+  '𝛾': '\\gamma',
+  'γ': '\\gamma',
+  '𝜃': '\\theta',
+  'θ': '\\theta',
+  '𝜆': '\\lambda',
+  'λ': '\\lambda',
+  '𝜇': '\\mu',
+  'μ': '\\mu',
+  '𝜎': '\\sigma',
+  'σ': '\\sigma',
+  '𝜏': '\\tau',
+  'τ': '\\tau',
+  '𝜔': '\\omega',
+  'ω': '\\omega',
+  '𝜙': '\\phi',
+  'φ': '\\phi',
+  '𝜓': '\\psi',
+  'ψ': '\\psi',
+  '∞': '\\infty',
+  '≤': '\\le',
+  '≥': '\\ge',
+  '≠': '\\ne',
+  '≈': '\\approx',
+  '∈': '\\in',
+  '∉': '\\notin',
+  '⊂': '\\subset',
+  '⊆': '\\subseteq',
+  '∪': '\\cup',
+  '∩': '\\cap',
+  '±': '\\pm',
+  '×': '\\times',
+  '÷': '\\div',
+  '∂': '\\partial',
+  '∇': '\\nabla',
+  '∑': '\\sum',
+  '∏': '\\prod',
+  '∫': '\\int',
+  '°': '^\\circ',
+  '²': '^2',
+  '³': '^3',
+  '⁴': '^4',
+  'ⁿ': '^n',
+  '₁': '_1',
+  '₂': '_2',
+  '₃': '_3',
+  'ᵢ': '_i',
+  'ₙ': '_n',
+};
+
+const MATH_COMMAND_REGEX =
+  /\\(sqrt|frac|dfrac|tfrac|pi|alpha|beta|gamma|delta|epsilon|varepsilon|zeta|eta|theta|vartheta|iota|kappa|lambda|mu|nu|xi|rho|varrho|sigma|varsigma|tau|upsilon|phi|varphi|chi|psi|omega|Gamma|Delta|Theta|Lambda|Xi|Pi|Sigma|Upsilon|Phi|Psi|Omega|sin|cos|tan|cot|sec|csc|arcsin|arccos|arctan|ln|log|exp|lim|sum|prod|int|iint|iiint|oint|partial|nabla|infty|pm|mp|times|div|cdot|cdots|ldots|vdots|ddots|circ|le|ge|ne|leq|geq|neq|approx|sim|simeq|equiv|subset|supset|subseteq|supseteq|in|notin|ni|forall|exists|vec|hat|bar|tilde|dot|ddot|mathbf|mathbb|mathrm|mathcal|mathscr|mathfrak)(?![a-zA-Z])/;
+
 /**
- * 若文本含有纯数学特征符号 (指数、下标、公式宏) 且未包裹 $，自动补齐数学定界符
+ * 规范化 Unicode 数学字符与控制字符
  */
-function ensureMathDelimiters(text: string): string {
+export function normalizeUnicodeMath(text: string): string {
   if (!text) return '';
-  const trimmed = text.trim();
-  if (trimmed.includes('$') || trimmed.includes('\\(') || trimmed.includes('\\[')) {
-    return text;
+  let res = text.replace(/\r\n/g, '\n').replace(/\r/g, '');
+  res = res.replace(/\\n(?![a-zA-Z])/g, '\n');
+  res = res.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '');
+
+  // 转换 Unicode 数学斜体英文字母 (U+1D44E .. U+1D467) 为常规 ASCII 字母
+  res = res.replace(/[\uD835][\uDC4E-\uDC67]/g, (match) => {
+    const code = match.codePointAt(0) || 0;
+    return String.fromCharCode(code - 0x1d44e + 0x61);
+  });
+
+  for (const [char, replacement] of Object.entries(UNICODE_MATH_MAP)) {
+    if (res.includes(char)) {
+      res = res.replaceAll(char, replacement);
+    }
   }
-  if (/[\^_\\]/.test(trimmed) && !/[\u4e00-\u9fa5]/.test(trimmed)) {
-    return `$${trimmed}$`;
+
+  return res;
+}
+
+/**
+ * 自动检测并修复文本中因 OCR 或输入遗漏的未闭合 $ 定界符
+ */
+export function balanceDollars(text: string): string {
+  if (!text) return '';
+  let res = '';
+  let inMath = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const prev = i > 0 ? text[i - 1] : '';
+    const next = i < text.length - 1 ? text[i + 1] : '';
+
+    if (ch === '$' && prev === '\\') {
+      res += ch;
+      continue;
+    }
+
+    if (ch === '$' && next === '$') {
+      res += '$$';
+      i++;
+      inMath = false;
+      continue;
+    }
+
+    if (ch === '$') {
+      inMath = !inMath;
+      res += ch;
+      continue;
+    }
+
+    if (inMath) {
+      if (ch === '。' || ch === '；' || ch === '．' || (ch === '\n' && next === '\n')) {
+        res += '$';
+        inMath = false;
+      }
+    }
+
+    res += ch;
   }
-  return text;
+
+  if (inMath) {
+    res += '$';
+  }
+
+  return res;
+}
+
+/**
+ * 安全识别文本中裸露的数学命令与公式表达式，包裹 $...$
+ * 必须在现有公式已受占位符保护的前提下运行
+ */
+export function sanitizeBareMath(text: string): string {
+  if (!text) return text;
+
+  // 1. 保护已有占位符 (格式为 §§MBX#123§§)
+  const mbxPlaceholders: string[] = [];
+  let s = text.replace(/§§MBX#\d+§§/g, (m) => {
+    mbxPlaceholders.push(m);
+    return `§§P${mbxPlaceholders.length - 1}P§§`;
+  });
+
+  // 2. 若整段文本不含中文字符、不含换行、且非题号 (如 "(1)" 或 "A.")
+  const trimmed = s.trim();
+  const hasChinese = /[\u4e00-\u9fa5]/.test(trimmed);
+  const isSubLabel = /^\(?[0-9a-zA-ZivxIVX]+\)?[\.\s]*$/.test(trimmed);
+  const isPlainWord = /^[a-zA-Z\s]+$/.test(trimmed);
+
+  if (!hasChinese && !isSubLabel && !isPlainWord) {
+    const hasMathCmd = MATH_COMMAND_REGEX.test(trimmed);
+    const hasSubSup = /(?:[a-zA-Z0-9\)\}][\^_]|[\^_][a-zA-Z0-9\{\(])/.test(trimmed);
+    const hasEquation = /[0-9a-zA-Z'\(\)]+\s*[=<>]\s*[-+]?[0-9a-zA-Z]/.test(trimmed);
+
+    if (mbxPlaceholders.length === 0 && (hasMathCmd || hasSubSup || hasEquation)) {
+      return `$${trimmed}$`;
+    }
+  }
+
+  // 3. 中西文混排情况：识别夹在中文、全角标点、换行之间的非中文公式片段
+  s = s.replace(
+    /(^|[\u4e00-\u9fa5，。！？；：（）“”《》【】、\n])([^\u4e00-\u9fa5，。！？；：（）“”《》【】\n§]+)(?=[\u4e00-\u9fa5，。！？；：（）“”《》【】、\n]|$)/g,
+    (_match, prefix, content) => {
+      const cTrim = content.trim();
+      if (!cTrim) return `${prefix}${content}`;
+      if (/^\(?[0-9a-zA-ZivxIVX]+\)?[\.\s]*$/.test(cTrim)) return `${prefix}${content}`;
+      if (/^[a-zA-Z\s]+$/.test(cTrim)) return `${prefix}${content}`;
+
+      const hasMathCmd = MATH_COMMAND_REGEX.test(cTrim);
+      const hasSubSup = /(?:[a-zA-Z0-9\)\}][\^_]|[\^_][a-zA-Z0-9\{\(])/.test(cTrim);
+      const hasEquation = /[0-9a-zA-Z'\(\)]+\s*[=<>]\s*[-+]?[0-9a-zA-Z]/.test(cTrim);
+
+      if (hasMathCmd || hasSubSup || hasEquation) {
+        const leadingSpace = content.match(/^\s*/)?.[0] || '';
+        const trailingSpace = content.match(/\s*$/)?.[0] || '';
+        return `${prefix}${leadingSpace}$${cTrim}$${trailingSpace}`;
+      }
+      return `${prefix}${content}`;
+    }
+  );
+
+  // 4. 还原占位符
+  s = s.replace(/§§P(\d+)P§§/g, (_m, idx) => mbxPlaceholders[Number(idx)] || '');
+  return s;
 }
 
 /**
@@ -121,7 +294,9 @@ function ensureMathDelimiters(text: string): string {
 export function formatLatexContent(text: string): string {
   if (!text) return '';
 
-  let raw = decodeHtmlEntities(ensureMathDelimiters(text));
+  let raw = decodeHtmlEntities(text);
+  raw = normalizeUnicodeMath(raw);
+  raw = balanceDollars(raw);
 
   // 1. 规范化换行与字面量转义换行符 (消除 JSON 中 \\n 引起的 Undefined control sequence)
   raw = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
@@ -148,42 +323,42 @@ export function formatLatexContent(text: string): string {
     return `\n\\begin{center}\n  \\IfFileExists{../public${cleanUrl}}{\\includegraphics[width=0.48\\linewidth,keepaspectratio]{../public${cleanUrl}}}{\\IfFileExists{public${cleanUrl}}{\\includegraphics[width=0.48\\linewidth,keepaspectratio]{public${cleanUrl}}}{\\fbox{\\small\\itshape [图示] ${escapedAlt}}}}\n\\end{center}\n`;
   });
 
-  // 4. 占位保护公式块 ($$ 与 $)
-  const mathBlocks: string[] = [];
-
-  // 保护 display math: $$...$$ 与 \[...\]
-  raw = raw.replace(/\$\$([\s\S]*?)\$\$/g, (_m, inner) => {
-    mathBlocks.push(`\\[\n${cleanMathFormula(inner.trim())}\n\\]`);
-    return `§§MATH_BLOCK_${mathBlocks.length - 1}§§`;
-  });
-  raw = raw.replace(/\\\[([\s\S]*?)\\\]/g, (_m, inner) => {
-    mathBlocks.push(`\\[\n${cleanMathFormula(inner.trim())}\n\\]`);
-    return `§§MATH_BLOCK_${mathBlocks.length - 1}§§`;
-  });
-
-  // 保护 inline math: $...$ 与 \(...\)
-  raw = raw.replace(/\\?\(([\s\S]*?)\\?\)/g, (m, inner) => {
-    if (m.startsWith('\\(')) {
-      mathBlocks.push(`$${cleanMathFormula(inner.trim())}$`);
-      return `§§MATH_BLOCK_${mathBlocks.length - 1}§§`;
-    }
-    return m;
-  });
-
-  raw = raw.replace(/\$([^\$\n]+?)\$/g, (_m, inner) => {
-    mathBlocks.push(`$${cleanMathFormula(inner)}$`);
-    return `§§MATH_BLOCK_${mathBlocks.length - 1}§§`;
-  });
-
-  // 5. 处理文本段 Markdown 标记与填空题下划线
-  // 填空下划线：文本模式使用 \rule[-0.2ex]{3.5em}{0.4pt}，杜绝 \underline 引发 Missing $ 报错
+  // 4. 处理填空题下划线与括号留白 (在提取公式前执行，防止下划线引发数学模式误判)
   raw = raw.replace(/\\underline\{\s*(\\quad)*\s*\}/g, '\\rule[-0.2ex]{3.5em}{0.4pt}');
   raw = raw.replace(/\\underline\{\s*\}/g, '\\rule[-0.2ex]{3.5em}{0.4pt}');
   raw = raw.replace(/_{3,}/g, '\\rule[-0.2ex]{3.5em}{0.4pt}');
   raw = raw.replace(/（\s*）/g, '（\\quad）');
   raw = raw.replace(/\(\s*\)/g, '(\\quad)');
 
-  // Markdown 加粗与斜体
+  // 5. 占位保护公式块 ($$ 与 $) - 使用不含下划线、不含反斜杠的独立标记 §§MBX#0§§
+  const mathBlocks: string[] = [];
+
+  // 保护 display math: $$...$$ 与 \[...\]
+  raw = raw.replace(/\$\$([\s\S]*?)\$\$/g, (_m, inner) => {
+    mathBlocks.push(`\\[\n${cleanMathFormula(inner.trim())}\n\\]`);
+    return `§§MBX#${mathBlocks.length - 1}§§`;
+  });
+  raw = raw.replace(/\\\[([\s\S]*?)\\\]/g, (_m, inner) => {
+    mathBlocks.push(`\\[\n${cleanMathFormula(inner.trim())}\n\\]`);
+    return `§§MBX#${mathBlocks.length - 1}§§`;
+  });
+
+  // 保护 inline math: \(...\)
+  raw = raw.replace(/\\\(([\s\S]*?)\\\)/g, (_m, inner) => {
+    mathBlocks.push(`$${cleanMathFormula(inner.trim())}$`);
+    return `§§MBX#${mathBlocks.length - 1}§§`;
+  });
+
+  // 保护 inline math: $...$ (支持同段内多行公式，不跨段落)
+  raw = raw.replace(/\$((?:[^\$\n]|\n(?!\s*\n))+?)\$/g, (_m, inner) => {
+    mathBlocks.push(`$${cleanMathFormula(inner)}$`);
+    return `§§MBX#${mathBlocks.length - 1}§§`;
+  });
+
+  // 6. 识别并包裹裸露公式与数学命令 (如 最大值为 2\sqrt{7} 或 a=2, b=-2，积分值为 \pi^2)
+  raw = sanitizeBareMath(raw);
+
+  // 7. 处理文本段 Markdown 加粗与斜体
   raw = raw.replace(/\*\*([^*]+)\*\*/g, '\\textbf{$1}');
   raw = raw.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1\\textit{$2}');
 
@@ -202,8 +377,8 @@ export function formatLatexContent(text: string): string {
   };
   raw = raw.replace(/[①②③④⑤⑥⑦⑧⑨⑩]/g, (m) => circledMap[m] || m);
 
-  // 6. 还原公式块
-  raw = raw.replace(/§§MATH_BLOCK_(\d+)§§/g, (_m, idx) => mathBlocks[Number(idx)] || '');
+  // 8. 还原所有公式块
+  raw = raw.replace(/§§MBX#(\d+)§§/g, (_m, idx) => mathBlocks[Number(idx)] || '');
 
   return raw.trim();
 }

@@ -75,6 +75,8 @@ jobs:
           echo "Workspace initialized with main.tex (size: $(wc -c < workspace/main.tex) bytes)"
 
       - name: Compile Document with XeLaTeX
+        id: compile
+        continue-on-error: true
         uses: xu-cheng/latex-action@v4
         with:
           root_file: main.tex
@@ -82,7 +84,7 @@ jobs:
           compiler: latexmk
           latexmk_use_xelatex: true
           texlive_version: 2024
-          args: -file-line-error -interaction=nonstopmode
+          args: -file-line-error -interaction=nonstopmode -f
 
       - name: Prepare Output Asset
         if: always() && hashFiles('workspace/main.pdf') != ''
@@ -144,3 +146,12 @@ jobs:
           path: workspace/*.pdf
           if-no-files-found: ignore
           retention-days: 1
+
+      - name: Verify Final PDF Status
+        if: always()
+        run: |
+          if [ ! -f workspace/main.pdf ]; then
+            echo "::error::XeLaTeX compilation halted before generating PDF. See build-error.log for compiler details."
+            exit 1
+          fi
+          echo "XeLaTeX compilation completed and verified: $(ls -lh workspace/*.pdf)"
