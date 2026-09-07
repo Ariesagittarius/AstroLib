@@ -4,12 +4,22 @@
  * 遵循极简学术排版哲学与 VitePress 设计规范
  */
 
+export type TransportMode = 'auto' | 'gzip' | 'blob';
+
+export interface DispatchCompileResult {
+  modeUsed: 'gzip' | 'blob' | 'legacy';
+  rawSizeBytes: number;
+  compressedSizeBytes?: number;
+  blobSha?: string;
+}
+
 export interface CloudCompileConfig {
   owner: string;
   repo: string;
   workflowFile: string;
   branch: string;
   token: string;
+  transportMode?: TransportMode;
   proxyUrl?: string;
 }
 
@@ -31,6 +41,7 @@ export const STORAGE_KEYS = {
   OWNER: 'astrolib_compiler_owner',
   REPO: 'astrolib_compiler_repo',
   BRANCH: 'astrolib_compiler_branch',
+  TRANSPORT_MODE: 'astrolib_compiler_transport_mode',
 };
 
 export const DEFAULT_CLOUD_CONFIG: CloudCompileConfig = {
@@ -39,6 +50,7 @@ export const DEFAULT_CLOUD_CONFIG: CloudCompileConfig = {
   workflowFile: 'compile-latex.yml',
   branch: 'main',
   token: '',
+  transportMode: 'auto',
 };
 
 /**
@@ -51,6 +63,8 @@ export function getStoredCompilerConfig(): CloudCompileConfig {
   const owner = localStorage.getItem(STORAGE_KEYS.OWNER) || DEFAULT_CLOUD_CONFIG.owner;
   const repo = localStorage.getItem(STORAGE_KEYS.REPO) || DEFAULT_CLOUD_CONFIG.repo;
   const branch = localStorage.getItem(STORAGE_KEYS.BRANCH) || DEFAULT_CLOUD_CONFIG.branch;
+  const transportMode =
+    (localStorage.getItem(STORAGE_KEYS.TRANSPORT_MODE) as TransportMode) || DEFAULT_CLOUD_CONFIG.transportMode;
 
   return {
     owner,
@@ -58,6 +72,7 @@ export function getStoredCompilerConfig(): CloudCompileConfig {
     workflowFile: DEFAULT_CLOUD_CONFIG.workflowFile,
     branch,
     token,
+    transportMode,
   };
 }
 
@@ -70,6 +85,7 @@ export function saveCompilerConfig(config: Partial<CloudCompileConfig>): void {
   if (config.owner !== undefined) localStorage.setItem(STORAGE_KEYS.OWNER, config.owner.trim());
   if (config.repo !== undefined) localStorage.setItem(STORAGE_KEYS.REPO, config.repo.trim());
   if (config.branch !== undefined) localStorage.setItem(STORAGE_KEYS.BRANCH, config.branch.trim());
+  if (config.transportMode !== undefined) localStorage.setItem(STORAGE_KEYS.TRANSPORT_MODE, config.transportMode);
 }
 
 /**
@@ -93,29 +109,155 @@ export function unicodeBase64Encode(str: string): string {
 }
 
 /**
+ * ArrayBuffer 转 Base64（分块处理，防止超大 Buffer 导致调用栈溢出）
+ */
+export function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunkSize)));
+  }
+  return btoa(binary);
+}
+
+/**
+ * 使用现代 Web API (CompressionStream) 对字符串执行 Gzip 压缩并输出 Base64
+ * 压缩率通常达 75% ~ 85%，可使 250KB 源码轻松压入 30KB~50KB
+ */
+export async function gzipCompressStringToBase64(str: string): Promise<string> {
+  const bytes = new TextEncoder().encode(str);
+  if (typeof CompressionStream !== 'undefined') {
+    const stream = new Blob([bytes]).stream();
+    const compressedStream = stream.pipeThrough(new CompressionStream('gzip'));
+    const response = new Response(compressedStream);
+    const buffer = await response.arrayBuffer();
+    return arrayBufferToBase64(buffer);
+  }
+  // 回退：无 CompressionStream 时返回常规 base64 编码
+  return unicodeBase64Encode(str);
+}
+
+/**
+ * 通过 GitHub Git Data API 将文本内容存为松散 Git Blob 对象 (最大支持 100MB)
+ * 零分支污染，不产生 commit 提交历史，无冲突
+ */
+export async function createGitBlob(
+  owner: string,
+  repo: string,
+  content: string,
+  token: string
+): Promise<string> {
+  const endpoint = `https://api.github.com/repos/${owner}/${repo}/git/blobs`;
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/vnd.github.v3+json',
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      content,
+      encoding: 'utf-8',
+    }),
+  });
+
+  if (!response.ok) {
+    let errorDetail = '';
+    try {
+      const json = await response.json();
+      errorDetail = json.message || response.statusText;
+    } catch {
+      errorDetail = response.statusText;
+    }
+
+    if (response.status === 403 || response.status === 401) {
+      throw new Error(
+        `创建 Git Blob 失败 (HTTP ${response.status}): 权限不足 (${errorDetail})。请确认 GitHub Token 具备 contents:write 权限（或经典 Token 的 repo 范围）。`
+      );
+    }
+    throw new Error(`创建 Git Blob 失败 (HTTP ${response.status}): ${errorDetail}`);
+  }
+
+  const data = await response.json();
+  if (!data.sha) {
+    throw new Error('Git Blob 创建响应中缺少 SHA 哈希标识');
+  }
+  return data.sha as string;
+}
+
+/**
  * 向 GitHub Actions 发起 workflow_dispatch 编译请求
+ * 支持 Gzip 压缩直传、Git Blob 大文件对象存储以及智能自适应模式
  */
 export async function dispatchCompileWorkflow(
   jobId: string,
   latexSource: string,
   filename: string,
-  config: CloudCompileConfig
-): Promise<void> {
+  config: CloudCompileConfig,
+  onLog?: (message: string) => void
+): Promise<DispatchCompileResult> {
   const token = config.token.trim();
   if (!token) {
     throw new Error('未配置 GitHub Access Token，请先在设置中配置具备 actions:write 权限的 Personal Access Token');
   }
 
-  const texB64 = unicodeBase64Encode(latexSource);
+  const mode = config.transportMode || 'auto';
+  const rawBytes = new TextEncoder().encode(latexSource).length;
+  const rawKb = (rawBytes / 1024).toFixed(1);
+
+  const inputs: Record<string, string> = {
+    job_id: jobId,
+    output_filename: filename,
+  };
+  let result: DispatchCompileResult;
+
+  // GitHub Actions 单个 input 硬限制为 65,535 字符。预留安全余量设为 60,000
+  const INPUT_CHAR_LIMIT = 60000;
+
+  if (mode === 'blob') {
+    onLog?.(`[传输模式: Git Blob] 写入对象数据库 (${rawKb} KB)...`);
+    const sha = await createGitBlob(config.owner, config.repo, latexSource, token);
+    onLog?.(`[传输模式: Git Blob] 写入完成 (SHA: ${sha.substring(0, 8)})`);
+    inputs.blob_sha = sha;
+    result = { modeUsed: 'blob', rawSizeBytes: rawBytes, blobSha: sha };
+  } else if (mode === 'gzip') {
+    const gzB64 = await gzipCompressStringToBase64(latexSource);
+    const gzKb = (Math.round(gzB64.length * 0.75) / 1024).toFixed(1);
+    const ratio = ((1 - (gzB64.length * 0.75) / rawBytes) * 100).toFixed(1);
+    onLog?.(`[传输模式: Gzip] 压缩比 ${rawKb} KB -> ${gzKb} KB (${ratio}%)`);
+
+    if (gzB64.length > INPUT_CHAR_LIMIT) {
+      throw new Error(
+        `源码经 Gzip 压缩后为 ${gzB64.length} 字符，超出 GitHub 输入限制 (65,535 字符)。请在设置中切换为 Git Blob 模式。`
+      );
+    }
+    inputs.tex_gz_b64 = gzB64;
+    result = { modeUsed: 'gzip', rawSizeBytes: rawBytes, compressedSizeBytes: Math.round(gzB64.length * 0.75) };
+  } else {
+    // 智能自适应模式 (auto)
+    const gzB64 = await gzipCompressStringToBase64(latexSource);
+    const gzKb = (Math.round(gzB64.length * 0.75) / 1024).toFixed(1);
+    const ratio = ((1 - (gzB64.length * 0.75) / rawBytes) * 100).toFixed(1);
+
+    if (gzB64.length <= INPUT_CHAR_LIMIT) {
+      onLog?.(`[自适应传输: Gzip] 压缩比 ${rawKb} KB -> ${gzKb} KB (${ratio}%)`);
+      inputs.tex_gz_b64 = gzB64;
+      result = { modeUsed: 'gzip', rawSizeBytes: rawBytes, compressedSizeBytes: Math.round(gzB64.length * 0.75) };
+    } else {
+      onLog?.(`[自适应传输: Git Blob] 源码超出单字段限制，转为写入 Git 对象 (${rawKb} KB)...`);
+      const sha = await createGitBlob(config.owner, config.repo, latexSource, token);
+      onLog?.(`[自适应传输: Git Blob] 写入完成 (SHA: ${sha.substring(0, 8)})`);
+      inputs.blob_sha = sha;
+      result = { modeUsed: 'blob', rawSizeBytes: rawBytes, blobSha: sha };
+    }
+  }
+
   const endpoint = `https://api.github.com/repos/${config.owner}/${config.repo}/actions/workflows/${config.workflowFile}/dispatches`;
 
   const payload = {
     ref: config.branch || 'main',
-    inputs: {
-      job_id: jobId,
-      tex_b64: texB64,
-      output_filename: filename,
-    },
+    inputs,
   };
 
   const response = await fetch(endpoint, {
@@ -136,14 +278,20 @@ export async function dispatchCompileWorkflow(
     } catch {
       errorDetail = response.statusText;
     }
-    if (response.status === 404) {
-      throw new Error(`找不到工作流文件 (${config.workflowFile}) 或仓库不存在。请确认仓库所有者与工作流配置。`);
+    if (response.status === 422 && errorDetail.includes('Unexpected inputs provided')) {
+      throw new Error(
+        `工作流参数未被远程仓库识别 (${errorDetail})。请确保分支 ${config.branch} 的 .github/workflows/compile-latex.yml 已更新并推送到远程。`
+      );
+    } else if (response.status === 404) {
+      throw new Error(`未找到工作流文件 (${config.workflowFile}) 或仓库不存在。`);
     } else if (response.status === 401 || response.status === 403) {
-      throw new Error(`GitHub 鉴权失败 (${response.status}): ${errorDetail}。请检查 Token 是否有效且包含 repo/actions 权限。`);
+      throw new Error(`GitHub 鉴权未通过 (${response.status}): ${errorDetail}。请核对 Token 权限。`);
     } else {
       throw new Error(`提交编译请求失败 (${response.status}): ${errorDetail}`);
     }
   }
+
+  return result;
 }
 
 /**
@@ -168,6 +316,21 @@ export async function checkReleaseDirectly(
       const pdfAsset = assets.find((a) => a.name.endsWith('.pdf'));
       if (pdfAsset) {
         return pdfAsset.browser_download_url;
+      }
+    }
+
+    // 回退检查 Actions Artifacts（针对 Release 被跳过但编译产物已打包的情况）
+    const artRes = await fetch(
+      `https://api.github.com/repos/${config.owner}/${config.repo}/actions/artifacts?name=pdf-${jobId}`,
+      { headers }
+    );
+    if (artRes.status === 200) {
+      const artData = await artRes.json();
+      if (artData.total_count > 0 && artData.artifacts?.[0]) {
+        const art = artData.artifacts[0];
+        if (art.workflow_run?.id) {
+          return `https://github.com/${config.owner}/${config.repo}/actions/runs/${art.workflow_run.id}`;
+        }
       }
     }
   } catch {
@@ -218,36 +381,95 @@ export async function pollCompileResult(
     const currentInterval = elapsed < 15 ? 2500 : 3500;
     await new Promise((res) => setTimeout(res, currentInterval));
 
-    // 每隔约 18 秒，若有 Token 则辅助检查 GitHub Actions 真实 Run 状态
+    // 每隔约 15 秒辅助检查 GitHub Actions 真实 Run 与 Artifact 状态（消除 404 永久等待）
     const now = Date.now();
-    if (config.token && now - lastRunCheckTime > 18000) {
+    if (now - lastRunCheckTime > 15000) {
       lastRunCheckTime = now;
+      const headers: Record<string, string> = {
+        Accept: 'application/vnd.github.v3+json',
+      };
+      if (config.token) {
+        headers['Authorization'] = `Bearer ${config.token.trim()}`;
+      }
+
       try {
-        const runsApi = `https://api.github.com/repos/${config.owner}/${config.repo}/actions/workflows/${config.workflowFile}/runs?per_page=3`;
-        const runRes = await fetch(runsApi, {
-          headers: {
-            Accept: 'application/vnd.github.v3+json',
-            Authorization: `Bearer ${config.token.trim()}`,
-          },
-          signal,
-        });
-        if (runRes.ok) {
-          const runData = await runRes.json();
-          const runs: any[] = runData.workflow_runs || [];
-          // 寻找最近的 workflow run
-          if (runs.length > 0) {
-            const latestRun = runs[0];
-            if (latestRun.status === 'queued') {
-              ghRunStatusText = 'GitHub Actions 正在排队等待分配 Ubuntu 算力节点...';
-            } else if (latestRun.status === 'in_progress') {
-              ghRunStatusText = 'Ubuntu 节点运行中：拉取 TeXLive 镜像并编译中...';
-            } else if (latestRun.status === 'completed' && latestRun.conclusion === 'failure') {
-              ghRunStatusText = 'GitHub Actions 工作流执行失败';
+        // 1. 优先检查 Artifacts 是否已生成
+        const artRes = await fetch(
+          `https://api.github.com/repos/${config.owner}/${config.repo}/actions/artifacts?name=pdf-${jobId}`,
+          { headers, signal }
+        );
+        if (artRes.ok) {
+          const artData = await artRes.json();
+          if (artData.total_count > 0 && artData.artifacts?.[0]) {
+            const art = artData.artifacts[0];
+            const runId = art.workflow_run?.id;
+            if (runId) {
+              const runRes = await fetch(
+                `https://api.github.com/repos/${config.owner}/${config.repo}/actions/runs/${runId}`,
+                { headers, signal }
+              );
+              if (runRes.ok) {
+                const runData = await runRes.json();
+                if (runData.status === 'completed') {
+                  if (runData.conclusion === 'success') {
+                    ghRunStatusText = '工作流编译完成，正在等待 Release 资产上线...';
+                  } else {
+                    // 工作流被取消或超时，但在 Artifacts 中保留了编译产物
+                    state.step = 'ready';
+                    state.progress = 100;
+                    state.statusText = `✓ 编译产物已生成 (工作流状态: ${runData.conclusion})！`;
+                    state.pdfUrl = runData.html_url;
+                    onUpdate({ ...state });
+                    return runData.html_url;
+                  }
+                } else if (runData.status === 'in_progress') {
+                  ghRunStatusText = 'Ubuntu 节点运行中：XeLaTeX 正在排版渲染...';
+                }
+              }
             }
           }
         }
-      } catch {
-        // 忽略状态检查异常，以 Release 资产为准
+
+        // 2. 若配置了 Token，检查最近派发的工作流运行状态
+        if (config.token) {
+          const runsApi = `https://api.github.com/repos/${config.owner}/${config.repo}/actions/workflows/${config.workflowFile}/runs?per_page=3`;
+          const runRes = await fetch(runsApi, { headers, signal });
+          if (runRes.ok) {
+            const runData = await runRes.json();
+            const runs: any[] = runData.workflow_runs || [];
+            if (runs.length > 0) {
+              const latestRun = runs[0];
+              if (latestRun.status === 'queued') {
+                ghRunStatusText = 'GitHub Actions 正在排队等待分配 Ubuntu 算力节点...';
+              } else if (latestRun.status === 'in_progress') {
+                ghRunStatusText = 'Ubuntu 节点运行中：拉取 TeXLive 镜像并排版编译中...';
+              } else if (latestRun.status === 'completed' && latestRun.conclusion !== 'success') {
+                // 校验该 run 是否为当前任务
+                const jobsRes = await fetch(
+                  `https://api.github.com/repos/${config.owner}/${config.repo}/actions/runs/${latestRun.id}/jobs`,
+                  { headers, signal }
+                );
+                if (jobsRes.ok) {
+                  const jobsData = await jobsRes.json();
+                  const isCurrentJob = (jobsData.jobs || []).some((j: any) => j.name?.includes(jobId));
+                  if (isCurrentJob) {
+                    state.step = 'failed';
+                    state.progress = 100;
+                    state.statusText = `GitHub Actions 工作流执行异常 (${latestRun.conclusion})`;
+                    state.errorLog = `云端编译工作流执行中断 (${latestRun.conclusion})。\n查看 GitHub Actions 运行记录：${latestRun.html_url}`;
+                    onUpdate({ ...state });
+                    throw new Error(`云端工作流执行中断 (${latestRun.conclusion})`);
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (checkErr: any) {
+        if (state.step === 'failed' || checkErr.name === 'AbortError' || signal?.aborted) {
+          throw checkErr;
+        }
+        // 忽略状态检查网络波动
       }
     }
 

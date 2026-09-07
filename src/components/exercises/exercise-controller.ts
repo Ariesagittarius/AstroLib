@@ -236,6 +236,7 @@ class ExerciseCenterController {
   private latexSettingsCancelBtn: HTMLElement | null = null;
   private ghTokenInput: HTMLInputElement | null = null;
   private ghRepoInput: HTMLInputElement | null = null;
+  private ghTransportModeSelect: HTMLSelectElement | null = null;
   private ghSaveConfigBtn: HTMLElement | null = null;
 
   private moreExportBtn: HTMLElement | null = null;
@@ -392,6 +393,7 @@ class ExerciseCenterController {
       this.latexSettingsCancelBtn = this.root.querySelector('#ex-cancel-settings-btn');
       this.ghTokenInput = this.root.querySelector('#ex-gh-token-input');
       this.ghRepoInput = this.root.querySelector('#ex-gh-repo-input');
+      this.ghTransportModeSelect = this.root.querySelector('#ex-gh-transport-mode-select');
       this.ghSaveConfigBtn = this.root.querySelector('#ex-gh-save-config-btn');
 
       this.moreExportBtn = this.root.querySelector('#ex-more-export-btn');
@@ -2423,6 +2425,7 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     const cfg = getStoredCompilerConfig();
     if (this.ghTokenInput) this.ghTokenInput.value = cfg.token;
     if (this.ghRepoInput) this.ghRepoInput.value = `${cfg.owner}/${cfg.repo}`;
+    if (this.ghTransportModeSelect) this.ghTransportModeSelect.value = cfg.transportMode || 'auto';
 
     // 默认展示排版配置视图（若已有生成结果则直达预览）
     if (this.currentCompiledPdfUrl || this.isCompiling) {
@@ -2444,6 +2447,7 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     const cfg = getStoredCompilerConfig();
     if (this.ghTokenInput) this.ghTokenInput.value = cfg.token;
     if (this.ghRepoInput) this.ghRepoInput.value = `${cfg.owner}/${cfg.repo}`;
+    if (this.ghTransportModeSelect) this.ghTransportModeSelect.value = cfg.transportMode || 'auto';
     this.latexSettingsModal?.classList.remove('hidden');
     this.ghTokenInput?.focus();
   }
@@ -2468,15 +2472,17 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     const token = this.ghTokenInput?.value.trim() || '';
     const repoStr = this.ghRepoInput?.value.trim() || 'Ariesagittarius/AstroLib';
     const [owner, repo] = repoStr.split('/');
+    const transportMode = (this.ghTransportModeSelect?.value as any) || 'auto';
 
     saveCompilerConfig({
       token,
       owner: owner || 'Ariesagittarius',
       repo: repo || 'AstroLib',
+      transportMode,
     });
 
     this.closeSettingsModal();
-    this.showToast('✓ 已保存 GitHub Actions 编译凭证配置');
+    this.showToast('✓ 已保存 GitHub Actions 编译凭证与传输模式配置');
   }
 
   private switchLatexStage(stage: 'config' | 'result') {
@@ -2706,13 +2712,24 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
 
     try {
       if (this.latexLogPre) {
-        this.latexLogPre.textContent += `[${new Date().toLocaleTimeString()}] 正在触发 GitHub workflow_dispatch (${config.workflowFile})...\n`;
+        this.latexLogPre.textContent += `[${new Date().toLocaleTimeString()}] 正在调度 GitHub workflow_dispatch (${config.workflowFile})...\n`;
       }
 
-      await dispatchCompileWorkflow(jobId, this.currentGeneratedLatexCode, this.getPdfExportFilename(), config);
+      const dispatchRes = await dispatchCompileWorkflow(
+        jobId,
+        this.currentGeneratedLatexCode,
+        this.getPdfExportFilename(),
+        config,
+        (msg) => {
+          if (this.latexLogPre) {
+            this.latexLogPre.textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`;
+          }
+        }
+      );
 
       if (this.latexLogPre) {
-        this.latexLogPre.textContent += `[${new Date().toLocaleTimeString()}] 任务派发成功！进入 Runner 弹性并发池调度...\n`;
+        const modeLabel = dispatchRes.modeUsed === 'blob' ? 'Git Blob' : 'Gzip';
+        this.latexLogPre.textContent += `[${new Date().toLocaleTimeString()}] 任务已调度 (${modeLabel})，等待 Runner 执行...\n`;
       }
 
       const pdfUrl = await pollCompileResult(

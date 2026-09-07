@@ -7,9 +7,20 @@ on:
         description: 'Unique Compilation Job ID'
         required: true
         type: string
+      blob_sha:
+        description: 'GitHub Git Blob SHA (for files up to 100MB)'
+        required: false
+        default: ''
+        type: string
+      tex_gz_b64:
+        description: 'Gzip + Base64 Encoded LaTeX Source Code'
+        required: false
+        default: ''
+        type: string
       tex_b64:
-        description: 'Base64 Encoded LaTeX Source Code'
-        required: true
+        description: 'Base64 Encoded LaTeX Source Code (legacy fallback)'
+        required: false
+        default: ''
         type: string
       output_filename:
         description: 'Target PDF Filename'
@@ -28,7 +39,7 @@ jobs:
   compile:
     name: XeLaTeX Build (${{ github.event.inputs.job_id }})
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 12
 
     steps:
       - name: Checkout repository
@@ -38,7 +49,29 @@ jobs:
         id: prep
         run: |
           mkdir -p workspace
-          echo "${{ github.event.inputs.tex_b64 }}" | base64 -d > workspace/main.tex
+          if [ -n "${{ github.event.inputs.blob_sha }}" ]; then
+            echo "Fetching LaTeX source from Git Blob SHA: ${{ github.event.inputs.blob_sha }}..."
+            curl -sSL \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.raw" \
+              "https://api.github.com/repos/${{ github.repository }}/git/blobs/${{ github.event.inputs.blob_sha }}" \
+              > workspace/main.tex
+          elif [ -n "${{ github.event.inputs.tex_gz_b64 }}" ]; then
+            echo "Extracting Gzip-compressed LaTeX source..."
+            echo "${{ github.event.inputs.tex_gz_b64 }}" | base64 -d | gzip -d > workspace/main.tex
+          elif [ -n "${{ github.event.inputs.tex_b64 }}" ]; then
+            echo "Decoding raw Base64 LaTeX source (legacy mode)..."
+            echo "${{ github.event.inputs.tex_b64 }}" | base64 -d > workspace/main.tex
+          else
+            echo "::error::No LaTeX source provided (missing blob_sha, tex_gz_b64, or tex_b64)"
+            exit 1
+          fi
+
+          if [ ! -s workspace/main.tex ]; then
+            echo "::error::workspace/main.tex is empty or failed to generate!"
+            exit 1
+          fi
+
           echo "Workspace initialized with main.tex (size: $(wc -c < workspace/main.tex) bytes)"
 
       - name: Compile Document with XeLaTeX
@@ -49,10 +82,10 @@ jobs:
           compiler: latexmk
           latexmk_use_xelatex: true
           texlive_version: 2024
-          args: -file-line-error -interaction=nonstopmode -synctex=1
+          args: -file-line-error -interaction=nonstopmode
 
       - name: Prepare Output Asset
-        if: success()
+        if: always() && hashFiles('workspace/main.pdf') != ''
         id: output
         run: |
           OUT_NAME="${{ github.event.inputs.output_filename }}"
@@ -64,7 +97,7 @@ jobs:
           echo "filename=${OUT_NAME}" >> $GITHUB_OUTPUT
 
       - name: Publish PDF to GitHub Release Asset
-        if: success()
+        if: always() && steps.output.outputs.pdf_path != ''
         uses: softprops/action-gh-release@v2
         with:
           tag_name: job-${{ github.event.inputs.job_id }}
@@ -82,16 +115,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Capture Failure Log
-        if: failure()
+        if: always() && hashFiles('workspace/main.pdf') == ''
         run: |
           if [ -f workspace/main.log ]; then
-            tail -n 120 workspace/main.log > workspace/build-error.log
+            tail -n 150 workspace/main.log > workspace/build-error.log
           else
             echo "LaTeX compilation terminated before generating log." > workspace/build-error.log
           fi
 
       - name: Publish Failure Log to Release
-        if: failure()
+        if: always() && hashFiles('workspace/main.pdf') == ''
         uses: softprops/action-gh-release@v2
         with:
           tag_name: job-${{ github.event.inputs.job_id }}
@@ -109,4 +142,5 @@ jobs:
         with:
           name: pdf-${{ github.event.inputs.job_id }}
           path: workspace/*.pdf
+          if-no-files-found: ignore
           retention-days: 1

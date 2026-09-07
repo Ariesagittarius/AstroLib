@@ -822,16 +822,27 @@ if (!enabled) return;
             <span>GitHub Personal Access Token (PAT)</span>
             <a href="https://github.com/settings/tokens/new?scopes=repo,workflow" target="_blank" rel="noopener noreferrer" class="ex-link-tip">获取 Token ↗</a>
           </label>
-          <input type="password" id="ex-gh-token-input" class="ex-input" placeholder="ghp_xxxxxxxxxxxx (需具备 actions:write 权限)" autocomplete="off" />
+          <input type="password" id="ex-gh-token-input" class="ex-input" placeholder="ghp_xxxxxxxxxxxx (Classic 勾选 repo，细粒度需 actions/contents)" autocomplete="off" />
           <span class="ex-field-hint">私密凭证，仅保存在当前浏览器的 LocalStorage，绝不经过本站后端服务器</span>
         </div>
         <div class="ex-settings-field">
-          <label for="ex-gh-repo-input">编译调度仓库 (Owner / Repo)</label>
+          <label for="ex-gh-repo-input">编译调度仓库</label>
           <input type="text" id="ex-gh-repo-input" class="ex-input" placeholder="Ariesagittarius/AstroLib" value="Ariesagittarius/AstroLib" />
-          <span class="ex-field-hint">公开仓库标准 Runner 完全免费，不计分钟额度</span>
+          <span class="ex-field-hint">承载 XeLaTeX 编译工作流的目标 GitHub 仓库（所有者/仓库名）</span>
+        </div>
+        <div class="ex-settings-field">
+          <label for="ex-gh-transport-mode-select">源码传输模式</label>
+          <select id="ex-gh-transport-mode-select" class="ex-input">
+            <option value="auto">自适应（依据文档体积选择 Gzip 压缩流或 Git Blob 对象）</option>
+            <option value="gzip">Gzip 压缩流（单次调度，需 actions:write 权限）</option>
+            <option value="blob">Git Blob 对象（解除参数长度约束，需 contents:write 权限）</option>
+          </select>
+          <span class="ex-field-hint">
+            Gzip 模式通过工作流调度参数传输；Git Blob 模式将源码写入 Git 对象数据库后传递散列标识。
+          </span>
         </div>
         <div class="ex-settings-note">
-          提示：配置具备 actions:write 权限的 PAT 后，即可通过 GitHub Actions 并发算力池直接排版出矢量 PDF。
+          凭证权限：Gzip 模式需 Token 具备 actions:write 权限；Git Blob 模式需包含 contents:write 权限（或具有完整 repo 范围的经典 Token）。
         </div>
       </div>
       <div class="ex-submodal-footer ex-settings-dialog-footer">

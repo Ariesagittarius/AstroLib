@@ -76,15 +76,58 @@ function decodeHtmlEntities(str: string): string {
 }
 
 /**
+ * 清理与标准化数学公式内部语法（如规范化分段函数、修复换行、保护填空下划线）
+ */
+function cleanMathFormula(inner: string): string {
+  let res = inner;
+  // 转换伪分段函数 \left\{\begin{aligned} ... \end{aligned}\right. 为标准 \begin{cases} ... \end{cases}
+  res = res.replace(/\\left\\\{\s*\\begin\{aligned\}([\s\S]*?)\\end\{aligned\}\s*(?:\\right\.?)?/g, (_m, body) => {
+    const cleanedRows = body
+      .split('\\\\')
+      .map((row: string) => row.trim().replace(/^&\s*/, ''))
+      .join(' \\\\\n  ');
+    return `\\begin{cases}\n  ${cleanedRows}\n\\end{cases}`;
+  });
+
+  // 修复 cases/matrix 中误写单反斜杠换行错误 (如 \ 0, & -> \\ 0, &)
+  res = res.replace(/([^\\])\\\s+([0-9a-zA-Z\$\\]+,\s*&)/g, '$1 \\\\ $2');
+
+  // 填空题下划线保护：使用学术排版标准 \rule[-0.2ex]{3.5em}{0.4pt}
+  res = res.replace(/\\underline\{\s*(\\quad)*\s*\}/g, '\\rule[-0.2ex]{3.5em}{0.4pt}');
+  res = res.replace(/_{3,}/g, '\\rule[-0.2ex]{3.5em}{0.4pt}');
+
+  return res;
+}
+
+/**
+ * 若文本含有纯数学特征符号 (指数、下标、公式宏) 且未包裹 $，自动补齐数学定界符
+ */
+function ensureMathDelimiters(text: string): string {
+  if (!text) return '';
+  const trimmed = text.trim();
+  if (trimmed.includes('$') || trimmed.includes('\\(') || trimmed.includes('\\[')) {
+    return text;
+  }
+  if (/[\^_\\]/.test(trimmed) && !/[\u4e00-\u9fa5]/.test(trimmed)) {
+    return `$${trimmed}$`;
+  }
+  return text;
+}
+
+/**
  * 清理 HTML 标签与规范化 Markdown 语法为 LaTeX 语法
  * 保护数学公式 ($...$ 与 $$...$$) 内部不被错误处理
  */
 export function formatLatexContent(text: string): string {
   if (!text) return '';
 
-  let raw = decodeHtmlEntities(text);
+  let raw = decodeHtmlEntities(ensureMathDelimiters(text));
 
-  // 1. 规范化 HTML 换行与段落
+  // 1. 规范化换行与字面量转义换行符 (消除 JSON 中 \\n 引起的 Undefined control sequence)
+  raw = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  raw = raw.replace(/\\n(?![a-zA-Z])/g, '\n');
+
+  // 2. 规范化 HTML 换行与段落
   raw = raw.replace(/<br\s*\/?>/gi, '\n');
   raw = raw.replace(/<\/p>/gi, '\n\n');
   raw = raw.replace(/<p[^>]*>/gi, '');
@@ -97,42 +140,46 @@ export function formatLatexContent(text: string): string {
   raw = raw.replace(/<em[^>]*>([\s\S]*?)<\/em>/gi, '\\textit{$1}');
   raw = raw.replace(/<i[^>]*>([\s\S]*?)<\/i>/gi, '\\textit{$1}');
 
-  // 2. 占位保护公式块 ($$ 与 $)
+  // 3. 处理 Markdown 图片语法 (![alt](url))，生成自适应学术图示
+  raw = raw.replace(/!\[(.*?)\]\((.*?)\)/g, (_m, alt, url) => {
+    const cleanUrl = url.trim();
+    const cleanAlt = alt ? alt.trim() : '';
+    const escapedAlt = (cleanAlt || cleanUrl).replace(/([_&%$#])/g, '\\$1');
+    return `\n\\begin{center}\n  \\IfFileExists{../public${cleanUrl}}{\\includegraphics[width=0.48\\linewidth,keepaspectratio]{../public${cleanUrl}}}{\\IfFileExists{public${cleanUrl}}{\\includegraphics[width=0.48\\linewidth,keepaspectratio]{public${cleanUrl}}}{\\fbox{\\small\\itshape [图示] ${escapedAlt}}}}\n\\end{center}\n`;
+  });
+
+  // 4. 占位保护公式块 ($$ 与 $)
   const mathBlocks: string[] = [];
 
   // 保护 display math: $$...$$ 与 \[...\]
   raw = raw.replace(/\$\$([\s\S]*?)\$\$/g, (_m, inner) => {
-    mathBlocks.push(`\\[\n${inner.trim()}\n\\]`);
+    mathBlocks.push(`\\[\n${cleanMathFormula(inner.trim())}\n\\]`);
     return `§§MATH_BLOCK_${mathBlocks.length - 1}§§`;
   });
   raw = raw.replace(/\\\[([\s\S]*?)\\\]/g, (_m, inner) => {
-    mathBlocks.push(`\\[\n${inner.trim()}\n\\]`);
+    mathBlocks.push(`\\[\n${cleanMathFormula(inner.trim())}\n\\]`);
     return `§§MATH_BLOCK_${mathBlocks.length - 1}§§`;
   });
 
   // 保护 inline math: $...$ 与 \(...\)
   raw = raw.replace(/\\?\(([\s\S]*?)\\?\)/g, (m, inner) => {
     if (m.startsWith('\\(')) {
-      mathBlocks.push(`$${inner.trim()}$`);
+      mathBlocks.push(`$${cleanMathFormula(inner.trim())}$`);
       return `§§MATH_BLOCK_${mathBlocks.length - 1}§§`;
     }
     return m;
   });
 
   raw = raw.replace(/\$([^\$\n]+?)\$/g, (_m, inner) => {
-    // 填空题下划线保护
-    let mathContent = inner;
-    mathContent = mathContent.replace(/\\underline\{\s*(\\quad)*\s*\}/g, '\\underline{\\hspace{3.5em}}');
-    mathContent = mathContent.replace(/_{3,}/g, '\\underline{\\hspace{3.5em}}');
-    mathBlocks.push(`$${mathContent}$`);
+    mathBlocks.push(`$${cleanMathFormula(inner)}$`);
     return `§§MATH_BLOCK_${mathBlocks.length - 1}§§`;
   });
 
-  // 3. 处理文本段 Markdown 标记与填空题下划线
-  // 填空下划线
-  raw = raw.replace(/\\underline\{\s*(\\quad)*\s*\}/g, '\\underline{\\hspace{3.5em}}');
-  raw = raw.replace(/\\underline\{\s*\}/g, '\\underline{\\hspace{3.5em}}');
-  raw = raw.replace(/_{3,}/g, '\\underline{\\hspace{3.5em}}');
+  // 5. 处理文本段 Markdown 标记与填空题下划线
+  // 填空下划线：文本模式使用 \rule[-0.2ex]{3.5em}{0.4pt}，杜绝 \underline 引发 Missing $ 报错
+  raw = raw.replace(/\\underline\{\s*(\\quad)*\s*\}/g, '\\rule[-0.2ex]{3.5em}{0.4pt}');
+  raw = raw.replace(/\\underline\{\s*\}/g, '\\rule[-0.2ex]{3.5em}{0.4pt}');
+  raw = raw.replace(/_{3,}/g, '\\rule[-0.2ex]{3.5em}{0.4pt}');
   raw = raw.replace(/（\s*）/g, '（\\quad）');
   raw = raw.replace(/\(\s*\)/g, '(\\quad)');
 
@@ -155,7 +202,7 @@ export function formatLatexContent(text: string): string {
   };
   raw = raw.replace(/[①②③④⑤⑥⑦⑧⑨⑩]/g, (m) => circledMap[m] || m);
 
-  // 4. 还原公式块
+  // 6. 还原公式块
   raw = raw.replace(/§§MATH_BLOCK_(\d+)§§/g, (_m, idx) => mathBlocks[Number(idx)] || '');
 
   return raw.trim();
@@ -348,10 +395,13 @@ export function generateLatexDocument(
 \\UseLanguage{Chinese}
 
 % 常用数学与排版增强宏包
-\\usepackage{amsmath,amssymb,mathtools,bm}
+\\usepackage{amsmath,amssymb,mathtools}
 \\usepackage{tasks}      % 专业选择题多列对齐宏包
 \\usepackage{booktabs}   % 经典学术三线表宏包
 \\usepackage{array}
+\\usepackage{longtable}  % 跨页表格宏包（避免题量较多时答案表截断或引发页面死循环）
+\\usepackage{graphicx}   % 学术图示宏包
+\\providecommand{\\boldsymbol}{\\symbf}
 
 ${mathFontCode}${pageNumberCode}
 % 选择题 tasks 标签格式设置为 A. B. C. D.
@@ -502,13 +552,15 @@ ${dateCode}
     code += `\\clearpage\n`;
     code += `\\section*{参考答案与详细推导}\n\n`;
 
-    // 1. 答案速查三线表 (booktabs)
+    // 1. 答案速查三线表 (longtable + booktabs，支持长题库自动分页)
     code += `\\subsection*{一、参考答案速查}\n\n`;
-    code += `\\begin{center}\n`;
-    code += `\\begin{tabular}{c p{5.5cm} c p{5.5cm}}\n`;
+    code += `\\begin{longtable}{c p{5.5cm} c p{5.5cm}}\n`;
     code += `  \\toprule\n`;
     code += `  \\textbf{题号} & \\textbf{参考答案} & \\textbf{题号} & \\textbf{参考答案} \\\\\n`;
     code += `  \\midrule\n`;
+    code += `  \\endhead\n`;
+    code += `  \\bottomrule\n`;
+    code += `  \\endfoot\n`;
 
     const getSummaryAnswerText = (ansRaw: string): string => {
       if (!ansRaw) return '略';
@@ -540,9 +592,7 @@ ${dateCode}
       code += `  ${i + 1} & ${q1Ans || '见解析'} & ${q2Num} & ${q2Ans ? q2Ans : (q2 ? '见解析' : '')} \\\\\n`;
     }
 
-    code += `  \\bottomrule\n`;
-    code += `\\end{tabular}\n`;
-    code += `\\end{center}\n\n`;
+    code += `\\end{longtable}\n\n`;
 
     // 2. 详细解答与证明过程 (按 Jinwen-XU/homework 的 solution 环境)
     code += `\\subsection*{二、详细推导与证明过程}\n\n`;
@@ -557,14 +607,21 @@ ${dateCode}
       const isProof = q.type === 'proof';
 
       code += `\\begin{solution}[第 ${num} 题解答]\n`;
+      let bodyCode = '';
       if (ansLatex && !isProof) {
-        code += `  \\textbf{【答案】} ${ansLatex}\n\n`;
+        bodyCode += `  \\textbf{【答案】} ${ansLatex}\n\n`;
       }
       if (stepsLatex) {
-        code += `  \\textbf{${isProof ? '【证明】' : '【解析】'}} ${stepsLatex}\n`;
+        bodyCode += `  \\textbf{${isProof ? '【证明】' : '【解析】'}} ${stepsLatex}\n`;
+      } else if (isProof) {
+        bodyCode += `  \\textbf{【证明】} ${ansLatex || '略。'}\n`;
       } else if (!ansLatex) {
-        code += `  略。\n`;
+        bodyCode += `  略。\n`;
       }
+      if (!bodyCode.trim()) {
+        bodyCode = `  略。\n`;
+      }
+      code += bodyCode;
       code += `\\end{solution}\n\n`;
     });
   }
