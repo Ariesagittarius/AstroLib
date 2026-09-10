@@ -20,6 +20,8 @@
  *      - 消除 forced reflow 与无效 DOM 重建。
  */
 
+import { mountToOverlayRoot } from '../overlay/overlay-root';
+
 export interface ModuleItem {
   id: string;
   kind: string;
@@ -1245,12 +1247,12 @@ class ModuleInspectorController {
 }
 
 export function initModuleInspector() {
-  // 如果 body 下已经有运行中的实例，清理页面新插入的重复壳
-  const existingInBody = document.querySelector('body > #dsh-inspector-root');
+  // 如果 overlay root 或 body 下已经有运行中的实例，清理页面新插入的重复壳
+  const existingInRoot = document.querySelector('#astro-overlay-root > #dsh-inspector-root, body > #dsh-inspector-root');
   const allInstances = document.querySelectorAll('#dsh-inspector-root');
-  if (existingInBody && allInstances.length > 1) {
+  if (existingInRoot && allInstances.length > 1) {
     allInstances.forEach((el) => {
-      if (el !== existingInBody) el.remove();
+      if (el !== existingInRoot) el.remove();
     });
   }
 
@@ -1261,12 +1263,12 @@ export function initModuleInspector() {
     controller = new ModuleInspectorController();
     controller.init();
     (window as unknown as Record<string, unknown>).__dshModuleInspector = controller;
-  } else {
-    // 确保已有 controller 的 rootEl 在 body 下
-    const rootEl = document.getElementById('dsh-inspector-root');
-    if (rootEl && rootEl.parentElement !== document.body) {
-      document.body.appendChild(rootEl);
-    }
+  }
+  
+  // 确保 controller 的 rootEl 挂载在 overlay root 下
+  const rootEl = document.getElementById('dsh-inspector-root');
+  if (rootEl) {
+    mountToOverlayRoot(rootEl);
   }
 }
 

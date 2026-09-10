@@ -15,6 +15,7 @@
  *   · 每次变化 dispatch 'dsh:feature-change'，供其它脚本联动。
  */
 
+import { getOverlayRoot, mountToOverlayRoot } from '../utils/overlay/overlay-root';
 import {
   applyFontPref,
   clearFontPref,
@@ -36,6 +37,12 @@ import {
 } from './site-themes';
 
 import { DEFAULT_SITE_THEME } from '../config/themes.config.mjs';
+import {
+  applyThemeColor,
+  loadThemeColor,
+  saveThemeColor,
+  DEFAULT_THEME_COLOR_ID,
+} from '../themes/material-you/color-engine';
 import { enableFormulaActions, disableFormulaActions } from './formula/ui';
 import {
   getAllAiModels,
@@ -82,6 +89,73 @@ export function savePrewarmPref(val: number): void {
     }
     window.dispatchEvent(new CustomEvent('prewarm:config-change', { detail: { pages: val } }));
   } catch {}
+}
+
+/** 亮/暗/设备外观偏好存储键：'light' | 'dark' | '' (表示 auto 跟随系统) */
+export const THEME_MODE_STORAGE_KEY = 'starlight-theme';
+export type ThemeMode = 'light' | 'dark' | 'auto';
+
+export function loadThemeMode(): ThemeMode {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const val = localStorage.getItem(THEME_MODE_STORAGE_KEY);
+      if (val === 'light' || val === 'dark') return val;
+      if (val === 'auto') return 'auto';
+    }
+  } catch {}
+  return 'auto';
+}
+
+export function saveThemeMode(mode: ThemeMode): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(THEME_MODE_STORAGE_KEY, mode === 'light' || mode === 'dark' ? mode : '');
+    }
+  } catch {}
+}
+
+export function applyThemeMode(mode?: ThemeMode): void {
+  if (typeof document === 'undefined') return;
+  const currentMode = mode || loadThemeMode();
+  const root = document.documentElement;
+  const animate = localStorage.getItem(THEME_TRANSITION_KEY) === 'animate';
+  if (!animate) root.classList.add('theme-switching');
+
+  const resolved =
+    currentMode === 'auto'
+      ? window.matchMedia('(prefers-color-scheme: light)').matches
+        ? 'light'
+        : 'dark'
+      : currentMode;
+  root.dataset.theme = resolved;
+
+  if (!animate) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => root.classList.remove('theme-switching'));
+    });
+  }
+
+  // 同步顶栏的 starlight-theme-select 图标
+  document.querySelectorAll('starlight-theme-select').forEach((el: any) => {
+    if (typeof el.syncIcon === 'function') el.syncIcon();
+    else el.classList.toggle('is-dark', resolved === 'dark');
+  });
+
+  window.dispatchEvent(new CustomEvent('starlight-theme-change', { detail: { mode: currentMode, resolved } }));
+}
+
+export function syncAllThemeModes(): void {
+  const currentMode = loadThemeMode();
+  document.querySelectorAll('.ft-panel .ft-mode-btn, starlight-feature-toggles .ft-mode-btn').forEach((btn) => {
+    const val = btn.getAttribute('data-mode-val');
+    const active = val === currentMode;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-checked', String(active));
+    const modeIcon = btn.querySelector('.ft-mode-icon');
+    const checkIcon = btn.querySelector('.ft-mode-check-icon');
+    if (modeIcon) modeIcon.classList.toggle('hidden', active);
+    if (checkIcon) checkIcon.classList.toggle('hidden', !active);
+  });
 }
 
 type FeatureMeta = { id: string; label: string; build: boolean; runtime: boolean; devOnly: boolean };
@@ -148,6 +222,7 @@ export function resetToggles(): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(THEME_TRANSITION_KEY);
+      localStorage.removeItem('starlight-m3-theme-color');
     }
   } catch {}
 
@@ -158,12 +233,22 @@ export function resetToggles(): void {
   // 重置 UI 风格主题
   setSiteTheme(DEFAULT_SITE_THEME);
 
+  // 重置 Material You 主题色
+  saveThemeColor(DEFAULT_THEME_COLOR_ID);
+  applyThemeColor(DEFAULT_THEME_COLOR_ID);
+
+  // 重置外观模式为遵循系统/设备
+  saveThemeMode('auto');
+  applyThemeMode('auto');
+
   // 重置章节预加载配置为全书拉取 (-1)
   savePrewarmPref(DEFAULT_PREWARM_PAGES);
 
   syncAllCheckboxes();
+  syncAllThemeModes();
   syncAllFontButtons();
   syncAllThemeChips();
+  syncAllThemeColors();
   syncAllPrewarmButtons();
   syncAllAiSettings();
   apply();
@@ -186,20 +271,26 @@ export function syncAllAiSettings(): void {
       select.value = activeId;
     }
 
-    const keyInput = root.querySelector<HTMLInputElement>('.ft-ai-key-input');
-    if (keyInput && document.activeElement !== keyInput) {
+    const keyInput = root.querySelector<any>('.ft-ai-key-input');
+    if (keyInput && !keyInput.matches?.(':focus-within') && document.activeElement !== keyInput) {
       keyInput.value = key;
+      keyInput.type = 'password';
+      const revealBtn = root.querySelector<any>('.ft-ai-key-reveal');
+      if (revealBtn) {
+        revealBtn.selected = false;
+      }
     }
 
-    const keyBadge = root.querySelector<HTMLElement>('.ft-ai-key-badge');
+    const keyBadge = root.querySelector<HTMLElement>('.ft-ai-key-badge, .ft-ai-key-chip');
     if (keyBadge) {
       const hasKey = !!key.trim();
-      keyBadge.textContent = hasKey ? '已配置' : '未配置';
+      const labelEl = keyBadge.querySelector<HTMLElement>('.ft-chip-label') || keyBadge;
+      labelEl.textContent = hasKey ? '已配置' : '未配置';
       keyBadge.classList.toggle('configured', hasKey);
     }
 
-    const endpointInput = root.querySelector<HTMLInputElement>('.ft-ai-endpoint-input');
-    if (endpointInput && document.activeElement !== endpointInput) {
+    const endpointInput = root.querySelector<any>('.ft-ai-endpoint-input');
+    if (endpointInput && !endpointInput.matches?.(':focus-within') && document.activeElement !== endpointInput) {
       endpointInput.value = endpoint;
     }
   });
@@ -270,7 +361,7 @@ export function apply(): void {
 /** 同步当前所有实例的复选框/滑块状态 */
 function syncAllCheckboxes(): void {
   document
-    .querySelectorAll<HTMLInputElement>('.ft-panel input[type="checkbox"][data-feature-id], starlight-feature-toggles input[type="checkbox"][data-feature-id]')
+    .querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-feature-id]')
     .forEach((cb) => {
       const id = cb.getAttribute('data-feature-id') || '';
       cb.checked = toggles[id] !== false;
@@ -278,22 +369,40 @@ function syncAllCheckboxes(): void {
     });
 
   document
-    .querySelectorAll<HTMLInputElement>('.ft-panel input[type="checkbox"][data-theme-transition], starlight-feature-toggles input[type="checkbox"][data-theme-transition]')
+    .querySelectorAll<any>('md-switch[data-feature-id]')
+    .forEach((sw) => {
+      const id = sw.getAttribute('data-feature-id') || '';
+      sw.selected = toggles[id] !== false;
+      sw.disabled = !isRuntimeSwitchable(id);
+    });
+
+  document
+    .querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-theme-transition]')
     .forEach((cb) => {
       cb.checked = loadThemeTransition() === 'animate';
       cb.disabled = !isEnabled('theme');
     });
+
+  document
+    .querySelectorAll<any>('md-switch[data-theme-transition]')
+    .forEach((sw) => {
+      sw.selected = loadThemeTransition() === 'animate';
+      sw.disabled = !isEnabled('theme');
+    });
 }
 
-/** 同步当前所有实例的字体高亮按钮状态 */
+/** 同步当前所有实例的字体高亮按钮与官方 Chip 状态 */
 function syncAllFontButtons(): void {
   const pref = loadFontPref();
-  document.querySelectorAll('.ft-panel .ft-font-btn, starlight-feature-toggles .ft-font-btn').forEach((btn) => {
-    const setting = btn.getAttribute('data-font-setting');
-    const val = btn.getAttribute('data-font-val');
+  document.querySelectorAll<any>('.ft-panel .ft-font-btn, starlight-feature-toggles .ft-font-btn, .ft-panel .ft-font-chip, starlight-feature-toggles .ft-font-chip').forEach((el) => {
+    const setting = el.getAttribute('data-font-setting');
+    const val = el.getAttribute('data-font-val');
     const active = setting === 'latin' ? val === pref.latin : val === pref.cjk;
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-selected', String(active));
+    el.classList.toggle('active', active);
+    el.setAttribute('aria-selected', String(active));
+    if ('selected' in el) {
+      el.selected = active;
+    }
   });
 }
 
@@ -308,6 +417,34 @@ function syncAllThemeChips(): void {
   });
 }
 
+/** 同步当前所有实例的 M3 主题色高亮 Swatches */
+export function syncAllThemeColors(): void {
+  const currentColor = loadThemeColor();
+  document.querySelectorAll('.ft-panel .ft-preset-swatch, starlight-feature-toggles .ft-preset-swatch').forEach((swatch) => {
+    const val = swatch.getAttribute('data-m3-color');
+    const active = val === currentColor;
+    swatch.classList.toggle('active', active);
+    swatch.setAttribute('aria-selected', String(active));
+  });
+
+  // 同步原生 color input
+  document.querySelectorAll<HTMLInputElement>('.ft-color-native-input').forEach((input) => {
+    if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(currentColor)) {
+      input.value = currentColor;
+    }
+  });
+
+  // 同步自定义 Tile 状态
+  const isCustomHex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(currentColor);
+  document.querySelectorAll<HTMLElement>('.ft-custom-color-tile').forEach((tile) => {
+    tile.classList.toggle('active', isCustomHex);
+    const dropper = tile.querySelector<HTMLElement>('.ft-eyedropper-circle');
+    if (dropper) {
+      dropper.style.backgroundColor = isCustomHex ? currentColor : '';
+    }
+  });
+}
+
 /** 绑定「点击面板外收起」到 document（只注册一次，兼容多实例与 Portal） */
 let documentBound = false;
 function bindDocument(): void {
@@ -315,10 +452,20 @@ function bindDocument(): void {
   documentBound = true;
 
   document.addEventListener('click', (e) => {
-    const t = e.target;
-    if (!(t instanceof Element)) return;
-    // 点击面板本体或触发按钮时不收起
-    if (t.closest('.ft-panel') || t.closest('.ft-toggle-btn')) return;
+    const path = e.composedPath();
+    const isInside = path.some(
+      (node) =>
+        node instanceof HTMLElement &&
+        (node.closest?.('.ft-panel') || node.closest?.('.ft-toggle-btn'))
+    );
+    if (isInside) return;
+
+    // 在桌面端 Material You 侧边抽屉模式下，点击页面其他元素时不自动收起面板，允许自由操作其他组件
+    const isDesktopM3 =
+      document.documentElement.dataset.siteTheme === 'material-you' &&
+      window.matchMedia('(min-width: 50rem)').matches;
+    if (isDesktopM3) return;
+
     document.querySelectorAll<StarlightFeatureToggles>('starlight-feature-toggles').forEach((host) => {
       host.closePanel();
     });
@@ -357,14 +504,18 @@ class StarlightFeatureToggles extends HTMLElement {
     this.bindClose();
     this.bindDrag();
     this.bindUI();
+    this.bindThemeMode();
     this.bindFonts();
     this.bindSiteThemes();
+    this.bindThemeColors();
     this.bindPrewarm();
     this.bindAiSettings();
 
     syncAllCheckboxes();
+    syncAllThemeModes();
     syncAllFontButtons();
     syncAllThemeChips();
+    syncAllThemeColors();
     syncAllPrewarmButtons();
     syncAllAiSettings();
     apply();
@@ -372,10 +523,11 @@ class StarlightFeatureToggles extends HTMLElement {
 
   disconnectedCallback() {
     this.closePanel();
-    if (this.panel && this.panel.parentElement === document.body) {
+    const overlayRoot = getOverlayRoot();
+    if (this.panel && (this.panel.parentElement === overlayRoot || this.panel.parentElement === document.body)) {
       this.panel.remove();
     }
-    if (this.backdrop && this.backdrop.parentElement === document.body) {
+    if (this.backdrop && (this.backdrop.parentElement === overlayRoot || this.backdrop.parentElement === document.body)) {
       this.backdrop.remove();
     }
     document.documentElement.classList.remove('ft-scroll-lock');
@@ -385,15 +537,16 @@ class StarlightFeatureToggles extends HTMLElement {
     const isMobile = window.matchMedia('(max-width: 49.999rem)').matches;
     if (!this.panel || !this.backdrop) return;
 
+    const overlayRoot = getOverlayRoot();
     if (isMobile) {
-      // 移动端：将 panel 和 backdrop 移入 document.body，彻底逃逸 .sidebar-pane 的 transform / overflow-y 裁剪
-      if (this.panel.parentElement !== document.body) {
-        document.body.appendChild(this.backdrop);
-        document.body.appendChild(this.panel);
+      // 移动端：将 panel 和 backdrop 移入 overlay root，彻底逃逸 .sidebar-pane 的 transform / overflow-y 裁剪
+      if (this.panel.parentElement !== overlayRoot) {
+        mountToOverlayRoot(this.backdrop);
+        mountToOverlayRoot(this.panel);
       }
     } else {
       // 桌面端：放回本 host 内部，使 position: absolute 可以基于顶栏按钮精准定位
-      if (this.panel.parentElement === document.body) {
+      if (this.panel.parentElement === overlayRoot || this.panel.parentElement === document.body) {
         this.appendChild(this.backdrop);
         this.appendChild(this.panel);
       }
@@ -521,12 +674,34 @@ class StarlightFeatureToggles extends HTMLElement {
       });
     });
 
+    root.querySelectorAll<any>('md-switch[data-feature-id]').forEach((sw) => {
+      const id = sw.getAttribute('data-feature-id') || '';
+      sw.selected = toggles[id] !== false;
+      sw.disabled = !isRuntimeSwitchable(id);
+      sw.addEventListener('change', () => {
+        toggles[id] = sw.selected;
+        saveToggles();
+        syncAllCheckboxes();
+        apply();
+      });
+    });
+
     root.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-theme-transition]').forEach((cb) => {
       cb.checked = loadThemeTransition() === 'animate';
       cb.disabled = !isEnabled('theme');
       cb.addEventListener('change', () => {
         try {
           localStorage.setItem(THEME_TRANSITION_KEY, cb.checked ? 'animate' : 'instant');
+        } catch {}
+      });
+    });
+
+    root.querySelectorAll<any>('md-switch[data-theme-transition]').forEach((sw) => {
+      sw.selected = loadThemeTransition() === 'animate';
+      sw.disabled = !isEnabled('theme');
+      sw.addEventListener('change', () => {
+        try {
+          localStorage.setItem(THEME_TRANSITION_KEY, sw.selected ? 'animate' : 'instant');
         } catch {}
       });
     });
@@ -550,8 +725,8 @@ class StarlightFeatureToggles extends HTMLElement {
 
   bindFonts() {
     const root = this.panel || this;
-    root.querySelectorAll<HTMLButtonElement>('.ft-font-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
+    root.querySelectorAll<HTMLElement>('.ft-font-btn, .ft-font-chip').forEach((btn) => {
+      const handleSelect = (e: Event) => {
         e.preventDefault();
         e.stopPropagation();
         const setting = btn.getAttribute('data-font-setting');
@@ -564,7 +739,9 @@ class StarlightFeatureToggles extends HTMLElement {
         saveFontPref(next);
         applyFontPref(next);
         syncAllFontButtons();
-      });
+      };
+      btn.addEventListener('click', handleSelect);
+      btn.addEventListener('change', handleSelect);
     });
   }
 
@@ -578,6 +755,73 @@ class StarlightFeatureToggles extends HTMLElement {
         setSiteTheme(targetTheme);
         syncAllThemeChips();
       });
+    });
+  }
+
+  bindThemeMode() {
+    const root = this.panel || this;
+    root.querySelectorAll<HTMLButtonElement>('.ft-mode-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const mode = btn.getAttribute('data-mode-val') as ThemeMode;
+        if (mode) {
+          saveThemeMode(mode);
+          applyThemeMode(mode);
+          syncAllThemeModes();
+        }
+      });
+    });
+  }
+
+  bindThemeColors() {
+    const root = this.panel || this;
+    root.querySelectorAll<HTMLButtonElement>('.ft-preset-swatch').forEach((swatch) => {
+      swatch.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const colorVal = swatch.getAttribute('data-m3-color');
+        if (colorVal) {
+          saveThemeColor(colorVal);
+          applyThemeColor(colorVal);
+          syncAllThemeColors();
+        }
+      });
+    });
+
+    // 自定义取色器卡片点击唤起原生拾色器
+    root.querySelectorAll<HTMLElement>('.ft-custom-color-tile, [data-action="open-custom-color"]').forEach((tile) => {
+      const colorInput = tile.querySelector<HTMLInputElement>('.ft-color-native-input');
+      tile.addEventListener('click', (e) => {
+        if (e.target === colorInput) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (colorInput) {
+          try {
+            if ('showPicker' in colorInput && typeof (colorInput as any).showPicker === 'function') {
+              (colorInput as any).showPicker();
+            } else {
+              colorInput.click();
+            }
+          } catch {
+            colorInput.click();
+          }
+        }
+      });
+    });
+
+    root.querySelectorAll<HTMLInputElement>('.ft-color-native-input').forEach((input) => {
+      const handleCustom = (e: Event) => {
+        e.stopPropagation();
+        const hex = (e.target as HTMLInputElement).value;
+        if (hex) {
+          saveThemeColor(hex);
+          applyThemeColor(hex);
+          syncAllThemeColors();
+        }
+      };
+      input.addEventListener('input', handleCustom);
+      input.addEventListener('change', handleCustom);
     });
   }
 
@@ -597,21 +841,47 @@ class StarlightFeatureToggles extends HTMLElement {
   bindAiSettings() {
     const root = this.panel || this;
     const modelSelect = root.querySelector<HTMLSelectElement>('.ft-ai-model-select');
-    const keyInput = root.querySelector<HTMLInputElement>('.ft-ai-key-input');
-    const endpointInput = root.querySelector<HTMLInputElement>('.ft-ai-endpoint-input');
-    const revealBtn = root.querySelector<HTMLButtonElement>('.ft-ai-key-reveal');
+    const keyInput = root.querySelector<any>('.ft-ai-key-input');
+    const endpointInput = root.querySelector<any>('.ft-ai-endpoint-input');
+    const revealBtn = root.querySelector<any>('.ft-ai-key-reveal');
     const customToggle = root.querySelector<HTMLButtonElement>('[data-action="toggle-custom-model"]');
     const customForm = root.querySelector<HTMLElement>('.ft-ai-custom-form');
     const customCancel = root.querySelector<HTMLButtonElement>('[data-action="cancel-custom-model"]');
     const customAddBtn = root.querySelector<HTMLButtonElement>('[data-action="add-custom-model"]');
-    const testBtn = root.querySelector<HTMLButtonElement>('[data-action="test-ai-connection"]');
-    const testStatus = root.querySelector<HTMLElement>('.ft-ai-test-status');
+    const testBtn = root.querySelector<any>('[data-action="test-ai-connection"]');
+
+    const setTestStatus = (state: 'idle' | 'loading' | 'ok' | 'err', message = '') => {
+      const allStatusChips = document.querySelectorAll<HTMLElement>('.ft-ai-test-status');
+      allStatusChips.forEach((chip) => {
+        const textEl = chip.querySelector<HTMLElement>('.ft-test-chip-text');
+        const okIcon = chip.querySelector<HTMLElement>('.ft-test-chip-icon-ok');
+        const errIcon = chip.querySelector<HTMLElement>('.ft-test-chip-icon-err');
+        const spinIcon = chip.querySelector<HTMLElement>('.ft-test-chip-spinner');
+
+        if (state === 'idle') {
+          chip.classList.add('hidden');
+          chip.classList.remove('status-loading', 'status-ok', 'status-err');
+          if (textEl) textEl.textContent = '';
+          return;
+        }
+
+        chip.classList.remove('hidden');
+        chip.classList.toggle('status-loading', state === 'loading');
+        chip.classList.toggle('status-ok', state === 'ok');
+        chip.classList.toggle('status-err', state === 'err');
+
+        if (okIcon) okIcon.classList.toggle('hidden', state !== 'ok');
+        if (errIcon) errIcon.classList.toggle('hidden', state !== 'err');
+        if (spinIcon) spinIcon.classList.toggle('hidden', state !== 'loading');
+
+        if (textEl) {
+          textEl.textContent = message;
+        }
+      });
+    };
 
     const clearTestStatus = () => {
-      if (testStatus) {
-        testStatus.textContent = '';
-        testStatus.className = 'ft-ai-test-status';
-      }
+      setTestStatus('idle');
     };
 
     if (modelSelect) {
@@ -633,35 +903,39 @@ class StarlightFeatureToggles extends HTMLElement {
     }
 
     if (endpointInput) {
-      endpointInput.addEventListener('change', () => {
+      const handleEndpoint = () => {
         const activeId = getActiveAiModelId();
         saveAiEndpoint(activeId, endpointInput.value.trim());
         clearTestStatus();
         syncAllAiSettings();
-      });
+      };
+      endpointInput.addEventListener('change', handleEndpoint);
       endpointInput.addEventListener('input', () => {
         clearTestStatus();
       });
     }
 
     if (revealBtn && keyInput) {
-      revealBtn.addEventListener('click', (e) => {
-        e.preventDefault();
+      const handleReveal = () => {
+        const isRevealed = !!revealBtn.selected;
+        keyInput.type = isRevealed ? 'text' : 'password';
+      };
+      revealBtn.addEventListener('input', handleReveal);
+      revealBtn.addEventListener('change', handleReveal);
+      revealBtn.addEventListener('click', (e: Event) => {
         e.stopPropagation();
-        const isPassword = keyInput.type === 'password';
-        keyInput.type = isPassword ? 'text' : 'password';
-        revealBtn.querySelector('.ft-eye-open')?.classList.toggle('hidden', isPassword);
-        revealBtn.querySelector('.ft-eye-closed')?.classList.toggle('hidden', !isPassword);
+        setTimeout(handleReveal, 0);
       });
     }
 
-    if (testBtn && testStatus) {
-      testBtn.addEventListener('click', async (e) => {
+    if (testBtn) {
+      testBtn.addEventListener('click', async (e: Event) => {
         e.preventDefault();
         e.stopPropagation();
         testBtn.disabled = true;
-        testStatus.textContent = '测试中...';
-        testStatus.className = 'ft-ai-test-status status-loading';
+        testBtn.querySelector('.ft-test-bolt-icon')?.classList.add('hidden');
+        testBtn.querySelector('.ft-test-spinner')?.classList.remove('hidden');
+        setTestStatus('loading', '测试中...');
 
         try {
           const activeId = getActiveAiModelId();
@@ -669,13 +943,13 @@ class StarlightFeatureToggles extends HTMLElement {
           const epVal = endpointInput ? endpointInput.value.trim() : undefined;
           const result = await testAiConnection(activeId, keyVal, epVal);
 
-          testStatus.textContent = result.message;
-          testStatus.className = `ft-ai-test-status ${result.ok ? 'status-ok' : 'status-err'}`;
+          setTestStatus(result.ok ? 'ok' : 'err', result.message);
         } catch (err: unknown) {
-          testStatus.textContent = (err as Error)?.message || '连接失败';
-          testStatus.className = 'ft-ai-test-status status-err';
+          setTestStatus('err', (err as Error)?.message || '连接失败');
         } finally {
           testBtn.disabled = false;
+          testBtn.querySelector('.ft-test-bolt-icon')?.classList.remove('hidden');
+          testBtn.querySelector('.ft-test-spinner')?.classList.add('hidden');
         }
       });
     }
@@ -700,13 +974,13 @@ class StarlightFeatureToggles extends HTMLElement {
       customAddBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const idInput = customForm.querySelector<HTMLInputElement>('.ft-ai-custom-id');
-        const labelInput = customForm.querySelector<HTMLInputElement>('.ft-ai-custom-label');
-        const epInput = customForm.querySelector<HTMLInputElement>('.ft-ai-custom-ep');
+        const idInput = customForm.querySelector<any>('.ft-ai-custom-id');
+        const labelInput = customForm.querySelector<any>('.ft-ai-custom-label');
+        const epInput = customForm.querySelector<any>('.ft-ai-custom-ep');
 
-        const id = idInput?.value.trim();
-        const label = labelInput?.value.trim() || id;
-        const ep = epInput?.value.trim();
+        const id = idInput?.value?.trim();
+        const label = labelInput?.value?.trim() || id;
+        const ep = epInput?.value?.trim();
 
         if (!id) { idInput?.focus(); return; }
         if (!ep) { epInput?.focus(); return; }
@@ -723,10 +997,18 @@ class StarlightFeatureToggles extends HTMLElement {
   }
 
   openPanel() {
-    // 互斥：打开当前面板前先关闭其它所有实例
+    // 互斥：打开当前面板前先关闭其它所有设置实例
     document
       .querySelectorAll<StarlightFeatureToggles>('starlight-feature-toggles')
       .forEach((el) => el !== this && el.closePanel());
+
+    // 互斥：关闭其他顶栏下拉菜单（如书籍与学习工具）
+    const toolsWrapper = document.getElementById('vp-tools-wrapper');
+    if (toolsWrapper?.classList.contains('is-open')) {
+      toolsWrapper.classList.remove('is-open');
+      document.getElementById('vp-tools-trigger')?.setAttribute('aria-expanded', 'false');
+      document.getElementById('vp-tools-menu')?.setAttribute('aria-hidden', 'true');
+    }
 
     this.ensurePortal();
 
@@ -735,12 +1017,21 @@ class StarlightFeatureToggles extends HTMLElement {
     this.backdrop?.classList.add('ft-is-open');
     this.panel?.setAttribute('aria-hidden', 'false');
     this.querySelector<HTMLButtonElement>('.ft-toggle-btn')?.setAttribute('aria-expanded', 'true');
+    document.documentElement.classList.add('ft-settings-open');
 
     if (window.matchMedia('(max-width: 49.999rem)').matches) {
       document.documentElement.classList.add('ft-scroll-lock');
     }
 
+    if (document.documentElement.dataset.siteTheme === 'material-you') {
+      import('../themes/material-you/index').then((m) => {
+        m.upgradeSwitchesToMaterialWeb?.();
+        syncAllCheckboxes();
+      }).catch(() => {});
+    }
+
     syncAllCheckboxes();
+    syncAllThemeModes();
     syncAllFontButtons();
     syncAllThemeChips();
     syncAllPrewarmButtons();
@@ -750,6 +1041,7 @@ class StarlightFeatureToggles extends HTMLElement {
   closePanel() {
     const wasOpen = this.classList.contains('ft-is-open') || this.panel?.classList.contains('ft-is-open');
     this.classList.remove('ft-is-open');
+    document.documentElement.classList.remove('ft-settings-open');
     if (this.panel) {
       this.panel.classList.remove('ft-is-open');
       this.panel.classList.remove('ft-is-dragging');
@@ -774,28 +1066,50 @@ class StarlightFeatureToggles extends HTMLElement {
  * 初始化：注册自定义元素（幂等）+ 首次应用到页面 + 订阅 SPA 路由/跨标签页。
  */
 export function initFeatureToggles(): void {
+  // 清理任何历史残留的 M3 dialog
+  document.querySelectorAll('#ft-m3-settings-dialog').forEach((el) => el.remove());
+
   bindDocument();
   loadToggles();
+  applyFontPref(loadFontPref());
 
   if (!customElements.get('starlight-feature-toggles')) {
     customElements.define('starlight-feature-toggles', StarlightFeatureToggles);
   }
 
+  apply();
+  syncAllThemeModes();
+
   onAiConfigChange(() => {
     syncAllAiSettings();
+  });
+
+  // 监听系统深浅配色变化（设备模式自动跟随）
+  matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+    if (loadThemeMode() === 'auto') {
+      applyThemeMode('auto');
+      syncAllThemeModes();
+    }
   });
 
   document.addEventListener('astro:page-load', () => {
     apply();
     syncAllCheckboxes();
+    syncAllThemeModes();
     syncAllFontButtons();
     syncAllThemeChips();
+    syncAllThemeColors();
     syncAllPrewarmButtons();
     syncAllAiSettings();
   });
 
   window.addEventListener('site-theme-change', () => {
     syncAllThemeChips();
+    syncAllThemeColors();
+  });
+
+  window.addEventListener('m3-theme-color-change', () => {
+    syncAllThemeColors();
   });
 
   window.addEventListener('storage', (e) => {
@@ -803,6 +1117,11 @@ export function initFeatureToggles(): void {
       loadToggles();
       syncAllCheckboxes();
       apply();
+    } else if (e.key === THEME_MODE_STORAGE_KEY) {
+      syncAllThemeModes();
+    } else if (e.key === 'starlight-m3-theme-color') {
+      applyThemeColor();
+      syncAllThemeColors();
     } else if (e.key === PREWARM_PAGES_KEY) {
       syncAllPrewarmButtons();
     } else if (e.key?.startsWith('astrolib_ai_') || e.key?.startsWith('dsh-aiask-')) {

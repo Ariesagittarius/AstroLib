@@ -12,6 +12,7 @@ import type {
 } from '../../types/exercises';
 
 import { generateLatexDocument, type LatexExportConfig, DEFAULT_LATEX_CONFIG } from '../../publishing/latex/latex-generator';
+import { getStoredExportSettings, saveStoredExportSettings } from '../../publishing/common/export-settings.ts';
 import {
   generateJobId,
   getStoredCompilerConfig,
@@ -1998,6 +1999,16 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
       });
     }
 
+    const typographySelect = this.root.querySelector('#ex-latex-typography') as HTMLSelectElement;
+    if (typographySelect) {
+      typographySelect.addEventListener('change', (e) => {
+        const typo = (e.target as HTMLSelectElement).value as any;
+        this.currentLatexConfig.typography = typo;
+        saveStoredExportSettings({ typography: typo });
+        this.refreshLatexPreview();
+      });
+    }
+
     const fontSelect = this.root.querySelector('#ex-latex-font-family') as HTMLSelectElement;
     if (fontSelect) {
       fontSelect.addEventListener('change', (e) => {
@@ -2426,6 +2437,16 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     if (this.ghTokenInput) this.ghTokenInput.value = cfg.token;
     if (this.ghRepoInput) this.ghRepoInput.value = `${cfg.owner}/${cfg.repo}`;
     if (this.ghTransportModeSelect) this.ghTransportModeSelect.value = cfg.transportMode || 'auto';
+
+    // 同步排版预设与本地存储 (包含历史配置静默迁移)
+    const storedExport = getStoredExportSettings();
+    if (storedExport.typography) {
+      this.currentLatexConfig.typography = storedExport.typography;
+    }
+    const typoSelect = this.latexModal.querySelector('#ex-latex-typography') as HTMLSelectElement | null;
+    if (typoSelect && this.currentLatexConfig.typography) {
+      typoSelect.value = this.currentLatexConfig.typography;
+    }
 
     // 默认展示排版配置视图（若已有生成结果则直达预览）
     if (this.currentCompiledPdfUrl || this.isCompiling) {

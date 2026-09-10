@@ -6,7 +6,18 @@ const cleanId = title ? title.trim().replace(/\s+/g, '-') : undefined;
 ---
 
 <div class="fallback-block toc-chunk" data-title={title} id={cleanId} {...srcAttrs(Astro.props)}>
-  <div class="fallback-header" set:html={renderTitleHtml(title)}></div>
+  {title && (
+    <div class="fallback-header">
+      <span class="block-mdicon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M12 2l-5.5 9h11z" />
+          <circle cx="17.5" cy="17.5" r="4.5" />
+          <path d="M3 13.5h8v8H3z" />
+        </svg>
+      </span>
+      <span class="block-title-text" set:html={renderTitleHtml(title)}></span>
+    </div>
+  )}
   <div class="fallback-content">
     <slot />
   </div>
@@ -14,19 +25,25 @@ const cleanId = title ? title.trim().replace(/\s+/g, '-') : undefined;
 
 <style>
   .fallback-block {
-    background-color: transparent;
-    border: none;
-    padding: 0;
-    margin: 1.75rem 0 1.25rem;
+    margin: 1.75rem 0 1.5rem;
+    border-radius: var(--card-border-radius, 12px);
   }
   .fallback-header {
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: var(--sl-color-white);
-    margin-bottom: 0.65rem;
-    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.02rem;
+    font-weight: 650;
+    font-family: var(--font-heading, var(--academic-font-heading, sans-serif));
+    letter-spacing: 0.01em;
+  }
+  .block-mdicon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
   .fallback-content {
-    padding: 0 0 0 0.75rem;
+    line-height: 1.8;
   }
 </style>

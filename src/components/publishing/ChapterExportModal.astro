@@ -1,0 +1,912 @@
+---
+/**
+ * src/components/publishing/ChapterExportModal.astro
+ * 章节学术出版物导出交互弹窗 (LaTeX .tex / 离线 .zip / 本地与云端 PDF)
+ *
+ * 遵循极端减法哲学：
+ * - 纯正学术极简黑白灰阶，无任何 SaaS 胶囊标签或花哨动画
+ * - 快捷键 Alt+X 随时唤出
+ * - 零冗余依赖，原生 Fetch 流式下载
+ * - 出版风格单选由 Typography Preset Registry 动态驱动，拒绝暴露底层字体文件名
+ */
+import { listTypographyPresets } from '../../publishing/typography/presets/index.ts';
+
+const typographyPresets = listTypographyPresets();
+---
+
+<div id="chapter-export-modal" class="chapter-export-backdrop" aria-hidden="true">
+  <div class="chapter-export-dialog" role="dialog" aria-modal="true" aria-labelledby="chapter-export-title">
+    <div class="dialog-header">
+      <h3 id="chapter-export-title" class="dialog-title">章节导出 (LaTeX / PDF)</h3>
+      <button type="button" class="dialog-close-btn" data-close-export-modal aria-label="关闭窗口 (Esc)">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="dialog-body">
+      <!-- 当前章节元信息 -->
+      <div class="chapter-meta-box">
+        <span class="meta-label">当前章节</span>
+        <span id="export-chapter-name" class="meta-value">加载中...</span>
+      </div>
+
+      <!-- 全站共享排版参数设置 -->
+      <div class="typography-settings-card">
+        <div class="settings-header">
+          <span class="settings-title">出版排版风格与版面规格</span>
+          <span class="settings-hint">全站共享 · 统一学术基准</span>
+        </div>
+        <div class="settings-grid">
+          <div class="setting-item setting-item-full">
+            <label for="chapter-typography" class="setting-label">出版风格 (Typography Preset)</label>
+            <select id="chapter-typography" class="setting-select">
+              {typographyPresets.map((preset) => (
+                <option value={preset.id} selected={preset.id === 'scholarly'}>
+                  {preset.name} — {preset.description}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div class="setting-item">
+            <label for="chapter-font-size" class="setting-label">正文字号</label>
+            <select id="chapter-font-size" class="setting-select">
+              <option value="10.5">10.5 pt (五号)</option>
+              <option value="11" selected>11 pt (标准教材)</option>
+              <option value="12">12 pt (大号)</option>
+            </select>
+          </div>
+
+          <div class="setting-item">
+            <label for="chapter-paper-size" class="setting-label">纸张规格</label>
+            <select id="chapter-paper-size" class="setting-select">
+              <option value="a4" selected>A4 (210 × 297 mm)</option>
+              <option value="b5">B5 (176 × 250 mm)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 历史配置向下兼容静默迁移桥梁 (不呈现在主视觉中，供 LocalStorage 迁移与契约测试) -->
+        <div style="display: none;" aria-hidden="true" data-legacy-bridge>
+          <select id="chapter-cjk-font">
+            <option value="default">default</option>
+            <option value="sourcehan">sourcehan</option>
+          </select>
+          <select id="chapter-math-font">
+            <option value="typst">typst</option>
+            <option value="modern">modern</option>
+            <option value="times">times</option>
+            <option value="pagella">pagella</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 导出通道列表 -->
+      <div class="export-options-grid">
+        <!-- 选项 1: LaTeX 独立源码 -->
+        <div class="export-option-card">
+          <div class="option-info">
+            <div class="option-title">LaTeX 源码 (.tex)</div>
+            <div class="option-desc">导出独立章节 LaTeX 源码文件，保留公式、定理环境与编号结构。</div>
+          </div>
+          <button type="button" class="export-action-btn" id="btn-export-tex">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>下载 .tex</span>
+          </button>
+        </div>
+
+        <!-- 选项 2: 完整离线编译包 -->
+        <div class="export-option-card">
+          <div class="option-info">
+            <div class="option-title">离线编译包 (.zip)</div>
+            <div class="option-desc">打包 .tex 源码、astrolib-chapter.sty 宏包及当前章节配图资源。</div>
+          </div>
+          <button type="button" class="export-action-btn" id="btn-export-zip">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+            <span>下载 .zip</span>
+          </button>
+        </div>
+
+        <!-- 选项 3: 直接编译 PDF (本地) -->
+        <div class="export-option-card">
+          <div class="option-info">
+            <div class="option-title">本地编译 PDF (.pdf)</div>
+            <div class="option-desc" id="pdf-option-desc">调用本地 XeLaTeX 引擎执行双遍编译并输出 PDF。</div>
+          </div>
+          <button type="button" class="export-action-btn" id="btn-export-pdf">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span>本地编译 PDF</span>
+          </button>
+        </div>
+
+        <!-- 选项 4: 云端 GitHub Actions 编译 PDF -->
+        <div class="export-option-card cloud-card">
+          <div class="option-info">
+            <div class="option-header-row">
+              <div class="option-title">云端编译 PDF (GitHub Actions)</div>
+              <button type="button" class="cloud-cfg-btn" id="btn-cloud-token-cfg" title="配置 GitHub PAT 凭据">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+                <span>配置凭据</span>
+              </button>
+            </div>
+            <div class="option-desc">通过 GitHub Actions 云端 XeLaTeX 容器执行远程编译并下载。与题库共享凭据。</div>
+          </div>
+          <button type="button" class="export-action-btn primary" id="btn-export-cloud-pdf">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+              <polyline points="12 13 12 9"></polyline>
+              <polyline points="9 11 12 8 15 11"></polyline>
+            </svg>
+            <span>云端编译 PDF</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 云端凭据内联抽屉 (默认折叠) -->
+      <div id="cloud-token-drawer" class="token-drawer" style="display: none;">
+        <div class="token-drawer-inner">
+          <label for="input-gh-token" class="token-label">GitHub Personal Access Token (PAT)</label>
+          <div class="token-input-row">
+            <input type="password" id="input-gh-token" class="token-input" placeholder="输入具备 actions:write 权限的 PAT (github_pat_... 或 ghp_...)" autocomplete="off" />
+            <button type="button" class="token-save-btn" id="btn-save-token">保存凭据</button>
+          </div>
+          <div class="token-hint">凭据保存在本地浏览器 LocalStorage 中，与题库导出共享。</div>
+        </div>
+      </div>
+
+      <div id="export-status-banner" class="status-banner" style="display: none;">
+        <span class="status-spinner"></span>
+        <span id="export-status-text" class="status-text">准备导出数据...</span>
+      </div>
+    </div>
+
+    <div class="dialog-footer">
+      <div class="footer-tip">
+        <span>命令行导出: <code>node scripts/export-chapter-latex.mjs &lt;path&gt; --compile</code></span>
+      </div>
+      <button type="button" class="btn-secondary" data-close-export-modal>关闭</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .chapter-export-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: var(--layer-dialog);
+    background-color: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(5px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  .chapter-export-backdrop.open {
+    display: flex;
+  }
+
+  .chapter-export-dialog {
+    width: 100%;
+    max-width: 620px;
+    background-color: var(--sl-color-bg-sidebar, #18181b);
+    border: 1px solid var(--sl-color-hairline, #2e2e34);
+    border-radius: 4px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-size: 0.875rem;
+    color: var(--sl-color-gray-2, #d4d4d8);
+  }
+
+  .dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--sl-color-hairline, #2e2e34);
+  }
+
+  .dialog-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--sl-color-white, #ffffff);
+    margin: 0;
+  }
+
+  .dialog-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--sl-color-gray-3, #8e8e93);
+    cursor: pointer;
+    padding: 0.4rem;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+  }
+
+  .dialog-close-btn:hover {
+    color: var(--sl-color-white, #ffffff);
+    background-color: var(--sl-color-hairline, #2e2e34);
+  }
+
+  .dialog-body {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .chapter-meta-box {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.6rem 0.8rem;
+    background-color: var(--sl-color-bg-inline-code, #141416);
+    border: 1px solid var(--sl-color-hairline, #2e2e34);
+    border-radius: 3px;
+  }
+
+  .meta-label {
+    font-size: 0.75rem;
+    color: var(--sl-color-gray-4, #71717a);
+    flex-shrink: 0;
+  }
+
+  .meta-value {
+    font-weight: 600;
+    color: var(--sl-color-gray-1, #f4f4f5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 排版参数设置卡片 */
+  .typography-settings-card {
+    padding: 0.85rem 1rem;
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--sl-color-hairline, #2e2e34);
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .settings-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--sl-color-gray-2, #e4e4e7);
+  }
+
+  .settings-hint {
+    font-size: 0.7rem;
+    color: var(--sl-color-gray-4, #71717a);
+  }
+
+  .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  @media (max-width: 520px) {
+    .settings-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .setting-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .setting-item-full {
+    grid-column: 1 / -1;
+  }
+
+  .setting-label {
+    font-size: 0.72rem;
+    color: var(--sl-color-gray-4, #a1a1aa);
+  }
+
+  .setting-select {
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.78rem;
+    background-color: var(--sl-color-bg-inline-code, #141416);
+    border: 1px solid var(--sl-color-hairline, #3f3f46);
+    border-radius: 3px;
+    color: var(--sl-color-gray-1, #f4f4f5);
+    outline: none;
+    cursor: pointer;
+  }
+
+  .setting-select:focus {
+    border-color: var(--sl-color-text-accent, #60a5fa);
+  }
+
+  /* 选项卡片 */
+  .export-options-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .export-option-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 0.95rem;
+    border: 1px solid var(--sl-color-hairline, #2e2e34);
+    border-radius: 3px;
+    background-color: rgba(255, 255, 255, 0.015);
+    transition: border-color 0.15s ease;
+  }
+
+  .export-option-card:hover {
+    border-color: var(--sl-color-gray-4, #52525b);
+  }
+
+  .export-option-card.cloud-card {
+    background-color: rgba(59, 130, 246, 0.03);
+    border-color: rgba(59, 130, 246, 0.25);
+  }
+
+  .export-option-card.cloud-card:hover {
+    border-color: rgba(59, 130, 246, 0.45);
+  }
+
+  .option-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+  }
+
+  .option-header-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .option-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--sl-color-white, #ffffff);
+  }
+
+  .option-desc {
+    font-size: 0.74rem;
+    color: var(--sl-color-gray-3, #a1a1aa);
+    line-height: 1.4;
+  }
+
+  .cloud-cfg-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    color: var(--sl-color-text-accent, #60a5fa);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.1rem 0.3rem;
+    border-radius: 2px;
+  }
+
+  .cloud-cfg-btn:hover {
+    background-color: rgba(59, 130, 246, 0.15);
+  }
+
+  .export-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    background-color: var(--sl-color-bg-inline-code, #27272a);
+    color: var(--sl-color-gray-1, #f4f4f5);
+    border: 1px solid var(--sl-color-hairline, #3f3f46);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .export-action-btn:hover {
+    background-color: var(--sl-color-gray-5, #3f3f46);
+    border-color: var(--sl-color-gray-3, #71717a);
+  }
+
+  .export-action-btn.primary {
+    background-color: var(--sl-color-text-accent, #3b82f6);
+    border-color: var(--sl-color-text-accent, #3b82f6);
+    color: #ffffff;
+  }
+
+  .export-action-btn.primary:hover {
+    opacity: 0.9;
+  }
+
+  .export-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Token 凭据内联抽屉 */
+  .token-drawer {
+    padding: 0.8rem;
+    background-color: var(--sl-color-bg-inline-code, #141416);
+    border: 1px solid var(--sl-color-hairline, #3f3f46);
+    border-radius: 3px;
+  }
+
+  .token-drawer-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .token-label {
+    font-size: 0.72rem;
+    color: var(--sl-color-gray-3, #a1a1aa);
+  }
+
+  .token-input-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .token-input {
+    flex: 1;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.78rem;
+    background-color: #0c0c0e;
+    border: 1px solid var(--sl-color-hairline, #3f3f46);
+    border-radius: 3px;
+    color: #ffffff;
+    outline: none;
+  }
+
+  .token-input:focus {
+    border-color: var(--sl-color-text-accent, #60a5fa);
+  }
+
+  .token-save-btn {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.78rem;
+    background-color: var(--sl-color-bg-inline-code, #27272a);
+    border: 1px solid var(--sl-color-hairline, #3f3f46);
+    border-radius: 3px;
+    color: var(--sl-color-gray-1, #f4f4f5);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .token-save-btn:hover {
+    background-color: var(--sl-color-gray-5, #3f3f46);
+  }
+
+  .token-hint {
+    font-size: 0.68rem;
+    color: var(--sl-color-gray-4, #71717a);
+  }
+
+  /* 状态条 */
+  .status-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.65rem 0.85rem;
+    background-color: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 3px;
+    font-size: 0.8rem;
+    color: var(--sl-color-gray-2, #d4d4d8);
+  }
+
+  .status-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-top-color: var(--sl-color-text-accent, #3b82f6);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .dialog-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.25rem;
+    border-top: 1px solid var(--sl-color-hairline, #2e2e34);
+    background-color: var(--sl-color-bg-inline-code, #141416);
+  }
+
+  .footer-tip {
+    font-size: 0.72rem;
+    color: var(--sl-color-gray-4, #71717a);
+  }
+
+  .footer-tip code {
+    font-family: var(--sl-font-mono, monospace);
+    color: var(--sl-color-gray-3, #a1a1aa);
+  }
+
+  .btn-secondary {
+    padding: 0.35rem 0.8rem;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    background: transparent;
+    color: var(--sl-color-gray-3, #a1a1aa);
+    border: 1px solid var(--sl-color-hairline, #3f3f46);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-secondary:hover {
+    color: var(--sl-color-white, #ffffff);
+    border-color: var(--sl-color-gray-2, #d4d4d8);
+  }
+</style>
+
+<script>
+  import {
+    getStoredExportSettings,
+    saveStoredExportSettings,
+  } from '../../publishing/common/export-settings.ts';
+  import {
+    dispatchCompileWorkflow,
+    pollCompileResult,
+    getStoredCompilerConfig,
+    saveCompilerConfig,
+    generateJobId,
+  } from '../../utils/latex/latex-cloud-compiler.ts';
+  import { mountToOverlayRoot } from '../../utils/overlay/overlay-root.ts';
+
+  function setupChapterExport() {
+    const newModal = document.getElementById('chapter-export-modal');
+    if (!newModal) return;
+
+    // 清理 overlay root / body 中残留的旧 modal（由 SPA 前序页面遗留），防止多实例与 DOM 泄漏
+    const existingModals = document.querySelectorAll('#astro-overlay-root > #chapter-export-modal, body > #chapter-export-modal');
+    existingModals.forEach((el) => {
+      if (el !== newModal) el.remove();
+    });
+
+    // 核心架构修复：Portal 机制挂载至 overlay root，脱离 Starlight stacking context
+    mountToOverlayRoot(newModal);
+    const modal = newModal;
+
+    // 若当前 modal 已初始化绑定，仅对齐章节名并退出，防止重复绑定
+    if (modal.hasAttribute('data-initialized')) {
+      const h1 = document.querySelector('h1#_top') || document.querySelector('h1');
+      const title = h1 ? h1.textContent?.trim() || '当前章节' : '当前章节';
+      const nameEl = modal.querySelector('#export-chapter-name');
+      if (nameEl) nameEl.textContent = title;
+      return;
+    }
+    modal.setAttribute('data-initialized', 'true');
+
+    const chapterNameEl = modal.querySelector('#export-chapter-name');
+    const statusBanner = modal.querySelector('#export-status-banner') as HTMLElement | null;
+    const statusText = modal.querySelector('#export-status-text');
+
+    const selectTypography = modal.querySelector('#chapter-typography') as HTMLSelectElement | null;
+    const selectCjkFont = modal.querySelector('#chapter-cjk-font') as HTMLSelectElement | null;
+    const selectMathFont = modal.querySelector('#chapter-math-font') as HTMLSelectElement | null;
+    const selectFontSize = modal.querySelector('#chapter-font-size') as HTMLSelectElement | null;
+    const selectPaperSize = modal.querySelector('#chapter-paper-size') as HTMLSelectElement | null;
+
+    const btnTex = modal.querySelector('#btn-export-tex') as HTMLButtonElement | null;
+    const btnZip = modal.querySelector('#btn-export-zip') as HTMLButtonElement | null;
+    const btnPdf = modal.querySelector('#btn-export-pdf') as HTMLButtonElement | null;
+    const btnCloudPdf = modal.querySelector('#btn-export-cloud-pdf') as HTMLButtonElement | null;
+
+    const btnTokenCfg = modal.querySelector('#btn-cloud-token-cfg') as HTMLButtonElement | null;
+    const tokenDrawer = modal.querySelector('#cloud-token-drawer') as HTMLElement | null;
+    const inputToken = modal.querySelector('#input-gh-token') as HTMLInputElement | null;
+    const btnSaveToken = modal.querySelector('#btn-save-token') as HTMLButtonElement | null;
+
+    // 1. 初始化并加载全站共享排版偏好 (含静默向新预设体系迁移)
+    const initialSettings = getStoredExportSettings();
+    if (selectTypography && initialSettings.typography) selectTypography.value = initialSettings.typography;
+    if (selectCjkFont && initialSettings.cjkFont) selectCjkFont.value = initialSettings.cjkFont;
+    if (selectMathFont && initialSettings.mathFont) selectMathFont.value = initialSettings.mathFont;
+    if (selectFontSize && initialSettings.fontSize) selectFontSize.value = String(initialSettings.fontSize);
+    if (selectPaperSize && initialSettings.paperSize) selectPaperSize.value = initialSettings.paperSize;
+
+    // 监听排版偏好变更并持久化
+    function onSettingsChange() {
+      const typography = (selectTypography?.value || 'scholarly') as any;
+      const fontSize = parseFloat(selectFontSize?.value || '11') as any;
+      const paperSize = selectPaperSize?.value as any;
+      saveStoredExportSettings({ typography, fontSize, paperSize });
+    }
+
+    selectTypography?.addEventListener('change', onSettingsChange);
+    selectFontSize?.addEventListener('change', onSettingsChange);
+    selectPaperSize?.addEventListener('change', onSettingsChange);
+
+    // 2. 云端 Token 抽屉与持久化
+    const cloudCfg = getStoredCompilerConfig();
+    if (inputToken && cloudCfg.token) {
+      inputToken.value = cloudCfg.token;
+    }
+
+    btnTokenCfg?.addEventListener('click', () => {
+      if (!tokenDrawer) return;
+      tokenDrawer.style.display = tokenDrawer.style.display === 'none' ? 'block' : 'none';
+      if (tokenDrawer.style.display === 'block' && inputToken) {
+        inputToken.focus();
+      }
+    });
+
+    btnSaveToken?.addEventListener('click', () => {
+      const tokenVal = inputToken?.value?.trim() || '';
+      saveCompilerConfig({ token: tokenVal });
+      if (statusBanner && statusText) {
+        statusBanner.style.display = 'flex';
+        statusText.textContent = tokenVal ? 'GitHub PAT 凭据已保存' : '已清除凭据';
+        setTimeout(() => {
+          if (statusBanner) statusBanner.style.display = 'none';
+        }, 2500);
+      }
+      if (tokenDrawer) tokenDrawer.style.display = 'none';
+    });
+
+    // 3. 模态窗开关与快捷键
+    function openModal() {
+      const activeModal = document.getElementById('chapter-export-modal');
+      const h1 = document.querySelector('h1#_top') || document.querySelector('h1');
+      const title = h1 ? h1.textContent?.trim() || '当前章节' : '当前章节';
+      const nameEl = activeModal?.querySelector('#export-chapter-name');
+      if (nameEl) {
+        nameEl.textContent = title;
+      }
+      activeModal?.classList.add('open');
+      activeModal?.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeModal() {
+      const activeModal = document.getElementById('chapter-export-modal');
+      activeModal?.classList.remove('open');
+      activeModal?.setAttribute('aria-hidden', 'true');
+      const banner = activeModal?.querySelector('#export-status-banner') as HTMLElement | null;
+      const drawer = activeModal?.querySelector('#cloud-token-drawer') as HTMLElement | null;
+      if (banner) banner.style.display = 'none';
+      if (drawer) drawer.style.display = 'none';
+    }
+
+    modal.querySelectorAll('[data-close-export-modal]').forEach((btn) => {
+      btn.addEventListener('click', closeModal);
+    });
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    // 全局快捷键与触发器监听通过单例守卫绑定，杜绝重复监听
+    if (!(window as any).__astrolib_chapter_export_bound) {
+      (window as any).__astrolib_chapter_export_bound = true;
+
+      document.addEventListener('keydown', (e) => {
+        const activeModal = document.getElementById('chapter-export-modal');
+        if ((e.altKey && (e.key === 'x' || e.key === 'X')) || (e.ctrlKey && e.altKey && (e.key === 'x' || e.key === 'X'))) {
+          e.preventDefault();
+          openModal();
+        } else if (e.key === 'Escape' && activeModal?.classList.contains('open')) {
+          closeModal();
+        }
+      });
+
+      document.addEventListener('click', (e) => {
+        const trigger = (e.target as HTMLElement)?.closest('[data-chapter-export-trigger]');
+        if (trigger) {
+          e.preventDefault();
+          openModal();
+        }
+      });
+    }
+
+    // 4. 通用下载触发器（.tex / .zip / 本地 .pdf）
+    async function triggerDownload(format: 'tex' | 'zip' | 'pdf', targetBtn: HTMLButtonElement | null) {
+      if (targetBtn) targetBtn.disabled = true;
+      if (statusBanner && statusText) {
+        statusBanner.style.display = 'flex';
+        statusText.textContent =
+          format === 'pdf'
+            ? '正在调用本地 XeLaTeX 执行双遍编译...'
+            : `正在生成 ${format.toUpperCase()} 产物...`;
+      }
+
+      const currentPath = decodeURI(window.location.pathname);
+      const typography = selectTypography?.value || 'scholarly';
+      const fontSize = selectFontSize?.value || '11';
+      const paperSize = selectPaperSize?.value || 'a4';
+
+      const downloadUrl = `/__chapter_export__/export?pathname=${encodeURIComponent(currentPath)}&format=${format}&typography=${encodeURIComponent(typography)}&fontSize=${encodeURIComponent(fontSize)}&paperSize=${encodeURIComponent(paperSize)}`;
+
+      try {
+        const resp = await fetch(downloadUrl);
+        if (!resp.ok) {
+          const errData = await resp.json().catch(() => ({}));
+          throw new Error(errData.message || `导出失败 (HTTP ${resp.status})`);
+        }
+
+        const disposition = resp.headers.get('content-disposition') || '';
+        let filename = `chapter_${Date.now()}.${format}`;
+        const match = disposition.match(/filename\*=UTF-8''([^;]+)|filename="([^"]+)"/);
+        if (match) {
+          filename = decodeURIComponent(match[1] || match[2]);
+        }
+
+        const blob = await resp.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(objectUrl);
+
+        if (statusBanner && statusText) {
+          statusText.textContent = `${filename} 已生成并开始下载`;
+          setTimeout(() => {
+            if (statusBanner) statusBanner.style.display = 'none';
+          }, 3500);
+        }
+      } catch (err: any) {
+        console.error('[chapter-export] 下载异常:', err);
+        if (statusBanner && statusText) {
+          statusText.textContent = `导出失败: ${err.message || '服务不可用'}`;
+        }
+      } finally {
+        if (targetBtn) targetBtn.disabled = false;
+      }
+    }
+
+    // 5. 云端 GitHub Actions 编译 PDF 流程
+    async function triggerCloudPdf(targetBtn: HTMLButtonElement | null) {
+      const storedCfg = getStoredCompilerConfig();
+      if (!storedCfg.token) {
+        if (tokenDrawer) {
+          tokenDrawer.style.display = 'block';
+          if (inputToken) inputToken.focus();
+        }
+        if (statusBanner && statusText) {
+          statusBanner.style.display = 'flex';
+          statusText.textContent = '请先配置具备 actions:write 权限的 GitHub PAT 凭据';
+        }
+        return;
+      }
+
+      if (targetBtn) targetBtn.disabled = true;
+      if (statusBanner && statusText) {
+        statusBanner.style.display = 'flex';
+        statusText.textContent = '正在获取当前章节 LaTeX 源码...';
+      }
+
+      try {
+        const currentPath = decodeURI(window.location.pathname);
+        const typography = selectTypography?.value || 'scholarly';
+        const fontSize = selectFontSize?.value || '11';
+        const paperSize = selectPaperSize?.value || 'a4';
+
+        const texUrl = `/__chapter_export__/export?pathname=${encodeURIComponent(currentPath)}&format=tex&typography=${encodeURIComponent(typography)}&fontSize=${encodeURIComponent(fontSize)}&paperSize=${encodeURIComponent(paperSize)}`;
+
+        const texResp = await fetch(texUrl);
+        if (!texResp.ok) {
+          throw new Error('获取本章 LaTeX 源码失败');
+        }
+        const latexSource = await texResp.text();
+
+        const jobId = generateJobId();
+        const safeChapterTitle = (chapterNameEl?.textContent || 'chapter').replace(/[^\w\u4e00-\u9fa5\-]/g, '_');
+        const pdfFilename = `${safeChapterTitle}.pdf`;
+
+        if (statusText) statusText.textContent = '正在调度 GitHub Actions 云端编译工作流...';
+
+        await dispatchCompileWorkflow(
+          jobId,
+          latexSource,
+          pdfFilename,
+          storedCfg,
+          (log) => {
+            if (statusText) statusText.textContent = log;
+          }
+        );
+
+        if (statusText) statusText.textContent = 'GitHub Actions 排队与编译中...';
+
+        const pdfUrl = await pollCompileResult(
+          jobId,
+          pdfFilename,
+          storedCfg,
+          (state) => {
+            if (statusText) {
+              statusText.textContent = `[${state.progress}%] ${state.statusText} (${state.elapsedSeconds}s)`;
+            }
+          }
+        );
+
+        if (pdfUrl) {
+          if (statusText) statusText.textContent = '云端编译完成，正在下载 PDF...';
+          const a = document.createElement('a');
+          a.href = pdfUrl;
+          a.download = pdfFilename;
+          a.target = '_blank';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+
+          setTimeout(() => {
+            if (statusBanner) statusBanner.style.display = 'none';
+          }, 4000);
+        } else {
+          throw new Error('云端编译超时或未生成 PDF');
+        }
+      } catch (err: any) {
+        console.error('[chapter-export] 云端编译失败:', err);
+        if (statusBanner && statusText) {
+          statusText.textContent = `云端编译失败: ${err.message || '未知错误'}`;
+        }
+      } finally {
+        if (targetBtn) targetBtn.disabled = false;
+      }
+    }
+
+    btnTex?.addEventListener('click', () => triggerDownload('tex', btnTex));
+    btnZip?.addEventListener('click', () => triggerDownload('zip', btnZip));
+    btnPdf?.addEventListener('click', () => triggerDownload('pdf', btnPdf));
+    btnCloudPdf?.addEventListener('click', () => triggerCloudPdf(btnCloudPdf));
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupChapterExport);
+  } else {
+    setupChapterExport();
+  }
+  document.addEventListener('astro:page-load', setupChapterExport);
+</script>

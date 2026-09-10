@@ -5,6 +5,7 @@ import LanguageSelect from 'virtual:starlight/components/LanguageSelect';
 import Search from 'virtual:starlight/components/Search';
 import SocialIcons from 'virtual:starlight/components/SocialIcons';
 import ThemeSelect from 'virtual:starlight/components/ThemeSelect';
+import HeaderToolsMenu from './HeaderToolsMenu.astro';
 
 /**
  * Render the `Search` component if Pagefind is enabled or default search is overridden.
@@ -38,34 +39,29 @@ const shouldRenderSearch =
 
 		<a href="/" class="vp-brand-link" aria-label="AstroLib 首页">
 			<div class="vp-logo-wrap" aria-hidden="true">
-				<svg class="vp-logo-svg" viewBox="0 0 32 32" fill="none" stroke="currentColor">
-					<path d="M4 22.5C4 22.5 8.5 20.5 16 20.5C23.5 20.5 28 22.5 28 22.5V9.5C28 9.5 23.5 7.5 16 7.5C8.5 7.5 4 9.5 4 9.5V22.5Z" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-					<path d="M16 7.5V20.5" stroke-width="2" stroke-linecap="round"/>
-					<path d="M16 1.5L17.2 5.3L21 6.5L17.2 7.7L16 11.5L14.8 7.7L11 6.5L14.8 5.3L16 1.5Z" fill="currentColor" stroke="none"/>
-				</svg>
+				<img src="/astrolib-logo.png" class="vp-logo-img" alt="AstroLib 徽标" width="28" height="22" />
 			</div>
 			<span class="vp-site-name">AstroLib</span>
 		</a>
 	</div>
 
-	<!-- Search Trigger -->
+	<!-- Search Trigger (Google Drive Centered Pill Style) -->
 	<div class="vp-search-wrapper print:hidden">
 		{shouldRenderSearch && <Search />}
 	</div>
 
-	<!-- Right Control Group (桌面端完整展示 / 移动端仅挂载大纲按钮) -->
+	<!-- Right Control Group (Google Drive 40px Circular Icon Group) -->
 	<div class="print:hidden vp-right-group right-group">
-		<!-- Group 1: Theme & Settings Controls (桌面端显示) -->
-		<div class="vp-header-theme-group sl-hidden md:sl-flex">
+		<!-- 1. 书籍与学习工具聚合菜单 -->
+		<HeaderToolsMenu />
+
+		<!-- 2. 日夜主题与全站设置 -->
+		<div class="vp-header-theme-group">
 			<ThemeSelect />
 		</div>
 
-		<!-- Divider -->
-		<div class="vp-nav-divider sl-hidden md:sl-block" aria-hidden="true"></div>
-
-		<!-- Group 2: Social & Developer Links (桌面端低频入口弱化降噪) -->
-		<div class="vp-social-group sl-hidden lg:sl-flex">
-			<a href="/dev/" class="vp-header-link vp-dev-link" title="项目开发与架构文档">开发者</a>
+		<!-- 3. GitHub 仓库入口 -->
+		<div class="vp-social-group sl-hidden sm:sl-flex">
 			<SocialIcons />
 		</div>
 
@@ -151,15 +147,19 @@ const shouldRenderSearch =
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--sl-color-accent, #3451b2);
-	}
-	:global([data-theme='dark']) .vp-logo-wrap {
-		color: var(--sl-color-accent, #a8b1ff);
-	}
-	.vp-logo-svg {
-		width: 1.35rem;
-		height: 1.35rem;
 		flex-shrink: 0;
+	}
+	.vp-logo-img {
+		width: 1.65rem;
+		height: auto;
+		max-height: 1.5rem;
+		object-fit: contain;
+		flex-shrink: 0;
+		display: block;
+		transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+	}
+	.vp-brand-link:hover .vp-logo-img {
+		transform: scale(1.05);
 	}
 	.vp-site-name {
 		font-family: var(--font-brand, 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
@@ -175,72 +175,32 @@ const shouldRenderSearch =
 		display: flex;
 		align-items: center;
 		justify-content: flex-start;
-		max-width: 16rem;
-		margin-left: 0.25rem;
+		max-width: 42rem;
+		margin-inline: 1rem;
 		min-width: 0;
 	}
 
 	@media (max-width: 49.999rem) {
 		.vp-search-wrapper {
 			max-width: none;
-			margin-right: 0.25rem;
+			margin-inline: 0.35rem;
 		}
 	}
 
 	.vp-right-group {
 		display: flex;
 		align-items: center;
-		gap: 0.6rem;
+		gap: 0.375rem;
 		margin-left: auto;
 		flex-shrink: 0;
 	}
 
-	.vp-header-nav-links {
-		display: flex;
-		align-items: center;
-		gap: 0.2rem;
-	}
-	.vp-header-link {
-		display: inline-flex;
-		align-items: center;
-		padding: 0.2rem 0.45rem;
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: var(--sl-color-gray-2);
-		text-decoration: none;
-		border-radius: 4px;
-		transition: color 0.2s, background-color 0.2s;
-		white-space: nowrap;
-	}
-	.vp-header-link:hover {
-		color: var(--sl-color-white);
-		background-color: transparent;
-	}
-
 	.vp-header-theme-group {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
+		display: contents;
 	}
 
 	.vp-social-group {
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
-		opacity: 0.6;
-		transition: opacity 0.2s ease;
-	}
-	.vp-social-group:hover {
-		opacity: 1;
-	}
-
-	/* 垂直分割线 */
-	.vp-nav-divider {
-		width: 1px;
-		height: 1.15rem;
-		background-color: var(--sl-color-hairline, #e2e2e3);
-		margin: 0 0.1rem;
-		flex-shrink: 0;
+		display: contents;
 	}
 </style>
 

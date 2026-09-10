@@ -13,6 +13,8 @@
  * ============================================================================
  */
 
+import { mountToOverlayRoot } from '../overlay/overlay-root';
+
 declare global {
   interface Window {
     echarts?: any;
@@ -512,6 +514,7 @@ export function initRelationGraphClient() {
 
   // 2. 模态窗开关与全局快捷键绑定
   function openModal() {
+    if (root) mountToOverlayRoot(root);
     root?.classList.add('open');
     loadAndRenderData();
   }

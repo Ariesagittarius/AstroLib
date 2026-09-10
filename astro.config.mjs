@@ -28,6 +28,8 @@ import devEditServerPlugin from './src/features/mdx-editor/server/dev-server-plu
 import devInspectorServerPlugin from './src/server/plugins/module-inspector/dev-server-plugin.mjs';
 // 章节内联关系图谱：/__relation_graph__/* 实时端点（Vite dev server 插件，仅 dev 启用）
 import devRelationGraphServerPlugin from './src/server/plugins/relation-graph/dev-server-plugin.mjs';
+// 章节 LaTeX / PDF 导出：/__chapter_export__/* 实时端点（Vite dev server 插件，仅 dev 启用）
+import devChapterExportServerPlugin from './src/server/plugins/chapter-export/dev-server-plugin.mjs';
 // 习题模块：/api/exercise/* 源码热保存、读者反馈与社区题解端点（Vite dev server 插件，仅 dev 启用）
 import { exerciseDevServerPlugin } from './src/server/plugins/exercise-editor/dev-server-plugin.mjs';
 // Mermaid 图表拦截插件：将 ```mermaid 代码块转化为 .mermaid-container DOM
@@ -154,8 +156,12 @@ if (features.imageBlur.enabled) {
 //   关闭某功能即不引入对应 CSS（如关闭 fonts 则不打包 @fontsource 与 fonts.css）。
 const customCss = [];
 if (features.katex.enabled) customCss.push('katex/dist/katex.min.css');
+customCss.push('./src/styles/tokens/layers.css');
 customCss.push('./src/styles/custom.css');
-if (features.theme.enabled) customCss.push('./src/styles/vitepress-theme.css');
+if (features.theme.enabled) {
+  customCss.push('./src/styles/vitepress-theme.css');
+  customCss.push('./src/themes/material-you/theme.css');
+}
 if (features.fonts.enabled) {
   // 自托管思源 webfont 与 Plus Jakarta Sans 品牌英文字体由 registry 引入（index.css 含全部 unicode-range 切片）。
   // 默认系统档位浏览器不会下载任何 woff2（未 use 的 @font-face 不请求），零下载。
@@ -172,6 +178,7 @@ const componentOverrides = {
   PageSidebar: './src/components/PageSidebarOverride.astro', // 右侧多合集自适应大纲与卡片修补
   Pagination: './src/components/PaginationOverride.astro', // 文章底部翻页 → VitePress pager 结构
   Footer: './src/components/FooterOverride.astro', // 底部：原翻页/编辑链接 + 在线精修工具壳（仅 dev）
+  PageFrame: './src/components/PageFrameOverride.astro', // 顶层骨架覆盖：注入全站统一视窗挂载容器 (#astro-overlay-root)
   PageTitle: './src/components/PageTitleOverride.astro', // 页面大标题 H1 构建期数学公式转译（零客户端 KaTeX）
 };
 if (features.theme.enabled) {
@@ -191,6 +198,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'AstroLib',
+      favicon: '/favicon.png',
       social: [
         {
           icon: 'github',
@@ -211,6 +219,8 @@ export default defineConfig({
       ...(isEffective('inspector') ? [devInspectorServerPlugin()] : []),
       // 章节内联关系图谱端点：仅 dev + relationGraph 启用时注册（生产构建不加载，零污染）
       ...(isEffective('relationGraph') ? [devRelationGraphServerPlugin()] : []),
+      // 章节 LaTeX / PDF 导出端点：仅 dev + chapterExport 启用时注册（生产构建不加载，零污染）
+      ...(isEffective('chapterExport') ? [devChapterExportServerPlugin()] : []),
       // 习题模块本地 API 与源码持久化端点（仅 dev 启用）
       exerciseDevServerPlugin(),
     ],

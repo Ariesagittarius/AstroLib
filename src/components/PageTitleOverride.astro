@@ -1,21 +1,177 @@
 ---
 const PAGE_TITLE_ID = '_top';
 import { renderTitleHtml } from '../utils/render-title.mjs';
+import { collections } from '../config/collections.config.mjs';
 
-const rawTitle = Astro.locals.starlightRoute.entry.data.title;
+const pathname = Astro.url.pathname;
+const entry = Astro.locals.starlightRoute.entry;
+const rawTitle = entry.data.title;
 const titleHtml = renderTitleHtml(rawTitle);
+const entryId = entry.id || '';
+const entrySlug = entry.slug || '';
+
+// 深度匹配当前路由所属图书及合集
+let currentBook = null;
+let currentCol = null;
+
+for (const col of collections) {
+  for (const book of col.books) {
+    const pattern = `${col.slug}/${book.slug}`;
+    if (pathname.includes(pattern) || entrySlug.includes(pattern) || entryId.includes(pattern)) {
+      currentCol = col;
+      currentBook = book;
+      break;
+    }
+  }
+  if (currentBook) break;
+}
+
+const stageSubjectLabel = [
+  currentBook?.stageLabel,
+  currentBook?.categoryLabel || currentBook?.subjectLabel
+].filter(Boolean).join(' · ');
 ---
 
-<h1 id={PAGE_TITLE_ID} set:html={titleHtml}></h1>
+{currentBook ? (
+  <header class="chapter-header">
+    <h1 id={PAGE_TITLE_ID} class="chapter-title" set:html={titleHtml}></h1>
+
+    <div class="chapter-meta-container">
+      <md-chip-set class="chapter-meta-chip-set" role="list" aria-label="教材元数据">
+        {currentBook.author && (
+          <md-assist-chip label={currentBook.author} has-icon>
+            <svg slot="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg>
+            <span class="m3-chip-text">{currentBook.author}</span>
+          </md-assist-chip>
+        )}
+
+        {currentBook.publisher && (
+          <md-assist-chip label={currentBook.publisher} has-icon>
+            <svg slot="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z" />
+            </svg>
+            <span class="m3-chip-text">{currentBook.publisher}</span>
+          </md-assist-chip>
+        )}
+
+        {currentBook.title && (
+          <md-assist-chip label={`《${currentBook.title}》`} has-icon>
+            <svg slot="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z" />
+            </svg>
+            <span class="m3-chip-text">《{currentBook.title}》</span>
+          </md-assist-chip>
+        )}
+
+        {stageSubjectLabel && (
+          <md-assist-chip label={stageSubjectLabel} has-icon>
+            <svg slot="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z" />
+            </svg>
+            <span class="m3-chip-text">{stageSubjectLabel}</span>
+          </md-assist-chip>
+        )}
+      </md-chip-set>
+    </div>
+  </header>
+) : (
+  <h1 id={PAGE_TITLE_ID} class="chapter-title" set:html={titleHtml}></h1>
+)}
 
 <style>
-	@layer starlight.core {
-		h1 {
-			margin-top: 1rem;
-			font-size: var(--sl-text-h1);
-			line-height: var(--sl-line-height-headings);
-			font-weight: 600;
-			color: var(--sl-color-white);
-		}
-	}
+  @layer starlight.core {
+    .chapter-header {
+      display: flex;
+      flex-direction: column;
+      margin-top: 0;
+      margin-bottom: 0;
+      position: relative;
+    }
+
+    .chapter-header :is(#_top, .chapter-title) {
+      margin-top: 0 !important;
+      margin-bottom: 0.25rem !important;
+      font-size: var(--sl-text-h1);
+      line-height: 1.25 !important;
+      font-weight: 700;
+      color: var(--sl-color-white);
+      letter-spacing: -0.015em;
+    }
+
+    .chapter-meta-container {
+      display: flex;
+      align-items: center;
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
+      padding-top: 0 !important;
+      padding-bottom: 0.45rem !important;
+      border-bottom: 1px solid var(--sl-color-hairline);
+    }
+
+    .chapter-meta-chip-set {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+      margin: 0 !important;
+      padding: 0 !important;
+      --md-assist-chip-container-shape: 9999px;
+      --md-assist-chip-label-text-size: 0.775rem;
+      --md-assist-chip-icon-size: 0.95rem;
+      --md-assist-chip-outline-color: var(--sl-color-hairline);
+      --md-assist-chip-outline-width: 1px;
+      --md-assist-chip-container-color: transparent;
+      --md-assist-chip-container-elevation: 0;
+      --md-assist-chip-label-text-color: var(--sl-color-gray-2);
+      --md-assist-chip-icon-color: var(--sl-color-gray-3);
+    }
+
+    /* Fallback and styling before hydration */
+    md-assist-chip:not(:defined) {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      height: 1.75rem;
+      padding: 0 0.65rem;
+      border-radius: 9999px;
+      background-color: transparent;
+      border: 1px solid var(--sl-color-hairline);
+      color: var(--sl-color-gray-2);
+      font-size: 0.775rem;
+      font-weight: 500;
+      box-sizing: border-box;
+      box-shadow: none !important;
+      cursor: default;
+    }
+
+    md-assist-chip:not(:defined) svg {
+      width: 0.95rem;
+      height: 0.95rem;
+      color: var(--sl-color-gray-3);
+      flex-shrink: 0;
+    }
+
+    /* When defined by Lit, the shadow DOM handles the label via `label` property,
+       so hide the light DOM fallback text to prevent duplication */
+    md-assist-chip:defined .m3-chip-text {
+      display: none;
+    }
+
+    /* Strict bounding on all SVGs inside md-assist-chip */
+    md-assist-chip svg {
+      width: 0.95rem !important;
+      height: 0.95rem !important;
+      max-width: 0.95rem !important;
+      max-height: 0.95rem !important;
+      flex-shrink: 0;
+    }
+  }
 </style>
+
+<script>
+  import '@material/web/chips/chip-set.js';
+  import '@material/web/chips/assist-chip.js';
+</script>
+

@@ -21,9 +21,22 @@ import { features } from '../config/features.config.mjs';
 <script is:inline>
   (function () {
     try {
-      var key = 'starlight-site-theme';
-      var theme = localStorage.getItem(key) || 'vitepress';
+      var themeKey = 'starlight-site-theme';
+      var theme = localStorage.getItem(themeKey) || 'vitepress';
       document.documentElement.dataset.siteTheme = theme;
+
+      var fontKey = 'starlight-font';
+      var rawFont = localStorage.getItem(fontKey);
+      if (rawFont) {
+        var parsed = JSON.parse(rawFont);
+        if (parsed && typeof parsed === 'object') {
+          if (parsed.latin) document.documentElement.dataset.fontLatin = parsed.latin;
+          if (parsed.cjk) document.documentElement.dataset.fontCjk = parsed.cjk;
+        }
+      }
+      var colorKey = 'starlight-m3-theme-color';
+      var m3Color = localStorage.getItem(colorKey);
+      if (m3Color) document.documentElement.dataset.m3ThemeColor = m3Color;
     } catch (e) {}
   })();
 </script>
@@ -32,12 +45,11 @@ import { features } from '../config/features.config.mjs';
   <button type="button" class="vp-switch vp-switch-appearance" role="switch" aria-label="切换亮/暗主题" title="切换亮/暗主题">
     <span class="vp-switch-check">
       <span class="vp-switch-icon">
-        <svg class="vp-icon vp-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="4" />
-          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+        <svg class="vp-icon vp-sun header-mdicon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+          <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z" />
         </svg>
-        <svg class="vp-icon vp-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        <svg class="vp-icon vp-moon header-mdicon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+          <path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" />
         </svg>
       </span>
     </span>
@@ -110,6 +122,7 @@ import { features } from '../config/features.config.mjs';
 </style>
 
 <script>
+  import '../themes/material-you/index';
   type Theme = 'auto' | 'dark' | 'light';
 
   /** Key in `localStorage` to store color theme preference at. */

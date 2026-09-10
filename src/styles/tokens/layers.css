@@ -1,0 +1,64 @@
+/**
+ * ============================================================================
+ * AstroLib Window Layer System (层级架构设计令牌)
+ * ============================================================================
+ * 规范：定义全局唯一的视窗层级体系，禁止在任何组件中散落大型硬编码 z-index 魔数。
+ *
+ * 核心原则：
+ *   1. 数值不是 API，语义名称才是 API。
+ *   2. Global Window Layer（跨组件全局视窗层级）必须使用 --layer-* 变量。
+ *   3. Local Component Layer（组件内部局部微层级，如 badge、指示线）允许使用局部小数值 (1~10)。
+ *   4. Overlay Context 内部的局部层叠使用 --layer-local-* 变量，杜绝逐级递增军备竞赛。
+ * ============================================================================
+ */
+
+:root {
+  /* --- 1. 全局视窗层级 (Global Window Layers) --- */
+
+  /* L0: 文档基础流与学术卡片容器 (Document Base Flow) */
+  --layer-base: 0;
+
+  /* L1: 视口常驻与粘性导航 (Sticky Navigation & TOC) */
+  --layer-sticky: 100;
+
+  /* L2: 局部视口悬浮控件 (Local Floating Controls & Triggers) */
+  /* 例：返回阅读位置胶囊、AI 唤起 FAB、正文公式操作栏 */
+  --layer-floating: 200;
+
+  /* L3: 锚点弹出菜单与下拉浮层 (Anchored Popovers, Menus & Dropdowns) */
+  /* 例：顶栏主题/字体下拉面板、公式导出菜单、跨引用消歧 Popover */
+  --layer-popover: 300;
+
+  /* L4: 边缘滑出抽屉与底栏抽屉 (Edge-Anchored Drawers & Sheets) */
+  /* 例：模块巡检抽屉、AI 对话抽屉、移动端章节目录侧栏、移动端设置底栏 */
+  --layer-drawer: 400;
+
+  /* L5: 标准居中对话框 (Standard Content Dialogs) */
+  /* 例：章节 LaTeX / PDF 导出对话框、读者勘误反馈弹窗、书目详情对话框 */
+  --layer-dialog: 500;
+
+  /* L6: 全屏沉浸式模态视窗 (Fullscreen Immersive Modals) */
+  /* 例：全书章节关系图谱、课后习题与真题自测全屏中心 */
+  --layer-modal: 600;
+
+  /* L7: 状态通知与操作反馈 (Transient Feedback Toasts & Snacks) */
+  /* 例：LaTeX 源码复制成功提示、做题提交结果反馈、编辑器保存提示 */
+  /* 注意：Toast 必须处于 Dialog/Modal 之上，确保在弹窗内复制公式时反馈可见 */
+  --layer-toast: 700;
+
+  /* L8: 顶层系统状态指示器 (Critical System Indicators) */
+  /* 例：全站 SPA 页面切换微光进度条 */
+  --layer-system: 800;
+
+  /* L9: 开发者调试与源码精修覆盖层 (Development & Debug Overlays) */
+  /* 例：在线可视化精修工具宿主、段落高亮与审查条 (仅 dev 模式) */
+  --layer-debug: 900;
+
+  /* --- 2. 模态上下文内部微层级 (Local Overlay Context Layers) --- */
+  /* 供 Dialog / Modal 内部建立独立局部上下文，无需在全局递增魔数 */
+  --layer-local-base: 0;
+  --layer-local-surface: 1;
+  --layer-local-elevated: 5;
+  --layer-local-nested: 10;
+}
+

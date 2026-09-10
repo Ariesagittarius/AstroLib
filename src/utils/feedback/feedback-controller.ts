@@ -13,6 +13,7 @@ import {
   buildGithubIssueUrl,
   submitToBotProxy,
 } from './format-issue';
+import { mountToOverlayRoot } from '../overlay/overlay-root';
 
 interface BlockTarget {
   el: HTMLElement;
@@ -132,7 +133,7 @@ function ensureUI(): HTMLElement {
 
   rootEl = document.createElement('div');
   rootEl.id = 'sl-feedback-root';
-  document.body.appendChild(rootEl);
+  mountToOverlayRoot(rootEl);
 
   bannerEl = document.createElement('div');
   bannerEl.className = 'sl-fb-banner';

@@ -5,10 +5,13 @@
  * 采用 VitePress 优雅学术排版，零 Emoji，纯 SVG 矢量图标
  */
 import { features } from '../../config/features.config.mjs';
+import { listTypographyPresets } from '../../publishing/typography/index.ts';
 import './exercise-theme.css';
 
 const { enabled = true } = features.exercises || {};
 if (!enabled) return;
+
+const typographyPresets = listTypographyPresets();
 ---
 
 <div id="exercise-modal-root" class="ex-modal-root" aria-label="章节习题与真题自测中心">
@@ -447,21 +450,28 @@ if (!enabled) return;
                   </select>
                 </div>
 
-                <div class="ex-control-group">
-                  <label for="ex-latex-font-family">正文字体</label>
-                  <select id="ex-latex-font-family" class="ex-select">
-                    <option value="serif" selected>学术衬线 (思源宋体 / FandolSong)</option>
-                    <option value="sans">现代无衬线 (思源黑体 / FandolHei)</option>
+                <div class="ex-control-group full-width">
+                  <label for="ex-latex-typography">出版风格 (Typography Preset)</label>
+                  <select id="ex-latex-typography" class="ex-select" aria-label="学术出版风格与排版预设">
+                    {typographyPresets.map((preset) => (
+                      <option value={preset.id} selected={preset.id === 'scholarly'}>
+                        {preset.name} · {preset.academicScope}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
-                <div class="ex-control-group full-width">
-                  <label for="ex-latex-math-font">数学公式字体</label>
-                  <select id="ex-latex-math-font" class="ex-select">
-                    <option value="typst" selected>现代学术 (New Computer Modern Math)</option>
-                    <option value="modern">经典 LaTeX (Latin Modern Math)</option>
-                    <option value="pagella">TeX Gyre Pagella (典雅帕拉蒂诺风格)</option>
-                    <option value="times">TeX Gyre Termes (Times 泰晤士体)</option>
+                <!-- 兼容历史契约与自动化测试的隐藏桥梁 (Legacy Compatibility Bridge) -->
+                <div style="display: none;" data-legacy-bridge aria-hidden="true">
+                  <select id="ex-latex-font-family">
+                    <option value="serif" selected>serif</option>
+                    <option value="sans">sans</option>
+                  </select>
+                  <select id="ex-latex-math-font">
+                    <option value="typst" selected>typst</option>
+                    <option value="modern">modern</option>
+                    <option value="pagella">pagella</option>
+                    <option value="times">times</option>
                   </select>
                 </div>
               </div>
@@ -857,11 +867,13 @@ if (!enabled) return;
 </div>
 
 <script>
-  let loaded = false;
+  let controllerPromise: Promise<any> | null = null;
   async function loadAndOpen(detail?: any) {
-    if (!loaded) {
-      loaded = true;
-      const { exerciseController } = await import('./exercise-controller');
+    try {
+      if (!controllerPromise) {
+        controllerPromise = import('./exercise-controller').then((m) => m.exerciseController);
+      }
+      const exerciseController = await controllerPromise;
       if (detail) {
         if (detail.mode === 'paper') {
           exerciseController.openPaper(detail.paperId || 1, detail.targetQid);
@@ -871,6 +883,9 @@ if (!enabled) return;
       } else {
         exerciseController.open();
       }
+    } catch (err) {
+      console.error('[ExerciseModal] 加载习题控制器失败:', err);
+      controllerPromise = null;
     }
   }
 

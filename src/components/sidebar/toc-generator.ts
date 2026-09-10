@@ -193,63 +193,42 @@ export function buildBookTOC(
   const desktopLinks: HTMLAnchorElement[] = [];
   const mobileLinks: HTMLAnchorElement[] = [];
 
-  function makeTocEntry(
-    chunk: { kind: 'heading' | 'card'; el: HTMLElement; level?: number; _tocId?: string },
-    _index: number,
-    targetList: HTMLElement | DocumentFragment,
-    links: HTMLAnchorElement[],
-    isMobile: boolean
-  ) {
-    const el = chunk.el;
-    const isHeading = chunk.kind === 'heading';
-    const rawTitle = isHeading
-      ? (el.textContent || '').trim()
-      : el.getAttribute('data-title') ||
-        el.querySelector('.card-header, .fallback-header, .guide-header')?.textContent ||
-        '无标题';
+  // 1. 将平铺的 tocEntries 聚合为结构化的标题分组 (Level 1: 标题, Level 2: 标题间的书内板块卡片)
+  interface TocSectionGroup {
+    headingChunk: { kind: 'heading'; el: HTMLElement; level?: number; _tocId?: string } | null;
+    cardChunks: Array<{ kind: 'card'; el: HTMLElement; level?: number; _tocId?: string }>;
+  }
 
-    const id = chunk._tocId || el.id;
-    if (!el.id) el.id = id;
+  const sectionGroups: TocSectionGroup[] = [];
+  let currentGroup: TocSectionGroup = { headingChunk: null, cardChunks: [] };
 
-    const { type, number } = parseTitleFromConfig(rawTitle, modules);
-    const modMeta = modules[type] || {};
-    const chipClass = modMeta.theme || 'chip-default';
-    // 学术环境标准显示名：定理、定义、性质、推论等保留规范全名，例题简称为“例”
-    const displayLabel = (type === '定理' || type === '定义' || type === '性质' || type === '推论' || type === '引理' || type === '命题' || type === '公理')
-      ? type
-      : (modMeta.short || type);
+  tocEntries.forEach((chunk) => {
+    if (chunk.kind === 'heading') {
+      if (currentGroup.headingChunk !== null || currentGroup.cardChunks.length > 0) {
+        sectionGroups.push(currentGroup);
+      }
+      currentGroup = { headingChunk: chunk, cardChunks: [] };
+    } else {
+      currentGroup.cardChunks.push(chunk);
+    }
+  });
 
-    const li = document.createElement('li');
-    li.className = 'toc-item';
+  if (currentGroup.headingChunk !== null || currentGroup.cardChunks.length > 0) {
+    sectionGroups.push(currentGroup);
+  }
 
+  // 辅助函数：构造单个超链接节点（带平滑跳转与来源追踪）
+  function createTocAnchor(
+    id: string,
+    rawTitle: string,
+    contentNode: DocumentFragment | HTMLElement,
+    isMobile: boolean,
+    extraClass = ''
+  ): HTMLAnchorElement {
     const a = document.createElement('a');
     a.href = `#${encodeURIComponent(id)}`;
-    a.className = 'toc-link';
-
-    if (isHeading) {
-      a.classList.add('toc-heading', `toc-level-${chunk.level}`);
-      const headingText = document.createElement('span');
-      headingText.className = 'toc-heading-text';
-      headingText.innerHTML = el.innerHTML;
-      a.appendChild(headingText);
-    } else {
-      if (displayLabel && (!number || !number.startsWith(displayLabel))) {
-        const chipSpan = document.createElement('span');
-        chipSpan.className = 'toc-chip';
-        chipSpan.textContent = displayLabel;
-        a.appendChild(chipSpan);
-      }
-
-      const numSpan = document.createElement('span');
-      numSpan.className = 'toc-number';
-      const headerEl = el.querySelector('.card-header, .fallback-header, .guide-header');
-      if (headerEl) {
-        numSpan.innerHTML = headerEl.innerHTML;
-      } else {
-        numSpan.textContent = number || rawTitle;
-      }
-      a.appendChild(numSpan);
-    }
+    a.className = `toc-link ${extraClass}`.trim();
+    a.appendChild(contentNode);
 
     a.addEventListener('click', (e) => {
       if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -262,7 +241,6 @@ export function buildBookTOC(
       const tocH = parseFloat(rootStyle.getPropertyValue('--sl-mobile-toc-height')) || 0;
       const top = target.getBoundingClientRect().top + window.scrollY - navH - tocH - 16;
 
-      // 若页内大纲跳转垂直位移较大 (> 350px)，记录跳转来源方便读者一键原路返回
       if (Math.abs(top - window.scrollY) > 350) {
         recordJump({
           sourceText: rawTitle,
@@ -274,19 +252,182 @@ export function buildBookTOC(
       history.replaceState({ ...(history.state || {}), scrollY: window.scrollY }, '', `#${encodeURIComponent(id)}`);
     });
 
-    li.appendChild(a);
-    targetList.appendChild(li);
-    links.push(a);
+    return a;
   }
 
-  // 使用 DocumentFragment 批量构建 TOC 条目，最终一次性挂载到实时 DOM，
-  // 避免逐条 appendChild 到 live DOM 引起多次重排与分阶段闪烁
+  // 构建单个卡片条目的 DOM
+  function createCardContent(chunk: { el: HTMLElement; _tocId?: string }): { fragment: DocumentFragment; rawTitle: string } {
+    const el = chunk.el;
+    const titleTextEl = el.querySelector('.card-title-text, .block-title-text, .note-title-text') as HTMLElement | null;
+    const headerEl = el.querySelector('.card-header, .fallback-header, .guide-header, .note-header') as HTMLElement | null;
+    const rawTitle = el.getAttribute('data-title') ||
+      (titleTextEl ? titleTextEl.textContent : headerEl?.textContent) ||
+      '无标题';
+
+    const { type, number } = parseTitleFromConfig(rawTitle, modules);
+    const modMeta = modules[type] || {};
+    const displayLabel = (type === '定理' || type === '定义' || type === '性质' || type === '推论' || type === '引理' || type === '命题' || type === '公理')
+      ? type
+      : (modMeta.short || type);
+
+    const frag = document.createDocumentFragment();
+    const hasChip = Boolean(displayLabel && displayLabel !== '模块');
+    if (hasChip) {
+      const chipSpan = document.createElement('span');
+      chipSpan.className = 'toc-chip';
+      chipSpan.textContent = displayLabel;
+      frag.appendChild(chipSpan);
+    }
+
+    const numSpan = document.createElement('span');
+    numSpan.className = 'toc-number';
+
+    const sourceEl = titleTextEl || headerEl;
+    if (sourceEl) {
+      const clone = sourceEl.cloneNode(true) as HTMLElement;
+      clone.querySelectorAll('.card-mdicon, .block-mdicon, .note-mdicon, svg').forEach((s) => s.remove());
+
+      if (hasChip) {
+        const walker = document.createTreeWalker(clone, NodeFilter.SHOW_TEXT);
+        const firstText = walker.nextNode() as Text | null;
+        if (firstText && firstText.nodeValue) {
+          const val = firstText.nodeValue.trimStart();
+          const labelRegex = new RegExp(`^${displayLabel}\\s*`, 'i');
+          if (labelRegex.test(val)) {
+            firstText.nodeValue = val.replace(labelRegex, '');
+          }
+        }
+      }
+      const trimmedHtml = clone.innerHTML.trim();
+      if (trimmedHtml) {
+        numSpan.innerHTML = trimmedHtml;
+      } else {
+        numSpan.textContent = number || rawTitle;
+      }
+    } else {
+      numSpan.textContent = number || rawTitle;
+    }
+    frag.appendChild(numSpan);
+
+    return { fragment: frag, rawTitle };
+  }
+
+  // 渲染一组标题及归属卡片
+  function renderGroup(
+    group: TocSectionGroup,
+    targetContainer: HTMLElement | DocumentFragment,
+    links: HTMLAnchorElement[],
+    isMobile: boolean
+  ) {
+    if (group.headingChunk) {
+      const headingChunk = group.headingChunk;
+      const hEl = headingChunk.el;
+      const hId = headingChunk._tocId || hEl.id;
+      const hRawTitle = (hEl.textContent || '').trim();
+
+      const groupLi = document.createElement('li');
+      groupLi.className = 'toc-group';
+      // 进入一本书时默认展开
+      groupLi.setAttribute('data-collapsed', 'false');
+
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'toc-heading-row';
+
+      // 若本标题下包含卡片，渲染 M3 风格折叠按钮
+      if (group.cardChunks.length > 0) {
+        const collapseBtn = document.createElement('button');
+        collapseBtn.type = 'button';
+        collapseBtn.className = 'toc-collapse-btn';
+        collapseBtn.setAttribute('aria-label', `折叠/展开「${hRawTitle}」板块`);
+        collapseBtn.setAttribute('aria-expanded', 'true');
+        collapseBtn.innerHTML = `
+          <svg class="toc-caret-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+            <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+          </svg>
+        `;
+
+        collapseBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          const isCollapsed = groupLi.getAttribute('data-collapsed') === 'true';
+          const nextState = !isCollapsed;
+          groupLi.setAttribute('data-collapsed', String(nextState));
+          collapseBtn.setAttribute('aria-expanded', String(!nextState));
+        });
+
+        rowDiv.appendChild(collapseBtn);
+      } else {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'toc-collapse-placeholder';
+        placeholder.setAttribute('aria-hidden', 'true');
+        rowDiv.appendChild(placeholder);
+      }
+
+      // 标题链接 (一级菜单)
+      const headingTextSpan = document.createElement('span');
+      headingTextSpan.className = 'toc-heading-text';
+      const hClone = hEl.cloneNode(true) as HTMLElement;
+      hClone.querySelectorAll('.card-mdicon, .block-mdicon, .note-mdicon, svg, .heading-anchor, .anchor-icon').forEach((s) => s.remove());
+      headingTextSpan.innerHTML = hClone.innerHTML.trim();
+
+      const headingAnchor = createTocAnchor(
+        hId,
+        hRawTitle,
+        headingTextSpan,
+        isMobile,
+        `toc-heading toc-level-${headingChunk.level}`
+      );
+      rowDiv.appendChild(headingAnchor);
+      links.push(headingAnchor);
+      groupLi.appendChild(rowDiv);
+
+      // 二级菜单：收纳本标题下所有卡片块
+      if (group.cardChunks.length > 0) {
+        const subUl = document.createElement('ul');
+        subUl.className = 'toc-sublist';
+
+        group.cardChunks.forEach((cChunk) => {
+          const cId = cChunk._tocId || cChunk.el.id;
+          const { fragment, rawTitle } = createCardContent(cChunk);
+          const cLi = document.createElement('li');
+          cLi.className = 'toc-item';
+          const cardAnchor = createTocAnchor(cId, rawTitle, fragment, isMobile);
+          cLi.appendChild(cardAnchor);
+          subUl.appendChild(cLi);
+          links.push(cardAnchor);
+        });
+
+        groupLi.appendChild(subUl);
+      }
+
+      targetContainer.appendChild(groupLi);
+    } else if (group.cardChunks.length > 0) {
+      // 位于首个标题之前的引言卡片板块
+      const introUl = document.createElement('ul');
+      introUl.className = 'toc-sublist toc-intro-sublist';
+
+      group.cardChunks.forEach((cChunk) => {
+        const cId = cChunk._tocId || cChunk.el.id;
+        const { fragment, rawTitle } = createCardContent(cChunk);
+        const cLi = document.createElement('li');
+        cLi.className = 'toc-item';
+        const cardAnchor = createTocAnchor(cId, rawTitle, fragment, isMobile);
+        cLi.appendChild(cardAnchor);
+        introUl.appendChild(cLi);
+        links.push(cardAnchor);
+      });
+
+      targetContainer.appendChild(introUl);
+    }
+  }
+
+  // 批量挂载
   const desktopFrag = document.createDocumentFragment();
   const mobileFrag = mobileTocList ? document.createDocumentFragment() : null;
 
-  tocEntries.forEach((chunk, index) => {
-    makeTocEntry(chunk, index, desktopFrag, desktopLinks, false);
-    if (mobileFrag) makeTocEntry(chunk, index, mobileFrag, mobileLinks, true);
+  sectionGroups.forEach((grp) => {
+    renderGroup(grp, desktopFrag, desktopLinks, false);
+    if (mobileFrag) renderGroup(grp, mobileFrag, mobileLinks, true);
   });
 
   tocList.appendChild(desktopFrag);
@@ -309,14 +450,24 @@ export function buildBookTOC(
     desktopLinks.forEach((link, index) => link.classList.toggle('active', index === activeIndex));
     mobileLinks.forEach((link, index) => link.classList.toggle('active', index === activeIndex));
 
-    if (marker) {
-      const activeLink = activeIndex >= 0 ? desktopLinks[activeIndex] : null;
+    if (activeIndex >= 0) {
+      const activeLink = desktopLinks[activeIndex];
       if (activeLink) {
-        marker.style.top = `${activeLink.offsetTop}px`;
-        marker.style.opacity = '1';
-      } else {
-        marker.style.opacity = '0';
+        // 若当前激活的卡片位于已折叠的分组内，自动展开该分组以防视线迷失
+        const parentGroup = activeLink.closest('.toc-group');
+        if (parentGroup && parentGroup.getAttribute('data-collapsed') === 'true') {
+          parentGroup.setAttribute('data-collapsed', 'false');
+          const btn = parentGroup.querySelector('.toc-collapse-btn');
+          if (btn) btn.setAttribute('aria-expanded', 'true');
+        }
+
+        if (marker) {
+          marker.style.top = `${activeLink.offsetTop}px`;
+          marker.style.opacity = '1';
+        }
       }
+    } else if (marker) {
+      marker.style.opacity = '0';
     }
 
     if (document.body.classList.contains('mobile-toc-open') && activeIndex !== lastSpyIndex) {

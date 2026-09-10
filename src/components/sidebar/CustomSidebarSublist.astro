@@ -17,47 +17,119 @@ function flattenSidebar(entries: any[]): any[] {
 
 <ul class:list={{ 'top-level': !nested }}>
 	{
-		sublist.map((entry) => (
-			<li>
-				{entry.type === 'link' ? (
-					<a
-						href={entry.href}
-						aria-current={entry.isCurrent ? 'page' : undefined}
-						class:list={[{ large: !nested }, entry.attrs?.class]}
-						{...entry.attrs}
-					>
-						<span set:html={renderTitleHtml(entry.label)}></span>
-						{entry.badge && (
-							<Badge
-								variant={entry.badge.variant}
-								class={entry.badge.class}
-								text={entry.badge.text}
-							/>
-						)}
-					</a>
-				) : (
-					<details
-						open={flattenSidebar(entry.entries).some((i) => i.isCurrent) || !entry.collapsed}
-					>
-						<summary>
-							<span class="group-label">
-								<span class="large" set:html={renderTitleHtml(entry.label)}></span>
-								{entry.badge && (
-									<Badge
-										variant={entry.badge.variant}
-										class={entry.badge.class}
-										text={entry.badge.text}
-									/>
-								)}
+		sublist.map((entry) => {
+			if (entry.isCategory) {
+				const isOpen = flattenSidebar(entry.entries).some((i) => i.isCurrent) || !entry.collapsed;
+				return (
+					<li class="sidebar-category-item">
+						<details class="sidebar-category-group" open={isOpen}>
+							<summary class="sidebar-category-summary">
+								<span class="sidebar-category-title-wrap">
+									<span class="sidebar-category-icon" aria-hidden="true">
+										<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+											<path d="M12 2l-5.5 9h11z"/><circle cx="17.5" cy="17.5" r="4.5"/><path d="M3 13.5h8v8H3z"/>
+										</svg>
+									</span>
+									<span class="sidebar-category-label" set:html={renderTitleHtml(entry.label)}></span>
+								</span>
+								<Icon name="right-caret" class="caret" size="1.15rem" />
+							</summary>
+							<SidebarRestorePoint />
+							<Astro.self sublist={entry.entries} nested />
+						</details>
+					</li>
+				);
+			}
+
+			if (entry.isBook) {
+				if (entry.type === 'group') {
+					const isOpen = entry.isCurrentBook || flattenSidebar(entry.entries).some((i) => i.isCurrent);
+					return (
+						<li class:list={['gdocs-book-li', { 'is-current-book': entry.isCurrentBook }]}>
+							<details class="gdocs-book-group" open={isOpen}>
+								<summary class:list={['gdocs-tab-pill', entry.isCurrentBook ? 'is-active' : 'is-inactive']}>
+									<span class="gdocs-book-icon" aria-hidden="true">
+										<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+											<path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm-1 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
+										</svg>
+									</span>
+									<span class="gdocs-book-label">
+										{entry.isCurrentBook ? (
+											<span class="gdocs-book-text" set:html={renderTitleHtml(entry.label)}></span>
+										) : (
+											<a href={entry.href} class="gdocs-book-link" onclick="event.stopPropagation()" set:html={renderTitleHtml(entry.label)}></a>
+										)}
+									</span>
+									<span class="gdocs-tab-caret" aria-label="折叠/展开目录">
+										<Icon name="right-caret" class="caret" size="1.15rem" />
+									</span>
+								</summary>
+								<div class="gdocs-book-outline">
+									<SidebarRestorePoint />
+									<Astro.self sublist={entry.entries} nested />
+								</div>
+							</details>
+						</li>
+					);
+				}
+
+				return (
+					<li class="gdocs-book-li">
+						<a href={entry.href} class="gdocs-tab-item gdocs-inactive-book" {...entry.attrs}>
+							<span class="gdocs-book-icon" aria-hidden="true">
+								<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+									<path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm-1 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
+								</svg>
 							</span>
-							<Icon name="right-caret" class="caret" size="1.25rem" />
-						</summary>
-						<SidebarRestorePoint />
-						<Astro.self sublist={entry.entries} nested />
-					</details>
-				)}
-			</li>
-		))
+							<span class="gdocs-book-label" set:html={renderTitleHtml(entry.label)}></span>
+						</a>
+					</li>
+				);
+			}
+
+			return (
+				<li class="gdocs-outline-li">
+					{entry.type === 'link' ? (
+						<a
+							href={entry.href}
+							aria-current={entry.isCurrent ? 'page' : undefined}
+							class:list={['gdocs-outline-link', { large: !nested }, entry.attrs?.class]}
+							{...entry.attrs}
+						>
+							<span class="gdocs-link-text" set:html={renderTitleHtml(entry.label)}></span>
+							{entry.badge && (
+								<Badge
+									variant={entry.badge.variant}
+									class={entry.badge.class}
+									text={entry.badge.text}
+								/>
+							)}
+						</a>
+					) : (
+						<details
+							class="gdocs-chapter-group"
+							open={flattenSidebar(entry.entries).some((i) => i.isCurrent) || !entry.collapsed}
+						>
+							<summary class="gdocs-chapter-summary">
+								<span class="group-label">
+									<span class:list={[{ large: !nested }]} set:html={renderTitleHtml(entry.label)}></span>
+									{entry.badge && (
+										<Badge
+											variant={entry.badge.variant}
+											class={entry.badge.class}
+											text={entry.badge.text}
+										/>
+									)}
+								</span>
+								<Icon name="right-caret" class="caret" size="1.15rem" />
+							</summary>
+							<SidebarRestorePoint />
+							<Astro.self sublist={entry.entries} nested />
+						</details>
+					)}
+				</li>
+			);
+		})
 	}
 </ul>
 
@@ -86,7 +158,7 @@ function flattenSidebar(entries: any[]): any[] {
 		}
 
 		.top-level > li + li {
-			margin-top: 0.75rem;
+			margin-top: 3px;
 		}
 
 		summary {
@@ -94,7 +166,7 @@ function flattenSidebar(entries: any[]): any[] {
 			align-items: center;
 			justify-content: space-between;
 			padding: 0.2em var(--sl-sidebar-item-padding-inline);
-			line-height: 1.4;
+			line-height: 1.35;
 			cursor: pointer;
 			user-select: none;
 		}
@@ -116,11 +188,11 @@ function flattenSidebar(entries: any[]): any[] {
 
 		a {
 			display: block;
-			border-radius: 0.25rem;
+			border-radius: 9999px;
 			text-decoration: none;
 			color: var(--sl-color-gray-2);
-			padding: 0.3em var(--sl-sidebar-item-padding-inline);
-			line-height: 1.4;
+			padding: 0.25rem 0.65rem;
+			line-height: 1.35;
 		}
 
 		a:hover,
@@ -134,6 +206,7 @@ function flattenSidebar(entries: any[]): any[] {
 			font-weight: 600;
 			color: var(--sl-color-text-invert);
 			background-color: var(--sl-color-text-accent);
+			border-radius: 9999px;
 		}
 
 		a > *:not(:last-child),
@@ -141,16 +214,116 @@ function flattenSidebar(entries: any[]): any[] {
 			margin-inline-end: 0.25em;
 		}
 
-		@media (min-width: 50rem) {
-			.top-level > li + li {
-				margin-top: 0.5rem;
-			}
-			.large {
-				font-size: var(--sl-text-base);
-			}
-			a {
-				font-size: var(--sl-text-sm);
-			}
+		.sidebar-category-item {
+			margin-bottom: 0.5rem;
+		}
+
+		.sidebar-category-summary {
+			font-weight: 700;
+			font-size: var(--sl-text-xs);
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+			color: var(--sl-color-gray-3);
+			padding: 0.4rem var(--sl-sidebar-item-padding-inline);
+		}
+
+		.sidebar-category-title-wrap {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.45rem;
+		}
+
+		.sidebar-category-icon {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--sl-color-gray-3);
+			flex-shrink: 0;
+		}
+
+		.gdocs-book-li {
+			list-style: none;
+			margin-block: 2px;
+		}
+
+		.gdocs-tab-pill,
+		.gdocs-tab-item {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			padding: 0.32rem 0.65rem;
+			border-radius: 9999px;
+			text-decoration: none;
+			color: var(--sl-color-gray-2);
+			transition: all 0.15s ease;
+			font-size: var(--sl-text-sm);
+			cursor: pointer;
+		}
+
+		.gdocs-tab-item:hover {
+			color: var(--sl-color-white);
+			background-color: var(--sl-color-gray-6, rgba(125, 125, 125, 0.08));
+		}
+
+		.gdocs-tab-pill.is-active {
+			color: var(--sl-color-white);
+			font-weight: 600;
+		}
+
+		.gdocs-book-icon {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+			opacity: 0.85;
+		}
+
+		.gdocs-book-label {
+			flex: 1;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			line-height: 1.35;
+		}
+
+		.gdocs-book-link {
+			color: inherit;
+			text-decoration: none;
+			display: block;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.gdocs-book-text {
+			display: block;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.gdocs-tab-pill.is-inactive:hover {
+			color: var(--sl-color-white);
+			background-color: var(--sl-color-gray-6, rgba(125, 125, 125, 0.08));
+		}
+
+		.gdocs-tab-caret {
+			display: inline-flex;
+			align-items: center;
+			flex-shrink: 0;
+		}
+
+		.gdocs-book-outline {
+			margin-top: 2px;
+		}
+
+		.gdocs-outline-link {
+			display: block;
+			border-radius: 9999px;
+			text-decoration: none;
+			color: var(--sl-color-gray-2);
+			padding: 0.22rem 0.65rem;
+			line-height: 1.35;
 		}
 	}
 </style>

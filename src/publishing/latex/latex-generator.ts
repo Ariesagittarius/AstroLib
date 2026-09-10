@@ -5,54 +5,32 @@
  * 遵循极简学术排版哲学：The content is the design. The mathematics is the interface.
  * 原生直出 LaTeX/KaTeX 数学公式，零转译损耗，100% 还原公式韵律。
  */
-
 import type { SlimQuestionItem } from '../../types/exercises';
+import type {
+  ChapterDocument,
+  SemanticBlock,
+  SemanticTableData,
+  SemanticFigureData,
+  SemanticListData,
+} from '../../types/chapter-semantic';
+import {
+  type BaseExportSettings,
+  type ChapterExportSettings,
+  type ExerciseExportSettings,
+  type ImageSizingPolicy,
+  DEFAULT_CHAPTER_EXPORT_SETTINGS,
+  DEFAULT_EXERCISE_EXPORT_SETTINGS,
+  DEFAULT_IMAGE_POLICY,
+  renderFontPreamble,
+  renderCjkFontPreamble,
+} from '../common/export-settings.ts';
+export type LatexExportConfig = ExerciseExportSettings;
+export const DEFAULT_LATEX_CONFIG: LatexExportConfig = DEFAULT_EXERCISE_EXPORT_SETTINGS;
 
-export interface LatexExportConfig {
-  template: 'handout' | 'exam'; // 学术讲义练习册 vs 课程自测试卷
-  paperSize: 'a4' | 'b5';
-  fontSize: 10 | 10.5 | 11 | 12;
-  fontFamily: 'serif' | 'sans';
-  mathFont: 'typst' | 'modern' | 'times' | 'pagella'; // 现代 Typst 风格 (New Computer Modern) vs 经典 LaTeX (Latin Modern) vs Times vs Pagella
-  removeQed: boolean; // 是否去除题干右侧方框 QED 符号（还原纯正教材/试卷质感）
-  pageNumbering: 'total' | 'simple' | 'none'; // 完整页码 vs 简洁纯数字页码 vs 无页码
-  writingSpace: 'comfortable' | 'compact' | 'none'; // 留白：充裕(手写演算) / 紧凑(节约纸张) / 纯题干(无留白)
-  answerPlacement: 'appendix' | 'inline' | 'none'; // 答案位置：文末附录 / 题下紧随 / 纯题卷无答案
-  coloredSolution: boolean; // 是否彩色题解 (Jinwen-XU/homework 原生 colored solution 特性)
-  // 卷头与元数据控制 (Header & Metadata)
-  headerMode: 'standard' | 'compact' | 'none'; // 标准学术卷头 / 紧凑单行 / 无卷头省纸
-  title: string;
-  subtitle?: string;
-  showSubtitle: boolean;
-  showLicense: boolean; // CC BY-NC-SA 4.0 协议
-  licenseText: string;  // 默认为 'CC BY-NC-SA 4.0'
-  showDate: boolean;
-  date?: string;
-  courseName?: string;
-  author?: string;
-}
-
-export const DEFAULT_LATEX_CONFIG: LatexExportConfig = {
-  template: 'handout',
-  paperSize: 'a4',
-  fontSize: 11,
-  fontFamily: 'serif',
-  mathFont: 'typst',
-  removeQed: true,
-  pageNumbering: 'simple',
-  writingSpace: 'comfortable',
-  answerPlacement: 'appendix',
-  coloredSolution: false,
-  headerMode: 'standard',
-  title: '工科数学分析',
-  subtitle: '章节真题精选与自测练习',
-  showSubtitle: true,
-  showLicense: true,
-  licenseText: 'CC BY-NC-SA 4.0',
-  showDate: true,
-  date: '\\today',
-  courseName: '工科数学分析',
-  author: '',
+export type ChapterLatexConfig = ChapterExportSettings;
+export const DEFAULT_CHAPTER_LATEX_CONFIG: ChapterLatexConfig & { embedStyle?: boolean; styleSource?: string } = {
+  ...DEFAULT_CHAPTER_EXPORT_SETTINGS,
+  embedStyle: false,
 };
 
 /**
@@ -65,6 +43,8 @@ function decodeHtmlEntities(str: string): string {
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
+    .replace(/&\$lt\$;?/gi, '<')
+    .replace(/&\$gt\$;?/gi, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
     .replace(/&le;/g, '\\leqslant ')
@@ -92,6 +72,32 @@ function cleanMathFormula(inner: string): string {
   // 修复 cases/matrix 中误写单反斜杠换行错误 (如 \ 0, & -> \\ 0, &)
   res = res.replace(/([^\\])\\\s+([0-9a-zA-Z\$\\]+,\s*&)/g, '$1 \\\\ $2');
 
+  // 修复换行后紧跟中括号被 LaTeX 误解析为可选行距参数 \\[<dim>] 引发 "Missing number"
+  res = res.replace(/\\\\\s*\[/g, '\\\\ \\relax [');
+
+  // 修复 OCR 粘连：缺失空格导致命令与后续字母粘连（如 \cupB -> \cup B, \capA -> \cap A）
+  res = res.replace(/\\(cup|cap|pm|mp|div|wedge|vee|sim|times)([a-zA-Z])/g, '\\$1 $2');
+
+  // 修复 \begin{array}{...} 声明列数少于实际 & 分隔列数引发的 "Extra alignment tab has been changed to \cr"
+  res = res.replace(/\\begin\{array\}\{([^}]+)\}([\s\S]*?)\\end\{array\}/g, (_m, colsDecl, body) => {
+    const rawRows = body.split('\\\\');
+    let maxCols = 1;
+    for (const r of rawRows) {
+      const ampersands = (r.match(/(?<!\\)&/g) || []).length;
+      if (ampersands + 1 > maxCols) {
+        maxCols = ampersands + 1;
+      }
+    }
+    const cleanCols = colsDecl.replace(/[^a-zA-Z]/g, '');
+    let newCols = colsDecl;
+    if (cleanCols.length < maxCols) {
+      const padChar = cleanCols[cleanCols.length - 1] || 'c';
+      const missing = maxCols - cleanCols.length;
+      newCols = colsDecl.trim() + ' ' + Array(missing).fill(padChar).join(' ');
+    }
+    return `\\begin{array}{${newCols}}${body}\\end{array}`;
+  });
+
   // 填空题下划线保护：使用学术排版标准 \rule[-0.2ex]{3.5em}{0.4pt}
   res = res.replace(/\\underline\{\s*(\\quad)*\s*\}/g, '\\rule[-0.2ex]{3.5em}{0.4pt}');
   res = res.replace(/_{3,}/g, '\\rule[-0.2ex]{3.5em}{0.4pt}');
@@ -100,50 +106,51 @@ function cleanMathFormula(inner: string): string {
 }
 
 const UNICODE_MATH_MAP: Record<string, string> = {
-  '𝜋': '\\pi',
-  'π': '\\pi',
-  '𝛼': '\\alpha',
-  'α': '\\alpha',
-  '𝛽': '\\beta',
-  'β': '\\beta',
-  '𝛾': '\\gamma',
-  'γ': '\\gamma',
-  '𝜃': '\\theta',
-  'θ': '\\theta',
-  '𝜆': '\\lambda',
-  'λ': '\\lambda',
-  '𝜇': '\\mu',
-  'μ': '\\mu',
-  '𝜎': '\\sigma',
-  'σ': '\\sigma',
-  '𝜏': '\\tau',
-  'τ': '\\tau',
-  '𝜔': '\\omega',
-  'ω': '\\omega',
-  '𝜙': '\\phi',
-  'φ': '\\phi',
-  '𝜓': '\\psi',
-  'ψ': '\\psi',
-  '∞': '\\infty',
-  '≤': '\\le',
-  '≥': '\\ge',
-  '≠': '\\ne',
-  '≈': '\\approx',
-  '∈': '\\in',
-  '∉': '\\notin',
-  '⊂': '\\subset',
-  '⊆': '\\subseteq',
-  '∪': '\\cup',
-  '∩': '\\cap',
-  '±': '\\pm',
-  '×': '\\times',
-  '÷': '\\div',
-  '∂': '\\partial',
-  '∇': '\\nabla',
-  '∑': '\\sum',
-  '∏': '\\prod',
-  '∫': '\\int',
-  '°': '^\\circ',
+  '𝜋': '\\pi ',
+  'π': '\\pi ',
+  '𝛼': '\\alpha ',
+  'α': '\\alpha ',
+  '𝛽': '\\beta ',
+  'β': '\\beta ',
+  '𝛾': '\\gamma ',
+  'γ': '\\gamma ',
+  '𝜃': '\\theta ',
+  'θ': '\\theta ',
+  '𝜆': '\\lambda ',
+  'λ': '\\lambda ',
+  '𝜇': '\\mu ',
+  'μ': '\\mu ',
+  '𝜎': '\\sigma ',
+  'σ': '\\sigma ',
+  '𝜏': '\\tau ',
+  'τ': '\\tau ',
+  '𝜔': '\\omega ',
+  'ω': '\\omega ',
+  '𝜙': '\\phi ',
+  'φ': '\\phi ',
+  '𝜓': '\\psi ',
+  'ψ': '\\psi ',
+  '∞': '\\infty ',
+  '≤': '\\le ',
+  '≥': '\\ge ',
+  '≠': '\\ne ',
+  '≈': '\\approx ',
+  '∈': '\\in ',
+  '∉': '\\notin ',
+  '⊂': '\\subset ',
+  '⊆': '\\subseteq ',
+  '∪': '\\cup ',
+  '∩': '\\cap ',
+  '∅': '\\varnothing ',
+  '±': '\\pm ',
+  '×': '\\times ',
+  '÷': '\\div ',
+  '∂': '\\partial ',
+  '∇': '\\nabla ',
+  '∑': '\\sum ',
+  '∏': '\\prod ',
+  '∫': '\\int ',
+  '°': '^\\circ ',
   '²': '^2',
   '³': '^3',
   '⁴': '^4',
@@ -156,7 +163,7 @@ const UNICODE_MATH_MAP: Record<string, string> = {
 };
 
 const MATH_COMMAND_REGEX =
-  /\\(sqrt|frac|dfrac|tfrac|pi|alpha|beta|gamma|delta|epsilon|varepsilon|zeta|eta|theta|vartheta|iota|kappa|lambda|mu|nu|xi|rho|varrho|sigma|varsigma|tau|upsilon|phi|varphi|chi|psi|omega|Gamma|Delta|Theta|Lambda|Xi|Pi|Sigma|Upsilon|Phi|Psi|Omega|sin|cos|tan|cot|sec|csc|arcsin|arccos|arctan|ln|log|exp|lim|sum|prod|int|iint|iiint|oint|partial|nabla|infty|pm|mp|times|div|cdot|cdots|ldots|vdots|ddots|circ|le|ge|ne|leq|geq|neq|approx|sim|simeq|equiv|subset|supset|subseteq|supseteq|in|notin|ni|forall|exists|vec|hat|bar|tilde|dot|ddot|mathbf|mathbb|mathrm|mathcal|mathscr|mathfrak)(?![a-zA-Z])/;
+  /\\(sqrt|frac|dfrac|tfrac|pi|alpha|beta|gamma|delta|epsilon|varepsilon|zeta|eta|theta|vartheta|iota|kappa|lambda|mu|nu|xi|rho|varrho|sigma|varsigma|tau|upsilon|phi|varphi|chi|psi|omega|Gamma|Delta|Theta|Lambda|Xi|Pi|Sigma|Upsilon|Phi|Psi|Omega|sin|cos|tan|cot|sec|csc|arcsin|arccos|arctan|ln|log|exp|lim|sum|prod|int|iint|iiint|oint|partial|nabla|infty|pm|mp|times|div|cdot|cdots|ldots|vdots|ddots|circ|le|ge|ne|leq|geq|neq|approx|sim|simeq|equiv|subset|supset|subseteq|supseteq|cup|cap|emptyset|varnothing|in|notin|ni|forall|exists|vec|hat|bar|tilde|dot|ddot|mathbf|mathbb|mathrm|mathcal|mathscr|mathfrak)(?![a-zA-Z])/;
 
 /**
  * 规范化 Unicode 数学字符与控制字符
@@ -172,6 +179,21 @@ export function normalizeUnicodeMath(text: string): string {
     const code = match.codePointAt(0) || 0;
     return String.fromCharCode(code - 0x1d44e + 0x61);
   });
+
+  // 转换全角/特殊 Unicode 罗马数字 (Ⅰ..Ⅹ) 为标准 ASCII
+  const romanMap: Record<string, string> = {
+    'Ⅰ': 'I',
+    'Ⅱ': 'II',
+    'Ⅲ': 'III',
+    'Ⅳ': 'IV',
+    'Ⅴ': 'V',
+    'Ⅵ': 'VI',
+    'Ⅶ': 'VII',
+    'Ⅷ': 'VIII',
+    'Ⅸ': 'IX',
+    'Ⅹ': 'X',
+  };
+  res = res.replace(/[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]/g, (m) => romanMap[m] || m);
 
   for (const [char, replacement] of Object.entries(UNICODE_MATH_MAP)) {
     if (res.includes(char)) {
@@ -237,9 +259,9 @@ export function balanceDollars(text: string): string {
 export function sanitizeBareMath(text: string): string {
   if (!text) return text;
 
-  // 1. 保护已有占位符 (格式为 §§MBX#123§§)
+  // 1. 保护已有占位符 (格式为 §§MBX#123§§ 或 §§IMG#123§§)
   const mbxPlaceholders: string[] = [];
-  let s = text.replace(/§§MBX#\d+§§/g, (m) => {
+  let s = text.replace(/§§[A-Z0-9_]+#\d+§§/g, (m) => {
     mbxPlaceholders.push(m);
     return `§§P${mbxPlaceholders.length - 1}P§§`;
   });
@@ -302,25 +324,30 @@ export function formatLatexContent(text: string): string {
   raw = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   raw = raw.replace(/\\n(?![a-zA-Z])/g, '\n');
 
-  // 2. 规范化 HTML 换行与段落
+
+  // 2. 规范化 HTML 换行与段落 (严格校验标签边界，防止误伤 0<p<1 等数学不等式)
   raw = raw.replace(/<br\s*\/?>/gi, '\n');
   raw = raw.replace(/<\/p>/gi, '\n\n');
-  raw = raw.replace(/<p[^>]*>/gi, '');
-  raw = raw.replace(/<span[^>]*>/gi, '');
+  raw = raw.replace(/<p(\s+[^>]*)?>/gi, '');
+  raw = raw.replace(/<span(\s+[^>]*)?>/gi, '');
   raw = raw.replace(/<\/span>/gi, '');
-  raw = raw.replace(/<div[^>]*>/gi, '');
+  raw = raw.replace(/<div(\s+[^>]*)?>/gi, '');
   raw = raw.replace(/<\/div>/gi, '\n');
-  raw = raw.replace(/<strong[^>]*>([\s\S]*?)<\/strong>/gi, '\\textbf{$1}');
-  raw = raw.replace(/<b[^>]*>([\s\S]*?)<\/b>/gi, '\\textbf{$1}');
-  raw = raw.replace(/<em[^>]*>([\s\S]*?)<\/em>/gi, '\\textit{$1}');
-  raw = raw.replace(/<i[^>]*>([\s\S]*?)<\/i>/gi, '\\textit{$1}');
+  raw = raw.replace(/<strong(\s+[^>]*)?>([\s\S]*?)<\/strong>/gi, '\\textbf{$2}');
+  raw = raw.replace(/<b(\s+[^>]*)?>([\s\S]*?)<\/b>/gi, '\\textbf{$2}');
+  raw = raw.replace(/<em(\s+[^>]*)?>([\s\S]*?)<\/em>/gi, '\\textit{$2}');
+  raw = raw.replace(/<i(\s+[^>]*)?>([\s\S]*?)<\/i>/gi, '\\textit{$2}');
 
-  // 3. 处理 Markdown 图片语法 (![alt](url))，生成自适应学术图示
+  // 3. 处理 Markdown 图片语法 (![alt](url))，使用占位符保护防止被后续裸公式识别器误处理
+  const imgBlocks: string[] = [];
   raw = raw.replace(/!\[(.*?)\]\((.*?)\)/g, (_m, alt, url) => {
     const cleanUrl = url.trim();
     const cleanAlt = alt ? alt.trim() : '';
     const escapedAlt = (cleanAlt || cleanUrl).replace(/([_&%$#])/g, '\\$1');
-    return `\n\\begin{center}\n  \\IfFileExists{../public${cleanUrl}}{\\includegraphics[width=0.48\\linewidth,keepaspectratio]{../public${cleanUrl}}}{\\IfFileExists{public${cleanUrl}}{\\includegraphics[width=0.48\\linewidth,keepaspectratio]{public${cleanUrl}}}{\\fbox{\\small\\itshape [图示] ${escapedAlt}}}}\n\\end{center}\n`;
+    imgBlocks.push(
+      `\n\\begin{center}\n  \\IfFileExists{../public${cleanUrl}}{\\includegraphics[width=0.48\\linewidth,keepaspectratio]{../public${cleanUrl}}}{\\IfFileExists{public${cleanUrl}}{\\includegraphics[width=0.48\\linewidth,keepaspectratio]{public${cleanUrl}}}{\\fbox{\\small\\itshape [图示] ${escapedAlt}}}}\n\\end{center}\n`
+    );
+    return `§§IMG#${imgBlocks.length - 1}§§`;
   });
 
   // 4. 处理填空题下划线与括号留白 (在提取公式前执行，防止下划线引发数学模式误判)
@@ -377,8 +404,13 @@ export function formatLatexContent(text: string): string {
   };
   raw = raw.replace(/[①②③④⑤⑥⑦⑧⑨⑩]/g, (m) => circledMap[m] || m);
 
-  // 8. 还原所有公式块
+  // 7.1 转义文本中的保留字符 (此时公式与图片均已被保护在占位符内)
+  raw = raw.replace(/(?<!\\)&/g, '\\&');
+  raw = raw.replace(/(?<!\\)%/g, '\\%');
+
+  // 8. 还原所有公式块与图片块
   raw = raw.replace(/§§MBX#(\d+)§§/g, (_m, idx) => mathBlocks[Number(idx)] || '');
+  raw = raw.replace(/§§IMG#(\d+)§§/g, (_m, idx) => imgBlocks[Number(idx)] || '');
 
   return raw.trim();
 }
@@ -513,17 +545,12 @@ export function generateLatexDocument(
     classOptions.push('colored solution');
   }
 
-  // 数学公式字体配置
-  let mathFontCode = '';
-  if (config.mathFont === 'typst') {
-    mathFontCode = '% 公式字体：现代学术 Typst 同款字体 (New Computer Modern Math)\n\\setmathfont{NewCMMath-Book.otf}\n';
-  } else if (config.mathFont === 'modern') {
-    mathFontCode = '% 公式字体：经典 LaTeX 默认字体 (Latin Modern Math)\n\\setmathfont{latinmodern-math.otf}\n';
-  } else if (config.mathFont === 'times') {
-    mathFontCode = '% 公式字体：科技期刊 Times 风格字体 (TeX Gyre Termes Math)\n\\setmathfont{texgyretermes-math.otf}\n';
-  } else if (config.mathFont === 'pagella') {
-    mathFontCode = '% 公式字体：优雅数学教材 Pagella 风格字体 (TeX Gyre Pagella Math)\n\\setmathfont{texgyrepagella-math.otf}\n';
-  }
+  // 学术排版与字体配置 (统一委托至 Academic Typography System 唯一入口)
+  const typographyCode = renderFontPreamble(config, {
+    includePackage: false,
+    resolutionMode: config.resolutionMode || 'deterministic',
+    userExplicit: userConfig,
+  });
 
   // 页码设置
   let pageNumberCode = '';
@@ -578,12 +605,12 @@ export function generateLatexDocument(
 \\usepackage{graphicx}   % 学术图示宏包
 \\providecommand{\\boldsymbol}{\\symbf}
 
-${mathFontCode}${pageNumberCode}
+${typographyCode}${pageNumberCode}
 % 选择题 tasks 标签格式设置为 A. B. C. D.
 \\settasks{
-  label = \\Alph*.,
+  label = \Alph*.,
   label-width = 1.6em,
-  label-format = {\\bfseries},
+  label-format = {\sffamily\bfseries},
   item-indent = 2.2em,
   before-skip = 0.3em,
   after-skip = 0.5em
@@ -639,7 +666,7 @@ ${dateCode}
 % 紧凑型单行卷头（节省打印空间）
 % -------------------------------------------------------------------------
 \\begin{center}
-  {\\large\\bfseries ${escapeLatexMeta(config.title)}}${titleSub}${licenseLine}
+  {\\large\\sffamily\\bfseries ${escapeLatexMeta(config.title)}}${titleSub}${licenseLine}
 \\end{center}
 \\vspace{0.3em}\\hrule\\vspace{1.0em}
 `;
@@ -803,5 +830,594 @@ ${dateCode}
 
   code += `\\end{document}\n`;
 
+  return code;
+}
+
+// =========================================================================
+// 章节级别学术教材 / 讲义 LaTeX 生成引擎 (Chapter LaTeX Renderer)
+// 纯粹的 Publishing 表现层渲染器，接受 ChapterDocument 语义数据模型，输出纯正 ctexart / ctexbook
+// =========================================================================
+
+/**
+ * 剥离章节与节标题前手工书写的冗余数字前缀（如 '1.1 集合及其运算' -> '集合及其运算'）
+ * 遵循 Rule 13: 编号由 LaTeX 计数器负责，保持交叉引用与自动层级一致
+ */
+export function stripLeadingNumber(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/^(?:第[0-9一二三四五六七八九十]+[章节讲部](?:分)?|[0-9]+(?:\.[0-9]+)*[章节讲]?)[、\.\s\-－:]+/, '')
+    .replace(/^(\d+(?:\.\d+)*)\s+/, '')
+    .trim() || text;
+}
+
+/**
+ * 剥离定理/例题/定义等学术模块标题中的前缀与编号，仅保留名称
+ * 例如 '定义 1.1 实数集的有界性' -> '实数集的有界性'，'例 1.1' -> ''
+ * 由 tcolorbox 负责自动编号，避免 '定义 1.1 (定义 1.1 实数集的有界性)' 重复
+ */
+export function stripTheoremPrefix(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/^(?:定理|定义|引理|推论|命题|公理|性质|准则|法则|例|例题|变式|方法|习题)\s*[0-9a-zA-Z\.\-－ⅠⅡⅢⅣⅤⅥ]*\s*/i, '')
+    .trim();
+}
+
+/**
+ * 将数学公式转换为纯文本/Unicode 文本（供 PDF 书签及超链接回退使用）
+ */
+export function mathToBookmarkText(math: string): string {
+  if (!math) return '';
+  let res = math.trim();
+
+  // 1. 希腊字母映射
+  const GREEK_MAP: Record<string, string> = {
+    '\\alpha': 'α',
+    '\\beta': 'β',
+    '\\gamma': 'γ',
+    '\\delta': 'δ',
+    '\\epsilon': 'ε',
+    '\\varepsilon': 'ε',
+    '\\zeta': 'ζ',
+    '\\eta': 'η',
+    '\\theta': 'θ',
+    '\\vartheta': 'θ',
+    '\\iota': 'ι',
+    '\\kappa': 'κ',
+    '\\lambda': 'λ',
+    '\\mu': 'μ',
+    '\\nu': 'ν',
+    '\\xi': 'ξ',
+    '\\pi': 'π',
+    '\\rho': 'ρ',
+    '\\varrho': 'ρ',
+    '\\sigma': 'σ',
+    '\\varsigma': 'σ',
+    '\\tau': 'τ',
+    '\\upsilon': 'υ',
+    '\\phi': 'φ',
+    '\\varphi': 'φ',
+    '\\chi': 'χ',
+    '\\psi': 'ψ',
+    '\\omega': 'ω',
+    '\\Gamma': 'Γ',
+    '\\Delta': 'Δ',
+    '\\Theta': 'Θ',
+    '\\Lambda': 'Λ',
+    '\\Xi': 'Ξ',
+    '\\Pi': 'Π',
+    '\\Sigma': 'Σ',
+    '\\Upsilon': 'Υ',
+    '\\Phi': 'Φ',
+    '\\Psi': 'Ψ',
+    '\\Omega': 'Ω',
+  };
+
+  for (const [cmd, sym] of Object.entries(GREEK_MAP)) {
+    res = res.replace(new RegExp(cmd.replace('\\', '\\\\') + '(?![a-zA-Z])', 'g'), sym);
+  }
+
+  // 2. 常见数学符号与算符
+  res = res.replace(/\\(le|leqslant)(?![a-zA-Z])/g, '≤');
+  res = res.replace(/\\(ge|geqslant)(?![a-zA-Z])/g, '≥');
+  res = res.replace(/\\(ne|neq)(?![a-zA-Z])/g, '≠');
+  res = res.replace(/\\approx(?![a-zA-Z])/g, '≈');
+  res = res.replace(/\\sim(?![a-zA-Z])/g, '∼');
+  res = res.replace(/\\times(?![a-zA-Z])/g, '×');
+  res = res.replace(/\\div(?![a-zA-Z])/g, '÷');
+  res = res.replace(/\\pm(?![a-zA-Z])/g, '±');
+  res = res.replace(/\\mp(?![a-zA-Z])/g, '∓');
+  res = res.replace(/\\infty(?![a-zA-Z])/g, '∞');
+  res = res.replace(/\\in(?![a-zA-Z])/g, '∈');
+  res = res.replace(/\\notin(?![a-zA-Z])/g, '∉');
+  res = res.replace(/\\(cdots|ldots)(?![a-zA-Z])/g, '…');
+  res = res.replace(/\\cdot(?![a-zA-Z])/g, '·');
+
+  // 3. 上标
+  const supMap: Record<string, string> = {
+    '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+    '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
+    'n': 'ⁿ', 'k': 'ᵏ', 'i': 'ⁱ', '+': '⁺', '-': '⁻'
+  };
+  res = res.replace(/\^\{?([0-9nkipm\+\-])\}?/g, (_m, char) => supMap[char] || char);
+  res = res.replace(/\^\{\\circ\}|\^\\circ/g, '°');
+
+  // 4. 下标
+  const subMap: Record<string, string> = {
+    '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄',
+    '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
+    'i': 'ᵢ', 'j': 'ⱼ', 'k': 'ₖ', 'n': 'ₙ', 'm': 'ₘ', 'p': 'ₚ'
+  };
+  res = res.replace(/_\{?([0-9ijknmp])\}?/g, (_m, char) => subMap[char] || char);
+
+  // 5. 格式宏与括号剥离
+  res = res.replace(/\\(mathbf|mathrm|mathit|mathcal|mathbb|bm|boldsymbol)\s*\{([^}]*)\}/g, '$2');
+  res = res.replace(/\\(left|right|big|Big|bigg|Bigg)[()\[\]|.\\]/g, '');
+  res = res.replace(/[{}\\]/g, '');
+
+  return res.trim();
+}
+
+/**
+ * 格式化章节标题：使用 \texorpdfstring 保护公式，杜绝 hyperref 书签展开崩溃
+ */
+export function formatHeadingLatex(title: string): string {
+  if (!title) return '';
+  let raw = decodeHtmlEntities(title);
+  raw = normalizeUnicodeMath(raw);
+  raw = balanceDollars(raw);
+
+  const texorPlaceholders: string[] = [];
+
+  // 匹配 $...$
+  raw = raw.replace(/\$((?:[^\$\n]|\n(?!\s*\n))+?)\$/g, (_m, math) => {
+    const cleanMath = cleanMathFormula(math.trim());
+    const bookmark = mathToBookmarkText(math);
+    texorPlaceholders.push(`\\texorpdfstring{$${cleanMath}$}{${bookmark}}`);
+    return `§§TOPDF_${texorPlaceholders.length - 1}§§`;
+  });
+
+  // 匹配 \( ... \)
+  raw = raw.replace(/\\\(([\s\S]*?)\\\)/g, (_m, math) => {
+    const cleanMath = cleanMathFormula(math.trim());
+    const bookmark = mathToBookmarkText(math);
+    texorPlaceholders.push(`\\texorpdfstring{$${cleanMath}$}{${bookmark}}`);
+    return `§§TOPDF_${texorPlaceholders.length - 1}§§`;
+  });
+
+  // 转义文本中的特殊字符
+  raw = raw.replace(/(?<!\\)&/g, '\\&');
+  raw = raw.replace(/(?<!\\)%/g, '\\%');
+  raw = raw.replace(/(?<!\\)#/g, '\\#');
+
+  // 还原占位符
+  raw = raw.replace(/§§TOPDF_(\d+)§§/g, (_m, idx) => texorPlaceholders[Number(idx)] || '');
+  return raw.trim();
+}
+
+/**
+ * 渲染单个表格节点为 booktabs 标准学术三线表
+ * @param tableData 表格数据模型
+ * @param inBox 是否处于 tcolorbox (定理/定义/例题等) 容器内部。内部严禁使用浮动体 \\begin{table}
+ */
+export function renderLatexTable(tableData: SemanticTableData, inBox = false): string {
+  if (!tableData || !tableData.headers || tableData.headers.length === 0) return '';
+  const colCount = Math.max(
+    tableData.headers.length,
+    ...(tableData.rows || []).map((r) => r.length)
+  );
+
+  const colAligns = (tableData.aligns || []).map((a) => {
+    if (a === 'left') return 'l';
+    if (a === 'right') return 'r';
+    return 'c';
+  });
+  while (colAligns.length < colCount) {
+    colAligns.push('c');
+  }
+
+  const tableBody = [
+    `    \\toprule`,
+    `    ${tableData.headers.map((h) => formatLatexContent(h)).join(' & ')} \\\\`,
+    `    \\midrule`,
+    ...(tableData.rows || []).map((row) => {
+      const paddedRow = [...row];
+      while (paddedRow.length < colCount) paddedRow.push('');
+      return `    ${paddedRow.map((c) => formatLatexContent(c)).join(' & ')} \\\\`;
+    }),
+    `    \\bottomrule`,
+  ].join('\n');
+
+  const tabularCode = `\\begin{tabular}{${colAligns.join(' ')}}\n${tableBody}\n  \\end{tabular}`;
+  // 使用 adjustbox 约束宽度不超过版心，杜绝超宽表格撑破右边距
+  const wrappedTabular = `\\begin{adjustbox}{max width=\\linewidth}\n  ${tabularCode}\n  \\end{adjustbox}`;
+
+  let captionCode = '';
+  if (tableData.caption && tableData.caption.trim()) {
+    captionCode = formatLatexContent(tableData.caption.trim());
+  }
+
+  if (inBox) {
+    // 处于 tcolorbox (定理/例题/定义等) 容器内部时，使用居中非浮动环境，杜绝 "Not in outer par mode"
+    let code = `\\begin{center}\n  \\small\n`;
+    if (captionCode) {
+      code += `  {\\small\\kaishu ${captionCode}}\\par\\vspace{0.4em}\n`;
+    }
+    code += `  ${wrappedTabular}\n\\end{center}\n\n`;
+    return code;
+  }
+
+  // 处于正文顶层时，使用标准的浮动体 table 环境与三线表
+  let code = `\\begin{table}[htbp]\n  \\centering\n  \\small\n`;
+  if (captionCode) {
+    code += `  \\caption{${captionCode}}\n`;
+  }
+  code += `  ${wrappedTabular}\n\\end{table}\n\n`;
+  return code;
+}
+
+/**
+ * 渲染单个列表节点
+ */
+function renderLatexList(listData: SemanticListData, config: ChapterLatexConfig, inBox = false): string {
+  if (!listData || !listData.items) return '';
+  const env = listData.ordered ? 'enumerate' : 'itemize';
+  let code = `\\begin{${env}}\n`;
+
+  for (const itemBlocks of listData.items) {
+    const itemContent = renderSemanticBlocks(itemBlocks, config, inBox).trim();
+    code += `  \\item ${itemContent}\n`;
+  }
+
+  code += `\\end{${env}}\n\n`;
+  return code;
+}
+
+/**
+ * 渲染插图与图题节点 (遵循 ImageSizingPolicy 约束，基于 adjustbox 防止大图/竖图撑爆版面)
+ */
+export function renderLatexFigure(
+  figureData: SemanticFigureData,
+  policy: ImageSizingPolicy = DEFAULT_IMAGE_POLICY
+): string {
+  if (!figureData || !figureData.url) return '';
+  const cleanUrl = figureData.url.replace(/^(\.\/)?images\//, 'assets/');
+  const escapedAlt = escapeLatexMeta(figureData.caption || figureData.alt || cleanUrl);
+
+  const mw = policy.maxWidthRatio ?? 0.65;
+  const mh = policy.maxHeightRatio ?? 0.30;
+  const keepAspect = policy.keepAspectRatio !== false ? ',keepaspectratio' : '';
+  const imgOptions = `max width=${mw}\\linewidth,max height=${mh}\\textheight${keepAspect}`;
+
+  let code = `\\begin{center}\n`;
+  code += `  \\IfFileExists{${cleanUrl}}{\\includegraphics[${imgOptions}]{${cleanUrl}}}{\\IfFileExists{${figureData.url}}{\\includegraphics[${imgOptions}]{${figureData.url}}}{\\fbox{\\small\\itshape [图示] ${escapedAlt}}}}\n`;
+
+  if (figureData.caption && figureData.caption.trim()) {
+    const captionFont = policy.captionStyle === 'kaishu' ? '\\kaishu' : '\\normalfont';
+    code += `  \\par\\vspace{0.4em}{\\small${captionFont} ${formatLatexContent(figureData.caption.trim())}}\n`;
+  }
+
+  code += `\\end{center}\n\n`;
+  return code;
+}
+
+/**
+ * 递归渲染语义块列表 (SemanticBlock[]) 为纯正 LaTeX 语法
+ */
+export function renderSemanticBlocks(
+  blocks: SemanticBlock[],
+  config: ChapterLatexConfig,
+  inBox = false
+): string {
+  if (!blocks || blocks.length === 0) return '';
+  let code = '';
+
+  for (const block of blocks) {
+    if (!block) continue;
+
+    switch (block.kind) {
+      case 'heading': {
+        const level = block.level || 2;
+        const cleanTitle = formatHeadingLatex(stripLeadingNumber(block.title || block.content || ''));
+        if (level === 1) {
+          if (config.documentclass === 'ctexbook') {
+            code += `\\chapter{${cleanTitle}}\n\n`;
+          } else {
+            code += `\\section{${cleanTitle}}\n\n`;
+          }
+        } else if (level === 2) {
+          code += `\\section{${cleanTitle}}\n\n`;
+        } else if (level === 3) {
+          code += `\\subsection{${cleanTitle}}\n\n`;
+        } else {
+          code += `\\subsubsection{${cleanTitle}}\n\n`;
+        }
+        break;
+      }
+
+      case 'paragraph': {
+        const p = formatLatexContent(block.content || '').trim();
+        if (p) {
+          code += `${p}\n\n`;
+        }
+        break;
+      }
+
+      case 'math': {
+        if (block.content) {
+          code += `\\[\n${cleanMathFormula(block.content.trim())}\n\\]\n\n`;
+        }
+        break;
+      }
+
+      case 'figure': {
+        if (block.figureData) {
+          code += renderLatexFigure(block.figureData, config.imagePolicy);
+        }
+        break;
+      }
+
+      case 'table': {
+        if (block.tableData) {
+          code += renderLatexTable(block.tableData, inBox);
+        }
+        break;
+      }
+
+      case 'list': {
+        if (block.listData) {
+          code += renderLatexList(block.listData, config, inBox);
+        }
+        break;
+      }
+
+      case 'quote': {
+        code += `\\begin{quote}\n${renderSemanticBlocks(block.children || [], config, inBox).trim()}\n\\end{quote}\n\n`;
+        break;
+      }
+
+      case 'code': {
+        code += `\\begin{verbatim}\n${block.content || ''}\n\\end{verbatim}\n\n`;
+        break;
+      }
+
+      // 核心定理族 (tcolorbox 自动编号定理环境)
+      case 'definition':
+      case 'theorem':
+      case 'lemma':
+      case 'corollary':
+      case 'proposition':
+      case 'axiom':
+      case 'property':
+      case 'criterion':
+      case 'academicblock':
+      case 'example':
+      case 'variant':
+      case 'method': {
+        const titleArg = block.title ? formatLatexContent(stripTheoremPrefix(block.title)) : '';
+        const labelArg = block.label || (block.number ? `${block.kind}:${block.number.replace(/\./g, '-')}` : '');
+        code += `\\begin{${block.kind}}{${titleArg}}{${labelArg}}\n`;
+        const inner = renderSemanticBlocks(block.children || [], config, true).trim();
+        if (inner) {
+          code += `${inner}\n`;
+        }
+        code += `\\end{${block.kind}}\n\n`;
+        break;
+      }
+
+      case 'proof': {
+        code += `\\begin{proof}\n`;
+        const inner = renderSemanticBlocks(block.children || [], config, true).trim();
+        if (inner) {
+          code += `${inner}\n`;
+        }
+        code += `\\end{proof}\n\n`;
+        break;
+      }
+
+      case 'solution': {
+        const title = block.title ? formatLatexContent(block.title) : '解';
+        code += `\\begin{solution}[${title}]\n`;
+        const inner = renderSemanticBlocks(block.children || [], config, true).trim();
+        if (inner) {
+          code += `${inner}\n`;
+        }
+        code += `\\end{solution}\n\n`;
+        break;
+      }
+
+      case 'remark': {
+        const title = block.title ? formatLatexContent(block.title) : '注记';
+        code += `\\begin{remark}[${title}]\n`;
+        const inner = renderSemanticBlocks(block.children || [], config, true).trim();
+        if (inner) {
+          code += `${inner}\n`;
+        }
+        code += `\\end{remark}\n\n`;
+        break;
+      }
+
+      case 'analysis': {
+        const title = block.title ? formatLatexContent(block.title) : '思路分析';
+        code += `\\begin{analysis}[${title}]\n`;
+        const inner = renderSemanticBlocks(block.children || [], config, true).trim();
+        if (inner) {
+          code += `${inner}\n`;
+        }
+        code += `\\end{analysis}\n\n`;
+        break;
+      }
+
+      case 'guide': {
+        const title = block.title ? formatLatexContent(block.title) : '本节导读';
+        code += `\\begin{guide}[${title}]\n`;
+        const inner = renderSemanticBlocks(block.children || [], config, true).trim();
+        if (inner) {
+          code += `${inner}\n`;
+        }
+        code += `\\end{guide}\n\n`;
+        break;
+      }
+
+      case 'summary': {
+        const title = block.title ? formatLatexContent(block.title) : '本节总结';
+        code += `\\begin{summary}[${title}]\n`;
+        const inner = renderSemanticBlocks(block.children || [], config, true).trim();
+        if (inner) {
+          code += `${inner}\n`;
+        }
+        code += `\\end{summary}\n\n`;
+        break;
+      }
+
+      case 'exercise': {
+        const title = block.title ? formatLatexContent(block.title) : '课后习题';
+        code += `\\begin{exercise}[${title}]\n`;
+        const inner = renderSemanticBlocks(block.children || [], config, true).trim();
+        if (inner) {
+          code += `${inner}\n`;
+        }
+        code += `\\end{exercise}\n\n`;
+        break;
+      }
+
+      case 'digital_resource':
+      case 'qrcode': {
+        const res = block.resourceData;
+        const categoryLabel = res?.categoryLabel || (block.title?.includes('微课') ? '微课视频' : '配套数字资源');
+        const title = res?.title || block.title || '数字资源';
+        const url = res?.url || block.content || '';
+        code += `\\astrolibdigitalresource[${escapeLatexMeta(categoryLabel)}]{${escapeLatexMeta(title)}}{${url ? url.trim() : ''}}\n\n`;
+        break;
+      }
+
+      case 'footnote': {
+        const text = block.content ? formatLatexContent(block.content) : '';
+        if (text) {
+          code += `\\footnote{${text}}\n`;
+        }
+        break;
+      }
+
+      default:
+        if (block.children) {
+          code += renderSemanticBlocks(block.children, config, inBox);
+        }
+    }
+  }
+
+  return code;
+}
+
+/**
+ * 核心导出函数：将 ChapterDocument 语义领域模型渲染为完整可编译的 LaTeX 源码
+ * 遵循极简学术规范：单章输出默认基于 ctexart，取消封面大标题页，第 1 页直接以学术紧凑卷头展开正文
+ */
+export function renderChapterLatexDocument(
+  chapter: ChapterDocument,
+  userConfig: Partial<ChapterLatexConfig & { embedStyle?: boolean }> = {}
+): string {
+  const config = { ...DEFAULT_CHAPTER_EXPORT_SETTINGS, ...userConfig };
+  const isBook = config.documentclass === 'ctexbook';
+  const paperOption = config.paperSize === 'b5' ? 'b5paper' : 'a4paper';
+  const fontPt = config.fontSize === 10.5 ? '10.5pt' : `${config.fontSize}pt`;
+
+  // 学术排版与字体配置 (统一委托至 Academic Typography System 唯一入口)
+  const typographyCode = renderFontPreamble(config, {
+    includePackage: true,
+    resolutionMode: config.resolutionMode || 'deterministic',
+    userExplicit: userConfig,
+  });
+
+  // 样式引入模式：使用独立宏包 vs 内嵌宏包代码（独立单文件开箱即用）
+  let styleCode = '\\usepackage{astrolib-chapter}\n';
+  if (config.embedStyle && config.styleSource) {
+    styleCode = `\n% ================= 内联 AstroLib 学术教材排版样式 =================\n${config.styleSource}\n% ==================================================================\n`;
+  }
+
+  // 章节层级元数据权威注入 (来自 Core / Catalog 层的 ChapterCanonicalMetadata)
+  const meta = chapter.metadata;
+  let chapterPrefix = meta?.numberingPrefix;
+  if (!chapterPrefix && meta?.chapterNumber != null) {
+    chapterPrefix = `${meta.chapterNumber}.`;
+  }
+  if (!chapterPrefix) {
+    const m = (chapter.title || '').match(/^(\d+)\./);
+    chapterPrefix = m ? `${m[1]}.` : '';
+  }
+
+  let classOptionsStr = `${paperOption}, ${fontPt === '10.5pt' ? '11pt' : fontPt}, UTF8, punct=kaiming`;
+  if (isBook) {
+    classOptionsStr += `, openany, oneside`;
+  }
+
+  let code = `% =========================================================================
+% AstroLib Academic Textbook / Lecture Notes Chapter
+% Clean, minimal, publication-grade academic layout (${config.documentclass || 'ctexart'} + tcolorbox + amsthm)
+% Generated by AstroLib Headless Publishing System
+% =========================================================================
+
+\\documentclass[
+  ${classOptionsStr}
+]{${config.documentclass || 'ctexart'}}
+
+${styleCode}
+% 图形查找路径配置（优先 assets/，兼容 images/ 与当前目录）
+\\graphicspath{{assets/}{images/}{./}}
+
+${typographyCode}
+`;
+
+  // 卷头与元数据排版 (Page 1 Restrained Academic Header - No Standalone Cover Page)
+  const bookTitle = meta?.bookTitle || chapter.bookTitle || '';
+  const chapterTitle = meta?.chapterTitle || '';
+  const fullTitle = meta?.fullTitle || chapter.title || config.title || '';
+  const authorName = meta?.bookAuthor || chapter.author || config.author || '';
+
+  // 动态对齐教材大章编号与计数器（节号与定理编号）及页眉书名
+  let counterCode = '';
+  if (!isBook && chapterPrefix) {
+    counterCode = `% 动态对齐教材大章编号与节计数器\n\\renewcommand{\\astrolibchapternum}{${chapterPrefix}}\n\\renewcommand{\\thesection}{\\astrolibchapternum\\arabic{section}}\n`;
+  }
+  if (bookTitle) {
+    counterCode += `% 页眉右上角书名绑定 (纯粹学术，无品牌杂讯)\n\\renewcommand{\\astrolibbooktitle}{${escapeLatexMeta(bookTitle)}}\n`;
+  }
+
+  if (config.headerMode === 'standard') {
+    code += `\\begin{document}
+${counterCode}
+% =========================================================================
+% 学术讲义/单章卷头 (Page 1 Restrained Academic Header - No Cover Page)
+% =========================================================================
+\\begin{center}
+${bookTitle || chapterTitle ? `  {\\zihao{4}\\kaishu ${escapeLatexMeta([bookTitle, chapterTitle].filter(Boolean).join('　'))}}\\par\\vspace{0.5em}\n` : ''}  {\\zihao{2}\\sffamily\\bfseries ${escapeLatexMeta(fullTitle)}}\\par\\vspace{0.6em}
+${authorName ? `  {\\small\\normalfont ${escapeLatexMeta(authorName)}}\\par\\vspace{0.6em}\n` : ''}\\end{center}
+\\vspace{-0.2em}\\hrule height 0.6pt\\vspace{1.5em}
+`;
+  } else if (config.headerMode === 'compact') {
+    code += `\\begin{document}
+${counterCode}
+\\begin{center}
+  {\\zihao{3}\\sffamily\\bfseries ${escapeLatexMeta(fullTitle)}}\\par\\vspace{0.3em}
+${bookTitle ? `  {\\small\\kaishu ${escapeLatexMeta(bookTitle)}}\\par\\vspace{0.3em}\n` : ''}\\end{center}
+\\vspace{-0.3em}\\hrule height 0.4pt\\vspace{1.0em}
+`;
+  } else {
+    code += `\\begin{document}\n${counterCode}`;
+  }
+
+  if (config.showToc) {
+    code += `\\tableofcontents\\vspace{1.5em}\\hrule\\vspace{1.5em}\n`;
+  }
+
+  // 若为 ctexbook 且首个节点非 level:1 heading，则显式输出章标题
+  const hasH1 = (chapter.blocks || []).some((b) => b.kind === 'heading' && b.level === 1);
+  if (isBook && !hasH1) {
+    code += `\\chapter{${formatHeadingLatex(stripLeadingNumber(chapter.title))}}\n\n`;
+  }
+
+  // 渲染正文块
+  code += renderSemanticBlocks(chapter.blocks || [], config);
+
+  code += `\\end{document}\n`;
   return code;
 }

@@ -96,7 +96,7 @@ import { siteThemes } from '../config/themes.config.mjs';
     border-radius: 0.5rem;
     box-shadow: var(--sl-shadow-md);
     overflow: hidden;
-    z-index: 2147483001;
+    z-index: var(--layer-popover);
   }
   .vp-site-theme-switch.vp-open .vp-site-theme-panel {
     display: flex;
@@ -196,13 +196,37 @@ import { siteThemes } from '../config/themes.config.mjs';
       const btn = this.querySelector<HTMLButtonElement>('.vp-site-theme-btn');
       const panel = this.querySelector<HTMLElement>('.vp-site-theme-panel');
 
-      btn?.addEventListener('click', () => this.toggle(panel));
+      btn?.addEventListener('click', (e) => {
+        // 当处于 Material You 主题时，直接唤起 Material 3 Dialog 垂直切片
+        if (document.documentElement.dataset.siteTheme === 'material-you') {
+          e.preventDefault();
+          e.stopPropagation();
+          this.close();
+          import('../themes/material-you/index')
+            .then((m) => m.openMaterialThemeDialog())
+            .catch(() => this.toggle(panel));
+          return;
+        }
+        this.toggle(panel);
+      });
 
       this.querySelectorAll<HTMLButtonElement>('.vp-site-theme-option').forEach((opt) => {
         opt.addEventListener('click', () => {
           const targetTheme = parseSiteTheme(opt.dataset.themeId);
           setSiteTheme(targetTheme);
           this.close();
+
+          if (targetTheme === 'material-you') {
+            import('../themes/material-you/index')
+              .then((m) => {
+                m.showMaterialSnackbar({
+                  message: '已启用 Material You 风格',
+                  actionLabel: '配置',
+                  onAction: () => m.openMaterialThemeDialog(),
+                });
+              })
+              .catch(() => {});
+          }
         });
       });
 

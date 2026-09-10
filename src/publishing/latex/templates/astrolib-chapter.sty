@@ -1,0 +1,379 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{astrolib-chapter}[2026/09/07 v1.0 AstroLib Academic Textbook Chapter Style]
+
+% =========================================================================
+% AstroLib 生产级大学数学教材 / 学术讲义宏包 (astrolib-chapter.sty)
+% 哲学：The content is the interface. The mathematics is the design.
+% 特性：极简、克制、纯正黑白灰阶学术版式，无任何 SaaS UI 杂讯与无谓装饰
+% =========================================================================
+
+% 基础版面与几何设定 (大学教材标准版心，舒适留白)
+\RequirePackage{geometry}
+\geometry{
+  a4paper,
+  top=2.6cm,
+  bottom=2.6cm,
+  left=2.8cm,
+  right=2.8cm,
+  headheight=14pt,
+  headsep=1.2em,
+  footskip=2.0em
+}
+
+% 核心数学宏包
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}
+\RequirePackage{mathtools}
+\RequirePackage{amsthm}
+
+% 学术表格与插图
+\RequirePackage{booktabs}
+\RequirePackage{array}
+\RequirePackage{longtable}
+\RequirePackage{graphicx}
+\RequirePackage[export]{adjustbox}
+\RequirePackage{float}
+
+% 极简学术线框宏包 (tcolorbox)
+\RequirePackage{tcolorbox}
+\tcbuselibrary{skins,breakable,theorems}
+
+% 列表与枚举控制 (增强最大嵌套深度至 8 级，防止答案/复杂嵌套列表报 Too deeply nested)
+\RequirePackage{enumitem}
+\setlistdepth{8}
+\renewlist{itemize}{itemize}{8}
+\setlist[itemize]{label=\textbullet, nosep, leftmargin=2em}
+\renewlist{enumerate}{enumerate}{8}
+\setlist[enumerate]{label=\arabic*., nosep, leftmargin=2em}
+
+% 页眉页脚 (fancyhdr) - 顶栏选用典雅楷体
+\RequirePackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyhead[L]{\small\kaishu\leftmark}
+\newcommand{\astrolibbooktitle}{}
+\fancyhead[R]{\small\kaishu\astrolibbooktitle}
+\fancyfoot[C]{\small\normalfont 第 \thepage\ 页}
+
+% =========================================================================
+% 章节标题排版规范：统一采用黑体方案（\sffamily\bfseries），彻底杜绝加粗宋体
+% =========================================================================
+\ctexset{
+  section = {
+    format = \Large\bfseries\sffamily,
+    aftername = \quad,
+  },
+  subsection = {
+    format = \large\bfseries\sffamily,
+    aftername = \quad,
+  },
+  subsubsection = {
+    format = \normalsize\bfseries\sffamily,
+    aftername = \quad,
+  },
+  paragraph = {
+    format = \normalsize\bfseries\sffamily,
+    aftername = \quad,
+  }
+}
+\@ifclassloaded{ctexbook}{
+  \ctexset{
+    chapter = {
+      format = \huge\bfseries\sffamily\centering,
+      aftername = \quad,
+    }
+  }
+}{}
+
+% 交叉引用与超链接 (克制灰黑配色，印刷友好)
+\RequirePackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=black!80,
+  bookmarksnumbered=true,
+  pdfstartview=FitH
+}
+\RequirePackage{cleveref}
+
+% hyperref PDF 书签宏安全展开屏蔽表 (防止 unicode-math 下希腊字母及公式宏展开为字体图元引发 Improper alphabetic constant 崩溃)
+\pdfstringdefDisableCommands{
+  \def\chi{χ}
+  \def\sigma{σ}
+  \def\mu{μ}
+  \def\alpha{α}
+  \def\beta{β}
+  \def\gamma{γ}
+  \def\delta{δ}
+  \def\epsilon{ε}
+  \def\varepsilon{ε}
+  \def\zeta{ζ}
+  \def\eta{η}
+  \def\theta{θ}
+  \def\vartheta{θ}
+  \def\iota{ι}
+  \def\kappa{κ}
+  \def\lambda{λ}
+  \def\nu{ν}
+  \def\xi{ξ}
+  \def\pi{π}
+  \def\rho{ρ}
+  \def\varrho{ρ}
+  \def\tau{τ}
+  \def\upsilon{υ}
+  \def\phi{φ}
+  \def\varphi{φ}
+  \def\psi{ψ}
+  \def\omega{ω}
+  \def\Gamma{Γ}
+  \def\Delta{Δ}
+  \def\Theta{Θ}
+  \def\Lambda{Λ}
+  \def\Xi{Ξ}
+  \def\Pi{Π}
+  \def\Sigma{Σ}
+  \def\Upsilon{Υ}
+  \def\Phi{Φ}
+  \def\Psi{Ψ}
+  \def\Omega{Ω}
+  \def\infty{∞}
+  \def\le{≤}
+  \def\ge{≥}
+  \def\leqslant{≤}
+  \def\geqslant{≥}
+  \def\ne{≠}
+  \def\neq{≠}
+  \def\approx{≈}
+  \def\sim{∼}
+  \def\in{∈}
+  \def\notin{∉}
+  \def\pm{±}
+  \def\mp{∓}
+  \def\times{×}
+  \def\div{÷}
+  \def\cdot{·}
+  \def\cdots{…}
+  \def\ldots{…}
+  \def\mathbf#1{#1}
+  \def\mathrm#1{#1}
+  \def\mathit#1{#1}
+  \def\mathbb#1{#1}
+  \def\mathcal#1{#1}
+  \def\bm#1{#1}
+  \def\boldsymbol#1{#1}
+}
+
+% =========================================================================
+% 学术定理与模块环境定义 (现代学术精排风格：0.38pt 典雅细线，1.5mm 微圆角，透气留白)
+% =========================================================================
+
+% 动态前缀宏：默认 1.，由渲染器根据当前章节 Canonical Metadata 动态设置
+\providecommand{\astrolibchapternum}{1.}
+
+\tcbset{
+  astrolib-box/.style={
+    enhanced,
+    breakable,
+    arc=1.5mm,
+    boxrule=0.38pt,
+    colback=white,
+    colframe=black!32,
+    fonttitle=\sffamily\bfseries,
+    coltitle=black,
+    attach title to upper={\;\ },
+    separator sign={},
+    top=0.85em,
+    bottom=0.85em,
+    left=1.2em,
+    right=1.2em,
+    before skip=1.3em plus 0.3em minus 0.2em,
+    after skip=1.3em plus 0.3em minus 0.2em,
+  }
+}
+
+% 1. 核心定理与命题系统 (由动态宏统一驱动，与原书标号一致)
+\newtcbtheorem{theorem}{定理}{
+  astrolib-box,
+  colframe=black!45,
+  colback=white,
+  separator sign={\ },
+  description font=\sffamily,
+}{thm}
+\makeatletter
+\renewcommand{\thetcb@cnt@theorem}{\astrolibchapternum\arabic{tcb@cnt@theorem}}
+\makeatother
+
+\newtcbtheorem[use counter from=theorem]{definition}{定义}{
+  astrolib-box,
+  colframe=black!35,
+  colback=white,
+  separator sign={\ },
+  description font=\sffamily,
+}{def}
+\newtcbtheorem[use counter from=theorem]{lemma}{引理}{
+  astrolib-box,
+  colframe=black!38,
+  colback=white,
+  separator sign={\ },
+  description font=\sffamily,
+}{lem}
+\newtcbtheorem[use counter from=theorem]{corollary}{推论}{
+  astrolib-box,
+  colframe=black!38,
+  colback=white,
+  separator sign={\ },
+  description font=\sffamily,
+}{cor}
+\newtcbtheorem[use counter from=theorem]{proposition}{命题}{
+  astrolib-box,
+  colframe=black!38,
+  colback=white,
+  separator sign={\ },
+  description font=\sffamily,
+}{prop}
+\newtcbtheorem[use counter from=theorem]{axiom}{公理}{
+  astrolib-box,
+  colframe=black!45,
+  colback=white,
+  separator sign={\ },
+  description font=\sffamily,
+}{axm}
+\newtcbtheorem[use counter from=theorem]{property}{性质}{
+  astrolib-box,
+  colframe=black!35,
+  colback=white,
+  separator sign={\ },
+  description font=\sffamily,
+}{prp}
+\newtcbtheorem[use counter from=theorem]{criterion}{准则}{
+  astrolib-box,
+  colframe=black!42,
+  colback=white,
+  separator sign={\ },
+  description font=\sffamily,
+}{crit}
+\newtcbtheorem[use counter from=theorem]{academicblock}{法则}{
+  astrolib-box,
+  colframe=black!32,
+  colback=white,
+  separator sign={\ },
+  description font=\sffamily,
+}{blk}
+
+% 2. 例题与变式系统 (独立按 astrolibchapternum 编号，柔和微浅灰底)
+\newtcbtheorem{example}{例}{
+  astrolib-box,
+  colframe=black!28,
+  colback=black!1.8,
+  separator sign={\ },
+  description font=\sffamily,
+}{ex}
+\makeatletter
+\renewcommand{\thetcb@cnt@example}{\astrolibchapternum\arabic{tcb@cnt@example}}
+\makeatother
+
+\newtcbtheorem[use counter from=example]{variant}{变式}{
+  astrolib-box,
+  colframe=black!22,
+  colback=black!1.2,
+  separator sign={\ },
+  description font=\sffamily,
+}{var}
+
+% 3. 方法总结与解题指南
+\newtcbtheorem[use counter from=example]{method}{方法}{
+  astrolib-box,
+  colframe=black!35,
+  colback=black!1.5,
+  separator sign={\ },
+  description font=\sffamily,
+}{meth}
+
+% 4. 证明环境 (严谨 amsthm 标准，结尾自动附加 Halmos 墓碑符 \qedsymbol)
+\renewcommand{\proofname}{\sffamily\bfseries 证明}
+% amsthm 原生 proof 已经非常完美，此处保留其纯正行为
+
+% 5. 解题环境 (例题解答，与严谨证明在学术语义上严格区分)
+% 消费 Academic Typography Hooks 保证与正文字体同阶同族，消除粗黑断裂
+\providecommand{\astrolibsolutionhead}[1][解]{{\normalfont\sffamily\bfseries 【#1】}}
+\newenvironment{solution}[1][解]{%
+  \par\vspace{0.4em}\noindent\astrolibsolutionhead[#1]\;\ %
+}{%
+  \par\vspace{0.8em}%
+}
+
+% 6. 注记与思考 (左侧垂直学术参考线，无边框与背景)
+\newtcolorbox{remark}[1][注记]{
+  blanker,
+  breakable,
+  left=1.2em,
+  borderline west={1.2pt}{0pt}{black!35},
+  fonttitle=\sffamily\bfseries,
+  coltitle=black!80,
+  title={【#1】},
+  attach title to upper={\;\ },
+  before skip=1.0em plus 0.2em minus 0.1em,
+  after skip=1.0em plus 0.2em minus 0.1em
+}
+
+% 7. 思路分析 (弱化学术引导)
+\newtcolorbox{analysis}[1][思路分析]{
+  blanker,
+  breakable,
+  left=1.2em,
+  borderline west={0.9pt}{0pt}{black!28},
+  fonttitle=\sffamily\itshape,
+  coltitle=black!70,
+  title={【#1】},
+  attach title to upper={\;\ },
+  before skip=0.8em,
+  after skip=0.8em
+}
+
+% 8. 导读与总结
+\newtcolorbox{guide}[1][本节导读]{
+  astrolib-box,
+  colframe=black!25,
+  colback=black!1.5,
+  title={【#1】}
+}
+
+\newtcolorbox{summary}[1][本节总结]{
+  astrolib-box,
+  colframe=black!35,
+  colback=black!1.2,
+  title={【#1】}
+}
+
+% 9. 课后习题
+\newtcolorbox{exercise}[1][课后习题]{
+  astrolib-box,
+  colframe=black!30,
+  colback=white,
+  title={【#1】}
+}
+
+% =========================================================================
+% 10. 学术数字资源流式标注 (Academic Digital Resource Annotation)
+% 哲学：外部延伸资源遵循正文内容流排版，绝非正文脚注，不占页脚，不生成上标编号
+% 排版：Typography + Spacing 驱动，小字号、弱化前缀、标题整体超链接及轻量 ↗
+% =========================================================================
+\newcommand{\astrolibdigitalresource}[3][配套数字资源]{%
+  \par\vspace{0.4em plus 0.1em minus 0.1em}%
+  \noindent%
+  \begingroup%
+  \small%
+  {\kaishu\textcolor{black!60}{#1\,·\,}}%
+  \if\relax\detokenize{#3}\relax%
+    {\textcolor{black!85}{#2}}%
+  \else%
+    \href{#3}{\textcolor{black!85}{#2}\,\ensuremath{\nearrow}}%
+  \fi%
+  \endgroup%
+  \par\vspace{0.45em plus 0.1em minus 0.1em}%
+}
+
+\endinput

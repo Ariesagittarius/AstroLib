@@ -159,7 +159,7 @@ const docCompact = generateLatexDocument(sampleHeaderQ, {
   headerMode: 'compact',
   title: '高等数学阶段测试'
 });
-if (!/\{\\large\\bfseries 高等数学阶段测试\}/.test(docCompact)) {
+if (!/\{\\large(?:\\sffamily)?\\bfseries 高等数学阶段测试\}/.test(docCompact)) {
   throw new Error('headerMode: compact 模式下应包含紧凑居中标题');
 }
 console.log('✅ 紧凑单行卷头模式测试通过');

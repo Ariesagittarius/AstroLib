@@ -1,4 +1,5 @@
 import { recordJump } from './jump-navigator';
+import { mountToOverlayRoot } from '../../utils/overlay/overlay-root';
 
 export function resolveIndexUrl(rel: string): string {
   if (!rel) return '';
@@ -15,7 +16,7 @@ function injectPopoverStyles() {
   style.textContent = `
 .xref-disambiguation-popover {
   position: absolute;
-  z-index: 2147483000;
+  z-index: var(--layer-popover);
   width: 310px;
   max-width: calc(100vw - 24px);
   background: color-mix(in srgb, var(--sl-color-bg) 92%, transparent);
@@ -285,7 +286,7 @@ function showDisambiguationPopover(
   });
 
   popover.appendChild(list);
-  document.body.appendChild(popover);
+  mountToOverlayRoot(popover);
 
   const rect = badge.getBoundingClientRect();
   const popoverWidth = 310;

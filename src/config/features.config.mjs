@@ -219,6 +219,17 @@ const featureDefs = {
     },
   }),
 
+  // 章节 LaTeX / PDF 导出：导出当前章节为独立学术 .tex、离线可编译 ZIP 包或本地/云端编译 PDF
+  chapterExport: defineFeature({
+    id: 'chapterExport',
+    cat: 'extra',
+    label: '章节 LaTeX / PDF 导出',
+    desc: '导出当前章节为大学教材级 LaTeX 源码、离线可编译 ZIP 包或本地/云端编译 PDF',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+  }),
+
   // 在线精修工具：dev 下点击渲染页可视化改 MDX 并写回；生产零污染
   editor: defineFeature({
     id: 'editor',

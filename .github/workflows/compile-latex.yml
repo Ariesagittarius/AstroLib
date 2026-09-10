@@ -48,7 +48,16 @@ jobs:
       - name: Prepare LaTeX Workspace
         id: prep
         run: |
-          mkdir -p workspace
+          mkdir -p workspace/assets
+          if [ -d "src/publishing/latex/templates" ]; then
+            cp src/publishing/latex/templates/*.sty workspace/ 2>/dev/null || true
+          fi
+          if [ -d "src/content/docs/collections" ]; then
+            find src/content/docs/collections -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.svg" \) -exec cp {} workspace/assets/ \; 2>/dev/null || true
+          fi
+          if [ -d "public" ]; then
+            cp -r public/* workspace/assets/ 2>/dev/null || true
+          fi
           if [ -n "${{ github.event.inputs.blob_sha }}" ]; then
             echo "Fetching LaTeX source from Git Blob SHA: ${{ github.event.inputs.blob_sha }}..."
             curl -sSL \

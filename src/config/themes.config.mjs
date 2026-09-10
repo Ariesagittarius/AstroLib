@@ -26,6 +26,12 @@ export const siteThemes = [
     desc: 'Astro Starlight 原生经典文档风格',
     icon: 'starlight',
   },
+  {
+    id: 'material-you',
+    label: 'Material You',
+    desc: 'Google Material 3 现代学术设计语言',
+    icon: 'material-you',
+  },
 ];
 
 /** 默认风格主题 */

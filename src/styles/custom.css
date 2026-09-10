@@ -1,3 +1,5 @@
+@import './tokens/layers.css';
+
 /* ==========================================================================
    UI 样式表
    ========================================================================== */
@@ -49,16 +51,16 @@
   text-align: center;
 }
 
-/* 公式末尾编号（\tag）：标准学术版心右对齐 */
+/* 公式末尾编号（\tag）：标准学术版心右对齐与正统教材墨黑 */
 .katex-display > .katex > .katex-html > .tag {
   position: absolute;
   right: 0.25rem;
   top: 50%;
   transform: translateY(-50%);
   white-space: nowrap;
-  font-family: var(--font-latin-serif);
+  font-family: var(--academic-font-latin, 'Times New Roman', serif);
   font-size: 0.95em;
-  color: var(--sl-color-gray-3, #94a3b8);
+  color: var(--academic-color-tag, var(--sl-color-white));
   user-select: none;
   padding-left: 1.5rem;
 }
@@ -70,6 +72,19 @@
     margin-left: 1rem;
     transform: none;
   }
+}
+
+/* 行内公式视觉校准：与中文 1rem 字面高度自然融合，基线平稳，字阶克制 */
+.sl-markdown-content .katex:not(.katex-display .katex) {
+  font-size: 1.08em;
+  line-height: normal;
+}
+
+/* KaTeX 经典框式公式排版 (\boxed) 纯正学术线框 (0.8px 发丝线与舒适内衬) */
+.katex .fbox {
+  border: 0.8px solid currentColor !important;
+  padding: 0.35em 0.65em !important;
+  border-radius: 1px !important;
 }
 
 /* 行内公式：仅限制最大宽度，不轻易改动行内盒模型（99% 的短公式保持原生排版） */
@@ -288,8 +303,7 @@
    3. 引用联动与跳转高亮（克制学术风：无波纹、无形变、流畅轻盈）
    -------------------------------------------------------------------------- */
 
-.fig-target-image, .fig-target-caption,
-.example-card, .variant-card, .summary-card, .knowledge-card, .method-card, .fallback-block, .solution-details {
+.fig-target-image, .fig-target-caption {
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
@@ -606,29 +620,27 @@ table {
     --sl-content-pad-x: 1.125rem;
   }
 
-  /* 卡片组件：缩小边距与间距，减少移动端的“臃肿感” */
+  /* 学术语义块：移动端轻量排版与紧凑垂直律动（纯文本流，杜绝多余卡片内边距） */
   .example-card,
   .variant-card,
   .method-card,
   .exercise-card,
   .fallback-block,
-  .guide-block,
-  .knowledge-card,
+  .knowledge-card {
+    margin: 1.75rem 0 1.25rem;
+  }
+  .card-body,
+  .fallback-content {
+    padding: 0;
+  }
   .note-block,
+  .guide-block,
   .analysis-block {
     margin: 1.25rem 0;
-  }
-  .card-body {
-    padding: 0.875rem;
-  }
-  .fallback-block,
-  .guide-block,
-  .note-block,
-  .analysis-block {
-    padding: 0.75rem 0.875rem;
+    padding: 0 0 0 0.75rem;
   }
   .solution-content {
-    padding: 0.875rem;
+    padding: 0.15rem 0 0.5rem 0;
   }
 
   /* 选择题：更紧凑的间距，双列/单列折行更自然 */
@@ -1071,7 +1083,7 @@ starlight-menu-button {
     border-radius: 0.5rem !important;
     border: 1px solid var(--sl-color-hairline) !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
-    z-index: 100 !important;
+    z-index: var(--layer-popover) !important;
     background-color: var(--sl-color-bg-sidebar, #161618) !important;
     transform: translateY(-0.5rem) scale(0.98) !important;
     opacity: 0 !important;
@@ -1173,7 +1185,7 @@ body[data-mobile-menu-expanded] .vp-local-nav {
     transform: translateX(-100%);
     transition: transform 0.35s cubic-bezier(0.19, 1, 0.22, 1), visibility 0s 0.35s;
     overscroll-behavior: contain;
-    z-index: 50 !important;
+    z-index: var(--layer-drawer) !important;
   }
 
   body[data-mobile-menu-expanded] .sidebar-pane,
@@ -1183,13 +1195,13 @@ body[data-mobile-menu-expanded] .vp-local-nav {
     transition: transform 0.35s cubic-bezier(0.19, 1, 0.22, 1) !important;
   }
 
-  /* 遮罩（VPBackdrop 语义）：抽屉打开时覆盖其余屏幕；z-index 低于抽屉(5)、
-     低于顶栏(10)，保证菜单按钮始终可点；点击关闭由 SidebarOverride 的 JS 绑定 */
+  /* 遮罩（VPBackdrop 语义）：抽屉打开时覆盖其余屏幕；z-index 低于抽屉、
+     低于顶栏(100)，保证菜单按钮始终可点；点击关闭由 SidebarOverride 的 JS 绑定 */
   body[data-mobile-menu-expanded] .page::before {
     content: '';
     position: fixed;
-    inset: 0;
-    z-index: calc(var(--sl-z-index-menu) - 1);
+    inset: var(--sl-nav-height) 0 0 0;
+    z-index: calc(var(--layer-drawer) - 1);
     background: rgba(0, 0, 0, 0.4);
     opacity: 1;
     transition: opacity 0.25s;
@@ -1197,8 +1209,8 @@ body[data-mobile-menu-expanded] .vp-local-nav {
   body:not([data-mobile-menu-expanded]) .page::before {
     content: '';
     position: fixed;
-    inset: 0;
-    z-index: calc(var(--sl-z-index-menu) - 1);
+    inset: var(--sl-nav-height) 0 0 0;
+    z-index: calc(var(--layer-drawer) - 1);
     background: rgba(0, 0, 0, 0.4);
     opacity: 0;
     pointer-events: none;
@@ -1292,7 +1304,7 @@ main sup, article sup {
   position: fixed;
   bottom: 2rem;
   left: 2rem;
-  z-index: 2147482900;
+  z-index: var(--layer-floating);
   display: inline-flex;
   align-items: center;
   background: color-mix(in srgb, var(--sl-color-bg, #ffffff) 88%, transparent);
@@ -1465,10 +1477,12 @@ main sup, article sup {
 }
 
 /* ==========================================================================
-   学术出版物数字化配套资源组件 (Academic Digital Resource)
+   学术出版物数字化配套资源组件 (Academic Digital Resource Annotation)
+   North Star: Academic Restraint, Typography > Borders, No SaaS Card
    ========================================================================== */
 
-.academic-resource-card {
+/* 既有卡片模式向后兼容回退 */
+.academic-resource-card:not(.academic-digital-resource) {
   position: relative;
   margin: 1.15rem 0;
   padding: 0.45rem 0.85rem;
@@ -1480,107 +1494,115 @@ main sup, article sup {
   transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.academic-resource-card:hover {
-  border-color: var(--sl-color-gray-4, #cbd5e1);
-  border-left-color: var(--sl-color-text-accent, #1e3a8a);
+/* 学术数字资源流式排版 (Academic Text Annotation Stream) */
+.academic-digital-resource {
+  margin: 0.65rem 0 0.85rem 0;
+  padding: 0;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-family: var(--sl-font, inherit);
+  line-height: 1.6;
 }
 
-.academic-resource-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.academic-resource-left {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-width: 0;
-  flex: 1;
-}
-
-.academic-resource-icon {
+.academic-resource-stream {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+  font-size: 0.86rem;
+}
+
+.academic-resource-prefix {
+  font-family: var(--sl-font-serif, "Kaiti SC", "STKaiti", "KaiTi", serif);
+  font-size: 0.83rem;
   color: var(--sl-color-gray-3, #64748b);
-  flex-shrink: 0;
-}
-
-.academic-resource-category {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--sl-color-gray-2, #475569);
   letter-spacing: 0.02em;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.academic-resource-divider {
-  color: var(--sl-color-gray-4, #cbd5e1);
-  font-size: 0.75rem;
-  flex-shrink: 0;
   user-select: none;
 }
 
-.academic-resource-title {
-  font-size: 0.84rem;
+.academic-resource-title-link {
+  color: var(--sl-color-text-accent, #1d4ed8);
+  text-decoration: none;
   font-weight: 500;
-  color: var(--sl-color-white, #1e293b);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  transition: color 0.15s ease, text-decoration 0.15s ease;
+  word-break: break-word;
 }
 
-.academic-resource-trigger-wrapper {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
+.academic-resource-title-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--sl-color-accent-high, #1e40af);
 }
 
-.academic-resource-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  height: 26px;
-  padding: 0 0.55rem;
-  color: var(--sl-color-gray-2, #475569);
-  background: var(--sl-color-bg, #ffffff);
-  border: 1px solid var(--sl-color-hairline, #e2e8f0);
-  border-radius: 4px;
-  font-size: 0.75rem;
+.academic-resource-title-plain {
+  color: var(--sl-color-gray-2, #334155);
   font-weight: 500;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.15s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
-.academic-resource-btn:hover,
-.academic-resource-btn.is-active {
-  color: var(--sl-color-text-accent, #1e3a8a);
-  border-color: var(--sl-color-gray-4, #94a3b8);
-  background: var(--sl-color-bg, #ffffff);
-}
-
-.academic-resource-btn-text {
-  line-height: 1;
+.academic-resource-link-arrow {
+  display: inline-block;
   font-family: inherit;
+  font-size: 0.85em;
+  opacity: 0.75;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.academic-resource-title-link:hover .academic-resource-link-arrow {
+  opacity: 1;
+  transform: translate(1px, -1px);
+}
+
+.academic-resource-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.25rem;
+  vertical-align: middle;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.academic-resource-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin: 0 !important;
+  line-height: 1;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--sl-color-hairline, #e2e8f0);
+  border-radius: 3px;
+  color: var(--sl-color-gray-4, #94a3b8);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.academic-resource-action-btn:hover,
+.academic-resource-action-btn.is-active {
+  color: var(--sl-color-gray-1, #1e293b);
+  border-color: var(--sl-color-gray-3, #64748b);
+  background: var(--sl-color-gray-6, #f8f9fa);
+}
+
+.academic-resource-action-btn.is-copied {
+  color: #10b981 !important;
+  border-color: #10b981 !important;
 }
 
 /* --------------------------------------------------------------------------
-   学术数字资源弹层面板 (Restrained Academic Popover)
+   学术数字资源扫码弹层面板 (Discreet Popover)
    -------------------------------------------------------------------------- */
 .academic-resource-popover {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 6px);
   right: 0;
-  z-index: 99;
-  width: 236px;
+  margin: 0 !important;
+  z-index: var(--layer-popover);
+  width: 200px;
   max-width: calc(100vw - 2rem);
   background: var(--sl-color-bg, #ffffff);
   border: 1px solid var(--sl-color-hairline, #e2e8f0);
@@ -1605,25 +1627,11 @@ main sup, article sup {
   display: none !important;
 }
 
-/* 顶部微型箭头对齐触发按钮 */
-.academic-resource-arrow {
-  position: absolute;
-  top: -5px;
-  right: 20px;
-  width: 8px;
-  height: 8px;
-  background: var(--sl-color-bg, #ffffff);
-  border-left: 1px solid var(--sl-color-hairline, #e2e8f0);
-  border-top: 1px solid var(--sl-color-hairline, #e2e8f0);
-  transform: rotate(45deg);
-  z-index: 1;
-}
-
 .academic-resource-pop-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.45rem 0.75rem;
+  padding: 0.4rem 0.65rem;
   border-bottom: 1px solid var(--sl-color-hairline, #e2e8f0);
   background: var(--sl-color-gray-6, #f8f9fa);
   border-top-left-radius: 5px;
@@ -1631,7 +1639,7 @@ main sup, article sup {
 }
 
 .academic-resource-pop-title {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--sl-color-white, #1e293b);
   letter-spacing: 0.01em;
@@ -1658,33 +1666,16 @@ main sup, article sup {
 }
 
 .academic-resource-pop-body {
-  padding: 0.7rem 0.75rem 0.5rem 0.75rem;
+  padding: 0.65rem 0.65rem 0.5rem 0.65rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
 }
 
-.academic-resource-pop-subtitle {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--sl-color-gray-2, #475569);
-  margin-bottom: 0.55rem;
-  line-height: 1.35;
-  word-break: break-word;
-  max-width: 210px;
-}
-
-.academic-resource-qr-box {
-  background: #ffffff !important;
-  padding: 6px;
-  border: 1px solid var(--sl-color-hairline, #e2e8f0);
-  border-radius: 4px;
-}
-
 .academic-resource-qr-svg {
-  width: 154px;
-  height: 154px;
+  width: 140px;
+  height: 140px;
 }
 
 .academic-resource-qr-svg svg {
@@ -1693,66 +1684,39 @@ main sup, article sup {
   display: block;
 }
 
-.academic-resource-error {
-  width: 154px;
-  height: 154px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  color: var(--sl-color-gray-3, #64748b);
-}
-
 .academic-resource-tip {
   font-size: 0.72rem;
   color: var(--sl-color-gray-3, #94a3b8);
-  margin-top: 0.45rem;
+  margin-top: 0.4rem;
   margin-bottom: 0;
-}
-
-.academic-resource-pop-footer {
-  padding: 0.45rem 0.75rem 0.6rem 0.75rem;
-  text-align: center;
-  border-top: 1px solid var(--sl-color-hairline, #e2e8f0);
-}
-
-.academic-resource-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  width: 100%;
-  padding: 0.3rem 0.5rem;
-  background: transparent;
-  border: 1px solid var(--sl-color-hairline, #e2e8f0);
-  border-radius: 4px;
-  font-size: 0.75rem;
-  color: var(--sl-color-text-accent, #1e3a8a);
-  text-decoration: none;
-  font-weight: 500;
-  transition: all 0.15s ease;
-}
-
-.academic-resource-link:hover {
-  background: var(--sl-color-gray-6, #f8f9fa);
-  border-color: var(--sl-color-gray-4, #cbd5e1);
-  text-decoration: none;
 }
 
 /* --------------------------------------------------------------------------
    暗色模式适配 (Dark Mode)
    -------------------------------------------------------------------------- */
-:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-card,
-html[data-theme='dark'] .academic-resource-card {
-  background-color: var(--sl-color-gray-6, #1f2024);
-  border-color: var(--sl-color-hairline, #28282c);
-  border-left-color: var(--sl-color-gray-4, #3f3f44);
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-prefix,
+html[data-theme='dark'] .academic-resource-prefix {
+  color: var(--sl-color-gray-4, #94a3b8);
 }
 
-:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-card:hover,
-html[data-theme='dark'] .academic-resource-card:hover {
-  border-color: var(--sl-color-gray-4, #3f3f44);
-  border-left-color: var(--sl-color-accent, #93b4ff);
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-title-link,
+html[data-theme='dark'] .academic-resource-title-link {
+  color: var(--sl-color-accent, #93b4ff);
+}
+
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-action-btn,
+html[data-theme='dark'] .academic-resource-action-btn {
+  border-color: var(--sl-color-hairline, #28282c);
+  color: var(--sl-color-gray-4, #71717a);
+}
+
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-action-btn:hover,
+:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-action-btn.is-active,
+html[data-theme='dark'] .academic-resource-action-btn:hover,
+html[data-theme='dark'] .academic-resource-action-btn.is-active {
+  color: var(--sl-color-gray-1, #e4e4e7);
+  border-color: var(--sl-color-gray-4, #52525b);
+  background-color: var(--sl-color-gray-6, #27272a);
 }
 
 :root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-popover,
@@ -1762,46 +1726,16 @@ html[data-theme='dark'] .academic-resource-popover {
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
-:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-arrow,
-html[data-theme='dark'] .academic-resource-arrow {
-  background: var(--sl-color-bg, #17171a);
-  border-left-color: var(--sl-color-hairline, #28282c);
-  border-top-color: var(--sl-color-hairline, #28282c);
-}
-
 :root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-pop-header,
 html[data-theme='dark'] .academic-resource-pop-header {
   background: var(--sl-color-gray-7, #161618);
   border-bottom-color: var(--sl-color-hairline, #28282c);
 }
 
-:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-link,
-html[data-theme='dark'] .academic-resource-link {
-  border-color: var(--sl-color-hairline, #28282c);
-  color: var(--sl-color-accent, #93b4ff);
-}
-
-:root:not([data-site-theme='starlight'])[data-theme='dark'] .academic-resource-link:hover,
-html[data-theme='dark'] .academic-resource-link:hover {
-  background: var(--sl-color-gray-6, #1f2024);
-  border-color: var(--sl-color-gray-4, #3f3f44);
-}
-
-/* 响应式移动端适配 */
 @media (max-width: 640px) {
-  .academic-resource-inner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  .academic-resource-left {
-    width: 100%;
-  }
-  .academic-resource-trigger-wrapper {
-    align-self: flex-end;
-  }
   .academic-resource-popover {
-    right: 0;
-    width: min(236px, calc(100vw - 2.5rem));
+    right: auto;
+    left: 0;
+    width: min(200px, calc(100vw - 2.5rem));
   }
 }

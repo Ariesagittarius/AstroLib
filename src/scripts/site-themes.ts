@@ -55,6 +55,11 @@ export function applySiteTheme(theme: SiteThemeId): void {
   const validTheme = parseSiteTheme(theme);
   if (typeof document !== 'undefined') {
     document.documentElement.dataset.siteTheme = validTheme;
+    if (validTheme === 'material-you') {
+      import('../themes/material-you/index')
+        .then((m) => m.initMaterialYouTheme?.())
+        .catch(() => {});
+    }
   }
 }
 
@@ -67,5 +72,13 @@ export function setSiteTheme(theme: SiteThemeId): void {
   applySiteTheme(next);
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('site-theme-change', { detail: { theme: next } }));
+  }
+}
+
+// 脚本载入时若已是 material-you，即时触发主题初始化
+if (typeof document !== 'undefined') {
+  const current = loadSiteTheme();
+  if (current === 'material-you') {
+    applySiteTheme('material-you');
   }
 }

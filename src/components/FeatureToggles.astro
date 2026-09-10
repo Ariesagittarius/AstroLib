@@ -7,6 +7,7 @@
 import { features } from '../config/features.config.mjs';
 import { siteThemes } from '../config/themes.config.mjs';
 import { CJK_PRESETS, LATIN_PRESETS } from '../scripts/font-presets';
+import { THEME_COLOR_PRESETS } from '../themes/material-you/color-engine';
 
 const isDev = import.meta.env.DEV;
 
@@ -41,12 +42,11 @@ const metaJson = JSON.stringify(featureMeta);
     class="ft-toggle-btn"
     title="设置"
     aria-label="打开设置面板"
-    aria-haspopup="dialog"
+    aria-haspopup="true"
     aria-expanded="false"
   >
-    <svg class="ft-gear-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="3"></circle>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    <svg class="ft-gear-icon header-mdicon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+      <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
     </svg>
   </button>
 
@@ -54,17 +54,24 @@ const metaJson = JSON.stringify(featureMeta);
   <div class="ft-backdrop" aria-hidden="true"></div>
 
   <!-- 设置面板主体 (移动端向上滑出 Bottom Sheet，桌面端右上角悬浮面板) -->
-  <div class="ft-panel" role="dialog" aria-label="设置面板" aria-hidden="true">
+  <div class="ft-panel" role="region" aria-label="设置面板" aria-hidden="true">
     <!-- 移动端顶部拖拽手柄条 -->
     <div class="ft-sheet-handle" aria-hidden="true"></div>
 
     <div class="ft-panel-head">
-      <span class="ft-panel-title">设置</span>
+      <span class="ft-panel-title">快速设置</span>
       <button type="button" class="ft-close" title="关闭设置" aria-label="关闭">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
+      </button>
+    </div>
+
+    <!-- Gmail 风格顶部全宽药丸操作按钮（恢复默认配置） -->
+    <div class="ft-m3-header-action">
+      <button type="button" class="ft-m3-see-all-btn" data-action="reset-defaults" title="恢复所有选项至默认配置">
+        恢复默认设置
       </button>
     </div>
 
@@ -75,69 +82,222 @@ const metaJson = JSON.stringify(featureMeta);
           <div class="ft-section">
             <div class="ft-section-title">字体</div>
             <div class="ft-stack">
-              <!-- 中文字体 -->
+              <!-- 中文字体 (Material You Official md-filter-chip) -->
               <div class="ft-segment-wrapper">
                 <div class="ft-sub-label">中文</div>
-                <div class="ft-segment-track ft-grid-2">
+                <md-chip-set class="ft-font-chip-set ft-font-chip-set-cjk">
                   {CJK_PRESETS.map((opt) => (
-                    <button
-                      type="button"
-                      class="ft-font-btn"
+                    <md-filter-chip
+                      class={`ft-font-chip ft-cjk-${opt.value}`}
+                      label={opt.label}
                       data-font-setting="cjk"
                       data-font-val={opt.value}
                       title={opt.label}
-                    >
-                      <span class={`ft-font-preview ft-cjk-${opt.value}`}>{opt.label}</span>
-                    </button>
+                    ></md-filter-chip>
                   ))}
-                </div>
+                </md-chip-set>
               </div>
 
-              <!-- 英文字体与公式字体 -->
+              <!-- 英文字体与公式字体 (Material You Official md-filter-chip) -->
               <div class="ft-segment-wrapper">
                 <div class="ft-sub-label">英文与公式</div>
-                <div class="ft-segment-track ft-grid-3">
+                <md-chip-set class="ft-font-chip-set ft-font-chip-set-latin">
                   {LATIN_PRESETS.map((opt) => (
-                    <button
-                      type="button"
-                      class="ft-font-btn"
+                    <md-filter-chip
+                      class={`ft-font-chip ft-latin-${opt.value}`}
+                      label={opt.label}
                       data-font-setting="latin"
                       data-font-val={opt.value}
                       title={opt.label}
-                    >
-                      <span class={`ft-font-preview ft-latin-${opt.value}`}>{opt.label}</span>
-                    </button>
+                    ></md-filter-chip>
                   ))}
-                </div>
+                </md-chip-set>
               </div>
             </div>
           </div>
         )
       }
 
-      <!-- 分组二：界面 -->
+      <!-- 分组二：界面与主题 -->
       {
         features.theme.enabled && (
           <div class="ft-section">
-            <div class="ft-section-title">界面</div>
+            <div class="ft-section-title">界面与主题</div>
             <div class="ft-stack">
               {siteThemes && siteThemes.length > 1 && (
                 <div class="ft-segment-wrapper">
-                  <div class="ft-sub-label">主题</div>
-                  <div class="ft-segment-track ft-grid-2">
+                  <div class="ft-sub-label">UI 风格预设</div>
+                  <div class="ft-gmail-theme-list">
                     {siteThemes.map((st) => (
                       <button
                         type="button"
-                        class="ft-theme-chip"
+                        class="ft-theme-chip ft-gmail-theme-row"
                         data-site-theme-val={st.id}
                         title={st.desc}
                       >
-                        <span>{st.label}</span>
+                        <div class="ft-btn-label-group">
+                          <span class="ft-m3-radio-indicator" aria-hidden="true"></span>
+                          <span class="ft-theme-row-label">{st.label}</span>
+                        </div>
+                        <div class={`ft-wireframe-card ft-wf-theme-${st.id}`} aria-hidden="true">
+                          {st.id === 'vitepress' && (
+                            <div class="ft-wf-inner ft-wf-vp">
+                              <div class="ft-wf-topbar">
+                                <span class="ft-wf-vp-brand"></span>
+                                <span class="ft-wf-vp-nav"></span>
+                              </div>
+                              <div class="ft-wf-body">
+                                <div class="ft-wf-vp-sidebar"></div>
+                                <div class="ft-wf-vp-content">
+                                  <div class="ft-wf-vp-line ft-wf-accent"></div>
+                                  <div class="ft-wf-vp-line"></div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {st.id === 'starlight' && (
+                            <div class="ft-wf-inner ft-wf-sl">
+                              <div class="ft-wf-topbar">
+                                <span class="ft-wf-sl-star"></span>
+                                <span class="ft-wf-sl-search"></span>
+                              </div>
+                              <div class="ft-wf-body">
+                                <div class="ft-wf-sl-sidebar">
+                                  <div class="ft-wf-sl-tree"></div>
+                                  <div class="ft-wf-sl-tree"></div>
+                                </div>
+                                <div class="ft-wf-sl-content">
+                                  <div class="ft-wf-sl-line ft-wf-accent"></div>
+                                  <div class="ft-wf-sl-line"></div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {st.id === 'material-you' && (
+                            <div class="ft-wf-inner ft-wf-m3">
+                              <div class="ft-wf-topbar">
+                                <span class="ft-wf-m3-capsule"></span>
+                              </div>
+                              <div class="ft-wf-body">
+                                <div class="ft-wf-m3-rail">
+                                  <span class="ft-wf-m3-pill"></span>
+                                  <span class="ft-wf-m3-dot"></span>
+                                </div>
+                                <div class="ft-wf-m3-content">
+                                  <div class="ft-wf-m3-card"></div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </button>
                     ))}
                   </div>
                 </div>
               )}
+
+              <!-- Material You 动态主题色 (Google Chrome 4×4 色板矩阵与自定义取色) -->
+              <!-- Material You 动态主题色 (Google Chrome 外观分段模式与 4×4 色板矩阵) -->
+              <div class="ft-m3-color-section">
+                <!-- Chrome 风格外观模式分段控制 (浅色 / 深色 / 设备) -->
+                <div class="ft-theme-mode-segmented" role="radiogroup" aria-label="外观模式">
+                  <button
+                    type="button"
+                    class="ft-mode-btn"
+                    data-mode-val="light"
+                    role="radio"
+                    aria-checked="false"
+                    title="浅色模式"
+                  >
+                    <svg class="ft-mode-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                      <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z" />
+                    </svg>
+                    <svg class="ft-mode-check-icon hidden" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>浅色</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="ft-mode-btn"
+                    data-mode-val="dark"
+                    role="radio"
+                    aria-checked="false"
+                    title="深色模式"
+                  >
+                    <svg class="ft-mode-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                      <path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z" />
+                    </svg>
+                    <svg class="ft-mode-check-icon hidden" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>深色</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="ft-mode-btn"
+                    data-mode-val="auto"
+                    role="radio"
+                    aria-checked="false"
+                    title="遵循设备外观"
+                  >
+                    <svg class="ft-mode-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                      <path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/>
+                    </svg>
+                    <svg class="ft-mode-check-icon hidden" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>设备</span>
+                  </button>
+                </div>
+
+                <div class="ft-chrome-swatches-grid">
+                  {THEME_COLOR_PRESETS.map((preset) => (
+                    <button
+                      type="button"
+                      class="ft-color-swatch ft-preset-swatch ft-chrome-color-tile"
+                      data-m3-color={preset.id}
+                      title={preset.label}
+                      aria-label={preset.label}
+                    >
+                      <svg class="ft-color-wheel-svg" viewBox="0 0 36 36" width="42" height="42">
+                        <path d="M 0 18 A 18 18 0 0 1 36 18 Z" fill={preset.top} />
+                        <path d="M 0 18 A 18 18 0 0 0 18 36 L 18 18 Z" fill={preset.left} />
+                        <path d="M 18 18 L 18 36 A 18 18 0 0 0 36 18 Z" fill={preset.right} />
+                      </svg>
+                      <span class="ft-tile-check-badge" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </span>
+                      <md-ripple></md-ripple>
+                    </button>
+                  ))}
+
+                  <!-- 第 16 项：自定义取色器 (Chrome Eyedropper) -->
+                  <div
+                    class="ft-chrome-color-tile ft-custom-color-tile"
+                    data-action="open-custom-color"
+                    role="button"
+                    tabindex="0"
+                    title="自定义 HEX 主题色"
+                    aria-label="自定义主题色"
+                  >
+                    <input type="color" class="ft-color-native-input" data-action="custom-color-picker" value="#0b57d0" aria-label="自定义主题色" />
+                    <div class="ft-eyedropper-circle">
+                      <svg class="ft-eyedropper-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M20.71 5.63l-2.34-2.34a1 1 0 0 0-1.41 0l-3.12 3.12-1.93-1.91-1.41 1.41 1.42 1.42L3 16.25V21h4.75l8.92-8.92 1.42 1.42 1.41-1.41-1.92-1.92 3.12-3.12c.4-.4.4-1.03.01-1.42zM6.92 19L5 17.08l8.06-8.06 1.92 1.92L6.92 19z"/>
+                      </svg>
+                    </div>
+                    <span class="ft-tile-check-badge" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </span>
+                    <md-ripple></md-ripple>
+                  </div>
+                </div>
+              </div>
 
               <!-- 主题平滑过渡动画 -->
               <div class="ft-item-row">
@@ -180,10 +340,10 @@ const metaJson = JSON.stringify(featureMeta);
             </label>
           </div>
 
-          <!-- 3. 章节预加载 -->
-          <div class="ft-segment-wrapper">
+          <!-- 3. 章节预加载 (M3 Outlined Segmented Button) -->
+          <div class="ft-segment-wrapper ft-prewarm-wrapper">
             <div class="ft-sub-label">章节预加载</div>
-            <div class="ft-segment-track ft-grid-5">
+            <div class="ft-segment-track ft-grid-5 ft-prewarm-track">
               <button type="button" class="ft-prewarm-btn" data-prewarm-val="-1" title="全书预加载">全书</button>
               <button type="button" class="ft-prewarm-btn" data-prewarm-val="1" title="前后各 1 页">前后1页</button>
               <button type="button" class="ft-prewarm-btn" data-prewarm-val="2" title="前后各 2 页">前后2页</button>
@@ -248,49 +408,109 @@ const metaJson = JSON.stringify(featureMeta);
             <!-- 自定义模型表单 -->
             <div class="ft-ai-custom-form hidden">
               <div class="ft-ai-form-row">
-                <input type="text" class="ft-ai-input ft-ai-custom-id" placeholder="模型 ID（如 my-qwen）" autocomplete="off" />
-                <input type="text" class="ft-ai-input ft-ai-custom-label" placeholder="显示名称" autocomplete="off" />
+                <md-outlined-text-field class="ft-ai-input ft-ai-custom-id" label="模型 ID" placeholder="如 my-qwen" autocomplete="off"></md-outlined-text-field>
+                <md-outlined-text-field class="ft-ai-input ft-ai-custom-label" label="显示名称" placeholder="显示名称" autocomplete="off"></md-outlined-text-field>
               </div>
-              <input type="text" class="ft-ai-input ft-ai-custom-ep" placeholder="OpenAI 兼容端点 URL" autocomplete="off" />
+              <md-outlined-text-field class="ft-ai-input ft-ai-custom-ep" label="端点 URL" placeholder="OpenAI 兼容端点" autocomplete="off"></md-outlined-text-field>
               <div class="ft-ai-custom-actions">
                 <button type="button" class="ft-ai-btn ft-ai-btn-ghost" data-action="cancel-custom-model">取消</button>
                 <button type="button" class="ft-ai-btn ft-ai-btn-primary" data-action="add-custom-model">保存模型</button>
               </div>
             </div>
 
-            <!-- API Key -->
+            <!-- API Key 与端点配置 -->
             <div class="ft-ai-field">
               <div class="ft-ai-field-head">
-                <span class="ft-ai-mini-label">API Key</span>
-                <span class="ft-ai-key-badge">未配置</span>
+                <!-- 连接测试状态 Chip (与已配置同行) -->
+                <div class="ft-ai-test-status ft-ai-test-chip ft-m3-status-chip hidden" aria-live="polite" title="连接测试状态">
+                  <svg class="ft-chip-icon ft-test-chip-icon-ok" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                  </svg>
+                  <svg class="ft-chip-icon ft-test-chip-icon-err hidden" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                  </svg>
+                  <svg class="ft-chip-icon ft-test-chip-spinner hidden" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="9" stroke-opacity="0.25"></circle>
+                    <path d="M12 3a9 9 0 0 1 9 9" stroke-linecap="round"></path>
+                  </svg>
+                  <span class="ft-test-chip-text"></span>
+                </div>
+
+                <!-- API Key 配置状态 Chip -->
+                <div class="ft-ai-key-badge ft-ai-key-chip ft-m3-status-chip" title="API Key 配置状态">
+                  <svg class="ft-chip-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                  </svg>
+                  <span class="ft-chip-label">未配置</span>
+                </div>
               </div>
               <div class="ft-ai-key-row">
-                <input type="password" class="ft-ai-input ft-ai-key-input" placeholder="sk-..." autocomplete="off" />
-                <button type="button" class="ft-ai-icon-btn ft-ai-key-reveal" data-action="toggle-key-reveal" title="显示/隐藏密钥">
-                  <svg class="ft-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                  <svg class="ft-eye-closed hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                </button>
+                <md-outlined-text-field
+                  class="ft-ai-input ft-ai-key-input"
+                  label="API Key"
+                  type="password"
+                  placeholder="sk-..."
+                  autocomplete="off"
+                >
+                  <md-icon-button
+                    toggle
+                    slot="trailing-icon"
+                    type="button"
+                    class="ft-ai-icon-btn ft-ai-key-reveal"
+                    data-action="toggle-key-reveal"
+                    touch-target="none"
+                    aria-label="显示密钥"
+                    aria-label-selected="隐藏密钥"
+                    title="显示/隐藏密钥"
+                  >
+                    <md-icon class="ft-eye-open">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                      </svg>
+                    </md-icon>
+                    <md-icon slot="selected" class="ft-eye-closed">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>
+                      </svg>
+                    </md-icon>
+                  </md-icon-button>
+                </md-outlined-text-field>
               </div>
             </div>
 
-            <!-- API 端点 -->
+            <!-- API 端点与测试连接操作 (标准 M3 Outlined Text Field + 标准 M3 Trailing Icon Button) -->
             <div class="ft-ai-field">
-              <span class="ft-ai-mini-label">API 端点</span>
-              <input type="text" class="ft-ai-input ft-ai-endpoint-input" placeholder="https://api.deepseek.com/v1/chat/completions" autocomplete="off" />
-            </div>
-
-            <!-- 测试连接行 -->
-            <div class="ft-ai-test-row">
-              <button type="button" class="ft-ai-test-btn" data-action="test-ai-connection" title="测试当前 API Key 与端点连通性">
-                测试连接
-              </button>
-              <span class="ft-ai-test-status" aria-live="polite"></span>
+              <div class="ft-ai-endpoint-row">
+                <md-outlined-text-field
+                  class="ft-ai-input ft-ai-endpoint-input"
+                  label="API 端点"
+                  type="text"
+                  placeholder="https://api.deepseek.com/..."
+                  autocomplete="off"
+                >
+                  <md-icon-button
+                    slot="trailing-icon"
+                    type="button"
+                    class="ft-ai-test-icon-btn"
+                    data-action="test-ai-connection"
+                    touch-target="none"
+                    aria-label="测试连接"
+                    title="测试连接"
+                  >
+                    <md-icon class="ft-test-bolt-icon">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M11 21h-1l1-7H7.5c-.88 0-.33-.75-.31-.78L13.5 3h1l-1 7h3.5c.66 0 .44.62.33.82L11.5 21z"/>
+                      </svg>
+                    </md-icon>
+                    <md-icon class="ft-test-spinner hidden">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="9" stroke-opacity="0.25"></circle>
+                        <path d="M12 3a9 9 0 0 1 9 9" stroke-linecap="round"></path>
+                      </svg>
+                    </md-icon>
+                  </md-icon-button>
+                </md-outlined-text-field>
+              </div>
             </div>
           </div>
 
@@ -341,7 +561,7 @@ const metaJson = JSON.stringify(featureMeta);
                 <div class="ft-row-info">
                   <div class="ft-row-title-line">
                     <span class="ft-row-name">MDX 在线精修</span>
-                    <span class="ft-badge ft-badge-dev">DEV</span>
+                    <span class="ft-badge ft-badge-dev ft-m3-dev-chip">DEV</span>
                   </div>
                 </div>
                 <label class="ft-switch" title="启用/禁用在线精修">
@@ -355,12 +575,9 @@ const metaJson = JSON.stringify(featureMeta);
       }
     </div>
 
-    <!-- 底部状态与重置 -->
+    <!-- 底部状态提示 -->
     <div class="ft-panel-footer">
       <span class="ft-footer-hint">设置保存在此浏览器</span>
-      <button type="button" class="ft-reset-btn" data-action="reset-defaults" title="恢复所有选项至默认配置">
-        恢复默认
-      </button>
     </div>
   </div>
 </starlight-feature-toggles>
@@ -398,13 +615,13 @@ const metaJson = JSON.stringify(featureMeta);
     box-sizing: border-box;
   }
 
-  /* 顶栏与抽屉触发按钮（VitePress 36px/40px 极简图标按钮） */
+  /* 顶栏与抽屉触发按钮（Android Studio 34px 极简图标按钮） */
   starlight-feature-toggles .ft-toggle-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2.125rem;
+    height: 2.125rem;
     padding: 0;
     border: none;
     border-radius: 50%;
@@ -417,7 +634,12 @@ const metaJson = JSON.stringify(featureMeta);
   starlight-feature-toggles .ft-toggle-btn:hover,
   starlight-feature-toggles .ft-toggle-btn:focus-visible {
     color: var(--sl-color-white);
-    background-color: var(--sl-color-gray-6);
+    background-color: var(--sl-color-gray-6, rgba(125, 125, 125, 0.1));
+  }
+
+  starlight-feature-toggles.ft-is-open .ft-toggle-btn {
+    background-color: var(--sl-color-gray-6, rgba(125, 125, 125, 0.15));
+    color: var(--sl-color-text-accent);
   }
 
   starlight-feature-toggles .ft-toggle-btn:focus-visible {
@@ -426,8 +648,10 @@ const metaJson = JSON.stringify(featureMeta);
   }
 
   starlight-feature-toggles .ft-gear-icon {
-    width: 1.15rem;
-    height: 1.15rem;
+    width: 20px;
+    height: 20px;
+    display: block;
+    margin: 0 auto;
   }
 
   /* ==========================================================================
@@ -438,9 +662,7 @@ const metaJson = JSON.stringify(featureMeta);
       position: fixed;
       inset: 0;
       background: rgba(0, 0, 0, 0.48);
-      -webkit-backdrop-filter: blur(6px);
-      backdrop-filter: blur(6px);
-      z-index: 2147483646;
+      z-index: calc(var(--layer-drawer) - 1);
       opacity: 0;
       display: none;
       pointer-events: none;
@@ -472,7 +694,7 @@ const metaJson = JSON.stringify(featureMeta);
       border-right: none;
       border-bottom: none;
       box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.35);
-      z-index: 2147483647;
+      z-index: var(--layer-drawer);
       transform: translateY(100%);
       transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s;
       display: flex;
@@ -515,7 +737,7 @@ const metaJson = JSON.stringify(featureMeta);
   }
 
   /* ==========================================================================
-     桌面端 Popover 浮层模式 (>= 800px)
+     桌面端 Popover 浮层模式 (>= 800px) —— 对齐 HeaderToolsMenu 规范
      ========================================================================== */
   @media (min-width: 50rem) {
     .ft-backdrop,
@@ -527,37 +749,31 @@ const metaJson = JSON.stringify(featureMeta);
       position: absolute;
       top: calc(100% + 0.5rem);
       right: 0;
-      width: 368px;
-      max-height: min(84vh, 620px);
-      display: none;
+      width: 360px;
+      max-height: min(84vh, 600px);
+      display: flex;
       flex-direction: column;
-      background-color: var(--sl-color-bg, #ffffff) !important;
+      background-color: var(--sl-color-bg-sidebar, #ffffff) !important;
       color: var(--sl-color-white);
-      border: 1px solid var(--sl-color-hairline);
-      border-radius: 12px;
-      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18), 0 3px 10px rgba(0, 0, 0, 0.08);
-      z-index: 2147483001 !important;
+      border: 1px solid var(--sl-color-hairline, #e2e8f0);
+      border-radius: 1rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06);
+      z-index: var(--layer-popover, 300);
       overflow: hidden;
-      visibility: visible;
-      transform: none;
-      pointer-events: auto;
-      animation: ftFadeIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    @keyframes ftFadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(-4px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: scale(0.96) translateY(-4px);
+      transform-origin: top right;
+      transition: opacity 0.18s cubic-bezier(0.2, 0, 0, 1), transform 0.18s cubic-bezier(0.2, 0, 0, 1), visibility 0.18s;
     }
 
     .ft-panel.ft-is-open,
     starlight-feature-toggles.ft-is-open .ft-panel {
-      display: flex;
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: scale(1) translateY(0);
     }
   }
 
@@ -566,17 +782,18 @@ const metaJson = JSON.stringify(featureMeta);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 14px 9px;
-    border-bottom: 1px solid var(--sl-color-hairline);
-    background-color: var(--sl-color-bg, #ffffff) !important;
+    padding: 0.5rem 1rem 0.35rem;
+    border-bottom: 1px solid var(--sl-color-hairline, #e2e8f0);
+    background-color: transparent !important;
     flex-shrink: 0;
   }
 
   .ft-panel-title {
-    font-size: 13px;
+    font-size: 0.72rem;
     font-weight: 600;
-    color: var(--sl-color-white);
-    letter-spacing: -0.01em;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--sl-color-gray-3);
   }
 
   .ft-close {
@@ -610,15 +827,21 @@ const metaJson = JSON.stringify(featureMeta);
     outline-offset: 1px;
   }
 
+  @media (min-width: 50rem) {
+    .ft-close {
+      display: none !important;
+    }
+  }
+
   /* 面板主体内容区 */
   .ft-panel-body {
-    padding: 12px 14px;
+    padding: 0.625rem 0.875rem;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
     flex: 1;
     min-height: 0;
     background-color: var(--sl-color-bg, #ffffff) !important;
@@ -628,7 +851,7 @@ const metaJson = JSON.stringify(featureMeta);
 
   @media (max-width: 49.999rem) {
     .ft-panel-body {
-      padding: 14px 16px;
+      padding: 12px 14px;
       padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 16px));
     }
   }
@@ -657,7 +880,7 @@ const metaJson = JSON.stringify(featureMeta);
     font-weight: 600;
     color: var(--sl-color-gray-3);
     letter-spacing: 0.03em;
-    padding-left: 2px;
+    padding-left: 0;
   }
 
   .ft-stack {
@@ -670,27 +893,22 @@ const metaJson = JSON.stringify(featureMeta);
     font-size: 11px;
     font-weight: 500;
     color: var(--sl-color-gray-3);
-    padding-left: 2px;
+    padding-left: 0;
     margin-bottom: 2px;
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
 
-  /* 单行特性项 */
+  /* 单行特性项：纯粹学术排版，无悬停变色背景，无隐形卡片包裹 */
   .ft-item-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    padding: 5px 6px;
-    border-radius: 6px;
+    padding: 6px 0;
+    border-radius: 0;
     background-color: transparent;
-    transition: background-color 0.15s ease;
-  }
-
-  .ft-item-row:hover {
-    background-color: var(--sl-color-gray-6);
   }
 
   /* 行信息 */
@@ -794,7 +1012,7 @@ const metaJson = JSON.stringify(featureMeta);
   }
 
   .ft-ai-select,
-  .ft-ai-input {
+  input.ft-ai-input {
     width: 100%;
     height: 27px;
     padding: 0 8px;
@@ -809,7 +1027,7 @@ const metaJson = JSON.stringify(featureMeta);
   }
 
   .ft-ai-select:focus,
-  .ft-ai-input:focus {
+  input.ft-ai-input:focus {
     outline: none;
     border-color: var(--sl-color-accent);
   }
@@ -820,36 +1038,47 @@ const metaJson = JSON.stringify(featureMeta);
     align-items: center;
   }
 
-  .ft-ai-key-input {
+  input.ft-ai-key-input {
     padding-right: 28px;
   }
 
-  .ft-ai-icon-btn {
-    position: absolute;
-    right: 3px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
+  md-outlined-text-field.ft-ai-input {
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
     border: none;
     background: transparent;
-    color: var(--sl-color-gray-3);
-    cursor: pointer;
+  }
+
+  md-outlined-text-field .ft-ai-icon-btn,
+  md-outlined-text-field .ft-ai-test-icon-btn {
+    position: absolute;
+    inset: 0;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
     padding: 0;
-    border-radius: 4px;
-    transition: color 0.15s ease;
+    margin: 0;
   }
-  .ft-ai-icon-btn:hover {
-    color: var(--sl-color-white);
+
+  md-outlined-text-field md-icon.hidden,
+  .ft-test-spinner.hidden,
+  .ft-test-bolt-icon.hidden {
+    display: none !important;
   }
-  .ft-ai-icon-btn:focus-visible {
-    outline: 2px solid var(--sl-color-text-accent);
-    outline-offset: 1px;
+
+  .ft-test-spinner svg {
+    fill: none !important;
   }
-  .ft-ai-icon-btn svg {
-    width: 13px;
-    height: 13px;
+  .ft-test-spinner svg circle,
+  .ft-test-spinner svg path {
+    fill: none !important;
+    stroke: currentColor !important;
   }
 
   .ft-ai-custom-form {
@@ -916,6 +1145,224 @@ const metaJson = JSON.stringify(featureMeta);
     opacity: 0.9;
   }
 
+  /* API 端点与测试按钮行 */
+  .ft-ai-endpoint-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ft-ai-test-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--sl-color-hairline);
+    background: var(--sl-color-bg);
+    color: var(--sl-color-gray-2);
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .ft-ai-test-icon-btn:hover {
+    color: var(--sl-color-accent);
+    border-color: var(--sl-color-accent);
+    background-color: var(--sl-color-gray-6);
+  }
+
+  .ft-ai-test-icon-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+
+  .ft-test-spinner {
+    animation: ft-spin 1s linear infinite;
+  }
+
+  @keyframes ft-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .ft-ai-key-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .ft-ai-key-chip .ft-chip-icon {
+    display: none;
+  }
+
+  .ft-ai-key-chip.configured .ft-chip-icon {
+    display: inline-block;
+  }
+
+  /* Chrome 风格外观模式分段控制基础样式 */
+  .ft-theme-mode-segmented {
+    display: flex;
+    align-items: center;
+    height: 36px;
+    border-radius: 9999px;
+    border: 1px solid var(--sl-color-hairline);
+    background-color: var(--sl-color-gray-6);
+    padding: 2px;
+    gap: 2px;
+    margin-bottom: 8px;
+  }
+
+  .ft-mode-btn {
+    flex: 1;
+    height: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 9999px;
+    border: none;
+    background: transparent;
+    color: var(--sl-color-gray-2);
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .ft-mode-btn:hover {
+    color: var(--sl-color-white);
+  }
+
+  .ft-mode-btn.active {
+    background-color: var(--sl-color-bg);
+    color: var(--sl-color-accent);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+
+  .ft-mode-btn .ft-mode-icon {
+    display: inline-block;
+  }
+
+  .ft-mode-btn .ft-mode-check-icon {
+    display: none;
+  }
+
+  .ft-mode-btn.active .ft-mode-icon {
+    display: none;
+  }
+
+  .ft-mode-btn.active .ft-mode-check-icon {
+    display: inline-block;
+  }
+
+  /* Chrome 4x4 色板网格基础降级布局 */
+  .ft-chrome-swatches-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .ft-chrome-color-tile {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    border-radius: 14px;
+    border: 1px solid var(--sl-color-hairline);
+    background-color: var(--sl-color-gray-6);
+    cursor: pointer;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .ft-tile-check-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: var(--sl-color-accent);
+    color: #ffffff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ft-chrome-color-tile.active .ft-tile-check-badge {
+    display: flex;
+  }
+
+  .ft-custom-color-tile {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .ft-color-native-input {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    opacity: 0 !important;
+    cursor: pointer !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: 2 !important;
+  }
+
+  .ft-eyedropper-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background-color: var(--sl-color-gray-5);
+    color: var(--sl-color-white);
+    pointer-events: none;
+    box-shadow: none;
+    transition: background-color 0.15s ease;
+  }
+
+  /* Gmail 风格 UI 主题行基础降级 */
+  .ft-gmail-theme-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ft-gmail-theme-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .ft-gmail-theme-row:hover {
+    background-color: var(--sl-color-gray-6);
+  }
+
+  .ft-gmail-theme-row.active {
+    background-color: var(--sl-color-gray-6);
+    border-color: var(--sl-color-accent);
+  }
+
   /* 测试连接行 */
   .ft-ai-test-row {
     display: flex;
@@ -958,27 +1405,76 @@ const metaJson = JSON.stringify(featureMeta);
     cursor: wait;
   }
 
-  .ft-ai-test-status {
-    font-size: 10.5px;
-    line-height: 1.2;
+  .ft-ai-field-head {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    min-height: 24px;
+    margin-top: 6px;
+    margin-bottom: 3px;
+  }
+
+  .ft-m3-status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid var(--sl-color-hairline);
+    background: transparent;
     color: var(--sl-color-gray-3);
-    text-align: right;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 220px;
+    box-sizing: border-box;
+    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
   }
 
-  .ft-ai-test-status.status-ok {
+  .ft-m3-status-chip.hidden {
+    display: none !important;
+  }
+
+  .ft-m3-status-chip .ft-chip-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+
+  .ft-m3-status-chip .ft-chip-icon.hidden {
+    display: none !important;
+  }
+
+  .ft-ai-key-chip:not(.configured) .ft-chip-icon {
+    display: none !important;
+  }
+
+  .ft-m3-status-chip.configured {
+    background-color: var(--sl-color-accent-low, rgba(14, 165, 233, 0.15));
+    color: var(--sl-color-accent-high, #38bdf8);
+    border-color: transparent;
+  }
+
+  .ft-m3-status-chip.status-ok {
+    background-color: rgba(16, 185, 129, 0.15);
     color: #10b981;
+    border-color: transparent;
   }
 
-  .ft-ai-test-status.status-err {
+  .ft-m3-status-chip.status-err {
+    background-color: rgba(239, 68, 68, 0.15);
     color: #ef4444;
+    border-color: transparent;
   }
 
-  .ft-ai-test-status.status-loading {
-    color: var(--sl-color-accent);
+  .ft-m3-status-chip.status-loading {
+    background-color: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-2);
+    border-color: transparent;
   }
 
   /* ===== 分段选择器（Segmented Control · VitePress 胶囊切换） ===== */
@@ -986,6 +1482,10 @@ const metaJson = JSON.stringify(featureMeta);
     display: flex;
     flex-direction: column;
     gap: 2px;
+  }
+
+  .ft-prewarm-wrapper {
+    margin: 10px 0 6px 0;
   }
 
   .ft-segment-track {
@@ -1048,6 +1548,23 @@ const metaJson = JSON.stringify(featureMeta);
     color: var(--sl-color-accent);
     font-weight: 600;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+
+  .ft-prewarm-track .ft-prewarm-btn.active {
+    box-shadow: none !important;
+  }
+
+  /* 官方 Material 3 md-filter-chip 字体选择器 */
+  .ft-font-chip-set {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+  }
+
+  .ft-font-chip {
+    cursor: pointer;
   }
 
   .ft-font-preview {
@@ -1154,9 +1671,9 @@ const metaJson = JSON.stringify(featureMeta);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 14px;
-    border-top: 1px solid var(--sl-color-hairline);
-    background-color: var(--sl-color-bg, #ffffff) !important;
+    padding: 0.5rem 1rem;
+    border-top: 1px solid var(--sl-color-hairline, #e2e8f0);
+    background-color: transparent !important;
     flex-shrink: 0;
   }
 
@@ -1195,6 +1712,7 @@ const metaJson = JSON.stringify(featureMeta);
 
 <script>
   import { initFeatureToggles } from '../scripts/feature-toggles';
+  import '../themes/material-you/index';
   try {
     initFeatureToggles();
   } catch (e) {

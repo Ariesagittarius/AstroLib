@@ -12,7 +12,8 @@
 | [AI 书内问答模块实现交接.md](./AI%20书内问答模块实现交接.md) | **AI 书内问答（RAG）实现交接**：构建期分块索引管线、客户端 BYOK 直连流式生成、上下文成本硬约束与端侧检索设计。 | `src/ai/`<br>`src/components/AIAsk.astro`<br>`scripts/build-ai-index.mjs` |
 | [AI 赋能模块设计.md](./AI%20赋能模块设计.md) | **AI 赋能体系设计与 RAG 开发者指南**：包含全量 8 个 MCP/客户端工具规格、动态 Prompt 解耦串联架构、请求处理逻辑链及长远路线图。 | `src/ai/mcp/`<br>`src/ai/tools-client.mjs`<br>`src/ai/llm.mjs`<br>`src/ai/client/chat-controller.ts` |
 | [文章切换性能优化交接文档.md](./文章切换性能优化交接文档.md) | **跨页引用与 SPA 性能优化**：正文引用徽章识别从客户端扫描下沉至构建期 Rehype 插件（方案 B）的技术细节。 | `src/utils/rehype-cross-ref.mjs`<br>`src/components/PageSidebarOverride.astro` |
-| [VitePress主题改造交接文档.md](./VitePress主题改造交接文档.md) | **UI/UX 主题重塑**：重构 Starlight 默认皮肤，复刻 VitePress 色彩体系、极简图标主题切换与思源字体系统。 | `src/styles/vitepress-theme.css`<br>`src/styles/fonts.css`<br>`src/components/ThemeSelectOverride.astro` |
+| [VitePress主题改造交接文档.md](./VitePress主题改造交接文档.md) | **UI/UX 主题重塑（VitePress）**：重构 Starlight 默认皮肤，复刻 VitePress 色彩体系、极简图标主题切换与思源字体系统。 | `src/styles/vitepress-theme.css`<br>`src/styles/fonts.css`<br>`src/components/ThemeSelectOverride.astro` |
+| [Material-You主题改造交接文档.md](./Material-You主题改造交接文档.md) | **UI/UX 主题重塑（Material 3）**：对齐 Google Chrome / MD3 官方规范，Filter Chips 离散选项组、Outlined Inputbox、无边框 Tonal 卡片、56×56 FAB、Switch 双轨水合与合规审计指南。 | `src/themes/material-you/theme.css`<br>`src/themes/material-you/index.ts`<br>`src/components/FeatureToggles.astro`<br>`src/components/exercises/ExerciseModal.astro` |
 | [精修工具交接.md](./精修工具交接.md) | **在线可视化 MDX 精修工具**：dev 模式下源码位置注入（AST 标记）与 Vite dev server 写回端点设计。 | `src/utils/mdx-editor/dev-server-plugin.mjs`<br>`src/utils/editor.ts`<br>`src/components/EditorMode.astro` |
 | [模块查重与巡检工具.md](./模块查重与巡检工具.md) | **书籍模块巡检与查重工具**：dev 模式下快速查看与搜索全书模块、同章/全书查重、异常拆分标记与一键精准定位跳转。 | `src/utils/module-inspector/`<br>`src/components/ModuleInspector.astro` |
 | [公式末尾编号-tag-重叠问题修复记录.md](./公式末尾编号-tag-重叠问题修复记录.md) | **KaTeX 编号与排版排错**：独立行公式 `\tag{...}` 在移动端和窄屏下与公式内容重叠的 CSS 定位修复。 | `src/styles/custom.css` |
