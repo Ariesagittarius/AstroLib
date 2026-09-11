@@ -101,3 +101,5 @@ export interface SinglePaperData {
   sections_order: string[];
   questions: SlimQuestionItem[];
 }
+
+export type { ExerciseBank, ExerciseBankLicense } from '../config/exercise-banks.config';

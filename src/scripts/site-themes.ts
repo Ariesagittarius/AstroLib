@@ -1,8 +1,8 @@
 /**
- * 站点 UI 风格主题偏好（读者可选）—— 管理 VitePress / Starlight 等风格切换
+ * 站点 UI 风格主题偏好（读者可选）—— 管理 Material You / 风格切换
  * ==========================================================================
- * 存储：localStorage 'starlight-site-theme' 存储字符串主题 id（如 'vitepress' | 'starlight'）。
- * 应用：给 <html data-site-theme="vitepress"> 设置属性。
+ * 存储：localStorage 'starlight-site-theme' 存储字符串主题 id（默认 'material-you'）。
+ * 应用：给 <html data-site-theme="material-you"> 设置属性。
  * 广播：数据变更时触发 window 自定义事件 'site-theme-change'，确保页面多组件实例同步。
  * ==========================================================================
  */

@@ -31,7 +31,7 @@
 /* --------------------------------------------------------------------------
    1. 色板映射（亮色：正统学术出版物墨黑与纯净纸底）
    -------------------------------------------------------------------------- */
-:root:not([data-site-theme='starlight'])[data-theme='light'] {
+:root:not([data-site-theme='starlight']):not([data-site-theme='material-you'])[data-theme='light'] {
   /* 文字灰阶：深沉学术墨黑 (正统教材墨色，消除灰度 UI 感) */
   --sl-color-white: #111111;   /* 核心正文、标题、数学公式 */
   --sl-color-gray-1: #202022;  /* 核心强调文字 */
@@ -71,8 +71,8 @@
 /* --------------------------------------------------------------------------
    2. 色板映射（暗色：护眼学术夜读纸色）
    -------------------------------------------------------------------------- */
-:root:not([data-site-theme='starlight']),
-:root:not([data-site-theme='starlight'])[data-theme='dark'] {
+:root:not([data-site-theme='starlight']):not([data-site-theme='material-you']),
+:root:not([data-site-theme='starlight']):not([data-site-theme='material-you'])[data-theme='dark'] {
   --sl-color-white: #dfdfd6;   /* 柔和纸夜正文 */
   --sl-color-gray-1: #dfdfd6;
   --sl-color-gray-2: #98989f;  /* 次级文字 */
@@ -107,7 +107,7 @@
 /* --------------------------------------------------------------------------
    3. 字体 — 全局 UI 字体（正文阅读字体由 fonts.css 接管）
    -------------------------------------------------------------------------- */
-:root:not([data-site-theme='starlight']) {
+:root:not([data-site-theme='starlight']):not([data-site-theme='material-you']) {
   --sl-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
     'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
   --sl-font-mono: ui-monospace, 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono',
@@ -117,7 +117,7 @@
 /* --------------------------------------------------------------------------
    4. 顶部导航 — 静音书籍顶栏
    -------------------------------------------------------------------------- */
-html:not([data-site-theme='starlight']) header.header {
+html:not([data-site-theme='starlight']):not([data-site-theme='material-you']) header.header {
   background-color: color-mix(in srgb, var(--sl-color-bg-nav) 88%, transparent) !important;
   -webkit-backdrop-filter: saturate(150%) blur(8px);
   backdrop-filter: saturate(150%) blur(8px);
@@ -125,7 +125,7 @@ html:not([data-site-theme='starlight']) header.header {
   height: var(--sl-nav-height) !important;
   max-height: var(--sl-nav-height) !important;
 }
-html:not([data-site-theme='starlight']) .header .header {
+html:not([data-site-theme='starlight']):not([data-site-theme='material-you']) .header .header {
   background: transparent !important;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
@@ -136,7 +136,7 @@ html:not([data-site-theme='starlight']) .header .header {
    -------------------------------------------------------------------------- */
 
 /* 5.1 顶栏尺寸与站名 */
-html:not([data-site-theme='starlight']) .site-title {
+html:not([data-site-theme='starlight']):not([data-site-theme='material-you']) .site-title {
   font-size: 0.95rem !important;
   font-weight: 700 !important;
   letter-spacing: -0.01em !important;
@@ -201,9 +201,9 @@ html:not([data-site-theme='starlight']):not([data-site-theme='material-you']) .s
    -------------------------------------------------------------------------- */
 
 /* 品牌色 hover 态 */
-:root:not([data-site-theme='starlight'])[data-theme='light'] { --vp-brand-2: #1e40af; }
-:root:not([data-site-theme='starlight']),
-:root:not([data-site-theme='starlight'])[data-theme='dark'] { --vp-brand-2: #b8ceff; }
+:root:not([data-site-theme='starlight']):not([data-site-theme='material-you'])[data-theme='light'] { --vp-brand-2: #1e40af; }
+:root:not([data-site-theme='starlight']):not([data-site-theme='material-you']),
+:root:not([data-site-theme='starlight']):not([data-site-theme='material-you'])[data-theme='dark'] { --vp-brand-2: #b8ceff; }
 
 /* 6.1 标题体系：依靠字阶、字重与垂直留白建立层级，标题统一使用学术黑体体系，建立清晰学术层级 */
 html:not([data-site-theme='starlight']) :is(.main-pane h1, #_top, .sl-markdown-content :is(h1, h2, h3, h4, h5, h6)) {
@@ -255,6 +255,11 @@ html:not([data-site-theme='starlight']) .sl-markdown-content p {
   font-weight: var(--academic-font-weight-body, 400);
   color: var(--academic-color-ink, var(--sl-color-white));
   letter-spacing: var(--academic-letter-spacing-body, normal);
+  text-indent: var(--academic-paragraph-indent, 2em);
+}
+
+html[data-paragraph-indent="false"] .sl-markdown-content p {
+  text-indent: 0 !important;
 }
 
 html:not([data-site-theme='starlight']) .sl-markdown-content .katex-display {
@@ -587,7 +592,9 @@ html:not([data-site-theme='starlight']) .right-sidebar-panel .custom-page-sideba
   padding: 1.25rem 0.5rem 2rem 1rem !important;
   border-left: 1px solid var(--sl-color-hairline) !important;
   font-size: 0.8125rem !important;
-  width: var(--sl-toc-width, 16.5rem) !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 html:not([data-site-theme='starlight']) .custom-page-sidebar .outline-marker {
@@ -761,12 +768,14 @@ html:not([data-site-theme='starlight']):not([data-site-theme='material-you']) .v
     max-height: calc(100vh - var(--sl-nav-height)) !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
-    width: var(--sl-toc-width, 16.5rem) !important;
-    min-width: var(--sl-toc-width, 16.5rem) !important;
+    width: var(--sl-sideload-width, var(--sl-toc-width, 16.5rem)) !important;
+    min-width: var(--sl-sideload-width, var(--sl-toc-width, 16.5rem)) !important;
+    max-width: var(--sl-sideload-width, var(--sl-toc-width, 16.5rem)) !important;
     flex-shrink: 0 !important;
     order: 2 !important;
     z-index: 4 !important;
     scrollbar-width: thin;
+    transition: width 0.22s cubic-bezier(0.2, 0, 0, 1), max-width 0.22s cubic-bezier(0.2, 0, 0, 1) !important;
   }
 
   html:not([data-site-theme='starlight']) .right-sidebar {
@@ -789,10 +798,13 @@ html:not([data-site-theme='starlight']):not([data-site-theme='material-you']) .v
     border-left: 1px solid var(--sl-color-hairline) !important;
   }
 
-  html:not([data-site-theme='starlight']) :global([data-has-sidebar][data-has-toc]) .main-pane {
-    width: calc(100% - var(--sl-toc-width, 16.5rem)) !important;
+  html:not([data-site-theme='starlight']) [data-has-sidebar][data-has-toc] .main-pane,
+  html:not([data-site-theme='starlight']) .main-pane {
+    width: calc(100% - var(--sl-sideload-width, var(--sl-toc-width, 16.5rem))) !important;
+    max-width: calc(100% - var(--sl-sideload-width, var(--sl-toc-width, 16.5rem))) !important;
     flex: 1 1 auto !important;
     order: 1 !important;
+    transition: width 0.22s cubic-bezier(0.2, 0, 0, 1), max-width 0.22s cubic-bezier(0.2, 0, 0, 1) !important;
   }
 }
 

@@ -36,6 +36,8 @@ import { exerciseDevServerPlugin } from './src/server/plugins/exercise-editor/de
 import rehypeMermaid from './src/plugins/rehype/rehype-mermaid.mjs';
 // 图像高斯模糊占位插件：为正文图片在构建期生成微型 LQIP Base64 占位并平滑渐显
 import rehypeImageBlur from './src/plugins/rehype/rehype-image-blur.mjs';
+// 中文学术标点规范化与呼吸间距自愈插件：智能修复 MinerU 识别的半角标点与句间间距
+import rehypeCjkPunctuation from './src/plugins/rehype/rehype-cjk-punctuation.mjs';
 
 // 项目开发文档侧边栏
 const devDocsSidebarGroup = {
@@ -58,7 +60,7 @@ const devDocsSidebarGroup = {
       items: [
         { label: '中央图书配置', link: '/dev/architecture/collections-config/' },
         { label: '全站功能开关 (Registry)', link: '/dev/architecture/feature-registry/' },
-        { label: 'VitePress 主题与 CSS', link: '/dev/architecture/theme-system/' },
+        { label: 'Material You 主题与 CSS', link: '/dev/architecture/theme-system/' },
       ]
     },
     {
@@ -131,6 +133,10 @@ if (features.katex.enabled) {
   );
   rehypePlugins.push(...katexGroup);
 }
+if (features.cjkPunctuation?.enabled) {
+  // 学术出版标点与呼吸间距自愈（在 KaTeX 完成公式渲染后执行，确保精准跳过公式内部与代码块）
+  rehypePlugins.push(rehypeCjkPunctuation);
+}
 if (features.crossRef.enabled) {
   // 方案 B：构建期徽章下沉，须在 KaTeX 相关插件之后执行（依赖公式结构已定型）。
   // refs 取 features.crossRef.config.refs：'static' 时强制全部静态 chip（关闭同页联动）
@@ -173,16 +179,17 @@ if (features.fonts.enabled) {
 
 // 组件覆盖：仅主题切换按开关装配（其余为自定义骨架/性能优化，恒用）
 const componentOverrides = {
-  Header: './src/components/HeaderOverride.astro',        // VitePress 风格紧凑顶栏（Logo/Search/Links/VPSwitch/Dividers）
+  Header: './src/components/HeaderOverride.astro',        // 紧凑学术顶栏（Logo/Search/Links/ThemeSelect/Dividers）
   Sidebar: './src/components/SidebarOverride.astro',      // 左侧 LaTeX 公式渲染
   PageSidebar: './src/components/PageSidebarOverride.astro', // 右侧多合集自适应大纲与卡片修补
-  Pagination: './src/components/PaginationOverride.astro', // 文章底部翻页 → VitePress pager 结构
+  Pagination: './src/components/PaginationOverride.astro', // 文章底部翻页卡片（M3 Filled Tonal Pagers）
   Footer: './src/components/FooterOverride.astro', // 底部：原翻页/编辑链接 + 在线精修工具壳（仅 dev）
   PageFrame: './src/components/PageFrameOverride.astro', // 顶层骨架覆盖：注入全站统一视窗挂载容器 (#astro-overlay-root)
   PageTitle: './src/components/PageTitleOverride.astro', // 页面大标题 H1 构建期数学公式转译（零客户端 KaTeX）
+  SocialIcons: './src/components/SocialIconsOverride.astro', // 顶栏 GitHub 社交入口：覆盖默认黑底硬币圆盘，使用官方净标
 };
 if (features.theme.enabled) {
-  componentOverrides.ThemeSelect = './src/components/ThemeSelectOverride.astro'; // VitePress 纯图标主题切换按钮
+  componentOverrides.ThemeSelect = './src/components/ThemeSelectOverride.astro'; // 顶栏外观与主题切换按钮
 }
 
 export default defineConfig({

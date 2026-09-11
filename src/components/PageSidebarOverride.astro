@@ -29,28 +29,91 @@ if (!currentBook) {
 const bookConfigJson = JSON.stringify(currentBook);
 ---
 
-<aside class="custom-page-sidebar" data-book-key={`${currentCol.slug}/${currentBook.slug}`} data-refs-mode={refsMode} data-book-config={bookConfigJson}>
+<aside class="astrolib-sideload-dock custom-page-sidebar" id="astrolib-sideload-dock" data-book-key={`${currentCol.slug}/${currentBook.slug}`} data-refs-mode={refsMode} data-book-config={bookConfigJson}>
   <!-- VitePress outline-marker：跟随滚动高亮项的 2px 品牌色指示条（JS 更新 top） -->
   <div class="outline-marker" aria-hidden="true"></div>
-  <div class="toc-container">
-    <div class="toc-header-block">
-      <h2 class="toc-title">本节大纲</h2>
+
+  <!-- 面板 1: 本章大纲 (默认常驻) -->
+  <section class="sideload-panel-view" data-panel-id="toc" aria-hidden="false">
+    <div class="toc-container">
+      <div class="toc-header-block">
+        <h2 class="toc-title">本节大纲</h2>
+      </div>
+      <ul id="custom-toc-list" class="toc-list">
+        <li class="toc-loading">正在提取教辅大纲...</li>
+      </ul>
     </div>
-    <ul id="custom-toc-list" class="toc-list">
-      <li class="toc-loading">正在提取教辅大纲...</li>
-    </ul>
-  </div>
+  </section>
+
+  <!-- 面板 2: 课后习题专属右侧抽屉面板 -->
+  <section class="sideload-panel-view" data-panel-id="exercises" aria-hidden="true">
+    <div class="exercise-sidebar-panel" id="exercise-sidebar-panel" aria-hidden="true">
+      <div class="ex-sidebar-header">
+        <div class="ex-sidebar-title-group">
+          <!-- 返回本章大纲快捷按钮 -->
+          <button
+            type="button"
+            class="sideload-back-btn"
+            id="sideload-back-to-toc"
+            title="返回本节大纲 (Esc)"
+            aria-label="返回本节大纲"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+          <h3 class="ex-sidebar-title" id="ex-sidebar-title">课后习题</h3>
+          <span class="ex-sidebar-count-badge" id="ex-sidebar-count">0 题</span>
+        </div>
+        <div class="ex-sidebar-actions">
+          <button
+            type="button"
+            class="ex-sidebar-action-btn"
+            id="ex-sidebar-open-modal"
+            title="在完整题库中心打开 (Alt+E)"
+            aria-label="打开完整题库"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="ex-sidebar-action-btn"
+            id="ex-sidebar-close"
+            title="关闭习题栏并恢复大纲 (Esc)"
+            aria-label="关闭习题栏"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="ex-sidebar-content" id="ex-sidebar-content">
+        <!-- 动态渲染轻量题目卡片 -->
+      </div>
+    </div>
+  </section>
 </aside>
+
+<!-- 全局侧载抽屉遮罩 (在 Tablet/Mobile 抽屉模式下激活) -->
+<div class="astrolib-sideload-scrim" id="astrolib-sideload-scrim" aria-hidden="true"></div>
 
 <!-- 移动端本地导航 VPLocalNav（VitePress 移植：顶部 sticky 条 + 大纲 popup 下拉面板） -->
 <div class="vp-local-nav" data-vp-local-nav>
   <div class="vp-local-nav-container">
-    <button class="vp-local-nav-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="vp-local-nav-panel" aria-label="本页大纲">
-      <svg class="vp-local-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
-      </svg>
-      <svg class="vp-local-nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M9 18l6-6-6-6" />
+    <button class="vp-local-nav-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="vp-local-nav-panel" aria-label="本章大纲" title="本章大纲">
+      <!-- Google Material Symbols 官方半空心大纲图标 (Semi-Outlined toc) -->
+      <svg class="header-mdicon vp-local-nav-mdicon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="3" y1="7" x2="15" y2="7" />
+        <circle cx="19.5" cy="7" r="1.5" />
+        <line x1="3" y1="12" x2="15" y2="12" />
+        <circle cx="19.5" cy="12" r="1.5" />
+        <line x1="3" y1="17" x2="15" y2="17" />
+        <circle cx="19.5" cy="17" r="1.5" />
       </svg>
     </button>
     <div class="vp-local-nav-items" id="vp-local-nav-panel" aria-hidden="true">
@@ -496,6 +559,8 @@ const bookConfigJson = JSON.stringify(currentBook);
   import { initPageSidebar } from './sidebar/toc-generator';
   import { initMermaid, setupMermaidThemeListener } from './sidebar/mermaid-loader';
   import { initImageBlur } from './sidebar/image-blur-loader';
+  import { getExerciseSidebarController } from './exercises/exercise-sidebar-controller';
+  import { sideloadManager } from './sideload/sideload-manager';
 
   function syncRelationGraphButtonVisibility() {
     const isShow = localStorage.getItem('astro-show-relation-graph-btn') !== 'false';
@@ -505,11 +570,19 @@ const bookConfigJson = JSON.stringify(currentBook);
   }
 
   function handleInit() {
+    sideloadManager.init();
     initPageSidebar();
     syncRelationGraphButtonVisibility();
     initMermaid();
     setupMermaidThemeListener();
     initImageBlur();
+    getExerciseSidebarController().init();
+
+    // 绑定侧载抽屉遮罩点击关闭
+    const scrim = document.getElementById('astrolib-sideload-scrim');
+    if (scrim) {
+      scrim.onclick = () => sideloadManager.switchToDefault();
+    }
   }
 
   if (document.readyState === 'loading') {

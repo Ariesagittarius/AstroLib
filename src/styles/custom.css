@@ -74,10 +74,20 @@
   }
 }
 
-/* 行内公式视觉校准：与中文 1rem 字面高度自然融合，基线平稳，字阶克制 */
+/* 行内公式视觉校准：与中文 1rem 字面高度自然融合，基线严格平稳，字阶克制 */
 .sl-markdown-content .katex:not(.katex-display .katex) {
-  font-size: 1.08em;
+  font-size: 1.06em;
   line-height: normal;
+  /* 恢复标准 TeX 行内流排版，彻底拔除滚动条与底边缘判定 */
+  display: inline;
+  overflow: visible !important;
+  vertical-align: baseline !important;
+  white-space: normal;
+}
+
+.sl-markdown-content .katex:not(.katex-display .katex) .katex-html {
+  display: inline-block;
+  vertical-align: 0;
 }
 
 /* KaTeX 经典框式公式排版 (\boxed) 纯正学术线框 (0.8px 发丝线与舒适内衬) */
@@ -87,13 +97,13 @@
   border-radius: 1px !important;
 }
 
-/* 行内公式：仅限制最大宽度，不轻易改动行内盒模型（99% 的短公式保持原生排版） */
+/* 行内公式：仅限制最大宽度，内部严禁继承段落首行缩进 */
 .katex {
   max-width: 100%;
+  text-indent: 0 !important;
 }
 
-/* 纯 CSS 解决行内公式超长横向溢出，完全零 JavaScript 计算，消除移动端 Layout Thrashing */
-.sl-markdown-content .katex:not(.katex-display .katex),
+/* 仅针对显式标记为横向滚动的极端长行内公式容器启用滚动胶囊 */
 .katex-scroll-capsule {
   display: inline-block;
   max-width: 100%;
@@ -104,18 +114,93 @@
   scrollbar-width: thin;
   scrollbar-color: var(--sl-color-gray-5, #cbd5e1) transparent;
 }
-.sl-markdown-content .katex:not(.katex-display .katex)::-webkit-scrollbar,
 .katex-scroll-capsule::-webkit-scrollbar {
   height: 3px;
 }
-.sl-markdown-content .katex:not(.katex-display .katex)::-webkit-scrollbar-thumb,
 .katex-scroll-capsule::-webkit-scrollbar-thumb {
   background-color: var(--sl-color-gray-5, #cbd5e1);
   border-radius: 3px;
 }
-.sl-markdown-content .katex:not(.katex-display .katex)::-webkit-scrollbar-track,
 .katex-scroll-capsule::-webkit-scrollbar-track {
   background-color: transparent;
+}
+
+/* ==========================================================================
+   学术出版段落排版规范 (Academic Paragraph Typesetting & Indentation)
+   --------------------------------------------------------------------------
+   遵循中国高校数理专著、国家标准与 LaTeX ctex 宏包排版规范：
+   1. 正文自然段首行缩进 2 个中文字符宽 (2em，可由用户设置动态开关)；
+   2. 段落垂直节奏紧凑致密 (margin-block: 0.65rem)，呈现纸质学术书卷韵律；
+   3. 严格防御白名单，绝不误伤居中大公式、标题、表格、代码块、列表、定理标签。
+   ========================================================================== */
+
+:root {
+  --academic-paragraph-indent: 2em;
+}
+
+html[data-paragraph-indent="false"] {
+  --academic-paragraph-indent: 0 !important;
+}
+
+/* 正文与卡片正文说明段落：首行缩进（受快速设置中的【段前空两格】动态调控） */
+.sl-markdown-content > p:not(.noindent),
+.card-body > p:not(.noindent),
+.solution-content > p:not(.noindent),
+.analysis-content > p:not(.noindent),
+.knowledge-content > p:not(.noindent),
+.note-content > p:not(.noindent),
+.guide-content > p:not(.noindent),
+.method-content > p:not(.noindent),
+.fallback-content > p:not(.noindent) {
+  text-indent: var(--academic-paragraph-indent, 2em);
+  margin-top: 0.45rem;
+  margin-bottom: 0.65rem;
+}
+
+/* 用户关闭【段前空两格】时强制全量顶格 */
+html[data-paragraph-indent="false"] .sl-markdown-content > p,
+html[data-paragraph-indent="false"] .card-body > p,
+html[data-paragraph-indent="false"] .solution-content > p,
+html[data-paragraph-indent="false"] .analysis-content > p,
+html[data-paragraph-indent="false"] .knowledge-content > p,
+html[data-paragraph-indent="false"] .note-content > p,
+html[data-paragraph-indent="false"] .guide-content > p,
+html[data-paragraph-indent="false"] .method-content > p,
+html[data-paragraph-indent="false"] .fallback-content > p {
+  text-indent: 0 !important;
+}
+
+/* 核心防御 1: 块级独立公式绝对禁止首行缩进（否则公式偏右无法居中） */
+.katex-display,
+.sl-markdown-content p:has(> .katex-display),
+.sl-markdown-content p > .katex-display {
+  text-indent: 0 !important;
+}
+
+/* 核心防御 2: 仅包含图片或主要为插图的段落禁止缩进 */
+.sl-markdown-content p:has(> img:only-child),
+.sl-markdown-content p:has(> .astro-blur-image-wrapper:only-child),
+.sl-markdown-content p:has(> .astro-blur-image:only-child) {
+  text-indent: 0 !important;
+}
+
+/* 核心防御 3: 标题、列表、代码块、表格、引言、卡片头部、交叉引用徽章等结构元素绝对禁止缩进 */
+.sl-markdown-content :is(h1, h2, h3, h4, h5, h6, ul, ol, li, pre, code, table, th, td, blockquote, figure, figcaption),
+.card-header,
+.card-title,
+.option-chip-wrapper,
+.question-stem,
+.fig-ref-badge,
+.block-ref-badge,
+.fig-ref-badge *,
+.block-ref-badge * {
+  text-indent: 0 !important;
+}
+
+/* 显式顶格排版类（支持 LaTeX \noindent 语义，如紧随公式后的“式中：/其中：”） */
+.noindent,
+.sl-markdown-content p.noindent {
+  text-indent: 0 !important;
 }
 
 
@@ -209,6 +294,7 @@
 .fig-ref-badge, .block-ref-badge {
   display: inline-flex;
   align-items: baseline;
+  text-indent: 0 !important;
   text-decoration: underline !important;
   text-decoration-color: var(--sl-color-hairline) !important;
   text-underline-offset: 3px;
@@ -542,15 +628,18 @@
   margin-inline: auto !important;
 }
 
-/* 主版心框架：在桌面与超宽屏下控制总宽度，保持三栏比例和谐，杜绝右侧巨大虚空 */
+/* 主版心框架：在桌面与超宽屏下控制总宽度，保持三栏比例和谐，杜绝右侧巨大虚空与外溢 */
 .main-frame {
   width: 100%;
   max-width: 88rem !important; /* 约 1408px：容纳正文 768px + 右大纲 264px + 呼吸留白 */
   min-width: 0 !important;
+  box-sizing: border-box !important;
 }
 
 @media (min-width: 72rem) {
   .main-frame {
+    width: auto !important;
+    max-width: min(88rem, calc(100% - var(--sl-sidebar-width, 16rem))) !important;
     margin-left: var(--sl-sidebar-width, 16rem) !important;
     margin-right: auto !important;
     padding-inline-start: 0 !important;
@@ -562,6 +651,7 @@
   .main-frame {
     margin-left: auto !important;
     margin-right: auto !important;
+    max-width: 88rem !important;
   }
 }
 
@@ -1148,6 +1238,32 @@ starlight-menu-button {
 @media (min-width: 72rem) {
   .vp-local-nav {
     display: none !important;
+    align-items: center;
+    position: relative;
+    z-index: 9;
+    width: 36px;
+    height: 36px;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  html[data-sideload-active]:not([data-sideload-active='toc']):not([data-sideload-active='none']) .vp-local-nav,
+  body.exercise-sidebar-active .vp-local-nav {
+    display: flex !important;
+    margin-right: 4px;
+    opacity: 1;
+    pointer-events: auto;
+    animation: vpLocalNavFadeIn 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
+  }
+}
+
+@keyframes vpLocalNavFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 

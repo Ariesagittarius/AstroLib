@@ -32,6 +32,7 @@ import '@material/web/chips/filter-chip.js';
 import '@material/web/textfield/outlined-text-field.js';
 import '@material/web/radio/radio.js';
 import '@material/web/ripple/ripple.js';
+import '@material/web/slider/slider.js';
 import { initColorEngine, applyThemeColor } from './color-engine';
 export { initColorEngine, applyThemeColor };
 

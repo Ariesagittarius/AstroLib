@@ -1,45 +1,67 @@
 ---
-title: VitePress 主题与 CSS
-description: VitePress 主题覆盖层与 CSS 样式级联架构说明。
+title: Material You (Material 3) 主题与 CSS
+description: Material You (Material 3) 现代学术设计规范、动态色彩引擎与 CSS 样式级联架构说明。
 ---
 
-# VitePress 主题与 CSS
+# Material You (Material 3) 主题与 CSS
 
-AstroLib 重构了 Starlight 的默认皮肤，在视觉设计、布局、字体栈与组件交互上严格对齐 **VitePress 官方主题规范**。
+AstroLib 全面以 **Google Material You (Material Design 3 / M3)** 为核心设计语言，深度结合大学学术出版规范，打造兼具现代感、理性秩序与极简主义的数理学术阅读体验。
 
 ---
 
-## 样式级联顺序
+## 样式级联与加载架构
 
-在 `astro.config.mjs` 中，`customCss` 遵循严格的加载优先级顺序：
+在 `astro.config.mjs` 中，全站样式遵循严格的分层加载顺序：
 
 ```javascript
 const customCss = [
-  'katex/dist/katex.min.css',         // 1. KaTeX 基础排版样式
-  './src/styles/custom.css',          // 2. 基础结构与微调样式
-  './src/styles/vitepress-theme.css', // 3. VitePress 品牌覆盖层
-  './src/styles/fonts.css',           // 4. 思源字体定义 (覆盖 --sl-font)
+  'katex/dist/katex.min.css',              // 1. KaTeX 基础数学公式排版样式
+  './src/styles/tokens/layers.css',         // 2. 视窗层级规范 (--layer-*)
+  './src/styles/custom.css',               // 3. 全局基础结构与学术排版微调
+  './src/themes/material-you/theme.css',   // 4. Material You (M3) 官方核心规范层
+  './src/styles/fonts.css',                // 5. 思源与阅读字体栈定义
 ];
 ```
 
 > [!NOTE]
-> `vitepress-theme.css` 使用样式重写覆盖 Starlight 的内置选择器。若从配置文件中移去该样式声明，系统将优雅回退至 Starlight 默认视觉外观。
+> `src/themes/material-you/theme.css` 严格限定在 `html[data-site-theme='material-you']` 作用域内。默认情况下全站以 `material-you` 启动，并结合 `tokens.css` 与动态色彩系统统一派发设计令牌。
 
 ---
 
-## 主题变量映射规范
+## 动态色彩引擎与 Design Tokens
 
-系统支持亮色与暗色模式的自动与手动切换，对应色值由 `vitepress-theme.css` 定义：
+系统内建基于 Google 官方 `@material/material-color-utilities` 的动态色彩引擎（`src/themes/material-you/color-engine.ts`）：
 
-- **亮色模式 (Light)**：
-  - 背景色: `#ffffff`
-  - 侧边栏背景: `#f6f6f7`
-  - 边框分割线: `#e2e2e3`
-  - 品牌色 (Primary): `#3451b2` (Indigo)
-- **暗色模式 (Dark)**：
-  - 背景色: `#1b1b1f`
-  - 侧边栏背景: `#161618`
-  - 品牌色 (Primary): `#a8b1ff`
+- **HCT 色彩空间算法**：基于人类视觉感知的 Hue-Chroma-Tone 色彩模型，保证任何自选色彩在浅色与深色模式下均具备符合 WCAG AAA / AA 级的权威对比度；
+- **Chrome 4×4 经典色板与自选色**：在「快速设置」中提供 Google Chrome 官方色系预设，并支持原生颜色拾取器动态生成整套 M3 调色板；
+- **Tonal Surface 容器体系**：
+  - `surface-container-lowest`：底层卡片与微缩线框背景
+  - `surface-container-low`：章节翻页（Pager）与自测卡片底色
+  - `surface-container`：标准容器表面与 Chip 悬停态
+  - `surface-container-high`：设置面板与 Dialog 浮动弹窗
+  - `surface-container-highest`：输入框底色与强调容器
+
+---
+
+## 官方 `@material/web` 组件优先准则
+
+全站交互控件遵循“优先官方组件，坚决避免自造组件”原则：
+
+- **开关控件**：官方 `<md-switch>`，具备优雅微动效与像素级纯 CSS 回退；
+- **离散选项**：官方 `<md-chip-set>` 与 `<md-filter-chip>`，统一承载所有字体、标点风格及排版选项；
+- **用户输入**：官方 `<md-outlined-text-field>`，聚焦时以 `2px solid primary` 呈现标准轮廓；
+- **范围调节**：官方 `<md-slider>`，用于字阶微调与尺寸控制；
+- **模态窗口**：官方 `<md-dialog>`，统一挂载至全站根容器 `#astro-overlay-root`。
+
+---
+
+## 学术出版与极端减法结合
+
+在融入 Material 3 的同时，坚守学术出版第一性原则：
+
+- **内容即界面**：所有 UI 元素退居幕后，绝无彩色粗边框、药丸勋章或打卡管理杂讯；
+- **无边框 Tonal 卡片**：章节翻页与功能入口卡片均采用 `16px` 圆角、完全无 1px 细线描边的 Filled Tonal 样式，以温润留白衬托数学公式的纯粹与严肃；
+- **公式字体绝对保护**：KaTeX 独立行与行内公式拥有完全独立的字形度量与基线保护，严禁受外部 UI 样式干扰。
 
 ---
 
@@ -47,8 +69,7 @@ const customCss = [
 
 理科教辅与扫描图常以“白底黑线”呈现。在暗色模式下，系统在 `custom.css` 中应用了 GPU 硬件加速的**色彩保真智能反相系统**：
 
-- **智能明暗转换**：`invert(0.88)` 将白底映射为舒适深色（与 `#1b1b1f` 背景融为一体），黑线转为柔和浅白灰；
+- **智能明暗转换**：`invert(0.88)` 将白底映射为舒适深色（与 `#131314` 背景融为一体），黑线转为柔和浅白灰；
 - **色彩精确保真**：配合 `hue-rotate(180deg)` 旋转色相，确保红、蓝、绿等彩色标注与曲线完全不偏色；
 - **悬停原图透出**：暗色模式下鼠标悬停（hover）或轻触图片可平滑渐变恢复原始图样；
 - **排除规则**：实物照片等无需反色的插图，添加类名 `.no-dark-invert` 即可保留原生渲染。
-
