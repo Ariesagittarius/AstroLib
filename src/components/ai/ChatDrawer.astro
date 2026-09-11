@@ -1,107 +1,97 @@
 ---
-// 表现层：ChatDrawer 抽屉外壳与面板
+// 表现层：ChatDrawer 抽屉外壳与面板 (Material You M3 规范)
 ---
 
-<button class="ask-fab" type="button" aria-label="AI 书内问答" title="AI 书内问答 (Alt+A)">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/>
+<button class="ask-fab" type="button" aria-label="AI 书内智能问答" title="AI 书内问答 (Alt+A)">
+  <svg class="ask-fab-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+    <path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/>
   </svg>
   <span class="ask-fab-text">AI 问答</span>
 </button>
 
 <div class="ask-panel" role="dialog" aria-label="AI 书内智能问答">
+  <!-- 拖拽缩放手柄 (左边缘、上边缘与左上角) -->
+  <div class="ask-resize-handle ask-resize-nw" data-handle="nw" title="拖拽调整尺寸" aria-hidden="true"></div>
+  <div class="ask-resize-handle ask-resize-w" data-handle="w" title="拖拽调整宽度" aria-hidden="true"></div>
+  <div class="ask-resize-handle ask-resize-n" data-handle="n" title="拖拽调整高度" aria-hidden="true"></div>
+
   <header class="ask-head">
     <div class="ask-brand">
-      <span class="ask-brand-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 3a6 6 0 0 1 6 6c0 2.1-1 3.6-2.3 4.8-.6.5-1 1.2-1 2v.5M9 21h6"></path>
+      <span class="ask-brand-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+          <path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/>
         </svg>
       </span>
-      <div style="min-width:0;">
+      <div class="ask-title-group">
         <div class="ask-title">本书智能问答</div>
         <div class="ask-book"></div>
       </div>
     </div>
     <div class="ask-head-actions">
-      <button class="ask-icon-btn ask-history-btn" type="button" title="历史会话">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="9"></circle>
-          <path d="M12 7v5l3 2"></path>
+      <!-- 折叠/展开思考与工具过程 -->
+      <button class="ask-icon-btn ask-collapse-tools-btn" type="button" title="折叠前序过程" aria-label="折叠前序过程">
+        <svg class="icon-unfold-less" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+          <path d="M7.41 18.59 8.83 20 12 16.83 15.17 20l1.41-1.41L12 14l-4.59 4.59zm9.18-13.18L15.17 4 12 7.17 8.83 4 7.41 5.41 12 10l4.59-4.59z"/>
+        </svg>
+        <svg class="icon-unfold-more" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="display: none;">
+          <path d="m12 18.17 3.17-3.17 1.41 1.41L12 21l-4.58-4.59 1.41-1.41L12 18.17zm0-12.34L8.83 9 7.42 7.59 12 3l4.58 4.59L15.17 9 12 5.83z"/>
         </svg>
       </button>
-      <button class="ask-icon-btn ask-settings-btn" type="button" title="设置（模型 / API Key）">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      <!-- 新建会话 -->
+      <button class="ask-icon-btn ask-new-btn" type="button" title="新建会话" aria-label="新建会话">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
         </svg>
       </button>
+      <!-- 历史会话 -->
+      <button class="ask-icon-btn ask-history-btn" type="button" title="历史会话" aria-label="历史会话">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+          <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+        </svg>
+      </button>
+      <!-- 设置 (直接联动主站快速设置面板中的 AI 一项) -->
+      <button class="ask-icon-btn ask-settings-btn" type="button" title="AI 设置与偏好" aria-label="打开 AI 设置">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+          <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>
+        </svg>
+      </button>
+      <!-- 关闭 -->
       <button class="ask-icon-btn ask-close" type="button" title="关闭" aria-label="关闭">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-          <path d="M18 6 6 18M6 6l12 12"></path>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
         </svg>
       </button>
     </div>
   </header>
 
-  <div class="ask-tabs">
-    <div class="ask-tabs-list"></div>
-    <button class="ask-tab-add" type="button" title="新建会话" aria-label="新建会话">＋</button>
-  </div>
-
   <slot />
 
-  <div class="ask-settings">
-    <div class="ask-settings-head">设置</div>
-
-    <label for="ai-model">模型</label>
-    <div class="ask-row">
-      <select class="ask-model" id="ai-model"></select>
-      <button class="ask-custom-toggle" type="button" title="新增自定义模型">＋</button>
-    </div>
-    <div class="ask-custom-form" hidden>
-      <input class="ask-custom-id" type="text" placeholder="模型 id（如 my-model）" autocomplete="off" />
-      <input class="ask-custom-label" type="text" placeholder="显示名" autocomplete="off" />
-      <input class="ask-custom-ep" type="text" placeholder="OpenAI 兼容端点 URL" autocomplete="off" />
-      <button class="ask-custom-add" type="button">添加自定义模型</button>
-    </div>
-
-    <label for="ai-key">该模型 API Key（只存本机浏览器）</label>
-    <input type="password" class="ask-key" id="ai-key" placeholder="sk-..." autocomplete="off" />
-
-    <label for="ai-ep">端点（可覆盖该模型默认）</label>
-    <input type="text" class="ask-endpoint" id="ai-ep" placeholder="https://.../v1/chat/completions" autocomplete="off" />
-
-    <label for="ai-mode">回答方式</label>
-    <select class="ask-mode" id="ai-mode">
-      <option value="retrieve">检索本书（默认，带来源引用）</option>
-      <option value="discussion">深度讨论（不默认检索，AI 按需查原文）</option>
-    </select>
-    <div class="ask-settings-note" data-mode-note>「检索本书」总是把命中的 topK 片段注入答案；「深度讨论」不注入片段，AI 基于理解与上文深入讲解，需要原文时才按需调用检索工具。</div>
-
-    <label for="ai-topk">检索返回片段 topK</label>
-    <input type="number" class="ask-topk" id="ai-topk" min="1" max="20" step="1" />
-
-    <label for="ai-maxctx">上下文总字符上限（-1 不限制）</label>
-    <input type="number" class="ask-maxctx" id="ai-maxctx" min="-1" step="500" />
-
-    <label for="ai-maxtok">回答最大 token（-1 不限制）</label>
-    <input type="number" class="ask-maxtok" id="ai-maxtok" min="-1" step="64" />
-
-    <label for="ai-src-open">AI 回复与来源链接跳转方式</label>
-    <select class="ask-src-open" id="ai-src-open">
-      <option value="new">新窗口打开（target="_blank"）</option>
-      <option value="same">本页跳转（target="_self"）</option>
-    </select>
-
-    <div class="ask-settings-note">模型、API Key 与端点仅保存在本机浏览器 localStorage，与全站偏好设置和习题推导统一实时同步。</div>
-  </div>
-
-  <div class="ask-history">
+  <!-- 历史会话抽屉面板 (Official M3 List 规范) -->
+  <div class="ask-history" role="region" aria-label="历史会话列表">
     <div class="ask-history-head">
       <span class="ask-history-title">历史会话</span>
-      <button class="ask-history-new" type="button">＋ 新会话</button>
+      <div class="ask-history-actions">
+        <button class="ask-history-new-btn" type="button" title="新建会话">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+          <span>新建会话</span>
+        </button>
+        <button class="ask-icon-btn ask-history-close-btn" type="button" title="收起历史列表">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
     </div>
-    <div class="ask-history-list"></div>
-    <div class="ask-history-empty">暂无历史</div>
+    <div class="ask-history-body">
+      <md-list class="ask-history-list"></md-list>
+      <div class="ask-history-empty">
+        <svg class="ask-history-empty-icon" viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+          <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+        </svg>
+        <span>暂无历史会话记录</span>
+      </div>
+    </div>
   </div>
 </div>

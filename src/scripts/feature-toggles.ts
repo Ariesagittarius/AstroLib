@@ -45,16 +45,31 @@ import {
 } from '../themes/material-you/color-engine';
 import { enableFormulaActions, disableFormulaActions } from './formula/ui';
 import {
+  getAllAiProviders,
+  getAiProvider,
+  getActiveAiProviderId,
+  saveAiActiveProvider,
+  getProviderApiKey,
+  saveProviderApiKey,
+  getProviderEndpoint,
+  saveProviderEndpoint,
+  getModelsByProvider,
   getAllAiModels,
   getActiveAiModelId,
   saveAiActiveModel,
-  getAiApiKey,
-  saveAiApiKey,
-  getAiEndpoint,
-  saveAiEndpoint,
   addCustomAiModel,
   onAiConfigChange,
   testAiConnection,
+  getAiParams,
+  saveAiParams,
+  getAiAnswerMode,
+  saveAiAnswerMode,
+  getAiSourceOpen,
+  saveAiSourceOpen,
+  getAiPanelDimensions,
+  saveAiPanelDimensions,
+  getAiAutoCollapsePreceding,
+  saveAiAutoCollapsePreceding,
 } from '../ai/ai-config';
 
 /** 运行时开关存储键 */
@@ -89,6 +104,167 @@ export function savePrewarmPref(val: number): void {
     }
     window.dispatchEvent(new CustomEvent('prewarm:config-change', { detail: { pages: val } }));
   } catch {}
+}
+
+/** 段落首行缩进存储键：'true' (开启，默认) | 'false' (关闭) */
+export const TYPOGRAPHY_INDENT_KEY = 'astrolib_typography_indent';
+
+export function loadParagraphIndent(): boolean {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const val = localStorage.getItem(TYPOGRAPHY_INDENT_KEY);
+      if (val === 'false') return false;
+    }
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+export function saveParagraphIndent(enabled: boolean): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(TYPOGRAPHY_INDENT_KEY, String(enabled));
+    }
+  } catch {}
+  applyParagraphIndent(enabled);
+}
+
+export function applyParagraphIndent(enabled: boolean = loadParagraphIndent()): void {
+  if (typeof document === 'undefined') return;
+  document.documentElement.dataset.paragraphIndent = enabled ? 'true' : 'false';
+}
+
+/** 标点风格存储键：'dot' (数理圆点 ．，默认) | 'circle' (标准句号 。) */
+export const PUNCT_STYLE_KEY = 'astrolib_punct_style';
+export type PunctStyle = 'dot' | 'circle';
+
+export function loadPunctStyle(): PunctStyle {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const val = localStorage.getItem(PUNCT_STYLE_KEY);
+      if (val === 'circle') return 'circle';
+    }
+    return 'dot';
+  } catch {
+    return 'dot';
+  }
+}
+
+export function savePunctStyle(style: PunctStyle): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(PUNCT_STYLE_KEY, style);
+    }
+  } catch {}
+  applyPunctStyle(style);
+}
+
+/** 递归替换正文纯文本节点中的句末标点（避开代码块、公式与徽章） */
+export function replaceBodyFullStops(targetStyle: PunctStyle): void {
+  if (typeof document === 'undefined') return;
+  const root = document.querySelector('.sl-markdown-content');
+  if (!root) return;
+
+  const fromChar = targetStyle === 'circle' ? '．' : '。';
+  const toChar = targetStyle === 'circle' ? '。' : '．';
+
+  const walker = document.createTreeWalker(
+    root,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode(node) {
+        const parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_SKIP;
+        if (parent.closest('pre, code, .katex, .katex-display, script, style, .fig-ref-badge, .block-ref-badge')) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    }
+  );
+
+  let current = walker.nextNode();
+  while (current) {
+    if (current.nodeValue && current.nodeValue.includes(fromChar)) {
+      current.nodeValue = current.nodeValue.replaceAll(fromChar, toChar);
+    }
+    current = walker.nextNode();
+  }
+}
+
+export function applyPunctStyle(style: PunctStyle = loadPunctStyle()): void {
+  if (typeof document === 'undefined') return;
+  document.documentElement.dataset.punctStyle = style;
+  replaceBodyFullStops(style);
+}
+
+/** 正文字号存储键：'14' ~ '22'，默认 16 (px) */
+export const FONT_SIZE_KEY = 'astrolib_font_size';
+export const DEFAULT_FONT_SIZE = 16;
+export const MIN_FONT_SIZE = 14;
+export const MAX_FONT_SIZE = 22;
+
+export function loadFontSize(): number {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const val = parseInt(localStorage.getItem(FONT_SIZE_KEY) || '', 10);
+      if (!isNaN(val) && val >= MIN_FONT_SIZE && val <= MAX_FONT_SIZE) {
+        return val;
+      }
+    }
+    return DEFAULT_FONT_SIZE;
+  } catch {
+    return DEFAULT_FONT_SIZE;
+  }
+}
+
+/** 将字号像素值换算为 pt 磅/点字体单位（以 16px = 12pt 为基准，1px = 0.75pt） */
+export function formatFontSizePt(px: number): string {
+  const pt = px * 0.75;
+  return `${parseFloat(pt.toFixed(2))} pt`;
+}
+
+/** 兼容旧引用：保留 formatFontSizeRem 别名 */
+export function formatFontSizeRem(px: number): string {
+  return formatFontSizePt(px);
+}
+
+export function saveFontSize(val: number): void {
+  const clamped = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, Math.round(val)));
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(FONT_SIZE_KEY, String(clamped));
+    }
+  } catch {}
+  applyFontSize(clamped);
+}
+
+export function applyFontSize(val: number = loadFontSize()): void {
+  if (typeof document === 'undefined') return;
+  const pt = val * 0.75;
+  document.documentElement.style.setProperty('--academic-font-size-body', `${parseFloat(pt.toFixed(2))}pt`);
+  syncAllFontSizeSliders(val);
+}
+
+/** 同步当前所有实例的字号调节滑块及数值角标 (支持 md-chip / 元素) */
+export function syncAllFontSizeSliders(val: number = loadFontSize()): void {
+  if (typeof document === 'undefined') return;
+  const ptText = formatFontSizePt(val);
+  document.querySelectorAll<any>('[data-font-size-val]').forEach((badge) => {
+    if ('label' in badge) {
+      badge.label = ptText;
+    }
+    badge.textContent = ptText;
+    badge.setAttribute('label', ptText);
+  });
+
+  document.querySelectorAll<any>('[data-font-size-slider]').forEach((slider) => {
+    if (slider.value !== val) {
+      slider.value = val;
+    }
+    slider.valueLabel = ptText;
+  });
 }
 
 /** 亮/暗/设备外观偏好存储键：'light' | 'dark' | '' (表示 auto 跟随系统) */
@@ -244,6 +420,11 @@ export function resetToggles(): void {
   // 重置章节预加载配置为全书拉取 (-1)
   savePrewarmPref(DEFAULT_PREWARM_PAGES);
 
+  // 重置排版偏好（默认开启段前空两格，数理圆点，16px 字号）
+  saveParagraphIndent(true);
+  savePunctStyle('dot');
+  saveFontSize(DEFAULT_FONT_SIZE);
+
   syncAllCheckboxes();
   syncAllThemeModes();
   syncAllFontButtons();
@@ -251,36 +432,70 @@ export function resetToggles(): void {
   syncAllThemeColors();
   syncAllPrewarmButtons();
   syncAllAiSettings();
+  syncAllPunctChips();
+  syncAllFontSizeSliders();
   apply();
 }
 
-/** 同步当前所有实例的 AI 模型与 Key 配置状态 */
+/** 同步当前所有实例的 AI 模型、Key 与问答偏好配置状态 */
 export function syncAllAiSettings(): void {
-  const models = getAllAiModels();
-  const activeId = getActiveAiModelId();
-  const key = getAiApiKey(activeId);
-  const endpoint = getAiEndpoint(activeId);
+  const activeProviderId = getActiveAiProviderId();
+  const provider = getAiProvider(activeProviderId);
+  const providerModels = getModelsByProvider(activeProviderId);
+  const activeModelId = getActiveAiModelId();
+  const key = getProviderApiKey(activeProviderId);
+  const endpoint = getProviderEndpoint(activeProviderId);
+  const params = getAiParams();
+  const mode = getAiAnswerMode();
+  const srcOpen = getAiSourceOpen();
+  const dimensions = getAiPanelDimensions();
 
   document.querySelectorAll('.ft-panel, starlight-feature-toggles').forEach((root) => {
-    const select = root.querySelector<HTMLSelectElement>('.ft-ai-model-select');
-    if (select) {
-      const currentVal = select.value || activeId;
-      select.innerHTML = models
-        .map((m) => `<option value="${m.id}" ${m.id === activeId ? 'selected' : ''}>${m.label}${m.isCustom ? ' (自定义)' : ''}</option>`)
-        .join('');
-      select.value = activeId;
+    // 1. 同步提供商 Filter Chips
+    root.querySelectorAll<any>('.ft-ai-provider-chip-set md-filter-chip').forEach((chip) => {
+      const pId = chip.getAttribute('data-provider-id');
+      const isSelected = pId === activeProviderId;
+      chip.selected = isSelected;
+      chip.classList.toggle('active', isSelected);
+    });
+
+    // 2. 同步提供商 Badge 标签
+    const providerBadge = root.querySelector<HTMLElement>('.ft-ai-provider-badge');
+    if (providerBadge) {
+      providerBadge.textContent = provider.label;
     }
 
+    // 3. 同步模型下拉列表（联动当前提供商）
+    const select = root.querySelector<HTMLSelectElement>('.ft-ai-model-select');
+    if (select) {
+      if (providerModels.length > 0) {
+        select.innerHTML = providerModels
+          .map(
+            (m) =>
+              `<option value="${m.id}" ${m.id === activeModelId ? 'selected' : ''} title="${m.desc || ''}">${m.label}${m.isCustom ? ' (自定义)' : ''}</option>`
+          )
+          .join('');
+        select.value = activeModelId;
+        select.disabled = false;
+      } else {
+        select.innerHTML = `<option value="">暂无模型 (点击上方添加)</option>`;
+        select.disabled = true;
+      }
+    }
+
+    // 4. 同步 API Key 输入框与占位符
     const keyInput = root.querySelector<any>('.ft-ai-key-input');
     if (keyInput && !keyInput.matches?.(':focus-within') && document.activeElement !== keyInput) {
       keyInput.value = key;
       keyInput.type = 'password';
+      keyInput.placeholder = provider.keyPlaceholder || '填写 API Key';
       const revealBtn = root.querySelector<any>('.ft-ai-key-reveal');
       if (revealBtn) {
         revealBtn.selected = false;
       }
     }
 
+    // 5. 同步 Key 配置状态 Chip
     const keyBadge = root.querySelector<HTMLElement>('.ft-ai-key-badge, .ft-ai-key-chip');
     if (keyBadge) {
       const hasKey = !!key.trim();
@@ -289,10 +504,67 @@ export function syncAllAiSettings(): void {
       keyBadge.classList.toggle('configured', hasKey);
     }
 
+    // 6. 同步端点输入框与占位符
     const endpointInput = root.querySelector<any>('.ft-ai-endpoint-input');
     if (endpointInput && !endpointInput.matches?.(':focus-within') && document.activeElement !== endpointInput) {
       endpointInput.value = endpoint;
+      endpointInput.placeholder = provider.defaultEndpoint || 'OpenAI 兼容端点 URL';
     }
+
+    // 同步回答方式 Chips
+    root.querySelectorAll<any>('.ft-ai-mode-chip-set md-filter-chip').forEach((chip) => {
+      const chipVal = chip.getAttribute('data-ai-mode-val');
+      const isSelected = chipVal === mode;
+      chip.selected = isSelected;
+      chip.classList.toggle('active', isSelected);
+    });
+
+    // 同步来源链接跳转 Chips
+    root.querySelectorAll<any>('.ft-ai-src-chip-set md-filter-chip').forEach((chip) => {
+      const chipVal = chip.getAttribute('data-ai-src-val');
+      const isSelected = chipVal === srcOpen;
+      chip.selected = isSelected;
+      chip.classList.toggle('active', isSelected);
+    });
+
+    // 同步 Top K 滑块与数值 Chip
+    const topkSlider = root.querySelector<any>('.ft-ai-topk-slider');
+    if (topkSlider) {
+      topkSlider.value = params.topK;
+    }
+    const topkChip = root.querySelector<any>('.ft-ai-topk-val-chip');
+    if (topkChip) {
+      topkChip.label = `${params.topK} 条`;
+    }
+
+    // 同步上下文与 Token 输入框
+    const maxCtxInput = root.querySelector<any>('.ft-ai-maxctx-input');
+    if (maxCtxInput && !maxCtxInput.matches?.(':focus-within') && document.activeElement !== maxCtxInput) {
+      maxCtxInput.value = String(params.maxContextChars);
+    }
+    const maxTokInput = root.querySelector<any>('.ft-ai-maxtok-input');
+    if (maxTokInput && !maxTokInput.matches?.(':focus-within') && document.activeElement !== maxTokInput) {
+      maxTokInput.value = String(params.maxTokens);
+    }
+
+    // 同步自动折叠前序过程开关
+    const collapseToggle = root.querySelector<HTMLInputElement>('.ft-ai-collapse-preceding-toggle');
+    if (collapseToggle) {
+      collapseToggle.checked = getAiAutoCollapsePreceding();
+    }
+
+    // 同步窗口宽度预设 Chips
+    root.querySelectorAll<any>('.ft-ai-win-chip-set md-filter-chip').forEach((chip) => {
+      const chipVal = chip.getAttribute('data-ai-win-val');
+      const isSelected = chipVal === dimensions.preset;
+      chip.selected = isSelected;
+      chip.classList.toggle('active', isSelected);
+      if (chipVal === 'custom') {
+        const custW = dimensions.customWidth || dimensions.width;
+        chip.label = `自定义 (${custW}px)`;
+        chip.title = `自定义尺寸 (${custW}px × ${dimensions.customHeight || dimensions.height}px)`;
+      }
+    });
   });
 }
 
@@ -389,6 +661,33 @@ function syncAllCheckboxes(): void {
       sw.selected = loadThemeTransition() === 'animate';
       sw.disabled = !isEnabled('theme');
     });
+
+  // 同步段前空两格开关
+  document
+    .querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-typography-indent]')
+    .forEach((cb) => {
+      cb.checked = loadParagraphIndent();
+    });
+
+  document
+    .querySelectorAll<any>('md-switch[data-typography-indent]')
+    .forEach((sw) => {
+      sw.selected = loadParagraphIndent();
+    });
+}
+
+/** 同步当前所有实例的数理标点风格 Chips */
+export function syncAllPunctChips(): void {
+  const current = loadPunctStyle();
+  document.querySelectorAll<any>('.ft-panel .ft-punct-chip, starlight-feature-toggles .ft-punct-chip').forEach((chip) => {
+    const val = chip.getAttribute('data-punct-val');
+    const active = val === current;
+    chip.classList.toggle('active', active);
+    chip.setAttribute('aria-selected', String(active));
+    if ('selected' in chip) {
+      chip.selected = active;
+    }
+  });
 }
 
 /** 同步当前所有实例的字体高亮按钮与官方 Chip 状态 */
@@ -518,6 +817,8 @@ class StarlightFeatureToggles extends HTMLElement {
     syncAllThemeColors();
     syncAllPrewarmButtons();
     syncAllAiSettings();
+    syncAllPunctChips();
+    syncAllFontSizeSliders();
     apply();
   }
 
@@ -721,6 +1022,56 @@ class StarlightFeatureToggles extends HTMLElement {
         this.closePanel();
       });
     });
+
+    // 段前空两格开关
+    root.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-typography-indent]').forEach((cb) => {
+      cb.checked = loadParagraphIndent();
+      cb.addEventListener('change', () => {
+        saveParagraphIndent(cb.checked);
+        syncAllCheckboxes();
+      });
+    });
+
+    root.querySelectorAll<any>('md-switch[data-typography-indent]').forEach((sw) => {
+      sw.selected = loadParagraphIndent();
+      sw.addEventListener('change', () => {
+        saveParagraphIndent(sw.selected);
+        syncAllCheckboxes();
+      });
+    });
+
+    // 标点风格切换 Chips
+    root.querySelectorAll<HTMLElement>('.ft-punct-chip').forEach((chip) => {
+      const handleSelect = (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const val = chip.getAttribute('data-punct-val') as PunctStyle;
+        if (val) {
+          savePunctStyle(val);
+          syncAllPunctChips();
+        }
+      };
+      chip.addEventListener('click', handleSelect);
+      chip.addEventListener('change', handleSelect);
+    });
+
+    // 正文字号调节滑块 (md-slider)
+    root.querySelectorAll<any>('[data-font-size-slider]').forEach((slider) => {
+      const initVal = loadFontSize();
+      slider.value = initVal;
+      slider.valueLabel = formatFontSizePt(initVal);
+
+      const handleInput = () => {
+        const val = typeof slider.value === 'number' ? slider.value : parseInt(slider.value, 10);
+        if (!isNaN(val)) {
+          slider.valueLabel = formatFontSizePt(val);
+          saveFontSize(val);
+        }
+      };
+
+      slider.addEventListener('input', handleInput);
+      slider.addEventListener('change', handleInput);
+    });
   }
 
   bindFonts() {
@@ -751,6 +1102,9 @@ class StarlightFeatureToggles extends HTMLElement {
       chip.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        if (chip.disabled || chip.hasAttribute('disabled') || chip.classList.contains('is-disabled')) {
+          return;
+        }
         const targetTheme = parseSiteTheme(chip.getAttribute('data-site-theme-val'));
         setSiteTheme(targetTheme);
         syncAllThemeChips();
@@ -884,19 +1238,36 @@ class StarlightFeatureToggles extends HTMLElement {
       setTestStatus('idle');
     };
 
+    // 绑定提供商 Chips 切换
+    const providerChips = root.querySelectorAll<any>('.ft-ai-provider-chip-set md-filter-chip');
+    providerChips.forEach((chip) => {
+      chip.addEventListener('click', (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const pId = chip.getAttribute('data-provider-id') as any;
+        if (pId) {
+          saveAiActiveProvider(pId);
+          clearTestStatus();
+          syncAllAiSettings();
+        }
+      });
+    });
+
     if (modelSelect) {
       modelSelect.addEventListener('change', () => {
         const nextId = modelSelect.value;
-        saveAiActiveModel(nextId);
-        clearTestStatus();
-        syncAllAiSettings();
+        if (nextId) {
+          saveAiActiveModel(nextId);
+          clearTestStatus();
+          syncAllAiSettings();
+        }
       });
     }
 
     if (keyInput) {
       keyInput.addEventListener('input', () => {
-        const activeId = getActiveAiModelId();
-        saveAiApiKey(activeId, keyInput.value.trim(), true);
+        const activeProvider = getActiveAiProviderId();
+        saveProviderApiKey(activeProvider, keyInput.value.trim());
         clearTestStatus();
         syncAllAiSettings();
       });
@@ -904,8 +1275,8 @@ class StarlightFeatureToggles extends HTMLElement {
 
     if (endpointInput) {
       const handleEndpoint = () => {
-        const activeId = getActiveAiModelId();
-        saveAiEndpoint(activeId, endpointInput.value.trim());
+        const activeProvider = getActiveAiProviderId();
+        saveProviderEndpoint(activeProvider, endpointInput.value.trim());
         clearTestStatus();
         syncAllAiSettings();
       };
@@ -938,10 +1309,11 @@ class StarlightFeatureToggles extends HTMLElement {
         setTestStatus('loading', '测试中...');
 
         try {
+          const activeProvider = getActiveAiProviderId();
           const activeId = getActiveAiModelId();
           const keyVal = keyInput ? keyInput.value.trim() : undefined;
           const epVal = endpointInput ? endpointInput.value.trim() : undefined;
-          const result = await testAiConnection(activeId, keyVal, epVal);
+          const result = await testAiConnection(activeId, keyVal, epVal, activeProvider);
 
           setTestStatus(result.ok ? 'ok' : 'err', result.message);
         } catch (err: unknown) {
@@ -994,6 +1366,115 @@ class StarlightFeatureToggles extends HTMLElement {
         syncAllAiSettings();
       });
     }
+
+    // 绑定回答方式 Chips
+    root.querySelectorAll<any>('.ft-ai-mode-chip-set md-filter-chip').forEach((chip) => {
+      chip.addEventListener('click', (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const modeVal = chip.getAttribute('data-ai-mode-val') as 'retrieve' | 'discussion';
+        if (modeVal) {
+          saveAiAnswerMode(modeVal);
+          syncAllAiSettings();
+        }
+      });
+    });
+
+    // 绑定来源跳转方式 Chips
+    root.querySelectorAll<any>('.ft-ai-src-chip-set md-filter-chip').forEach((chip) => {
+      chip.addEventListener('click', (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const srcVal = chip.getAttribute('data-ai-src-val') as 'new' | 'same';
+        if (srcVal) {
+          saveAiSourceOpen(srcVal);
+          syncAllAiSettings();
+        }
+      });
+    });
+
+    // 绑定 Top K 滑块
+    const topkSlider = root.querySelector<any>('.ft-ai-topk-slider');
+    if (topkSlider) {
+      const handleTopK = () => {
+        const val = typeof topkSlider.value === 'number' ? topkSlider.value : parseInt(topkSlider.value, 10);
+        if (!isNaN(val) && val >= 1) {
+          saveAiParams({ topK: val });
+          const topkChip = root.querySelector<any>('.ft-ai-topk-val-chip');
+          if (topkChip) topkChip.label = `${val} 条`;
+        }
+      };
+      topkSlider.addEventListener('input', handleTopK);
+      topkSlider.addEventListener('change', handleTopK);
+    }
+
+    // 绑定上下文上限与单次 Max Token
+    const maxCtxInput = root.querySelector<any>('.ft-ai-maxctx-input');
+    if (maxCtxInput) {
+      maxCtxInput.addEventListener('change', () => {
+        const val = parseInt(maxCtxInput.value, 10);
+        if (!isNaN(val)) saveAiParams({ maxContextChars: val });
+      });
+    }
+    const maxTokInput = root.querySelector<any>('.ft-ai-maxtok-input');
+    if (maxTokInput) {
+      maxTokInput.addEventListener('change', () => {
+        const val = parseInt(maxTokInput.value, 10);
+        if (!isNaN(val)) saveAiParams({ maxTokens: val });
+      });
+    }
+
+    // 绑定问答窗口宽度预设 Chips
+    root.querySelectorAll<any>('.ft-ai-win-chip-set md-filter-chip').forEach((chip) => {
+      chip.addEventListener('click', (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const preset = chip.getAttribute('data-ai-win-val');
+        const dims = getAiPanelDimensions();
+        let width = 560;
+        let height = dims.height;
+        if (preset === 'compact') {
+          width = 460;
+        } else if (preset === 'wide') {
+          width = 720;
+        } else if (preset === 'custom') {
+          width = dims.customWidth || dims.width || 560;
+          height = dims.customHeight || dims.height || 680;
+        }
+        saveAiPanelDimensions({ width, height, preset: preset || 'standard' });
+        syncAllAiSettings();
+      });
+    });
+
+    // 绑定自动折叠前序过程开关
+    const collapseToggle = root.querySelector<HTMLInputElement>('.ft-ai-collapse-preceding-toggle');
+    if (collapseToggle) {
+      collapseToggle.addEventListener('change', () => {
+        saveAiAutoCollapsePreceding(collapseToggle.checked);
+      });
+    }
+
+    // 监听全局打开设置并聚焦指定 section 事件
+    if (!(window as any).__astrolibOpenSettingsBound) {
+      (window as any).__astrolibOpenSettingsBound = true;
+      window.addEventListener('astrolib:open-settings', (e: any) => {
+        const target = document.querySelector<StarlightFeatureToggles>('starlight-feature-toggles');
+        if (target) {
+          target.openPanel();
+          if (e?.detail?.section === 'ai') {
+            const panel = target.panel || target;
+            const aiSec = panel.querySelector('.ft-section:has(.ft-ai-block), .ft-section:has([data-feature-id="aiAsk"])') as HTMLElement;
+            if (aiSec) {
+              setTimeout(() => {
+                aiSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const advDetails = aiSec.querySelector<HTMLDetailsElement>('[data-ai-advanced-details]');
+                if (advDetails) advDetails.open = true;
+              }, 120);
+            }
+          }
+        }
+      });
+    }
   }
 
   openPanel() {
@@ -1018,6 +1499,7 @@ class StarlightFeatureToggles extends HTMLElement {
     this.panel?.setAttribute('aria-hidden', 'false');
     this.querySelector<HTMLButtonElement>('.ft-toggle-btn')?.setAttribute('aria-expanded', 'true');
     document.documentElement.classList.add('ft-settings-open');
+    document.body.classList.add('ft-settings-open');
 
     if (window.matchMedia('(max-width: 49.999rem)').matches) {
       document.documentElement.classList.add('ft-scroll-lock');
@@ -1036,12 +1518,15 @@ class StarlightFeatureToggles extends HTMLElement {
     syncAllThemeChips();
     syncAllPrewarmButtons();
     syncAllAiSettings();
+    syncAllPunctChips();
+    syncAllFontSizeSliders();
   }
 
   closePanel() {
     const wasOpen = this.classList.contains('ft-is-open') || this.panel?.classList.contains('ft-is-open');
     this.classList.remove('ft-is-open');
     document.documentElement.classList.remove('ft-settings-open');
+    document.body.classList.remove('ft-settings-open');
     if (this.panel) {
       this.panel.classList.remove('ft-is-open');
       this.panel.classList.remove('ft-is-dragging');
@@ -1072,6 +1557,9 @@ export function initFeatureToggles(): void {
   bindDocument();
   loadToggles();
   applyFontPref(loadFontPref());
+  applyParagraphIndent();
+  applyPunctStyle();
+  applyFontSize();
 
   if (!customElements.get('starlight-feature-toggles')) {
     customElements.define('starlight-feature-toggles', StarlightFeatureToggles);
@@ -1079,6 +1567,8 @@ export function initFeatureToggles(): void {
 
   apply();
   syncAllThemeModes();
+  syncAllPunctChips();
+  syncAllFontSizeSliders();
 
   onAiConfigChange(() => {
     syncAllAiSettings();
@@ -1094,6 +1584,9 @@ export function initFeatureToggles(): void {
 
   document.addEventListener('astro:page-load', () => {
     apply();
+    applyParagraphIndent();
+    applyPunctStyle();
+    applyFontSize();
     syncAllCheckboxes();
     syncAllThemeModes();
     syncAllFontButtons();
@@ -1101,6 +1594,8 @@ export function initFeatureToggles(): void {
     syncAllThemeColors();
     syncAllPrewarmButtons();
     syncAllAiSettings();
+    syncAllPunctChips();
+    syncAllFontSizeSliders();
   });
 
   window.addEventListener('site-theme-change', () => {
@@ -1124,6 +1619,15 @@ export function initFeatureToggles(): void {
       syncAllThemeColors();
     } else if (e.key === PREWARM_PAGES_KEY) {
       syncAllPrewarmButtons();
+    } else if (e.key === TYPOGRAPHY_INDENT_KEY) {
+      applyParagraphIndent();
+      syncAllCheckboxes();
+    } else if (e.key === PUNCT_STYLE_KEY) {
+      applyPunctStyle();
+      syncAllPunctChips();
+    } else if (e.key === FONT_SIZE_KEY) {
+      applyFontSize();
+      syncAllFontSizeSliders();
     } else if (e.key?.startsWith('astrolib_ai_') || e.key?.startsWith('dsh-aiask-')) {
       syncAllAiSettings();
     }

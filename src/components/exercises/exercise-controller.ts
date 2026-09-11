@@ -1,5 +1,6 @@
 import { streamChat } from '../../ai/llm.mjs';
 import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
+import { StreamThrottleScheduler } from './stream-scheduler';
 import { exerciseDb, type CommunityAiSolution, type ExerciseFeedbackPayload } from '../../utils/exercise-db/exercise-db-client';
 import type {
   SlimQuestionItem,
@@ -31,6 +32,7 @@ import {
   getActiveAiModel,
   onAiConfigChange,
 } from '../../ai/ai-config';
+import { parseAiError } from '../../ai/error-handler';
 
 function sanitizeLatexString(val: string): string {
   if (typeof val !== 'string') return '';
@@ -87,6 +89,18 @@ function renderSolutionMarkdown(md: string, isStreaming = false): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+
+  // 前置容错归一化：将可能漏网的 LaTeX 原生界定符统一转换为标准 KaTeX Markdown 语法
+  if (isStreaming) {
+    const openBrackets = (safe.match(/\\\[/g) || []).length;
+    const closeBrackets = (safe.match(/\\\]/g) || []).length;
+    if (openBrackets > closeBrackets) {
+      safe += '\n\\]';
+    }
+  }
+
+  safe = safe.replace(/\\\[([\s\S]*?)\\\]/g, (_m, inner) => `\n$$\n${inner.trim()}\n$$\n`);
+  safe = safe.replace(/\\\(([\s\S]*?)\\\)/g, (_m, inner) => `$${inner.trim()}$`);
 
   const mathBlocks: string[] = [];
 
@@ -324,6 +338,7 @@ class ExerciseCenterController {
   private aiSolutions = new Map<string, string>();
   private aiControllers = new Map<string, AbortController>();
   private aiStreamActive = new Set<string>();
+  private aiSchedulers = new Map<string, StreamThrottleScheduler>();
 
   private activeFeedbackQuestion: SlimQuestionItem | null = null;
   private activeEditorQuestion: SlimQuestionItem | null = null;
@@ -1718,13 +1733,12 @@ class ExerciseCenterController {
     if (retryBtn) retryBtn.classList.add('hidden');
     if (statusEl) statusEl.textContent = '正在推导...';
 
-    const prompt = `你是一位严谨的工科数学分析/微积分权威教授。请对以下题目给出极为规范、详尽的推导过程与标准解法。
-要求：
-1. 采用规范的 Markdown 与 KaTeX 格式（行内公式用 $...$，独立块公式用 $$...$$）；
-2. 给出规范分步推导演算过程与最终标准答案（用box框住）；
-3. 推导严谨、无跳步，字迹清晰。
-注意：
-不需要输出任何额外格式信息。
+    const prompt = `请对以下题目给出极为规范、详尽的推导过程与标准解法。
+【输出排版强制要求】：
+1. 严格使用标准 Markdown 与 KaTeX 规范：行内公式一律用 $...$，独立居中公式一律用 $$...$$；
+2. 绝对严禁输出任何 \\[、\\]、\\(、\\) 界定符！
+3. 给出规范分步推导演算过程与最终标准答案，步骤严谨无跳步。
+
 【题目信息】
 来源：${q.source || `${q.paper_title}（原卷第 ${q.paper_q_num} 题）`}
 小节：${q.sec_title || q.sec}
@@ -1740,9 +1754,35 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     this.aiStreamActive.add(qid);
 
     let accumulatedMd = '';
+    let accumulatedReasoning = '';
     this.activeSolutionVersions.set(qid, 'local');
 
-    const systemPrompt = '你是专注理科高精数学与物理推导的学术导师，严格输出规范 KaTeX 格式数学公式（行内公式用 $...$，独立块公式用 $$...$$）。严谨细致、推导演算分步无跳步。';
+    // 初始化流式批处理节流调度器（100ms 窗口）
+    const scheduler = new StreamThrottleScheduler(() => {
+      this.aiSolutions.set(qid, accumulatedMd);
+      if (contentEl) {
+        if (!accumulatedMd && accumulatedReasoning) {
+          contentEl.innerHTML = '<div class="ex-ai-placeholder">正在深度梳理推导演算与思考过程...</div>';
+        } else if (accumulatedMd) {
+          contentEl.innerHTML = renderSolutionMarkdown(accumulatedMd, true);
+          try {
+            renderMathInElement(contentEl, KATEX_OPTIONS);
+          } catch (e) {}
+        }
+      }
+    }, 100);
+    this.aiSchedulers.set(qid, scheduler);
+
+    const systemPrompt = `你是专注理科高精数学与物理推导的学术导师，以严谨细致、无跳步分步推导著称。
+【严格数学排版规范——必须100%遵从】：
+1. 绝对严禁使用任何 LaTeX 原生界定符 \\[ ... \\] 或 \\( ... \\)，绝不允许输出类似 "\\[" 或 "\\]" 单独成行的标记！
+2. 行内数学公式：必须且只能使用单个美元符号包裹，例如 $f(x) = 2x^2 + 3y^2$、$P_0(x_0, y_0, z_0)$。
+3. 独立块级居中公式：必须且只能使用双美元符号包裹，前后换行单独成段，例如：
+$$
+z_0 = 2x_0^2 + 3y_0^2
+$$
+4. 凡是多行推导或方程组，必须在同一个 $$ ... $$ 块内使用 \\begin{aligned} ... \\end{aligned} 组织，绝不可拆分成多个单独的公式块或输出 \\[！
+5. 所有数学符号、变量、几何点（如 $P_0$、\\lambda）、方程均须使用 KaTeX 公式渲染，不得作为裸露文本输出。`;
     const messages = [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: prompt },
@@ -1754,21 +1794,39 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
         apiKey: config.apiKey,
         model: config.model,
         messages,
-        maxTokens: config.maxTokens,
         signal: controller.signal,
+        onReasoningDelta: (chunk: string) => {
+          accumulatedReasoning += chunk;
+          scheduler.schedule();
+        },
         onDelta: (chunk: string) => {
           accumulatedMd += chunk;
-          this.aiSolutions.set(qid, accumulatedMd);
-          if (contentEl) {
-            contentEl.innerHTML = renderSolutionMarkdown(accumulatedMd, true);
-            try {
-              renderMathInElement(contentEl, KATEX_OPTIONS);
-            } catch (e) {}
-          }
+          scheduler.schedule();
         },
       });
 
+      scheduler.flush(true);
+      scheduler.stop();
+      this.aiSchedulers.delete(qid);
       this.aiStreamActive.delete(qid);
+
+      const hasContent = Boolean(accumulatedMd && accumulatedMd.trim());
+      const hasReasoning = Boolean(accumulatedReasoning && accumulatedReasoning.trim());
+
+      if (!hasContent && !hasReasoning) {
+        if (statusEl) statusEl.textContent = '推导中断';
+        if (contentEl) {
+          contentEl.innerHTML = '<div class="ex-ai-error">模型未返回有效推导内容，请检查服务状态并重试</div>';
+        }
+        if (stopBtn) stopBtn.classList.add('hidden');
+        if (retryBtn) retryBtn.classList.remove('hidden');
+        return;
+      }
+
+      if (!hasContent && hasReasoning) {
+        accumulatedMd = accumulatedReasoning;
+      }
+
       this.aiSolutions.set(qid, accumulatedMd);
       if (contentEl) {
         contentEl.innerHTML = renderSolutionMarkdown(accumulatedMd, false);
@@ -1783,13 +1841,19 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
       if (retryBtn) retryBtn.classList.remove('hidden');
       this.updateAiVersionsBar(qid);
     } catch (err: any) {
+      const sch = this.aiSchedulers.get(qid);
+      if (sch) {
+        sch.stop();
+        this.aiSchedulers.delete(qid);
+      }
       this.aiStreamActive.delete(qid);
       if (err.name === 'AbortError') {
         if (statusEl) statusEl.textContent = '已停止生成';
       } else {
-        if (statusEl) statusEl.textContent = '推导中断';
+        const errInfo = parseAiError(err);
+        if (statusEl) statusEl.textContent = `推导中断: ${errInfo.title}`;
         if (contentEl && !accumulatedMd) {
-          contentEl.innerHTML = `<div class="ex-ai-error">生成失败: ${err.message || '网络连接异常'}</div>`;
+          contentEl.innerHTML = `<div class="ex-ai-error"><strong>${errInfo.title}</strong><br/>${errInfo.message}</div>`;
         }
       }
       if (stopBtn) stopBtn.classList.add('hidden');
@@ -1798,6 +1862,11 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
   }
 
   private stopAiStream(qid: string) {
+    const scheduler = this.aiSchedulers.get(qid);
+    if (scheduler) {
+      scheduler.stop();
+      this.aiSchedulers.delete(qid);
+    }
     const ctrl = this.aiControllers.get(qid);
     if (ctrl) {
       ctrl.abort();

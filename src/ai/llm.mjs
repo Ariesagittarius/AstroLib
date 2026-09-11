@@ -117,21 +117,26 @@ export function buildMessages({ question, context, bookTitle = '本书', history
  * 发起流式对话，逐段回调 onDelta；返回 { text, toolCalls }。
  * - stream 模式下支持 tools / tool_choice / max_tokens；
  * - 若模型请求调用工具，会响应 delta.tool_calls；这里按 index 聚合拼接 arguments，
+ * 发起流式对话，逐段回调 onDelta / onReasoningDelta；返回 { text, reasoning, toolCalls }。
+ * - stream 模式下支持 tools / tool_choice；
+ * - 捕获 delta.reasoning_content / delta.reasoning / delta.thought / <think> 标签并回调 onReasoningDelta；
+ * - 绝不向后端发送破坏性的 max_tokens 限制，保证思考与数学推导完整无截断；
+ * - 若模型请求调用工具，会响应 delta.tool_calls；这里按 index 聚合拼接 arguments，
  *   并在结束时返回 [{ id, name, arguments(object) }]。
  * @param {{
  *   endpoint:string, apiKey?:string, model:string,
- *   messages:Array, onDelta?:(t:string)=>void, signal?:AbortSignal,
- *   tools?:Array, toolChoice?:string|object, maxTokens?:number,
+ *   messages:Array, onDelta?:(t:string)=>void, onReasoningDelta?:(t:string)=>void, signal?:AbortSignal,
+ *   tools?:Array, toolChoice?:string|object,
  * }} opts
  */
 export async function streamChat({
-  endpoint, apiKey, model, messages, onDelta, signal,
-  tools, toolChoice, maxTokens,
+  endpoint, apiKey, model, messages, onDelta, onReasoningDelta, signal,
+  tools, toolChoice,
 }) {
+  // 彻底移除 max_tokens 字段，避免限制学术模型（特别是带 CoT 思考链的模型）的完整推导能力
   const body = { model, messages, stream: true };
   if (Array.isArray(tools) && tools.length) body.tools = tools.map((t) => (t && t.function ? t : { type: 'function', function: t }));
   if (toolChoice) body.tool_choice = toolChoice;
-  if (Number.isFinite(maxTokens) && maxTokens > 0) body.max_tokens = Math.floor(maxTokens);
 
   const res = await fetch(endpoint, {
     method: 'POST',
@@ -144,7 +149,11 @@ export async function streamChat({
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw new Error(`LLM 请求失败 ${res.status}: ${text.slice(0, 300)}`);
+    const err = new Error(`LLM 请求失败 ${res.status}: ${text.slice(0, 300)}`);
+    err.status = res.status;
+    err.statusCode = res.status;
+    err.responseBody = text;
+    throw err;
   }
   if (!res.body) throw new Error('LLM 未返回可读流');
 
@@ -152,6 +161,8 @@ export async function streamChat({
   const decoder = new TextDecoder();
   let buffer = '';
   let full = '';
+  let fullReasoning = '';
+  let insideThinkTag = false;
   const callAcc = new Map(); // index -> { id, name, arguments }
   let callSeq = 0;
 
@@ -170,6 +181,58 @@ export async function streamChat({
     }
   }
 
+  function processDelta(delta) {
+    if (!delta) return;
+
+    // 1. 处理结构化思考字段（DeepSeek Reasoner、SiliconFlow、Moonshot、Qwen 等）
+    const reasoningChunk = delta.reasoning_content || delta.reasoning || delta.thought;
+    if (typeof reasoningChunk === 'string' && reasoningChunk) {
+      fullReasoning += reasoningChunk;
+      onReasoningDelta && onReasoningDelta(reasoningChunk);
+    }
+
+    // 2. 处理正文字段（兼顾部分端点直接在 content 中输出 <think> 标签的场景）
+    if (typeof delta.content === 'string' && delta.content) {
+      let contentChunk = delta.content;
+
+      if (contentChunk.includes('<think>')) {
+        insideThinkTag = true;
+        const parts = contentChunk.split('<think>');
+        if (parts[0]) {
+          full += parts[0];
+          onDelta && onDelta(parts[0]);
+        }
+        contentChunk = parts.slice(1).join('<think>');
+      }
+
+      if (insideThinkTag) {
+        if (contentChunk.includes('</think>')) {
+          insideThinkTag = false;
+          const parts = contentChunk.split('</think>');
+          if (parts[0]) {
+            fullReasoning += parts[0];
+            onReasoningDelta && onReasoningDelta(parts[0]);
+          }
+          const remainingContent = parts.slice(1).join('</think>');
+          if (remainingContent) {
+            full += remainingContent;
+            onDelta && onDelta(remainingContent);
+          }
+        } else {
+          fullReasoning += contentChunk;
+          onReasoningDelta && onReasoningDelta(contentChunk);
+        }
+      } else {
+        full += contentChunk;
+        onDelta && onDelta(contentChunk);
+      }
+    }
+
+    if (Array.isArray(delta.tool_calls) && delta.tool_calls.length) {
+      absorbToolCalls(delta.tool_calls);
+    }
+  }
+
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -184,13 +247,7 @@ export async function streamChat({
       try {
         const json = JSON.parse(payload);
         const delta = json.choices?.[0]?.delta || {};
-        if (typeof delta.content === 'string' && delta.content) {
-          full += delta.content;
-          onDelta && onDelta(delta.content);
-        }
-        if (Array.isArray(delta.tool_calls) && delta.tool_calls.length) {
-          absorbToolCalls(delta.tool_calls);
-        }
+        processDelta(delta);
       } catch {
         /* 忽略单个不完整 chunk */
       }
@@ -209,13 +266,7 @@ export async function streamChat({
       try {
         const json = JSON.parse(payload);
         const delta = json.choices?.[0]?.delta || {};
-        if (typeof delta.content === 'string' && delta.content) {
-          full += delta.content;
-          onDelta && onDelta(delta.content);
-        }
-        if (Array.isArray(delta.tool_calls) && delta.tool_calls.length) {
-          absorbToolCalls(delta.tool_calls);
-        }
+        processDelta(delta);
       } catch {}
     }
   }
@@ -227,5 +278,5 @@ export async function streamChat({
     toolCalls.push({ id: cur.id || '', name: cur.name || '', arguments: args });
   }
 
-  return { text: full, toolCalls };
+  return { text: full, reasoning: fullReasoning, toolCalls };
 }

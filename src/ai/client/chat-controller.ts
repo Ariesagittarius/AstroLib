@@ -31,28 +31,26 @@ async function getAiCoreModules() {
 import {
   getAllAiModels,
   getActiveAiModelId,
-  saveAiActiveModel,
+  getAiProvider,
+  getActiveAiProviderId,
   getAiApiKey,
-  saveAiApiKey,
   getAiEndpoint,
-  saveAiEndpoint,
-  addCustomAiModel,
   getAiParams,
-  saveAiParams,
+  getAiAnswerMode,
+  getAiSourceOpen,
+  getAiPanelDimensions,
+  saveAiPanelDimensions,
+  getAiAutoCollapsePreceding,
+  saveAiAutoCollapsePreceding,
   onAiConfigChange,
 } from '../ai-config';
+import { parseAiError, renderErrorCardHtml } from '../error-handler';
 
-const SRC_OPEN_STORE = 'dsh-aiask-src-open';
-const MODE_STORE = 'dsh-aiask-mode';
 const HISTORY_MAX = 12;
 const THREADS_PREFIX = 'dsh-aiask-threads-';
 const ACTIVE_PREFIX = 'dsh-aiask-active-';
 const MAX_THREADS = 30;
 const MAX_MSGS = 60;
-
-function lsGet(k: string, d: string): string { try { return localStorage.getItem(k) ?? d; } catch { return d; } }
-function lsGetJson(k: string, d: any): any { try { return JSON.parse(localStorage.getItem(k) || '') ?? d; } catch { return d; } }
-function lsSet(k: string, v: string): void { try { localStorage.setItem(k, v); } catch {} }
 
 function decorateFootnotes(html: string, decorate = true): string {
   if (!decorate || !html) return html || '';
@@ -66,35 +64,45 @@ function decorateFootnotes(html: string, decorate = true): string {
   return safe.replace(/___FN_PROT_(\d+)___/g, (_m, i) => protectedBlocks[Number(i)] || '');
 }
 
+function cleanSingleLine(s: string): string {
+  return (s || '').replace(/\s+/g, ' ').trim();
+}
+
 function toolSummary(name: string, out: any = {}): string {
+  let summary = '执行完成';
   if (name === 'book_retrieve') {
     const n = out.count ?? (out.results || []).length;
     const titles = (out.results || []).slice(0, 2).map((r: any) => r.title).filter(Boolean).join('、');
-    return `命中 ${n} 条${titles ? `：${titles}` : ''}`;
-  }
-  if (name === 'book_chunk') return out.found ? '已取片段全文' : '未找到片段';
-  if (name === 'book_slice_search') {
+    summary = `命中 ${n} 条${titles ? `：${titles}` : ''}`;
+  } else if (name === 'book_chunk') {
+    summary = out.found ? '已取片段全文' : '未找到片段';
+  } else if (name === 'book_slice_search') {
     const n = out.count ?? (out.hits || []).length;
     const titles = (out.hits || []).slice(0, 2).map((r: any) => r.title).filter(Boolean).join('、');
-    return `命中 ${n} 条${titles ? `：${titles}` : ''}`;
-  }
-  if (name === 'book_chapter_outline') {
-    if (out.found === false) return '未找到匹配章节（可给章号或标题后重试）';
-    if (out.chapter) {
+    summary = `命中 ${n} 条${titles ? `：${titles}` : ''}`;
+  } else if (name === 'book_chapter_outline') {
+    if (out.found === false) {
+      summary = '未找到匹配章节（可给章号或标题后重试）';
+    } else if (out.chapter) {
       const secs = (out.chapter.sections || []).length;
       const cards = (out.chapter.sections || []).reduce((s: number, x: any) => s + (x.cards || []).length, 0);
       const t = out.chapter.title ? `：${out.chapter.title}` : '';
-      return `章 ${out.chapter.number || ''}${t}（${secs} 小节 / ${cards} 卡片）`;
+      summary = `章 ${out.chapter.number || ''}${t}（${secs} 小节 / ${cards} 卡片）`;
+    } else {
+      summary = `列出 ${(out.chapters || []).length} 章（${out.count ?? ''}）`;
     }
-    return `列出 ${(out.chapters || []).length} 章（${out.count ?? ''}）`;
+  } else if (name === 'book_read_section') {
+    if (out.found === false) {
+      summary = '未找到起始片段（可用 id/标题/编号）';
+    } else {
+      summary = `已读 ${out.count} 段${out.truncated ? '（部分截断）' : ''}`;
+    }
+  } else if (name === 'list_books') {
+    summary = `列出 ${(out.books || []).length} 本书`;
+  } else if (name === 'book_toc') {
+    summary = `目录 ${(out.toc || []).length} 条`;
   }
-  if (name === 'book_read_section') {
-    if (out.found === false) return '未找到起始片段（可用 id/标题/编号）';
-    return `已读 ${out.count} 段${out.truncated ? '（部分截断）' : ''}`;
-  }
-  if (name === 'list_books') return `列出 ${(out.books || []).length} 本书`;
-  if (name === 'book_toc') return `目录 ${(out.toc || []).length} 条`;
-  return '执行完成';
+  return cleanSingleLine(summary);
 }
 
 function capSnippet(s: string, n = 110): string {
@@ -191,6 +199,12 @@ function safeLink(url: string): string {
   return (origin || '') + encodedPath + encodedHash;
 }
 
+function makeAiBadgeLink(href: string, text: string, target: string, rel: string): string {
+  const icon = `<span class="block-icon"><svg class="badge-svg" viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden="true"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg></span>`;
+  const arrow = `<span class="block-arrow"><svg class="badge-svg badge-arrow-svg" viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17l9.2-9.2M17 17V8H8"></path></svg></span>`;
+  return `<a href="${href}" class="block-ref-badge interactive-badge ai-link-badge" target="${target}" ${rel}>${icon}<span class="block-text">${text}</span>${arrow}</a>`;
+}
+
 function renderInline(s: string, openNew = true): string {
   const target = openNew ? '_blank' : '_self';
   const rel = openNew ? 'rel="noopener"' : '';
@@ -206,7 +220,7 @@ function renderInline(s: string, openNew = true): string {
     innerText = innerText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     innerText = innerText.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
     innerText = innerText.replace(/~~([^~]+)~~/g, '<del>$1</del>');
-    const tag = `<a href="${href}" target="${target}" ${rel}>${innerText}</a>`;
+    const tag = makeAiBadgeLink(href, innerText, target, rel);
     placeholders.push(tag);
     return `___LINK_PLACEHOLDER_${placeholders.length - 1}___`;
   });
@@ -217,7 +231,7 @@ function renderInline(s: string, openNew = true): string {
     const trailing = rawUrl.slice(cleanUrl.length);
     const href = safeLink(cleanUrl);
     if (!href) return fullMatch;
-    const tag = `<a href="${href}" target="${target}" ${rel}>${cleanUrl}</a>`;
+    const tag = makeAiBadgeLink(href, cleanUrl, target, rel);
     placeholders.push(tag);
     return `${prefix}___LINK_PLACEHOLDER_${placeholders.length - 1}___${trailing}`;
   });
@@ -288,16 +302,67 @@ function mdToHtml(md: string, openNew = true): string {
       out.push(`<blockquote>${buf.map(inline).join('<br/>')}</blockquote>`);
       continue;
     }
-    if (/^\s*[-*+]\s+/.test(line)) {
-      const items: string[] = [];
-      while (i < lines.length && /^\s*[-*+]\s+/.test(lines[i])) { items.push(inline(lines[i].replace(/^\s*[-*+]\s+/, ''))); i++; }
-      out.push(`<ul>${items.map((x) => `<li>${x}</li>`).join('')}</ul>`);
+    const ulMatch = line.match(/^\s*[-*+]\s+(.*)$/);
+    if (ulMatch) {
+      const items: string[][] = [[ulMatch[1]]];
+      i++;
+      while (i < lines.length) {
+        const cur = lines[i];
+        const nextItemMatch = cur.match(/^\s*[-*+]\s+(.*)$/);
+        if (nextItemMatch) {
+          items.push([nextItemMatch[1]]);
+          i++;
+          continue;
+        }
+        if (/^\s*$/.test(cur)) {
+          let k = i + 1;
+          while (k < lines.length && /^\s*$/.test(lines[k])) k++;
+          if (k < lines.length && /^\s*[-*+]\s+/.test(lines[k])) {
+            i = k;
+            continue;
+          }
+          break;
+        }
+        if (/^(#{1,6})\s|^\s*>\s|^\s*\d+[.)]\s|^\s*(?:```+|~~~+)|^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(cur)) {
+          break;
+        }
+        items[items.length - 1].push(cur.trim());
+        i++;
+      }
+      out.push(`<ul>${items.map((itemLines) => `<li>${itemLines.map(inline).join('<br/>')}</li>`).join('')}</ul>`);
       continue;
     }
-    if (/^\s*\d+[.)]\s+/.test(line)) {
-      const items: string[] = [];
-      while (i < lines.length && /^\s*\d+[.)]\s+/.test(lines[i])) { items.push(inline(lines[i].replace(/^\s*\d+[.)]\s+/, ''))); i++; }
-      out.push(`<ol>${items.map((x) => `<li>${x}</li>`).join('')}</ol>`);
+
+    const olMatch = line.match(/^\s*(\d+)[.)]\s+(.*)$/);
+    if (olMatch) {
+      const startNum = parseInt(olMatch[1], 10) || 1;
+      const items: string[][] = [[olMatch[2]]];
+      i++;
+      while (i < lines.length) {
+        const cur = lines[i];
+        const nextItemMatch = cur.match(/^\s*\d+[.)]\s+(.*)$/);
+        if (nextItemMatch) {
+          items.push([nextItemMatch[1]]);
+          i++;
+          continue;
+        }
+        if (/^\s*$/.test(cur)) {
+          let k = i + 1;
+          while (k < lines.length && /^\s*$/.test(lines[k])) k++;
+          if (k < lines.length && /^\s*\d+[.)]\s+/.test(lines[k])) {
+            i = k;
+            continue;
+          }
+          break;
+        }
+        if (/^(#{1,6})\s|^\s*>\s|^\s*[-*+]\s|^\s*(?:```+|~~~+)|^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(cur)) {
+          break;
+        }
+        items[items.length - 1].push(cur.trim());
+        i++;
+      }
+      const startAttr = startNum !== 1 ? ` start="${startNum}"` : '';
+      out.push(`<ol${startAttr}>${items.map((itemLines) => `<li>${itemLines.map(inline).join('<br/>')}</li>`).join('')}</ol>`);
       continue;
     }
     if (!/^\s*$/.test(line)) {
@@ -320,8 +385,6 @@ export class AIAskElement extends HTMLElement {
   _streaming = false;
   _threads: any[] | null = null;
   _activeThread: any = null;
-  _tabsList: HTMLElement | null = null;
-  _tabAdd: HTMLElement | null = null;
   _config: any = {};
   _bookTitle = '本书';
   _col = '';
@@ -330,8 +393,12 @@ export class AIAskElement extends HTMLElement {
   _fab!: HTMLElement;
   _close!: HTMLElement;
   _settingsBtn!: HTMLElement;
-  _settings!: HTMLElement;
+  _collapseBtn!: HTMLElement;
+  _isPrecedingCollapsed = true;
+  _newBtn!: HTMLElement;
   _submit!: HTMLButtonElement;
+  _sendIcon!: HTMLElement;
+  _stopIcon!: HTMLElement;
   _input!: HTMLTextAreaElement;
   _status!: HTMLElement;
   _thread!: HTMLElement;
@@ -343,8 +410,10 @@ export class AIAskElement extends HTMLElement {
   _historyList!: HTMLElement;
   _historyEmpty!: HTMLElement;
   _historyNew!: HTMLElement;
+  _historyClose!: HTMLElement;
   _onRoute!: () => void;
   _onDocClick!: (e: MouseEvent) => void;
+  _onExternalQuery!: (e: CustomEvent) => void;
   _unsubAi: (() => void) | null = null;
   _katexConfig = {
     delimiters: [
@@ -364,12 +433,7 @@ export class AIAskElement extends HTMLElement {
     this._initDom();
     this._onRoute = () => this._route();
     this._onDocClick = (e: MouseEvent) => {
-      if (this._settingsBtn && this._settingsBtn.contains(e.target as Node)) return;
       if (this._historyBtn && this._historyBtn.contains(e.target as Node)) return;
-      if (this._settings && this._settings.classList.contains('open') && !this._settings.contains(e.target as Node)) {
-        this._settings.classList.remove('open');
-        this._settingsBtn && this._settingsBtn.classList.remove('ask-settings-open');
-      }
       if (this._history && this._history.classList.contains('open') && !this._history.contains(e.target as Node)) {
         this._history.classList.remove('open');
         this._historyBtn && this._historyBtn.classList.remove('ask-settings-open');
@@ -382,7 +446,15 @@ export class AIAskElement extends HTMLElement {
     };
 
     this._unsubAi = onAiConfigChange(() => {
-      this._rebuildModelOptions();
+      const dims = getAiPanelDimensions();
+      if (this._panel && dims.width && dims.height) {
+        this._panel.style.setProperty('--ask-panel-width', `${dims.width}px`);
+        this._panel.style.setProperty('--ask-panel-height', `${dims.height}px`);
+      }
+      this._applySrcOpenToExisting();
+      if (getAiAutoCollapsePreceding()) {
+        this._collapsePreceding(true);
+      }
     });
 
     window.addEventListener('astro:page-load', this._onRoute);
@@ -420,8 +492,11 @@ export class AIAskElement extends HTMLElement {
     this._fab = this.querySelector('.ask-fab') as HTMLElement;
     this._close = this.querySelector('.ask-close') as HTMLElement;
     this._settingsBtn = this.querySelector('.ask-settings-btn') as HTMLElement;
-    this._settings = this.querySelector('.ask-settings') as HTMLElement;
-    this._submit = this.querySelector('.ask-send') as HTMLButtonElement;
+    this._collapseBtn = this.querySelector('.ask-collapse-tools-btn') as HTMLElement;
+    this._newBtn = this.querySelector('.ask-new-btn') as HTMLElement;
+    this._submit = (this.querySelector('.ask-send-btn') || this.querySelector('.ask-send')) as HTMLButtonElement;
+    this._sendIcon = this.querySelector('.ask-send-icon') as HTMLElement;
+    this._stopIcon = this.querySelector('.ask-stop-icon') as HTMLElement;
     this._input = this.querySelector('.ask-input') as HTMLTextAreaElement;
     this._status = this.querySelector('.ask-status') as HTMLElement;
     this._thread = this.querySelector('.ask-thread') as HTMLElement;
@@ -429,72 +504,99 @@ export class AIAskElement extends HTMLElement {
     this._messages = this.querySelector('.ask-messages') as HTMLElement;
     this._bookEl = this.querySelector('.ask-book') as HTMLElement;
 
-    const modelSelect = this.querySelector('.ask-model') as HTMLSelectElement | null;
-    const keyInput = this.querySelector('.ask-key') as HTMLInputElement;
-    const epInput = this.querySelector('.ask-endpoint') as HTMLInputElement;
-    const topkInput = this.querySelector('.ask-topk') as HTMLInputElement;
-    const maxctxInput = this.querySelector('.ask-maxctx') as HTMLInputElement;
-    const maxtokInput = this.querySelector('.ask-maxtok') as HTMLInputElement;
-
-    const refreshKeyForModel = () => {
-      const activeId = getActiveAiModelId();
-      if (modelSelect) modelSelect.value = activeId;
-      if (keyInput) keyInput.value = getAiApiKey(activeId);
-      if (epInput) epInput.value = getAiEndpoint(activeId);
-    };
-
-    if (modelSelect) {
-      this._rebuildModelOptions(getActiveAiModelId());
-      modelSelect.addEventListener('change', () => {
-        saveAiActiveModel(modelSelect.value);
-        refreshKeyForModel();
-      });
+    // Apply saved panel dimensions if present
+    const dims = getAiPanelDimensions();
+    if (this._panel) {
+      if (dims.width) this._panel.style.setProperty('--ask-panel-width', `${dims.width}px`);
+      if (dims.height) this._panel.style.setProperty('--ask-panel-height', `${dims.height}px`);
     }
 
-    const currentParams = getAiParams();
-    if (topkInput) topkInput.value = String(currentParams.topK);
-    if (maxctxInput) maxctxInput.value = String(currentParams.maxContextChars);
-    if (maxtokInput) maxtokInput.value = String(currentParams.maxTokens);
-
-    if (keyInput) {
-      keyInput.addEventListener('input', () => {
-        const id = getActiveAiModelId();
-        saveAiApiKey(id, keyInput.value.trim(), true);
-      });
-    }
-    if (epInput) {
-      epInput.addEventListener('change', () => {
-        const id = getActiveAiModelId();
-        saveAiEndpoint(id, epInput.value.trim());
-      });
-    }
-    if (topkInput) topkInput.addEventListener('change', () => saveAiParams({ topK: Number(topkInput.value) || 8 }));
-    if (maxctxInput) maxctxInput.addEventListener('change', () => saveAiParams({ maxContextChars: Number(maxctxInput.value) || 6000 }));
-    if (maxtokInput) maxtokInput.addEventListener('change', () => saveAiParams({ maxTokens: Number(maxtokInput.value) || 4096 }));
-
-    const modeSelect = this.querySelector('.ask-mode') as HTMLSelectElement | null;
-    if (modeSelect) {
-      modeSelect.value = lsGet(MODE_STORE, 'retrieve') === 'discussion' ? 'discussion' : 'retrieve';
-      modeSelect.addEventListener('change', () => lsSet(MODE_STORE, modeSelect.value));
-    }
-
-    const customToggle = this.querySelector('.ask-custom-toggle');
-    const customForm = this.querySelector('.ask-custom-form') as HTMLElement | null;
-    const customAdd = this.querySelector('.ask-custom-add');
-    if (customToggle && customForm) customToggle.addEventListener('click', () => { customForm.hidden = !customForm.hidden; });
-    if (customAdd) customAdd.addEventListener('click', () => this._addCustomModel());
-
-    const srcOpenSelect = this.querySelector('.ask-src-open') as HTMLSelectElement | null;
-    if (srcOpenSelect) {
-      srcOpenSelect.value = localStorage.getItem(SRC_OPEN_STORE) || 'new';
-      srcOpenSelect.addEventListener('change', () => {
-        localStorage.setItem(SRC_OPEN_STORE, srcOpenSelect.value);
-        this._applySrcOpenToExisting();
-      });
-    }
+    this._initResizeHandles();
 
     if (this._messages) {
       this._messages.addEventListener('click', (e: MouseEvent) => {
+        // 工具面板 Tab 切换 (结果 / 参数)
+        const tabBtn = (e.target as HTMLElement).closest('.ask-tool-tab');
+        if (tabBtn) {
+          e.preventDefault();
+          const panel = tabBtn.closest('.ask-tool-panel');
+          if (!panel) return;
+          const targetTab = tabBtn.getAttribute('data-tab');
+          panel.querySelectorAll('.ask-tool-tab').forEach((b) => {
+            b.classList.remove('active');
+            b.setAttribute('aria-selected', 'false');
+          });
+          tabBtn.classList.add('active');
+          tabBtn.setAttribute('aria-selected', 'true');
+          const paneResult = panel.querySelector('.ask-tool-pane-result') as HTMLElement;
+          const paneArgs = panel.querySelector('.ask-tool-pane-args') as HTMLElement;
+          if (targetTab === 'result') {
+            if (paneResult) paneResult.style.display = '';
+            if (paneArgs) paneArgs.style.display = 'none';
+          } else {
+            if (paneResult) paneResult.style.display = 'none';
+            if (paneArgs) paneArgs.style.display = '';
+          }
+          return;
+        }
+
+        // 工具数据复制
+        const copyBtn = (e.target as HTMLElement).closest('.ask-tool-copy-btn');
+        if (copyBtn) {
+          e.preventDefault();
+          const panel = copyBtn.closest('.ask-tool-panel');
+          if (!panel) return;
+          const activePane = panel.querySelector<HTMLElement>('.ask-tool-pane:not([style*="display: none"]):not([style*="display:none"]) pre');
+          const text = activePane ? activePane.textContent || '' : '';
+          if (text) {
+            navigator.clipboard.writeText(text).then(() => {
+              const label = copyBtn.querySelector('.ask-tool-copy-text');
+              if (label) {
+                const orig = label.textContent;
+                label.textContent = '已复制';
+                setTimeout(() => { label.textContent = orig; }, 1500);
+              }
+            }).catch(() => {});
+          }
+          return;
+        }
+
+        // 错误卡片重试
+        const retryBtn = (e.target as HTMLElement).closest('.ask-error-retry-btn');
+        if (retryBtn) {
+          e.preventDefault();
+          this._retryLast();
+          return;
+        }
+
+        // 错误卡片打开快速设置调整模型
+        const settingsTrigger = (e.target as HTMLElement).closest('.ask-error-settings-btn');
+        if (settingsTrigger) {
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('astrolib:open-settings', { detail: { section: 'ai' } }));
+          return;
+        }
+
+        // 错误卡片完整日志复制
+        const copyErrBtn = (e.target as HTMLElement).closest('.ask-error-copy-btn');
+        if (copyErrBtn) {
+          e.preventDefault();
+          const card = copyErrBtn.closest('.ask-error-card');
+          const pre = card?.querySelector('.ask-error-raw-pre code');
+          const text = pre ? pre.textContent || '' : '';
+          if (text) {
+            navigator.clipboard.writeText(text).then(() => {
+              const label = copyErrBtn.querySelector('.ask-copy-label');
+              if (label) {
+                const orig = label.textContent;
+                label.textContent = '已复制';
+                setTimeout(() => { label.textContent = orig; }, 1500);
+              }
+            }).catch(() => {});
+          }
+          return;
+        }
+
         const target = (e.target as HTMLElement).closest('a');
         if (!target || !target.href) return;
         const rawHref = target.getAttribute('href') || '';
@@ -528,17 +630,25 @@ export class AIAskElement extends HTMLElement {
     this._historyList = this.querySelector('.ask-history-list') as HTMLElement;
     this._historyEmpty = this.querySelector('.ask-history-empty') as HTMLElement;
     this._historyNew = this.querySelector('.ask-history-new') as HTMLElement;
+    this._historyClose = this.querySelector('.ask-history-close') as HTMLElement;
+
     if (this._historyBtn) {
       this._historyBtn.addEventListener('click', (e) => { e.stopPropagation(); this._toggleHistory(); });
     }
     if (this._historyNew) {
       this._historyNew.addEventListener('click', () => this._startNewThread());
     }
-
-    this._tabsList = this.querySelector('.ask-tabs-list');
-    this._tabAdd = this.querySelector('.ask-tab-add');
-    if (this._tabAdd) {
-      this._tabAdd.addEventListener('click', () => this._startNewThread());
+    if (this._historyClose) {
+      this._historyClose.addEventListener('click', () => this._closeHistory());
+    }
+    if (this._collapseBtn) {
+      this._collapseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._togglePrecedingCollapse();
+      });
+    }
+    if (this._newBtn) {
+      this._newBtn.addEventListener('click', () => this._startNewThread());
     }
 
     this._setBookTitle(this._bookTitle);
@@ -550,14 +660,37 @@ export class AIAskElement extends HTMLElement {
       });
     }
     if (this._close) this._close.addEventListener('click', () => this._closePanel());
-    if (this._settingsBtn) this._settingsBtn.addEventListener('click', (e) => { e.stopPropagation(); this._toggleSettings(); });
+
+    // Settings trigger dispatches global event to open quick settings AI panel
+    if (this._settingsBtn) {
+      this._settingsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        window.dispatchEvent(new CustomEvent('astrolib:open-settings', { detail: { section: 'ai' } }));
+      });
+    }
+
     if (this._input) {
       this._input.addEventListener('input', () => this._grow());
       this._input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this._ask(); }
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (this._streaming) {
+            if (this._abort) this._abort.abort();
+          } else {
+            this._ask();
+          }
+        }
       });
     }
-    if (this._submit) this._submit.addEventListener('click', () => this._ask());
+    if (this._submit) {
+      this._submit.addEventListener('click', () => {
+        if (this._streaming) {
+          if (this._abort) this._abort.abort();
+        } else {
+          this._ask();
+        }
+      });
+    }
 
     const sugg = this.querySelector('.ask-suggest');
     if (sugg) {
@@ -580,6 +713,73 @@ export class AIAskElement extends HTMLElement {
     this._grow();
   }
 
+  _initResizeHandles() {
+    if (!this._panel) return;
+    const handles = this._panel.querySelectorAll<HTMLElement>('.ask-resize-handle');
+    if (!handles.length) return;
+
+    handles.forEach((handle) => {
+      handle.addEventListener('pointerdown', (e: PointerEvent) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const type = handle.dataset.handle ||
+          (handle.classList.contains('ask-resize-w') ? 'w' :
+           handle.classList.contains('ask-resize-n') ? 'n' : 'nw');
+
+        try {
+          handle.setPointerCapture(e.pointerId);
+        } catch {}
+
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const rect = this._panel.getBoundingClientRect();
+        const startWidth = rect.width;
+        const startHeight = rect.height;
+
+        this._panel.classList.add('ask-resizing');
+        if (type === 'w') this._panel.classList.add('is-resizing-w');
+        else if (type === 'n') this._panel.classList.add('is-resizing-n');
+        else this._panel.classList.add('is-resizing-nw');
+        document.body.style.userSelect = 'none';
+
+        const onPointerMove = (moveEv: PointerEvent) => {
+          if (type === 'w' || type === 'nw') {
+            const deltaX = startX - moveEv.clientX;
+            const newW = Math.max(380, Math.min(1000, Math.min(window.innerWidth - 24, Math.round(startWidth + deltaX))));
+            this._panel.style.setProperty('--ask-panel-width', `${newW}px`);
+          }
+          if (type === 'n' || type === 'nw') {
+            const deltaY = startY - moveEv.clientY;
+            const newH = Math.max(420, Math.min(960, Math.min(window.innerHeight - 80, Math.round(startHeight + deltaY))));
+            this._panel.style.setProperty('--ask-panel-height', `${newH}px`);
+          }
+        };
+
+        const onPointerUp = (upEv: PointerEvent) => {
+          try {
+            handle.releasePointerCapture(upEv.pointerId);
+          } catch {}
+          this._panel.classList.remove('ask-resizing', 'is-resizing-w', 'is-resizing-n', 'is-resizing-nw');
+          document.body.style.userSelect = '';
+          window.removeEventListener('pointermove', onPointerMove);
+          window.removeEventListener('pointerup', onPointerUp);
+          window.removeEventListener('pointercancel', onPointerUp);
+
+          const curRect = this._panel.getBoundingClientRect();
+          const curW = Math.round(curRect.width);
+          const curH = Math.round(curRect.height);
+          saveAiPanelDimensions({ width: curW, height: curH, preset: 'custom' });
+        };
+
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
+      });
+    });
+  }
+
   _setBookTitle(t: string) {
     this._bookTitle = t || '本书';
     if (this._bookEl) this._bookEl.textContent = this._bookTitle;
@@ -593,24 +793,19 @@ export class AIAskElement extends HTMLElement {
   }
   _closePanel() {
     this._panel.classList.remove('ask-open');
-    this._settings && this._settings.classList.remove('open');
-    this._settingsBtn && this._settingsBtn.classList.remove('ask-settings-open');
     this._history && this._history.classList.remove('open');
     this._historyBtn && this._historyBtn.classList.remove('ask-settings-open');
   }
-  _toggleSettings() {
-    const open = this._settings.classList.toggle('open');
-    this._settingsBtn.classList.toggle('ask-settings-open', open);
-    if (open && this._history) { this._history.classList.remove('open'); }
-  }
   _toggleHistory() {
     const open = this._history.classList.toggle('open');
-    this._historyBtn.classList.toggle('ask-settings-open', open);
+    this._historyBtn && this._historyBtn.classList.toggle('ask-settings-open', open);
     if (open) {
-      if (this._settings) this._settings.classList.remove('open');
-      if (this._settingsBtn) this._settingsBtn.classList.remove('ask-settings-open');
       this._renderHistoryList();
     }
+  }
+  _closeHistory() {
+    this._history && this._history.classList.remove('open');
+    this._historyBtn && this._historyBtn.classList.remove('ask-settings-open');
   }
 
   _route() {
@@ -680,7 +875,6 @@ export class AIAskElement extends HTMLElement {
       this._activeThread = null;
       this._renderThread(null);
     }
-    this._renderTabs();
   }
 
   _ensureActiveThread() {
@@ -699,7 +893,6 @@ export class AIAskElement extends HTMLElement {
     if (!msgs.length) {
       if (this._messages) this._messages.style.display = 'none';
       if (this._empty) this._empty.style.display = '';
-      this._renderTabs();
       return;
     }
     this._hideEmpty();
@@ -719,14 +912,50 @@ export class AIAskElement extends HTMLElement {
             if (!seg.text || !seg.text.trim()) continue;
             this._appendMdBlock(body.blocksEl, seg.text, decorate);
           } else if (seg.kind === 'tool') {
-            body.blocksEl.insertAdjacentHTML('beforeend', this._toolBlocksHtml([seg]));
+            body.blocksEl.insertAdjacentHTML('beforeend', this._toolBlocksHtml([seg], false));
+          } else if (seg.kind === 'error') {
+            body.blocksEl.insertAdjacentHTML('beforeend', seg.html || (seg.errorInfo ? renderErrorCardHtml(seg.errorInfo) : ''));
           }
         }
         if (m.sources && m.sources.length) this._renderSources(body.sourcesEl, m.sources.map((s: any) => ({ chunk: s })));
       }
     }
+    if (getAiAutoCollapsePreceding()) {
+      this._collapsePreceding(true);
+    } else {
+      this._isPrecedingCollapsed = false;
+      this._updateCollapseBtnState();
+    }
     this._scrollThread();
-    this._renderTabs();
+  }
+
+  _retryLast() {
+    if (this._streaming || this._busy) return;
+    const t = this._activeThread;
+    if (!t || !Array.isArray(t.messages) || !t.messages.length) return;
+
+    let userIndex = -1;
+    for (let i = t.messages.length - 1; i >= 0; i--) {
+      if (t.messages[i].role === 'user') {
+        userIndex = i;
+        break;
+      }
+    }
+    if (userIndex < 0) return;
+
+    const lastUserMsg = t.messages[userIndex].text;
+    if (!lastUserMsg) return;
+
+    // 回滚该提问及后续可能失败的消息
+    t.messages = t.messages.slice(0, userIndex);
+    this._saveActiveThread();
+    this._renderThread(t);
+
+    if (this._input) {
+      this._input.value = lastUserMsg;
+      this._grow();
+    }
+    this._ask();
   }
 
   _appendToThread(q: string, text: string, sources: any[], tools: any[], segments: any[]) {
@@ -748,7 +977,6 @@ export class AIAskElement extends HTMLElement {
     this._threads = this._threads.slice(-MAX_THREADS);
     this._saveThreads(this._threads);
     this._saveActiveThreadId(t.id);
-    this._renderTabs();
   }
 
   _historyFromThread(t: any): any[] {
@@ -796,22 +1024,63 @@ export class AIAskElement extends HTMLElement {
     this._historyList.innerHTML = '';
     if (this._historyEmpty) this._historyEmpty.style.display = threads.length ? 'none' : '';
     for (const t of threads) {
-      const item = document.createElement('div');
+      const item = document.createElement('md-list-item');
       item.className = 'ask-history-item';
+      if (this._activeThread && this._activeThread.id === t.id) {
+        item.classList.add('ask-history-item-active');
+      }
       item.dataset.id = t.id;
-      const load = document.createElement('button');
-      load.type = 'button';
-      load.className = 'ask-history-load';
-      load.innerHTML = `<span class="h-title">${esc((t.title || '新会话').slice(0, 30))}</span><span class="h-time">${esc(this._relTime(t.updatedAt))} · ${(t.messages || []).length} 条</span>`;
-      load.addEventListener('click', () => this._loadThreadById(t.id));
-      const del = document.createElement('button');
-      del.type = 'button';
-      del.className = 'ask-history-del';
-      del.textContent = '×';
-      del.title = '删除该会话';
-      del.addEventListener('click', (e) => { e.stopPropagation(); this._deleteThread(t.id); });
-      item.appendChild(load);
-      item.appendChild(del);
+      item.type = 'button';
+
+      const icon = document.createElement('svg');
+      icon.slot = 'start';
+      icon.setAttribute('viewBox', '0 0 24 24');
+      icon.setAttribute('width', '20');
+      icon.setAttribute('height', '20');
+      icon.setAttribute('fill', 'none');
+      icon.setAttribute('stroke', 'currentColor');
+      icon.setAttribute('stroke-width', '2');
+      icon.setAttribute('stroke-linecap', 'round');
+      icon.setAttribute('stroke-linejoin', 'round');
+      icon.innerHTML = '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>';
+
+      const headline = document.createElement('div');
+      headline.slot = 'headline';
+      headline.className = 'ask-history-headline';
+      headline.textContent = (t.title || '新会话').slice(0, 32);
+
+      const supporting = document.createElement('div');
+      supporting.slot = 'supporting-text';
+      supporting.className = 'ask-history-meta';
+      supporting.textContent = `${this._relTime(t.updatedAt)} · ${(t.messages || []).length} 条对话`;
+
+      const delBtn = document.createElement('button');
+      delBtn.slot = 'end';
+      delBtn.type = 'button';
+      delBtn.className = 'ask-history-del-btn';
+      delBtn.title = '删除会话';
+      delBtn.setAttribute('aria-label', '删除会话');
+      delBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>`;
+
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._deleteThread(t.id);
+      });
+
+      item.appendChild(icon);
+      item.appendChild(headline);
+      item.appendChild(supporting);
+      item.appendChild(delBtn);
+
+      item.addEventListener('click', (e) => {
+        if (delBtn.contains(e.target as Node)) return;
+        this._loadThreadById(t.id);
+      });
+
       this._historyList.appendChild(item);
     }
   }
@@ -825,9 +1094,8 @@ export class AIAskElement extends HTMLElement {
     this._activeThread = t;
     this._saveActiveThreadId(id);
     this._renderThread(t);
-    this._renderTabs();
-    if (this._history) this._history.classList.remove('open');
-    if (this._historyBtn) this._historyBtn.classList.remove('ask-settings-open');
+    this._closeHistory();
+    this._updateSendState();
   }
 
   _deleteThread(id: string) {
@@ -842,8 +1110,8 @@ export class AIAskElement extends HTMLElement {
       try { localStorage.removeItem(this._activeKey()); } catch {}
       this._renderThread(null);
     }
-    this._renderTabs();
     this._renderHistoryList();
+    this._updateSendState();
   }
 
   _startNewThread() {
@@ -857,45 +1125,9 @@ export class AIAskElement extends HTMLElement {
     this._saveThreads(this._threads);
     this._saveActiveThreadId(this._activeThread.id);
     this._renderThread(this._activeThread);
-    this._renderTabs();
     if (this._input) { this._input.value = ''; this._grow(); }
-    if (this._history) this._history.classList.remove('open');
-    if (this._historyBtn) this._historyBtn.classList.remove('ask-settings-open');
-  }
-
-  _renderTabs() {
-    if (!this._tabsList) return;
-    const threads = (this._threads || []).slice().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-    this._tabsList.innerHTML = '';
-    let activeTabEl: HTMLElement | null = null;
-    for (const t of threads) {
-      const isActive = !!(this._activeThread && this._activeThread.id === t.id);
-      const tab = document.createElement('div');
-      tab.className = 'ask-tab' + (isActive ? ' ask-tab-active' : '');
-      tab.dataset.id = t.id;
-      if (isActive) activeTabEl = tab;
-      const title = document.createElement('span');
-      title.className = 'ask-tab-title';
-      title.textContent = (t.title || '新会话').slice(0, 18);
-      title.title = (t.messages && t.messages.length) ? `${t.title || '新会话'}（${t.messages.length} 条）` : (t.title || '新会话');
-      const close = document.createElement('button');
-      close.type = 'button';
-      close.className = 'ask-tab-close';
-      close.textContent = '×';
-      close.title = '关闭该会话';
-      close.addEventListener('click', (e) => { e.stopPropagation(); this._deleteThread(t.id); });
-      tab.appendChild(title);
-      tab.appendChild(close);
-      tab.addEventListener('click', (e) => {
-        if (close.contains(e.target as Node)) return;
-        if (this._activeThread && this._activeThread.id === t.id) return;
-        this._loadThreadById(t.id);
-      });
-      this._tabsList.appendChild(tab);
-    }
-    if (activeTabEl) {
-      try { (activeTabEl as HTMLElement).scrollIntoView({ inline: 'nearest', behavior: 'smooth' }); } catch {}
-    }
+    this._closeHistory();
+    this._updateSendState();
   }
 
   async _getIndex() {
@@ -917,7 +1149,17 @@ export class AIAskElement extends HTMLElement {
   _selectedModel(): any {
     const id = getActiveAiModelId();
     const endpoint = getAiEndpoint(id);
-    return { id, model: id, endpoint };
+    const all = getAllAiModels();
+    const found = all.find((m) => m.id === id);
+    const provider = getAiProvider();
+    return {
+      id,
+      model: id,
+      label: found ? found.label : id,
+      endpoint,
+      provider: found ? found.provider : provider.id,
+      providerLabel: provider.label,
+    };
   }
 
   _currentKey(): string {
@@ -929,37 +1171,7 @@ export class AIAskElement extends HTMLElement {
   }
 
   _answerMode(): string {
-    return lsGet(MODE_STORE, 'retrieve') === 'discussion' ? 'discussion' : 'retrieve';
-  }
-
-  _addCustomModel() {
-    const idRaw = this.querySelector('.ask-custom-id') as HTMLInputElement | null;
-    const labelEl = this.querySelector('.ask-custom-label') as HTMLInputElement | null;
-    const epEl = this.querySelector('.ask-custom-ep') as HTMLInputElement | null;
-    const id = idRaw && idRaw.value.trim();
-    if (!id) { idRaw && idRaw.focus(); return; }
-    const ep = epEl && epEl.value.trim();
-    if (!ep) { epEl && epEl.focus(); return; }
-    addCustomAiModel({ id, label: (labelEl && labelEl.value.trim()) || id, endpoint: ep });
-    this._rebuildModelOptions(id);
-    if (idRaw) idRaw.value = '';
-    if (labelEl) labelEl.value = '';
-    if (epEl) epEl.value = '';
-    const form = this.querySelector('.ask-custom-form') as HTMLElement | null;
-    if (form) form.hidden = true;
-  }
-
-  _rebuildModelOptions(selectId?: string) {
-    const sel = this.querySelector('.ask-model') as HTMLSelectElement | null;
-    if (!sel) return;
-    const models = getAllAiModels();
-    const activeId = selectId || getActiveAiModelId();
-    sel.innerHTML = models.map((m: any) => `<option value="${m.id}" ${m.id === activeId ? 'selected' : ''}>${m.label || m.id}${m.isCustom ? ' (自定义)' : ''}</option>`).join('');
-    sel.value = activeId;
-    const keyInput = this.querySelector('.ask-key') as HTMLInputElement | null;
-    const epInput = this.querySelector('.ask-endpoint') as HTMLInputElement | null;
-    if (keyInput) keyInput.value = getAiApiKey(activeId);
-    if (epInput) epInput.value = getAiEndpoint(activeId);
+    return getAiAnswerMode();
   }
 
   _hideEmpty() {
@@ -972,9 +1184,10 @@ export class AIAskElement extends HTMLElement {
     msg.className = 'ask-msg ' + (role === 'user' ? 'ask-msg-user' : 'ask-msg-ai');
     if (role === 'user') {
       const t = document.createElement('div');
-      t.className = 'ask-msg-text';
-      t.textContent = body.text;
+      t.className = 'ask-msg-text ai-md';
+      t.innerHTML = mdToHtml(body.text, this._sourceOpenNew());
       msg.appendChild(t);
+      this._typeMath(t);
     } else {
       const blocks = document.createElement('div');
       blocks.className = 'ask-blocks';
@@ -1009,13 +1222,29 @@ export class AIAskElement extends HTMLElement {
     const t = this._input;
     if (!t) return;
     t.style.height = 'auto';
-    t.style.height = Math.min(t.scrollHeight, 140) + 'px';
+    const h = Math.min(t.scrollHeight, 128);
+    t.style.height = `${h}px`;
+    t.style.overflowY = t.scrollHeight > 128 ? 'auto' : 'hidden';
     this._updateSendState();
   }
 
   _updateSendState() {
-    if (!this._input || !this._submit) return;
-    const val = this._input.value.trim();
+    if (!this._submit) return;
+    if (this._streaming) {
+      this._submit.disabled = false;
+      if (this._sendIcon) this._sendIcon.hidden = true;
+      if (this._stopIcon) this._stopIcon.hidden = false;
+      this._submit.title = '停止生成';
+      this._submit.setAttribute('aria-label', '停止生成');
+      return;
+    }
+
+    if (this._sendIcon) this._sendIcon.hidden = false;
+    if (this._stopIcon) this._stopIcon.hidden = true;
+    this._submit.title = '发送 (Enter)';
+    this._submit.setAttribute('aria-label', '发送');
+
+    const val = this._input ? this._input.value.trim() : '';
     this._submit.disabled = this._busy || !val;
   }
 
@@ -1057,8 +1286,7 @@ export class AIAskElement extends HTMLElement {
   }
 
   _sourceOpenNew(): boolean {
-    try { return (localStorage.getItem(SRC_OPEN_STORE) || 'new') !== 'same'; }
-    catch { return true; }
+    return getAiSourceOpen() !== 'same';
   }
 
   _applySrcOpenToExisting() {
@@ -1093,18 +1321,119 @@ export class AIAskElement extends HTMLElement {
     return jsonHighlight(s);
   }
 
-  _toolBlocksHtml(toolLog: any[]): string {
+  _collapseTools(container: HTMLElement) {
+    if (!container) return;
+    const tools = container.querySelectorAll<HTMLDetailsElement>('details.ask-tool[open]');
+    for (const t of Array.from(tools)) {
+      t.removeAttribute('open');
+    }
+  }
+
+  _collapsePreceding(forceCollapse?: boolean) {
+    if (!this._messages) return;
+    const aiMsgs = Array.from(this._messages.querySelectorAll<HTMLElement>('.ask-msg-ai'));
+    if (aiMsgs.length === 0) return;
+
+    const shouldCollapse = forceCollapse !== undefined ? forceCollapse : !this._isPrecedingCollapsed;
+    this._isPrecedingCollapsed = shouldCollapse;
+
+    if (aiMsgs.length === 1) {
+      if (forceCollapse === undefined) {
+        const tools = aiMsgs[0].querySelectorAll<HTMLDetailsElement>('details.ask-tool, details.ask-think');
+        for (const t of Array.from(tools)) {
+          if (shouldCollapse) t.removeAttribute('open');
+          else t.setAttribute('open', '');
+        }
+      }
+    } else {
+      const preceding = aiMsgs.slice(0, -1);
+      for (const msg of preceding) {
+        const tools = msg.querySelectorAll<HTMLDetailsElement>('details.ask-tool, details.ask-think');
+        for (const t of Array.from(tools)) {
+          if (shouldCollapse) {
+            t.removeAttribute('open');
+          } else {
+            t.setAttribute('open', '');
+          }
+        }
+      }
+      if (!shouldCollapse && forceCollapse === undefined) {
+        const lastTools = aiMsgs[aiMsgs.length - 1].querySelectorAll<HTMLDetailsElement>('details.ask-tool, details.ask-think');
+        for (const t of Array.from(lastTools)) {
+          t.setAttribute('open', '');
+        }
+      }
+    }
+
+    this._updateCollapseBtnState();
+  }
+
+  _togglePrecedingCollapse() {
+    this._collapsePreceding(!this._isPrecedingCollapsed);
+  }
+
+  _updateCollapseBtnState() {
+    if (!this._collapseBtn) return;
+    const iconLess = this._collapseBtn.querySelector<HTMLElement>('.icon-unfold-less');
+    const iconMore = this._collapseBtn.querySelector<HTMLElement>('.icon-unfold-more');
+    if (this._isPrecedingCollapsed) {
+      if (iconLess) iconLess.style.display = 'none';
+      if (iconMore) iconMore.style.display = '';
+      this._collapseBtn.title = '展开所有过程';
+      this._collapseBtn.setAttribute('aria-label', '展开所有过程');
+    } else {
+      if (iconLess) iconLess.style.display = '';
+      if (iconMore) iconMore.style.display = 'none';
+      this._collapseBtn.title = '折叠前序过程';
+      this._collapseBtn.setAttribute('aria-label', '折叠前序过程');
+    }
+  }
+
+  _toolBlocksHtml(toolLog: any[], isOpen = false): string {
     if (!toolLog || !toolLog.length) return '';
     const items = toolLog.map((t: any) => {
       const raw = t.resultRaw !== undefined ? t.resultRaw : t.resultText;
+      const cleanSummary = (t.summary || '').replace(/\s+/g, ' ').trim();
+      let countBadge = '';
+      if (raw && Array.isArray(raw.results)) countBadge = ` (${raw.results.length})`;
+      else if (raw && Array.isArray(raw.hits)) countBadge = ` (${raw.hits.length})`;
+      else if (Array.isArray(raw)) countBadge = ` (${raw.length})`;
+
       return `
-        <details class="ask-tool" open>
-          <summary><span class="ask-tool-icon">🔧</span> 调用 <code>${esc(t.name)}</code> <span class="ask-tool-sum">${esc(t.summary || '')}</span></summary>
-          <details class="ask-tool-raw">
-            <summary>查看参数与原始结果</summary>
-            <div class="ask-tool-args"><pre>${this._jsonHtml(t.args)}</pre></div>
-            <div class="ask-tool-out"><pre>${this._jsonHtml(raw)}</pre></div>
-          </details>
+        <details class="ask-tool" ${isOpen ? 'open' : ''}>
+          <summary class="ask-tool-summary" title="${esc(cleanSummary)}">
+            <svg class="ask-tool-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <span class="ask-tool-badge">Tool</span>
+            <span class="ask-tool-name">${esc(t.name)}</span>
+            <span class="ask-tool-sum">${esc(cleanSummary)}</span>
+          </summary>
+          <div class="ask-tool-panel">
+            <div class="ask-tool-panel-header">
+              <div class="ask-tool-tabs" role="tablist" aria-label="工具数据切换">
+                <button type="button" class="ask-tool-tab active" data-tab="result" role="tab" aria-selected="true">
+                  <span class="ask-tool-tab-label">返回结果</span><span class="ask-tool-tab-count">${countBadge}</span>
+                </button>
+                <button type="button" class="ask-tool-tab" data-tab="args" role="tab" aria-selected="false">
+                  <span class="ask-tool-tab-label">调用参数</span>
+                </button>
+              </div>
+              <button type="button" class="ask-tool-copy-btn" title="复制当前数据" aria-label="复制当前数据">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span class="ask-tool-copy-text">复制</span>
+              </button>
+            </div>
+            <div class="ask-tool-pane ask-tool-pane-result" role="tabpanel">
+              <pre>${this._jsonHtml(raw)}</pre>
+            </div>
+            <div class="ask-tool-pane ask-tool-pane-args" role="tabpanel" style="display:none;">
+              <pre>${this._jsonHtml(t.args)}</pre>
+            </div>
+          </div>
         </details>`;
     }).join('');
     return `<div class="ask-tool-block">${items}</div>`;
@@ -1179,8 +1508,20 @@ export class AIAskElement extends HTMLElement {
         status.textContent = '';
       }
     } catch (e: any) {
-      status.textContent = `出错了：${e.message}`;
-      this._appendMdBlock(blocksEl, `出错了：${e.message}`, false);
+      const provider = getAiProvider();
+      const modelDef = this._selectedModel();
+      const errInfo = parseAiError(e, {
+        providerId: provider.id,
+        providerLabel: provider.label,
+        modelId: modelDef.model || modelDef.id,
+        modelLabel: modelDef.label || modelDef.id,
+        endpoint: modelDef.endpoint,
+      });
+      status.textContent = `出错了：${errInfo.title}`;
+      const d = document.createElement('div');
+      d.className = 'ask-error-container';
+      d.innerHTML = renderErrorCardHtml(errInfo);
+      blocksEl.appendChild(d);
       console.error('[ai-ask]', e);
     } finally {
       this._busy = false;
@@ -1252,14 +1593,18 @@ export class AIAskElement extends HTMLElement {
     let usedTools = false;
     try {
       this._streaming = true;
+      this._updateSendState();
       for (let turn = 0; turn < maxTurns; turn++) {
         curText = '';
         curTextEl = null;
         const res = await ai.streamChat({
           endpoint, apiKey, model, messages,
-          tools: toolDefs, toolChoice: 'auto', maxTokens: params.maxAnswerTokens,
+          tools: toolDefs, toolChoice: 'auto',
           signal: this._abort.signal,
           onDelta: (d: string) => {
+            if (usedTools) {
+              this._collapseTools(blocksEl);
+            }
             curText += d;
             full += d;
             if (!curTextEl) curTextEl = addReplyEl();
@@ -1291,7 +1636,7 @@ export class AIAskElement extends HTMLElement {
             const t = { name: tc.name, args: tc.arguments || {}, summary, resultRaw: out, resultText: capJsonText(out) };
             toolLog.push(t);
             segments.push({ kind: 'tool', name: t.name, args: t.args, summary: t.summary, resultText: t.resultText });
-            blocksEl.insertAdjacentHTML('beforeend', this._toolBlocksHtml([t]));
+            blocksEl.insertAdjacentHTML('beforeend', this._toolBlocksHtml([t], true));
             messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(out) });
           }
           continue;
@@ -1301,16 +1646,30 @@ export class AIAskElement extends HTMLElement {
       flushReply();
     } catch (e: any) {
       if (e.name !== 'AbortError') {
-        const errMsg = `[生成中断] ${e.message}`;
+        const provider = getAiProvider();
+        const errInfo = parseAiError(e, {
+          providerId: provider.id,
+          providerLabel: provider.label,
+          modelId: modelDef.model || modelDef.id,
+          modelLabel: modelDef.label || modelDef.id,
+          endpoint,
+        });
+
+        const errorCardHtml = renderErrorCardHtml(errInfo);
         if (curText && curText.trim()) segments.push({ kind: 'reply', text: curText });
-        full += (full && full.trim() ? '\n\n' : '') + errMsg;
-        segments.push({ kind: 'reply', text: errMsg });
+        segments.push({ kind: 'error', errorInfo: errInfo, html: errorCardHtml });
+        full += (full && full.trim() ? '\n\n' : '') + `[${errInfo.title}] ${errInfo.message}`;
+
         const d = addReplyEl();
-        d.innerHTML = decorateFootnotes(mdToHtml(errMsg, this._sourceOpenNew()), !discussion);
-        this._typeMath(d);
+        d.innerHTML = errorCardHtml;
       }
     } finally {
+      this._collapseTools(blocksEl);
+      if (getAiAutoCollapsePreceding()) {
+        this._collapsePreceding(true);
+      }
       this._streaming = false;
+      this._updateSendState();
       for (const el of replyEls) { const c = el.querySelector('.ask-caret'); if (c) c.remove(); }
       if (usedTools && toolLog.length && !lastText.trim()) {
         const fb = this._fallbackSummary(toolLog);

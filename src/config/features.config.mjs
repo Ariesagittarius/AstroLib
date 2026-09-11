@@ -111,6 +111,17 @@ const featureDefs = {
     requires: ['katex'],
   }),
 
+  // 学术标点与呼吸间距：构建期将 MinerU 识别的英文逗号/句号智能规范化为出版级标点并补齐句间呼吸间距
+  cjkPunctuation: defineFeature({
+    id: 'cjkPunctuation',
+    cat: 'reader',
+    label: '学术标点与间距',
+    desc: '构建期智能规范化正文标点并补齐学术专著句间呼吸间距',
+    enabled: true,
+    devOnly: false,
+    ui: false,
+  }),
+
   // 公式操作与导出：正文公式快捷复制 LaTeX 源码与导出高清 SVG/PNG 图片
   formulaActions: defineFeature({
     id: 'formulaActions',
@@ -123,12 +134,12 @@ const featureDefs = {
     requires: ['katex'],
   }),
 
-  // 主题切换：亮/暗主题切换 + UI 风格主题切换（VitePress / Starlight）
+  // 主题切换：亮/暗模式切换与 Material You 主题色动态调配
   theme: defineFeature({
     id: 'theme',
     cat: 'reader',
     label: '主题切换',
-    desc: '亮/暗模式与 UI 风格主题切换（VitePress / Starlight）',
+    desc: '亮/暗模式切换与 Material You 动态主题调配',
     enabled: true,
     devOnly: false,
     ui: true,
@@ -275,11 +286,20 @@ const featureDefs = {
       topK: 8,                         // 每次送入生成的片段上限（成本控制）
       maxContextChars: 6000,           // 上下文总字符上限（成本硬约束）
       maxAnswerTokens: 4096,           // 回答最大 token（默认 4096，保障长公式与矩阵推导不截断）
-      defaultModel: 'deepseek-v4-flash',            // 默认模型（对应 models[i].id）
-      endpoint: 'https://api.deepseek.com/v1/chat/completions', // 无专属端点的兜底
-      models: [                        // 可选模型：id 会作为 API 的 model 字段，endpoint 可覆盖
-        { id: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash', endpoint: 'https://api.deepseek.com/v1/chat/completions' },
-        { id: 'gpt-4o-mini', label: 'GPT-4o mini', endpoint: 'https://api.openai.com/v1/chat/completions' },
+      defaultProvider: 'gemini',
+      defaultModel: 'gemini-3.8-flash',
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+      models: [
+        { id: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
+        { id: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
+        { id: 'gemini-3.6-flash', label: 'Gemini 3.6 Flash', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
+        { id: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
+        { id: 'gemini-3.5-flash-lite', label: 'Gemini 3.5 Flash Lite', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
+        { id: 'gemini-3-flash', label: 'Gemini 3 Flash', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
+        { id: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash Lite', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
+        { id: 'deepseek-flash', label: 'DeepSeek V4.1 Flash', provider: 'deepseek', endpoint: 'https://api.deepseek.com/v1/chat/completions' },
+        { id: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash', provider: 'deepseek', endpoint: 'https://api.deepseek.com/v1/chat/completions' },
+        { id: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro', provider: 'deepseek', endpoint: 'https://api.deepseek.com/v1/chat/completions' },
       ],
     },
   }),
