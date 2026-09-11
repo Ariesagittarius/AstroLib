@@ -188,6 +188,13 @@ export function parseAiError(
     message = `模型服务商服务端临时繁忙、过载或正在进行维护更新。`;
     advice = '建议：稍后重试，或临时在快速设置中切换到备用提供商。';
   }
+  // 本地中继反代错误
+  else if (lowerMsg.includes('[本地中继反代]') || lowerMsg.includes('upstream_proxy_error')) {
+    category = 'network';
+    title = '本地中继连接失败';
+    message = '本地 Vite 开发服务器中继进程在转发请求至 Google API 时遇到网络阻断或超时。';
+    advice = '建议：检查代理软件（如 Clash/V2Ray）是否正常运行并开启 TUN 虚拟网卡模式，确保本地 Node.js 具备境外访问能力。';
+  }
   // 网络连接阻断
   else if (
     errorObj instanceof TypeError ||

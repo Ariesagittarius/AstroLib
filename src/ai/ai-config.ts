@@ -48,11 +48,26 @@ export interface EffectiveAiConfig {
   autoCollapsePreceding?: boolean;
 }
 
+export const GEMINI_OFFICIAL_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+export const GEMINI_DEV_PROXY_ENDPOINT = '/api/proxy/gemini/v1beta/openai/chat/completions';
+
+/**
+ * 获取 Google Gemini 的有效默认端点：
+ * 在 Vite 本地开发态 (import.meta.env.DEV) 下默认使用本地 Node.js 进程全双工反代端点，
+ * 彻底消除浏览器 CORS 预检与 TLS 指纹阻断；生产静态构建下使用官方直连端点。
+ */
+export function getGeminiDefaultEndpoint(): string {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+    return GEMINI_DEV_PROXY_ENDPOINT;
+  }
+  return GEMINI_OFFICIAL_ENDPOINT;
+}
+
 export const DEFAULT_AI_PROVIDERS: AiProviderDef[] = [
   {
     id: 'gemini',
     label: 'Google Gemini',
-    defaultEndpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    defaultEndpoint: getGeminiDefaultEndpoint(),
     keyPlaceholder: 'AIzaSy...',
     defaultModelId: 'gemini-3.8-flash',
     desc: 'Google 官方前沿学术与长上下文模型，提供免费调用额度',
@@ -288,6 +303,12 @@ export function getAllAiProviders(): AiProviderDef[] {
         defaultModelId: customs[0]?.id || '',
       };
     }
+    if (p.id === 'gemini') {
+      return {
+        ...p,
+        defaultEndpoint: getGeminiDefaultEndpoint(),
+      };
+    }
     return p;
   });
 }
@@ -438,7 +459,17 @@ export function saveProviderApiKey(providerId: string, apiKey: string): void {
 export function getProviderEndpoint(providerId?: string): string {
   const targetProvider = providerId || getActiveAiProviderId();
   const override = safeGetItem(STORAGE_KEYS.PROVIDER_ENDPOINT_PREFIX + targetProvider);
-  if (override && override.trim()) return override.trim();
+  if (override && override.trim()) {
+    const cleanOverride = override.trim();
+    // 特化 Gemini：若处于本地开发态，且本地存储残留的是 Google 官方端点，
+    // 智能映射为本地 Dev Server 反代端点，避免因历史缓存导致浏览器/代理握手失败
+    if (targetProvider === 'gemini' && typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+      if (cleanOverride === GEMINI_OFFICIAL_ENDPOINT) {
+        return GEMINI_DEV_PROXY_ENDPOINT;
+      }
+    }
+    return cleanOverride;
+  }
 
   const provider = getAiProvider(targetProvider);
   return provider.defaultEndpoint || '';
@@ -490,7 +521,14 @@ export function getAiEndpoint(modelId?: string): string {
   const found = all.find((m) => m.id === targetModelId);
 
   // 1. 如果模型自身有特定 endpoint 且不属于默认提供商端点
-  if (found && found.endpoint) return found.endpoint;
+  if (found && found.endpoint) {
+    if (found.provider === 'gemini' && typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+      if (found.endpoint === GEMINI_OFFICIAL_ENDPOINT) {
+        return getProviderEndpoint('gemini');
+      }
+    }
+    return found.endpoint;
+  }
 
   // 2. 所属提供商端点
   const providerId = found ? found.provider : getActiveAiProviderId();
@@ -685,7 +723,12 @@ export async function testAiConnection(
   const targetProviderId = providerId || getActiveAiProviderId();
   const targetId = modelId || getActiveAiModelId();
   const apiKey = (explicitKey !== undefined ? explicitKey : getProviderApiKey(targetProviderId)).trim();
-  const endpoint = (explicitEndpoint !== undefined ? explicitEndpoint : getProviderEndpoint(targetProviderId)).trim();
+  let endpoint = (explicitEndpoint !== undefined ? explicitEndpoint : getProviderEndpoint(targetProviderId)).trim();
+  if (targetProviderId === 'gemini' && typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+    if (endpoint === GEMINI_OFFICIAL_ENDPOINT) {
+      endpoint = GEMINI_DEV_PROXY_ENDPOINT;
+    }
+  }
 
   if (!apiKey) {
     return { ok: false, latencyMs: 0, message: '请先填写 API Key' };

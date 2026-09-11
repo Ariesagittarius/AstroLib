@@ -32,6 +32,8 @@ import devRelationGraphServerPlugin from './src/server/plugins/relation-graph/de
 import devChapterExportServerPlugin from './src/server/plugins/chapter-export/dev-server-plugin.mjs';
 // 习题模块：/api/exercise/* 源码热保存、读者反馈与社区题解端点（Vite dev server 插件，仅 dev 启用）
 import { exerciseDevServerPlugin } from './src/server/plugins/exercise-editor/dev-server-plugin.mjs';
+// Gemini AI 中继模块：/api/proxy/gemini/* 本地 Node.js 进程全双工反代端点（Vite dev server 插件，仅 dev 启用）
+import { geminiProxyDevServerPlugin } from './src/server/plugins/gemini-proxy/dev-server-plugin.mjs';
 // Mermaid 图表拦截插件：将 ```mermaid 代码块转化为 .mermaid-container DOM
 import rehypeMermaid from './src/plugins/rehype/rehype-mermaid.mjs';
 // 图像高斯模糊占位插件：为正文图片在构建期生成微型 LQIP Base64 占位并平滑渐显
@@ -230,6 +232,8 @@ export default defineConfig({
       ...(isEffective('chapterExport') ? [devChapterExportServerPlugin()] : []),
       // 习题模块本地 API 与源码持久化端点（仅 dev 启用）
       exerciseDevServerPlugin(),
+      // Gemini AI 本地 Node.js 进程全双工中继反代端点（仅 dev 启用）
+      geminiProxyDevServerPlugin(),
     ],
     resolve: {
       alias: {
