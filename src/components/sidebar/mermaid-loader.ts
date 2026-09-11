@@ -1,16 +1,8 @@
-/**
- * mermaid-loader.ts：客户端动态加载与渲染 Mermaid 图表的工具
- * 
- * 性能约束：只有当 DOM 中存在 .mermaid-container、pre[data-language="mermaid"] 或 .mermaid 节点时，
- * 才会动态 trigger `import('mermaid')` 并下载 chunk；对于无图表页面，0 开销。
- */
-
 let isInitialized = false;
 let currentTheme: 'dark' | 'light' = 'light';
 
 function sanitizeMermaidCode(code: string): string {
-  // 自动将流程图文本中的 <col> 或 <book> 等标签转换为 HTML 实体 &lt;col&gt;，
-  // 防止 Mermaid / DOMPurify 将其误认为 HTML 元素导致语法解析报错。
+
   return code
     .replace(/<([a-zA-Z0-9_-]+)>/g, '&lt;$1&gt;')
     .replace(/([a-zA-Z0-9_.]+)\s*>\s*([0-9.]+)/g, '$1 &gt; $2');
@@ -25,7 +17,7 @@ export async function initMermaid() {
 
   if (targetElements.length === 0) return;
 
-  const isDark = document.documentElement.classList.contains('dark') || 
+  const isDark = document.documentElement.classList.contains('dark') ||
                  document.documentElement.getAttribute('data-theme') === 'dark';
   const newTheme = isDark ? 'dark' : 'light';
 
@@ -102,9 +94,6 @@ export async function initMermaid() {
   }
 }
 
-/**
- * 监听主题变化，以便在亮暗模式切换时重新渲染
- */
 export function setupMermaidThemeListener() {
   if (isInitialized) return;
   isInitialized = true;

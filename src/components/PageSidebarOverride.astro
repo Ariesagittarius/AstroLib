@@ -1,15 +1,11 @@
 ---
-// 自定义右侧侧边栏组件 - 替代 Starlight 的 PageSidebar.astro
-// 模块化架构：逻辑解耦至 src/components/sidebar/ 与 src/core/indexing/cross-ref-indexer.mjs
 import { collections } from '../config/collections.config.mjs';
 import { features, crossRefRefs } from '../config/features.config.mjs';
 
-// 引用联动模式：'interactive'（默认，可点击/跨页联动）| 'static'（统一静态 chip）。
 const refsMode = crossRefRefs() === 'static' ? 'static' : 'interactive';
 
 const pathname = Astro.url.pathname;
 
-// 1. 深度遍历两级结构，感知当前路由所属的图书及其 TOC 规则
 let currentBook = null;
 let currentCol = null;
 for (const col of collections) {
@@ -21,7 +17,6 @@ for (const col of collections) {
   }
 }
 
-// 2. 备用安全降级方案
 if (!currentBook) {
   currentCol = collections[0];
   currentBook = collections[0].books[0];
@@ -30,10 +25,9 @@ const bookConfigJson = JSON.stringify(currentBook);
 ---
 
 <aside class="astrolib-sideload-dock custom-page-sidebar" id="astrolib-sideload-dock" data-book-key={`${currentCol.slug}/${currentBook.slug}`} data-refs-mode={refsMode} data-book-config={bookConfigJson}>
-  <!-- VitePress outline-marker：跟随滚动高亮项的 2px 品牌色指示条（JS 更新 top） -->
+
   <div class="outline-marker" aria-hidden="true"></div>
 
-  <!-- 面板 1: 本章大纲 (默认常驻) -->
   <section class="sideload-panel-view" data-panel-id="toc" aria-hidden="false">
     <div class="toc-container">
       <div class="toc-header-block">
@@ -45,12 +39,11 @@ const bookConfigJson = JSON.stringify(currentBook);
     </div>
   </section>
 
-  <!-- 面板 2: 课后习题专属右侧抽屉面板 -->
   <section class="sideload-panel-view" data-panel-id="exercises" aria-hidden="true">
     <div class="exercise-sidebar-panel" id="exercise-sidebar-panel" aria-hidden="true">
       <div class="ex-sidebar-header">
         <div class="ex-sidebar-title-group">
-          <!-- 返回本章大纲快捷按钮 -->
+
           <button
             type="button"
             class="sideload-back-btn"
@@ -93,20 +86,18 @@ const bookConfigJson = JSON.stringify(currentBook);
         </div>
       </div>
       <div class="ex-sidebar-content" id="ex-sidebar-content">
-        <!-- 动态渲染轻量题目卡片 -->
+
       </div>
     </div>
   </section>
 </aside>
 
-<!-- 全局侧载抽屉遮罩 (在 Tablet/Mobile 抽屉模式下激活) -->
 <div class="astrolib-sideload-scrim" id="astrolib-sideload-scrim" aria-hidden="true"></div>
 
-<!-- 移动端本地导航 VPLocalNav（VitePress 移植：顶部 sticky 条 + 大纲 popup 下拉面板） -->
 <div class="vp-local-nav" data-vp-local-nav>
   <div class="vp-local-nav-container">
     <button class="vp-local-nav-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="vp-local-nav-panel" aria-label="本章大纲" title="本章大纲">
-      <!-- Google Material Symbols 官方半空心大纲图标 (Semi-Outlined toc) -->
+
       <svg class="header-mdicon vp-local-nav-mdicon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <line x1="3" y1="7" x2="15" y2="7" />
         <circle cx="19.5" cy="7" r="1.5" />
@@ -189,13 +180,10 @@ const bookConfigJson = JSON.stringify(currentBook);
   </div>
 </div>
 
-<style>
-  /* 1. 默认隐藏所有自定义大纲，防止在移动端正文中泄露 */
-  .custom-page-sidebar {
+<style>.custom-page-sidebar {
     display: none;
   }
 
-  /* 2. 仅在桌面端 (>= 72rem) 显示并置于右栏内部黏性跟随，杜绝超宽屏漂移 */
   @media (min-width: 72rem) {
     .custom-page-sidebar {
       display: block;
@@ -211,7 +199,6 @@ const bookConfigJson = JSON.stringify(currentBook);
     }
   }
 
-  /* outline-marker：2px 宽的竖条，绝对定位在 aside 左边缘（与链接左 border 对齐） */
   .outline-marker {
     position: absolute;
     left: 0.5rem;
@@ -487,7 +474,6 @@ const bookConfigJson = JSON.stringify(currentBook);
     border-radius: 9999px;
   }
 
-  /* 章节标题：重置内联 margin，由 .toc-heading-row 统一把控间距，杜绝折叠指示器垂直错位 */
   :global(.toc-heading.toc-level-2) {
     margin: 0;
     font-size: 0.825rem;
@@ -511,14 +497,12 @@ const bookConfigJson = JSON.stringify(currentBook);
     line-height: 1.35;
   }
 
-  /* 子条目（定理/例题/定义等卡片块）微缩进，视觉从属于章节 */
   :global(.toc-link:not(.toc-heading)) {
     padding-left: 0.65rem;
     font-size: 0.775rem;
     line-height: 1.35;
   }
 
-  /* 模块学术排版：纯文字前缀（定理、定义、例等），彻底移除高噪彩色胶囊 */
   :global(.toc-chip) {
     display: inline-block !important;
     font-size: 0.75rem !important;
@@ -555,8 +539,7 @@ const bookConfigJson = JSON.stringify(currentBook);
   }
 </style>
 
-<script>
-  import { initPageSidebar } from './sidebar/toc-generator';
+<script>import { initPageSidebar } from './sidebar/toc-generator';
   import { initMermaid, setupMermaidThemeListener } from './sidebar/mermaid-loader';
   import { initImageBlur } from './sidebar/image-blur-loader';
   import { getExerciseSidebarController } from './exercises/exercise-sidebar-controller';
@@ -578,7 +561,6 @@ const bookConfigJson = JSON.stringify(currentBook);
     initImageBlur();
     getExerciseSidebarController().init();
 
-    // 绑定侧载抽屉遮罩点击关闭
     const scrim = document.getElementById('astrolib-sideload-scrim');
     if (scrim) {
       scrim.onclick = () => sideloadManager.switchToDefault();

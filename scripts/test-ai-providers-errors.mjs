@@ -1,8 +1,3 @@
-/**
- * scripts/test-ai-providers-errors.mjs
- * 单元测试与真实验证：AI 提供商架构与错误诊断系统
- */
-
 import {
   getAllAiProviders,
   getAiProvider,
@@ -27,7 +22,6 @@ async function runTests() {
     console.log(`  模型清单: ${p.models.map((m) => m.id).join(', ')}`);
   }
 
-  // 校验 Gemini 模型清单
   const gemini = getAiProvider('gemini');
   if (!gemini) throw new Error('未找到 gemini 提供商');
   const geminiModelIds = gemini.models.map((m) => m.id);
@@ -47,7 +41,6 @@ async function runTests() {
   }
   console.log('✔ Gemini 7 个免费额度模型校验全部通过');
 
-  // 校验 DeepSeek 模型清单 (无淘汰模型 R1, V3)
   const deepseek = getAiProvider('deepseek');
   if (!deepseek) throw new Error('未找到 deepseek 提供商');
   const deepseekModelIds = deepseek.models.map((m) => m.id);
@@ -64,7 +57,6 @@ async function runTests() {
 
   console.log('\n=== 2. 验证错误解析器对特殊形态报错的处理 ===');
 
-  // 测试用例 A: Google Gemini 官方常见的 429 数组结构
   const gemini429Payload = JSON.stringify([
     {
       error: {
@@ -83,7 +75,6 @@ async function runTests() {
   console.log(`用例 A (Gemini 429 数组): 分类=${errA.category}, 标题="${errA.title}"`);
   if (errA.category !== 'quota') throw new Error('用例 A 分类预期为 quota');
 
-  // 测试用例 B: Google Gemini 400 API Key 无效数组结构
   const gemini400Payload = JSON.stringify([
     {
       error: {
@@ -101,7 +92,6 @@ async function runTests() {
   console.log(`用例 B (Gemini 400 Key 无效): 分类=${errB.category}, 标题="${errB.title}"`);
   if (errB.category !== 'auth') throw new Error('用例 B 分类预期为 auth');
 
-  // 测试用例 C: DeepSeek 401 认证失败结构
   const deepseek401Payload = JSON.stringify({
     error: {
       message: 'Authentication Fails (no such user)',

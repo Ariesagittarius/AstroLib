@@ -1,14 +1,3 @@
-/**
- * 公式交互操作 UI 模块（formula-ui）
- *
- * 职责：
- *   - 在文章正文带有 data-latex 的 KaTeX 公式上挂载快捷操作工具栏（复制 LaTeX + 导出图片下拉）；
- *   - 管理悬浮态、触屏交互、二级菜单自适应定位（fixed 逃逸 overflow 裁剪）；
- *   - 支持全生命周期（mount / unmount / enable / disable / destroy）：
- *     在关闭状态下完全卸载 DOM、断开 IntersectionObserver，零额外 DOM、零内存与计算损耗；
- *   - 图片导出引擎（exporter.ts）通过动态 import() 懒加载，常规阅读与一键复制零等待。
- */
-
 const COPIED_LABEL = '已复制';
 const COPY_FAILED_LABEL = '复制失败';
 const SVG_DONE_LABEL = 'SVG 已下载';
@@ -17,11 +6,6 @@ const DOWNLOAD_FAILED_LABEL = '下载失败';
 const TOOLTIP_MS = 1600;
 const TOUCH_REVEAL_MS = 2600;
 
-/* ------------------------------------------------------------------ *
- *  图标与 DOM 构建工具
- * ------------------------------------------------------------------ */
-
-/** 复制图标 */
 function copyIconSvg(): string {
   return (
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" ' +
@@ -32,7 +16,6 @@ function copyIconSvg(): string {
   );
 }
 
-/** 导出图标 */
 function downloadIconSvg(): string {
   return (
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" ' +
@@ -44,7 +27,6 @@ function downloadIconSvg(): string {
   );
 }
 
-/** 对勾图标（操作成功反馈） */
 function checkIconSvg(): string {
   return (
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" ' +
@@ -54,7 +36,6 @@ function checkIconSvg(): string {
   );
 }
 
-/** 写入剪贴板：优先 Clipboard API，失败时回退到 execCommand */
 export async function copyText(text: string): Promise<boolean> {
   try {
     if (navigator.clipboard?.writeText) {
@@ -62,7 +43,7 @@ export async function copyText(text: string): Promise<boolean> {
       return true;
     }
   } catch {
-    // 回退方案
+
   }
   try {
     const ta = document.createElement('textarea');
@@ -137,10 +118,6 @@ function makeActions(): ActionElements {
   return { wrap, copyBtn, triggerBtn, menu, svgItem, pngItem };
 }
 
-/* ------------------------------------------------------------------ *
- *  菜单定位与全局事件绑定
- * ------------------------------------------------------------------ */
-
 function resetMenuInlineStyles(menu: HTMLElement): void {
   menu.style.position = '';
   menu.style.top = '';
@@ -211,10 +188,6 @@ function removeGlobalListeners(): void {
   window.removeEventListener('resize', repositionOpenMenus);
 }
 
-/* ------------------------------------------------------------------ *
- *  公式节点挂接与交互绑定
- * ------------------------------------------------------------------ */
-
 function wireActions(source: HTMLElement, interact: HTMLElement, actions: ActionElements): void {
   const { wrap, copyBtn, triggerBtn, menu, svgItem, pngItem } = actions;
   const copyIcon = copyBtn.querySelector<HTMLElement>('.katex-copy-btn-icon');
@@ -277,7 +250,6 @@ function wireActions(source: HTMLElement, interact: HTMLElement, actions: Action
     }, TOOLTIP_MS + 250);
   };
 
-  // 动态懒加载导出核心模块（按需加载，未点击导出前零执行开销）
   svgItem.addEventListener('click', async (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -319,7 +291,6 @@ function wireActions(source: HTMLElement, interact: HTMLElement, actions: Action
   }
 }
 
-/** 挂载单个公式操作条 */
 export function mountFormula(root: HTMLElement): void {
   if (root.dataset.katexCopyReady) return;
   root.dataset.katexCopyReady = '1';
@@ -339,7 +310,6 @@ export function mountFormula(root: HTMLElement): void {
   }
 }
 
-/** 卸载单个公式操作条并还原 DOM（零多余节点残余） */
 export function unmountFormula(root: HTMLElement): void {
   if (!root.dataset.katexCopyReady) return;
   delete root.dataset.katexCopyReady;
@@ -361,21 +331,12 @@ export function unmountFormula(root: HTMLElement): void {
   }
 }
 
-/* ------------------------------------------------------------------ *
- *  全局生命周期与状态控制
- * ------------------------------------------------------------------ */
-
 let isActionsEnabled = true;
 
-/** 获取当前公式操作功能是否处于激活状态 */
 export function isFormulaActionsEnabled(): boolean {
   return isActionsEnabled;
 }
 
-/**
- * 启用公式操作功能：
- * 挂接 DOM、恢复 IntersectionObserver，按需渲染操作条。
- */
 export function enableFormulaActions(): void {
   isActionsEnabled = true;
   const content = document.querySelector<HTMLElement>('main .sl-markdown-content');
@@ -414,10 +375,6 @@ export function enableFormulaActions(): void {
   }
 }
 
-/**
- * 禁用公式操作功能：
- * 彻底卸载所有公式上的 DOM 结构、断开 Observer、移除全局事件，保证零性能开销。
- */
 export function disableFormulaActions(): void {
   isActionsEnabled = false;
   closeAllMenus();
@@ -452,9 +409,6 @@ function isStoredEnabled(): boolean {
   return true;
 }
 
-/**
- * 初始化文章正文公式操作（页面加载或 SPA 切换时调用）。
- */
 export function initFormulaActions(): void {
   if (!isStoredEnabled()) {
     isActionsEnabled = false;
@@ -465,9 +419,6 @@ export function initFormulaActions(): void {
   }
 }
 
-/**
- * 销毁并清理（页面卸载时调用）。
- */
 export function destroyFormulaActions(): void {
   disableFormulaActions();
 }

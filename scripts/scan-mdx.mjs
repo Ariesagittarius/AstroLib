@@ -1,4 +1,3 @@
-// 一次性扫描脚本：用与 Astro 相同的 MDX 编译管线检查指定目录下的所有 .mdx 文件
 import fs from 'node:fs';
 import path from 'node:path';
 import { compile } from '@mdx-js/mdx';
@@ -36,12 +35,11 @@ const mathErrors = [];
 for (const file of files) {
   const content = fs.readFileSync(file, 'utf-8');
   const relFile = path.relative(process.cwd(), file).replace(/\\/g, '/');
-  // 剥离 frontmatter（Astro 会单独处理，编译 MDX 时不含它）
+
   const body = content.replace(/^---[\s\S]*?---\r?\n?/, '');
 
   let fileHasError = false;
 
-  // 1. MDX 结构与 JSX 标签编译校验
   try {
     await compile({ value: body, path: file }, {
       remarkPlugins: [remarkMath],
@@ -60,7 +58,6 @@ for (const file of files) {
     });
   }
 
-  // 2. KaTeX 公式语法精确校验
   if (!skipMath) {
     const lineOffsets = [0];
     for (let i = 0; i < content.length; i++) {
@@ -76,7 +73,6 @@ for (const file of files) {
       return high + 1;
     };
 
-    // 块级公式
     const displayMatches = content.matchAll(/\$\$([\s\S]+?)\$\$/g);
     for (const m of displayMatches) {
       const raw = m[1].trim();
@@ -95,7 +91,6 @@ for (const file of files) {
       }
     }
 
-    // 行内公式（排除代码块与块级公式）
     const noBlocks = content.replace(/```[\s\S]*?```/g, (m) => ' '.repeat(m.length))
       .replace(/\$\$[\s\S]+?\$\$/g, (m) => ' '.repeat(m.length));
 

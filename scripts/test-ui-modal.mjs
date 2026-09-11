@@ -23,7 +23,7 @@ function sleep(ms) {
 
 async function runTest() {
   try {
-    // 等待 Edge 调试端口就绪
+
     let versionData = null;
     for (let i = 0; i < 20; i++) {
       try {
@@ -42,7 +42,6 @@ async function runTest() {
 
     console.log(`✅ 已成功连接至 Edge 浏览器: ${versionData['User-Agent']}`);
 
-    // 创建新页面
     const newPageRes = await fetch(`http://127.0.0.1:${PORT}/json/new?${encodeURIComponent(TARGET_URL)}`, { method: 'PUT' });
     const target = await newPageRes.json();
     const wsUrl = target.webSocketDebuggerUrl;
@@ -85,7 +84,6 @@ async function runTest() {
     console.log('⏳ 正在加载页面并等待客户端水合 (Hydration)...');
     await sleep(3500);
 
-    // 1. 验证 DOM Portal 挂载
     const portalCheck = await send('Runtime.evaluate', {
       expression: `(() => {
         const modal = document.getElementById('chapter-export-modal');
@@ -104,7 +102,6 @@ async function runTest() {
     console.log('--- [UI 检查 1] DOM Portal 与层级 ---');
     console.log('Portal 挂载检查结果:', portalCheck.result.value);
 
-    // 2. 模拟点击打开导出弹窗
     console.log('\n--- [UI 检查 2] 模拟点击触发导出弹窗 ---');
     const openResult = await send('Runtime.evaluate', {
       expression: `(() => {
@@ -122,7 +119,6 @@ async function runTest() {
     console.log('打开状态:', openResult.result.value);
     await sleep(500);
 
-    // 3. 验证 Stacking Context 与穿透防护 (检测屏幕中心和右侧大纲栏区域顶层元素)
     console.log('\n--- [UI 检查 3] Stacking Context 与大纲栏防穿透 ---');
     const penetrationCheck = await send('Runtime.evaluate', {
       expression: `(() => {
@@ -153,7 +149,6 @@ async function runTest() {
     });
     console.log('穿透检测结果:', penetrationCheck.result.value);
 
-    // 4. 验证 Escape 键关闭与按键交互
     console.log('\n--- [UI 检查 4] Escape 按键关闭交互 ---');
     const escapeResult = await send('Runtime.evaluate', {
       expression: `(() => {
@@ -169,7 +164,6 @@ async function runTest() {
     });
     console.log('Escape 关闭结果:', escapeResult.result.value);
 
-    // 5. 验证快捷键 Alt+X 重新唤起
     console.log('\n--- [UI 检查 5] Alt+X 快捷键呼出 ---');
     const altXResult = await send('Runtime.evaluate', {
       expression: `(() => {
@@ -184,7 +178,6 @@ async function runTest() {
     });
     console.log('Alt+X 呼出结果:', altXResult.result.value);
 
-    // 5.5 桌面端全屏截图保存至 artifacts
     const desktopScreenshot = await send('Page.captureScreenshot', { format: 'png' });
     const desktopImgBuffer = Buffer.from(desktopScreenshot.data, 'base64');
     const artifactDir = 'C:\\Users\\白羊欣存\\.gemini\\antigravity\\brain\\8f575f5c-18cc-41a4-b74f-ee32f88d123f';
@@ -192,7 +185,6 @@ async function runTest() {
     fs.writeFileSync(desktopScreenshotPath, desktopImgBuffer);
     console.log(`\n📸 桌面端真实浏览器渲染截图已保存至: ${desktopScreenshotPath}`);
 
-    // 6. 验证移动端视口 (Mobile Viewport)
     console.log('\n--- [UI 检查 6] 移动端视口 (375x667) 适配性 ---');
     await send('Emulation.setDeviceMetricsOverride', {
       width: 375,
@@ -218,7 +210,6 @@ async function runTest() {
     });
     console.log('移动端视口适配检查:', mobileCheck.result.value);
 
-    // 7. 移动端截图保存至 artifacts
     const screenshot = await send('Page.captureScreenshot', { format: 'png' });
     const imgBuffer = Buffer.from(screenshot.data, 'base64');
     const screenshotPath = path.join(artifactDir, 'chapter_export_modal_mobile.png');

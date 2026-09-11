@@ -1,19 +1,7 @@
-/**
- * src/publishing/typography/metadata.ts
- * AstroLib 学术开源字体元数据清单与权威许可证配置
- *
- * 架构规范：
- * - 纯领域元数据定义，严格标定许可证、上游来源、TeX Live 自包含状态与回退指引
- * - 确保所有内置和推荐字体均为 100% 自由开源、允许商业出版、允许 CI 自动化排版
- */
-
 import type { FontMetadata } from './types.ts';
 
-/**
- * 官方登记的学术字体元数据清单
- */
 export const ACADEMIC_FONT_INVENTORY: Record<string, FontMetadata> = {
-  // 1. STIX Two (科技出版与学术数学界黄金标准)
+
   stixTwoText: {
     family: 'STIX Two Text',
     files: [
@@ -46,7 +34,6 @@ export const ACADEMIC_FONT_INVENTORY: Record<string, FontMetadata> = {
     recommendedFallback: 'latinmodern-math.otf',
   },
 
-  // 2. 思源宋体 / Noto Serif CJK (现代中文学术印刷基准)
   sourceHanSerif: {
     family: 'Source Han Serif SC',
     files: [
@@ -67,7 +54,6 @@ export const ACADEMIC_FONT_INVENTORY: Record<string, FontMetadata> = {
     recommendedFallback: 'FandolSong-Regular.otf',
   },
 
-  // 3. 思源黑体 / Noto Sans CJK (现代标题与定理前缀标签基准)
   sourceHanSans: {
     family: 'Source Han Sans SC',
     files: [
@@ -88,7 +74,6 @@ export const ACADEMIC_FONT_INVENTORY: Record<string, FontMetadata> = {
     recommendedFallback: 'FandolHei-Regular.otf',
   },
 
-  // 4. Fandol 家族 (TeX Live 官方内建中文宏包标配，CI 确定性基石)
   fandolSong: {
     family: 'FandolSong',
     files: ['FandolSong-Regular.otf', 'FandolSong-Bold.otf'],
@@ -126,7 +111,6 @@ export const ACADEMIC_FONT_INVENTORY: Record<string, FontMetadata> = {
     bundledInTexLive: true,
   },
 
-  // 5. Latin Modern (经典 TeX 罗马体与数学符号)
   latinModernRoman: {
     family: 'Latin Modern Roman',
     files: [
@@ -157,7 +141,6 @@ export const ACADEMIC_FONT_INVENTORY: Record<string, FontMetadata> = {
     bundledInTexLive: true,
   },
 
-  // 6. Libertinus (数理物理学优雅衬线与完备数学符号)
   libertinusSerif: {
     family: 'Libertinus Serif',
     files: [
@@ -190,7 +173,6 @@ export const ACADEMIC_FONT_INVENTORY: Record<string, FontMetadata> = {
     recommendedFallback: 'STIXTwoMath-Regular.otf',
   },
 
-  // 7. 霞鹜文楷 (高质量开源中文手写/楷体，专用于课程讲义与题注)
   lxgwWenKai: {
     family: 'LXGW WenKai GB',
     files: [
@@ -205,11 +187,10 @@ export const ACADEMIC_FONT_INVENTORY: Record<string, FontMetadata> = {
     languageSupport: ['zh-CN', 'en', 'symbol'],
     mathSupport: false,
     redistributionAllowed: true,
-    bundledInTexLive: true, // TeX Live 自带 lxgw-wenkai 宏包及字体
+    bundledInTexLive: true,
     recommendedFallback: 'FandolKai-Regular.otf',
   },
 
-  // 8. New Computer Modern (Typst 默认学术字体同款，高对比衬线)
   newComputerModernMath: {
     family: 'NewCMMath-Book',
     files: ['NewCMMath-Book.otf', 'NewCMMath-Regular.otf'],

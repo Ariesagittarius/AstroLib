@@ -1,18 +1,3 @@
-/**
- * ============================================================================
- * 全书章节内联关系图谱客户端引擎 (Relation Graph Client Engine)
- * ============================================================================
- * 
- * 职责：
- *   1. 动态加载与缓存 Apache ECharts 5 运行时；
- *   2. Portal 脱离父级 Stacking Context，直接提升至 body 根层级（z-index: 999999）；
- *   3. 响应四种视图切换（拓扑网络、环形依存、思维导图、关联清单）；
- *   4. 响应四种缩放视角与层级过滤（全书明细、按篇章聚合、聚焦当前章、仅看连通节点）；
- *   5. 提供左下角悬浮操控台（放大、缩小、居中复位、物理引力开关）；
- *   6. 用户偏好持久化（支持隐藏/显示右侧侧边栏入口按钮与 Alt+G 快捷键）。
- * ============================================================================
- */
-
 import { mountToOverlayRoot } from '../overlay/overlay-root';
 
 declare global {
@@ -32,7 +17,6 @@ let isScriptLoading = false;
 
 const PREF_KEY_SHOW_BTN = 'astro-show-relation-graph-btn';
 
-/** 动态安全加载 ECharts 5 */
 async function ensureECharts(): Promise<any> {
   if (window.echarts) return window.echarts;
   if (isScriptLoading) {
@@ -72,13 +56,11 @@ async function ensureECharts(): Promise<any> {
   });
 }
 
-/** 判断当前是否暗黑模式 */
 function isDarkMode(): boolean {
   return document.documentElement.getAttribute('data-theme') === 'dark' ||
     document.documentElement.classList.contains('dark');
 }
 
-/** 获取主题对应的配色字典 */
 function getThemeColors() {
   const isDark = isDarkMode();
   return {
@@ -92,12 +74,11 @@ function getThemeColors() {
   };
 }
 
-/** 应用层级与范围过滤数据 */
 function getScopedData() {
   if (!currentGraphData) return null;
 
   if (currentScopeMode === 'group') {
-    // 按篇章/大章聚合
+
     return {
       nodes: currentGraphData.groupData?.nodes || [],
       links: currentGraphData.groupData?.links || [],
@@ -111,7 +92,7 @@ function getScopedData() {
   let links = currentGraphData.links || [];
 
   if (currentScopeMode === 'focus') {
-    // 聚焦当前章及其直接出入链邻居
+
     const currentPath = window.location.pathname.replace(/\/$/, '');
     let activeNode = nodes.find((n: any) => n.url.replace(/\/$/, '') === currentPath);
     if (!activeNode && nodes.length > 0) activeNode = nodes[0];
@@ -128,7 +109,7 @@ function getScopedData() {
       links = links.filter((l: any) => neighborIds.has(l.source) && neighborIds.has(l.target));
     }
   } else if (currentScopeMode === 'connected') {
-    // 仅看有引用的节点
+
     nodes = nodes.filter((n: any) => n.inDegree > 0 || n.outDegree > 0);
     const validIds = new Set(nodes.map((n: any) => n.id));
     links = links.filter((l: any) => validIds.has(l.source) && validIds.has(l.target));
@@ -143,7 +124,6 @@ function getScopedData() {
   };
 }
 
-/** 渲染 ECharts 图表选项 */
 function renderChartOption(data: any, viewMode: 'force' | 'circular' | 'mindmap') {
   if (!echartsInstance || !data) return;
 
@@ -340,7 +320,6 @@ function resolveUrl(url: string): string {
   return (m ? m[1] : '') + url;
 }
 
-/** 填充矩阵列表视图 */
 function renderMatrixView(matrixData: any[]) {
   const tbody = document.getElementById('brg-matrix-tbody');
   if (!tbody) return;
@@ -364,7 +343,6 @@ function renderMatrixView(matrixData: any[]) {
   }).join('');
 }
 
-/** 渲染选中章节详情 */
 function renderChapterDetails(chapterData: any) {
   const defaultView = document.querySelector('.brg-default-view') as HTMLElement;
   const detailView = document.querySelector('.brg-node-detail-view') as HTMLElement;
@@ -397,7 +375,6 @@ function renderChapterDetails(chapterData: any) {
     }
   }
 
-  // 渲染出链
   if (outRefsList) {
     const outCross = (chapterData.outReferences || []).filter((r: any) => r.isCrossChapter);
     if (outCross.length === 0) {
@@ -412,7 +389,6 @@ function renderChapterDetails(chapterData: any) {
     }
   }
 
-  // 渲染入链
   if (inRefsList) {
     const inRefs = chapterData.inReferences || [];
     if (inRefs.length === 0) {
@@ -427,7 +403,6 @@ function renderChapterDetails(chapterData: any) {
     }
   }
 
-  // 渲染本章内部卡片
   if (localCardsEl) {
     const cards = chapterData.cards || [];
     if (cards.length === 0) {
@@ -442,7 +417,6 @@ function renderChapterDetails(chapterData: any) {
   }
 }
 
-/** 渲染全局概览与核心枢纽榜 */
 function renderDefaultOverview(data: any) {
   const defaultView = document.querySelector('.brg-default-view') as HTMLElement;
   const detailView = document.querySelector('.brg-node-detail-view') as HTMLElement;
@@ -471,7 +445,6 @@ function renderDefaultOverview(data: any) {
   }
 }
 
-/** 应用侧边栏按钮显示偏好设置 */
 export function applyButtonVisibilityPref() {
   const isShow = localStorage.getItem(PREF_KEY_SHOW_BTN) !== 'false';
   const prefCheckbox = document.getElementById('brg-pref-show-sidebar-btn') as HTMLInputElement;
@@ -485,12 +458,10 @@ export function applyButtonVisibilityPref() {
 let activeThemeObserver: MutationObserver | null = null;
 let isRelationGraphGlobalBound = false;
 
-/** 初始化关系图谱客户端控制器 */
 export function initRelationGraphClient() {
   const root = document.getElementById('book-relation-graph-root');
   if (!root) return;
 
-  // 1. Portal 提升至 document.body 直属层级（彻底避免父容器 stacking context / clipping 遮挡）
   if (root.parentElement !== document.body) {
     document.body.appendChild(root);
   }
@@ -499,7 +470,6 @@ export function initRelationGraphClient() {
   const bookSlug = root.getAttribute('data-book') || '';
   const cacheKey = `${colSlug}-${bookSlug}`;
 
-  // 应用用户按钮偏好
   applyButtonVisibilityPref();
 
   const prefCheckbox = document.getElementById('brg-pref-show-sidebar-btn') as HTMLInputElement;
@@ -512,7 +482,6 @@ export function initRelationGraphClient() {
     });
   }
 
-  // 2. 模态窗开关与全局快捷键绑定
   function openModal() {
     if (root) mountToOverlayRoot(root);
     root?.classList.add('open');
@@ -525,7 +494,6 @@ export function initRelationGraphClient() {
 
   window.openBookRelationGraph = openModal;
 
-  // 绑定所有触发按钮
   document.querySelectorAll('[data-open-relation-graph], .relation-graph-trigger').forEach((btn) => {
     if ((btn as HTMLElement).dataset.bound) return;
     (btn as HTMLElement).dataset.bound = 'true';
@@ -538,7 +506,6 @@ export function initRelationGraphClient() {
   if (!isRelationGraphGlobalBound) {
     isRelationGraphGlobalBound = true;
 
-    // 快捷键 Alt+G 开启 / Esc 关闭
     window.addEventListener('keydown', (e) => {
       const modalRoot = document.getElementById('book-relation-graph-root');
       if (!modalRoot) return;
@@ -572,7 +539,6 @@ export function initRelationGraphClient() {
     backdrop.addEventListener('click', closeModal);
   }
 
-  // 全屏切换
   const fullscreenBtn = document.getElementById('brg-btn-fullscreen');
   if (fullscreenBtn && !fullscreenBtn.dataset.bound) {
     fullscreenBtn.dataset.bound = 'true';
@@ -583,7 +549,6 @@ export function initRelationGraphClient() {
     });
   }
 
-  // 视角与层级过滤选择器
   const scopeSelect = document.getElementById('brg-scope-select') as HTMLSelectElement;
   scopeSelect?.addEventListener('change', () => {
     currentScopeMode = scopeSelect.value as any;
@@ -602,7 +567,6 @@ export function initRelationGraphClient() {
     const width = container ? container.clientWidth / 2 : 400;
     const height = container ? container.clientHeight / 2 : 300;
 
-    // 1. 优先触发 ECharts 官方 graphRoam 事件（必须包含 seriesIndex: 0 与中心原点 originX/Y）
     try {
       echartsInstance.dispatchAction({
         type: 'graphRoam',
@@ -612,10 +576,9 @@ export function initRelationGraphClient() {
         originY: height,
       });
     } catch (e) {
-      // ignore
+
     }
 
-    // 2. 补强更新 option series[0].zoom，确保在所有视图（如 Tree 思维导图与 Graph）中 100% 精准响应
     currentZoomLevel *= factor;
     try {
       echartsInstance.setOption({
@@ -625,11 +588,10 @@ export function initRelationGraphClient() {
         }]
       });
     } catch (e) {
-      // ignore
+
     }
   }
 
-  // 左下角浮动操控台（放大 / 缩小 / 复位 / 物理开关）
   document.getElementById('brg-zoom-in')?.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -667,7 +629,6 @@ export function initRelationGraphClient() {
     }
   });
 
-  // 视图切换 Tab
   const tabs = root.querySelectorAll('.brg-tab');
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => {
@@ -697,7 +658,6 @@ export function initRelationGraphClient() {
     });
   });
 
-  // 搜索过滤
   const searchInput = document.getElementById('brg-search-input') as HTMLInputElement;
   const searchClear = document.getElementById('brg-search-clear') as HTMLButtonElement;
 
@@ -744,7 +704,6 @@ export function initRelationGraphClient() {
     });
   }
 
-  // 主题变化监听（单例维护，断开旧观察者）
   if (activeThemeObserver) {
     activeThemeObserver.disconnect();
     activeThemeObserver = null;
@@ -756,7 +715,6 @@ export function initRelationGraphClient() {
   });
   activeThemeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
 
-  // 3. 加载与渲染数据
   async function loadAndRenderData() {
     const loadingMask = document.getElementById('brg-loading-mask');
     loadingMask?.classList.remove('hidden');
@@ -770,7 +728,7 @@ export function initRelationGraphClient() {
           const res = await fetch(`/__relation_graph__/data?col=${colSlug}&book=${bookSlug}`);
           if (res.ok) fetchedData = await res.json();
         } catch {
-          // dev endpoint not active
+
         }
 
         if (!fetchedData) {
@@ -784,7 +742,6 @@ export function initRelationGraphClient() {
 
       currentGraphData = window.__BRG_CACHED_DATA__[cacheKey];
 
-      // 填充统计指标
       const statChapters = document.getElementById('brg-stat-chapters');
       const statCrossRefs = document.getElementById('brg-stat-cross-refs');
       const statLinks = document.getElementById('brg-stat-links');
@@ -793,10 +750,8 @@ export function initRelationGraphClient() {
       if (statCrossRefs) statCrossRefs.textContent = `${currentGraphData.stats.totalCrossReferences} 跨章引用`;
       if (statLinks) statLinks.textContent = `${currentGraphData.stats.totalLinks} 关联边`;
 
-      // 渲染概览
       renderDefaultOverview(currentGraphData);
 
-      // 加载 ECharts 并挂载实例
       const echartsLib = await ensureECharts();
       const container = document.getElementById('brg-echarts-container');
       if (container && !echartsInstance) {

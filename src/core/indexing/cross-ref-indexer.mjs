@@ -46,16 +46,8 @@ export function parseTitleDetails(rawTitle) {
   };
 }
 
-// 内存索引快照缓存池：bookKey -> { signature, result }
 const globalIndexMemoryCache = new Map();
 
-/**
- * 构建指定书籍的编译期全局跨页路由索引（带文件签名内存缓存，避免 SSR 重复读盘与正则风暴）
- * @param {string} colSlug 合集 slug
- * @param {string} bookSlug 图书 slug
- * @param {boolean} [force=false] 是否强制跳过缓存
- * @returns {Record<string, Array<{url: string, chapterTitle: string, rawTitle: string, cleanTitle: string}>>} 紧凑跨页索引字典
- */
 export function buildGlobalBlockIndex(colSlug, bookSlug, force = false) {
   const globalBlockIndex = {};
   if (!colSlug || !bookSlug) return globalBlockIndex;
@@ -84,7 +76,6 @@ export function buildGlobalBlockIndex(colSlug, bookSlug, force = false) {
         let urlPath = `/${cleanSlugPath}/`;
         urlPath = urlPath.replace(/\/+/g, '/');
 
-        // 提取章节标题 (Frontmatter title 或文件名)
         const fmTitleMatch = fileContent.match(/^---\s*\n([\s\S]*?)\n---/);
         let chapterTitle = path.basename(file, path.extname(file));
         if (fmTitleMatch) {
@@ -129,4 +120,3 @@ export function buildGlobalBlockIndex(colSlug, bookSlug, force = false) {
 
   return globalBlockIndex;
 }
-

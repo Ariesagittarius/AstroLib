@@ -1,18 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/generate-metrics-specimens.mjs
- * AstroLib Phase 6A: Typography Metrics Specimen Matrix Generator
- *
- * 任务：
- * 为 4 套已注册预设生成：
- * A. Baseline Specimen (纯净基准排版标本)
- * B. Diagnostic Measurement Specimen (带有光学度量标尺与高亮对齐参考线的诊断标本)
- *
- * 规范：
- * - 产物仅输出到 .tmp/typography-metrics/
- * - 严格作为 Diagnostic Specimen，禁止覆盖任何生产 Golden PDF
- * - 零修改现有 Preset 数据与行为
- */
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -30,13 +16,11 @@ const METRICS_DIR = path.join(ROOT, '.tmp', 'typography-metrics');
 
 fs.mkdirSync(METRICS_DIR, { recursive: true });
 
-// 拷贝宏包
 const styPath = path.join(ROOT, 'src', 'publishing', 'latex', 'templates', 'astrolib-chapter.sty');
 if (fs.existsSync(styPath)) {
   fs.copyFileSync(styPath, path.join(METRICS_DIR, 'astrolib-chapter.sty'));
 }
 
-// 探测本地可用 xelatex
 function findXelatex() {
   const candidates = [
     'xelatex',
@@ -57,10 +41,6 @@ if (!xelatexBin) {
   console.error('❌ 未找到可用 xelatex 编译器');
   process.exit(1);
 }
-
-// -----------------------------------------------------------------------------
-// 标本通用正文生成器
-// -----------------------------------------------------------------------------
 
 function buildSpecimenBody(isDiagnostic = false) {
   const diagnosticSection = isDiagnostic
@@ -160,10 +140,6 @@ ${diagnosticSection}
 \\end{center}
 `;
 }
-
-// -----------------------------------------------------------------------------
-// 编译流程
-// -----------------------------------------------------------------------------
 
 console.log('================================================================');
 console.log('📐 AstroLib Phase 6A: Specimen Matrix 编译生成器');

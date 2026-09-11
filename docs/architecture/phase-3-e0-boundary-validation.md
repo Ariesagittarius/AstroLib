@@ -1,8 +1,8 @@
 # AstroLib Phase 3-E0 核心边界校验报告：Core Boundary Validation
 
-> **阶段属性**：Phase 3-E0 (Architecture Boundary Verification & Decision)  
-> **操作纪律**：**零代码修改、零文件移动、零函数重构、零依赖变更、零破坏性操作**  
-> **前序基线**：Phase 3-C (`LOG-006` 门禁全通), Phase 3-D (`Candidate B` 架构方向暂定采纳)  
+> **阶段属性**：Phase 3-E0 (Architecture Boundary Verification & Decision)
+> **操作纪律**：**零代码修改、零文件移动、零函数重构、零依赖变更、零破坏性操作**
+> **前序基线**：Phase 3-C (`LOG-006` 门禁全通), Phase 3-D (`Candidate B` 架构方向暂定采纳)
 > **本阶段目标**：穿透源码、调用链与合约语义，严格审验 `cross-ref-indexer.mjs` 与 `sidebar.mjs` 是否有资格成为独立无染的 `src/core/` 领域底座。
 
 ---
@@ -55,7 +55,7 @@
 ### 2.5 审定结论
 `cross-ref-indexer.mjs` 拥有明确、稳定、无 UI 污染、多方共享的领域能力。
 
-> **判决：`cross-ref-indexer → APPROVE`**  
+> **判决：`cross-ref-indexer → APPROVE`**
 > 允许后续整体迁移至 `src/core/indexing/cross-ref-indexer.mjs`。
 
 ---
@@ -123,9 +123,9 @@ items.push({
 ### 3.5 审定结论
 当前 `sidebar.mjs` 属于“混合体”。绝不能将其作为一个整体文件直接晋升为 `src/core/`。
 
-> **判决：`sidebar.mjs → SPLIT`**  
-> 必须拆分为：  
-> 1. **领域核心**：`src/core/catalog/book-catalog.mjs`（构建纯净的教材目录树）  
+> **判决：`sidebar.mjs → SPLIT`**
+> 必须拆分为：
+> 1. **领域核心**：`src/core/catalog/book-catalog.mjs`（构建纯净的教材目录树）
 > 2. **展示适配器**：`src/server/adapters/starlight-sidebar.mjs`（将纯目录树转译为 Starlight sidebar schema 并注入 `collapsed: true`）
 
 ---
@@ -309,6 +309,6 @@ src/
 
 ---
 
-*报告生成时间：2026-09-06*  
-*执行原则遵循：Rule 0（行为保护）｜ Rule 1（UI 不是领域模型）｜ 零修改勘察*  
+*报告生成时间：2026-09-06*
+*执行原则遵循：Rule 0（行为保护）｜ Rule 1（UI 不是领域模型）｜ 零修改勘察*
 *状态：已停止操作，等待人工审核决策。*

@@ -55,7 +55,7 @@ const MAX_MSGS = 60;
 function decorateFootnotes(html: string, decorate = true): string {
   if (!decorate || !html) return html || '';
   const protectedBlocks: string[] = [];
-  // 保护 pre, code, a 标签，以及包含数学公式的标签与 HTML 属性，避免数学公式下标被误换为链接
+
   let safe = html.replace(/(<(?:pre|code|a|p\s+class="md-math")[^>]*>[\s\S]*?<\/(?:pre|code|a|p)>|<[^>]+>)/gi, (m) => {
     protectedBlocks.push(m);
     return `___FN_PROT_${protectedBlocks.length - 1}___`;
@@ -152,7 +152,6 @@ function safeLink(url: string): string {
   u = u.replace(/&amp;/g, '&');
   if (/^javascript:/i.test(u) || /^data:/i.test(u) || /^vbscript:/i.test(u)) return '';
 
-  // 剔除可能被误捕获的尾部标点（如右括号、句号、分号等）
   u = u.replace(/[),.，。；;!?！？、]+$/, '').trim();
   if (!u) return '';
 
@@ -210,8 +209,6 @@ function renderInline(s: string, openNew = true): string {
   const rel = openNew ? 'rel="noopener"' : '';
   const placeholders: string[] = [];
 
-  // 1. Markdown 链接 [text](url "title") 或 [text]( <url> )
-  // 兼容括号内首尾空白、换行、尖括号包围及可选引号 title
   s = s.replace(/\[([^\]\n]+)\]\(\s*<?([^)\s>]+)>?(?:\s+["'][^"']*["'])?\s*\)/g, (_m, text, url) => {
     const href = safeLink(url);
     if (!href) return esc(`[${text}](${url})`);
@@ -225,7 +222,6 @@ function renderInline(s: string, openNew = true): string {
     return `___LINK_PLACEHOLDER_${placeholders.length - 1}___`;
   });
 
-  // 2. 裸路径/各类畸形 collections 链接（含 https://collections/...、//collections/...、/collections/...）
   s = s.replace(/(^|[^\w"'/=])((?:https?:)?\/\/[^\s<>"']*collections\/[^\s<>"']+|\/?collections\/[^\s<>"']+)/gi, (fullMatch, prefix, rawUrl) => {
     let cleanUrl = rawUrl.replace(/[),.，。；;!?！？、]+$/, '');
     const trailing = rawUrl.slice(cleanUrl.length);
@@ -236,13 +232,11 @@ function renderInline(s: string, openNew = true): string {
     return `${prefix}___LINK_PLACEHOLDER_${placeholders.length - 1}___${trailing}`;
   });
 
-  // 3. 行内基础 Markdown 格式
   s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
   s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
 
-  // 4. 还原所有链接占位符
   s = s.replace(/___LINK_PLACEHOLDER_(\d+)___/g, (_m, idx) => placeholders[Number(idx)]);
 
   return s;
@@ -269,7 +263,7 @@ function mdToHtml(md: string, openNew = true): string {
       out.push(`<pre><code>${buf.join('\n')}</code></pre>`);
       continue;
     }
-    // $$ 数学块（支持单行与多行，含流式截断未闭合 $$ 的自动兜底闭合）
+
     if (/^\s*\$\$/.test(line)) {
       const buf = [line.trim()];
       if (/^\s*\$\$.*\$\$\s*$/.test(line) && line.trim().length > 4) {
@@ -504,7 +498,6 @@ export class AIAskElement extends HTMLElement {
     this._messages = this.querySelector('.ask-messages') as HTMLElement;
     this._bookEl = this.querySelector('.ask-book') as HTMLElement;
 
-    // Apply saved panel dimensions if present
     const dims = getAiPanelDimensions();
     if (this._panel) {
       if (dims.width) this._panel.style.setProperty('--ask-panel-width', `${dims.width}px`);
@@ -515,7 +508,7 @@ export class AIAskElement extends HTMLElement {
 
     if (this._messages) {
       this._messages.addEventListener('click', (e: MouseEvent) => {
-        // 工具面板 Tab 切换 (结果 / 参数)
+
         const tabBtn = (e.target as HTMLElement).closest('.ask-tool-tab');
         if (tabBtn) {
           e.preventDefault();
@@ -540,7 +533,6 @@ export class AIAskElement extends HTMLElement {
           return;
         }
 
-        // 工具数据复制
         const copyBtn = (e.target as HTMLElement).closest('.ask-tool-copy-btn');
         if (copyBtn) {
           e.preventDefault();
@@ -561,7 +553,6 @@ export class AIAskElement extends HTMLElement {
           return;
         }
 
-        // 错误卡片重试
         const retryBtn = (e.target as HTMLElement).closest('.ask-error-retry-btn');
         if (retryBtn) {
           e.preventDefault();
@@ -569,7 +560,6 @@ export class AIAskElement extends HTMLElement {
           return;
         }
 
-        // 错误卡片打开快速设置调整模型
         const settingsTrigger = (e.target as HTMLElement).closest('.ask-error-settings-btn');
         if (settingsTrigger) {
           e.preventDefault();
@@ -577,7 +567,6 @@ export class AIAskElement extends HTMLElement {
           return;
         }
 
-        // 错误卡片完整日志复制
         const copyErrBtn = (e.target as HTMLElement).closest('.ask-error-copy-btn');
         if (copyErrBtn) {
           e.preventDefault();
@@ -661,7 +650,6 @@ export class AIAskElement extends HTMLElement {
     }
     if (this._close) this._close.addEventListener('click', () => this._closePanel());
 
-    // Settings trigger dispatches global event to open quick settings AI panel
     if (this._settingsBtn) {
       this._settingsBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -946,7 +934,6 @@ export class AIAskElement extends HTMLElement {
     const lastUserMsg = t.messages[userIndex].text;
     if (!lastUserMsg) return;
 
-    // 回滚该提问及后续可能失败的消息
     t.messages = t.messages.slice(0, userIndex);
     this._saveActiveThread();
     this._renderThread(t);

@@ -1,19 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/test-typography-specimen.mjs
- * AstroLib Academic Typography Specimen 测试引擎
- *
- * 核心目标：
- * 1. 构建涵盖中文、西文、复杂数学公式（微积分、极限、矩阵、希腊字母、多行对齐）、
- *    定理族环境、严谨证明、解题环境、学术注记与数字资源的权威出版级 Specimen 测试文档。
- * 2. 对五大预设 (scholarly, classic, international, mathematical, lecture)
- *    执行真实 XeLaTeX 双遍物理编译，生成独立 PDF。
- * 3. 严格检测与审计：
- *    - 字体缺失与替换警告 (Missing Font / Glyph Warnings)
- *    - 中西文光学字高匹配与基线对齐
- *    - 解题环境【解】与定理标签视觉碎片化情况
- *    - 编译耗时、产物体积与页码收敛性
- */
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -35,7 +20,6 @@ console.log('================================================================');
 console.log('🔬 AstroLib Academic Typography System 样本物理编译与排版评测');
 console.log('================================================================\n');
 
-// 探测本地可用 XeLaTeX 编译器
 function findXelatex() {
   const candidates = [
     'xelatex',
@@ -60,16 +44,12 @@ if (!xelatexBin) {
 }
 console.log(`🔍 检测到本地 XeLaTeX 引擎: ${xelatexBin}\n`);
 
-// 拷贝 astrolib-chapter.sty 模版到测试目录
 const stySource = fs.readFileSync(
   path.join(ROOT, 'src', 'publishing', 'latex', 'templates', 'astrolib-chapter.sty'),
   'utf8'
 );
 fs.writeFileSync(path.join(SPECIMEN_DIR, 'astrolib-chapter.sty'), stySource, 'utf8');
 
-/**
- * 构造权威的 Academic Typography Specimen 正文
- */
 function buildSpecimenContent() {
   return `
 \\renewcommand{\\astrolibchapternum}{2.}
@@ -180,10 +160,6 @@ function buildSpecimenContent() {
 `;
 }
 
-// -----------------------------------------------------------------------------
-// 编译官方四套预设并记录度量指标
-// -----------------------------------------------------------------------------
-
 const presetsToTest = listTypographyPresets().map((p) => p.id);
 const results = [];
 
@@ -220,7 +196,7 @@ ${buildSpecimenContent()}
   let warnings = [];
 
   try {
-    // 执行双遍 XeLaTeX 编译
+
     execSync(
       `"${xelatexBin}" -file-line-error -interaction=nonstopmode specimen_${presetId}.tex`,
       { cwd: SPECIMEN_DIR, stdio: 'pipe' }
@@ -237,12 +213,10 @@ ${buildSpecimenContent()}
 
   const durationMs = Date.now() - startTime;
 
-  // 审计 .log 文件中的字体加载与告警信息
   if (fs.existsSync(logPath)) {
     const logContent = fs.readFileSync(logPath, 'utf8');
     const lines = logContent.split('\n');
 
-    // 过滤字体未找到或替换警告
     for (const line of lines) {
       if (/font.*not found/i.test(line) || /missing.*font/i.test(line)) {
         warnings.push(line.trim());
@@ -286,9 +260,6 @@ ${buildSpecimenContent()}
   console.log('');
 }
 
-// -----------------------------------------------------------------------------
-// 输出评测汇总表
-// -----------------------------------------------------------------------------
 console.log('================================================================');
 console.log('📊 Typography Specimen 物理编译验证与度量总表');
 console.log('================================================================');

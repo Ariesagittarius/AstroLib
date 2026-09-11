@@ -42,12 +42,8 @@ function assert(condition, message) {
   }
 }
 
-// -----------------------------------------------------------------------------
-// 1. 验证 Shared ExportSettings 跨 Chapter / Exercise 共享
-// -----------------------------------------------------------------------------
 console.log('--- [测试组 1] Shared ExportSettings 跨模块调用一致性 ---');
 
-// 1.1 LocalStorage 键名唯一性与无冲突检查
 const storageValues = Object.values(SHARED_EXPORT_STORAGE_KEYS);
 const uniqueStorageValues = new Set(storageValues);
 assert(
@@ -55,7 +51,6 @@ assert(
   `SHARED_EXPORT_STORAGE_KEYS 无重复键名 (共 ${storageValues.length} 个配置项)`
 );
 
-// 1.2 Math Font 变更联动
 const fonts = ['typst', 'modern', 'times', 'pagella'];
 const fontIdentifiers = {
   typst: 'NewCMMath-Book.otf',
@@ -80,7 +75,6 @@ for (const f of fonts) {
   );
 }
 
-// 1.3 Paper Size 变更联动
 for (const p of ['a4', 'b5']) {
   const chapterTex = renderChapterLatexDocument(
     { title: '测试章', blocks: [] },
@@ -97,7 +91,6 @@ for (const p of ['a4', 'b5']) {
   );
 }
 
-// 1.4 Font Size 变更联动
 for (const s of [10.5, 11, 12]) {
   const chapterTex = renderChapterLatexDocument(
     { title: '测试章', blocks: [] },
@@ -114,12 +107,8 @@ for (const s of [10.5, 11, 12]) {
   );
 }
 
-// -----------------------------------------------------------------------------
-// 2. 验证 Chapter-scoped 依赖资源解析 (Resource Resolution)
-// -----------------------------------------------------------------------------
 console.log('\n--- [测试组 2] Chapter-Scoped 静态资源解析与路径标准化 ---');
 
-// 2.1 跨平台 POSIX 路径标准化
 assert(
   normalizeLatexPath('assets\\figures\\01.jpg') === 'assets/figures/01.jpg',
   'normalizeLatexPath 将 Windows 反斜杠标准化为 POSIX 正斜杠'
@@ -129,7 +118,6 @@ assert(
   'normalizeLatexPath 保持 POSIX 正斜杠不变'
 );
 
-// 2.2 真实章节 Chapter-Scoped 过滤测试 (对比全量与局部)
 const sampleMdxPath = path.join(
   ROOT,
   'src/content/docs/collections/math/engineering_analysis/1.1_集合映射与函数.mdx'
@@ -143,13 +131,11 @@ const exportRes = exportChapterToLatex({
   bookTitle: '工科数学分析',
 });
 
-// 1.1 章节内含 15 张插图，而整书有 6000+ 张插图
 assert(
   exportRes.assets.length === 15,
   `精确提取当前章节引用的 ${exportRes.assets.length} 张插图 (非全书 6000+ 张图片)`
 );
 
-// 验证提取出来的每张图都是当前章节在 assets/ 下的相对引用
 const allAssetsTargetAssetsDir = exportRes.assets.every(
   (a) => a.targetPath.startsWith('assets/') && fs.existsSync(a.localPath)
 );
@@ -158,7 +144,6 @@ assert(
   '所有解析出的插图本地物理文件均存在，且目标路径统一规范至 assets/'
 );
 
-// 2.3 测试各种特殊插图类型的解析：普通图片、嵌套图片、宽图、高图、多图
 const mockChapterDir = path.join(ROOT, 'src/content/docs/collections/math/engineering_analysis');
 const testImages = [
   { url: 'images/0058c5383413a71167a7502db8fbe568ac47a8c7bd11c667a848abe03a4cd693.jpg', alt: '普通图片' },
@@ -175,9 +160,6 @@ assert(
 const allPosixSafe = resolvedSpecial.every((r) => !r.safeLatexPath.includes('\\'));
 assert(allPosixSafe, '所有输出 safeLatexPath 均为 POSIX 安全路径 (适合 Linux CI 及 Windows)');
 
-// -----------------------------------------------------------------------------
-// 3. 验证排版与版式约束：无封面、自适应尺寸 (adjustbox)、学术卷头
-// -----------------------------------------------------------------------------
 console.log('\n--- [测试组 3] 学术版式与自适应图片语法 ---');
 
 assert(
@@ -200,12 +182,9 @@ assert(
   exportRes.tex.includes('\\astrolibchapternum') && exportRes.tex.includes('\\thesection'),
   '动态注入 \\astrolibchapternum 与 \\thesection，章节与定理计数器准确对齐'
 );
-// -----------------------------------------------------------------------------
-// 4. 验证中文字体设置、纯粹书名页眉与克制弹窗
-// -----------------------------------------------------------------------------
+
 console.log('\n--- [测试组 4] 中文字体设置、纯粹书名页眉与克制弹窗规范 ---');
 
-// 4.1 CJK 字体思源组合注入
 const sourceHanTex = renderChapterLatexDocument(
   { title: '测试章', blocks: [] },
   { cjkFont: 'sourcehan' }
@@ -223,7 +202,6 @@ assert(
   'cjkFont: "default" 保持原生 ctexart 预设中文配置'
 );
 
-// 4.2 页眉右上角为纯粹书名，无品牌杂讯
 assert(
   !exportRes.styleSource.includes('AstroLib学术讲义') &&
   !exportRes.styleSource.includes('{AstroLib'),
@@ -234,7 +212,6 @@ assert(
   '导出章节源码正确将页眉右上角绑定为当前书名 (工科数学分析)'
 );
 
-// 4.3 交互弹窗克制化与 CJK 下拉框
 const modalAstroPath = path.join(ROOT, 'src/components/publishing/ChapterExportModal.astro');
 const modalAstroContent = fs.readFileSync(modalAstroPath, 'utf8');
 
@@ -251,12 +228,8 @@ assert(
   'ChapterExportModal 彻底剔除所有 Emoji 图标与营销修饰，保持严肃学术克制'
 );
 
-// -----------------------------------------------------------------------------
-// 5. 验证 Academic Digital Resource (数字资源学术排版与语义流)
-// -----------------------------------------------------------------------------
 console.log('\n--- [测试组 5] Academic Digital Resource (数字资源学术排版与语义流) ---');
 
-// 5.1 验证数字资源语义块解析 (Semantic Model)
 const parsedSample = parseMdxChapter(mdxContent, '1.1_集合映射与函数');
 const digitalResBlocks = parsedSample.blocks.filter((b) => b.kind === 'digital_resource');
 assert(
@@ -274,7 +247,6 @@ assert(
   '数字资源具备完整字段: category=digital_resource, relation=flow, 规范化标题与 URL'
 );
 
-// 5.2 验证 AST 上下文向内传递的确定性宿主绑定 (Deterministic Host Binding - Zero Guessing)
 const nestedSnippet = `
 <Example title="例 1.1">
   <QRCodeVideo title="例题微课视频" url="http://2d.hep.cn/example-video" />
@@ -291,7 +263,6 @@ assert(
   '嵌套在 Example 内的数字资源确定性绑定宿主: relation=embedded, hostKind=example, hostId="例 1.1"'
 );
 
-// 5.3 验证 LaTeX 源码输出 (Typography & Zero Footnote)
 assert(
   !exportRes.tex.includes('\\footnote{配套数字资源'),
   'LaTeX 导出彻底废除 \\footnote 机制，严禁将数字资源打入页面底端脚注'
@@ -305,7 +276,6 @@ assert(
   'LaTeX 源码统一输出 \\astrolibdigitalresource[<分类>]{<标题>}{<链接>} 语义命令'
 );
 
-// 5.4 验证宏包定义 (Package Contract)
 assert(
   exportRes.styleSource.includes('\\newcommand{\\astrolibdigitalresource}'),
   'astrolib-chapter.sty 宏包明确定义 \\astrolibdigitalresource 宏'
@@ -318,4 +288,3 @@ assert(
 console.log('\n================================================================');
 console.log(`🏁 测试完成: ${passedTests} / ${totalTests} 全部通过!`);
 console.log('================================================================\n');
-

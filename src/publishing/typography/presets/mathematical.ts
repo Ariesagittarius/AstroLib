@@ -1,15 +1,3 @@
-/**
- * src/publishing/typography/presets/mathematical.ts
- * 数理专版预设 (Mathematical) - Core 核心通用学术预设
- *
- * 设计理念：
- * - 纯粹数学与理论物理专版，注重公式精密排版与符号典雅韵律
- * - 中文正文：思源宋体 (Source Han Serif SC)
- * - 中文标题：思源黑体 (Source Han Sans SC)
- * - 西文与公式：Libertinus (Serif & Math)
- * - 辅助楷体：Fandol 楷体 (FandolKai)
- */
-
 import type { TypographyPreset } from '../types.ts';
 
 export const PRESET_MATHEMATICAL: TypographyPreset = {

@@ -1,22 +1,4 @@
 ---
-/**
- * ============================================================================
- * 全站用户体验洞察与统计分析组件 (Microsoft Clarity UX Telemetry)
- * ============================================================================
- *
- * 核心设计与数据质量保障：
- * 1. 【Microsoft Clarity 深度用户体验洞察】：
- *    - 永久无上限免费：提供高质量全量会话录屏 (Session Replays)、点击/滚动热力图 (Heatmaps)；
- *    - 自动识别痛点：暴怒点击 (Rage Clicks)、死点击 (Dead Clicks)、快速回退 (Quick Backs)；
- *    - 零侵入异步加载：不阻塞首屏渲染与 KaTeX 公式排版。
- * 2. 【智能环境守卫 (Data Sanitization)】：
- *    - 生产环境守卫：默认拦截 localhost、127.0.0.1 及内网调试隧道，防止本地开发污染分析看板；
- *    - 机器人过滤：拦截无头自动化浏览器 (Puppeteer/Playwright/Webdriver) 与常见爬虫扫描；
- *    - 黑名单过滤：排除 /dev/ 开发工具与 /print 打印排版页。
- * 3. 【高价值读者行为追踪 (High-Value Telemetry)】：
- *    - 全局统一事件总线 (window.__astrolibTrack) 深度对接 AI 问答、读者勘误、EPUB 下载与公式操作。
- * ============================================================================
- */
 import { features } from '../config/features.config.mjs';
 
 const isEnabled = features.analytics?.enabled ?? true;
@@ -34,15 +16,13 @@ const clarityProjectId = analyticsConfig.clarityProjectId || 'y9on8roaw3';
 
 {isEnabled && clarityProjectId && (
   <>
-    <!-- 客户端守卫与 Microsoft Clarity 核心注入引擎 -->
-    <script is:inline define:vars={{ analyticsConfig, clarityProjectId }}>
-      (function () {
+
+    <script is:inline define:vars={{ analyticsConfig, clarityProjectId }}>(function () {
         if (window.__astrolibClarityInjected) return;
 
         var hostname = window.location.hostname;
         var pathname = window.location.pathname;
 
-        // 1. 生产环境守卫：拦截本地开发与穿透调试，避免脏数据
         if (analyticsConfig.productionOnly) {
           var isLocal =
             hostname === 'localhost' ||
@@ -54,7 +34,7 @@ const clarityProjectId = analyticsConfig.clarityProjectId || 'y9on8roaw3';
             hostname.indexOf('localtunnel.me') !== -1;
 
           if (isLocal) {
-            // 本地开发环境下保留 mock 追踪函数，便于控制台调试
+
             window.__astrolibTrack = function (name, data) {
               console.log('[Analytics:DevMock]', name, data);
             };
@@ -62,7 +42,6 @@ const clarityProjectId = analyticsConfig.clarityProjectId || 'y9on8roaw3';
           }
         }
 
-        // 2. 爬虫与自动化测试探针过滤
         if (analyticsConfig.filterBots) {
           if (navigator.webdriver) return;
           var ua = (navigator.userAgent || '').toLowerCase();
@@ -78,7 +57,6 @@ const clarityProjectId = analyticsConfig.clarityProjectId || 'y9on8roaw3';
           }
         }
 
-        // 3. 黑名单路由过滤（排除开发文档、全书打印页）
         if (Array.isArray(analyticsConfig.excludePaths)) {
           for (var j = 0; j < analyticsConfig.excludePaths.length; j++) {
             var prefix = analyticsConfig.excludePaths[j];
@@ -88,7 +66,6 @@ const clarityProjectId = analyticsConfig.clarityProjectId || 'y9on8roaw3';
           }
         }
 
-        // 4. 异步加载并初始化 Microsoft Clarity
         window.__astrolibClarityInjected = true;
         (function (c, l, a, r, i, t, y) {
           c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
@@ -99,7 +76,6 @@ const clarityProjectId = analyticsConfig.clarityProjectId || 'y9on8roaw3';
           y.parentNode.insertBefore(t, y);
         })(window, document, 'clarity', 'script', clarityProjectId);
 
-        // 5. 注册全站统一安全埋点总线
         window.__astrolibTrack = function (eventName, eventData) {
           try {
             if (window.clarity) {
@@ -113,16 +89,13 @@ const clarityProjectId = analyticsConfig.clarityProjectId || 'y9on8roaw3';
               }
             }
           } catch (e) {
-            // 埋点静默失败保护
+
           }
         };
       })();
-    </script>
+</script>
 
-    <!-- 客户端事件监听器：高价值交互与 SPA 页面切章联动 -->
-    <script define:vars={{ trackHighValueEvents: analyticsConfig.trackHighValueEvents !== false }}>
-      // 1. SPA 页面路由切换同步（Starlight astro:page-load）
-      document.addEventListener('astro:page-load', () => {
+    <script define:vars={{ trackHighValueEvents: analyticsConfig.trackHighValueEvents !== false }}>document.addEventListener('astro:page-load', () => {
         if (window.clarity) {
           try {
             window.clarity('set', 'page_path', window.location.pathname);
@@ -131,13 +104,11 @@ const clarityProjectId = analyticsConfig.clarityProjectId || 'y9on8roaw3';
         }
       });
 
-      // 2. 高价值读者动作自动委托监听
       if (trackHighValueEvents) {
         document.addEventListener('click', (e) => {
           const target = e.target;
           if (!target) return;
 
-          // (1) EPUB 电子书下载追踪
           const anchor = target.closest ? target.closest('a') : null;
           if (anchor) {
             const href = anchor.getAttribute('href') || '';
@@ -149,7 +120,6 @@ const clarityProjectId = analyticsConfig.clarityProjectId || 'y9on8roaw3';
             }
           }
 
-          // (2) 公式快捷操作追踪 (复制 LaTeX / 导出图片)
           const formulaBtn = target.closest ? target.closest('.katex-action-btn') : null;
           if (formulaBtn) {
             const actionType = formulaBtn.getAttribute('aria-label') || 'formula_action';
@@ -158,7 +128,6 @@ const clarityProjectId = analyticsConfig.clarityProjectId || 'y9on8roaw3';
             }
           }
 
-          // (3) 跨章节引用徽章点击跳转追踪
           const crossRef = target.closest ? target.closest('.cross-ref-chip, [data-ref-id]') : null;
           if (crossRef) {
             const refText = crossRef.textContent?.trim() || 'cross_ref';
@@ -168,6 +137,6 @@ const clarityProjectId = analyticsConfig.clarityProjectId || 'y9on8roaw3';
           }
         });
       }
-    </script>
+</script>
   </>
 )}

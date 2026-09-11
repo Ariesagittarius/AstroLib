@@ -1,16 +1,3 @@
-/**
- * ============================================================================
- * Material You (Material 3) Dynamic Color Engine for AstroLib
- * ============================================================================
- * 职责：
- * 1. 依托 Google 官方 @material/material-color-utilities 算法，根据种子色
- *    动态计算 Light 与 Dark 双模的完整 M3 Tonal Palette 及系统色彩语义令牌。
- * 2. 提供 Chrome / 系统原生 AccentColor 探针，支持动态跟随 Chrome 强调色。
- * 3. 严格限定生成的 CSS 变量作用域在 html[data-site-theme='material-you']，
- *    绝对不污染 VitePress 或 Starlight 等其它主题。
- * ============================================================================
- */
-
 import { themeFromSourceColor, argbFromHex, hexFromArgb } from '@material/material-color-utilities';
 
 export interface ColorPreset {
@@ -45,18 +32,12 @@ export const THEME_COLOR_PRESETS: ColorPreset[] = [
 export const DEFAULT_THEME_COLOR_ID = 'chrome-blue';
 export const STORAGE_KEY_M3_COLOR = 'starlight-m3-theme-color';
 
-/**
- * 检测当前是否为 Chrome 浏览器（非 Edge/Opera 等派生内核）
- */
 export function isChromeBrowser(): boolean {
   if (typeof navigator === 'undefined') return false;
   const ua = navigator.userAgent;
   return /Chrome/.test(ua) && !/Edg|OPR|Brave/.test(ua);
 }
 
-/**
- * 探测 Chrome / 系统当前生效的 CSS AccentColor
- */
 export function detectChromeAccentColor(): string {
   if (typeof document === 'undefined') return '#0b57d0';
   try {
@@ -79,9 +60,6 @@ export function detectChromeAccentColor(): string {
   return '#0b57d0';
 }
 
-/**
- * 获取当前持久化的主题色标识或 Hex
- */
 export function loadThemeColor(): string {
   try {
     if (typeof localStorage !== 'undefined') {
@@ -93,9 +71,6 @@ export function loadThemeColor(): string {
   return DEFAULT_THEME_COLOR_ID;
 }
 
-/**
- * 保存主题色偏好
- */
 export function saveThemeColor(colorIdOrHex: string): void {
   try {
     if (typeof localStorage !== 'undefined') {
@@ -104,9 +79,6 @@ export function saveThemeColor(colorIdOrHex: string): void {
   } catch (e) {}
 }
 
-/**
- * 根据种子颜色生成 M3 CSS 样式表内容（严格限定在 html[data-site-theme='material-you']）
- */
 function generateSchemeCss(seedHex: string): string {
   let theme;
   try {
@@ -117,7 +89,6 @@ function generateSchemeCss(seedHex: string): string {
 
   const { light, dark } = theme.schemes;
 
-  // Light 模式 Tonal 变量
   const lightPrimary = hexFromArgb(light.primary);
   const lightOnPrimary = hexFromArgb(light.onPrimary);
   const lightPrimaryContainer = hexFromArgb(light.primaryContainer);
@@ -139,7 +110,6 @@ function generateSchemeCss(seedHex: string): string {
   const lightOutline = hexFromArgb(light.outline);
   const lightOutlineVariant = hexFromArgb(light.outlineVariant);
 
-  // Dark 模式 Tonal 变量
   const darkPrimary = hexFromArgb(dark.primary);
   const darkOnPrimary = hexFromArgb(dark.onPrimary);
   const darkPrimaryContainer = hexFromArgb(dark.primaryContainer);
@@ -244,9 +214,6 @@ html[data-site-theme='material-you'][data-theme='dark'] {
   `.trim();
 }
 
-/**
- * 解析有效种子色
- */
 export function resolveSeedColor(colorIdOrHex: string): { seedHex: string; isAuto: boolean } {
   if (colorIdOrHex === 'chrome-auto' || colorIdOrHex === 'auto') {
     return { seedHex: detectChromeAccentColor(), isAuto: true };
@@ -260,7 +227,6 @@ export function resolveSeedColor(colorIdOrHex: string): { seedHex: string; isAut
     return { seedHex: preset.seed, isAuto: false };
   }
 
-  // 检查是否为 Hex 字符串
   if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(colorIdOrHex)) {
     return { seedHex: colorIdOrHex, isAuto: false };
   }
@@ -268,9 +234,6 @@ export function resolveSeedColor(colorIdOrHex: string): { seedHex: string; isAut
   return { seedHex: '#0b57d0', isAuto: false };
 }
 
-/**
- * 将生成的 M3 动态色彩注入 DOM
- */
 export function applyThemeColor(colorIdOrHex?: string): void {
   if (typeof document === 'undefined') return;
 
@@ -295,20 +258,15 @@ export function applyThemeColor(colorIdOrHex?: string): void {
   );
 }
 
-/**
- * 初始化色彩引擎运行时与 Chrome 消息监听
- */
 export function initColorEngine(): void {
   if (typeof window === 'undefined') return;
   if ((window as any).__m3ColorEngineInitialized) return;
   (window as any).__m3ColorEngineInitialized = true;
 
-  // 初始应用
   if (document.documentElement.dataset.siteTheme === 'material-you') {
     applyThemeColor();
   }
 
-  // 监听站点主题切换
   window.addEventListener('site-theme-change', (e: Event) => {
     const detail = (e as CustomEvent).detail;
     if (detail?.theme === 'material-you') {
@@ -316,7 +274,6 @@ export function initColorEngine(): void {
     }
   });
 
-  // 监听 Chrome 扩展广播或跨域消息
   window.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'CHROME_THEME_COLOR' && event.data.color) {
       if (loadThemeColor() === 'chrome-auto') {

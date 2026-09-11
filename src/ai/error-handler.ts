@@ -1,26 +1,11 @@
-/**
- * src/ai/error-handler.ts
- * =============================================================================
- * AstroLib AI 问答统一错误诊断与日志提取中心
- * -----------------------------------------------------------------------------
- * 职责：
- * 1. 深度解析各大模型提供商（Google Gemini、DeepSeek、OpenAI、自定义等）的各种报错形态：
- *    - Google Gemini REST 数组形态: [{ error: { code: 429, message: "...", status: "RESOURCE_EXHAUSTED" } }]
- *    - Google Gemini / OpenAI 标准对象: { error: { message: "...", code: "...", status: "..." } }
- *    - 纯文本或 HTTP 响应体
- * 2. 结构化分类错误（配额超限/频控、密钥无效、模型不存在、网络受阻、服务端维护等）；
- * 3. 产出学术精美、轻量宁静的 Material 3 错误卡片 HTML 与完整诊断日志，供用户一键排查与复制。
- * =============================================================================
- */
-
 export type AiErrorCategory =
-  | 'quota'       // 配额耗尽或并发速率超限 (429 / RESOURCE_EXHAUSTED)
-  | 'auth'        // API Key 无效、缺失或未授权 (400 / 401 / 403)
-  | 'not_found'   // 模型不存在或未开放 (404)
-  | 'network'     // 浏览器网络连接失败 / CORS 阻断
-  | 'server'      // 服务商服务器异常 (500 / 502 / 503)
-  | 'abort'       // 用户主动取消生成
-  | 'unknown';    // 其他未知异常
+  | 'quota'
+  | 'auth'
+  | 'not_found'
+  | 'network'
+  | 'server'
+  | 'abort'
+  | 'unknown';
 
 export interface AiErrorInfo {
   category: AiErrorCategory;
@@ -47,9 +32,6 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
-/**
- * 递归从各种异常格式中提取最深层错误描述
- */
 export function extractErrorMessageAndStatus(raw: any): { status?: number; message: string; rawText: string } {
   let rawText = '';
   let status: number | undefined;
@@ -57,18 +39,18 @@ export function extractErrorMessageAndStatus(raw: any): { status?: number; messa
 
   if (typeof raw === 'string') {
     rawText = raw.trim();
-    // 尝试解析内嵌 JSON
+
     try {
       const parsed = JSON.parse(rawText);
       return extractErrorMessageAndStatus(parsed);
     } catch {
-      // 检查是否包含 HTTP 状态码前缀，如 "LLM 请求失败 429: ..."
+
       const match = rawText.match(/(?:请求失败|status|HTTP)\s*[:=]?\s*(\d{3})/i);
       if (match) status = parseInt(match[1], 10);
       message = rawText;
     }
   } else if (raw && typeof raw === 'object') {
-    // 检查是否为数组形态 (Google Gemini OpenAI 端点常返回 [{ error: { ... } }])
+
     let target = raw;
     if (Array.isArray(raw)) {
       target = raw[0] || {};
@@ -98,9 +80,6 @@ export function extractErrorMessageAndStatus(raw: any): { status?: number; messa
   return { status, message, rawText };
 }
 
-/**
- * 将各类运行时异常解析为标准化 AiErrorInfo
- */
 export function parseAiError(
   err: unknown,
   context?: {
@@ -115,7 +94,6 @@ export function parseAiError(
   const timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
   const errorObj = err as any;
 
-  // 1. 检查是否为用户主动取消
   if (errorObj?.name === 'AbortError' || errorObj?.message === 'AbortError') {
     return {
       category: 'abort',
@@ -129,7 +107,6 @@ export function parseAiError(
     };
   }
 
-  // 2. 提取状态码与错误正文
   const { status: parsedStatus, message: extractedMsg, rawText } = extractErrorMessageAndStatus(
     errorObj?.responseBody || errorObj?.rawText || errorObj?.message || errorObj
   );
@@ -138,13 +115,11 @@ export function parseAiError(
   const lowerMsg = (extractedMsg || '').toLowerCase();
   const lowerRaw = (rawText || '').toLowerCase();
 
-  // 3. 智能判定错误分类 (Category)
   let category: AiErrorCategory = 'unknown';
   let title = '请求异常';
   let message = extractedMsg || '模型接口请求未能顺利完成。';
   let advice = '建议检查网络连接或稍后重试。';
 
-  // 429 配额耗尽或频率限制
   if (
     statusCode === 429 ||
     lowerMsg.includes('resource_exhausted') ||
@@ -159,7 +134,7 @@ export function parseAiError(
     message = `当前模型在提供商（${context?.providerLabel || '当前提供商'}）处的可用免费/用量额度已耗尽，或请求频次超过了每分钟限制。`;
     advice = '建议：\n1. 稍等 10-30 秒后点击下方“重试”按钮；\n2. 点击右上角快速设置 -> AI，切换至同提供商的其他轻量模型（如 Flash Lite 系列）；\n3. 前往提供商控制台检查当前 API Key 的配额与账单余额。';
   }
-  // 400 / 401 / 403 认证错误
+
   else if (
     statusCode === 401 ||
     statusCode === 403 ||
@@ -174,28 +149,28 @@ export function parseAiError(
     message = `提供商拒绝了当前 API Key：密钥可能未填写、已失效、权限不足或存在格式与首尾空格错误。`;
     advice = `建议：点击右上角“快速设置” -> “AI”，重新粘贴当前【${context?.providerLabel || '所选提供商'}】的有效 API Key，并点击“测试连接”验证。`;
   }
-  // 404 模型未开放或下线
+
   else if (statusCode === 404 || lowerMsg.includes('not_found') || lowerMsg.includes('model_not_found') || lowerRaw.includes('model not found')) {
     category = 'not_found';
     title = `模型未找到 (${statusCode || 404})`;
     message = `请求的模型（${context?.modelLabel || context?.modelId || '所选模型'}）在当前端点未部署或已被服务商停用。`;
     advice = '建议：在快速设置中切换至提供商官方目前活跃的推荐模型。';
   }
-  // 5xx 服务端故障
+
   else if (statusCode >= 500) {
     category = 'server';
     title = `提供商服务器异常 (${statusCode})`;
     message = `模型服务商服务端临时繁忙、过载或正在进行维护更新。`;
     advice = '建议：稍后重试，或临时在快速设置中切换到备用提供商。';
   }
-  // 本地中继反代错误
+
   else if (lowerMsg.includes('[本地中继反代]') || lowerMsg.includes('upstream_proxy_error')) {
     category = 'network';
     title = '本地中继连接失败';
     message = '本地 Vite 开发服务器中继进程在转发请求至 Google API 时遇到网络阻断或超时。';
     advice = '建议：检查代理软件（如 Clash/V2Ray）是否正常运行并开启 TUN 虚拟网卡模式，确保本地 Node.js 具备境外访问能力。';
   }
-  // 网络连接阻断
+
   else if (
     errorObj instanceof TypeError ||
     lowerMsg.includes('failed to fetch') ||
@@ -224,9 +199,6 @@ export function parseAiError(
   };
 }
 
-/**
- * 组装可一键复制的完整技术诊断信息
- */
 export function generateDiagnosticText(info: AiErrorInfo): string {
   return [
     `=== AstroLib AI 问答诊断日志 ===`,
@@ -245,9 +217,6 @@ export function generateDiagnosticText(info: AiErrorInfo): string {
   ].join('\n');
 }
 
-/**
- * 渲染宁静学术的 Material 3 错误卡片 HTML
- */
 export function renderErrorCardHtml(info: AiErrorInfo): string {
   if (info.category === 'abort') {
     return `

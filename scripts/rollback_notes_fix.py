@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """一键回滚脚本：将 src/content/docs 恢复至纠正前备份副本。"""
 import os
 import shutil

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 MDX 章节习题页面生成器模块 (MDX Generator)
 基于提取的真题数据库，为《工科数学分析基础》等教材自动生成高质量的课后真题精选 MDX 页面。
@@ -10,7 +9,6 @@ import json
 from typing import List, Dict, Any
 from .models import QuestionItem
 from .formula_reconstructor import escape_for_mdx
-
 
 CHAPTER_FILENAMES = {
     1: "1.6_第1章名校期中与期末真题精选.mdx",
@@ -32,7 +30,6 @@ CHAPTER_NAMES = {
     7: "第7章 无穷级数"
 }
 
-
 class ChapterMDXGenerator:
     """章节 MDX 生成器"""
 
@@ -48,7 +45,6 @@ class ChapterMDXGenerator:
             if not q_list:
                 continue
 
-            # 按题型分组精选：选择题 4 道、填空题 4 道、计算/证明题 4 道
             curated = self._curate_questions(q_list, max_per_chapter)
             mdx_content = self._build_mdx_content(ch_id, curated)
 
@@ -57,7 +53,7 @@ class ChapterMDXGenerator:
 
             with open(fpath, "w", encoding="utf-8") as f:
                 f.write(mdx_content)
-            
+
             print(f"Generated chapter MDX: {fpath} ({len(curated)} curated questions)")
 
     def _curate_questions(self, q_list: List[QuestionItem], max_total: int) -> List[QuestionItem]:
@@ -67,12 +63,11 @@ class ChapterMDXGenerator:
         calcs = [q for q in q_list if q.meta.type in ["calc", "proof"] and q.solution.answer and len(q.content.stem) > 15]
 
         curated = []
-        # 按比例抽取：4道单选、4道填空、4道大题
+
         curated.extend(choices[:4])
         curated.extend(blanks[:4])
         curated.extend(calcs[:4])
 
-        # 如果不足，补充剩余优质题目
         if len(curated) < max_total:
             remaining = [q for q in q_list if q not in curated and q.solution.answer]
             curated.extend(remaining[:max_total - len(curated)])
@@ -82,7 +77,7 @@ class ChapterMDXGenerator:
     def _build_mdx_content(self, ch_id: int, questions: List[QuestionItem]) -> str:
         """构建 MDX 文本内容。"""
         ch_title = CHAPTER_NAMES[ch_id]
-        
+
         mdx_lines = [
             "---",
             f"title: '{ch_title}'",
@@ -101,7 +96,6 @@ class ChapterMDXGenerator:
             ""
         ]
 
-        # 按题型组织小节
         choice_qs = [q for q in questions if q.meta.type == "choice"]
         blank_qs = [q for q in questions if q.meta.type == "blank"]
         calc_qs = [q for q in questions if q.meta.type not in ["choice", "blank"]]
@@ -143,21 +137,18 @@ class ChapterMDXGenerator:
             ""
         ]
 
-        # 渲染选项
         if q.content.options:
             for opt in q.content.options:
                 opt_text = escape_for_mdx(opt.text)
                 lines.append(f"- **{opt.key}.** {opt_text}")
             lines.append("")
 
-        # 渲染大题子问
         if q.content.sub_questions:
             for sub in q.content.sub_questions:
                 sub_stem = escape_for_mdx(sub.stem)
                 lines.append(f"- **{sub.sub_id}** {sub_stem}")
             lines.append("")
 
-        # 渲染解答与解析
         clean_ans = escape_for_mdx(q.solution.answer)
         clean_hints = escape_for_mdx(q.solution.hints) if q.solution.hints else ""
 
@@ -168,13 +159,12 @@ class ChapterMDXGenerator:
         if clean_hints:
             lines.append(f"**【思路提示】** {clean_hints}")
             lines.append("")
-        
-        # 知识点标注
+
         mapping = q.mapping.get("engineering_analysis")
         if mapping and mapping.knowledge_points:
             kws = "、".join(mapping.knowledge_points)
             lines.append(f"> **考察考点**：{kws}（对应小节：`{mapping.section_slug}`）")
-        
+
         lines.append("</Solution>")
         lines.append("</Exercise>")
         lines.append("")

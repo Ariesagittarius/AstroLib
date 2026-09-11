@@ -1,8 +1,8 @@
 # AstroLib Academic Typography Metrics Evidence Report (Phase 6A)
 
-**报告状态**: PASS (Evidence Discovery Stage)  
-**测量环境**: Windows 11 / TeX Live 2026 / XeTeX 3.141592653-2.6-0.999998 (preloaded 2026.9.1)  
-**测量工具**: Python OpenType/TrueType Binary Table Parser + XeLaTeX Dvi/Layout Physical Box Probe (`\sbox`, `\ht`, `\dp`, `\wd`)  
+**报告状态**: PASS (Evidence Discovery Stage)
+**测量环境**: Windows 11 / TeX Live 2026 / XeTeX 3.141592653-2.6-0.999998 (preloaded 2026.9.1)
+**测量工具**: Python OpenType/TrueType Binary Table Parser + XeLaTeX Dvi/Layout Physical Box Probe (`\sbox`, `\ht`, `\dp`, `\wd`)
 **数据基准**: 11pt 标准中文学术正文字阶（`\documentclass[11pt]{ctexart}`）
 
 ---
@@ -241,4 +241,3 @@ export interface TypographyMetrics {
 - **Mathematical**: `baselineStretch = 1.25` (rhythm profile = textbook)
 - **Lecture**: `baselineStretch = 1.30` (rhythm profile = lecture)
 - **严律**：严禁将 `baselineStretch` 等版面垂直节奏基线混称为 "Zero Override"，四大预设均拥有其对应学术场景的基准韵律配置。
-

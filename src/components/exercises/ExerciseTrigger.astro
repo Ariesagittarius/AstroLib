@@ -1,15 +1,4 @@
 ---
-/**
- * ExerciseTrigger.astro
- * 嵌入各章节末尾的课后习题入口卡片（Material 3 规范）
- *
- * 架构重构：
- * 1. 标题自动剔除【课后真题与自测练习】多余字样，保持纯净章节名称；
- * 2. 移除旧静态描述文案与【进入自测】按钮；
- * 3. 采用 Material 3 <md-chip-set> / <md-filter-chip> 列出对当前书籍生效的习题册；
- * 4. 具备开源协议的习题册（如大邮数学集）渲染 info trailing icon，悬停触发 M3 Rich Tooltip；
- * 5. 点击 Chip 联动右侧边栏展开本节习题，原大纲收纳至顶栏。
- */
 import { getExerciseBanksForBook } from '../../config/exercise-banks.config';
 import { collections } from '../../config/collections.config.mjs';
 
@@ -27,7 +16,6 @@ const {
   book: explicitBook,
 } = Astro.props;
 
-// 1. 感知当前页面所属的书籍 slug
 const pathname = Astro.url.pathname;
 let currentBookSlug = explicitBook || '';
 if (!currentBookSlug) {
@@ -41,13 +29,11 @@ if (!currentBookSlug) {
 }
 if (!currentBookSlug) currentBookSlug = 'engineering_analysis';
 
-// 2. 标题规范化：剥离【课后真题与自测练习】等多余后缀
 const rawTitle = title || (section !== 'all' ? `第 ${section} 节` : `第 ${chapter} 章`);
 const cleanTitle = rawTitle
   .replace(/\s*(?:课后真题与自测练习|课后真题与即时自测练习|课后自测与真题练习|课后真题与练习|课后练习|自测练习)/g, '')
   .trim();
 
-// 3. 获取适用于本书的所有题库
 const availableBanks = getExerciseBanksForBook(currentBookSlug);
 ---
 
@@ -70,7 +56,7 @@ const availableBanks = getExerciseBanksForBook(currentBookSlug);
       <div class="exercise-trigger-title-row">
         <h4 class="exercise-trigger-title">{cleanTitle}</h4>
       </div>
-      <!-- Material 3 Chip 选项组：展示对本书生效的所有习题册 -->
+
       <div class="exercise-chip-group">
         <md-chip-set>
           {availableBanks.map((bank) => (
@@ -92,8 +78,7 @@ const availableBanks = getExerciseBanksForBook(currentBookSlug);
   </div>
 </div>
 
-<style>
-  .exercise-trigger-card {
+<style>.exercise-trigger-card {
     box-sizing: border-box;
   }
   .exercise-chip-group md-chip-set {
@@ -111,8 +96,7 @@ const availableBanks = getExerciseBanksForBook(currentBookSlug);
   }
 </style>
 
-<script>
-  import '@material/web/chips/chip-set.js';
+<script>import '@material/web/chips/chip-set.js';
   import '@material/web/chips/filter-chip.js';
   import { getExerciseSidebarController } from './exercise-sidebar-controller';
 

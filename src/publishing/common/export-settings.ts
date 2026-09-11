@@ -1,16 +1,3 @@
-/**
- * src/publishing/common/export-settings.ts
- * AstroLib 统一发布与导出配置体系 (Unified Export Settings & Typography Contracts)
- *
- * 架构规范：
- * - 归属于 Publishing Domain Common 层 (Layer 3)
- * - 为教材章节导出 (Chapter Export) 与习题导出 (Exercise Export) 提供单一配置权威
- * - 核心首选: typography (TypographyPresetId: 'scholarly' | 'classic' | 'mathematical' | 'lecture')
- * - 统一由 Academic Typography System (renderTypographyPreamble) 注入 Preamble
- * - 废除分散硬编码的字体生成逻辑，对历史参数 (mathFont, cjkFont) 执行规范化意图映射
- * - 遵循 Rule 1 (UI is not a domain model) & Rule 7 (Utils purity)
- */
-
 import type {
   TypographyPresetId,
   FontResolutionMode,
@@ -26,9 +13,9 @@ import {
 } from '../typography/presets/index.ts';
 
 export interface ImageSizingPolicy {
-  maxWidthRatio: number;   // 相对行宽的最大比例 (默认 0.65\linewidth)
-  maxHeightRatio: number;  // 相对版心高度的最大比例 (默认 0.30\textheight)
-  keepAspectRatio: boolean;// 严格保持宽高比 (默认 true)
+  maxWidthRatio: number;
+  maxHeightRatio: number;
+  keepAspectRatio: boolean;
   alignment: 'center' | 'left' | 'inline';
   captionStyle: 'kaishu' | 'normal';
 }
@@ -45,18 +32,13 @@ export interface BaseExportSettings {
   paperSize: 'a4' | 'b5';
   fontSize: 10 | 10.5 | 11 | 12;
   fontFamily: 'serif' | 'sans';
-  /**
-   * 核心首选：学术排版预设 (Phase 7 唯一权威)
-   * 'scholarly' (默认) | 'classic' | 'mathematical' | 'lecture'
-   */
+
   typography?: TypographyPresetId;
-  /**
-   * 字体解析模式 (deterministic: CI与发布必须使用; adaptive: 本地开发预览)
-   */
+
   resolutionMode?: FontResolutionMode;
-  /** @deprecated 请改用 typography 预设。保留向下兼容 */
+
   mathFont?: 'typst' | 'modern' | 'times' | 'pagella';
-  /** @deprecated 请改用 typography 预设。保留向下兼容 */
+
   cjkFont?: 'default' | 'sourcehan';
   headerMode: 'standard' | 'compact' | 'none';
   imagePolicy: ImageSizingPolicy;
@@ -128,9 +110,6 @@ export const DEFAULT_EXERCISE_EXPORT_SETTINGS: ExerciseExportSettings = {
   imagePolicy: DEFAULT_IMAGE_POLICY,
 };
 
-/**
- * 统一 LocalStorage 存储键名规范
- */
 export const SHARED_EXPORT_STORAGE_KEYS = {
   TYPOGRAPHY: 'astrolib_latex_typography_preset',
   MATH_FONT: 'astrolib_latex_math_font',
@@ -144,11 +123,6 @@ export const SHARED_EXPORT_STORAGE_KEYS = {
   GH_BRANCH: 'astrolib_compiler_branch',
 } as const;
 
-/**
- * 从配置对象中解析排版目标 (Target)：
- * 优先 userExplicit.typography 预设，次选 userExplicit legacy 参数，
- * 再次选 settings.typography，最后回退至 'scholarly'
- */
 export function getTypographyTarget(
   settings: Partial<BaseExportSettings>,
   userExplicit?: Partial<BaseExportSettings>
@@ -176,9 +150,6 @@ export function getTypographyTarget(
   return DEFAULT_TYPOGRAPHY_PRESET_ID;
 }
 
-/**
- * 从浏览器端安全获取全站共享的排版偏好设置 (含静默向新预设体系迁移)
- */
 export function getStoredExportSettings(): Partial<BaseExportSettings> {
   if (typeof window === 'undefined') return {};
   try {
@@ -189,7 +160,6 @@ export function getStoredExportSettings(): Partial<BaseExportSettings> {
     const paperSize = (localStorage.getItem(SHARED_EXPORT_STORAGE_KEYS.PAPER_SIZE) || 'a4') as any;
     const fontFamily = (localStorage.getItem(SHARED_EXPORT_STORAGE_KEYS.FONT_FAMILY) || 'serif') as any;
 
-    // 历史配置静默升级迁移 (Legacy LocalStorage -> TypographyPresetId)
     if (!typography || !isTypographyPresetId(typography)) {
       if (cjkFont || mathFont) {
         const intent = normalizeLegacyIntent({ cjkFont, mathFont, fontFamily });
@@ -215,9 +185,6 @@ export function getStoredExportSettings(): Partial<BaseExportSettings> {
   }
 }
 
-/**
- * 保存全站共享的排版偏好设置至 LocalStorage
- */
 export function saveStoredExportSettings(settings: Partial<BaseExportSettings>): void {
   if (typeof window === 'undefined') return;
   try {
@@ -242,12 +209,6 @@ export function saveStoredExportSettings(settings: Partial<BaseExportSettings>):
   } catch {}
 }
 
-/**
- * 统一生成 LaTeX 字体与学术排版 Preamble (生产环境唯一委托入口)
- * 供 renderChapterLatexDocument 与 generateLatexDocument 共同复用，彻底解耦底层字体技术细节
- * @param options.includePackage 是否显式包含 \usepackage{unicode-math}（homework.cls 自带时可设为 false）
- * @param options.resolutionMode 显式指定解析模式 ('deterministic' | 'adaptive')
- */
 export function renderFontPreamble(
   settings: BaseExportSettings,
   options: {
@@ -264,11 +225,6 @@ export function renderFontPreamble(
   });
 }
 
-/**
- * 统一生成中文字体 (CJK) 配置 Preamble
- * @deprecated CJK 字体已由 Academic Typography System 在 renderFontPreamble() 中统一注入。
- * 本函数保留为空实现，以完全保持对外接口兼容性。
- */
 export function renderCjkFontPreamble(_settings: BaseExportSettings): string {
   return '';
 }

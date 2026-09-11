@@ -1,14 +1,3 @@
-/**
- * ============================================================================
- * Material You (Material 3) Client Runtime for AstroLib
- * ============================================================================
- * Responsibility:
- * 1. Lazily loads official @material/web components when needed.
- * 2. Mounts Material overlays (Dialog, Menu, Snackbar) to #astro-overlay-root.
- * 3. Provides clean Vertical Slice APIs for settings / theme selection.
- * ============================================================================
- */
-
 import { mountToOverlayRoot } from '../../utils/overlay/overlay-root';
 import { setSiteTheme, type SiteThemeId } from '../../scripts/site-themes';
 import { siteThemes } from '../../config/themes.config.mjs';
@@ -38,16 +27,10 @@ export { initColorEngine, applyThemeColor };
 
 let materialWebLoaded = true;
 
-/**
- * Lazily load official @material/web components (no-op as components are bundled).
- */
 export async function ensureMaterialWebLoaded(): Promise<void> {
   return Promise.resolve();
 }
 
-/**
- * Upgrade hand-crafted .ft-switch elements to official <md-switch> components.
- */
 export function upgradeSwitchesToMaterialWeb(): void {
   const switchLabels = document.querySelectorAll<HTMLLabelElement>('.ft-switch');
 
@@ -74,7 +57,6 @@ export function upgradeSwitchesToMaterialWeb(): void {
 
       label.appendChild(mdSwitch);
 
-      // Prevent label click from triggering duplicate toggle on hidden native input
       label.addEventListener('click', (e) => {
         if (e.target !== mdSwitch && !mdSwitch.contains(e.target as Node)) {
           e.preventDefault();
@@ -104,16 +86,10 @@ export function upgradeSwitchesToMaterialWeb(): void {
   });
 }
 
-/**
- * Clean up any legacy injected appearance switch, keeping the canonical 40px circular mdicon.
- */
 export function upgradeAppearanceSwitchToMaterialWeb(): void {
   document.querySelectorAll('#m3-appearance-switch').forEach((el) => el.remove());
 }
 
-/**
- * Initialize Material You theme runtime: load components and hydrate official elements.
- */
 export async function initMaterialYouTheme(): Promise<void> {
   if (typeof document === 'undefined') return;
   if (document.documentElement.dataset.siteTheme !== 'material-you') return;
@@ -122,7 +98,6 @@ export async function initMaterialYouTheme(): Promise<void> {
   upgradeSwitchesToMaterialWeb();
   upgradeAppearanceSwitchToMaterialWeb();
 
-  // Watch for any dynamic UI insertions (like settings drawer reopening)
   if (!(window as any).__m3ObserverBound) {
     (window as any).__m3ObserverBound = true;
     const observer = new MutationObserver(() => {
@@ -135,10 +110,6 @@ export async function initMaterialYouTheme(): Promise<void> {
   }
 }
 
-
-/**
- * Options for Material 3 Snackbar.
- */
 export interface MaterialSnackbarOptions {
   message: string;
   actionLabel?: string;
@@ -146,9 +117,6 @@ export interface MaterialSnackbarOptions {
   durationMs?: number;
 }
 
-/**
- * Show a Material 3 Snackbar feedback message at --layer-toast.
- */
 export function showMaterialSnackbar(options: MaterialSnackbarOptions): void {
   const { message, actionLabel, onAction, durationMs = 4000 } = options;
 
@@ -183,7 +151,6 @@ export function showMaterialSnackbar(options: MaterialSnackbarOptions): void {
 
   host.appendChild(snackbar);
 
-  // Trigger animation in next frame
   requestAnimationFrame(() => {
     snackbar.classList.add('is-visible');
   });
@@ -203,10 +170,6 @@ export function showMaterialSnackbar(options: MaterialSnackbarOptions): void {
   timer = window.setTimeout(dismiss, durationMs);
 }
 
-/**
- * Vertical Slice: Open Material You Theme Dialog.
- * Uses official <md-dialog>, <md-filled-button>, <md-outlined-button>, <md-menu>, etc.
- */
 export async function openMaterialThemeDialog(): Promise<void> {
   await ensureMaterialWebLoaded();
 
@@ -278,7 +241,6 @@ export async function openMaterialThemeDialog(): Promise<void> {
 
     mountToOverlayRoot(dialog);
 
-    // Bind menu anchor
     const menuAnchor = dialog.querySelector('#m3-theme-menu-anchor');
     const menu = dialog.querySelector('#m3-theme-options-menu');
 
@@ -286,7 +248,6 @@ export async function openMaterialThemeDialog(): Promise<void> {
       menu.open = !menu.open;
     });
 
-    // Handle menu item selection
     menu?.querySelectorAll('md-menu-item').forEach((item: any) => {
       item.addEventListener('click', () => {
         const themeVal = item.getAttribute('data-theme-val') as SiteThemeId;
@@ -313,7 +274,6 @@ export async function openMaterialThemeDialog(): Promise<void> {
       });
     });
 
-    // Bind action buttons
     dialog.querySelector('#m3-dialog-close-btn')?.addEventListener('click', () => {
       dialog.close();
     });
@@ -323,7 +283,6 @@ export async function openMaterialThemeDialog(): Promise<void> {
     });
   }
 
-  // Update current badge
   const currentTheme = document.documentElement.dataset.siteTheme || 'material-you';
   const badge = dialog.querySelector('#m3-current-theme-badge');
   if (badge) {
@@ -334,7 +293,6 @@ export async function openMaterialThemeDialog(): Promise<void> {
   dialog.show();
 }
 
-// Global runtime listener
 if (typeof window !== 'undefined' && !(window as any).__m3ThemeListenerBound) {
   (window as any).__m3ThemeListenerBound = true;
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import re
 
 class MdxSanitizer:
@@ -69,30 +68,25 @@ class MdxSanitizer:
     @classmethod
     def sanitize_math(cls, math_str: str) -> str:
         s = math_str
-        # 1. 逆转义数学环境中的 HTML 实体
+
         for ent, repl in cls.MATH_HTML_ENTITIES.items():
             if ent in s:
                 s = s.replace(ent, repl)
 
-        # 2. 罗马数字规范化
         for r, repl in cls.ROMAN_MAP.items():
             if r in s:
                 s = s.replace(r, repl)
 
-        # 3. 带圈数字规范化
         s = re.sub(r'\\tag\s*\{([①-⑳])\}', lambda m: f"\\tag{{\\textcircled{{{cls.CIRCLED_MAP[m.group(1)]}}}}}", s)
         s = re.sub(r'\\textcircled\s*\{([①-⑳])\}', lambda m: f"\\textcircled{{{cls.CIRCLED_MAP[m.group(1)]}}}", s)
         s = re.sub(r'(\\underbrace\{[^}]*\}_\s*\{?)([①-⑳])(\}?)', lambda m: f"{m.group(1)}\\textcircled{{{cls.CIRCLED_MAP[m.group(2)]}}}{m.group(3)}", s)
         s = re.sub(r'([①-⑳])', lambda m: f"\\textcircled{{{cls.CIRCLED_MAP[m.group(1)]}}}", s)
 
-        # 4. 修复定界符 \right: -> \right.
         s = re.sub(r'\\right\s*:', r'\\right.', s)
 
-        # 5. 修复 Greek 字母在 \textbf 中报错 -> \boldsymbol
         for g in cls.GREEK_SYMBOLS:
             s = re.sub(rf'\\textbf\s*\{{\s*\\{g}\s*\}}', rf'\\boldsymbol{{\\{g}}}', s)
 
-        # 6. 修复双重 \tag 冲突（保留后一个或有效公式编号）
         s = re.sub(r'\\tag\s*\{[^}]*\}\s*(\\tag\s*\{[^}]*\})', r'\1', s)
 
         return s
@@ -111,7 +105,7 @@ class MdxSanitizer:
         clean_name = tag_name.lstrip('/')
         if clean_name not in self.VALID_TAGS:
             return False
-        # 如果不是标准 JSX 组件（即非大写开头），则属性内不允许出现中文字符（防止类似 a<b 还是 a>b 的误判）
+
         if not clean_name[0].isupper():
             if any(ord(c) >= 128 for c in tag_str):
                 return False
@@ -188,7 +182,6 @@ class MdxSanitizer:
         title = re.sub(r'\$([^$]*)\$', lambda m: re.sub(r'\s+', '', m.group(1)), title)
         title = title.replace("'", "\\'")
         return title.strip()
-
 
 class TextCleaner:
     """MinerU 产物通用噪声过滤与文本清洗器。"""

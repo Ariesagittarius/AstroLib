@@ -1,25 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/ai_fix_card_boundaries.mjs
- * -----------------------------------------------------------------------------
- * 维度二：基于 Gemini API (Flash-Lite) 的卡片边界智能比对、审计与自动化修复流水线。
- *
- * 核心机制：
- * 1. 极致精简 Token（Token-Frugal Pipeline）：
- *    · 预过滤：仅提取 >= 2 个段落且含有正文特征的疑似误吞卡片，跳过单段/结构清晰卡片；
- *    · 公式脱敏压缩：提取 preview 时将长 LaTeX 公式精简为 [公式]，降低 60%~70% 的 Token 消耗；
- *    · 批量聚合：单次 API 请求并发检测 5~8 个卡片；
- *    · 轻量模型优先：使用 gemini-3.5-flash-lite / gemini-3.1-flash-lite。
- * 2. 语法安全：
- *    · 拆分后经 @mdx-js/mdx 与 acorn 严格校验，杜绝任何编译破坏；
- * 3. 命令行参数：
- *    · --file <path>   单文件测试
- *    · --dry-run       仅输出识别报告与 Diff，不写盘（默认）
- *    · --apply         校验通过后真实写回 MDX 文件
- *    · --book <slug>   指定书处理
- *    · --all           全量处理
- * =============================================================================
- */
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -39,16 +18,12 @@ const MODELS = [
   'gemini-3.6-flash'
 ];
 
-// 命令行参数解析
 const args = process.argv.slice(2);
 const isApply = args.includes('--apply');
 const isDryRun = !isApply || args.includes('--dry-run');
 const singleFileArg = args.find((_, i, arr) => arr[i - 1] === '--file');
 const bookSlugArg = args.find((_, i, arr) => arr[i - 1] === '--book');
 
-/**
- * 递归收集 MDX 文件
- */
 function getMdxFiles(targetPath) {
   if (!fs.existsSync(targetPath)) return [];
   const stat = fs.statSync(targetPath);
@@ -69,9 +44,6 @@ function getMdxFiles(targetPath) {
   return files;
 }
 
-/**
- * 将卡片内容智能切分为逻辑段落（保持完整源码）
- */
 function splitCardIntoParagraphs(body) {
   const rawParts = body.split(/\r?\n\s*\r?\n/).map(p => p.trim()).filter(Boolean);
   const paragraphs = [];
@@ -94,9 +66,6 @@ function splitCardIntoParagraphs(body) {
   return paragraphs;
 }
 
-/**
- * 为 LLM 生成紧凑的段落文本摘要（脱敏长公式以大幅精简 Token）
- */
 function compressParagraphForLLM(p) {
   const simplified = p
     .replace(/\$\$[\s\S]*?\$\$/g, ' [公式] ')
@@ -108,9 +77,6 @@ function compressParagraphForLLM(p) {
   return simplified.length > 180 ? `${simplified.slice(0, 180)}...` : simplified;
 }
 
-/**
- * 预过滤：提取疑似误吞正文的卡片
- */
 function extractSuspectCards(fileContent, filePath) {
   const cardRegex = /<(Example|Knowledge|Note)\b([^>]*?)>([\s\S]*?)<\/\1>/g;
   const cards = [];
@@ -124,13 +90,11 @@ function extractSuspectCards(fileContent, filePath) {
     const titleMatch = attrs.match(/title=["'](.*?)["']/);
     const title = titleMatch ? titleMatch[1] : '';
 
-    // 若包含子组件 <Solution>，说明已有明确解答闭合结构
     if (body.includes('<Solution')) continue;
 
     const paragraphs = splitCardIntoParagraphs(body);
     if (paragraphs.length < 2) continue;
 
-    // 检查第 2 段及以后是否含有正文叙事、总结、引申或新概念特征
     const suspectParas = paragraphs.slice(1).filter(p => {
       return /^(其实|根据|由此可见|一般地|在下一[节章]|本节主要|综上所述|应当指出|我们称|俗称|这就是说|下面(?:我们|讨论|介绍|利用|给出)|定义\s*[\d.]|定理\s*[\d.]|例\s*[\d.]|注[:：])/.test(p)
         || p.includes('\\tag{')
@@ -153,9 +117,6 @@ function extractSuspectCards(fileContent, filePath) {
   return cards;
 }
 
-/**
- * 容错解析含 LaTeX 反斜杠的 JSON
- */
 function parseSafeJson(rawText) {
   let cleaned = rawText.trim();
   cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
@@ -171,9 +132,6 @@ function parseSafeJson(rawText) {
   }
 }
 
-/**
- * 调用 Gemini API (带多模型回退与轻量化 Payload)
- */
 async function queryGeminiBoundary(batchCards) {
   const promptItems = batchCards.map((c, i) => {
     return {
@@ -265,7 +223,7 @@ Output strictly JSON adhering to schema:
 
       return res;
     } catch (err) {
-      // 若 429 或 404，尝试下一个模型
+
       continue;
     }
   }
@@ -273,9 +231,6 @@ Output strictly JSON adhering to schema:
   throw new Error('All Gemini models failed or quota exceeded.');
 }
 
-/**
- * 校验 MDX 是否能通过编译
- */
 async function validateMdx(content, filePath) {
   try {
     const body = content.replace(/^---[\s\S]*?---\r?\n?/, '');
@@ -290,9 +245,6 @@ async function validateMdx(content, filePath) {
   }
 }
 
-/**
- * 主执行流程
- */
 async function main() {
   console.log('=== Gemini 驱动的卡片边界智能校准流水线 ===');
   console.log(`模式: ${isDryRun ? '🔍 试水/Dry-Run（不修改源文件）' : '⚡ Apply（自动校验并写回源文件）'}`);
@@ -360,7 +312,7 @@ async function main() {
             console.log(`  ✅ 【${card.title || card.tagName}】判定正常 (属于完整单一例题/知识点)`);
           }
         }
-        // 微缓冲平滑请求速率
+
         await new Promise(r => setTimeout(r, 600));
       } catch (err) {
         console.error(`  ❌ Gemini 判定失败: ${err.message}`);

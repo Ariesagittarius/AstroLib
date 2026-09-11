@@ -1,14 +1,4 @@
 ---
-/**
- * src/components/publishing/ChapterExportModal.astro
- * 章节学术出版物导出交互弹窗 (LaTeX .tex / 离线 .zip / 本地与云端 PDF)
- *
- * 遵循极端减法哲学：
- * - 纯正学术极简黑白灰阶，无任何 SaaS 胶囊标签或花哨动画
- * - 快捷键 Alt+X 随时唤出
- * - 零冗余依赖，原生 Fetch 流式下载
- * - 出版风格单选由 Typography Preset Registry 动态驱动，拒绝暴露底层字体文件名
- */
 import { listTypographyPresets } from '../../publishing/typography/presets/index.ts';
 
 const typographyPresets = listTypographyPresets();
@@ -27,13 +17,12 @@ const typographyPresets = listTypographyPresets();
     </div>
 
     <div class="dialog-body">
-      <!-- 当前章节元信息 -->
+
       <div class="chapter-meta-box">
         <span class="meta-label">当前章节</span>
         <span id="export-chapter-name" class="meta-value">加载中...</span>
       </div>
 
-      <!-- 全站共享排版参数设置 -->
       <div class="typography-settings-card">
         <div class="settings-header">
           <span class="settings-title">出版排版风格与版面规格</span>
@@ -69,7 +58,6 @@ const typographyPresets = listTypographyPresets();
           </div>
         </div>
 
-        <!-- 历史配置向下兼容静默迁移桥梁 (不呈现在主视觉中，供 LocalStorage 迁移与契约测试) -->
         <div style="display: none;" aria-hidden="true" data-legacy-bridge>
           <select id="chapter-cjk-font">
             <option value="default">default</option>
@@ -84,9 +72,8 @@ const typographyPresets = listTypographyPresets();
         </div>
       </div>
 
-      <!-- 导出通道列表 -->
       <div class="export-options-grid">
-        <!-- 选项 1: LaTeX 独立源码 -->
+
         <div class="export-option-card">
           <div class="option-info">
             <div class="option-title">LaTeX 源码 (.tex)</div>
@@ -102,7 +89,6 @@ const typographyPresets = listTypographyPresets();
           </button>
         </div>
 
-        <!-- 选项 2: 完整离线编译包 -->
         <div class="export-option-card">
           <div class="option-info">
             <div class="option-title">离线编译包 (.zip)</div>
@@ -118,7 +104,6 @@ const typographyPresets = listTypographyPresets();
           </button>
         </div>
 
-        <!-- 选项 3: 直接编译 PDF (本地) -->
         <div class="export-option-card">
           <div class="option-info">
             <div class="option-title">本地编译 PDF (.pdf)</div>
@@ -136,7 +121,6 @@ const typographyPresets = listTypographyPresets();
           </button>
         </div>
 
-        <!-- 选项 4: 云端 GitHub Actions 编译 PDF -->
         <div class="export-option-card cloud-card">
           <div class="option-info">
             <div class="option-header-row">
@@ -162,7 +146,6 @@ const typographyPresets = listTypographyPresets();
         </div>
       </div>
 
-      <!-- 云端凭据内联抽屉 (默认折叠) -->
       <div id="cloud-token-drawer" class="token-drawer" style="display: none;">
         <div class="token-drawer-inner">
           <label for="input-gh-token" class="token-label">GitHub Personal Access Token (PAT)</label>
@@ -189,8 +172,7 @@ const typographyPresets = listTypographyPresets();
   </div>
 </div>
 
-<style>
-  .chapter-export-backdrop {
+<style>.chapter-export-backdrop {
     position: fixed;
     inset: 0;
     z-index: var(--layer-dialog);
@@ -286,7 +268,6 @@ const typographyPresets = listTypographyPresets();
     text-overflow: ellipsis;
   }
 
-  /* 排版参数设置卡片 */
   .typography-settings-card {
     padding: 0.85rem 1rem;
     background-color: rgba(255, 255, 255, 0.02);
@@ -357,7 +338,6 @@ const typographyPresets = listTypographyPresets();
     border-color: var(--sl-color-text-accent, #60a5fa);
   }
 
-  /* 选项卡片 */
   .export-options-grid {
     display: flex;
     flex-direction: column;
@@ -468,7 +448,6 @@ const typographyPresets = listTypographyPresets();
     cursor: not-allowed;
   }
 
-  /* Token 凭据内联抽屉 */
   .token-drawer {
     padding: 0.8rem;
     background-color: var(--sl-color-bg-inline-code, #141416);
@@ -527,7 +506,6 @@ const typographyPresets = listTypographyPresets();
     color: var(--sl-color-gray-4, #71717a);
   }
 
-  /* 状态条 */
   .status-banner {
     display: flex;
     align-items: center;
@@ -590,8 +568,7 @@ const typographyPresets = listTypographyPresets();
   }
 </style>
 
-<script>
-  import {
+<script>import {
     getStoredExportSettings,
     saveStoredExportSettings,
   } from '../../publishing/common/export-settings.ts';
@@ -608,17 +585,14 @@ const typographyPresets = listTypographyPresets();
     const newModal = document.getElementById('chapter-export-modal');
     if (!newModal) return;
 
-    // 清理 overlay root / body 中残留的旧 modal（由 SPA 前序页面遗留），防止多实例与 DOM 泄漏
     const existingModals = document.querySelectorAll('#astro-overlay-root > #chapter-export-modal, body > #chapter-export-modal');
     existingModals.forEach((el) => {
       if (el !== newModal) el.remove();
     });
 
-    // 核心架构修复：Portal 机制挂载至 overlay root，脱离 Starlight stacking context
     mountToOverlayRoot(newModal);
     const modal = newModal;
 
-    // 若当前 modal 已初始化绑定，仅对齐章节名并退出，防止重复绑定
     if (modal.hasAttribute('data-initialized')) {
       const h1 = document.querySelector('h1#_top') || document.querySelector('h1');
       const title = h1 ? h1.textContent?.trim() || '当前章节' : '当前章节';
@@ -648,7 +622,6 @@ const typographyPresets = listTypographyPresets();
     const inputToken = modal.querySelector('#input-gh-token') as HTMLInputElement | null;
     const btnSaveToken = modal.querySelector('#btn-save-token') as HTMLButtonElement | null;
 
-    // 1. 初始化并加载全站共享排版偏好 (含静默向新预设体系迁移)
     const initialSettings = getStoredExportSettings();
     if (selectTypography && initialSettings.typography) selectTypography.value = initialSettings.typography;
     if (selectCjkFont && initialSettings.cjkFont) selectCjkFont.value = initialSettings.cjkFont;
@@ -656,7 +629,6 @@ const typographyPresets = listTypographyPresets();
     if (selectFontSize && initialSettings.fontSize) selectFontSize.value = String(initialSettings.fontSize);
     if (selectPaperSize && initialSettings.paperSize) selectPaperSize.value = initialSettings.paperSize;
 
-    // 监听排版偏好变更并持久化
     function onSettingsChange() {
       const typography = (selectTypography?.value || 'scholarly') as any;
       const fontSize = parseFloat(selectFontSize?.value || '11') as any;
@@ -668,7 +640,6 @@ const typographyPresets = listTypographyPresets();
     selectFontSize?.addEventListener('change', onSettingsChange);
     selectPaperSize?.addEventListener('change', onSettingsChange);
 
-    // 2. 云端 Token 抽屉与持久化
     const cloudCfg = getStoredCompilerConfig();
     if (inputToken && cloudCfg.token) {
       inputToken.value = cloudCfg.token;
@@ -695,7 +666,6 @@ const typographyPresets = listTypographyPresets();
       if (tokenDrawer) tokenDrawer.style.display = 'none';
     });
 
-    // 3. 模态窗开关与快捷键
     function openModal() {
       const activeModal = document.getElementById('chapter-export-modal');
       const h1 = document.querySelector('h1#_top') || document.querySelector('h1');
@@ -726,7 +696,6 @@ const typographyPresets = listTypographyPresets();
       if (e.target === modal) closeModal();
     });
 
-    // 全局快捷键与触发器监听通过单例守卫绑定，杜绝重复监听
     if (!(window as any).__astrolib_chapter_export_bound) {
       (window as any).__astrolib_chapter_export_bound = true;
 
@@ -749,7 +718,6 @@ const typographyPresets = listTypographyPresets();
       });
     }
 
-    // 4. 通用下载触发器（.tex / .zip / 本地 .pdf）
     async function triggerDownload(format: 'tex' | 'zip' | 'pdf', targetBtn: HTMLButtonElement | null) {
       if (targetBtn) targetBtn.disabled = true;
       if (statusBanner && statusText) {
@@ -807,7 +775,6 @@ const typographyPresets = listTypographyPresets();
       }
     }
 
-    // 5. 云端 GitHub Actions 编译 PDF 流程
     async function triggerCloudPdf(targetBtn: HTMLButtonElement | null) {
       const storedCfg = getStoredCompilerConfig();
       if (!storedCfg.token) {

@@ -1,7 +1,4 @@
 ---
-// 读者勘误反馈系统 · 服务端组件 (FeedbackMode)
-// 挂载点：由 FooterOverride.astro 在全站底部引入，SPA 导航下仅执行一次。
-// 样式完全遵循 VitePress 视觉语言（Indigo 蓝紫重音、精细灰阶边框与软阴影）。
 import { features } from '../config/features.config.mjs';
 
 const feedbackFeature = features.feedback || {};
@@ -13,12 +10,7 @@ const configJson = JSON.stringify(config);
 
 <div id="sl-feedback-anchor" data-feedback-config={configJson}></div>
 
-<style is:global>
-  /* ==========================================================================
-     读者勘误系统 UI 规范 (VitePress 主题风格)
-     ========================================================================== */
-
-  #sl-feedback-root {
+<style is:global>#sl-feedback-root {
     position: fixed;
     inset: 0;
     pointer-events: none;
@@ -37,12 +29,10 @@ const configJson = JSON.stringify(config);
     font: inherit;
   }
 
-  /* 勘误模式激活状态下正文段落交互 */
   body.sl-feedback-active main [data-src-line] {
     cursor: crosshair !important;
   }
 
-  /* 段落悬浮框选样式（VitePress 品牌色） */
   .sl-fb-hover {
     outline: 2px dashed var(--sl-color-accent, #3451b2) !important;
     outline-offset: 3px !important;
@@ -51,7 +41,6 @@ const configJson = JSON.stringify(config);
     transition: outline 0.12s ease, background-color 0.12s ease;
   }
 
-  /* 悬浮元素元数据徽标 */
   .sl-fb-badge {
     position: fixed;
     padding: 3px 8px;
@@ -68,7 +57,6 @@ const configJson = JSON.stringify(config);
     z-index: var(--layer-floating);
   }
 
-  /* 顶部全局提示条 (Banner) */
   .sl-fb-banner {
     position: fixed;
     top: 14px;
@@ -142,7 +130,6 @@ const configJson = JSON.stringify(config);
     background: var(--sl-color-gray-6, #f6f6f7);
   }
 
-  /* 勘误提交模态弹窗 (Modal) */
   .sl-fb-modal {
     position: fixed;
     inset: 0;
@@ -316,7 +303,6 @@ const configJson = JSON.stringify(config);
     resize: vertical;
   }
 
-  /* 状态信息条 */
   .sl-fb-status-msg {
     padding: 8px 12px;
     border-radius: 6px;
@@ -360,7 +346,6 @@ const configJson = JSON.stringify(config);
     border: 1px solid rgba(239, 68, 68, 0.25);
   }
 
-  /* 弹窗底部操作栏 */
   .sl-fb-modal-foot {
     display: flex;
     align-items: center;
@@ -425,7 +410,6 @@ const configJson = JSON.stringify(config);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
   }
 
-  /* Toast 提示容器 */
   .sl-fb-toast-box {
     position: fixed;
     bottom: 24px;
@@ -454,8 +438,7 @@ const configJson = JSON.stringify(config);
   }
 </style>
 
-<script>
-  let feedbackLoaded = false;
+<script>let feedbackLoaded = false;
   let feedbackLoading: Promise<void> | null = null;
 
   async function activateFeedback() {
@@ -468,7 +451,7 @@ const configJson = JSON.stringify(config);
           try {
             config = JSON.parse(anchor.getAttribute('data-feedback-config') || '{}');
           } catch {
-            // Fallback
+
           }
         }
         const { initFeedback, toggleFeedback } = await import('../utils/feedback/feedback-controller');
@@ -480,7 +463,6 @@ const configJson = JSON.stringify(config);
     await feedbackLoading;
   }
 
-  // Preload on mouseover/pointerenter on feedback trigger buttons
   document.addEventListener(
     'pointerenter',
     (e) => {

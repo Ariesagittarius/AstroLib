@@ -1,14 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/test-phase9-matrix.mjs
- * AstroLib Phase 9: Academic Typography 全矩阵测试与 Fixture 验证套件
- *
- * 覆盖 4 个核心维度：
- * 1. 预设 × 模式矩阵 (4 Presets × 2 Modes = 8 组合)
- * 2. 模板矩阵 (Chapter, Handout, Exam)
- * 3. 历史兼容矩阵 (16 组 Legacy Combinations + 优先级 + LocalStorage 迁移)
- * 4. 物理 XeLaTeX 编译与嵌入字体审计 (4 份长篇学术 PDF 实测，零 Variable Font，零缺失)
- */
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -44,7 +34,6 @@ console.log('================================================================');
 console.log('🧪 AstroLib Phase 9: Academic Typography 全矩阵自动化测试');
 console.log('================================================================\n');
 
-// 1. 加载所有标准 Fixtures
 console.log('--- [步骤 0] 加载标准测试 Fixtures ---');
 const canonicalChapter = JSON.parse(
   fs.readFileSync(path.join(FIXTURES_DIR, 'canonical-chapter.json'), 'utf8')
@@ -75,9 +64,6 @@ function assert(condition, message) {
   }
 }
 
-// =============================================================================
-// 维度 1: 预设 × 模式解析与代码生成矩阵 (4 Presets × 2 Modes = 8 单元)
-// =============================================================================
 console.log('--- [维度 1] 预设 × 模式生成矩阵 (4 Presets × 2 Modes = 8 单元) ---');
 
 const presets = listTypographyPresets();
@@ -101,10 +87,10 @@ for (const preset of presets) {
 
     let modeValid = false;
     if (mode === 'deterministic') {
-      // 确定性模式：应当包含直接设置或确定性回退链
+
       modeValid = doc.includes('\\setmainfont') && doc.includes('\\setmathfont') && doc.includes('\\setCJKmainfont');
     } else {
-      // 自适应模式：应当包含 \\IfFontExistsTF 条件探测
+
       modeValid = doc.includes('\\IfFontExistsTF');
     }
 
@@ -122,12 +108,8 @@ for (const preset of presets) {
   }
 }
 
-// =============================================================================
-// 维度 2: 文档模版矩阵 (Chapter, Handout, Exam)
-// =============================================================================
 console.log('\n--- [维度 2] 文档模版生成矩阵 (Chapter, Handout, Exam) ---');
 
-// 2.1 Chapter Document (ctexart + astrolib-chapter.sty)
 const chapterDoc = renderChapterLatexDocument(canonicalChapter, {
   typography: 'scholarly',
   headerMode: 'standard',
@@ -139,7 +121,6 @@ assert(chapterDoc.includes('\\begin{theorem}{柯西收敛准则'), 'Chapter 模�
 assert(chapterDoc.includes('\\begin{solution}'), 'Chapter 模版正确渲染解题环境');
 assert(chapterDoc.includes('\\astrolibdigitalresource'), 'Chapter 模版正确渲染数字资源');
 
-// 2.2 Handout Worksheet (homework template)
 const handoutDoc = generateLatexDocument(canonicalExercises, {
   template: 'handout',
   typography: 'mathematical',
@@ -150,7 +131,6 @@ assert(handoutDoc.includes('title in boldface'), 'Handout 模版注入 Jinwen-XU
 assert(handoutDoc.includes('LibertinusMath-Regular.otf'), 'Handout 模版按 mathematical 预设注入 Libertinus 公式字体');
 assert(handoutDoc.includes('\\begin{solution}'), 'Handout 模版附录题解渲染有效');
 
-// 2.3 Exam Paper (exam template)
 const examDoc = generateLatexDocument(canonicalExercises, {
   template: 'exam',
   typography: 'classic',
@@ -160,9 +140,6 @@ const examDoc = generateLatexDocument(canonicalExercises, {
 assert(examDoc.includes('hide solution'), 'Exam 模版正确注入 hide solution 考试试卷选项');
 assert(examDoc.includes('latinmodern-math.otf'), 'Exam 模版按 classic 预设注入 Latin Modern 公式字体');
 
-// =============================================================================
-// 维度 3: 历史配置规范化与兼容矩阵 (16 组 Legacy Combinations)
-// =============================================================================
 console.log('\n--- [维度 3] Legacy 规范化与兼容矩阵 (16 组用例) ---');
 
 const originalRegistryJson = JSON.stringify(PRESET_REGISTRY);
@@ -183,13 +160,11 @@ for (const tc of legacyCases) {
   );
 }
 
-// 验证 PRESET_REGISTRY 未被正交覆写所污染 (Immutability / Purity Check)
 assert(
   JSON.stringify(PRESET_REGISTRY) === originalRegistryJson,
   'PRESET_REGISTRY 具备纯粹不可变性，解析旧参数未发生全局对象污染'
 );
 
-// 优先级契约测试 (Precedence Rules)
 console.log('\n--- [维度 3.1] 优先级规则断言 ---');
 const explicitModern = getTypographyTarget(
   { typography: 'scholarly' },
@@ -209,9 +184,6 @@ assert(
 const defaultFallback = getTypographyTarget({});
 assert(defaultFallback === 'scholarly', '空输入默认稳定回退至 scholarly');
 
-// =============================================================================
-// 维度 4: 物理 XeLaTeX 编译与嵌入字体审计 (4 Presets 真实长篇 PDF 实测)
-// =============================================================================
 console.log('\n--- [维度 4] 真实 XeLaTeX 物理双遍编译与嵌入字体审计 ---');
 
 function findXelatex() {
@@ -229,7 +201,6 @@ function findXelatex() {
   return null;
 }
 
-// 从 PDF 二进制流中提取所有嵌入的 BaseFont
 function extractPdfEmbeddedFonts(pdfBuffer) {
   const decompressed = [];
   const streamRegex = /stream[\r\n]+([\s\S]*?)[\r\n]+endstream/g;
@@ -262,7 +233,6 @@ if (!xelatexBin) {
 } else {
   console.log(`🔍 本地编译器: ${xelatexBin}\n`);
 
-  // 拷贝宏包与素材
   const stySource = fs.readFileSync(
     path.join(ROOT, 'src', 'publishing', 'latex', 'templates', 'astrolib-chapter.sty'),
     'utf8'
@@ -275,7 +245,6 @@ if (!xelatexBin) {
     const testDir = path.join(OUT_DIR, pId);
     fs.mkdirSync(testDir, { recursive: true });
 
-    // 拷贝样式与 assets
     fs.writeFileSync(path.join(testDir, 'astrolib-chapter.sty'), stySource, 'utf8');
     const assetsDir = path.join(testDir, 'assets');
     fs.mkdirSync(assetsDir, { recursive: true });
@@ -293,13 +262,11 @@ if (!xelatexBin) {
       fs.copyFileSync(sampleImgSrc, path.join(assetsDir, path.basename(sampleImgSrc)));
     }
 
-    // 生成正文并追加公式压力测试
     let chapterTex = renderChapterLatexDocument(canonicalChapter, {
       typography: pId,
       resolutionMode: 'deterministic',
     });
 
-    // 在 \\end{document} 前插入公式压力测试
     chapterTex = chapterTex.replace(
       '\\end{document}',
       `\n% ================= 插入公式压力测试 =================\n${stressMathTeX}\n\\end{document}`
@@ -313,7 +280,7 @@ if (!xelatexBin) {
     let compileSuccess = false;
 
     try {
-      // 双遍编译保证引用与目录收敛
+
       execSync(`"${xelatexBin}" -interaction=nonstopmode -file-line-error main.tex`, {
         cwd: testDir,
         stdio: 'ignore',
@@ -387,7 +354,6 @@ if (!xelatexBin) {
   );
 }
 
-// 写入完整测试矩阵报告
 const reportPath = path.join(ROOT, '.tmp', 'phase9-test-matrix-report.json');
 fs.writeFileSync(
   reportPath,

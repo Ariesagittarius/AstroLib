@@ -1,16 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/test-typography-presets.mjs
- * AstroLib Academic Typography Preset Registry 契约与完整性测试套件 (Phase 5)
- *
- * 验证目标：
- * 1. 注册表完整性 (4 套 Presets，不多不少)
- * 2. 彻底杜绝 international (零生产路径、零注册)
- * 3. scholarly 为默认 Preset，且配置符合 Core 教材标准
- * 4. 每套 Preset 的 schema 完整性 (category, designFamily, deterministic, adaptive, guaranteedFallback, metrics)
- * 5. 全面排查 Variable Font (StaticFontOnlyForPublishing 契约验证)
- * 6. getTypographyPreset / isTypographyPresetId 边界与异常回退行为验证
- */
 
 import {
   PRESET_REGISTRY,
@@ -44,9 +32,6 @@ function assert(condition, message) {
   }
 }
 
-// -----------------------------------------------------------------------------
-// 1. 注册表完整性与 Preset 数量审计
-// -----------------------------------------------------------------------------
 console.log('--- [测试组 1] 注册表核心规格与唯一性审计 ---');
 
 const registeredKeys = Object.keys(PRESET_REGISTRY);
@@ -72,9 +57,6 @@ assert(
   '所有已注册预设的 ID 保持唯一，无重复'
 );
 
-// -----------------------------------------------------------------------------
-// 2. 彻底剔除 international 验证 (零泄露)
-// -----------------------------------------------------------------------------
 console.log('\n--- [测试组 2] 彻底移除 international 验证 (无隐藏生产路径) ---');
 
 assert(
@@ -92,9 +74,6 @@ assert(
   'isTypographyPresetId("international") 守卫判定为 false'
 );
 
-// -----------------------------------------------------------------------------
-// 3. 默认预设 (Default Preset) 规范验证
-// -----------------------------------------------------------------------------
 console.log('\n--- [测试组 3] 默认预设 (Default Preset) 规范验证 ---');
 
 assert(
@@ -117,9 +96,6 @@ assert(
   '默认预设归属于 core 核心通用学术分类'
 );
 
-// -----------------------------------------------------------------------------
-// 4. Schema 结构完整度与分类审计
-// -----------------------------------------------------------------------------
 console.log('\n--- [测试组 4] Schema 完整性、学术分类与双态候选链审计 ---');
 
 const corePresets = ['scholarly', 'classic', 'mathematical'];
@@ -128,7 +104,6 @@ const specializedPresets = ['lecture'];
 for (const preset of presetList) {
   const pId = preset.id;
 
-  // 分类检验
   if (corePresets.includes(pId)) {
     assert(
       preset.category === 'core',
@@ -141,7 +116,6 @@ for (const preset of presetList) {
     );
   }
 
-  // 元数据字段非空
   assert(
     typeof preset.name === 'string' && preset.name.length > 0,
     `预设 [${pId}] name 字段有效 ("${preset.name}")`
@@ -155,7 +129,6 @@ for (const preset of presetList) {
     `预设 [${pId}] targetAudience 字段有效`
   );
 
-  // 字体规格审计
   const fontSpecs = [
     { role: 'chineseBody', spec: preset.chineseBody },
     { role: 'chineseHeading', spec: preset.chineseHeading },
@@ -179,13 +152,11 @@ for (const preset of presetList) {
     );
   }
 
-  // 数学公式规格
   assert(
     typeof preset.math.family === 'string' && preset.math.family.endsWith('.otf'),
     `预设 [${pId}] math.family 为合规的 OpenType 数学字体文件: "${preset.math.family}"`
   );
 
-  // 极端缺字环境 TeX Live 确定性兜底 (Guaranteed Fallback)
   assert(
     typeof preset.guaranteedFallback.cjk === 'string' &&
       typeof preset.guaranteedFallback.cjkSans === 'string' &&
@@ -194,7 +165,6 @@ for (const preset of presetList) {
     `预设 [${pId}] 具备完备的 guaranteedFallback (CJK=${preset.guaranteedFallback.cjk}, Math=${preset.guaranteedFallback.math})`
   );
 
-  // 度量参数
   assert(
     typeof preset.metrics.baselineStretch === 'number' && preset.metrics.baselineStretch >= 1.1,
     `预设 [${pId}] baselineStretch 行高伸缩因子在合规学术区间 (${preset.metrics.baselineStretch})`
@@ -205,9 +175,6 @@ for (const preset of presetList) {
   );
 }
 
-// -----------------------------------------------------------------------------
-// 5. 严格杜绝 Variable Font (静态字体排版安全准则)
-// -----------------------------------------------------------------------------
 console.log('\n--- [测试组 5] 彻底排查 Variable Font (可变字体) 安全审查 ---');
 
 assert(
@@ -242,18 +209,13 @@ for (const preset of presetList) {
   );
 }
 
-// -----------------------------------------------------------------------------
-// 6. getTypographyPreset / isTypographyPresetId 边界与异常测试
-// -----------------------------------------------------------------------------
 console.log('\n--- [测试组 6] API 检索、守卫与边界异常处理测试 ---');
 
-// 正向获取
 assert(getTypographyPreset('scholarly') === PRESET_SCHOLARLY, 'getTypographyPreset("scholarly") 返回 PRESET_SCHOLARLY');
 assert(getTypographyPreset('classic') === PRESET_CLASSIC, 'getTypographyPreset("classic") 返回 PRESET_CLASSIC');
 assert(getTypographyPreset('mathematical') === PRESET_MATHEMATICAL, 'getTypographyPreset("mathematical") 返回 PRESET_MATHEMATICAL');
 assert(getTypographyPreset('lecture') === PRESET_LECTURE, 'getTypographyPreset("lecture") 返回 PRESET_LECTURE');
 
-// 非法输入自动回退测试 (fallbackToDefault = true)
 assert(
   getTypographyPreset('non_existent_preset') === DEFAULT_TYPOGRAPHY_PRESET,
   '未知 ID 自动回退至 DEFAULT_TYPOGRAPHY_PRESET'
@@ -271,7 +233,6 @@ assert(
   'undefined 输入安全回退至 DEFAULT_TYPOGRAPHY_PRESET'
 );
 
-// 严格报错模式测试 (fallbackToDefault = false)
 let threwForUnknown = false;
 try {
   getTypographyPreset('unknown_preset_xyz', false);
@@ -288,7 +249,6 @@ try {
 }
 assert(threwForInternational, '严格模式下 (fallbackToDefault=false) "international" 显式抛出未知异常');
 
-// 类型守卫全面测试
 assert(isTypographyPresetId('scholarly') === true, 'isTypographyPresetId("scholarly") === true');
 assert(isTypographyPresetId('classic') === true, 'isTypographyPresetId("classic") === true');
 assert(isTypographyPresetId('mathematical') === true, 'isTypographyPresetId("mathematical") === true');

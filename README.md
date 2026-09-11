@@ -27,13 +27,6 @@ A modern, quiet, and typographic reading system for university mathematics and s
 
 ---
 
-<!-- TODO: Add screenshots -->
-<!--
-建议捕获并放置 1-2 张无外框、高精度的界面实景图：
-1. 桌面端阅读界面（包含侧边栏、长公式与定理卡片）
-2. 习题弹窗界面（即时答题、公式推导折叠与 LaTeX 导出预览）
--->
-
 <a id="about"></a>
 ## 📖 关于项目
 

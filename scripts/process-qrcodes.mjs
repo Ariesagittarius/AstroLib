@@ -14,9 +14,6 @@ if (!fs.existsSync(targetDir)) {
 
 const imagesDir = path.join(targetDir, 'images');
 
-/**
- * 识别某张图片是否为二维码，返回解出的字符串 URL 或 null
- */
 async function decodeQRCode(imgPath) {
   try {
     const { data, info } = await sharp(imgPath)
@@ -29,14 +26,11 @@ async function decodeQRCode(imgPath) {
       return code.data.trim();
     }
   } catch (err) {
-    // 忽略非图片或解不出的图
+
   }
   return null;
 }
 
-/**
- * 在线/自动解析 URL 对应的资源标题
- */
 async function resolveUrlTitle(url) {
   if (!url) return '';
   try {
@@ -53,14 +47,14 @@ async function resolveUrlTitle(url) {
       return m[1].trim();
     }
   } catch (e) {
-    // 网络超时或失败则返回空，后续回退到本地提取
+
   }
   return '';
 }
 
 async function main() {
   console.log(`== 1. 扫描与检测图片目录: ${imagesDir} ==`);
-  const qrImageMap = new Map(); // filename -> url
+  const qrImageMap = new Map();
 
   if (fs.existsSync(imagesDir)) {
     const files = fs.readdirSync(imagesDir);
@@ -80,11 +74,10 @@ async function main() {
   }
 
   console.log(`\n== 2. 在线解析二维码资源标题与微课名称 ==`);
-  const urlTitleMap = new Map(); // url -> title
+  const urlTitleMap = new Map();
   const uniqueUrls = Array.from(new Set(qrImageMap.values()));
   console.log(`共有 ${uniqueUrls.length} 个独立 URL 待解析...`);
 
-  // 分批并发请求，防止网络拥塞
   const batchSize = 15;
   for (let i = 0; i < uniqueUrls.length; i += batchSize) {
     const batch = uniqueUrls.slice(i, i + batchSize);
@@ -111,10 +104,9 @@ async function main() {
     let content = fs.readFileSync(filePath, 'utf-8');
     const lines = content.split(/\r?\n/);
     const toRemoveIndices = new Set();
-    const lineReplacements = new Map(); // lineIndex -> replacement string
+    const lineReplacements = new Map();
     let fileModified = false;
 
-    // 扫描每一行是否包含二维码图片
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       for (const [imgName, url] of qrImageMap.entries()) {
@@ -126,14 +118,11 @@ async function main() {
           let title = urlTitleMap.get(url) || '';
           let id = '';
 
-          // 1. 检查前后是否有标题说明文本
-          // 向上检查前 1 行
           const prevLine = i > 0 ? lines[i - 1].trim() : '';
-          // 向下检查后 2 行
+
           const nextLine1 = i + 1 < lines.length ? lines[i + 1].trim() : '';
           const nextLine2 = i + 2 < lines.length ? lines[i + 2].trim() : '';
 
-          // 检查 "二维码 1.1.1 标题"
           const qrMatchNext = nextLine1.match(/^二维码\s*(\d+(?:\.\d+)*)?\s*(.*)$/);
           const qrMatchPrev = prevLine.match(/^二维码\s*(\d+(?:\.\d+)*)?\s*(.*)$/);
 
@@ -146,7 +135,7 @@ async function main() {
             if (qrMatchPrev[2]) title = qrMatchPrev[2].trim();
             toRemoveIndices.add(i - 1);
           } else {
-            // 检查紧随其后的短文本行是否为标题（如 "本章提要"、"北斗导航系统"、"金属表面为什么容易反射电磁波？" 等）
+
             if (
               nextLine1 &&
               !nextLine1.startsWith('#') &&
@@ -159,14 +148,14 @@ async function main() {
               !nextLine1.startsWith('---') &&
               nextLine1.length <= 40
             ) {
-              // 如果在线标题与该行吻合，或者本地没有在线标题
+
               const cleanedNext1 = nextLine1.replace(/[\s\-_—·:：,，.。()（）[\]【】？?]/g, '');
               const cleanedOnline = title.replace(/[\s\-_—·:：,，.。()（）[\]【】？?]/g, '');
 
               if (!title) {
                 title = nextLine1;
                 toRemoveIndices.add(i + 1);
-                // 处理双行标题（如 "物理中的" \n "模型化"）
+
                 if (
                   nextLine2 &&
                   !nextLine2.startsWith('#') &&
@@ -184,9 +173,9 @@ async function main() {
                 cleanedNext1 &&
                 (cleanedOnline.includes(cleanedNext1) || cleanedNext1.includes(cleanedOnline) || nextLine1 === title)
               ) {
-                // 冗余标题行，删除
+
                 toRemoveIndices.add(i + 1);
-                // 如果是折成两行的冗余行也一并清理
+
                 if (nextLine2 && cleanedOnline.includes(cleanedNext1 + nextLine2.replace(/[\s\-_—·:：,，.。()（）[\]【】？?]/g, ''))) {
                   toRemoveIndices.add(i + 2);
                 }
@@ -194,7 +183,6 @@ async function main() {
             }
           }
 
-          // 规范化 title / id
           title = (title || '').replace(/^二维码\s*\d+(\.\d+)*\s*/, '').replace(/[\.\。\s]+$/, '').trim();
           const propId = id ? ` id="${id}"` : '';
           const propTitle = title ? ` title="${title.replace(/"/g, '&quot;')}"` : '';
@@ -222,7 +210,6 @@ async function main() {
 
       let finalContent = newLines.join('\n');
 
-      // 确保顶部 import
       if (!finalContent.includes("import QRCodeVideo from '@/components/QRCodeVideo.astro'")) {
         const fmEndIndex = finalContent.indexOf('---', 3);
         if (fmEndIndex !== -1) {
@@ -262,4 +249,3 @@ main().catch((err) => {
   console.error('[process-qrcodes] 执行报错:', err);
   process.exit(1);
 });
-

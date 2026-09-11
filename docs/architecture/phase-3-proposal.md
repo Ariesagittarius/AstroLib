@@ -1,7 +1,7 @@
 # AstroLib 架构重构 Phase 3 提案：目录边界与关注点分离 (Directory Boundaries & Separation of Concerns)
 
-> **当前阶段**：Phase 3 (Boundary Investigation & Directory Reorganization Proposal)  
-> **执行状态**：**只调查，不移动，不修改。** 等待架构审阅。  
+> **当前阶段**：Phase 3 (Boundary Investigation & Directory Reorganization Proposal)
+> **执行状态**：**只调查，不移动，不修改。** 等待架构审阅。
 > **前序基准**：Phase 0 (Archaeology), Phase 1 (Safe Cleanup), Phase 2 (Decouple Publishing Types) 均已通过全量验证。
 
 ---
@@ -390,5 +390,5 @@ npm run build
 
 当前调查已完备，三大边界与全量 30 个文件的定位已完全明确。
 
-**当前动作：严格停止操作。**  
+**当前动作：严格停止操作。**
 在获得用户对本提案的正式审阅与授权指令前，**不移动任何文件、不删除任何文件、不修改任何业务逻辑**。
