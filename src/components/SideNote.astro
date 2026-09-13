@@ -1,0 +1,217 @@
+---
+import { renderTitleHtml } from '../utils/render-title.mjs';
+import { srcAttrs } from '../utils/src-attrs.mjs';
+
+interface Props {
+  title?: string;
+  type?: 'note' | 'think' | 'caution' | 'analysis' | 'geom';
+  side?: 'right' | 'left';
+  inline?: boolean;
+  class?: string;
+  [key: string]: any;
+}
+
+const {
+  title,
+  type,
+  side = 'right',
+  inline = false,
+  class: className = '',
+  ...restProps
+} = Astro.props;
+
+const displayTitle = title !== undefined ? title : '注';
+const cleanId = displayTitle ? displayTitle.trim().replace(/\s+/g, '-') : undefined;
+
+// 根据标题文本或传入的 type 自动推断学术语义类别
+let noteKind = type || 'note';
+if (!type && title) {
+  const t = title.trim();
+  if (/想一想|思考|问一问|探讨|探究/i.test(t)) {
+    noteKind = 'think';
+  } else if (/注意|警告|防错|小心/i.test(t)) {
+    noteKind = 'caution';
+  } else if (/分析|思路|关键|证明思路/i.test(t)) {
+    noteKind = 'analysis';
+  } else if (/几何|几何意义|直观/i.test(t)) {
+    noteKind = 'geom';
+  }
+}
+---
+
+<aside
+  class:list={[
+    'astrolib-sidenote',
+    `sidenote-${noteKind}`,
+    side === 'left' ? 'sidenote-left' : 'sidenote-right',
+    inline ? 'sidenote-inline' : 'sidenote-float',
+    className,
+  ]}
+  data-sidenote-kind={noteKind}
+  data-title={displayTitle}
+  id={cleanId}
+  {...srcAttrs(Astro.props)}
+>
+  <div class="sidenote-header">
+    <span class="sidenote-icon" aria-hidden="true">
+      {noteKind === 'think' && (
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M12 2C7.58 2 4 5.58 4 10c0 2.5 1.15 4.73 2.96 6.22.37.31.59.78.59 1.28V19c0 .55.45 1 1 1h7c.55 0 1-.45 1-1v-1.5c0-.5.22-.97.59-1.28C18.85 14.73 20 12.5 20 10c0-4.42-3.58-8-8-8zm-2 19h4v1h-4v-1zm2-17c3.31 0 6 2.69 6 6 0 1.88-.86 3.55-2.22 4.67-.65.54-1.03 1.34-1.03 2.18V18H9.25v-1.15c0-.84-.38-1.64-1.03-2.18C6.86 13.55 6 11.88 6 10c0-3.31 2.69-6 6-6z"/>
+        </svg>
+      )}
+      {noteKind === 'caution' && (
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+      )}
+      {noteKind === 'analysis' && (
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+        </svg>
+      )}
+      {noteKind === 'geom' && (
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z"/>
+        </svg>
+      )}
+      {noteKind === 'note' && (
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+        </svg>
+      )}
+    </span>
+    <span class="sidenote-title" set:html={renderTitleHtml(displayTitle)}></span>
+  </div>
+  <div class="sidenote-content">
+    <slot />
+  </div>
+</aside>
+
+<style>
+  .astrolib-sidenote {
+    box-sizing: border-box;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.86rem;
+    line-height: 1.65;
+    background-color: var(--sl-color-gray-6, rgba(255, 255, 255, 0.03));
+    border-radius: 6px;
+    border-left: 2.5px solid var(--sl-color-gray-4, #94a3b8);
+    color: var(--sl-color-gray-2, #cbd5e1);
+    user-select: text;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+  }
+
+  /* 桌面端浮动模式：依附于正文右侧，高度随上下文并列排版 */
+  @media (min-width: 50rem) {
+    .astrolib-sidenote.sidenote-float.sidenote-right {
+      float: right;
+      clear: right;
+      width: min(18rem, 36%);
+      margin: 0.25rem 0 1.15rem 1.35rem;
+    }
+    .astrolib-sidenote.sidenote-float.sidenote-left {
+      float: left;
+      clear: left;
+      width: min(18rem, 36%);
+      margin: 0.25rem 1.35rem 1.15rem 0;
+    }
+  }
+
+  /* 移动端与内联模式：撑满宽度，自然降级为紧凑说明块 */
+  @media (max-width: 49.99rem) {
+    .astrolib-sidenote.sidenote-float {
+      float: none !important;
+      width: 100% !important;
+      margin: 1rem 0 !important;
+    }
+  }
+
+  .astrolib-sidenote.sidenote-inline {
+    float: none !important;
+    width: 100% !important;
+    margin: 1.15rem 0 !important;
+  }
+
+  /* 头部标题区 */
+  .sidenote-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 650;
+    font-family: var(--font-heading, var(--academic-font-heading, sans-serif));
+    letter-spacing: 0.02em;
+    margin-bottom: 0.35rem;
+  }
+
+  .sidenote-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .sidenote-title {
+    color: var(--sl-color-white, #f8fafc);
+  }
+
+  /* 正文区 */
+  .sidenote-content {
+    color: var(--sl-color-gray-2, #cbd5e1);
+  }
+
+  .sidenote-content :global(p) {
+    margin: 0.35rem 0;
+  }
+  .sidenote-content :global(p:first-child) {
+    margin-top: 0;
+  }
+  .sidenote-content :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  /* KaTeX 公式在旁注中的字阶微调 */
+  .sidenote-content :global(.katex) {
+    font-size: 0.95em;
+  }
+
+  /* 学术语义类型色阶：克制衬托，无刺眼高饱和度 */
+  .sidenote-think {
+    border-left-color: var(--sl-color-accent, #38bdf8);
+    background-color: var(--sl-color-accent-low, rgba(56, 189, 248, 0.05));
+  }
+  .sidenote-think .sidenote-icon {
+    color: var(--sl-color-accent, #38bdf8);
+  }
+
+  .sidenote-caution {
+    border-left-color: #f59e0b;
+    background-color: rgba(245, 158, 11, 0.05);
+  }
+  .sidenote-caution .sidenote-icon {
+    color: #f59e0b;
+  }
+
+  .sidenote-analysis {
+    border-left-color: #10b981;
+    background-color: rgba(16, 185, 129, 0.05);
+  }
+  .sidenote-analysis .sidenote-icon {
+    color: #10b981;
+  }
+
+  .sidenote-geom {
+    border-left-color: #a855f7;
+    background-color: rgba(168, 85, 247, 0.05);
+  }
+  .sidenote-geom .sidenote-icon {
+    color: #a855f7;
+  }
+
+  .sidenote-note {
+    border-left-color: var(--sl-color-gray-4, #94a3b8);
+  }
+  .sidenote-note .sidenote-icon {
+    color: var(--sl-color-gray-3, #94a3b8);
+  }
+</style>

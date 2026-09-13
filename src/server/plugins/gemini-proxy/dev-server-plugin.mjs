@@ -3,6 +3,8 @@
 // 原理：Node.js 本地进程不受浏览器 CORS 预检与 TLS 指纹阻断，可稳定秒通 Google API；
 // 前端同源请求 /api/proxy/gemini/*，由本地后端以流式 (SSE) 透明转发。
 
+import fs from 'node:fs';
+
 const GOOGLE_API_HOST = 'https://generativelanguage.googleapis.com';
 const PROXY_PATH_PREFIX = '/api/proxy/gemini';
 const DEFAULT_GEMINI_SUBPATH = '/v1beta/openai/chat/completions';
@@ -110,7 +112,38 @@ async function readBody(req) {
           };
 
           if (hasBody) {
-            const bodyBuffer = await readBody(req);
+            let bodyBuffer = await readBody(req);
+            // 兜底安全防线：若发往 Google Gemini OpenAI 兼容端点的请求体中存在未签名的 assistant tool_calls，
+            // 自动注入官方跳过校验签名，防止任何历史遗留或客户端分支未打签名导致 400 崩溃
+            if (subPath.includes('/openai/chat/completions')) {
+              try {
+                const parsed = JSON.parse(bodyBuffer.toString('utf-8'));
+                if (Array.isArray(parsed.messages)) {
+                  let mutated = false;
+                  for (const m of parsed.messages) {
+                    if (m && m.role === 'assistant' && Array.isArray(m.tool_calls)) {
+                      for (const tc of m.tool_calls) {
+                        if (!tc.extra_content?.google?.thought_signature) {
+                          tc.extra_content = {
+                            ...(tc.extra_content || {}),
+                            google: {
+                              ...((tc.extra_content && tc.extra_content.google) || {}),
+                              thought_signature: 'skip_thought_signature_validator',
+                            },
+                          };
+                          mutated = true;
+                        }
+                      }
+                    }
+                  }
+                  if (mutated) {
+                    bodyBuffer = Buffer.from(JSON.stringify(parsed));
+                  }
+                }
+              } catch {
+                // 非 JSON 格式则保持原样
+              }
+            }
             fetchOptions.body = bodyBuffer;
           }
 
@@ -123,7 +156,7 @@ async function readBody(req) {
             'Access-Control-Allow-Headers': '*',
           };
 
-          const upstreamContentType = upstreamRes.headers.get('content-type');
+          const upstreamContentType = upstreamRes.headers.get('content-type') || '';
           if (upstreamContentType) {
             responseHeaders['Content-Type'] = upstreamContentType;
           }
@@ -132,11 +165,32 @@ async function readBody(req) {
             responseHeaders['Cache-Control'] = upstreamCacheControl;
           }
 
+          // 若上游响应为 SSE 流式数据，强化防缓冲与长连接响应头，保障流式切片即时推达客户端
+          if (upstreamContentType.includes('text/event-stream')) {
+            responseHeaders['Cache-Control'] = 'no-cache, no-transform';
+            responseHeaders['Connection'] = 'keep-alive';
+            responseHeaders['X-Accel-Buffering'] = 'no';
+          }
+
           res.writeHead(upstreamRes.status, responseHeaders);
+
+          try {
+            fs.writeFileSync('.astro/gemini-last-req.json', JSON.stringify({
+              time: new Date().toISOString(),
+              url: targetUrl,
+              status: upstreamRes.status,
+              headers: Object.fromEntries(upstreamRes.headers.entries()),
+              body: hasBody && fetchOptions.body ? fetchOptions.body.toString('utf-8') : null,
+            }, null, 2));
+            fs.writeFileSync('.astro/gemini-raw-stream.log', '');
+          } catch {}
 
           if (upstreamRes.body) {
             for await (const chunk of upstreamRes.body) {
               if (res.writableEnded) break;
+              try {
+                fs.appendFileSync('.astro/gemini-raw-stream.log', chunk);
+              } catch {}
               res.write(chunk);
             }
           }

@@ -11,257 +11,190 @@ import Analysis from '@/components/Analysis.astro';
 import Solution from '@/components/Solution.astro';
 import Variant from '@/components/Variant.astro';
 import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
 import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 import Exercise from '@/components/Exercise.astro';
 
-微分是与导数密切相关又有本质区别的一个重要概念.本节主要介绍微分的概念、计算及简单应用,说明在“微小局部”用线性函数代替非线性函数是微积分的基本思想方法之一.
+微分是与导数密切相关又有本质区别的一个重要概念。本节主要介绍微分的概念、计算及简单应用，说明在“微小局部”用线性函数代替非线性函数是微积分的基本思想方法之一。
 
 ## 3.1 微分的概念
 
-在很多问题中,常常要研究函数的改变量 $\Delta y=f(x_{0}+\Delta x)-f(x_{0})$ 与自变量改变量 $\Delta x$ 之间的关系,计算函数改变量的大小.我们知道,对于刻画均匀变化的线性函数 $y=kx+b$ 而言, $\Delta y$ 是 $\Delta x$ 的线性函数,即 $\Delta y=k\Delta x$ .对于刻画非均匀变化的非线性函数,一般来说, $\Delta y$ 与 $\Delta x$ 之间的关系要复杂得多.例如,设 $y=x^{2}$ ,则 $\Delta y=(x_{0}+\Delta x)^{2}-x_{0}^{2}=2x_{0}\Delta x+(\Delta x)^{2}$ ,它是由关于 $\Delta x$ 的线性函数部分 $2x_{0}\Delta x$ 和非线性部分 $(\Delta x)^{2}$ 组成的.自然要问,当 $|\Delta x|$ 很小时,能否用 $\Delta x$ 的线性函数部分去近似代替 $\Delta y$ 呢?近似代替后所产生的误差是多大?微分的概念就是在研究此类问题中提出来的.
+在很多问题中，常常要研究函数的改变量 $\Delta y = f(x_0 + \Delta x) - f(x_0)$ 与自变量改变量 $\Delta x$ 之间的关系，计算函数改变量的大小。我们知道，对于刻画均匀变化的线性函数 $y = kx + b$ 而言，$\Delta y$ 是 $\Delta x$ 的线性函数，即 $\Delta y = k\Delta x$。对于刻画非均匀变化的非线性函数，一般来说，$\Delta y$ 与 $\Delta x$ 之间的关系要复杂得多。例如，设 $y = x^2$，则 $\Delta y = (x_0 + \Delta x)^2 - x_0^2 = 2x_0\Delta x + (\Delta x)^2$，它是由关于 $\Delta x$ 的线性函数部分 $2x_0\Delta x$ 和非线性部分 $(\Delta x)^2$ 组成的。自然要问，当 $|\Delta x|$ 很小时，能否用 $\Delta x$ 的线性函数部分去近似代替 $\Delta y$ 呢？近似代替后所产生的误差有多大？微分的概念就是在研究此类问题中提出来的。
 
-若函数 $y=f(x)$ 在 $x_{0}$ 处可导，则由本章的(1.11)式，
+若函数 $y = f(x)$ 在 $x_0$ 处可导，则由本章的 (1.11) 式，
+$$\Delta y = f'(x_0)\Delta x + o(\Delta x)$$
+当 $f'(x) \neq 0$ 时，易见，$\Delta y$ 也是由两部分组成的，即关于 $\Delta x$ 的线性函数部分 $f'(x_0)\Delta x$ 和高阶无穷小部分 $o(\Delta x)$。若 $|\Delta x|$ 充分小，第二部分的绝对值比第一部分的绝对值小得多。因此，$\Delta y$ 的大小主要取决于第一部分，称它为 $\Delta y$ 的线性主部。若用线性主部 $f'(x_0)\Delta x$ 近似代替 $\Delta y$，则所产生的绝对值误差 $|o(\Delta x)|$ 是 $\Delta x$ 的高阶无穷小。由此就得到微分的概念。
+
+<Knowledge title="定义 3.1 (微分)">
+
+<SideNote title="注意">
+函数 $y = f(x)$ 在 $x_0$ 处的微分 $\mathrm{d}y = \mathrm{d}f(x_0) = a\Delta x$ 实际上是当 $\Delta x \to 0$ 时的无穷小，它与函数改变量 $\Delta y$ 之差是 $\Delta x$ 的高阶无穷小，即 $\Delta y - \mathrm{d}y = o(\Delta x)$。当 $\mathrm{d}y \neq 0$ 时，$\mathrm{d}y$ 与 $\Delta y$ 是当 $\Delta x \to 0$ 时的等价无穷小。
+</SideNote>
+
+设有函数 $f: U(x_0) \to \mathbb{R}$，若存在一个关于 $\Delta x$ 的线性函数 $L(\Delta x) = a\Delta x$ ($a \in \mathbb{R}$ 为与 $\Delta x$ 无关的常数)，使：
 
 $$
-\Delta y = f ^ {\prime} (x _ {0}) \Delta x + o (\Delta x).
+f(x_0 + \Delta x) - f(x_0) = a\Delta x + o(\Delta x) \tag{3.1}
 $$
 
-当 $f'(x) \neq 0$ 时, 易见, $\Delta y$ 也是由两部分组成的, 即关于 $\Delta x$ 的线性函数部分 $f'(x_0) \Delta x$ 和高阶无穷小部分 $o(\Delta x)$ . 若 $|\Delta x|$ 充分小, 第二部分的绝对值比第一部分的绝对值小得多. 因此, $\Delta y$ 的大小主要取决于第一部分, 称它为 $\Delta y$ 的线性主部. 若用线性主部 $f'(x_0) \Delta x$ 近似代替 $\Delta y$ , 则所产生的绝对值误差 $|o(\Delta x)|$ 是 $\Delta x$ 的高阶无穷小. 由此就得到微分的概念.
-
-<Knowledge title="定义 3.1 微分">
-设有函数 $f: U(x_{0}) \rightarrow R$ . 若存在一个关于 $\Delta x$ 的线性函数 $L(\Delta x) = a\Delta x (a \in \mathbb{R}$ 为与 $\Delta x$ 无关的常数），使
-
-$$
-f \left(x _ {0} + \Delta x\right) - f \left(x _ {0}\right) = a \Delta x + o (\Delta x),\tag{3.1}
-$$
+则称 $f$ 在 $x_0$ 处可微，并称 $a\Delta x$ 为 $f$ 在 $x_0$ 处的微分，记作 $\mathrm{d}f(x_0) = a\Delta x$。若函数用 $y = f(x)$ 表示，则可记作 $\left. \mathrm{d}y \right|_{x=x_0} = a\Delta x$。若 $f$ 在区间 $I$ 的每一点可微，则称 $f$ 在 $I$ 上可微。
 </Knowledge>
 
-函数 $y=f(x)$ 在 $x_{0}$ 处的微分 $\mathrm{d}y=\mathrm{d}f(x_{0})=a\Delta x$ 实际上是当 $\Delta x\rightarrow0$ 时的无穷小, 它与函数改变量 $\Delta y$ 之差是 $\Delta x$ 的高阶无穷小, 即 $\Delta y-\mathrm{d}y=o(\Delta x)$ , 当 $dy\neq0$ 时, dy 与 $\Delta y$ 是当 $\Delta x\rightarrow0$ 时的等价无穷小.
-
-则称 $f$ 在 $x_0$ 处可微，并称 $a\Delta x$ 为 $f$ 在 $x_0$ 处的微分，记作 $\mathrm{df}(x_0) = a\Delta x.$ 若函数用 $y = f(x)$ 表示，则可记作
-
-$\mathrm{d}y\big|_{x=x_{0}}=a\Delta x.$ 若f在区间I的每一点可微,则称f在I上可微.
-
-由定义3.1可知, 当 $a \neq 0$ 时, 函数 f 在 $x_{0}$ 处的微分就是在小区间 $[x_{0}, x_{0} + \Delta x]$ (或 $[x_{0} + \Delta x, x_{0}]$ ) 上函数改变量 $\Delta y$ 的线性主部 $a\Delta x$ . 现在要问, f 在什么条件下是可微的? 如果可微, 微分中的常数 a 与 f 有怎样的关系? 下面的定理回答了这个问题.
+由定义 3.1 可知，当 $a \neq 0$ 时，函数 $f$ 在 $x_0$ 处的微分就是在小区间 $[x_0, x_0 + \Delta x]$ (或 $[x_0 + \Delta x, x_0]$) 上函数改变量 $\Delta y$ 的线性主部 $a\Delta x$。现在要问，$f$ 在什么条件下是可微的？如果可微，微分中的常数 $a$ 与 $f$ 有怎样的关系？下面的定理回答了这个问题。
 
 <Knowledge title="定理 3.1">
-函数 $f: U(x_{0}) \rightarrow R$ 在 $x_{0}$ 处可微 $\Leftrightarrow f$ 在 $x_{0}$ 处可导. 此时, $\mathrm{d}f(x_{0}) = f'(x_{0})\Delta x$ .
-
-<Solution title="证明">
-不难看出,充分性在定义3.1前面一段中已经证明,下面证明必要性.设f在 $x_{0}$ 处可微,由定义知(3.1)式成立,从而有
-
-$$
-\frac {f (x _ {0} + \Delta x) - f (x _ {0})}{\Delta x} = a + \frac {o (\Delta x)}{\Delta x}.
-$$
-
-令 $\Delta x\to 0$ ，得
-
-$$
-f ^ {\prime} (x _ {0}) = a,
-$$
-
-故 $f$ 在 $x_0$ 处可导，且 $f^{\prime}(x_0) = a$ ，此时， $\mathrm{df}(x_0) = f'(x_0)\Delta x.$
-
-规定自变量的微分等于自变量的改变量, 即 dx = $\Delta x$ . 因此, 函数 $y = f(x)$ 在 $x_{0}$ 处的微分可写成 $\mathrm{d}f(x_{0}) = f'(x_{0})\mathrm{d}x$ 或 $\mathrm{d}y = f'(x_{0})\mathrm{d}x, y = f(x)$ 在区间 I 任一点 x 处的微分可写成
-</Solution>
+函数 $f: U(x_0) \to \mathbb{R}$ 在 $x_0$ 处可微 $\iff f$ 在 $x_0$ 处可导。此时，$\mathrm{d}f(x_0) = f'(x_0)\Delta x$。
 </Knowledge>
 
-(1) 微分 $\mathrm{d}y=f'(x)\mathrm{d}x$ 中的 dx 的含义是什么？它是否要很小？
+<Solution title="证明">
+不难看出，充分性在定义 3.1 前面一段中已经证明，下面证明必要性。设 $f$ 在 $x_0$ 处可微，由定义知 (3.1) 式成立，从而有
+$$\frac{f(x_0 + \Delta x) - f(x_0)}{\Delta x} = a + \frac{o(\Delta x)}{\Delta x}$$
+令 $\Delta x \to 0$，得
+$$f'(x_0) = a$$
+故 $f$ 在 $x_0$ 处可导，且 $f'(x_0) = a$，此时，$\mathrm{d}f(x_0) = f'(x_0)\Delta x$。
+</Solution>
+
+规定自变量的微分等于自变量的改变量，即 $\mathrm{d}x = \Delta x$。因此，函数 $y = f(x)$ 在 $x_0$ 处的微分可写成 $\mathrm{d}f(x_0) = f'(x_0)\mathrm{d}x$ 或 $\mathrm{d}y = f'(x_0)\mathrm{d}x$。$y = f(x)$ 在区间 $I$ 任一点 $x$ 处的微分可写成
 
 $$
-\mathrm{d} y = f ^ {\prime} (x) \mathrm{d} x.\tag{3.2}
+\mathrm{d}y = f'(x)\mathrm{d}x \tag{3.2}
 $$
 
-(2) 为什么说, 函数的导数与微分是两个不同的概念?
+<SideNote title="想一想">
+(1) 微分 $\mathrm{d}y = f'(x)\mathrm{d}x$ 中的 $\mathrm{d}x$ 含义是什么？它是否要很小？  
+(2) 为什么说，函数的导数与微分是两个不同的概念？
+</SideNote>
 
-定理3.1 告诉我们, 对一元函数来说, 函数可导
+定理 3.1 告诉我们，对一元函数来说，函数可导性与可微性是两个等价的概念，今后我们不再区分它们。而且，求出函数的导数之后，只要再乘以 $\mathrm{d}x$，就得到相应的微分。但是，函数的导数与微分却是两个不同的概念。
 
-性与可微性是两个等价的概念,今后我们不再区分它们.而且,求出函数的导数之后,只要再乘 dx,就得到相应的微分.但是,函数的导数与微分却是两个不同的概念.
+用 $\mathrm{d}x$ 除 (3.2) 式两端，得
+$$\frac{\mathrm{d}y}{\mathrm{d}x} = f'(x)$$
+这就是说，函数的导数等于函数的微分与自变量微分之商。因此，导数又称为“微商”，这正是把导数记作 $\frac{\mathrm{d}y}{\mathrm{d}x}$ 的一个原因。
 
-用 dx 除(3.2)式两端, 得
+### 微分的几何意义
+
+在图 2.11 中，函数 $y = f(x)$ 在 $x_0$ 处的导数 $f'(x_0)$ 表示曲线 $y = f(x)$ 在点 $P(x_0, f(x_0))$ 处的切线 $PT$ 的斜率 $\tan \alpha$，因此，
+$$\mathrm{d}y = f'(x_0)\mathrm{d}x = \tan \alpha \cdot PN = NT$$
+这就是说，函数 $y = f(x)$ 在 $x_0$ 处的微分在几何上表示曲线 $y = f(x)$ 在点 $P$ 切线上点的纵坐标对应横坐标改变量 $\Delta x$ 的改变量。
+
+又因为 $\Delta y = f(x_0 + \Delta x) - f(x_0) = NQ$，所以用微分近似代替改变量 $\Delta y$ 产生的误差就是 $TQ$。当 $|\Delta x|$ 很小时，$TQ$ 比 $NT$ 小得多，故由 (3.1) 式及定理 3.1 知，当 $|\Delta x| = |x - x_0|$ 很小时，
 
 $$
-\frac {\mathrm{d} y}{\mathrm{d} x} = f ^ {\prime} (x).
+f(x) \approx f(x_0) + f'(x_0)(x - x_0) \tag{3.3}
 $$
 
-这就是说,函数的导数等于函数的微分与自变量微分之商.因此,导数又称为微商,这正是把导数记作 $\frac{dy}{dx}$ 的一个原因.
+此式表明，用微分近似代替改变量 $\Delta y$，实质上就是在 $x_0$ 附近（微小局部）用线性函数 $y = f(x_0) + f'(x_0)(x - x_0)$ 近似代替非线性函数 $y = f(x)$。在几何上就是在点 $P$ 附近用切线 $PT$ 近似代替曲线 $PQ$。
 
-## 微分的几何意义
-
-在图 2.11 中, 函数 $y=f(x)$ 在 $x_{0}$ 处的导数 $f'(x_{0})$ 表示曲线 $y=f(x)$ 在点 $P(x_{0}, f(x_{0}))$ 处的切线 PT 的斜率 $\tan \alpha$ , 因此,
-
-$$
-\mathrm{d} y = f ^ {\prime} \left(x _ {0}\right) \mathrm{d} x = \tan \alpha \cdot P N = N T.
-$$
-
-这就是说,函数 $y=f(x)$ 在 $x_{0}$ 处的微分在几何上表示曲线 $y=f(x)$ 在点 P 处切线上点的纵坐标对应于横坐标改变量 $\Delta x$ 的改变量。
+在微小局部用线性函数近似代替非线性函数，或者，在几何上用切线段近似代替曲线段，是微积分的基本思想方法之一，通常称为非线性函数的局部线性化。这种思想方法在自然科学和工程问题的研究中也是常用的。
 
 <figure class="vp-figure">
-  ![](images/7508ca3493ada2b0d9d7cfbfa3b2cd8e738a504eb3394a18b32bb6c88758e0c5.jpg)
-  <figcaption>图2.11</figcaption>
+  ![](./images/fig_2_11.png)
+  <figcaption>图 2.11</figcaption>
 </figure>
-
-又因为 $\Delta y=f(x_{0}+\Delta x)-f(x_{0})=NQ$ ，所以用微分近似代替改变量 $\Delta y$ 产生的误差就是 TQ。当 $\left|\Delta x\right|$ 很小时，TQ 比 NT 小得多，故�� (3.1) 式及定理 3.1 知，当 $\left|\Delta x\right|=\left|x-x_{0}\right|$ 很小时，
-
-$$
-f (x) \approx f (x _ {0}) + f ^ {\prime} (x _ {0}) (x - x _ {0}).\tag{3.3}
-$$
-
-此式表明，用微分近似代替改变量 $\Delta y$ ，实质上就是在 $x_{0}$ 附近（微小局部）用线性函数 $y = f(x_{0}) + f'(x_{0})(x - x_{0})$ 近似代替非线性函数 $y = f(x)$ 。在几何上就是在点 P 附近
-
-用切线 PT 近似代替曲线 PQ.
-
-在微小局部用线性函数近似代替非线性函数,或者,在几何上用切线段近似代替曲线段,是微积分的基本思想方法之一,通常称为非线性函数的局部线性化.这种思想方法在自然科学和工程问题的研究中也是常用的.
-
-<QRCodeVideo id="2.3.1" url="http://2d.hep.cn/1254051/24" />
-微分概念中的局部线性化思想.
 
 ## 3.2 微分的运算法则
 
-前面已经指出,要求微分,只要先求出导数再乘 dx 即可.因此,由
+<QRCodeVideo id="2.3.1" title="微分概念中的局部线性化思想" url="#" />
 
-函数的导数公式立即可以得到相应的微分公式,由基本导数表可以得到基本微分表.这里我们不再一一罗列出来,读者自己去默写一遍,像基本导数公式一样,要牢记在心.
+前面已经指出，要求微分，只要先求出导数再乘以 $\mathrm{d}x$ 即可。因此，由函数的导数公式立即可以得到相应的微分公式，由基本导数表可以得到基本微分表。这里我们不再一一罗列出来，读者自己去默写一遍，像基本导数公式一样，要牢记在心。
 
-同样,由导数的有理运算法则(定理2.1)可以得到微分的有理运算法则:
+同样，由导数的有理运算法则（定理 2.1）可以得到微分的有理运算法则：
+$$d(u \pm v) = du \pm dv, \quad d(uv) = vdu + udv, \quad d\left(\frac{u}{v}\right) = \frac{vdu - udv}{v^2} \quad (v \neq 0)$$
 
-$$
-\mathrm{d} (u \pm v) = \mathrm{d} u \pm \mathrm{d} v, \quad \mathrm{d} (u v) = v \mathrm{d} u + u \mathrm{d} v, \quad \mathrm{d} \left(\frac {u}{v}\right) = \frac {v \mathrm{d} u - u \mathrm{d} v}{v ^ {2}} (v \neq 0).
-$$
-
-下面介绍复合函数的微分运算法则.设有可微函数 $y=f(u)$ ，若 u 是自变量，根据微分的定义，则有
+下面介绍复合函数的微分运算法则。设有可微函数 $y = f(u)$，若 $u$ 是自变量，根据微分的定义，则有
 
 $$
-\mathrm{d} y = f ^ {\prime} (u) \mathrm{d} u.\tag{3.4}
+\mathrm{d}y = f'(u)\mathrm{d}u \tag{3.4}
 $$
 
-若 u 又是另一个变量 x 的可微函数 $u = g(x)$ ，则由链式法则易知，复合函数 $y = f(g(x))$ 的微分为
+若 $u$ 又是另一个变量 $x$ 的可微函数 $u = g(x)$，则由链式法则易知，复合函数 $y = f(g(x))$ 的微分为
+$$\mathrm{d}y = f'(u)g'(x)\mathrm{d}x$$
+因为 $g'(x)\mathrm{d}x = \mathrm{d}u$，故上式也可以写成 (3.4) 式的形式。这意味着，无论 $u$ 是自变量还是另一个变量的函数，函数 $y = f(u)$ 的微分都保持由 (3.4) 式所表示的同一形式，这一性质称为“微分形式不变性”，它是复合函数求导法则在微分中的反映。由此，复合函数的微分既可以利用链式法则求出导数再乘以 $\mathrm{d}x$ 得到，也可以利用微分形式不变性，由 (3.4) 式直接求得。
 
-$$
-\mathrm{d} y = f ^ {\prime} (u) g ^ {\prime} (x) \mathrm{d} x.
-$$
-
-因为 $g'(x)\mathrm{d}x=\mathrm{d}u$ ，故上式也可以写成(3.4)式的形式。这就是说，无论 u 是自变量还是另一个变量的函数，函数 $y=f(u)$ 的微分都保持由(3.4)式所表示的同一形式，这一性质称为微分形式不变性，它是复合函数求导法则在微分中的反映。由此，复合函数的微分既可以利用链式法则求出导数再乘 dx 得到，也可以利用微分形式不变性，由(3.4)式直接求得。
-
-<Example title="例 3.1">
-求函数 $y=\sin(2x+1)$ 的微分.
-
+<Example title="例 3.1 求函数 $y = \sin(2x+1)$ 的微分。">
 <Solution title="解">
-令 $u = 2x + 1$ ，则由(3.4)式，
-
-$$
-\mathrm{d} y = \cos u \mathrm{d} u = \cos (2 x + 1) \cdot 2 \mathrm{d} x = 2 \cos (2 x + 1) \mathrm{d} x.
-$$
+令 $u = 2x + 1$，则由 (3.4) 式，
+$$\mathrm{d}y = \cos u \, \mathrm{d}u = \cos(2x + 1) \cdot 2\mathrm{d}x = 2\cos(2x + 1)\mathrm{d}x$$
 </Solution>
 </Example>
 
-<Example title="例 3.2">
-求函数 $y=\ln(1+e^{x^{2}})$ 的微分.
-
+<Example title="例 3.2 求函数 $y = \ln(1 + e^x)$ 的微分。">
 <Solution title="解">
-同求复合函数导数一样,利用微分形式不变性求复合函数微分时,也不必写出该复合函数的中间变量直接按如下步骤进行:
-
-$$
-\mathrm{d} y = \frac {1}{1 + \mathrm{e} ^ {x ^ {2}}} \mathrm{d} (1 + \mathrm{e} ^ {x ^ {2}}) = \frac {1}{1 + \mathrm{e} ^ {x ^ {2}}} \cdot \mathrm{e} ^ {x ^ {2}} \mathrm{d} (x ^ {2}) = \frac {\mathrm{e} ^ {x ^ {2}}}{1 + \mathrm{e} ^ {x ^ {2}}} \cdot 2 x \mathrm{d} x = \frac {2 x \mathrm{e} ^ {x ^ {2}}}{1 + \mathrm{e} ^ {x ^ {2}}} \mathrm{d} x.
-$$
-
-由于函数的导数等于函数的微分与自变量微分之商,因此,可以利用微分形式不变性求复合函数的导数.在例3.2中,由所求得的微分表达式立即可得导数 $\frac{dy}{dx}=\frac{2x}{1+e^{x^{2}}}e^{x^{2}}$ .
+同求复合函数导数一样，利用微分形式不变性求复合函数微分时，也不必写出该复合函数的中间变量，直接按如下步骤进行：
 </Solution>
 </Example>
+
+$\mathrm{d}y = \frac{1}{1+e^{x^2}}\mathrm{d}(1+e^{x^2}) = \frac{1}{1+e^{x^2}} \cdot e^{x^2}\mathrm{d}(x^2) = \frac{e^{x^2}}{1+e^{x^2}} \cdot 2x\mathrm{d}x = \frac{2xe^{x^2}}{1+e^{x^2}}\mathrm{d}x.$
+
+由于函数的导数等于函数的微分与自变量微分之商，因此，可以利用微分形式不变性求复合函数的导数。在例 3.2 中，由所求得的微分表达式立即可得导数 $\frac{\mathrm{d}y}{\mathrm{d}x} = \frac{2xe^{x^2}}{1+e^{x^2}}$。
 
 ## 3.3 高阶微分
 
-设函数 $y=f(x)$ 在区间 I 上一阶可导，则它的微分 $\mathrm{d}y=f'(x)\mathrm{d}x$ 在区间 I 上仍是 x 的函数。因此，若该函数在 I 上二阶可导，则可再对微分 dy 求微分，得
+<Knowledge title="高阶微分定义">
+设函数 $y=f(x)$ 在区间 $I$ 上一阶可导，则它的微分 $\mathrm{d}y=f'(x)\mathrm{d}x$ 在区间 $I$ 上仍是 $x$ 的函数。因此，若该函数在 $I$ 上二阶可导，则可再对微分 $\mathrm{d}y$ 求微分，得
+$$\mathrm{d}(\mathrm{d}y) = \mathrm{d}(f'(x)\mathrm{d}x) = f''(x)(\mathrm{d}x)^2$$
+（其中第二个等式成立是由于 $\mathrm{d}x=\Delta x$，与 $x$ 无关），称之为函数 $f$ 在 $I$ 上的二阶微分，记作 $\mathrm{d}^2f$ 或 $\mathrm{d}^2y$。通常把 $(\mathrm{d}x)^2$ 记作 $\mathrm{d}x^2$，则有
+$$\mathrm{d}^2f = \mathrm{d}^2y = f''(x)\mathrm{d}x^2.$$
+此时，称 $f$ 在 $I$ 上二阶可微。
+</Knowledge>
 
-$$
-\mathrm{d} (\mathrm{dy}) = \mathrm{d} (f ^ {\prime} (x) \mathrm{dx}) = f ^ {\prime \prime} (x) (\mathrm{dx}) ^ {2}
-$$
+<Knowledge title="$n$ 阶微分">
+类似地可以定义三阶微分，四阶微分等。一般地，若函数 $f: I \to \mathbf{R}^n$ $n$ 阶可导，则定义它在 $I$ 上的 $n$ 阶微分为
+$$\mathrm{d}^ny = \mathrm{d}^nf = \mathrm{d}(\mathrm{d}^{n-1}f) = f^{(n)}(x)\mathrm{d}x^n,$$
+此时，称 $f$ 在 $I$ 上 $n$ 阶可微。
+</Knowledge>
 
-（其中第二个等式成立是由于 $\mathrm{dx} = \Delta x$ ，与 $x$ 无关），称它为函数 $f$ 在 $I$ 上的二阶微分，记作 $\mathrm{d}^2 f$ 或 $\mathrm{d}^2 y.$ 通常把 $(\mathrm{dx})^2$ 记作 $\mathrm{dx}^2$ ，则有
-
-$$
-\mathrm{d} ^ {2} f = \mathrm{d} ^ {2} y = f ^ {\prime \prime} (x) \mathrm{d} x ^ {2}.
-$$
-
-此时,称f在I上二阶可微.
-
-类似地可以定义三阶微分,四阶微分等.一般地,若函数 $f:I\to R^{n}$ n 阶可导,则定义它在 I 上的 n 阶微分为
-
-$$
-\mathrm{d} ^ {n} y = \mathrm{d} ^ {n} f = \mathrm{d} (\mathrm{d} ^ {n - 1} f) = f ^ {(n)} (x) \mathrm{d} x ^ {n},
-$$
-
-此时,称f在I上n阶可微.
-
-为统一起见,函数的微分也称为函数的一阶微分,二阶与二阶以上的微分统称为高阶微分.应当注意,高阶微分没有微分形式不变性.
+<SideNote title="注意">
+为统一一起见，函数的微分也称为函数的一阶微分，二阶与二阶以上的微分统称为高阶微分。应当注意，高阶微分没有微分形式不变性。
+</SideNote>
 
 ## 3.4 微分在近似计算中的应用
 
-用微分进行近似计算的基本思想是:在微小局部将给定的函数线性化,即在 $x_{0}$ 的小邻域内,利用近似等式(3.3)来计算 $f(x)$ 的值.由于该式右端的线性函数之值容易计算,因此,为近似计算函数 $y=f(x)$ 的值提供了方便.
+用微分进行近似计算的基本思想是：在微小局部将给定的函数线性化，即在 $x_0$ 的小邻域内，利用近似等式 (3.3) 来计算 $f(x)$ 的值。由于该式右端的线性函数之值容易计算，因此，为近似计算函数 $y=f(x)$ 的值提供了方便。
 
-<Example title="例 3.3">
-求 $\sqrt[3]{1.02}$ 的近似值.
-
+<Example title="例 3.3 求 $\sqrt[3]{1.02}$ 的近似值">
 <Solution title="解">
-为计算 $\sqrt[3]{1.02}$ 的近似值, 取 $f(x) = \sqrt[3]{x}$ , 则由 (3.3) 式得
-
-$$
-\sqrt [ 3 ]{x} \approx \sqrt [ 3 ]{x _ {0}} + \frac {1}{3 \sqrt [ 3 ]{x _ {0} ^ {2}}} (x - x _ {0}).
-$$
-
-令 $x_0 = 1, x = 1.02$ ，于是
-
-$$
-\sqrt [ 3 ]{1 . 0 2} \approx 1 + \frac {1}{3} \times 0. 0 2 \approx 1. 0 0 6 7.
-$$
+为计算 $\sqrt[3]{1.02}$ 的近似值，取 $f(x)=\sqrt[3]{x}$，则由 (3.3) 式得
+$$\sqrt[3]{x} \approx \sqrt[3]{x_0} + \frac{1}{3\sqrt[3]{x_0^2}}(x - x_0).$$
+令 $x_0=1, x=1.02$，于是
+$$\sqrt[3]{1.02} \approx 1 + \frac{1}{3} \times 0.02 \approx 1.0067.$$
 </Solution>
 </Example>
 
-<Example title="例 3.4">
-计算 $\sin 44^{\circ}$ 的近似值.
-
+<Example title="例 3.4 计算 $\sin 44^\circ$ 的近似值">
 <Solution title="解">
-取 $f(x) = \sin x$ ，则由(3.3)式得
-
-$$
-\sin x \approx \sin x _ {0} + (x - x _ {0}) \cos x _ {0}.
-$$
-
-令 $x_0 = 45^\circ = \frac{\pi}{4}, x = 44^\circ = \frac{\pi}{4} - \frac{\pi}{180}$ , 于是注意:前面曾经指出,微积分中三角函数角度的度量必须用弧度制,因此,在例3.4中必须先将角度的度数转化为弧度,然后再用微分来计算函数值.
-
-$$
-\sin 4 4 ^ {\circ} \approx \sin \frac {\pi}{4} - \frac {\pi}{1 8 0} \cos \frac {\pi}{4} = \frac {\sqrt {2}}{2} - \frac {\pi}{1 8 0} \frac {\sqrt {2}}{2} \approx 0. 6 9 4 8.
-$$
-
-在(3.3)式中,取 $x_{0}=0$ ,当 $|\Delta x|=|x|$ 充分小时,有
-
-$$
-f (x) \approx f (0) + f ^ {\prime} (0) x.
-$$
-
-由此容易得到下面一些常用的近似公式: 当 $\left|x\right|<<1$ 时,
-
-$$
-\mathrm{e} ^ {x} \approx 1 + x, \quad \sin x \approx x, \quad \tan x \approx x, \quad (1 + x) ^ {\alpha} \approx 1 + \alpha x, \quad \ln (1 + x) \approx x.\tag{3.5}
-$$
+取 $f(x)=\sin x$，由 (3.3) 式得
+$$\sin x \approx \sin x_0 + (x - x_0)\cos x_0.$$
+令 $x_0=45^\circ=\frac{\pi}{4}, x=44^\circ=\frac{\pi}{4} - \frac{\pi}{180}$，于是
+$$\sin 44^\circ \approx \sin \frac{\pi}{4} - \frac{\pi}{180}\cos \frac{\pi}{4} = \frac{\sqrt{2}}{2} - \frac{\pi}{180} \frac{\sqrt{2}}{2} \approx 0.6948.$$
 </Solution>
 </Example>
 
-<Example title="例 3.5">
-计算 $\sqrt[5]{270}$ 的近似值.
+<SideNote title="注意">
+前面曾经指出，微积分中三角函数角度的度量必须用弧度制，因此，在例 3.4 中必须先将角度的度数转化为弧度，然后再用微分来计算函数值。
+</SideNote>
 
+<Knowledge title="常用近似计算公式">
+在 (3.3) 式中，取 $x_0=0$，当 $|\Delta x| = |x|$ 充分小时，有
+
+$$
+f(x) \approx f(0) + f'(0)x.
+$$
+
+由此容易得到下面一些常用的近似公式：当 $|x| \ll 1$ 时，
+
+$$
+e^x \approx 1+x, \quad \sin x \approx x, \quad \tan x \approx x, \quad (1+x)^\alpha \approx 1+\alpha x, \quad \ln(1+x) \approx x. \tag{3.5}
+$$
+</Knowledge>
+
+<Example title="例 3.5 计算 $\sqrt[5]{270}$ 的近似值">
 <Solution title="解">
 由于
-
-$$
-\sqrt [ 5 ]{2 7 0} = \sqrt [ 5 ]{2 4 3 + 2 7} = 3 \left(1 + \frac {2 7}{2 4 3}\right) ^ {\frac {1}{5}},
-$$
-
-在近似公式 $(1 + x)^{\alpha}\approx 1 + \alpha x$ 中取 $x = \frac{27}{243},\alpha = \frac{1}{5}$ ，得
-
-$$
-\sqrt [ 5 ]{2 7 0} \approx 3 \left(1 + \frac {1}{5} \cdot \frac {2 7}{2 4 3}\right) \approx 3. 0 6 6 7.
-$$
+$$\sqrt[5]{270} = \sqrt[5]{243 + 27} = 3\left(1 + \frac{27}{243}\right)^{\frac{1}{5}},$$
+在近似公式 $(1+x)^\alpha \approx 1+\alpha x$ 中取 $x=\frac{27}{243}, \alpha=\frac{1}{5}$，得
+$$\sqrt[5]{270} \approx 3\left(1 + \frac{1}{5} \cdot \frac{27}{243}\right) \approx 3.0667.$$
 </Solution>
 </Example>
 

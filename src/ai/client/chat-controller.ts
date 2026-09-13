@@ -990,18 +990,13 @@ export class AIAskElement extends HTMLElement {
   }
 
   _fallbackSummary(toolLog: any[]): string {
-    if (!toolLog || !toolLog.length) return '';
-    const lines = [
-      '我已检索了本书相关内容，以下是找到的关键资料（更多细节请见下方来源卡片，或点击卡片跳转原文）：',
+    return [
+      '**【AI 本轮未能输出最终回答】**',
       '',
-    ];
-    for (const t of toolLog) {
-      const summary = t.summary || '';
-      const que = (t.args && t.args.question) ? `（${String(t.args.question).slice(0, 60)}）` : '';
-      if (summary) lines.push(`· ${summary}${que}`);
-    }
-    lines.push('', '若仍不满意，你可以换一种问法，或直接点击上方/下方的来源卡片查看对应原文。');
-    return lines.join('\n');
+      'AI 已检索了本书相关的背景资料（可参考下方检索到的来源卡片），但未能生成完整的最终总结回答。',
+      '',
+      '您可以直接点击下方来源卡片查阅教材原文，或稍后换一种问法重新提问。',
+    ].join('\n');
   }
 
   _relTime(ts: number): string {
@@ -1589,7 +1584,7 @@ export class AIAskElement extends HTMLElement {
       curTextEl = null;
     };
 
-    const maxTurns = 6;
+    const maxTurns = 8;
     let usedTools = false;
     try {
       this._streaming = true;
@@ -1617,10 +1612,17 @@ export class AIAskElement extends HTMLElement {
           messages.push({
             role: 'assistant',
             content: res.text || null,
-            tool_calls: res.toolCalls.map((tc: any) => ({
-              id: tc.id, type: 'function',
-              function: { name: tc.name, arguments: JSON.stringify(tc.arguments) },
-            })),
+            tool_calls: res.toolCalls.map((tc: any) => {
+              const callObj: any = {
+                id: tc.id,
+                type: 'function',
+                function: { name: tc.name, arguments: JSON.stringify(tc.arguments) },
+              };
+              if (tc.extra_content) {
+                callObj.extra_content = tc.extra_content;
+              }
+              return callObj;
+            }),
           });
           flushReply();
           for (const tc of res.toolCalls) {
@@ -1637,7 +1639,7 @@ export class AIAskElement extends HTMLElement {
             toolLog.push(t);
             segments.push({ kind: 'tool', name: t.name, args: t.args, summary: t.summary, resultText: t.resultText });
             blocksEl.insertAdjacentHTML('beforeend', this._toolBlocksHtml([t], true));
-            messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(out) });
+            messages.push({ role: 'tool', tool_call_id: tc.id, name: tc.name, content: JSON.stringify(out) });
           }
           continue;
         }

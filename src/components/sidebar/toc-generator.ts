@@ -143,7 +143,7 @@ export function buildBookTOC(
 
   for (const el of Array.from(contentRoot.querySelectorAll([...trackList, 'h2', 'h3', 'h4'].join(', '))) as HTMLElement[]) {
     if (el.matches('h2, h3, h4')) {
-      if (!el.closest(trackSelectors) && !el.closest('.custom-page-sidebar')) {
+      if (!el.closest(trackSelectors) && !el.closest('.custom-page-sidebar') && !el.closest('.not-content')) {
         tocEntries.push({ kind: 'heading', el, level: Number(el.tagName.slice(1)) });
       }
     } else {
@@ -179,11 +179,6 @@ export function buildBookTOC(
     const emptyHtml = '<li class="toc-loading">本节暂无大纲</li>';
     tocList.innerHTML = emptyHtml;
     if (mobileTocList) mobileTocList.innerHTML = emptyHtml;
-    const navBtn = document.querySelector('.vp-local-nav-btn');
-    if (navBtn) {
-      navBtn.classList.add('return-top');
-      navBtn.setAttribute('aria-label', '返回顶部');
-    }
     return;
   }
 

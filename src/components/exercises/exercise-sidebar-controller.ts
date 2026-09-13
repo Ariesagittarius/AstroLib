@@ -22,137 +22,7 @@ import { sideloadManager } from '../sideload/sideload-manager';
 import '@material/web/iconbutton/icon-button.js';
 import '@material/web/icon/icon.js';
 
-const KATEX_OPTIONS = {
-  delimiters: [
-    { left: '$$', right: '$$', display: true },
-    { left: '$', right: '$', display: false },
-    { left: '\\[', right: '\\]', display: true },
-    { left: '\\(', right: '\\)', display: false },
-  ],
-  throwOnError: false,
-  errorColor: '#cc0000',
-  strict: false,
-  trust: true,
-  macros: {
-    '\\dif': '\\mathrm{d}',
-    '\\e': '\\mathrm{e}',
-    '\\i': '\\mathrm{i}',
-    '\\R': '\\mathbb{R}',
-    '\\N': '\\mathbb{N}',
-    '\\Z': '\\mathbb{Z}',
-    '\\C': '\\mathbb{C}',
-    '\\iint': '\\int\\!\\!\\int',
-    '\\iiint': '\\int\\!\\!\\int\\!\\!\\int',
-    '\\iiiint': '\\int\\!\\!\\int\\!\\!\\int\\!\\!\\int',
-  },
-};
-
-function renderSolutionMarkdown(md: string, isStreaming = false): string {
-  if (!md) return '<div class="ex-ai-placeholder">正在调用学术模型进行规范推导演算...</div>';
-  let safe = md
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-
-  // 前置容错归一化：将可能漏网的 LaTeX 原生界定符统一转换为标准 KaTeX Markdown 语法
-  if (isStreaming) {
-    const openBrackets = (safe.match(/\\\[/g) || []).length;
-    const closeBrackets = (safe.match(/\\\]/g) || []).length;
-    if (openBrackets > closeBrackets) {
-      safe += '\n\\]';
-    }
-  }
-
-  safe = safe.replace(/\\\[([\s\S]*?)\\\]/g, (_m, inner) => `\n$$\n${inner.trim()}\n$$\n`);
-  safe = safe.replace(/\\\(([\s\S]*?)\\\)/g, (_m, inner) => `$${inner.trim()}$`);
-
-  const mathBlocks: string[] = [];
-
-  if (isStreaming) {
-    const doubleDollarCount = (safe.match(/\$\$/g) || []).length;
-    if (doubleDollarCount % 2 !== 0) {
-      safe += '\n$$';
-    }
-  }
-
-  safe = safe.replace(/\$\$([\s\S]*?)\$\$/g, (_m, inner) => {
-    mathBlocks.push(`$$${inner}$$`);
-    return `___MATH_BLOCK_${mathBlocks.length - 1}___`;
-  });
-
-  safe = safe.replace(/\$([^\$\n]+?)\$/g, (_m, inner) => {
-    mathBlocks.push(`$${inner}$`);
-    return `___MATH_BLOCK_${mathBlocks.length - 1}___`;
-  });
-
-  const lines = safe.split(/\r?\n/);
-  const out: string[] = [];
-  let inCode = false;
-  let codeBuf: string[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    if (/^```/.test(line)) {
-      if (inCode) {
-        out.push(`<pre><code>${codeBuf.join('\n')}</code></pre>`);
-        codeBuf = [];
-        inCode = false;
-      } else {
-        inCode = true;
-      }
-      continue;
-    }
-    if (inCode) {
-      codeBuf.push(line);
-      continue;
-    }
-
-    if (/^###\s+(.*)$/.test(line)) {
-      const title = line.replace(/^###\s+/, '');
-      out.push(`<h6>${title}</h6>`);
-      continue;
-    }
-    if (/^##\s+(.*)$/.test(line)) {
-      const title = line.replace(/^##\s+/, '');
-      out.push(`<h5>${title}</h5>`);
-      continue;
-    }
-    if (/^#\s+(.*)$/.test(line)) {
-      const title = line.replace(/^#\s+/, '');
-      out.push(`<h4>${title}</h4>`);
-      continue;
-    }
-
-    if (/^[-*]\s+(.*)$/.test(line)) {
-      const item = line.replace(/^[-*]\s+/, '');
-      out.push(`<li>${item}</li>`);
-      continue;
-    }
-
-    if (/^\d+\.\s+(.*)$/.test(line)) {
-      const item = line.replace(/^\d+\.\s+/, '');
-      out.push(`<li>${item}</li>`);
-      continue;
-    }
-
-    if (line.trim() === '') {
-      continue;
-    }
-
-    out.push(`<p>${line}</p>`);
-  }
-
-  let html = out.join('\n');
-  html = html.replace(/<li>[\s\S]*?<\/li>/g, (m) => `<ul>${m}</ul>`);
-  html = html.replace(/<\/ul>\s*<ul>/g, '');
-
-  html = html.replace(/___MATH_BLOCK_(\d+)___/g, (_m, idx) => {
-    return mathBlocks[parseInt(idx, 10)] || '';
-  });
-
-  return html;
-}
+import { renderAcademicSolutionMarkdown as renderSolutionMarkdown, EXERCISE_KATEX_OPTIONS as KATEX_OPTIONS } from './exercise-markdown';
 
 class ExerciseSidebarController {
   private isOpen = false;
@@ -954,6 +824,7 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
         endpoint: config.endpoint,
         apiKey: config.apiKey,
         model: config.model,
+        maxTokens: config.maxTokens,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
@@ -976,7 +847,7 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
       const hasContent = Boolean(accumulatedMd && accumulatedMd.trim());
       const hasReasoning = Boolean(accumulatedReasoning && accumulatedReasoning.trim());
 
-      // 严格非空校验：若未收到任何内容，绝对禁止渲染虚假对勾
+      // 1. 若完全未收到任何内容（空响应）
       if (!hasContent && !hasReasoning) {
         if (contentEl) {
           contentEl.innerHTML = `
@@ -992,11 +863,59 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
         return;
       }
 
-      // 若正文为空但输出了完整的推导思路，自动降级以思考链作为主要推导展示，避免空白
+      // 2. 关键防御：若模型输出了深度思考思路但正文未输出（例如 Token 限制、上游截断）
+      // 绝对禁止将思考链冒充赋给正文（杜绝草稿冒充最终解答与虚假对勾）
       if (!hasContent && hasReasoning) {
-        accumulatedMd = accumulatedReasoning;
+        this.aiReasonings.set(qid, accumulatedReasoning);
+        try {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(`astrolib_ai_reasoning_${qid}`, accumulatedReasoning);
+          }
+        } catch {}
+
+        if (contentEl) {
+          contentEl.innerHTML = `
+            <div class="ex-sb-empty" style="padding: 1rem 0;">
+              <p style="color: var(--md-sys-color-error, #ba1a1a); font-size: 0.75rem; line-height: 1.5;">
+                模型已完成思路推演，但未输出正文推导（可能因服务端连接中断或生成异常）。请点击下方按钮重新生成。
+              </p>
+              <button type="button" class="ex-sb-retry-btn" id="ai-err-retry-${qid}">重新推导</button>
+            </div>
+          `;
+          document.getElementById(`ai-err-retry-${qid}`)?.addEventListener('click', () => {
+            this.triggerAiGeneration(qid, q, true);
+          });
+        }
+
+        const statusEl = document.getElementById(`ai-status-${qid}`);
+        if (statusEl) {
+          statusEl.setAttribute('title', '推导中断（正文未返回）');
+          statusEl.innerHTML = `
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="var(--md-sys-color-error, #ba1a1a)" style="flex-shrink:0;">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+          `;
+        }
+
+        document.getElementById(`ai-stop-${qid}`)?.classList.add('hidden');
+        document.getElementById(`ai-retry-${qid}`)?.classList.remove('hidden');
+
+        // 同步至浮窗：保留思考折叠栏，但在正文区明确展示中断提示
+        this.syncStreamingToRichTooltip(qid, '', accumulatedReasoning, false);
+        const tooltipSol = document.getElementById('ex-tooltip-solution');
+        if (tooltipSol) {
+          tooltipSol.innerHTML = `
+            <div class="ex-sb-empty" style="padding: 0.75rem 0;">
+              <p style="color: var(--md-sys-color-error, #ba1a1a); font-size: 0.75rem; line-height: 1.5;">
+                模型已完成思路推演，但未输出正文推导。请重新推导。
+              </p>
+            </div>
+          `;
+        }
+        return;
       }
 
+      // 3. 正常完成（正文非空）
       this.aiSolutions.set(qid, accumulatedMd);
       if (accumulatedReasoning) {
         this.aiReasonings.set(qid, accumulatedReasoning);

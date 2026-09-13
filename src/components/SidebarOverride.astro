@@ -1,7 +1,6 @@
 ---
 import SidebarPersister from '@astrojs/starlight/components/SidebarPersister.astro';
 import SidebarSublist from './sidebar/CustomSidebarSublist.astro';
-import MobileMenuFooter from 'virtual:starlight/components/MobileMenuFooter';
 import fs from 'node:fs';
 import { features } from '../config/features.config.mjs';
 import { collections } from '../config/collections.config.mjs';
@@ -141,9 +140,7 @@ if (features.epub.enabled && bookMatch) {
   </div>
 )}
 
-<div class="md:sl-hidden">
-  <MobileMenuFooter />
-</div>
+
 
 <style>
   .epub-entry {
@@ -325,10 +322,21 @@ if (features.epub.enabled && bookMatch) {
       // 离屏预处理：在缓存前对离屏 DOM 执行所有会引起 layout shift 的同步突变
       preprocessPage(mainPane);
 
-      // 提取 head 中的额外样式表 link[rel="stylesheet"]
+      // 提取 head 中的额外样式表 link[rel="stylesheet"] 与 style 标签 (涵盖 dev HMR 样式与 prod scoped styles)
       const headLinks = Array.from(doc.querySelectorAll('head link[rel="stylesheet"]'))
         .map((l) => l.getAttribute('href'))
         .filter(Boolean);
+
+      const headStyles = Array.from(doc.querySelectorAll('head style'))
+        .map((s) => ({
+          id: s.getAttribute('data-vite-dev-id') || s.id || '',
+          content: s.textContent || '',
+          attrs: Array.from(s.attributes).reduce((acc, attr) => {
+            acc[attr.name] = attr.value;
+            return acc;
+          }, {})
+        }))
+        .filter((s) => s.content.trim().length > 0 || s.id);
 
       // 性能突破：缓存序列化后的 HTML 字符串与文本切片，杜绝脱体 DOM 节点在 Blink C++ 内存中常驻
       const record = {
@@ -337,6 +345,7 @@ if (features.epub.enabled && bookMatch) {
         rightHtml: rightSidebar ? rightSidebar.outerHTML : null,
         sidebarHtml: sidebar ? sidebar.outerHTML : null,
         headLinks,
+        headStyles,
         textSnippet: (mainPane.textContent || '').slice(0, 2500)
       };
 
@@ -593,7 +602,7 @@ if (features.epub.enabled && bookMatch) {
           currentRight.remove();
         }
 
-        // 同步 head 中的新增样式表 (保障含有专属组件的页面通过 SPA 瞬切时样式完整)
+        // 同步 head 中的新增样式表与内联 style (保障含有专属组件的页面通过 SPA 瞬切时样式完整)
         if (pageData.headLinks && pageData.headLinks.length > 0) {
           pageData.headLinks.forEach((href) => {
             if (!document.querySelector(`head link[href="${href}"]`)) {
@@ -602,6 +611,27 @@ if (features.epub.enabled && bookMatch) {
               l.href = href;
               document.head.appendChild(l);
             }
+          });
+        }
+
+        if (pageData.headStyles && pageData.headStyles.length > 0) {
+          pageData.headStyles.forEach((item) => {
+            if (item.id) {
+              if (document.querySelector(`head style[data-vite-dev-id="${item.id}"], head style#${CSS.escape(item.id)}`)) {
+                return;
+              }
+            } else if (item.content) {
+              const exists = Array.from(document.querySelectorAll('head style')).some(
+                (existing) => existing.textContent === item.content
+              );
+              if (exists) return;
+            }
+            const s = document.createElement('style');
+            if (item.attrs) {
+              Object.entries(item.attrs).forEach(([k, v]) => s.setAttribute(k, v));
+            }
+            s.textContent = item.content;
+            document.head.appendChild(s);
           });
         }
 

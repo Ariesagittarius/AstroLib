@@ -19,6 +19,8 @@
 | [模块查重与巡检工具.md](./模块查重与巡检工具.md) | **书籍模块巡检与查重工具**：dev 模式下快速查看与搜索全书模块、同章/全书查重、异常拆分标记与一键精准定位跳转。 | `src/utils/module-inspector/`<br>`src/components/ModuleInspector.astro` |
 | [公式末尾编号-tag-重叠问题修复记录.md](./公式末尾编号-tag-重叠问题修复记录.md) | **KaTeX 编号与排版排错**：独立行公式 `\tag{...}` 在移动端和窄屏下与公式内容重叠的 CSS 定位修复。 | `src/styles/custom.css` |
 | [大邮数学集题库结构化与分章习题交接文档.md](./大邮数学集题库结构化与分章习题交接文档.md) | **全量真题题库抽取与分章习题建设**：173套试卷/2765道题结构化抽取、Unicode规范化、KaTeX公式平衡与工科数分分章自测页集成。 | `scripts/lib/math_archive/`<br>`src/data/exercises/`<br>`src/components/ChapterQuiz.astro` |
+| [Gemma4原书扫描全视觉推倒重建与全书构建流水线交接文档.md](./Gemma4原书扫描全视觉推倒重建与全书构建流水线交接文档.md) | **Gemma 4 原书扫描全视觉推倒重建与全书构建生产流水线（当前活跃最高准则）**：彻底推倒 MinerU OCR 脏文本，以原书 PDF 物理扫描页为 Ground Truth；模型选型（`gemma-4-26b-a4b-it` 多模态）、SSE 流式通信、思考配额约束与防爆死循环机制、六大排版契约（SideNote 边栏剥离、AST 闭合与 H1 去重、KaTeX cases 嵌套避坑、多子图实体化合成、习题切断解耦）、全书物理页映射字典、全自动化工具脚本与**三层【真实情景实测】闭环验证体系**。已全量上线独立测试图书 `engineering_analysis_rebuild`（第二、三、四、五章全量及第六章 6.1~6.3 共 25 篇章节 100% 校验通过）。 | `scripts/vision_reconstruct/`<br>`src/content/docs/collections/math/engineering_analysis_rebuild/`<br>`src/config/collections.config.mjs` |
+| [Gemma数据清洗与旁注重构流水线交接文档.md](./Gemma数据清洗与旁注重构流水线交接文档.md) | **Gemma 数据清洗与旁注重构历史文档（文本级清洗阶段）**：落地 `<SideNote>`（桌面浮动/移动紧凑）旁注组件历史记录。 | `src/components/SideNote.astro`<br>`src/components/MarginNote.astro` |
 
 ---
 

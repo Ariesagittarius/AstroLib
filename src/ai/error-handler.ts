@@ -159,6 +159,13 @@ export function parseAiError(
     message = `当前模型在提供商（${context?.providerLabel || '当前提供商'}）处的可用免费/用量额度已耗尽，或请求频次超过了每分钟限制。`;
     advice = '建议：\n1. 稍等 10-30 秒后点击下方“重试”按钮；\n2. 点击右上角快速设置 -> AI，切换至同提供商的其他轻量模型（如 Flash Lite 系列）；\n3. 前往提供商控制台检查当前 API Key 的配额与账单余额。';
   }
+  // 400 Gemini 函数调用思维签名校验异常
+  else if (lowerMsg.includes('thought_signature') || lowerRaw.includes('thought_signature')) {
+    category = 'unknown';
+    title = `函数调用思维签名校验异常 (${statusCode || 400})`;
+    message = `Google Gemini 要求在多轮工具调用 (Function Calling) 交互中附带思维签名 (thought_signature)。`;
+    advice = '建议：系统已启用思维签名全链路透传与官方兜底机制，点击下方“重试”即可继续生成完整学术解答。';
+  }
   // 400 / 401 / 403 认证错误
   else if (
     statusCode === 401 ||

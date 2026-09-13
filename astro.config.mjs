@@ -189,6 +189,7 @@ const componentOverrides = {
   PageFrame: './src/components/PageFrameOverride.astro', // 顶层骨架覆盖：注入全站统一视窗挂载容器 (#astro-overlay-root)
   PageTitle: './src/components/PageTitleOverride.astro', // 页面大标题 H1 构建期数学公式转译（零客户端 KaTeX）
   SocialIcons: './src/components/SocialIconsOverride.astro', // 顶栏 GitHub 社交入口：覆盖默认黑底硬币圆盘，使用官方净标
+  TwoColumnContent: './src/components/TwoColumnContentOverride.astro', // 正文两栏布局覆盖：在正文卡片上方挂载 NoticeFramework
 };
 if (features.theme.enabled) {
   componentOverrides.ThemeSelect = './src/components/ThemeSelectOverride.astro'; // 顶栏外观与主题切换按钮

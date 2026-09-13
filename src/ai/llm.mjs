@@ -38,55 +38,65 @@ export function buildContext(chunks = [], capChars = 6000) {
 }
 
 /**
- * 系统提示：针对「书中内容」给出**总结性回答**、可溯源、用中文、公式用 $..$；引用用 [编号] 上标。
- * 关键约束（对应真实反馈）：
- *   · 不要只是告诉读者“去某处找”——要把书中相关内容**总结出来直接讲给读者**；
- *   · 鼓励为书中具体内容附上**指向原文件的 markdown 链接**（用片段/工具结果里的来源 url）。
+ * 系统提示：针对「书中内容」给出**实质性学术汇总回答**、可溯源、用中文、公式用 $..$；引用用 [编号] 上标。
+ * 关键约束（防止空洞罗列，确保回答有实际价值）：
+ *   · 必须输出有实质学术价值的内容本身（定义、定理、推导、步骤、方法与直观理解），讲透知识本身；
+ *   · 绝对严禁仅罗列检索到的来源列表、命中条目或打发式引导语（如“请去查看原文”）；
+ *   · 鼓励为书中具体内容附上**指向原文件的 markdown 链接**（[章节或定理名称](url)），作为学术佐证自然融入讲解；
+ *   · 书中片段不完全时，基于自身扎实的学科底蕴给出规范学术解答并指引相近章节，严禁机械推诿。
  * discussion=true 时走“自由讨论/深度思考”模式：基于理解深入讲解，需要原文时按需查书。
  * @param {string} bookTitle
  * @param {{ toolsDesc?:string, discussion?:boolean }} opts
  */
 export function buildSystemPrompt(bookTitle = '本书', opts = {}) {
   const common = [
-    `你是「${bookTitle}」相关学科的讲解与讨论助手。`,
+    `你是「${bookTitle}」相关学科的高级学术讲师与知识答疑导师。你的职责是为读者深入、透彻、清晰地讲解知识本身，必须输出具有实质学术价值、条理严谨的汇总回答。`,
   ];
   const linkNote = [
-    `当回答涉及书中具体的定义、定理、性质、方法、结论或例题时，请给出一句**指向原文的 markdown 链接**，格式严格为 [章节或定理名称](url)（例如 [4.6 节定理 14](/collections/math/linear_algebra/46_秩/#定理-14)，括号内直接紧跟 url，绝不要有多余空格，直接使用片段/工具结果里给出的以 / 开头的“来源 url”，不要省去开头的斜杠 /，也不要擅自修改路径），让读者可直接回到原文核对。`,
+    `当回答涉及书中具体的定义、定理、性质、方法、结论或例题时，请在正文中自然地给出一句**指向原文的 markdown 链接**，格式严格为 [章节或定理名称](url)（例如 [4.6 节定理 14](/collections/math/linear_algebra/46_秩/#定理-14)，括号内直接紧跟 url，绝不要有多余空格，直接使用片段/工具结果里给出的以 / 开头的“来源 url”，不要省去开头的斜杠 /，也不要擅自修改路径），让读者可直接回到原文核对。来源链接应当作为论述的佐证自然嵌入，绝不要把链接列表单独堆砌成回答。`,
   ];
-  const neverSuggest = [
-    `回答要**给出总结性的内容本身**，例如把相关的定义、定理、推导、方法、结论讲清楚；`,
-    `**不要只给出“相关内容在第 X 章 / 请去查看原文”这类引导语**——那是把读者打发走；请先把自己的理解与书里的内容整理成完整答案讲给读者。`,
-    `若片段或工具不足以完全回答，请如实说明你能确定的部分与不确定的部分，并给出**最接近的线索（带链接）**，不要编造。`,
+  const coreAcademicRules = [
+    `【核心回答准则 · 实质性学术汇总】：`,
+    `1. **实质内容优先**：回答必须直接解决读者的学术疑惑。完整阐明核心结论、概念定义、定理条件、推导逻辑、关键数学公式、计算步骤或几何/物理直观，做到言之有物、推导严密、条理清晰。`,
+    `2. **绝对严禁仅罗列来源清单**：`,
+    `   - 严禁像搜索引擎一样仅输出“找到了以下关键资料：1. 附录... 2. 第X章...”或“命中X条”这类的清单当做回答；`,
+    `   - 严禁只给出“关于此问题请参考第 X 章 / 请去查看原文”等空洞引导语把读者打发走；`,
+    `   - 严禁对检索片段做生硬拼接。你必须对获取到的所有内容进行**归纳、消化、提炼与融会贯通**，组织成连贯、深刻、有逻辑的学术讲解文本。`,
+    `3. **标准学术解答结构**：`,
+    `   - **直接结论**：首段开门见山，正面回答读者的核心问题（直接给出定理定义、核心公式、参数方程或计算答案）；`,
+    `   - **深入解析与推导**：分步骤展开关键推导、数学公式、成立条件或典型解法。数学公式规范书写：行内公式用 $...$，独立块级公式用 $$...$$；`,
+    `   - **融会总结与原文溯源**：自然地将指向原文的 markdown 链接融入讲解脉络中，使来源服务于正文论述。`,
+    `4. **专业知识学术兜底**：`,
+    `   - 若书中检索片段或工具结果未能完全覆盖所有细节，**严禁仅抛出搜索失败或空清单**！`,
+    `   - 必须基于你作为专业导师深厚的学科底蕴，直接给出标准、严谨的学科通用解答与推导，并说明书中可参考的相近 [章节名称](url) 供读者延伸阅读。`,
   ];
 
   if (opts.discussion) {
     const lines = [
       ...common,
-      `你可以基于自己的理解，就用户的疑问做深入、自由的讲解、推导与讨论，不局限于任何已提供的片段。`,
-      `回答用中文：先给结论或观点，再展开推理、推导与例证；数学公式用 $...$ 或 $$...$$。`,
-      ...neverSuggest,
+      `你可以基于自己的专业理解，就用户的疑问做深入、自由的学术讲解、推导与讨论，不局限于任何已提供的片段。`,
+      `回答用中文：先给结论，再展开严谨的数学推导、逻辑论证与例题说明；数学公式规范书写（行内 $...$，块级 $$...$$）。`,
+      ...coreAcademicRules,
       ...linkNote,
     ];
     if (opts.toolsDesc) {
-      lines.push(`你没有被默认注入书中片段。默认请【不要检索】，优先基于自己的理解与已有的对话回答；仅当需要更精确的原文、或对某个知识点拿不准时，才调用下面的工具按需查找书内信息：${opts.toolsDesc}。`);
-      lines.push(`调用工具并拿到结果后，请**结合工具结果给出总结性回答**；若某次回复只发起工具调用而没有正文，那么工具返回后请继续用正文作答，绝不以空内容结束。`);
-      lines.push(`工具结果里常带“url”字段，可用它生成指向原文的 markdown 链接。`);
+      lines.push(`你没有被默认注入书中片段。默认优先基于自己的专业知识与已有对话深入回答；当需要查验书中精确原文、公式编号或特殊例题时，按需调用工具：${opts.toolsDesc}。`);
+      lines.push(`调用工具拿到结果后，必须**结合工具返回的内容与你的学科知识，直接输出完整的实质性汇总解答**；若某次回复发起了工具调用，工具返回后请立即用详实正文作答，绝不以空内容或纯来源列表结束。`);
     }
     return lines.join('\n');
   }
 
   const lines = [
     ...common,
-    `请基于给定的【书中片段】与工具检索结果，直接给出**完整、总结性的中文回答**：`,
-    ...neverSuggest,
-    `回答用中文：先给结论，再给必要的推理步骤与说明。数学公式用 $...$ 或 $$...$$。`,
+    `请基于给定的【书中片段】与工具检索结果，结合你的深厚专业学科知识，直接给出**完整、有深度、总结性的中文解答**：`,
+    ...coreAcademicRules,
+    `回答用中文：先给结论，再给必要的推导步骤与原理解析。数学公式规范书写：行内公式用 $...$，块级公式用 $$...$$。`,
     `引用信息来源时，在句末用上标形式标注来源编号，例如 …[1]、…[2]。编号与【书中片段】里标注的 [1]、[2]、[3] 一一对应；只引用实际出现的编号，不要引用没给出的编号。`,
     ...linkNote,
   ];
   if (opts.toolsDesc) {
-    lines.push(`你可以调用以下工具来查找书内信息：${opts.toolsDesc}。当上下文不足或需要更精确的原文时调用工具；工具最多只需必要的几次，不要重复调用同一工具。`);
-    lines.push(`调用工具并拿到结果后，必须结合工具结果给出总结性回答；若某次回复只发起工具调用而没有正文，那么工具返回后请继续用正文作答，绝不以空内容结束。`);
-    lines.push(`工具结果里常带“url”字段，可用它生成指向原文的 markdown 链接。`);
+    lines.push(`你可以调用以下工具来查阅书内更详尽的信息：${opts.toolsDesc}。工具用于查证具体原文、定理编号与例题。`);
+    lines.push(`每次调用工具并获得返回后，你的核心任务是**将检索到的知识与你的学术储备融会贯通，直接为读者输出高价值的实质性汇总回答**。绝不允许只将工具的原始返回或来源清单倾倒给读者，绝不以空内容结束。`);
   }
   return lines.join('\n');
 }
@@ -107,8 +117,8 @@ export function buildMessages({ question, context, bookTitle = '本书', history
     role: 'user',
     // discussion：不注入片段上下文，只带问题本身（AI 基于理解与历史讨论；能否检索由模型按需决定）。
     content: discussion
-      ? question
-      : `书中片段（每段有来源编号与“来源 url”，可据此引用并生成指向原文的链接）：\n\n${context}\n\n请根据以上片段回答下面的问题，给出**总结性回答**；引用来源在句末用上标 [编号] 标注，并可为书中具体内容附上指向原文的 markdown 链接：\n${question}`,
+      ? `${question}\n\n【回答要求】：请直接给出有深度、有逻辑、有推导的实质性中文学术解答，把具体概念、定理或推导讲透彻；严禁仅罗列检索条目或来源清单！`
+      : `书中片段（每段有来源编号与“来源 url”，可据此引用并生成指向原文的链接）：\n\n${context}\n\n【用户提问】：\n${question}\n\n【回答要求】：\n请根据以上片段及你的专业学科知识，直接给出具有实质学术价值、有逻辑、有推导的完整中文汇总解答。把具体的定义、定理、公式推导或计算步骤讲解透彻；引用来源在句末用上标 [编号] 标注，并为关键内容自然附上指向原文的 markdown 链接。严禁仅罗列片段或来源清单！`,
   });
   return messages;
 }
@@ -131,12 +141,70 @@ export function buildMessages({ question, context, bookTitle = '本书', history
  */
 export async function streamChat({
   endpoint, apiKey, model, messages, onDelta, onReasoningDelta, signal,
-  tools, toolChoice,
+  tools, toolChoice, maxTokens,
 }) {
-  // 彻底移除 max_tokens 字段，避免限制学术模型（特别是带 CoT 思考链的模型）的完整推导能力
-  const body = { model, messages, stream: true };
+  // 关键防御：针对 Google Gemini 与非 Gemini 提供商做精准兼容
+  // 1. 对于 Gemini 模型 / 端点：Gemini 3 系列强制要求在 functionCall parts 中包含 thought_signature。
+  //    如果流式响应中已捕获到真实签名，必须完整透传；若由于网络/流式分片未捕获到真实签名，
+  //    必须按照 Google 官方规范在第一项注入官方 dummy signature ('skip_thought_signature_validator') 跳过校验，
+  //    避免 Gemini 返回 400 INVALID_ARGUMENT (Function call is missing a thought_signature)。
+  // 2. 对于非 Gemini 提供商（如 DeepSeek、原生 OpenAI 等）：清除 extra_content 字段，
+  //    避免第三方提供商因为严格的 JSON Schema 校验而报错。
+  const isGemini =
+    (typeof model === 'string' && model.toLowerCase().includes('gemini')) ||
+    (typeof endpoint === 'string' && (endpoint.includes('googleapis.com') || endpoint.includes('/proxy/gemini')));
+
+  const normalizedMessages = (messages || []).map((m) => {
+    if (!m || m.role !== 'assistant' || !Array.isArray(m.tool_calls) || !m.tool_calls.length) {
+      return m;
+    }
+    if (isGemini) {
+      const fixedCalls = m.tool_calls.map((tc, idx) => {
+        const copy = { ...tc };
+        const hasSig = copy.extra_content?.google?.thought_signature;
+        if (!hasSig) {
+          copy.extra_content = {
+            ...(copy.extra_content || {}),
+            google: {
+              ...((copy.extra_content && copy.extra_content.google) || {}),
+              thought_signature: 'skip_thought_signature_validator',
+            },
+          };
+        }
+        return copy;
+      });
+      return { ...m, tool_calls: fixedCalls };
+    } else {
+      const cleanCalls = m.tool_calls.map((tc) => {
+        if (!tc || typeof tc !== 'object') return tc;
+        const { extra_content, ...rest } = tc;
+        return rest;
+      });
+      return { ...m, tool_calls: cleanCalls };
+    }
+  });
+
+  const body = { model, messages: normalizedMessages, stream: true };
   if (Array.isArray(tools) && tools.length) body.tools = tools.map((t) => (t && t.function ? t : { type: 'function', function: t }));
   if (toolChoice) body.tool_choice = toolChoice;
+
+  if (isGemini) {
+    // 关键：针对 Google Gemini 显式开启思考摘要输出并配置高深度思考等级，激活前端 M3 CoT 折叠栏展示
+    body.extra_body = {
+      google: {
+        thinking_config: {
+          thinking_level: 'high',
+          include_thoughts: true,
+        },
+      },
+    };
+    // 针对 Gemini 思考模型，显式设置 16384 以上充足的 max_tokens，
+    // 避免 Google 缺省 4096 总输出限制被思考 Token（通常 2000~4000）耗尽导致正文推导截断。
+    // 注意：绝不能同时设置 max_tokens 与 max_completion_tokens，否则 Google API 会直接报 400 校验错误
+    body.max_tokens = maxTokens && maxTokens > 0 ? Math.max(maxTokens, 16384) : 16384;
+  } else if (maxTokens && maxTokens > 0) {
+    body.max_tokens = maxTokens;
+  }
 
   const res = await fetch(endpoint, {
     method: 'POST',
@@ -163,37 +231,78 @@ export async function streamChat({
   let full = '';
   let fullReasoning = '';
   let insideThinkTag = false;
-  const callAcc = new Map(); // index -> { id, name, arguments }
+  let streamExtraContent = null;
+  const callAcc = new Map(); // index -> { id, name, arguments, extra_content }
   let callSeq = 0;
 
-  function absorbToolCalls(toolCalls) {
+  function absorbToolCalls(toolCalls, extraFromDelta) {
     for (const tc of toolCalls || []) {
       const i = tc.index ?? callSeq;
-      const cur = callAcc.get(i) || { id: '', name: '', arguments: '' };
+      const cur = callAcc.get(i) || { id: '', name: '', arguments: '', extra_content: null };
       if (tc.id) cur.id = tc.id;
       if (tc.type) cur.type = tc.type;
       if (tc.function) {
         if (tc.function.name) cur.name += tc.function.name;
         if (tc.function.arguments) cur.arguments += tc.function.arguments;
       }
+      if (tc.extra_content) {
+        cur.extra_content = tc.extra_content;
+      } else if (tc.thought_signature) {
+        cur.extra_content = { google: { thought_signature: tc.thought_signature } };
+      } else if (!cur.extra_content && extraFromDelta) {
+        cur.extra_content = extraFromDelta;
+      } else if (!cur.extra_content && streamExtraContent) {
+        cur.extra_content = streamExtraContent;
+      }
       if (i >= callSeq) callSeq = i + 1;
       callAcc.set(i, cur);
     }
   }
 
-  function processDelta(delta) {
+  function processDelta(delta, rawJson, choice) {
     if (!delta) return;
 
-    // 1. 处理结构化思考字段（DeepSeek Reasoner、SiliconFlow、Moonshot、Qwen 等）
-    const reasoningChunk = delta.reasoning_content || delta.reasoning || delta.thought;
+    // 1. 全面判定是否为思考切片（严格兼容布尔标记与各种异构思考字段）
+    const isExplicitThought =
+      delta.thought === true ||
+      choice?.thought === true ||
+      rawJson?.thought === true ||
+      Boolean(delta.reasoning_content) ||
+      Boolean(delta.reasoning) ||
+      (typeof delta.thought === 'string' && delta.thought.length > 0) ||
+      delta.extra_content?.google?.thought === true ||
+      (typeof delta.extra_content?.google?.thought === 'string' && delta.extra_content.google.thought.length > 0);
+
+    let reasoningChunk =
+      delta.reasoning_content ||
+      delta.reasoning ||
+      (typeof delta.thought === 'string' ? delta.thought : null) ||
+      (typeof delta.extra_content?.google?.thought === 'string' ? delta.extra_content.google.thought : null);
+
+    // 兼容 Gemini 原生 parts 数组切片中可能泄漏的 thought 片段
+    if (!reasoningChunk && Array.isArray(delta.parts)) {
+      const thoughtParts = delta.parts.filter((p) => p && p.thought && typeof p.text === 'string');
+      if (thoughtParts.length) {
+        reasoningChunk = thoughtParts.map((p) => p.text).join('');
+      }
+    }
+
+    // 关键防御：若该 chunk 被标记为思考（如 Google OpenAI 兼容层返回 { content: "...", thought: true }），
+    // 但文本承载于 delta.content 中，则必须将其定向为思考文本，严禁泄漏至正文！
+    if (isExplicitThought && !reasoningChunk && typeof delta.content === 'string' && delta.content) {
+      reasoningChunk = delta.content;
+    }
+
     if (typeof reasoningChunk === 'string' && reasoningChunk) {
       fullReasoning += reasoningChunk;
       onReasoningDelta && onReasoningDelta(reasoningChunk);
     }
 
-    // 2. 处理正文字段（兼顾部分端点直接在 content 中输出 <think> 标签的场景）
-    if (typeof delta.content === 'string' && delta.content) {
-      let contentChunk = delta.content;
+    // 2. 处理正文字段（仅当该 chunk 不是思考切片时，才作为正文处理）
+    if (!isExplicitThought && typeof delta.content === 'string' && delta.content) {
+      let contentChunk = delta.content
+        .replace(/<thought>/gi, '<think>')
+        .replace(/<\/thought>/gi, '</think>');
 
       if (contentChunk.includes('<think>')) {
         insideThinkTag = true;
@@ -228,8 +337,29 @@ export async function streamChat({
       }
     }
 
+    const extraFromChunk = delta.extra_content || choice?.extra_content || rawJson?.choices?.[0]?.extra_content || rawJson?.extra_content;
+    if (extraFromChunk) {
+      streamExtraContent = extraFromChunk;
+    }
+
     if (Array.isArray(delta.tool_calls) && delta.tool_calls.length) {
-      absorbToolCalls(delta.tool_calls);
+      absorbToolCalls(delta.tool_calls, extraFromChunk);
+    }
+  }
+
+  function processPayloadLine(payload) {
+    if (!payload || payload === '[DONE]') return;
+    try {
+      const json = JSON.parse(payload);
+      if (Array.isArray(json.choices) && json.choices.length) {
+        for (const choice of json.choices) {
+          processDelta(choice?.delta || {}, json, choice);
+        }
+      } else if (json.delta) {
+        processDelta(json.delta, json, null);
+      }
+    } catch {
+      /* 忽略单个不完整 chunk */
     }
   }
 
@@ -242,15 +372,7 @@ export async function streamChat({
     for (const line of lines) {
       const trimmed = line.trim();
       if (!trimmed.startsWith('data:')) continue;
-      const payload = trimmed.slice(5).trim();
-      if (!payload || payload === '[DONE]') continue;
-      try {
-        const json = JSON.parse(payload);
-        const delta = json.choices?.[0]?.delta || {};
-        processDelta(delta);
-      } catch {
-        /* 忽略单个不完整 chunk */
-      }
+      processPayloadLine(trimmed.slice(5).trim());
     }
   }
 
@@ -261,13 +383,7 @@ export async function streamChat({
     for (const line of remainingLines) {
       const trimmed = line.trim();
       if (!trimmed.startsWith('data:')) continue;
-      const payload = trimmed.slice(5).trim();
-      if (!payload || payload === '[DONE]') continue;
-      try {
-        const json = JSON.parse(payload);
-        const delta = json.choices?.[0]?.delta || {};
-        processDelta(delta);
-      } catch {}
+      processPayloadLine(trimmed.slice(5).trim());
     }
   }
 
@@ -275,7 +391,11 @@ export async function streamChat({
   for (const cur of callAcc.values()) {
     let args = {};
     try { args = JSON.parse(cur.arguments || '{}'); } catch { args = {}; }
-    toolCalls.push({ id: cur.id || '', name: cur.name || '', arguments: args });
+    const tcItem = { id: cur.id || '', name: cur.name || '', arguments: args };
+    if (cur.extra_content) {
+      tcItem.extra_content = cur.extra_content;
+    }
+    toolCalls.push(tcItem);
   }
 
   return { text: full, reasoning: fullReasoning, toolCalls };

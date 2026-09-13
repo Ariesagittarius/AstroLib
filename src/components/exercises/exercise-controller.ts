@@ -67,129 +67,7 @@ function sanitizeLatexValue(val: any): any {
   return val;
 }
 
-const KATEX_OPTIONS = {
-  delimiters: [
-    { left: '$$', right: '$$', display: true },
-    { left: '$', right: '$', display: false },
-    { left: '\\(', right: '\\)', display: false },
-    { left: '\\[', right: '\\]', display: true },
-  ],
-  throwOnError: false,
-  strict: false,
-  macros: {
-    '\\overparen': '\\stackrel{\\frown}{#1}',
-    '\\wideparen': '\\stackrel{\\frown}{#1}',
-    '\\iiiint': '\\int\\!\\!\\int\\!\\!\\int\\!\\!\\int',
-  },
-};
-
-function renderSolutionMarkdown(md: string, isStreaming = false): string {
-  if (!md) return '<div class="ex-ai-placeholder">正在调用学术模型进行规范推导演算...</div>';
-  let safe = sanitizeLatexString(md)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-
-  // 前置容错归一化：将可能漏网的 LaTeX 原生界定符统一转换为标准 KaTeX Markdown 语法
-  if (isStreaming) {
-    const openBrackets = (safe.match(/\\\[/g) || []).length;
-    const closeBrackets = (safe.match(/\\\]/g) || []).length;
-    if (openBrackets > closeBrackets) {
-      safe += '\n\\]';
-    }
-  }
-
-  safe = safe.replace(/\\\[([\s\S]*?)\\\]/g, (_m, inner) => `\n$$\n${inner.trim()}\n$$\n`);
-  safe = safe.replace(/\\\(([\s\S]*?)\\\)/g, (_m, inner) => `$${inner.trim()}$`);
-
-  const mathBlocks: string[] = [];
-
-  if (isStreaming) {
-    const doubleDollarCount = (safe.match(/\$\$/g) || []).length;
-    if (doubleDollarCount % 2 !== 0) {
-      safe += '\n$$';
-    }
-  }
-
-  safe = safe.replace(/\$\$([\s\S]*?)\$\$/g, (_m, inner) => {
-    mathBlocks.push(`$$${inner}$$`);
-    return `___MATH_BLOCK_${mathBlocks.length - 1}___`;
-  });
-
-  safe = safe.replace(/\$([^\$\n]+?)\$/g, (_m, inner) => {
-    mathBlocks.push(`$${inner}$`);
-    return `___MATH_BLOCK_${mathBlocks.length - 1}___`;
-  });
-
-  const lines = safe.split(/\r?\n/);
-  const out: string[] = [];
-  let inCode = false;
-  let codeBuf: string[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    if (/^```/.test(line)) {
-      if (inCode) {
-        out.push(`<pre><code>${codeBuf.join('\n')}</code></pre>`);
-        codeBuf = [];
-        inCode = false;
-      } else {
-        inCode = true;
-      }
-      continue;
-    }
-    if (inCode) {
-      codeBuf.push(line);
-      continue;
-    }
-
-    if (/^###\s+(.*)$/.test(line)) {
-      const title = line.replace(/^###\s+/, '');
-      out.push(`<h6>${renderInlineStyle(title)}</h6>`);
-      continue;
-    }
-    if (/^##\s+(.*)$/.test(line)) {
-      const title = line.replace(/^##\s+/, '');
-      out.push(`<h5>${renderInlineStyle(title)}</h5>`);
-      continue;
-    }
-    if (/^#\s+(.*)$/.test(line)) {
-      const title = line.replace(/^#\s+/, '');
-      out.push(`<h4>${renderInlineStyle(title)}</h4>`);
-      continue;
-    }
-    if (/^\s*[-*+]\s+(.*)$/.test(line)) {
-      const item = line.replace(/^\s*[-*+]\s+/, '');
-      out.push(`<ul><li>${renderInlineStyle(item)}</li></ul>`);
-      continue;
-    }
-    if (/^\s*\d+[.)]\s+(.*)$/.test(line)) {
-      const item = line.replace(/^\s*\d+[.)]\s+/, '');
-      out.push(`<ol><li>${renderInlineStyle(item)}</li></ol>`);
-      continue;
-    }
-    if (!line.trim()) {
-      continue;
-    }
-    out.push(`<p>${renderInlineStyle(line)}</p>`);
-  }
-
-  if (inCode && codeBuf.length) {
-    out.push(`<pre><code>${codeBuf.join('\n')}</code></pre>`);
-  }
-
-  let html = out.join('\n');
-  html = html.replace(/___MATH_BLOCK_(\d+)___/g, (_m, idx) => mathBlocks[Number(idx)] || '');
-  return html;
-}
-
-function renderInlineStyle(s: string): string {
-  return s
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>');
-}
+import { renderAcademicSolutionMarkdown as renderSolutionMarkdown, EXERCISE_KATEX_OPTIONS as KATEX_OPTIONS } from './exercise-markdown';
 
 export type {
   SlimQuestionItem,
@@ -1793,6 +1671,7 @@ $$
         endpoint: config.endpoint,
         apiKey: config.apiKey,
         model: config.model,
+        maxTokens: config.maxTokens,
         messages,
         signal: controller.signal,
         onReasoningDelta: (chunk: string) => {
@@ -1824,7 +1703,13 @@ $$
       }
 
       if (!hasContent && hasReasoning) {
-        accumulatedMd = accumulatedReasoning;
+        if (statusEl) statusEl.textContent = '推导中断（正文未返回）';
+        if (contentEl) {
+          contentEl.innerHTML = '<div class="ex-ai-error">模型已完成思路推演，但未输出正文推导（可能因服务端连接中断或生成异常）。请点击重新生成。</div>';
+        }
+        if (stopBtn) stopBtn.classList.add('hidden');
+        if (retryBtn) retryBtn.classList.remove('hidden');
+        return;
       }
 
       this.aiSolutions.set(qid, accumulatedMd);

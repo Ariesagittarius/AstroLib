@@ -1,0 +1,332 @@
+---
+/**
+ * ChromeNotice.astro
+ * ============================================================================
+ * Chrome 风格卡片式提示（参考 Google Chrome AI 注意事项 / Media 1 原型）
+ * 
+ * 特征：
+ * 1. M3 Surface Container Tonal 卡片形态 (border-radius: 12px)；
+ * 2. 具有明确的主标题与副标（如「注意事项」）；
+ * 3. 清晰的三点式/多点式带图标清单列表。
+ * ============================================================================
+ */
+
+interface Props {
+  notice: {
+    id: string;
+    variant?: string;
+    severity?: 'warning' | 'info' | 'neutral' | 'accent';
+    title?: string;
+    subtitle?: string;
+    message?: string;
+    tags?: string[];
+    items?: Array<{ icon?: string; text: string }>;
+    dismissible?: boolean;
+  };
+}
+
+const { notice } = Astro.props;
+const severity = notice.severity || 'warning';
+---
+
+<div class={`astrolib-notice-card astrolib-notice-chrome severity-${severity}`} id={`notice-${notice.id}`} data-notice-id={notice.id}>
+  <div class="chrome-header-row">
+    <div class="chrome-title-wrap">
+      {notice.title && <h3 class="chrome-title">{notice.title}</h3>}
+      {notice.subtitle && <span class="chrome-subtitle">{notice.subtitle}</span>}
+    </div>
+
+    {notice.dismissible && (
+      <button 
+        type="button" 
+        class="notice-action-btn dismiss-btn" 
+        title="关闭本提示"
+        aria-label="关闭本提示"
+      >
+        <svg class="action-icon close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    )}
+  </div>
+
+  {notice.message && !notice.items?.length && (
+    <div class="chrome-message-body">
+      <p>{notice.message}</p>
+    </div>
+  )}
+
+  {notice.items && notice.items.length > 0 && (
+    <ul class="chrome-item-list">
+      {notice.items.map(item => (
+        <li class="chrome-item-row">
+          <div class="chrome-item-icon-wrap" aria-hidden="true">
+            {item.icon === 'smart_toy' ? (
+              <svg class="item-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="10" rx="3" />
+                <circle cx="12" cy="5" r="2" />
+                <path d="M12 7v4" />
+                <line x1="8" y1="16" x2="8.01" y2="16" stroke-width="2.5" />
+                <line x1="16" y1="16" x2="16.01" y2="16" stroke-width="2.5" />
+                <path d="M9 19h6" />
+              </svg>
+            ) : item.icon === 'menu_book' ? (
+              <svg class="item-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+                <path d="M6 6h10" />
+                <path d="M6 10h10" />
+              </svg>
+            ) : item.icon === 'rate_review' ? (
+              <svg class="item-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                <path d="M13 8H7" />
+                <path d="M17 12H7" />
+              </svg>
+            ) : (
+              <svg class="item-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            )}
+          </div>
+          <span class="chrome-item-text">{item.text}</span>
+        </li>
+      ))}
+    </ul>
+  )}
+
+  {notice.tags && notice.tags.length > 0 && (
+    <div class="chrome-tags-row">
+      <md-chip-set class="chrome-chip-set" role="list">
+        {notice.tags.map(t => (
+          <md-assist-chip class="chrome-meta-chip" label={t}>
+            <span class="m3-chip-text">{t}</span>
+          </md-assist-chip>
+        ))}
+      </md-chip-set>
+    </div>
+  )}
+</div>
+
+<style>
+  .astrolib-notice-card.astrolib-notice-chrome {
+    position: relative;
+    background-color: var(--md-sys-color-surface-container-low, #f7f3f6);
+    border: 1px solid var(--md-sys-color-outline-variant, rgba(0, 0, 0, 0.08));
+    border-radius: var(--md-shape-corner-large, 14px);
+    padding: 1.1rem 1.35rem 1.2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    margin-bottom: 0.75rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+  }
+
+  :global([data-theme='dark']) .astrolib-notice-card.astrolib-notice-chrome {
+    background-color: var(--md-sys-color-surface-container, #1e1f20);
+    border-color: rgba(255, 255, 255, 0.09);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  .chrome-header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .chrome-title-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .chrome-title {
+    margin: 0;
+    font-size: 0.96rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--md-sys-color-on-surface, #1f1f1f);
+  }
+
+  :global([data-theme='dark']) .chrome-title {
+    color: var(--md-sys-color-on-surface, #f0f0f0);
+  }
+
+  .chrome-subtitle {
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: #b91c1c; /* Subdued Red/Orange alert tone */
+    letter-spacing: 0.02em;
+  }
+
+  :global([data-theme='dark']) .chrome-subtitle {
+    color: #f87171;
+  }
+
+  .chrome-message-body p {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--md-sys-color-on-surface-variant, #444746);
+  }
+
+  .chrome-item-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .chrome-item-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+  }
+
+  .chrome-item-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--md-sys-color-on-surface-variant, #5e6266);
+  }
+
+  :global([data-theme='dark']) .chrome-item-icon-wrap {
+    color: #a8abb0;
+  }
+
+  .item-svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .chrome-item-text {
+    font-size: 0.84rem;
+    line-height: 1.48;
+    color: var(--md-sys-color-on-surface-variant, #3c4043);
+  }
+
+  :global([data-theme='dark']) .chrome-item-text {
+    color: var(--md-sys-color-on-surface, #d2d5d9);
+  }
+
+  .chrome-tags-row {
+    margin-top: 0.75rem;
+    padding-top: 0.6rem;
+    border-top: 1px dashed var(--md-sys-color-outline-variant, rgba(0, 0, 0, 0.08));
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  :global([data-theme='dark']) .chrome-tags-row {
+    border-top-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .chrome-chip-set {
+    display: inline-flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0 !important;
+  }
+
+  .chrome-meta-chip {
+    --md-assist-chip-container-height: 24px;
+    --md-assist-chip-container-shape: 8px;
+    --md-assist-chip-label-text-size: 0.72rem;
+    --md-assist-chip-label-text-weight: 500;
+    --md-assist-chip-outline-width: 1px;
+    --md-assist-chip-outline-color: var(--md-sys-color-outline-variant, rgba(0, 0, 0, 0.12));
+    --md-assist-chip-container-color: var(--md-sys-color-surface-container-high, rgba(0, 0, 0, 0.04));
+    --md-assist-chip-label-text-color: var(--md-sys-color-on-surface-variant, #444746);
+    --md-assist-chip-leading-space: 8px;
+    --md-assist-chip-trailing-space: 8px;
+    vertical-align: middle;
+    box-shadow: none !important;
+  }
+
+  :global([data-theme='dark']) .chrome-meta-chip {
+    --md-assist-chip-container-color: rgba(255, 255, 255, 0.06);
+    --md-assist-chip-outline-color: rgba(255, 255, 255, 0.14);
+    --md-assist-chip-label-text-color: #c4c7c5;
+  }
+
+  /* SSR fallback before Lit hydration */
+  md-assist-chip:not(:defined) {
+    display: inline-flex;
+    align-items: center;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 8px;
+    background-color: var(--md-sys-color-surface-container-high, rgba(0, 0, 0, 0.04));
+    border: 1px solid var(--md-sys-color-outline-variant, rgba(0, 0, 0, 0.12));
+    color: var(--md-sys-color-on-surface-variant, #444746);
+    font-size: 0.72rem;
+    font-weight: 500;
+    box-sizing: border-box;
+    cursor: default;
+    vertical-align: middle;
+  }
+
+  :global([data-theme='dark']) md-assist-chip:not(:defined) {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: #c4c7c5;
+  }
+
+  md-assist-chip:defined .m3-chip-text {
+    display: none;
+  }
+
+  /* Actions */
+  .notice-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: var(--md-sys-color-outline, #74777f);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .notice-action-btn:hover {
+    background-color: var(--md-sys-color-surface-container-highest, rgba(0, 0, 0, 0.08));
+    color: var(--md-sys-color-on-surface, #1f1f1f);
+  }
+
+  :global([data-theme='dark']) .notice-action-btn:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+  }
+
+  .action-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  @media (max-width: 49.999rem) {
+    .astrolib-notice-card.astrolib-notice-chrome {
+      padding: 0.9rem 1rem 1rem;
+      border-radius: 12px;
+    }
+    .chrome-item-text {
+      font-size: 0.81rem;
+    }
+  }
+</style>
+
+<script>
+  import '@material/web/chips/chip-set.js';
+  import '@material/web/chips/assist-chip.js';
+</script>

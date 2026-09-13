@@ -409,6 +409,36 @@ export function upgradeStaticBadges(root: ParentNode, globalBlockIndex: Record<s
 }
 
 /**
+ * 递归遍历文本节点辅助函数，跳过代码块、公式与已有标签
+ */
+function walkTextNodes(node: Node, callback: (textNode: Node) => void): void {
+  if (node.nodeType === Node.TEXT_NODE) {
+    callback(node);
+    return;
+  }
+  const el = node as Element;
+  const tag = el.tagName?.toLowerCase();
+  if (
+    tag === 'script' ||
+    tag === 'style' ||
+    tag === 'svg' ||
+    tag === 'pre' ||
+    tag === 'code' ||
+    tag === 'a' ||
+    tag === 'button' ||
+    el.classList?.contains('katex') ||
+    el.classList?.contains('interactive-badge') ||
+    el.classList?.contains('static-badge')
+  ) {
+    return;
+  }
+  const children = Array.from(node.childNodes);
+  for (const child of children) {
+    walkTextNodes(child, callback);
+  }
+}
+
+/**
  * 客户端全时无条件高阶联动引擎
  */
 export function linkPageElements(

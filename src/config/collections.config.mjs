@@ -1,3 +1,5 @@
+import { NOTICE_PRESETS } from './notices.config.mjs';
+
 /**
  * 中央书库配置：合集（collections）与图书（books）的唯一数据源。
  *
@@ -31,6 +33,7 @@ export const collections = [
         tags: ['高考数学', '高中数学', '三角函数', '数列', '导数', '解析几何'],
         cover: 'https://img.alicdn.com/bao/uploaded/i3/2222147525702/O1CN01uA0zRt1rzZVUNfX91_!!4611686018427386950-53-xy_item.heic_790x10000Q90.jpg_.webp',
         entryPoint: '06_第1章-三角函数', 
+        notices: [NOTICE_PRESETS.mineruOcr],
         trackClasses: ['.example-card', '.variant-card', '.summary-card', '.knowledge-card', '.method-card', '.fallback-block'],
         modules: {
           '例题': { emoji: '✍️', short: '例', aliases: ['例题', '例'], theme: 'chip-example' },
@@ -72,6 +75,7 @@ export const collections = [
         tags: ['数学分析', '实数理论', '极限论', '微积分', '级数'],
         cover: 'https://images.unsplash.com/photo-1509228626012-67e33ae61292?auto=format&fit=crop&q=80&w=400',
         entryPoint: '01_内容简介',
+        notices: [NOTICE_PRESETS.mineruOcr],
         trackClasses: ['.example-card', '.variant-card', '.summary-card', '.knowledge-card', '.method-card', '.fallback-block'],
         modules: {
           '例': { emoji: '✍️', short: '例', aliases: ['例', '例题'], theme: 'chip-example' },
@@ -111,10 +115,10 @@ export const collections = [
         categoryLabel: '教材',
         subject: 'math',
         subjectLabel: '数学',
-        description: '高等工科院校数学基础教材。上册包含一元微积分与常微分方程，下册包含多元微积分与无穷级数。',
-        tags: ['工科数学分析', '高等数学', '微积分', '常微分方程', '无穷级数'],
+        description: '高等工科院校数学基础教材。上册包含一元微积分与常微分方程，下册包含多元微积分与无穷级数。全面采用高保真学术排版与旁注系统。',
+        tags: ['工科数学分析', '高等数学', '微积分', '常微分方程', '无穷级数', 'SideNote'],
         cover: '/covers/engineering_analysis.jpg',
-        entryPoint: '00_内容简介',
+        entryPoint: '00_内容说明',
         trackClasses: ['.example-card', '.knowledge-card', '.exercise-card', '.fallback-block'],
         modules: {
           '例': { emoji: '✍️', short: '例', aliases: ['例', '例题'], theme: 'chip-example' },
@@ -155,6 +159,7 @@ export const collections = [
         tags: ['线性代数', '矩阵代数', '行列式', '向量空间', '特征值', '正交性'],
         cover: '/covers/linear_algebra.jpg',
         entryPoint: '00_内容简介',
+        notices: [NOTICE_PRESETS.mineruOcr],
         trackClasses: ['.example-card', '.knowledge-card', '.fallback-block'],
         modules: {
           '例': { emoji: '✍️', short: '例', aliases: ['例', '例题'], theme: 'chip-example' },
@@ -194,6 +199,7 @@ export const collections = [
         tags: ['概率论', '数理统计', '随机变量', '极限定理', '参数估计', '假设检验'],
         cover: '/covers/probability_statistics.jpg',
         entryPoint: '00_内容简介',
+        notices: [NOTICE_PRESETS.mineruOcr],
         trackClasses: ['.example-card', '.knowledge-card', '.fallback-block'],
         modules: {
           '例': { emoji: '✍️', short: '例', aliases: ['例', '例题'], theme: 'chip-example' },
@@ -241,6 +247,7 @@ export const collections = [
         tags: ['大学物理', '力学', '电磁学', '热学', '波动光学', '课后习题'],
         cover: '/covers/university_physics.jpg',
         entryPoint: '00_内容简介',
+        notices: [NOTICE_PRESETS.mineruOcr],
         trackClasses: ['.example-card', '.knowledge-card', '.exercise-card', '.fallback-block'],
         modules: {
           '例': { emoji: '✍️', short: '例', aliases: ['例', '例题'], theme: 'chip-example' },

@@ -1,0 +1,386 @@
+---
+/**
+ * WikiNotice.astro
+ * ============================================================================
+ * Wiki 风格学术提示条（参考 MediaWiki ambox / Media 3 原型）
+ * 
+ * 特征：
+ * 1. 左侧带有鲜明强调色竖线 (3.5px 警戒橙/信息蓝/中性色)；
+ * 2. 紧凑行高与高空间利用率，符合学术出版极简主义；
+ * 3. 包含左侧标准矢量图标、核心提示词、涉及范围元数据标签；
+ * 4. 支持可折叠/展开详尽清单条目。
+ * ============================================================================
+ */
+
+interface Props {
+  notice: {
+    id: string;
+    variant?: string;
+    severity?: 'warning' | 'info' | 'neutral' | 'accent';
+    icon?: string;
+    title?: string;
+    subtitle?: string;
+    message?: string;
+    tags?: string[];
+    items?: Array<{ icon?: string; text: string }>;
+    collapsible?: boolean;
+    dismissible?: boolean;
+  };
+}
+
+const { notice } = Astro.props;
+const severity = notice.severity || 'warning';
+---
+
+<div class={`astrolib-notice-card astrolib-notice-wiki severity-${severity}`} id={`notice-${notice.id}`} data-notice-id={notice.id}>
+  <div class="wiki-main-row">
+    <div class="wiki-icon-wrap" aria-hidden="true">
+      {notice.icon === 'smart_toy' ? (
+        <svg class="notice-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="10" rx="3" />
+          <circle cx="12" cy="5" r="2" />
+          <path d="M12 7v4" />
+          <line x1="8" y1="16" x2="8.01" y2="16" stroke-width="2.5" />
+          <line x1="16" y1="16" x2="16.01" y2="16" stroke-width="2.5" />
+          <path d="M9 19h6" />
+        </svg>
+      ) : notice.icon === 'auto_awesome' ? (
+        <svg class="notice-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+        </svg>
+      ) : (
+        <svg class="notice-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="16" x2="12" y2="12" />
+          <line x1="12" y1="8" x2="12.01" y2="8" stroke-width="2.5" />
+        </svg>
+      )}
+    </div>
+
+    <div class="wiki-content-col">
+      <div class="wiki-text-line">
+        <span class="wiki-message">{notice.message || notice.title}</span>
+        {notice.tags && notice.tags.length > 0 && (
+          <span class="wiki-tags-inline">
+            <md-chip-set class="wiki-chip-set" role="list">
+              {notice.tags.map(tag => (
+                <md-assist-chip class="wiki-meta-chip" label={tag}>
+                  <span class="m3-chip-text">{tag}</span>
+                </md-assist-chip>
+              ))}
+            </md-chip-set>
+          </span>
+        )}
+      </div>
+
+      {notice.items && notice.items.length > 0 && (
+        <div class="wiki-expand-panel" id={`expand-${notice.id}`} hidden>
+          <ul class="wiki-item-list">
+            {notice.items.map(item => (
+              <li class="wiki-item-li">
+                <span class="wiki-item-bullet">•</span>
+                <span class="wiki-item-text">{item.text}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+
+    <div class="wiki-actions-col">
+      {notice.items && notice.items.length > 0 && notice.collapsible && (
+        <button 
+          type="button" 
+          class="notice-action-btn toggle-expand-btn" 
+          aria-expanded="false" 
+          aria-controls={`expand-${notice.id}`}
+          title="展开/收起详情"
+        >
+          <svg class="action-icon chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+      )}
+
+      {notice.dismissible && (
+        <button 
+          type="button" 
+          class="notice-action-btn dismiss-btn" 
+          title="关闭本提示"
+          aria-label="关闭本提示"
+        >
+          <svg class="action-icon close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      )}
+    </div>
+  </div>
+</div>
+
+<style>
+  .astrolib-notice-card.astrolib-notice-wiki {
+    --wiki-accent-color: #ea580c; /* Default Warning */
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    background-color: var(--md-sys-color-surface-container-low, #f9f9fb);
+    border: 1px solid var(--md-sys-color-outline-variant, rgba(0, 0, 0, 0.08));
+    border-left: 4.5px solid var(--wiki-accent-color);
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    margin-bottom: 0.65rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+  }
+
+  :global([data-theme='dark']) .astrolib-notice-card.astrolib-notice-wiki {
+    background-color: var(--md-sys-color-surface-container, #1e1f20);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  }
+
+  .severity-warning {
+    --wiki-accent-color: #ea580c;
+  }
+  .severity-info {
+    --wiki-accent-color: #0284c7;
+  }
+  .severity-accent {
+    --wiki-accent-color: var(--md-sys-color-primary, #0b57d0);
+  }
+  .severity-neutral {
+    --wiki-accent-color: var(--md-sys-color-outline, #74777f);
+  }
+
+  :global([data-theme='dark']) .severity-warning {
+    --wiki-accent-color: #f97316;
+  }
+  :global([data-theme='dark']) .severity-info {
+    --wiki-accent-color: #38bdf8;
+  }
+  :global([data-theme='dark']) .severity-accent {
+    --wiki-accent-color: var(--md-sys-color-primary, #a8c7fa);
+  }
+  :global([data-theme='dark']) .severity-neutral {
+    --wiki-accent-color: #8e918f;
+  }
+
+  .wiki-main-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.65rem 0.9rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .wiki-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--wiki-accent-color);
+  }
+
+  .notice-svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .wiki-content-col {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .wiki-text-line {
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--md-sys-color-on-surface, #1f1f1f);
+    word-break: break-word;
+  }
+
+  :global([data-theme='dark']) .wiki-text-line {
+    color: var(--md-sys-color-on-surface, #e3e3e3);
+  }
+
+  .wiki-message {
+    font-weight: 450;
+  }
+
+  .wiki-tags-inline {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-inline-start: 0.5rem;
+    vertical-align: middle;
+  }
+
+  .wiki-chip-set {
+    display: inline-flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0 !important;
+  }
+
+  .wiki-meta-chip {
+    --md-assist-chip-container-height: 24px;
+    --md-assist-chip-container-shape: 8px;
+    --md-assist-chip-label-text-size: 0.72rem;
+    --md-assist-chip-label-text-weight: 500;
+    --md-assist-chip-outline-width: 1px;
+    --md-assist-chip-outline-color: var(--md-sys-color-outline-variant, rgba(0, 0, 0, 0.12));
+    --md-assist-chip-container-color: var(--md-sys-color-surface-container-high, rgba(0, 0, 0, 0.04));
+    --md-assist-chip-label-text-color: var(--md-sys-color-on-surface-variant, #444746);
+    --md-assist-chip-leading-space: 8px;
+    --md-assist-chip-trailing-space: 8px;
+    vertical-align: middle;
+    box-shadow: none !important;
+  }
+
+  :global([data-theme='dark']) .wiki-meta-chip {
+    --md-assist-chip-container-color: rgba(255, 255, 255, 0.06);
+    --md-assist-chip-outline-color: rgba(255, 255, 255, 0.14);
+    --md-assist-chip-label-text-color: #c4c7c5;
+  }
+
+  /* SSR Fallback before Lit hydration */
+  md-assist-chip:not(:defined) {
+    display: inline-flex;
+    align-items: center;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 8px;
+    background-color: var(--md-sys-color-surface-container-high, rgba(0, 0, 0, 0.04));
+    border: 1px solid var(--md-sys-color-outline-variant, rgba(0, 0, 0, 0.12));
+    color: var(--md-sys-color-on-surface-variant, #444746);
+    font-size: 0.72rem;
+    font-weight: 500;
+    box-sizing: border-box;
+    cursor: default;
+    vertical-align: middle;
+  }
+
+  :global([data-theme='dark']) md-assist-chip:not(:defined) {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: #c4c7c5;
+  }
+
+  md-assist-chip:defined .m3-chip-text {
+    display: none;
+  }
+
+  /* Expandable panel */
+  .wiki-expand-panel {
+    margin-top: 0.5rem;
+    padding-top: 0.45rem;
+    border-top: 1px dashed var(--md-sys-color-outline-variant, rgba(0, 0, 0, 0.08));
+  }
+
+  :global([data-theme='dark']) .wiki-expand-panel {
+    border-top-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .wiki-item-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .wiki-item-li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    font-size: 0.8rem;
+    line-height: 1.42;
+    color: var(--md-sys-color-on-surface-variant, #444746);
+  }
+
+  :global([data-theme='dark']) .wiki-item-li {
+    color: #c4c7c5;
+  }
+
+  .wiki-item-bullet {
+    color: #ea580c;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  /* Actions column */
+  .wiki-actions-col {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+    margin-top: -2px;
+  }
+
+  .notice-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: var(--md-sys-color-outline, #74777f);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.2s ease;
+  }
+
+  .notice-action-btn:hover {
+    background-color: var(--md-sys-color-surface-container-highest, rgba(0, 0, 0, 0.08));
+    color: var(--md-sys-color-on-surface, #1f1f1f);
+  }
+
+  :global([data-theme='dark']) .notice-action-btn:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+  }
+
+  .action-icon {
+    width: 15px;
+    height: 15px;
+  }
+
+  .chevron-icon {
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .toggle-expand-btn[aria-expanded='true'] .chevron-icon {
+    transform: rotate(180deg);
+  }
+
+  @media (max-width: 49.999rem) {
+    .wiki-main-row {
+      padding: 0.6rem 0.75rem;
+      gap: 0.6rem;
+    }
+    .wiki-text-line {
+      font-size: 0.81rem;
+    }
+    .wiki-tags-inline {
+      margin-inline-start: 0;
+      margin-top: 0.25rem;
+      display: flex;
+    }
+  }
+</style>
+
+<script>
+  import '@material/web/chips/chip-set.js';
+  import '@material/web/chips/assist-chip.js';
+</script>

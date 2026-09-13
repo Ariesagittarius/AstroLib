@@ -32,6 +32,7 @@ const files = walk(path.resolve(targetDir));
 let ok = 0;
 const failures = [];
 const mathErrors = [];
+const imageErrors = [];
 
 for (const file of files) {
   const content = fs.readFileSync(file, 'utf-8');
@@ -43,11 +44,21 @@ for (const file of files) {
 
   // 1. MDX 结构与 JSX 标签编译校验
   try {
-    await compile({ value: body, path: file }, {
+    const compiled = await compile({ value: body, path: file }, {
       remarkPlugins: [remarkMath],
       rehypePlugins: [[rehypeKatex, { strict: false }], rehypeImageBlur],
       jsx: true,
     });
+    const compiledStr = String(compiled);
+    if (compiledStr.includes('katex-error')) {
+      fileHasError = true;
+      const idx = compiledStr.indexOf('katex-error');
+      const snippet = compiledStr.slice(Math.max(0, idx - 40), Math.min(compiledStr.length, idx + 250));
+      failures.push({
+        file: relFile,
+        message: snippet.replace(/\s+/g, ' '),
+      });
+    }
   } catch (err) {
     fileHasError = true;
     failures.push({
@@ -60,22 +71,22 @@ for (const file of files) {
     });
   }
 
+  const lineOffsets = [0];
+  for (let i = 0; i < content.length; i++) {
+    if (content.charCodeAt(i) === 10) lineOffsets.push(i + 1);
+  }
+  const getLine = (idx) => {
+    let low = 0, high = lineOffsets.length - 1;
+    while (low <= high) {
+      const mid = (low + high) >> 1;
+      if (lineOffsets[mid] <= idx) low = mid + 1;
+      else high = mid - 1;
+    }
+    return high + 1;
+  };
+
   // 2. KaTeX 公式语法精确校验
   if (!skipMath) {
-    const lineOffsets = [0];
-    for (let i = 0; i < content.length; i++) {
-      if (content.charCodeAt(i) === 10) lineOffsets.push(i + 1);
-    }
-    const getLine = (idx) => {
-      let low = 0, high = lineOffsets.length - 1;
-      while (low <= high) {
-        const mid = (low + high) >> 1;
-        if (lineOffsets[mid] <= idx) low = mid + 1;
-        else high = mid - 1;
-      }
-      return high + 1;
-    };
-
     // 块级公式
     const displayMatches = content.matchAll(/\$\$([\s\S]+?)\$\$/g);
     for (const m of displayMatches) {
@@ -118,6 +129,32 @@ for (const file of files) {
     }
   }
 
+  // 3. 本地图片与静态资源物理存在性校验 (Image Asset Integrity Gate)
+  const mdImgMatches = content.matchAll(/!\[.*?\]\((.*?)\)/g);
+  const htmlImgMatches = content.matchAll(/<img\s+[^>]*src=["'](.*?)["']/g);
+  for (const m of [...mdImgMatches, ...htmlImgMatches]) {
+    const rawPath = (m[1] || '').trim();
+    if (!rawPath || rawPath.startsWith('http://') || rawPath.startsWith('https://') || rawPath.startsWith('data:')) {
+      continue;
+    }
+    const cleanPath = rawPath.split('?')[0].split('#')[0];
+    let resolvedPath = '';
+    if (cleanPath.startsWith('/')) {
+      resolvedPath = path.resolve('public', cleanPath.slice(1));
+    } else {
+      resolvedPath = path.resolve(path.dirname(file), cleanPath);
+    }
+    if (!fs.existsSync(resolvedPath)) {
+      fileHasError = true;
+      imageErrors.push({
+        file: relFile,
+        ref: rawPath,
+        resolved: path.relative(process.cwd(), resolvedPath).replace(/\\/g, '/'),
+        line: getLine(m.index),
+      });
+    }
+  }
+
   if (!fileHasError) ok++;
 }
 
@@ -156,6 +193,18 @@ if (mathErrors.length) {
   }
 }
 
-if (!failures.length && !mathErrors.length) {
-  console.log('🎉 所有 MDX 与 KaTeX 数学公式均校验通过！');
+if (imageErrors.length) {
+  console.log(`\n🖼️ 图片资产缺失 (ImageNotFound): ${imageErrors.length} 处\n`);
+  for (const img of imageErrors) {
+    console.log(`${img.file}:${img.line}`);
+    console.log(`  引用路径: ${img.ref}`);
+    console.log(`  磁盘定位: ${img.resolved} (文件不存在)`);
+  }
 }
+
+if (!failures.length && !mathErrors.length && !imageErrors.length) {
+  console.log('🎉 所有 MDX 语法、KaTeX 数学公式与本地图片资产均校验通过！');
+} else {
+  process.exit(1);
+}
+

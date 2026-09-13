@@ -1,4 +1,5 @@
 @import './tokens/layers.css';
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 
 /* ==========================================================================
    UI 样式表
@@ -1141,8 +1142,8 @@ starlight-menu-button {
   display: none !important;
 }
 
-/* 移动端大纲下拉栏（优雅吸附于顶栏右侧大纲按钮下方，绝对定位杜绝受 header backdrop-filter 影响而飘走） */
-@media (max-width: 49.999rem) {
+/* 移动端/平板端大纲下拉栏（优雅吸附于顶栏右侧大纲按钮下方） */
+@media (max-width: 71.999rem) {
   body.mobile-toc-open::after {
     content: '';
     position: fixed;
@@ -1152,6 +1153,7 @@ starlight-menu-button {
     -webkit-backdrop-filter: blur(2px);
     z-index: 8;
     pointer-events: auto;
+    cursor: pointer;
     animation: fadeInTocBackdrop 0.15s ease forwards;
   }
 
@@ -1162,18 +1164,19 @@ starlight-menu-button {
 
   html:not([data-site-theme='starlight']) .vp-local-nav-items,
   .vp-local-nav-items {
-    position: absolute !important;
-    top: calc(100% + 0.5rem) !important;
-    right: 0 !important;
-    left: auto !important;
+    position: fixed !important;
+    top: calc(var(--sl-nav-height, 3.5rem) + 0.5rem) !important;
+    left: 0.75rem !important;
+    right: 0.75rem !important;
     bottom: auto !important;
-    width: min(22rem, calc(100vw - 1.5rem)) !important;
-    max-width: calc(100vw - 1.5rem) !important;
-    max-height: calc(100vh - 4.5rem) !important;
-    border-radius: 0.5rem !important;
+    width: auto !important;
+    max-width: 24rem !important;
+    margin-inline: auto !important;
+    max-height: calc(100dvh - var(--sl-nav-height, 3.5rem) - 1.5rem) !important;
+    border-radius: 1rem !important;
     border: 1px solid var(--sl-color-hairline) !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
-    z-index: var(--layer-popover) !important;
+    z-index: var(--layer-popover, 300) !important;
     background-color: var(--sl-color-bg-sidebar, #161618) !important;
     transform: translateY(-0.5rem) scale(0.98) !important;
     opacity: 0 !important;
@@ -1222,15 +1225,17 @@ starlight-menu-button {
   }
 }
 
-/* 纯移动端（<50rem）：Starlight 的 .right-group 默认隐藏，强制显示为“只含大纲按钮”
-   的右侧动作区（社交/主题切换仍在左侧抽屉底部，见 MobileMenuFooter 组件）。
-   平板段（50–72rem）right-group 默认显示，社交/主题/大纲按钮并列，不受影响。 */
+/* 纯移动端（<50rem）：
+   顶栏右侧动作区展示工具/主题/设置/大纲，隐藏社交链接（GitHub） */
 @media (max-width: 49.999rem) {
   .right-group {
     display: flex !important;
     align-items: center;
   }
-  .right-group > :not(.vp-local-nav) {
+  .vp-tools-wrapper,
+  .vp-social-group,
+  .right-group .social-icons,
+  .right-group .vp-social-group {
     display: none !important;
   }
 }
@@ -1612,6 +1617,9 @@ main sup, article sup {
 
 /* 学术数字资源流式排版 (Academic Text Annotation Stream) */
 .academic-digital-resource {
+  clear: both;
+  display: flow-root;
+  box-sizing: border-box;
   margin: 0.65rem 0 0.85rem 0;
   padding: 0;
   background: transparent !important;
@@ -1855,3 +1863,133 @@ html[data-theme='dark'] .academic-resource-pop-header {
     width: min(200px, calc(100vw - 2.5rem));
   }
 }
+
+/* ==========================================================================
+   学术出版物旁注与侧注组件 (Academic SideNote / MarginNote)
+   ========================================================================== */
+.astrolib-sidenote {
+  box-sizing: border-box;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.86rem;
+  line-height: 1.65;
+  background-color: var(--sl-color-gray-6, rgba(255, 255, 255, 0.03));
+  border-radius: 6px;
+  border-left: 2.5px solid var(--sl-color-gray-4, #94a3b8);
+  color: var(--sl-color-gray-2, #cbd5e1);
+  user-select: text;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+/* 桌面端浮动模式：依附于正文右侧，高度随上下文并列排版 */
+@media (min-width: 50rem) {
+  .astrolib-sidenote.sidenote-float.sidenote-right {
+    float: right;
+    clear: right;
+    width: min(18rem, 36%);
+    margin: 0.25rem 0 1.15rem 1.35rem;
+  }
+  .astrolib-sidenote.sidenote-float.sidenote-left {
+    float: left;
+    clear: left;
+    width: min(18rem, 36%);
+    margin: 0.25rem 1.35rem 1.15rem 0;
+  }
+}
+
+/* 移动端与内联模式：撑满宽度，自然降级为紧凑说明块 */
+@media (max-width: 49.99rem) {
+  .astrolib-sidenote.sidenote-float {
+    float: none !important;
+    width: 100% !important;
+    margin: 1rem 0 !important;
+  }
+}
+
+.astrolib-sidenote.sidenote-inline {
+  float: none !important;
+  width: 100% !important;
+  margin: 1.15rem 0 !important;
+}
+
+/* 头部标题区 */
+.astrolib-sidenote .sidenote-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 650;
+  font-family: var(--font-heading, var(--academic-font-heading, sans-serif));
+  letter-spacing: 0.02em;
+  margin-bottom: 0.35rem;
+}
+
+.astrolib-sidenote .sidenote-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.astrolib-sidenote .sidenote-title {
+  color: var(--sl-color-white, #f8fafc);
+}
+
+/* 正文区 */
+.astrolib-sidenote .sidenote-content {
+  color: var(--sl-color-gray-2, #cbd5e1);
+}
+
+.astrolib-sidenote .sidenote-content p {
+  margin: 0.35rem 0;
+}
+.astrolib-sidenote .sidenote-content p:first-child {
+  margin-top: 0;
+}
+.astrolib-sidenote .sidenote-content p:last-child {
+  margin-bottom: 0;
+}
+
+.astrolib-sidenote .sidenote-content .katex {
+  font-size: 0.95em;
+}
+
+/* 学术语义类型色阶：克制衬托，无刺眼高饱和度 */
+.astrolib-sidenote.sidenote-think {
+  border-left-color: var(--sl-color-accent, #38bdf8);
+  background-color: var(--sl-color-accent-low, rgba(56, 189, 248, 0.05));
+}
+.astrolib-sidenote.sidenote-think .sidenote-icon {
+  color: var(--sl-color-accent, #38bdf8);
+}
+
+.astrolib-sidenote.sidenote-caution {
+  border-left-color: #f59e0b;
+  background-color: rgba(245, 158, 11, 0.05);
+}
+.astrolib-sidenote.sidenote-caution .sidenote-icon {
+  color: #f59e0b;
+}
+
+.astrolib-sidenote.sidenote-analysis {
+  border-left-color: #10b981;
+  background-color: rgba(16, 185, 129, 0.05);
+}
+.astrolib-sidenote.sidenote-analysis .sidenote-icon {
+  color: #10b981;
+}
+
+.astrolib-sidenote.sidenote-geom {
+  border-left-color: #a855f7;
+  background-color: rgba(168, 85, 247, 0.05);
+}
+.astrolib-sidenote.sidenote-geom .sidenote-icon {
+  color: #a855f7;
+}
+
+.astrolib-sidenote.sidenote-note {
+  border-left-color: var(--sl-color-gray-4, #94a3b8);
+}
+.astrolib-sidenote.sidenote-note .sidenote-icon {
+  color: var(--sl-color-gray-3, #94a3b8);
+}
+

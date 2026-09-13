@@ -36,6 +36,7 @@ class MdxSanitizer:
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
         'Example', 'Knowledge', 'Solution', 'Note', 'Block',
         'Guide', 'Analysis', 'Variant', 'Method', 'Exercise',
+        'SideNote', 'MarginNote',
     }
 
     def __init__(self):
