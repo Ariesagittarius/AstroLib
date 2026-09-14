@@ -107,28 +107,37 @@ if (isDryRun) {
 }
 
 async function submitIndexNow() {
-  try {
-    const endpoint = 'https://api.indexnow.org/indexnow';
-    console.log(`[IndexNow] 正在发送 HTTP POST 请求至 ${endpoint} ...`);
+  const endpoints = [
+    { name: 'Bing IndexNow 网关', url: 'https://www.bing.com/indexnow' },
+    { name: 'IndexNow 联合网关', url: 'https://api.indexnow.org/indexnow' },
+  ];
 
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-      body: JSON.stringify(payload),
-    });
+  let successCount = 0;
+  for (const ep of endpoints) {
+    try {
+      console.log(`[IndexNow] 正在发送 HTTP POST 请求至 ${ep.name} (${ep.url}) ...`);
+      const response = await fetch(ep.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+        },
+        body: JSON.stringify(payload),
+      });
 
-    if (response.status === 200 || response.status === 202) {
-      console.log(`[IndexNow] 恭喜！成功推送 ${urlList.length} 个页面至 IndexNow 搜索引擎网关（状态码: ${response.status}）！`);
-      console.log(`[IndexNow] Bing 与其他接入平台将在数分钟内启动抓取队列。\n`);
-    } else {
-      const respText = await response.text();
-      console.warn(`[IndexNow] 服务器返回状态码: ${response.status}`);
-      console.warn(`[IndexNow] 返回详情: ${respText}`);
+      if (response.status === 200 || response.status === 202) {
+        console.log(`[IndexNow] 恭喜！成功推送 ${urlList.length} 个页面至 ${ep.name}（状态码: ${response.status}）！`);
+        successCount++;
+      } else {
+        const respText = await response.text();
+        console.warn(`[IndexNow] ${ep.name} 返回状态码: ${response.status}，详情: ${respText}`);
+      }
+    } catch (err) {
+      console.warn(`[IndexNow] 连接 ${ep.name} 失败:`, err.message);
     }
-  } catch (err) {
-    console.error(`[IndexNow] 推送失败:`, err.message);
+  }
+
+  if (successCount > 0) {
+    console.log(`\n[IndexNow] 核心抓取网关已接受推送，Bingbot 将在数分钟内启动抓取队列。\n`);
   }
 }
 
