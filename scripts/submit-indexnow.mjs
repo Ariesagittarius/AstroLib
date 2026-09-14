@@ -29,7 +29,21 @@ const host = new URL(siteUrl).host;
 // 解析 CLI 参数
 const args = process.argv.slice(2);
 const isDryRun = args.includes('--dry-run');
+const isOnBuild = args.includes('--on-build');
 const keyArg = args.find(a => a.startsWith('--key='))?.split('=')[1];
+
+// 若作为构建生命周期钩子（--on-build）调用，仅在生产环境或显式声明时触发
+if (isOnBuild) {
+  const isVercel = process.env.VERCEL === '1';
+  const isVercelProd = isVercel && (process.env.VERCEL_ENV === 'production' || process.env.VERCEL_GIT_COMMIT_REF === 'main');
+  const isExplicitEnabled = process.env.INDEXNOW_AUTO_SUBMIT === 'true';
+
+  if (!isVercelProd && !isExplicitEnabled) {
+    console.log('[IndexNow] 当前处于本地或非生产预览环境，跳过自动推送。如需手动推送请执行: npm run seo:indexnow');
+    process.exit(0);
+  }
+  console.log('[IndexNow] 🚀 检测到 Vercel 生产环境构建完成，正在自动触发 IndexNow 全量主动推送...');
+}
 
 let apiKey = keyArg || features.seo?.config?.indexNowKey || process.env.INDEXNOW_KEY;
 
@@ -141,4 +155,6 @@ async function submitIndexNow() {
   }
 }
 
-submitIndexNow();
+submitIndexNow().catch((err) => {
+  console.warn('[IndexNow] 推送出现未捕获异常（不影响构建流程）:', err.message);
+});
