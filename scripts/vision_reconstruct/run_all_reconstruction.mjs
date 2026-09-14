@@ -23,15 +23,13 @@ async function main() {
   console.log(`=============================================================\n`);
 
   try {
-    // Step 1: Chapter 6 remaining sections (6.7 to 6.8)
+
     console.log(`\n>>> [Step 1/3] 开始处理第六章剩余章节 (6.7 ~ 6.8)...`);
     await runStep('node', ['scripts/vision_reconstruct/reconstruct_chapters_5_6.mjs', '--from-section', '6.7']);
 
-    // Step 2: Chapter 7 full reconstruction (7.1 to 7.4)
     console.log(`\n>>> [Step 2/3] 开始处理第七章全量章节 (7.1 ~ 7.4)...`);
     await runStep('node', ['scripts/vision_reconstruct/reconstruct_chapter_7.mjs']);
 
-    // Step 3: Chapter 1 full reconstruction (1.1 to 1.5)
     console.log(`\n>>> [Step 3/3] 开始处理第一章全量章节 (1.1 ~ 1.5)...`);
     await runStep('node', ['scripts/vision_reconstruct/reconstruct_chapter_1.mjs']);
 

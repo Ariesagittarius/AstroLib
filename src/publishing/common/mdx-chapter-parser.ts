@@ -1,14 +1,3 @@
-/**
- * src/publishing/common/mdx-chapter-parser.ts
- * AstroLib Processing 层：MDX 教材章节解析器
- *
- * 职责：
- * - 纯 Processing 逻辑，负责将原始 MDX 内容解析为统一的 Chapter Semantic Model (ChapterDocument)
- * - 严禁在其中包含任何 LaTeX 排版或视觉渲染代码（职责单一原则）
- * - 基于 unified + remark-parse + remark-mdx + remark-math 完整还原 AST
- * - 精确提取 12 种学术语义组件及正文数学、列表、表格、插图
- */
-
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkMath from 'remark-math';
@@ -27,7 +16,6 @@ import { resolveChapterCanonicalMetadata } from '../../core/catalog/chapter-meta
 
 const mdxPlugin = (remarkMdx as any).remarkMdx ?? (remarkMdx as any).default ?? remarkMdx;
 
-/** 剥离 Frontmatter 并返回元数据字典与正文 Body */
 export function extractFrontmatter(source: string): { frontmatter: Record<string, string>; body: string } {
   const clean = source.replace(/^\uFEFF/, '');
   const match = clean.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
@@ -45,7 +33,7 @@ export function extractFrontmatter(source: string): { frontmatter: Record<string
     if (kv) {
       const key = kv[1].trim();
       let val = kv[2].trim();
-      // 去除首尾单双引号
+
       val = val.replace(/^['"]|['"]$/g, '');
       frontmatter[key] = val;
     }
@@ -54,7 +42,6 @@ export function extractFrontmatter(source: string): { frontmatter: Record<string
   return { frontmatter, body };
 }
 
-/** 提取 MDX JSX 节点的属性值 */
 function getJsxAttr(node: any, name: string): string | undefined {
   if (!node || !node.attributes) return undefined;
   for (const attr of node.attributes) {
@@ -71,7 +58,6 @@ function getJsxAttr(node: any, name: string): string | undefined {
   return undefined;
 }
 
-/** 序列化内联节点为文本字符串（保留 $...$ 行内公式与格式） */
 function serializeInlineNodes(nodes: any[]): string {
   if (!nodes || nodes.length === 0) return '';
   let result = '';
@@ -125,67 +111,52 @@ function serializeInlineNodes(nodes: any[]): string {
   return result;
 }
 
-/**
- * 分析 Knowledge 标题以推断具体的数学学术语义
- */
 function classifyKnowledgeSemantic(title: string): { kind: SemanticBlockKind; coreTitle: string; number?: string } {
   const clean = (title || '').trim().replace(/[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}\u{27BF}\uFE0F]/gu, '').trim();
 
-  // 定理 Theorem
   let m = clean.match(/^(定理)\s*([0-9\.\-－]*)\s*(.*)$/);
   if (m) {
     return { kind: 'theorem', coreTitle: m[3] || m[1], number: m[2] };
   }
 
-  // 定义 Definition
   m = clean.match(/^(定义)\s*([0-9\.\-－]*)\s*(.*)$/);
   if (m) {
     return { kind: 'definition', coreTitle: m[3] || m[1], number: m[2] };
   }
 
-  // 引理 Lemma
   m = clean.match(/^(引理)\s*([0-9\.\-－]*)\s*(.*)$/);
   if (m) {
     return { kind: 'lemma', coreTitle: m[3] || m[1], number: m[2] };
   }
 
-  // 推论 Corollary
   m = clean.match(/^(推论)\s*([0-9\.\-－]*)\s*(.*)$/);
   if (m) {
     return { kind: 'corollary', coreTitle: m[3] || m[1], number: m[2] };
   }
 
-  // 命题 Proposition
   m = clean.match(/^(命题)\s*([0-9\.\-－]*)\s*(.*)$/);
   if (m) {
     return { kind: 'proposition', coreTitle: m[3] || m[1], number: m[2] };
   }
 
-  // 公理 Axiom
   m = clean.match(/^(公理)\s*([0-9\.\-－]*)\s*(.*)$/);
   if (m) {
     return { kind: 'axiom', coreTitle: m[3] || m[1], number: m[2] };
   }
 
-  // 性质 Property
   m = clean.match(/^(性质)\s*([0-9\.\-－]*)\s*(.*)$/);
   if (m) {
     return { kind: 'property', coreTitle: m[3] || m[1], number: m[2] };
   }
 
-  // 准则 Criterion
   m = clean.match(/^(准则)\s*([0-9a-zA-Z\.\-－ⅠⅡⅢⅣⅤⅥ]*)\s*(.*)$/);
   if (m) {
     return { kind: 'criterion', coreTitle: m[3] || m[1], number: m[2] };
   }
 
-  // 默认作为定理族学术块
   return { kind: 'academicblock', coreTitle: clean };
 }
 
-/**
- * 从 JSX AST 节点中提取表格数据模型
- */
 function extractTableDataFromJsx(tableNode: any): SemanticTableData | null {
   const rows: string[][] = [];
   let caption = '';
@@ -223,9 +194,6 @@ function extractTableDataFromJsx(tableNode: any): SemanticTableData | null {
   };
 }
 
-/**
- * 从原始 HTML 字符串中提取表格数据模型
- */
 function parseHtmlTable(html: string): SemanticTableData | null {
   const capMatch = html.match(/<caption[^>]*>([\s\S]*?)<\/caption>/i);
   const caption = capMatch ? capMatch[1].replace(/<[^>]+>/g, '').trim() : undefined;
@@ -254,9 +222,6 @@ function parseHtmlTable(html: string): SemanticTableData | null {
   };
 }
 
-/**
- * 递归解析 AST 节点集合为 SemanticBlock 结构化列表
- */
 function parseAstNodes(
   nodes: any[],
   imageCollector: ChapterImageItem[],
@@ -280,7 +245,7 @@ function parseAstNodes(
       }
 
       case 'paragraph': {
-        // 检查段落中是否含有表格 (JSX 元素 <table> 在缺少空行时会被 remark-mdx 判定为 inline JSX 包裹进 paragraph)
+
         const hasTableChild = (node.children || []).some((c: any) => c.name === 'table');
         if (hasTableChild) {
           let textAcc: any[] = [];
@@ -310,7 +275,6 @@ function parseAstNodes(
           break;
         }
 
-        // 检查段落中是否仅包含单张图片
         const isSingleImage =
           node.children.length === 1 && node.children[0].type === 'image';
 
@@ -326,7 +290,7 @@ function parseAstNodes(
             },
           });
         } else {
-          // 检查段落内部是否含有图片
+
           for (const c of node.children) {
             if (c.type === 'image') {
               imageCollector.push({ alt: c.alt || '', url: c.url || '', originalPath: c.url || '' });
@@ -409,7 +373,7 @@ function parseAstNodes(
       }
 
       case 'thematicBreak': {
-        // 分割线可忽略或作为段落间隔
+
         break;
       }
 
@@ -431,7 +395,6 @@ function parseAstNodes(
         const idAttr = getJsxAttr(node, 'id') || '';
         const urlAttr = getJsxAttr(node, 'url') || '';
 
-        // 0. 表格组件 (JSX <table> 结构化解析)
         if (name === 'table') {
           const tblData = extractTableDataFromJsx(node);
           if (tblData) {
@@ -440,7 +403,6 @@ function parseAstNodes(
           }
         }
 
-        // 1. Knowledge 组件 (定理/定义/引理/性质等)
         if (name === 'Knowledge') {
           const info = classifyKnowledgeSemantic(titleAttr);
           const childBlocks = parseAstNodes(node.children || [], imageCollector, {
@@ -456,7 +418,7 @@ function parseAstNodes(
             children: childBlocks,
           });
         }
-        // 2. Example 组件 (例题)
+
         else if (name === 'Example') {
           const childBlocks = parseAstNodes(node.children || [], imageCollector, {
             kind: 'example',
@@ -470,7 +432,7 @@ function parseAstNodes(
             children: childBlocks,
           });
         }
-        // 3. Variant 组件 (变式训练)
+
         else if (name === 'Variant') {
           const childBlocks = parseAstNodes(node.children || [], imageCollector, {
             kind: 'variant',
@@ -484,7 +446,7 @@ function parseAstNodes(
             children: childBlocks,
           });
         }
-        // 4. Solution 组件 (证明 vs 解答)
+
         else if (name === 'Solution') {
           const isProof = /证明|证/i.test(titleAttr);
           const childBlocks = parseAstNodes(node.children || [], imageCollector, {
@@ -498,7 +460,7 @@ function parseAstNodes(
             children: childBlocks,
           });
         }
-        // 5. Note 组件 (注记/想一想)
+
         else if (name === 'Note') {
           const childBlocks = parseAstNodes(node.children || [], imageCollector, {
             kind: 'remark',
@@ -511,7 +473,7 @@ function parseAstNodes(
             children: childBlocks,
           });
         }
-        // 6. Analysis 组件 (思路分析)
+
         else if (name === 'Analysis') {
           const childBlocks = parseAstNodes(node.children || [], imageCollector, {
             kind: 'analysis',
@@ -524,7 +486,7 @@ function parseAstNodes(
             children: childBlocks,
           });
         }
-        // 7. Method 组件 (方法总结)
+
         else if (name === 'Method') {
           const childBlocks = parseAstNodes(node.children || [], imageCollector, {
             kind: 'method',
@@ -537,7 +499,7 @@ function parseAstNodes(
             children: childBlocks,
           });
         }
-        // 8. Block 组件 (通用学术块/法则)
+
         else if (name === 'Block') {
           const childBlocks = parseAstNodes(node.children || [], imageCollector, {
             kind: 'academicblock',
@@ -550,7 +512,7 @@ function parseAstNodes(
             children: childBlocks,
           });
         }
-        // 9. Exercise 组件 (课后习题)
+
         else if (name === 'Exercise') {
           const childBlocks = parseAstNodes(node.children || [], imageCollector, {
             kind: 'exercise',
@@ -563,7 +525,7 @@ function parseAstNodes(
             children: childBlocks,
           });
         }
-        // 10. Guide 组件 (导读)
+
         else if (name === 'Guide') {
           const childBlocks = parseAstNodes(node.children || [], imageCollector, {
             kind: 'guide',
@@ -576,7 +538,7 @@ function parseAstNodes(
             children: childBlocks,
           });
         }
-        // 11. Summary 组件 (总结)
+
         else if (name === 'Summary') {
           const childBlocks = parseAstNodes(node.children || [], imageCollector, {
             kind: 'summary',
@@ -589,15 +551,14 @@ function parseAstNodes(
             children: childBlocks,
           });
         }
-        // 12. QRCodeVideo / DigitalResource 组件
+
         else if (name === 'QRCodeVideo' || name === 'DigitalResource') {
-          // 清洗标题：去除 "二维码 1.1.3" 前缀及末尾标点
+
           const cleanTitle = titleAttr
             .replace(/^二维码\s*[\d\.\-－]*\s*/, '')
             .replace(/[\.\。\s]+$/, '')
             .trim() || '配套数字资源';
 
-          // 依据属性与标题确定分类标签（微课视频、教学课件、动态演示、配套数字资源）
           let categoryLabel = '配套数字资源';
           if (/课件|讲义|PPT|演示文稿/i.test(cleanTitle)) {
             categoryLabel = '教学课件';
@@ -607,7 +568,6 @@ function parseAstNodes(
             categoryLabel = '动态演示';
           }
 
-          // 确定性宿主绑定：仅当明确嵌入于父级容器内时记录宿主，严禁猜测推断
           const isEmbedded = !!parentContext;
           const hostKind = parentContext?.kind;
           const hostId = parentContext?.id || parentContext?.title;
@@ -631,7 +591,7 @@ function parseAstNodes(
             resourceData,
           });
         }
-        // 13. figure / figcaption 结构
+
         else if (name === 'figure') {
           let figImg: string | undefined;
           let figAlt = '';
@@ -660,7 +620,7 @@ function parseAstNodes(
             });
           }
         }
-        // 未知或基础 HTML 标签（如 div, span, p）：扁平递归解析子节点
+
         else {
           const childBlocks = parseAstNodes(node.children || [], imageCollector, parentContext);
           blocks.push(...childBlocks);
@@ -678,9 +638,6 @@ function parseAstNodes(
   return blocks;
 }
 
-/**
- * 主入口：将 MDX 源码解析为标准的 ChapterDocument 语义领域模型
- */
 export function parseMdxChapter(
   mdxSource: string,
   options: { slug?: string; bookSlug?: string; colSlug?: string; bookTitle?: string; courseName?: string } = {}
@@ -688,7 +645,6 @@ export function parseMdxChapter(
   const { frontmatter, body } = extractFrontmatter(mdxSource);
   const rawTitle = frontmatter.title || options.slug || '章节文档';
 
-  // 1. 调用 Domain Catalog 层权威解析章节元数据
   const metadata = resolveChapterCanonicalMetadata({
     slug: options.slug || 'chapter',
     bookSlug: options.bookSlug,
@@ -700,7 +656,6 @@ export function parseMdxChapter(
   const title = metadata.fullTitle || rawTitle;
   const cleanTitle = metadata.sectionTitle || rawTitle.replace(/^[\d\.\s_-]+/, '').trim() || rawTitle;
 
-  // 2. 使用 unified + remark 编译器管线解析 AST
   const processor = unified().use(remarkParse).use(mdxPlugin).use(remarkMath);
   const ast = processor.parse(body);
 

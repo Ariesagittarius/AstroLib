@@ -11,7 +11,6 @@ import {
 
 console.log('--- Running Comment Stripper Unit Tests ---');
 
-// 1. JS / TS Tests
 {
   const input = `
   // single line comment
@@ -38,7 +37,6 @@ console.log('--- Running Comment Stripper Unit Tests ---');
   console.log('✓ JS / TS tests passed');
 }
 
-// 2. CSS Tests
 {
   const input = `
   /* Top level CSS comment */
@@ -55,7 +53,6 @@ console.log('--- Running Comment Stripper Unit Tests ---');
   console.log('✓ CSS tests passed');
 }
 
-// 3. Astro Tests
 {
   const input = `---
 // Frontmatter comment
@@ -90,7 +87,6 @@ const title = "My Site";
   console.log('✓ Astro tests passed');
 }
 
-// 4. MDX Tests
 {
   const input = `---
 title: "Sample MDX"
@@ -121,7 +117,6 @@ Inline \`code with // comments\` should stay intact.
   console.log('✓ MDX tests passed');
 }
 
-// 5. Python Tests
 {
   const input = `#!/usr/bin/env python3
 # Top level Python comment
@@ -145,7 +140,6 @@ def foo():
   console.log('✓ Python tests passed');
 }
 
-// 6. YAML Tests
 {
   const input = `
 # Global YAML config comment
@@ -164,7 +158,6 @@ nested:
   console.log('✓ YAML tests passed');
 }
 
-// 7. Dispatcher Test
 {
   assert.strictEqual(stripContentByExtension('// comment\nconst a = 1;', '.js'), 'const a = 1;\n');
   assert.strictEqual(stripContentByExtension('/* comment */ body { margin: 0; }', '.css'), 'body { margin: 0; }\n');

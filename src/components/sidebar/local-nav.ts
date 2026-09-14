@@ -5,9 +5,6 @@ declare global {
   }
 }
 
-/**
- * 移动端大纲 popup 开关（以 <body> 上的 .mobile-toc-open 类为唯一状态源）
- */
 export function setMobileTocOpen(open: boolean): void {
   document.body.classList.toggle('mobile-toc-open', open);
   const nav = document.querySelector('.vp-local-nav');
@@ -22,14 +19,10 @@ export function setMobileTocOpen(open: boolean): void {
   }
 }
 
-/**
- * 移动端本地导航 VPLocalNav 装配
- */
 export function setupVPLocalNav(): void {
   const header = document.querySelector('.header');
   const rightGroup = header?.querySelector('.right-group');
 
-  // 若页面主体重新渲染了未挂载的大纲节点，则清理旧的已挂载节点
   const freshNav = document.querySelector('.vp-local-nav:not(.vp-local-nav-teleported)') as HTMLElement | null;
   if (freshNav) {
     document.querySelectorAll('.vp-local-nav.vp-local-nav-teleported').forEach((n) => n.remove());

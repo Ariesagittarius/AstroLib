@@ -1,14 +1,3 @@
-/**
- * src/types/exercises.ts
- * AstroLib 核心领域数据模型：题目、章节、试卷与选项的数据契约定义
- *
- * 架构规范：
- * - 属于 Layer 2 (Data Contract / Domain Model)
- * - 纯 TypeScript 接口声明，无运行时代码，无 DOM 依赖，无外部服务依赖
- * - 供 Publishing (LaTeX/Typst)、Features (Exercises)、Services 与 Scripts 共同引用
- * - 遵循 Rule 1 (UI is not a domain model) & Rule 2 (Publishing is independent)
- */
-
 export interface QuestionOption {
   key: string;
   text_html: string;

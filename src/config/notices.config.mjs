@@ -1,26 +1,9 @@
-/**
- * notices.config.mjs
- * ============================================================================
- * 全站提示框架（Notice Framework）配置与中央预设
- * 
- * 遵循架构规范：
- * 1. UI 不是数据模型，本文件是全站提示项的结构与预设唯一声明源；
- * 2. 支持 Wiki 风格（通栏/左强调色条）与 Chrome 风格（M3 Tonal 表面卡片/条目清单）；
- * 3. 图书在 collections.config.mjs 中通过 notices 数组声明提示，支持未来叠加多个提示。
- * ============================================================================
- */
-
-/**
- * 提示预设集合
- */
 export const NOTICE_PRESETS = {
-  /**
-   * MinerU OCR 自动化提取书目统一提示预设
-   */
+
   mineruOcr: {
     id: 'mineru-ocr-notice',
-    variant: 'wiki', // 'wiki' (Media 3 ambox 风格) | 'chrome' (Media 1 带有标题和清单的 M3 卡片)
-    severity: 'warning', // 'warning' (橙黄微警示) | 'info' | 'neutral' | 'accent'
+    variant: 'wiki',
+    severity: 'warning',
     icon: 'smart_toy',
     title: '自动化 OCR 数字化版本说明',
     subtitle: '注意事项',
@@ -45,12 +28,6 @@ export const NOTICE_PRESETS = {
   }
 };
 
-/**
- * 将图书配置与章节 frontmatter 中的提示声明归一化为完整对象列表
- * @param {Array<string | object>} [bookNotices] 图书级提示列表
- * @param {Array<string | object>} [pageNotices] 页面/章节级提示列表
- * @returns {Array<object>}
- */
 export function resolveNotices(bookNotices = [], pageNotices = []) {
   const combined = [...(bookNotices || []), ...(pageNotices || [])];
   if (!combined.length) return [];
@@ -59,12 +36,12 @@ export function resolveNotices(bookNotices = [], pageNotices = []) {
   for (const item of combined) {
     if (!item) continue;
     if (typeof item === 'string') {
-      // 字符串别名映射到预设
+
       if (item === 'mineru-ocr' || item === 'mineruOcr') {
         list.push({ ...NOTICE_PRESETS.mineruOcr });
       }
     } else if (typeof item === 'object') {
-      // 允许基于预设局部覆盖，或传入全新定义
+
       if (item.preset && NOTICE_PRESETS[item.preset]) {
         list.push({ ...NOTICE_PRESETS[item.preset], ...item });
       } else {
@@ -73,7 +50,6 @@ export function resolveNotices(bookNotices = [], pageNotices = []) {
     }
   }
 
-  // 按 ID 去重，后声明者覆盖前者
   const map = new Map();
   for (const n of list) {
     if (n.id) {

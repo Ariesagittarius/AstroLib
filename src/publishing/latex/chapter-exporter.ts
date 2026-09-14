@@ -1,13 +1,3 @@
-/**
- * src/publishing/latex/chapter-exporter.ts
- * AstroLib Publishing 层：教材章节 LaTeX 导出统一门面与调度 API
- *
- * 遵循架构规范：
- * - 纯 Publishing 服务，无 DOM/UI 依赖
- * - 串联 Processing (parseMdxChapter) 与 Renderer (renderChapterLatexDocument)
- * - 收集章节关联静态图示资源，提供独立 .tex 源码及完整离线编译 .zip 包
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -33,7 +23,7 @@ const ROOT = path.resolve(__dirname, '../../..');
 export interface ChapterExportAsset {
   name: string;
   localPath: string;
-  targetPath: string; // 在输出目录/ZIP 中的相对路径，如 assets/fig-01.png
+  targetPath: string;
 }
 
 export interface ChapterExportResult {
@@ -56,9 +46,6 @@ export interface ExportChapterOptions {
   latexConfig?: Partial<ChapterExportSettings & { embedStyle?: boolean }>;
 }
 
-/**
- * 统一章节 LaTeX 导出主接口
- */
 export function exportChapterToLatex(options: ExportChapterOptions): ChapterExportResult {
   const {
     mdxSource,
@@ -70,7 +57,6 @@ export function exportChapterToLatex(options: ExportChapterOptions): ChapterExpo
     latexConfig = {},
   } = options;
 
-  // 1. Processing 层：将 MDX 解析为语义领域模型 (自动挂载 canonical metadata)
   const doc = parseMdxChapter(mdxSource, {
     slug,
     bookSlug,
@@ -79,7 +65,6 @@ export function exportChapterToLatex(options: ExportChapterOptions): ChapterExpo
     courseName,
   });
 
-  // 2. Resource Resolver：使用 Chapter-scoped 依赖图解析器收集插图
   const chapterDir = colSlug && bookSlug
     ? path.join(ROOT, 'src', 'content', 'docs', 'collections', colSlug, bookSlug)
     : ROOT;
@@ -90,7 +75,6 @@ export function exportChapterToLatex(options: ExportChapterOptions): ChapterExpo
     targetPath: a.targetPath,
   }));
 
-  // 3. Publishing 渲染层：将语义数据模型输出为纯正 LaTeX 源码 (ctexart + adjustbox)
   const tex = renderChapterLatexDocument(doc, {
     ...DEFAULT_CHAPTER_EXPORT_SETTINGS,
     ...latexConfig,
@@ -114,26 +98,19 @@ export function exportChapterToLatex(options: ExportChapterOptions): ChapterExpo
   };
 }
 
-/**
- * 将章节导出产物一键打包为可直接独立编译的 ZIP 归档包
- * 包含：chapter.tex、astrolib-chapter.sty 宏包以及 assets/ 目录下的所有插图
- */
 export function createChapterZipPackage(exportResult: ChapterExportResult): Buffer {
   const entries: Array<{ name: string; data: Buffer | string }> = [];
 
-  // 1. LaTeX 主文件
   entries.push({
     name: 'chapter.tex',
     data: Buffer.from(exportResult.tex, 'utf8'),
   });
 
-  // 2. 学术样式宏包
   entries.push({
     name: 'astrolib-chapter.sty',
     data: Buffer.from(exportResult.styleSource, 'utf8'),
   });
 
-  // 3. 所有配图
   for (const asset of exportResult.assets) {
     if (fs.existsSync(asset.localPath)) {
       try {

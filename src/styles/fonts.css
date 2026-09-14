@@ -1,46 +1,10 @@
-/* ==========================================================================
-   字体系统（Font Presets & Reader Override）
-   --------------------------------------------------------------------------
-   全站字体由 Starlight 的 --sl-font / --sl-font-mono 驱动（默认栈写在
-   vitepress-theme.css 第 96–102 行）。本文件在其后加载，负责：
-
-   1. 「中西文两栏独立选择」作用于【正文】：读者分别挑拉丁段（英文/数字）与中文段（汉字），
-      最终字体栈 = [拉丁段], [中文段] 两条顺序 fallback —— 英文落拉丁段，
-      汉字自动回退到中文段；零 JS、零解析。
-   2. 两条全局变量把「界面/全局字体」与「正文阅读字体」解耦：
-        --font-ui        → 界面（导航/侧栏/大纲），最终映射到 Starlight 的 --sl-font
-        --font-reading   → 正文阅读，作用于 .sl-markdown-content
-   3. 读者通过 <html data-font-latin="…"> 与 <html data-font-cjk="…"> 覆盖：
-        latin: sans | serif | katex
-        cjk:   sans | serif | han-sans | han-serif
-      （选择器见 FontSelectOverride.astro；持久化与迁移见 src/scripts/font-presets.ts）
-       · 思源两档使用 @fontsource 自托管 webfont（unicode-range 按需切片），
-         仅当选中的读者才按需下载对应字形切片；默认系统档位零下载。
-       · katex 档复用 KaTeX 的 KaTeX_Main（Computer Modern 衬线），让正文英文与
-         页面公式同款（仅当 features.katex.enabled 时该 @font-face 才存在，否则回退衬线）。
-
-   加载顺序：本文件位于 astro.config.mjs customCss 数组最后（晚于 vitepress-theme.css），
-   因此它覆盖 --sl-font 的优先级最高。
-   ========================================================================== */
-
-/* ==========================================================================
-   学术排版设计令牌 (Minimal Academic Typography Tokens)
-   --------------------------------------------------------------------------
-   专为大学数理教材、讲义与学术出版物打造的核心排版系统令牌。
-   独立于导航/侧栏等现代 Web UI 控件，专注于正文阅读流的学术质感。
-   ========================================================================== */
 :root {
-  /* 基础学术字体栈：
-     1. 拉丁/数字段：优先采用经典数学教材衬线 Times New Roman / Georgia；
-     2. 中文正文段：优先匹配本地已安装的思源宋体 (Source Han Serif / Noto Serif SC)，
-        并以自托管的 'Noto Serif SC Variable' (@fontsource) 作为高质量无缝兜底；
-     3. 传统中易宋体 (SimSun) 仅置于最末端作为系统兜底，绝不优先匹配。 */
+
   --academic-font-body: 'Times New Roman', Georgia,
     local('Source Han Serif SC'), local('Source Han Serif CN'),
     local('Noto Serif SC'), local('Noto Serif CJK SC'), local('思源宋体'),
     'Noto Serif SC Variable', 'Songti SC', 'STSong', 'SimSun', serif;
 
-  /* 学术标题/环境标签字体栈：严肃经典大学教材黑体体系（高教社/科学社权威质感） */
   --academic-font-heading: 'Plus Jakarta Sans Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI',
     local('Source Han Sans SC'), local('Source Han Sans CN'),
     local('Noto Sans SC'), local('Noto Sans CJK SC'),
@@ -49,52 +13,42 @@
   --academic-font-latin: 'Times New Roman', Georgia, serif;
   --academic-font-math: 'KaTeX_Math', 'KaTeX_Main', 'Times New Roman', serif;
 
-  /* 墨色层级 (Ink Density) */
-  --academic-color-ink: #111111;         /* 亮色：纯正教材高密度墨黑（消除灰色 Web text 感） */
-  --academic-color-heading: #000000;     /* 亮色：深沉标题墨黑 */
-  --academic-color-tag: #1a1a1a;         /* 亮色：公式编号 (\tag) 采用与正文同级深墨 */
+  --academic-color-ink: #111111;
+  --academic-color-heading: #000000;
+  --academic-color-tag: #1a1a1a;
 
-  /* 正文与标题文字韵律 */
-  --academic-font-size-body: 1rem;       /* 16px 标准学术基准字阶 */
-  --academic-line-height-body: 1.74;     /* 紧凑且包容复杂行内公式的学术阅读行高 (27.8px) */
-  --academic-letter-spacing-body: normal;/* 纯正 0 letter-spacing，不人为拉大中文 tracking */
-  --academic-font-weight-body: 400;      /* 纯正 400 原生字重，杜绝加粗假充印刷质感 */
-  --academic-font-weight-heading: 650;   /* 标题与定理标签采用精确 SemiBold */
+  --academic-font-size-body: 1rem;
+  --academic-line-height-body: 1.74;
+  --academic-letter-spacing-body: normal;
+  --academic-font-weight-body: 400;
+  --academic-font-weight-heading: 650;
 }
 
-/* 暗色模式墨色适配（柔和夜读纸色） */
 :root[data-theme='dark'] {
   --academic-color-ink: #dfdfd6;
   --academic-color-heading: #f0f0ea;
   --academic-color-tag: #dfdfd6;
 }
 
-/* --------------------------------------------------------------------------
-   1. 底层可定制字体段 —— 想单独调英文或中文，只改这里即可
-   -------------------------------------------------------------------------- */
 :root {
-  /* 无衬线拉丁段 */
+
   --font-latin-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  /* 品牌英文展示字体（Logo、大标题、Hero，跨端一致的高品质几何无衬线） */
+
   --font-brand: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  /* 衬线拉丁段：使用纯正学术 Times New Roman / Georgia；KaTeX_Main 仅在公式或读者显式选 katex 时使用 */
+
   --font-latin-serif: 'Times New Roman', Georgia, serif;
-  /* KaTeX 公式字体段：KaTeX_Main（Computer Modern 衬线），与页面公式同款；缺字体回退常规衬线 */
+
   --font-latin-katex: 'KaTeX_Main', 'Times New Roman', Georgia, serif;
 
-  /* 系统无衬线中文段（纯系统原生黑体，零 webfont 下载） */
   --font-cjk-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-  /* 系统衬线中文段（纯系统原生宋体，零 webfont 下载） */
+
   --font-cjk-serif: 'Songti SC', 'STSong', 'SimSun', serif;
-  /* 思源黑体中文段（自托管 Noto Sans SC webfont 优先） */
+
   --font-cjk-han-sans: 'Noto Sans SC Variable', local('Source Han Sans SC'), local('Source Han Sans CN'), local('Noto Sans SC'), var(--font-cjk-sans);
-  /* 思源宋体中文段（自托管 Noto Serif SC webfont 优先） */
+
   --font-cjk-han-serif: 'Noto Serif SC Variable', local('Source Han Serif SC'), local('Source Han Serif CN'), local('Noto Serif SC'), var(--font-cjk-serif);
 }
 
-/* --------------------------------------------------------------------------
-   2. 各段当前值 —— 由 data-font-latin / data-font-cjk 驱动（默认学术衬线体系）
-   -------------------------------------------------------------------------- */
 :root {
   --font-latin: var(--font-latin-serif);
   --font-cjk: var(--font-cjk-serif);
@@ -121,32 +75,20 @@
   --font-cjk: var(--font-cjk-han-serif);
 }
 
-/* --------------------------------------------------------------------------
-   3. 组合字体栈 → --font-ui / --font-reading，并映射到 Starlight / 正文容器
-   -------------------------------------------------------------------------- */
-
-/* 全局界面字体：固定用思源黑体（Noto Sans SC Variable，@fontsource 自托管 webfont），
-   作为导航/侧栏/大纲/底部等所有「非正文组件」的默认字体。
-   它【不随读者选择变化】——字体切换只作用于下方正文阅读字体。 */
 :root {
   --font-ui: var(--font-latin-sans), var(--font-cjk-han-sans);
 }
 
-/* 全局界面字体：覆盖 vitepress-theme.css 的 --sl-font（强制高优先级）。 */
 :root,
 :root:not([data-site-theme='starlight']) {
   --sl-font: var(--font-ui) !important;
 }
 
-/* 正文阅读字体：真正响应读者 <html data-font-latin / data-font-cjk> 的字体栈，
-   顺序 = [拉丁段], [中文段]。这是全站唯一受字体切换影响的位置——字体只改正文、不动全局。 */
 :root {
   --font-reading: var(--font-latin), var(--font-cjk);
   --font-heading: var(--academic-font-heading);
 }
 
-/* 正文阅读字体：与界面分离，作用于大标题（h1）与文章内容容器（含卡片、表格、引用块）。
-   行内代码/代码块仍走 --sl-font-mono，KaTeX 公式仍走 KaTeX 自带字体，均不受影响。 */
 .sl-markdown-content,
 .sl-markdown-content :is(p, li, dd, td, th, blockquote, .fallback-content, .card-body) {
   font-family: var(--font-reading) !important;
@@ -159,7 +101,7 @@
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-kerning: normal;
-  /* 现代浏览器 CJK 标点挤压与自动中西文微距 */
+
   font-feature-settings: "chws" 1;
   text-autospace: normal;
 }
@@ -174,5 +116,3 @@
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
-
-

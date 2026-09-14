@@ -122,7 +122,6 @@ class ExerciseCenterController {
   private currentLatexConfig: LatexExportConfig = { ...DEFAULT_LATEX_CONFIG };
   private currentGeneratedLatexCode: string = '';
 
-  // 云端 XeLaTeX 编译与免服务器打印字段
   private latexSettingsOpenBtn: HTMLElement | null = null;
   private latexSettingsModal: HTMLElement | null = null;
   private latexSettingsCloseBtn: HTMLElement | null = null;
@@ -231,7 +230,7 @@ class ExerciseCenterController {
     if (typeof document === 'undefined') return;
 
     const setup = () => {
-      // 路由换页安全清理：若存在多个 root 节点，移除多余的旧节点
+
       const allRoots = document.querySelectorAll('#exercise-modal-root');
       if (allRoots.length > 1) {
         allRoots.forEach((node, idx) => {
@@ -280,7 +279,6 @@ class ExerciseCenterController {
       this.latexPreviewCopyBtn = this.root.querySelector('#ex-latex-preview-copy-btn');
       this.latexDownloadBtn = this.root.querySelector('#ex-latex-download-btn');
 
-      // 云端编译与二级设置弹窗 DOM 查询
       this.latexSettingsOpenBtn = this.root.querySelector('#ex-latex-open-settings-btn');
       this.latexSettingsModal = this.root.querySelector('#ex-latex-settings-modal');
       this.latexSettingsCloseBtn = this.root.querySelector('#ex-close-settings-modal-btn');
@@ -339,7 +337,7 @@ class ExerciseCenterController {
       try {
         const savedCollapsed = localStorage.getItem('astro_exercise_filter_collapsed');
         const isMobileScreen = typeof window !== 'undefined' && window.innerWidth <= 640;
-        // 规范第九条：移动端优先进入「沉浸做题态」，筛选默认收起；桌面端遵从用户记忆
+
         const shouldCollapse = savedCollapsed !== null ? savedCollapsed === '1' : isMobileScreen;
         if (shouldCollapse) {
           this.setFilterCollapsed(true);
@@ -1635,7 +1633,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     let accumulatedReasoning = '';
     this.activeSolutionVersions.set(qid, 'local');
 
-    // 初始化流式批处理节流调度器（100ms 窗口）
     const scheduler = new StreamThrottleScheduler(() => {
       this.aiSolutions.set(qid, accumulatedMd);
       if (contentEl) {
@@ -1914,7 +1911,6 @@ $$
       aiUploadSubmitBtn.addEventListener('click', () => this.submitAiSolutionUpload());
     }
 
-    // --- LaTeX Export Modal Events ---
     if (this.openLatexBtn) {
       this.openLatexBtn.addEventListener('click', () => this.openLatexModal());
     }
@@ -1923,7 +1919,6 @@ $$
       btn.addEventListener('click', () => this.latexModal?.classList.add('hidden'));
     });
 
-    // 模板版式分段控制器切换 (handout / exam)
     this.root.querySelectorAll('.ex-segmented-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         this.root?.querySelectorAll('.ex-segmented-btn').forEach((b) => {
@@ -1944,7 +1939,6 @@ $$
       });
     });
 
-    // 页面与字体规格
     const paperSelect = this.root.querySelector('#ex-latex-paper-size') as HTMLSelectElement;
     if (paperSelect) {
       paperSelect.addEventListener('change', (e) => {
@@ -1995,7 +1989,6 @@ $$
       });
     }
 
-    // 作答留白单选
     this.root.querySelectorAll('input[name="ex-latex-writing-space"]').forEach((radio) => {
       radio.addEventListener('change', (e) => {
         this.currentLatexConfig.writingSpace = (e.target as HTMLInputElement).value as any;
@@ -2003,7 +1996,6 @@ $$
       });
     });
 
-    // 参考答案附录单选
     this.root.querySelectorAll('input[name="ex-latex-answer-mode"]').forEach((radio) => {
       radio.addEventListener('change', (e) => {
         this.currentLatexConfig.answerPlacement = (e.target as HTMLInputElement).value as any;
@@ -2011,7 +2003,6 @@ $$
       });
     });
 
-    // Overleaf、复制与下载按钮（在更多导出下拉菜单中）
     if (this.latexOverleafBtn) {
       this.latexOverleafBtn.addEventListener('click', () => {
         this.closeMoreExportMenu();
@@ -2034,7 +2025,6 @@ $$
       });
     }
 
-    // 更多导出方式二级下拉菜单切换与外部点击关闭
     if (this.moreExportBtn && this.moreExportMenu) {
       this.moreExportBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -2052,7 +2042,6 @@ $$
       });
     }
 
-    // 云端编译配置独立二级弹窗开关与保存
     if (this.latexSettingsOpenBtn) {
       this.latexSettingsOpenBtn.addEventListener('click', () => this.openSettingsModal());
     }
@@ -2071,7 +2060,6 @@ $$
       this.ghSaveConfigBtn.addEventListener('click', () => this.saveCompilerSettings());
     }
 
-    // 阶段 1 主 CTA 按钮: 开始生成 PDF
     if (this.latexStartCompileBtn) {
       this.latexStartCompileBtn.addEventListener('click', () => {
         const config = getStoredCompilerConfig();
@@ -2085,14 +2073,12 @@ $$
       });
     }
 
-    // 阶段 2 返回修改配置按钮
     if (this.latexBackConfigBtn) {
       this.latexBackConfigBtn.addEventListener('click', () => {
         this.switchLatexStage('config');
       });
     }
 
-    // 阶段 2 主 CTA: 下载 PDF 文件
     if (this.latexDownloadPdfBtn) {
       this.latexDownloadPdfBtn.addEventListener('click', () => {
         if (this.currentCompiledPdfUrl) {
@@ -2105,7 +2091,6 @@ $$
       });
     }
 
-    // 次要打印按钮
     if (this.latexPrintBtn) {
       this.latexPrintBtn.addEventListener('click', () => {
         if (this.currentCompiledPdfUrl) {
@@ -2115,12 +2100,10 @@ $$
       });
     }
 
-    // 取消编译按钮
     if (this.latexCancelCompileBtn) {
       this.latexCancelCompileBtn.addEventListener('click', () => this.cancelCloudCompilation());
     }
 
-    // 耗时较长挂起状态下的辅助操作
     if (this.continueWaitBtn) {
       this.continueWaitBtn.addEventListener('click', () => this.continueWaitingCompilation());
     }
@@ -2267,7 +2250,6 @@ $$
       this.sourceEditorModal.classList.add('hidden');
       this.showToast(res.message || '源码修改已成功保存并完成热重载！');
 
-      // 清理缓存以保证下次加载最新编译产物
       this.chapterCache.delete(this.activeEditorQuestion.chapter);
       this.paperCache.delete(this.activeEditorQuestion.paper_id);
       this.allQuestionsCache = [];
@@ -2276,7 +2258,6 @@ $$
       if (parsedData.solution?.answer) this.activeEditorQuestion.answer = parsedData.solution.answer;
       if (parsedData.meta?.type) this.activeEditorQuestion.type = parsedData.meta.type;
 
-      // 重新拉取当前章节
       if (this.currentMode === 'practice') {
         this.loadChapter(this.currentChapter);
       } else if (this.currentMode === 'paper') {
@@ -2350,7 +2331,6 @@ $$
   private openLatexModal() {
     if (!this.latexModal) return;
 
-    // 根据当前视图设定标题与科目（严谨学术体例）
     let title = '工科数学分析';
     let subtitle = '章节真题精选与自测练习';
     let courseName = '工科数学分析';
@@ -2376,7 +2356,6 @@ $$
     this.currentLatexConfig.subtitle = subtitle;
     this.currentLatexConfig.courseName = courseName;
 
-    // 获取当前选定题量并更新 Header 提示
     const questions =
       this.currentFilteredQuestions.length > 0
         ? this.currentFilteredQuestions
@@ -2386,13 +2365,11 @@ $$
       this.latexModalMeta.textContent = `${title} · 共 ${questions.length} 道习题`;
     }
 
-    // 初始化编译配置项到输入框
     const cfg = getStoredCompilerConfig();
     if (this.ghTokenInput) this.ghTokenInput.value = cfg.token;
     if (this.ghRepoInput) this.ghRepoInput.value = `${cfg.owner}/${cfg.repo}`;
     if (this.ghTransportModeSelect) this.ghTransportModeSelect.value = cfg.transportMode || 'auto';
 
-    // 同步排版预设与本地存储 (包含历史配置静默迁移)
     const storedExport = getStoredExportSettings();
     if (storedExport.typography) {
       this.currentLatexConfig.typography = storedExport.typography;
@@ -2402,7 +2379,6 @@ $$
       typoSelect.value = this.currentLatexConfig.typography;
     }
 
-    // 默认展示排版配置视图（若已有生成结果则直达预览）
     if (this.currentCompiledPdfUrl || this.isCompiling) {
       this.switchLatexStage('result');
     } else {
@@ -2662,7 +2638,6 @@ $$
     this.compileAbortController = new AbortController();
     this.compileStartTime = Date.now();
 
-    // 确保切换到编译交付与 PDF 预览阶段
     this.switchLatexStage('result');
     this.setLatexExportState('compiling', '正在向 GitHub Actions 算力池调度编译任务...');
 
@@ -2824,21 +2799,17 @@ $$
   private refreshLatexPreview() {
     if (!this.latexModal) return;
 
-    // 获取当前要导出的题目集合
     const questions =
       this.currentFilteredQuestions.length > 0
         ? this.currentFilteredQuestions
         : this.chapterCache.get(this.currentChapter)?.questions || [];
 
-    // 生成 LaTeX 源码
     this.currentGeneratedLatexCode = generateLatexDocument(questions, this.currentLatexConfig);
 
-    // 更新右侧代码显示
     if (this.latexCodeTextarea) {
       this.latexCodeTextarea.value = this.currentGeneratedLatexCode;
     }
 
-    // 更新统计徽章
     const qCountEl = this.latexModal.querySelector('#ex-latex-stat-qcount');
     const linesEl = this.latexModal.querySelector('#ex-latex-stat-lines');
 
@@ -2847,7 +2818,6 @@ $$
     if (qCountEl) qCountEl.textContent = `题目：${questions.length} 题`;
     if (linesEl) linesEl.textContent = `${linesCount} 行代码`;
 
-    // 更新建议下载文件名
     const defaultFilename = this.getLatexExportFilename();
     if (this.latexFilenameBadge) {
       this.latexFilenameBadge.textContent = defaultFilename;

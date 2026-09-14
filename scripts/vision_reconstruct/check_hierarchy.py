@@ -33,13 +33,10 @@ for fname in FILES:
     with open(fpath, 'r', encoding='utf-8') as f:
         text = f.read()
 
-    # 1. 检查正文中的 H1 一级标题
     h1s = re.findall(r'^#[^#\r\n]+$', text, flags=re.MULTILINE)
 
-    # 2. 检查末尾 ExerciseTrigger
     has_trigger = '<ExerciseTrigger' in text
 
-    # 3. 检查例题 title 是否超过 80 字符 (过长导致整段加粗)
     long_ex = []
     for m in re.finditer(r'<Example\s+title="([^"]+)"', text):
         title = m.group(1)

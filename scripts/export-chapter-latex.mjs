@@ -1,21 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/export-chapter-latex.mjs
- * AstroLib 命令行工具：将指定教材 MDX 章节导出为独立学术 LaTeX 源码与 PDF
- *
- * 用法：
- *   node scripts/export-chapter-latex.mjs <mdx-file-or-slug> [options]
- *
- * 选项：
- *   --out <dir>     指定输出目录（默认为 dist/export/ 或 .tmp/export/）
- *   --zip           同时生成完整独立的离线可编译 ZIP 归档包（含 .tex、.sty 与 assets/ 配图）
- *   --compile       若本地安装有 XeLaTeX，自动触发二次物理编译生成 PDF
- *   --book <title>  指定全书书名（如 "工科数学分析（上册）"）
- *   --course <name> 指定课程名称（如 "工科数学分析"）
- *
- * 示例：
- *   node scripts/export-chapter-latex.mjs src/content/docs/collections/math/engineering_analysis/1.1_集合映射与函数.mdx --compile --zip
- */
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -53,7 +36,6 @@ if (args.length === 0 || args.includes('-h') || args.includes('--help')) {
   process.exit(0);
 }
 
-// 解析命令行参数
 let targetMdx = '';
 let outDirArg = '';
 let shouldZip = false;
@@ -101,7 +83,6 @@ if (!targetMdx) {
   process.exit(1);
 }
 
-// 解析 MDX 路径
 const resolvedMdxPath = path.isAbsolute(targetMdx)
   ? targetMdx
   : path.resolve(process.cwd(), targetMdx);
@@ -111,7 +92,6 @@ if (!fs.existsSync(resolvedMdxPath)) {
   process.exit(1);
 }
 
-// 分析合集与图书 slug
 const relToDocs = path.relative(path.join(ROOT, 'src', 'content', 'docs'), resolvedMdxPath);
 const pathParts = relToDocs.split(path.sep);
 let colSlug = '';
@@ -130,7 +110,6 @@ console.log(`📖 正在导出章节: ${fileBaseName}`);
 console.log(`📂 文件来源: ${path.relative(ROOT, resolvedMdxPath)}`);
 console.log('------------------------------------------------------------');
 
-// 1. 调用统一门面执行 Processing 与 Rendering
 const exportResult = exportChapterToLatex({
   mdxSource,
   slug: fileBaseName,
@@ -149,26 +128,21 @@ const exportResult = exportChapterToLatex({
   },
 });
 
-// 确定输出目录 (避免污染 public 目录，符合 Rule 5)
 const targetDir = outDirArg
   ? path.resolve(process.cwd(), outDirArg)
   : path.join(ROOT, '.tmp', 'export', exportResult.cleanTitle);
 
 fs.mkdirSync(targetDir, { recursive: true });
 
-// 2. 写入主 LaTeX 文件
 const texFilePath = path.join(targetDir, exportResult.filename);
 fs.writeFileSync(texFilePath, exportResult.tex, 'utf8');
 
-// 同时写入一份固定名称的 main.tex 便于标准化编译
 const mainTexPath = path.join(targetDir, 'main.tex');
 fs.writeFileSync(mainTexPath, exportResult.tex, 'utf8');
 
-// 3. 写入宏包
 const styFilePath = path.join(targetDir, 'astrolib-chapter.sty');
 fs.writeFileSync(styFilePath, exportResult.styleSource, 'utf8');
 
-// 4. 拷贝配图
 if (exportResult.assets.length > 0) {
   for (const asset of exportResult.assets) {
     const dest = path.join(targetDir, asset.targetPath);
@@ -185,7 +159,6 @@ console.log(`✅ LaTeX 源码已生成: ${path.relative(ROOT, texFilePath)}`);
 console.log(`✅ 独立样式包已就绪: ${path.relative(ROOT, styFilePath)}`);
 console.log(`✅ 配图资源已复制: ${exportResult.assets.length} 张`);
 
-// 5. 生成 ZIP 归档包
 if (shouldZip) {
   const zipBuffer = createChapterZipPackage(exportResult);
   const zipPath = path.join(targetDir, `${exportResult.cleanTitle}.zip`);
@@ -193,7 +166,6 @@ if (shouldZip) {
   console.log(`📦 离线 ZIP 归档包已生成: ${path.relative(ROOT, zipPath)} (${(zipBuffer.length / 1024).toFixed(1)} KB)`);
 }
 
-// 6. 执行物理 XeLaTeX 编译
 if (shouldCompile) {
   console.log('\n⏳ 正在探测本地 XeLaTeX 编译器...');
   const candidates = [

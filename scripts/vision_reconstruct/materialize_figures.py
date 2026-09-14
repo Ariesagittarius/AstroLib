@@ -20,7 +20,6 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 IMAGES_DIR = os.path.join(ROOT_DIR, 'src/content/docs/collections/math/engineering_analysis_rebuild/images')
 PDF_PATH = os.path.join(ROOT_DIR, 'test/data/工科数学分析基础 上册.pdf')
 
-# Hash mappings for Chapter 3
 CH3_HASH_MAP = {
     'fig_3_1.png': 'e7df89a4c03019955e9197d9786370041e96243d89166fbe482c6134766f7a3f.jpg',
     'fig_3_2.png': '870af19a1612d93a95c1e14fd27f774c9073f70feb339a6ee87f63bde2dcb74b.jpg',
@@ -43,11 +42,10 @@ CH3_HASH_MAP = {
     'fig_3_21.png': 'ad01708b8fcb59fdb149cdc13aa3bfbbf337635de165d425c7a50d0aa112ea23.jpg',
 }
 
-# Special crops directly from PDF pages (e.g. composite figures with subfigures (a)(b)(c))
 CH3_CROPS = {
-    # 图 3.4 (a)(b)(c) on Phys 194 (0-based index 193)
+
     'fig_3_4.png': {'page_idx': 193, 'rect': [25, 435, 480, 575], 'dpi': 200},
-    # 图 3.15 (a)(b)(c)(d) on Phys 238 (0-based index 237)
+
     'fig_3_15.png': {'page_idx': 237, 'rect': [25, 140, 480, 435], 'dpi': 200},
 }
 
@@ -58,8 +56,7 @@ def materialize_chapter_3(force=False):
         doc = pymupdf.open(PDF_PATH)
 
     print("\n📦 [Materialize] 正在实体化第三章插图资产...")
-    
-    # 1. Process hash map
+
     for target_name, hash_name in CH3_HASH_MAP.items():
         dst_path = os.path.join(IMAGES_DIR, target_name)
         src_path = os.path.join(IMAGES_DIR, hash_name)
@@ -72,7 +69,6 @@ def materialize_chapter_3(force=False):
         else:
             print(f"  [Warn] 源散列图片缺失: {hash_name}")
 
-    # 2. Process special crops from PDF
     if doc:
         for target_name, info in CH3_CROPS.items():
             dst_path = os.path.join(IMAGES_DIR, target_name)
@@ -87,7 +83,6 @@ def materialize_chapter_3(force=False):
 
     print("🎉 第三章插图资产实体化就绪！\n")
 
-# Hash mappings for Chapter 4
 CH4_HASH_MAP = {
     'fig_4_1.png': 'ce4866dae0a139add30ba5dcf63af38e8cf004e58ac812ae8c4f1f2325d55aa0.jpg',
     'fig_4_3.png': '8c7bfff9a19d36f0bb490b2cd066ecd880ffce809d146c6cf09cd93ead3d770b.jpg',
@@ -99,9 +94,8 @@ CH4_HASH_MAP = {
     'fig_4_9.png': '7a57912a2bbcd1d764f32c72761c4c31a7961b113f5d3dd879e7674728671cd6.jpg',
 }
 
-# Special crops directly from PDF pages for Chapter 4
 CH4_CROPS = {
-    # 图 4.2 (a)(b) on Phys 265 (0-based index 264)
+
     'fig_4_2.png': {'page_idx': 264, 'rect': [50, 480, 500, 750], 'dpi': 200},
 }
 
@@ -112,8 +106,7 @@ def materialize_chapter_4(force=False):
         doc = pymupdf.open(PDF_PATH)
 
     print("\n📦 [Materialize] 正在实体化第四章插图资产...")
-    
-    # 1. Process hash map
+
     for target_name, hash_name in CH4_HASH_MAP.items():
         dst_path = os.path.join(IMAGES_DIR, target_name)
         src_path = os.path.join(IMAGES_DIR, hash_name)
@@ -126,7 +119,6 @@ def materialize_chapter_4(force=False):
         else:
             print(f"  [Warn] 源散列图片缺失: {hash_name}")
 
-    # 2. Process special crops from PDF
     if doc:
         for target_name, info in CH4_CROPS.items():
             dst_path = os.path.join(IMAGES_DIR, target_name)
@@ -139,7 +131,6 @@ def materialize_chapter_4(force=False):
             pix.save(dst_path)
             print(f"  [Crop] 成功从 PDF 第 {info['page_idx']+1} 页高保真裁切 -> {target_name}")
 
-    # Also make aliases for fig_4_2_a and fig_4_2_b
     sub_a = os.path.join(IMAGES_DIR, '4e83c3f419ee464bcc7e8fef89422cd8eeb35bcf8490cedecbc27c6fe4fb6017.jpg')
     sub_b = os.path.join(IMAGES_DIR, 'a003045ddd8a2883011337dc5a84c66dd869694c2f8e4ed17b0a1115f5d0a707.jpg')
     if os.path.exists(sub_a):

@@ -29,7 +29,6 @@ export async function fetchGlobalIndex(aside: HTMLElement | null): Promise<Recor
   if (globalIndexCache.has(key)) return globalIndexCache.get(key)!;
   if (inFlightIndexFetches.has(key)) return inFlightIndexFetches.get(key)!;
 
-  // Fallback to data-global-index if present
   const raw = aside?.getAttribute('data-global-index');
   if (raw && raw !== '{}') {
     try {
@@ -39,7 +38,6 @@ export async function fetchGlobalIndex(aside: HTMLElement | null): Promise<Recor
     } catch {}
   }
 
-  // Fetch static JSON generated at build time
   const [col, book] = key.split('/');
   if (col && book) {
     const fetchPromise = (async () => {
@@ -188,7 +186,6 @@ export function buildBookTOC(
   const desktopLinks: HTMLAnchorElement[] = [];
   const mobileLinks: HTMLAnchorElement[] = [];
 
-  // 1. 将平铺的 tocEntries 聚合为结构化的标题分组 (Level 1: 标题, Level 2: 标题间的书内板块卡片)
   interface TocSectionGroup {
     headingChunk: { kind: 'heading'; el: HTMLElement; level?: number; _tocId?: string } | null;
     cardChunks: Array<{ kind: 'card'; el: HTMLElement; level?: number; _tocId?: string }>;
@@ -212,7 +209,6 @@ export function buildBookTOC(
     sectionGroups.push(currentGroup);
   }
 
-  // 辅助函数：构造单个超链接节点（带平滑跳转与来源追踪）
   function createTocAnchor(
     id: string,
     rawTitle: string,
@@ -250,7 +246,6 @@ export function buildBookTOC(
     return a;
   }
 
-  // 构建单个卡片条目的 DOM
   function createCardContent(chunk: { el: HTMLElement; _tocId?: string }): { fragment: DocumentFragment; rawTitle: string } {
     const el = chunk.el;
     const titleTextEl = el.querySelector('.card-title-text, .block-title-text, .note-title-text') as HTMLElement | null;
@@ -307,7 +302,6 @@ export function buildBookTOC(
     return { fragment: frag, rawTitle };
   }
 
-  // 渲染一组标题及归属卡片
   function renderGroup(
     group: TocSectionGroup,
     targetContainer: HTMLElement | DocumentFragment,
@@ -322,13 +316,12 @@ export function buildBookTOC(
 
       const groupLi = document.createElement('li');
       groupLi.className = 'toc-group';
-      // 进入一本书时默认展开
+
       groupLi.setAttribute('data-collapsed', 'false');
 
       const rowDiv = document.createElement('div');
       rowDiv.className = 'toc-heading-row';
 
-      // 若本标题下包含卡片，渲染 M3 风格折叠按钮
       if (group.cardChunks.length > 0) {
         const collapseBtn = document.createElement('button');
         collapseBtn.type = 'button';
@@ -358,7 +351,6 @@ export function buildBookTOC(
         rowDiv.appendChild(placeholder);
       }
 
-      // 标题链接 (一级菜单)
       const headingTextSpan = document.createElement('span');
       headingTextSpan.className = 'toc-heading-text';
       const hClone = hEl.cloneNode(true) as HTMLElement;
@@ -376,7 +368,6 @@ export function buildBookTOC(
       links.push(headingAnchor);
       groupLi.appendChild(rowDiv);
 
-      // 二级菜单：收纳本标题下所有卡片块
       if (group.cardChunks.length > 0) {
         const subUl = document.createElement('ul');
         subUl.className = 'toc-sublist';
@@ -397,7 +388,7 @@ export function buildBookTOC(
 
       targetContainer.appendChild(groupLi);
     } else if (group.cardChunks.length > 0) {
-      // 位于首个标题之前的引言卡片板块
+
       const introUl = document.createElement('ul');
       introUl.className = 'toc-sublist toc-intro-sublist';
 
@@ -416,7 +407,6 @@ export function buildBookTOC(
     }
   }
 
-  // 批量挂载
   const desktopFrag = document.createDocumentFragment();
   const mobileFrag = mobileTocList ? document.createDocumentFragment() : null;
 
@@ -448,7 +438,7 @@ export function buildBookTOC(
     if (activeIndex >= 0) {
       const activeLink = desktopLinks[activeIndex];
       if (activeLink) {
-        // 若当前激活的卡片位于已折叠的分组内，自动展开该分组以防视线迷失
+
         const parentGroup = activeLink.closest('.toc-group');
         if (parentGroup && parentGroup.getAttribute('data-collapsed') === 'true') {
           parentGroup.setAttribute('data-collapsed', 'false');
@@ -486,14 +476,14 @@ export function buildBookTOC(
   if (window.__slScrollSpy) window.removeEventListener('scroll', window.__slScrollSpy);
   window.__slScrollSpy = handleSpyScrollThrottled;
   window.addEventListener('scroll', window.__slScrollSpy, { passive: true });
-  // 消除 Layout Thrashing：在 DOM 突变后解耦读取，延后至下一渲染帧执行 getBoundingClientRect
+
   requestAnimationFrame(() => {
     handleSpyScroll();
   });
 }
 
 export function renderSidebarMath(): void {
-  // no-op: 大纲与卡片公式直接继承构建期转译的静态 HTML，客户端零解析
+
 }
 
 export function teardownPageSidebar(): void {
@@ -503,16 +493,12 @@ export function teardownPageSidebar(): void {
   }
 }
 
-// 自动响应全站 SPA 页面卸载时序，释放旧章节 DOM 节点闭包引用
 if (typeof document !== 'undefined') {
   document.addEventListener('astrolib:page-unload', () => {
     teardownPageSidebar();
   });
 }
 
-/**
- * 每次导航初始化入口
- */
 export function initPageSidebar(): void {
   teardownPageSidebar();
   formatMultipleChoiceQuestions();

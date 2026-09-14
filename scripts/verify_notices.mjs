@@ -48,8 +48,7 @@ async function main() {
     try {
       const res = await fetch(encodeURI(t.url));
       const html = await res.text();
-      
-      // 必须判断真实的 DOM 节点（data-notice-id 仅存在于 HTML 节点中，不会误匹配 head 内的 style 规则）
+
       const hasNoticeBox = html.includes('data-notice-id=');
       const hasWikiNotice = html.includes('astrolib-notice-wiki') && hasNoticeBox;
       const hasTitle = t.expectTitle ? html.includes(t.expectTitle) : true;
