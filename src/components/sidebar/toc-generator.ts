@@ -486,17 +486,35 @@ export function buildBookTOC(
   if (window.__slScrollSpy) window.removeEventListener('scroll', window.__slScrollSpy);
   window.__slScrollSpy = handleSpyScrollThrottled;
   window.addEventListener('scroll', window.__slScrollSpy, { passive: true });
-  handleSpyScroll();
+  // 消除 Layout Thrashing：在 DOM 突变后解耦读取，延后至下一渲染帧执行 getBoundingClientRect
+  requestAnimationFrame(() => {
+    handleSpyScroll();
+  });
 }
 
 export function renderSidebarMath(): void {
   // no-op: 大纲与卡片公式直接继承构建期转译的静态 HTML，客户端零解析
 }
 
+export function teardownPageSidebar(): void {
+  if (window.__slScrollSpy) {
+    window.removeEventListener('scroll', window.__slScrollSpy);
+    window.__slScrollSpy = undefined;
+  }
+}
+
+// 自动响应全站 SPA 页面卸载时序，释放旧章节 DOM 节点闭包引用
+if (typeof document !== 'undefined') {
+  document.addEventListener('astrolib:page-unload', () => {
+    teardownPageSidebar();
+  });
+}
+
 /**
  * 每次导航初始化入口
  */
 export function initPageSidebar(): void {
+  teardownPageSidebar();
   formatMultipleChoiceQuestions();
   initJumpNavigator();
 

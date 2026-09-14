@@ -82,7 +82,7 @@ const THEME_TRANSITION_KEY = 'starlight-theme-transition';
 export const PREWARM_PAGES_KEY = 'astrolib_prewarm_pages';
 export const DEFAULT_PREWARM_PAGES = 1;
 
-/** 读取章节预加载范围配置（默认 1 为前后各 1 页滑动窗口） */
+/** 读取章节后台空闲预加载范围配置（默认 1 为前后各 1 页滑动窗口） */
 export function loadPrewarmPref(): number {
   try {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(PREWARM_PAGES_KEY) : null;
@@ -96,13 +96,68 @@ export function loadPrewarmPref(): number {
   }
 }
 
-/** 保存章节预加载范围配置 */
+/** 保存章节后台空闲预加载范围配置 */
 export function savePrewarmPref(val: number): void {
   try {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(PREWARM_PAGES_KEY, String(val));
     }
     window.dispatchEvent(new CustomEvent('prewarm:config-change', { detail: { pages: val } }));
+  } catch {}
+}
+
+/** 页面内存缓存上限存储键：5 (默认 5 页，标准平衡) | 3 (极简节能) | 10 (性能优先) | 20 (超大缓存) | -1 (不限) */
+export const MAX_PAGE_CACHE_KEY = 'astrolib_max_page_cache';
+export const DEFAULT_MAX_PAGE_CACHE = 5;
+
+/** 读取页面内存缓存上限配置（默认 5 页） */
+export function loadMaxPageCachePref(): number {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(MAX_PAGE_CACHE_KEY);
+      if (raw !== null && raw !== undefined && raw !== '') {
+        const val = parseInt(raw, 10);
+        if (!isNaN(val)) return val;
+      }
+    }
+    return DEFAULT_MAX_PAGE_CACHE;
+  } catch {
+    return DEFAULT_MAX_PAGE_CACHE;
+  }
+}
+
+/** 保存页面内存缓存上限配置并广播缓存裁剪事件 */
+export function saveMaxPageCachePref(val: number): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(MAX_PAGE_CACHE_KEY, String(val));
+    }
+    window.dispatchEvent(new CustomEvent('cache:config-change', { detail: { max: val } }));
+  } catch {}
+}
+
+/** 左侧栏悬停预加载存储键：'true' (开启，默认) | 'false' (关闭) */
+export const SIDEBAR_HOVER_PREFETCH_KEY = 'astrolib_sidebar_hover_prefetch';
+export const DEFAULT_SIDEBAR_HOVER_PREFETCH = true;
+
+/** 读取左侧栏悬停预加载配置（默认开启） */
+export function loadSidebarHoverPref(): boolean {
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(SIDEBAR_HOVER_PREFETCH_KEY) : null;
+    if (raw === 'false') return false;
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+/** 保存左侧栏悬停预加载配置并广播通知 */
+export function saveSidebarHoverPref(enabled: boolean): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(SIDEBAR_HOVER_PREFETCH_KEY, String(enabled));
+    }
+    window.dispatchEvent(new CustomEvent('sidebar-prefetch:config-change', { detail: { enabled } }));
   } catch {}
 }
 
@@ -160,6 +215,8 @@ export function savePunctStyle(style: PunctStyle): void {
   applyPunctStyle(style);
 }
 
+let currentDomPunctStyle: PunctStyle = 'dot'; // 构建期 rehype-cjk-punctuation 输出基准为 'dot'
+
 /** 递归替换正文纯文本节点中的句末标点（避开代码块、公式与徽章） */
 export function replaceBodyFullStops(targetStyle: PunctStyle): void {
   if (typeof document === 'undefined') return;
@@ -193,10 +250,22 @@ export function replaceBodyFullStops(targetStyle: PunctStyle): void {
   }
 }
 
-export function applyPunctStyle(style: PunctStyle = loadPunctStyle()): void {
+export function applyPunctStyle(style: PunctStyle = loadPunctStyle(), force = false): void {
   if (typeof document === 'undefined') return;
   document.documentElement.dataset.punctStyle = style;
-  replaceBodyFullStops(style);
+
+  // 关键性能优化：构建期输出默认即为数理圆点 'dot'。
+  // 若当前配置仍为默认 'dot' 且未强制触发，直接跳过耗时的全量 DOM TreeWalker 扫描。
+  if (!force && style === currentDomPunctStyle && style === 'dot') {
+    return;
+  }
+
+  // 若需要从 dot 变换为 circle 或发生明确偏好切换，使用 idle 调度异步执行，杜绝阻塞首屏关键帧
+  const idle = (typeof window !== 'undefined' && window.requestIdleCallback) || ((fn: Function) => setTimeout(fn, 60));
+  idle(() => {
+    replaceBodyFullStops(style);
+    currentDomPunctStyle = style;
+  }, { timeout: 800 });
 }
 
 /** 正文字号存储键：'14' ~ '22'，默认 16 (px) */
@@ -417,8 +486,14 @@ export function resetToggles(): void {
   saveThemeMode('auto');
   applyThemeMode('auto');
 
-  // 重置章节预加载配置为全书拉取 (-1)
+  // 重置章节预加载配置为前后1页 (1)
   savePrewarmPref(DEFAULT_PREWARM_PAGES);
+
+  // 重置页面内存缓存上限为 5 页
+  saveMaxPageCachePref(DEFAULT_MAX_PAGE_CACHE);
+
+  // 重置左侧栏悬停预加载为开启 (true)
+  saveSidebarHoverPref(DEFAULT_SIDEBAR_HOVER_PREFETCH);
 
   // 重置排版偏好（默认开启段前空两格，数理圆点，16px 字号）
   saveParagraphIndent(true);
@@ -431,6 +506,7 @@ export function resetToggles(): void {
   syncAllThemeChips();
   syncAllThemeColors();
   syncAllPrewarmButtons();
+  syncAllCacheButtons();
   syncAllAiSettings();
   syncAllPunctChips();
   syncAllFontSizeSliders();
@@ -568,14 +644,31 @@ export function syncAllAiSettings(): void {
   });
 }
 
-/** 同步当前所有实例的后台预加载范围按钮状态 */
+/** 同步当前所有实例的后台预加载范围 Chips / 按钮状态 */
 export function syncAllPrewarmButtons(): void {
   const current = loadPrewarmPref();
-  document.querySelectorAll('.ft-panel .ft-prewarm-btn, starlight-feature-toggles .ft-prewarm-btn').forEach((btn) => {
-    const val = parseInt(btn.getAttribute('data-prewarm-val') || '-1', 10);
+  document.querySelectorAll<any>('.ft-panel .ft-prewarm-chip, starlight-feature-toggles .ft-prewarm-chip, .ft-panel .ft-prewarm-btn, starlight-feature-toggles .ft-prewarm-btn').forEach((chip) => {
+    const val = parseInt(chip.getAttribute('data-prewarm-val') || '-1', 10);
     const active = val === current;
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-selected', String(active));
+    chip.classList.toggle('active', active);
+    chip.setAttribute('aria-selected', String(active));
+    if ('selected' in chip) {
+      chip.selected = active;
+    }
+  });
+}
+
+/** 同步当前所有实例的页面内存缓存上限 Chips / 按钮状态 */
+export function syncAllCacheButtons(): void {
+  const current = loadMaxPageCachePref();
+  document.querySelectorAll<any>('.ft-panel .ft-cache-chip, starlight-feature-toggles .ft-cache-chip, .ft-panel .ft-cache-btn, starlight-feature-toggles .ft-cache-btn').forEach((chip) => {
+    const val = parseInt(chip.getAttribute('data-cache-val') || '5', 10);
+    const active = val === current;
+    chip.classList.toggle('active', active);
+    chip.setAttribute('aria-selected', String(active));
+    if ('selected' in chip) {
+      chip.selected = active;
+    }
   });
 }
 
@@ -673,6 +766,19 @@ function syncAllCheckboxes(): void {
     .querySelectorAll<any>('md-switch[data-typography-indent]')
     .forEach((sw) => {
       sw.selected = loadParagraphIndent();
+    });
+
+  // 同步左侧栏悬停预加载开关
+  document
+    .querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-sidebar-hover-prefetch]')
+    .forEach((cb) => {
+      cb.checked = loadSidebarHoverPref();
+    });
+
+  document
+    .querySelectorAll<any>('md-switch[data-sidebar-hover-prefetch]')
+    .forEach((sw) => {
+      sw.selected = loadSidebarHoverPref();
     });
 }
 
@@ -808,6 +914,7 @@ class StarlightFeatureToggles extends HTMLElement {
     this.bindSiteThemes();
     this.bindThemeColors();
     this.bindPrewarm();
+    this.bindCache();
     this.bindAiSettings();
 
     syncAllCheckboxes();
@@ -816,6 +923,7 @@ class StarlightFeatureToggles extends HTMLElement {
     syncAllThemeChips();
     syncAllThemeColors();
     syncAllPrewarmButtons();
+    syncAllCacheButtons();
     syncAllAiSettings();
     syncAllPunctChips();
     syncAllFontSizeSliders();
@@ -1040,6 +1148,23 @@ class StarlightFeatureToggles extends HTMLElement {
       });
     });
 
+    // 左侧栏悬停预加载开关
+    root.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-sidebar-hover-prefetch]').forEach((cb) => {
+      cb.checked = loadSidebarHoverPref();
+      cb.addEventListener('change', () => {
+        saveSidebarHoverPref(cb.checked);
+        syncAllCheckboxes();
+      });
+    });
+
+    root.querySelectorAll<any>('md-switch[data-sidebar-hover-prefetch]').forEach((sw) => {
+      sw.selected = loadSidebarHoverPref();
+      sw.addEventListener('change', () => {
+        saveSidebarHoverPref(sw.selected);
+        syncAllCheckboxes();
+      });
+    });
+
     // 标点风格切换 Chips
     root.querySelectorAll<HTMLElement>('.ft-punct-chip').forEach((chip) => {
       const handleSelect = (e: Event) => {
@@ -1181,14 +1306,31 @@ class StarlightFeatureToggles extends HTMLElement {
 
   bindPrewarm() {
     const root = this.panel || this;
-    root.querySelectorAll<HTMLButtonElement>('.ft-prewarm-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
+    root.querySelectorAll<HTMLElement>('.ft-prewarm-chip, .ft-prewarm-btn').forEach((chip) => {
+      const handleSelect = (e: Event) => {
         e.preventDefault();
         e.stopPropagation();
-        const val = parseInt(btn.getAttribute('data-prewarm-val') || '-1', 10);
+        const val = parseInt(chip.getAttribute('data-prewarm-val') || '-1', 10);
         savePrewarmPref(val);
         syncAllPrewarmButtons();
-      });
+      };
+      chip.addEventListener('click', handleSelect);
+      chip.addEventListener('change', handleSelect);
+    });
+  }
+
+  bindCache() {
+    const root = this.panel || this;
+    root.querySelectorAll<HTMLElement>('.ft-cache-chip, .ft-cache-btn').forEach((chip) => {
+      const handleSelect = (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const val = parseInt(chip.getAttribute('data-cache-val') || '5', 10);
+        saveMaxPageCachePref(val);
+        syncAllCacheButtons();
+      };
+      chip.addEventListener('click', handleSelect);
+      chip.addEventListener('change', handleSelect);
     });
   }
 
@@ -1517,6 +1659,7 @@ class StarlightFeatureToggles extends HTMLElement {
     syncAllFontButtons();
     syncAllThemeChips();
     syncAllPrewarmButtons();
+    syncAllCacheButtons();
     syncAllAiSettings();
     syncAllPunctChips();
     syncAllFontSizeSliders();
@@ -1585,6 +1728,7 @@ export function initFeatureToggles(): void {
   document.addEventListener('astro:page-load', () => {
     apply();
     applyParagraphIndent();
+    currentDomPunctStyle = 'dot';
     applyPunctStyle();
     applyFontSize();
     syncAllCheckboxes();
@@ -1593,6 +1737,7 @@ export function initFeatureToggles(): void {
     syncAllThemeChips();
     syncAllThemeColors();
     syncAllPrewarmButtons();
+    syncAllCacheButtons();
     syncAllAiSettings();
     syncAllPunctChips();
     syncAllFontSizeSliders();
@@ -1619,6 +1764,10 @@ export function initFeatureToggles(): void {
       syncAllThemeColors();
     } else if (e.key === PREWARM_PAGES_KEY) {
       syncAllPrewarmButtons();
+    } else if (e.key === MAX_PAGE_CACHE_KEY) {
+      syncAllCacheButtons();
+    } else if (e.key === SIDEBAR_HOVER_PREFETCH_KEY) {
+      syncAllCheckboxes();
     } else if (e.key === TYPOGRAPHY_INDENT_KEY) {
       applyParagraphIndent();
       syncAllCheckboxes();

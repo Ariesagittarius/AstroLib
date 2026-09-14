@@ -41,10 +41,16 @@ class ExerciseSidebarController {
   private tooltipEl: HTMLElement | null = null;
   private isTooltipPinned = false;
   private isCustomPositioned = false;
+  private unsubSideload: (() => void) | null = null;
 
   constructor() {
     // 监听全局按键：Esc 退出习题模式（与顶栏大纲及全量模态题库状态独立）
     if (typeof window !== 'undefined') {
+      // 监听页面卸载，自动收起并中止运行中 AI 流
+      document.addEventListener('astrolib:page-unload', () => {
+        if (this.isOpen) this.closeInternal();
+      });
+
       window.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
 
@@ -107,8 +113,12 @@ class ExerciseSidebarController {
     this.bindTriggerChips();
     this.bindPanelActions();
 
-    // 监听统一侧载状态变化，实现与其他面板或全局事件的优雅解耦
-    sideloadManager.subscribe((state) => {
+    // 幂等订阅统一侧载状态变化，避免跨章节切换时监听器无节制叠加
+    if (this.unsubSideload) {
+      this.unsubSideload();
+      this.unsubSideload = null;
+    }
+    this.unsubSideload = sideloadManager.subscribe((state) => {
       if (state.activePanelId !== 'exercises' && this.isOpen) {
         this.closeInternal();
       }

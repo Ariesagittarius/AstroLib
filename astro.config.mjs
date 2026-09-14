@@ -47,46 +47,35 @@ const devDocsSidebarGroup = {
   collapsed: false,
   items: [
     { label: '开发文档首页', link: '/dev/' },
+    { label: '项目概览', link: '/dev/overview/' },
     {
       label: '快速入门',
       collapsed: false,
       items: [
-        { label: '项目总览', link: '/dev/getting-started/overview/' },
-        { label: '环境准备与命令', link: '/dev/getting-started/setup/' },
-        { label: '目录结构说明', link: '/dev/getting-started/layout/' },
+        { label: '本地部署与运行', link: '/dev/quickstart/deployment-and-running/' },
+        { label: '脚本列表与说明', link: '/dev/quickstart/all-runnable-scripts/' },
+        { label: '添加新书', link: '/dev/quickstart/add-new-book/' },
+        { label: '加入习题册', link: '/dev/quickstart/add-exercise-booklet/' },
       ]
     },
     {
-      label: '核心架构与配置',
+      label: '贡献指南',
       collapsed: false,
       items: [
-        { label: '中央图书配置', link: '/dev/architecture/collections-config/' },
-        { label: '全站功能开关 (Registry)', link: '/dev/architecture/feature-registry/' },
-        { label: 'Material You 主题与 CSS', link: '/dev/architecture/theme-system/' },
+        { label: '贡献新书：AI 数据清洗', link: '/dev/contributing/contribute-book-ai-cleaning/' },
+        { label: '贡献勘误', link: '/dev/contributing/contribute-errata/' },
+        { label: '贡献 AI 题解', link: '/dev/contributing/contribute-ai-solutions/' },
       ]
     },
     {
-      label: '内容撰写与组件规范',
+      label: '附加说明',
       collapsed: false,
       items: [
-        { label: 'MDX 与 KaTeX 规范', link: '/dev/authoring/mdx-guide/' },
-        { label: '教辅结构化卡片组件库', link: '/dev/authoring/card-components/' },
-      ]
-    },
-    {
-      label: '导入与导出流程',
-      collapsed: false,
-      items: [
-        { label: 'MinerU OCR 到 MDX 导入', link: '/dev/workflow/import-book/' },
-        { label: 'EPUB 导出管线', link: '/dev/workflow/epub-export/' },
-      ]
-    },
-    {
-      label: '开发者工具与 AI 系统',
-      collapsed: false,
-      items: [
-        { label: '可视化精修与巡检工具', link: '/dev/tools/editor-inspector/' },
-        { label: 'AI 书内问答 (RAG)', link: '/dev/tools/ai-rag/' },
+        { label: 'AI 模型 API Key 申请与配置', link: '/dev/advanced/ai-api-keys-setup/' },
+        { label: 'MCP 工具链与 RAG 架构', link: '/dev/advanced/mcp-and-rag-deep-dive/' },
+        { label: '环境配置与常见问题', link: '/dev/advanced/local-env-setup-troubleshooting/' },
+        { label: 'MDX 编辑模式与模块检查', link: '/dev/advanced/developer-mode-and-inspection/' },
+        { label: 'Git 提交规范与代码同步', link: '/dev/advanced/academic-git-and-dual-push/' },
       ]
     }
   ]
@@ -190,12 +179,18 @@ const componentOverrides = {
   PageTitle: './src/components/PageTitleOverride.astro', // 页面大标题 H1 构建期数学公式转译（零客户端 KaTeX）
   SocialIcons: './src/components/SocialIconsOverride.astro', // 顶栏 GitHub 社交入口：覆盖默认黑底硬币圆盘，使用官方净标
   TwoColumnContent: './src/components/TwoColumnContentOverride.astro', // 正文两栏布局覆盖：在正文卡片上方挂载 NoticeFramework
+  Head: './src/components/HeadOverride.astro', // 全站 SEO 增强：智能 Title 补齐书名、Description 自动合成、Schema.org 与站长验证
 };
 if (features.theme.enabled) {
   componentOverrides.ThemeSelect = './src/components/ThemeSelectOverride.astro'; // 顶栏外观与主题切换按钮
 }
 
 export default defineConfig({
+  // 规范站点根域名：供 Canonical 链接、Sitemap 与 OpenGraph 绝对路径生成
+  site: features.seo?.config?.siteUrl || 'https://astrolib.cloud',
+  // 彻底关闭 Starlight/Astro 默认隐式启用的全量链接悬停预取
+  // 页面预取与内存缓存完全由 AstroLib 自研 SPA 路由引擎与用户偏好设置精准接管
+  prefetch: false,
   image: {
     service: passthroughImageService(),
   },
@@ -208,13 +203,21 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'AstroLib',
+      description: features.seo?.config?.defaultDescription || '大学理工科教材与学术资料数字化阅读与自测系统',
+      defaultLocale: 'root',
+      locales: {
+        root: {
+          label: '简体中文',
+          lang: 'zh-CN',
+        },
+      },
       favicon: '/favicon.png',
       social: [
         {
           icon: 'github',
           label: 'GitHub',
-          href: 'https://github.com/withastro/starlight'
-        }
+          href: 'https://github.com/Ariesagittarius/AstroLib',
+        },
       ],
       components: componentOverrides,
       sidebar: dynamicSidebar,

@@ -1,0 +1,103 @@
+# 环境配置与常见问题
+
+本文档归纳在 Windows、macOS 或 Linux 环境下部署与维护 AstroLib 时常见的系统与依赖排坑方案。
+
+---
+
+## 1. Windows PowerShell 脚本执行策略拦截
+
+### 现象
+在 Windows 系统的 PowerShell 中运行 `npm run dev` 或 `npx` 相关命令时，终端报错：
+```text
+无法加载文件 ... 因为在此系统上禁止运行脚本。有关详细信息，请参阅 https:/go.microsoft.com/fwlink/?LinkID=135170 中的 about_Execution_Policies。
+```
+
+### 解决方案
+这是 Windows 默认的安全策略限制。以当前用户权限放开本地无签名脚本执行权限即可：
+1. 打开 PowerShell 终端；
+2. 执行以下命令：
+   ```powershell
+   Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+   ```
+3. 输入 `Y` 确认后重新运行命令。
+
+---
+
+## 2. sharp 原生二进制包下载超时
+
+### 现象
+在运行 `npm install` 时卡在 `sharp` 安装阶段，或报错：
+```text
+sharp: Installation error: socket hang up / connect ETIMEDOUT
+```
+
+### 解决方案
+`sharp` 在安装时会从 GitHub Releases 下载对应操作系统的预编译 C++ 动态库。若网络访问受阻，可切换至官方镜像源：
+```bash
+# 设置 sharp 下载镜像
+npm config set sharp_binary_host "https://npmmirror.com/mirrors/sharp"
+
+# 清理缓存并重新安装
+npm cache clean --force
+npm install
+```
+
+---
+
+## 3. Git 换行符（CRLF vs LF）导致文件全量修改
+
+### 现象
+在 Windows 系统下拉取或提交代码时，Git 显示大量未修改的文件全部变更，差异仅为换行符差异（`warning: LF will be replaced by CRLF`）。
+
+### 解决方案
+推荐统一使用 LF（Unix 换行符），在本地仓库中执行：
+```bash
+# 提交时转换为 LF，检出时不自动转为 CRLF
+git config core.autocrlf input
+
+# 强制重置索引以清理现有混杂状态
+git rm --cached -r .
+git reset --hard
+```
+
+---
+
+## 4. 生产构建 Node.js 内存溢出（JavaScript heap out of memory）
+
+### 现象
+在执行 `npm run build` 进行全量生产打包时，Node 进程崩溃并抛出：
+```text
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+```
+
+### 解决方案
+AstroLib 在构建期需要同时处理 2900+ 道真题的 KaTeX 静态编译、全书分块索引与拓扑图谱计算。系统已在 `package.json` 的 `build` 脚本中显式增加了内存配额（`--max-old-space-size=4096`）。
+
+若在个人电脑上手动执行某个独立预处理脚本时遇到内存瓶颈，可在运行前增加环境变量：
+```bash
+# Linux / macOS
+export NODE_OPTIONS="--max-old-space-size=4096"
+
+# Windows PowerShell
+$env:NODE_OPTIONS="--max-old-space-size=4096"
+```
+
+---
+
+## 5. 离线 Python 工具环境依赖（可选）
+
+若需要运行 `scripts/vision_reconstruct/slice_pdf_pages.py`（教材 PDF 高精切页）或 `scripts/process_bupt_math_archive.py`（题库抽取），需要配置 Python 环境：
+
+```bash
+# 建议创建独立虚拟环境
+python -m venv .venv
+
+# 激活虚拟环境
+# Windows:
+.venv\Scripts\activate
+# Linux/macOS:
+source .venv/bin/activate
+
+# 安装切页与文本抽取依赖
+pip install PyMuPDF pillow
+```

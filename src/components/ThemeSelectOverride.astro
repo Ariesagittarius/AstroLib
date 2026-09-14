@@ -40,6 +40,15 @@ import { features } from '../config/features.config.mjs';
       var colorKey = 'starlight-m3-theme-color';
       var m3Color = localStorage.getItem(colorKey);
       if (m3Color) document.documentElement.dataset.m3ThemeColor = m3Color;
+
+      // 性能突破：首屏秒级预注 M3 动态色彩样式，彻底消除首屏样式重算与背景闪色
+      var cachedCss = localStorage.getItem('astrolib_m3_cached_css');
+      if (cachedCss && theme === 'material-you') {
+        var styleEl = document.createElement('style');
+        styleEl.id = 'm3-dynamic-color-theme';
+        styleEl.textContent = cachedCss;
+        document.head.appendChild(styleEl);
+      }
     } catch (e) {}
   })();
 </script>

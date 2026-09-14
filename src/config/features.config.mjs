@@ -180,6 +180,7 @@ const featureDefs = {
     ui: true,
     config: {
       defaultPages: 1, // 1 为前后 1 页滑动窗口（兼顾秒开与极低内存），0 为关闭，-1 为全书拉取
+      sidebarHover: true, // 默认开启左侧栏悬停即时预加载，可在偏好设置中关闭
     },
   }),
 
@@ -359,6 +360,25 @@ const featureDefs = {
         supabaseAnonKey: '',
       },
       devSourceEditor: true, // 开启开发者源码查看与热持久化修改
+    },
+  }),
+
+  // SEO 与搜索引擎优化：站点规范域名、自动化 Sitemap、智能 Head 增强、Schema.org 结构化数据与站长工具验证
+  seo: defineFeature({
+    id: 'seo',
+    cat: 'extra',
+    label: 'SEO 与搜索引擎优化',
+    desc: '自动化 Canonical、Sitemap、智能标题与摘要合成、Schema.org 结构化数据及 Bing IndexNow 支持',
+    enabled: true,
+    devOnly: false,
+    ui: false,
+    config: {
+      siteUrl: (typeof process !== 'undefined' && process.env?.SITE_URL) || 'https://astrolib.cloud',
+      siteTitle: 'AstroLib',
+      defaultDescription: 'AstroLib 是面向高校师生与自学者的大学理工科教材与学术数字化阅读系统，提供高清数学排版、推导过程、离线 EPUB 与课后真题练习。',
+      googleSiteVerification: (typeof process !== 'undefined' && process.env?.GOOGLE_SITE_VERIFICATION) || '',
+      bingSiteVerification: (typeof process !== 'undefined' && process.env?.BING_SITE_VERIFICATION) || '',
+      indexNowKey: (typeof process !== 'undefined' && process.env?.INDEXNOW_KEY) || '',
     },
   }),
 };

@@ -20,6 +20,7 @@ A modern, quiet, and typographic reading system for university mathematics and s
   <a href="#features">核心特性</a> •
   <a href="#textbooks">收录教材</a> •
   <a href="#quickstart">快速开始</a> •
+  <a href="docs/README.md">开发与贡献文档</a> •
   <a href="#copyright">版权说明</a>
 </p>
 

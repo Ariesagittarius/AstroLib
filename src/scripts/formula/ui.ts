@@ -373,6 +373,22 @@ export function isFormulaActionsEnabled(): boolean {
 }
 
 /**
+ * 页面卸载或重置时的轻量清理：
+ * 断开 IntersectionObserver、关闭菜单并解绑全局滚动监听，保留功能启用偏好（不修改 isActionsEnabled）。
+ */
+export function cleanupPageFormulaActions(): void {
+  closeAllMenus();
+
+  const win = window as unknown as { __formulaIO?: IntersectionObserver };
+  if (win.__formulaIO) {
+    win.__formulaIO.disconnect();
+    win.__formulaIO = undefined;
+  }
+
+  removeGlobalListeners();
+}
+
+/**
  * 启用公式操作功能：
  * 挂接 DOM、恢复 IntersectionObserver，按需渲染操作条。
  */
@@ -384,26 +400,27 @@ export function enableFormulaActions(): void {
   const roots = Array.from(content.querySelectorAll<HTMLElement>('[data-latex]'));
   if (!roots.length) return;
 
+  // 挂载前先清理旧观察器，确保无陈旧 detached 节点驻留
+  cleanupPageFormulaActions();
   ensureGlobalListeners();
 
   const win = window as unknown as { __formulaIO?: IntersectionObserver };
-  const useLazy = typeof IntersectionObserver === 'function' && roots.length > 48;
+  // 性能优化：始终优先采用视口延迟观察，只在公式接近可视区时挂载 DOM，杜绝首屏突发批量重排
+  const useLazy = typeof IntersectionObserver === 'function';
 
   if (useLazy) {
-    if (!win.__formulaIO) {
-      win.__formulaIO = new IntersectionObserver(
-        (entries) => {
-          for (const entry of entries) {
-            if (entry.isIntersecting) {
-              const root = entry.target as HTMLElement;
-              mountFormula(root);
-              win.__formulaIO?.unobserve(root);
-            }
+    win.__formulaIO = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const root = entry.target as HTMLElement;
+            mountFormula(root);
+            win.__formulaIO?.unobserve(root);
           }
-        },
-        { rootMargin: '480px 0px' }
-      );
-    }
+        }
+      },
+      { rootMargin: '480px 0px' }
+    );
     for (const root of roots) {
       if (!root.dataset.katexCopyReady) win.__formulaIO.observe(root);
     }
@@ -420,13 +437,7 @@ export function enableFormulaActions(): void {
  */
 export function disableFormulaActions(): void {
   isActionsEnabled = false;
-  closeAllMenus();
-
-  const win = window as unknown as { __formulaIO?: IntersectionObserver };
-  if (win.__formulaIO) {
-    win.__formulaIO.disconnect();
-    win.__formulaIO = undefined;
-  }
+  cleanupPageFormulaActions();
 
   const content = document.querySelector<HTMLElement>('main .sl-markdown-content');
   if (content) {
@@ -435,8 +446,6 @@ export function disableFormulaActions(): void {
       unmountFormula(root);
     }
   }
-
-  removeGlobalListeners();
 }
 
 function isStoredEnabled(): boolean {
@@ -469,5 +478,12 @@ export function initFormulaActions(): void {
  * 销毁并清理（页面卸载时调用）。
  */
 export function destroyFormulaActions(): void {
-  disableFormulaActions();
+  cleanupPageFormulaActions();
+}
+
+// 自动响应全站 SPA 页面卸载时序，杜绝跨章节强引用驻留
+if (typeof document !== 'undefined') {
+  document.addEventListener('astrolib:page-unload', () => {
+    cleanupPageFormulaActions();
+  });
 }

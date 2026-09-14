@@ -20,6 +20,24 @@ function getEpubUrl(slug: string) {
   return null;
 }
 
+const siteUrl = (features.seo?.config?.siteUrl || 'https://astrolib.cloud').replace(/\/$/, '');
+const pageTitle = '书目检索与分类索引 · AstroLib';
+const pageDescription = '按学段、资料类别与学科检索 AstroLib 收录的初高中及大学理科教材、教辅与配套习题。收录数学分析、工科数学分析、线性代数、概率统计与大学物理等教材。';
+
+const librarySchema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: pageTitle,
+  description: pageDescription,
+  url: `${siteUrl}/library/`,
+  inLanguage: 'zh-CN',
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'AstroLib',
+    url: `${siteUrl}/`,
+  },
+};
+
 const allBooks = getAllBooks().map(book => {
   const epubUrl = getEpubUrl(book.slug);
   return {
@@ -36,8 +54,28 @@ const allBooks = getAllBooks().map(book => {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AstroLib | 书目检索与分类索引</title>
-    <meta name="description" content="按学段、资料类别与学科检索 AstroLib 收录的初高中及大学理科教材、教辅与配套习题。" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
+    <meta name="keywords" content="AstroLib, 书目检索, 数学教材, 物理教材, 大学教材, 高中数学, 教辅, 习题册" />
+    <link rel="canonical" href={`${siteUrl}/library/`} />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:url" content={`${siteUrl}/library/`} />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content={`${siteUrl}/astrolib-logo.png`} />
+    <meta property="og:locale" content="zh_CN" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    <meta name="twitter:image" content={`${siteUrl}/astrolib-logo.png`} />
+
+    <!-- Schema.org 结构化数据 (JSON-LD) -->
+    <script type="application/ld+json" set:html={JSON.stringify(librarySchema)} />
+
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />

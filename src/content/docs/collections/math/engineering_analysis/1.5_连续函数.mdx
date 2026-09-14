@@ -16,13 +16,146 @@ import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 import Exercise from '@/components/Exercise.astro';
 
+
 连续函数是微积分研究的主要对象。本节利用函数的极限讨论函数连续性的概念与间断点的分类，连续函数的基本性质与初等函数的连续性，以及闭区间上连续函数的重要性质（包括一致连续性）与应用。
 
-一单侧邻域内（可以不包含 $x_0$）有定义，若 $f$ 在 $x_0$ 不连续，则称 $x_0$ 为 $f$ 的一个间断点。
+### 5.1 函数的连续性概念与间断点的分类
+
+#### 1. 函数的连续性
+
+纵观自然界中各种变量的变化，大体上可以分为渐变与突变两大类型。例如，在正常情况下，气温随时间的变化、地壳振动的振幅随时间的变化都是逐渐变化的，即在很短的时间内，温度和振幅的变化也很微小。但在严寒的冬季，由于寒流的突然袭击，在短时间内气温会骤然下降；在发生强烈地震的短时间内，地壳的振幅会发生巨变，造成地壳的断裂和下降。气温和地壳振幅的这种变化相对于正常情况，可以看成是突变。为了描述变量变化的上述两种不同状态，数学上就抽象出函数的连续和间断这两个相对立的概念。
+
+仔细分析上面的例子不难发现，所谓渐变，就是当自变量（例如时间 $t$）的值变化很微小时，对应的函数值（例如气温 $T$ 或振幅 $A$）的变化也很小。并且，当自变量改变的数量无限趋近于 0 时，函数值改变的数量可以任意接近于 0。因此，可以用极限来刻画这种渐变现象，给出函数连续性的严格定义。
+
+设函数 $y = f(x)$ 定义在 $x_0$ 的某邻域内，当自变量从 $x_0$ 变到 $x$ 时，对应的函数值就从 $f(x_0)$ 变到 $f(x)$，称 $\Delta x = x - x_0$ 为自变量的改变量，$\Delta y = f(x) - f(x_0) = f(x_0 + \Delta x) - f(x_0)$ 为函数值的改变量或因变量的改变量，习惯上也称 $\Delta y$ 为函数的改变量。
+
+<Knowledge title="定义 5.1 (函数在一点处连续)">
+设函数 $f: U(x_0) \subseteq \mathbf{R} \to \mathbf{R}$，若
+
+$$
+\lim_{\Delta x \to 0} \Delta y = 0 \quad \text{或} \quad \lim_{x \to x_0} f(x) = f(x_0), \tag{5.1}
+$$
+
+则称函数 $f$ 在 $x_0$ 处**连续**。
+</Knowledge>
+
+<SideNote title="想一想">
+函数 $f$ 在 $x_0$ 处极限的定义与它在 $x_0$ 处连续的定义有什么重要的区别？
+</SideNote>
+
+函数 $f$ 在 $x_0$ 处连续也可以用 $\varepsilon$-$\delta$ 语言定义如下：
+
+$$
+\forall \varepsilon > 0, \exists \delta > 0, \text{使得 } \forall x \in U(x_0, \delta), \text{恒有 } |f(x) - f(x_0)| < \varepsilon. \tag{5.2}
+$$
+
+<QRCodeVideo id="1.5.1" title="函数在一点处连续的等价定义" url="#" />
+
+易见，将表示函数 $f$ 在 $x_0$ 处极限几何意义的图 1.17 略加修改就得到表示 $f$ 在 $x_0$ 处连续几何意义的图 1.22。它表明函数 $f$ 的图像在点 $(x_0, f(x_0))$ 不会断开。
+
+<figure class="vp-figure">
+  ![](./images/fig_1_22.png)
+  <figcaption>图 1.22</figcaption>
+</figure>
+
+类似于左极限和右极限，也可以定义函数在点 $x_0$ 处左连续和右连续。若函数 $f$ 在 $x_0$ 的左邻域 $(x_0 - \delta_0, x_0]$（右邻域 $[x_0, x_0 + \delta_0)$）上有定义，且
+
+$$
+\lim_{x \to x_0^-} f(x) = f(x_0) \quad \left(\lim_{x \to x_0^+} f(x) = f(x_0)\right),
+$$
+
+则称 $f$ 在 $x_0$ 处**左连续（右连续）**，左、右连续统称为**单侧连续**。读者不难证明：
+
+$$
+\text{函数 } f \text{ 在 } x_0 \text{ 处连续} \iff f \text{ 在 } x_0 \text{ 处既左连续又右连续}。
+$$
+
+若 $f$ 在开区间 $(a, b)$ 内每一点连续，则称它在开区间 $(a, b)$ 内连续；若 $f$ 在有限区间 $(a, b)$ 内连续，并且在左端点 $a$ 右连续，在右端点 $b$ 左连续，则称它在闭区间 $[a, b]$ 上连续。类似地，可定义 $f$ 在半开（半闭）区间上连续。一般，若 $f$ 在定义区间 $I$ 上处处连续，则称它是该区间上的**连续函数**。区间 $I$ 上连续函数的全体构成的集合记作 $C(I)$。
+
+在几何上，区间上的连续函数的图像是该区间上的一条连续不断的平面曲线。
+
+<Example title="例 5.1">
+证明：幂函数 $x^n \in C(-\infty, +\infty), n \in \mathbf{N}_+$。
+</Example>
+
+<Solution title="证">
+根据连续函数的定义，只要证明 $x^n$ 在 $(-\infty, +\infty)$ 内每一点处连续。为此，任取 $x_0 \in (-\infty, +\infty)$，根据极限的乘法运算法则，我们有
+
+$$
+\lim_{x \to x_0} x^n = (\lim_{x \to x_0} x)^n = x_0^n,
+$$
+
+所以 $x^n$ 在 $x_0$ 处连续。由于 $x_0$ 是 $(-\infty, +\infty)$ 内的任意一点，因此，$x^n \in C(-\infty, +\infty)$。
+</Solution>
+
+<SideNote title="注意">
+在 $x_0$ 处连续的函数不一定在 $x_0$ 的某邻域内连续。例如，不难验证函数
+
+$$
+f(x) = \begin{cases} x, & x \text{ 为有理数}, \\ 0, & x \text{ 为无理数} \end{cases}
+$$
+
+在 $x = 0$ 处连续，但在其余的 $x \neq 0$ 处均不连续，故在 $x = 0$ 的任何邻域内不连续。
+</SideNote>
+
+<Example title="例 5.2">
+证明：函数 $\sin x, \cos x \in C(-\infty, +\infty)$。
+</Example>
+
+<Solution title="证">
+与例 5.1 类似，只要证 $\sin x$ 在 $(-\infty, +\infty)$ 内每一点处连续。任取 $x_0 \in (-\infty, +\infty)$，由和差化积公式得
+
+$$
+\Delta y = \sin(x_0 + \Delta x) - \sin x_0 = 2 \cos\left(x_0 + \frac{\Delta x}{2}\right) \sin \frac{\Delta x}{2},
+$$
+
+从而
+
+$$
+\lim_{\Delta x \to 0} \Delta y = 2 \lim_{\Delta x \to 0} \cos\left(x_0 + \frac{\Delta x}{2}\right) \sin \frac{\Delta x}{2} = 0,
+$$
+
+故 $\sin x$ 在 $x_0$ 处连续。由 $x_0$ 的任意性知 $\sin x \in C(-\infty, +\infty)$。类似可证 $\cos x \in C(-\infty, +\infty)$。
+</Solution>
+
+<Example title="例 5.3">
+证明：指数函数 $e^x, a^x \in C(-\infty, +\infty)$，其中 $a > 0 \ (a \neq 1)$。
+</Example>
+
+<Solution title="证">
+根据本章例 3.9，$\forall x_0 \in (-\infty, +\infty)$，都有
+
+$$
+\lim_{x \to x_0} a^x = a^{x_0}, \quad \lim_{x \to x_0} e^x = e^{x_0},
+$$
+
+所以，$a^x, e^x \in C(-\infty, +\infty)$。
+</Solution>
+
+#### 2. 间断点及其分类
+
+由定义 5.1 可知，函数 $f$ 在 $x_0$ 处连续必须且只需同时满足下面三个条件：
+
+(1) $f$ 在 $x_0$ 处有定义；
+
+(2) $\lim_{x \to x_0} f(x)$ 存在，即 $f(x_0 - 0)$ 与 $f(x_0 + 0)$ 均存在且相等；
+
+(3) $\lim_{x \to x_0} f(x) = f(x_0)$。
+
+如果其中有一个不满足，就是说，或者 $f$ 在 $x_0$ 处无定义；或者 $f$ 在 $x_0$ 处虽有定义但在 $x_0$ 的极限不存在；或者 $f$ 在 $x_0$ 处有定义，极限也存在，但极限值不等于 $f(x_0)$，那么 $f$ 在 $x_0$ 处就不连续。
+
+<SideNote title="注意">
+与许多同类教材不同，本书关于间断点没有采用连续点的否定形式简单地把函数 $f$ 的不连续点定义为 $f$ 的间断点。要了解这样做的原因，请参见二维码 1.5.2。
+</SideNote>
+
+<QRCodeVideo id="1.5.2" title="怎样理解函数间断点的定义" url="#" />
+
+<Knowledge title="定义 5.2 (函数的间断点)">
+设函数 $f$ 在 $x_0$ 的某一个单侧邻域内（可以不包含 $x_0$）有定义，若 $f$ 在 $x_0$ 不连续，则称 $x_0$ 为 $f$ 的一个**间断点**。
+</Knowledge>
 
 <Example title="例 5.4">
 考察函数 $f(x) = \frac{x^2 - 1}{x - 1}$。由于该函数在 $x = 1$ 的去心邻域内有定义，并且
-<QRCodeVideo id="1.5.2" title="怎样理解函数间断点的定义" url="#" />
 
 $$
 

@@ -193,6 +193,10 @@ export function closeDisambiguationPopover() {
   }
 }
 
+if (typeof document !== 'undefined') {
+  document.addEventListener('astrolib:page-unload', closeDisambiguationPopover);
+}
+
 function showDisambiguationPopover(
   badge: HTMLElement,
   candidates: Array<{ url: string; chapterTitle: string; rawTitle: string; cleanTitle: string }>

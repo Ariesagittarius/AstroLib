@@ -119,19 +119,36 @@ export async function initMaterialYouTheme(): Promise<void> {
   if (document.documentElement.dataset.siteTheme !== 'material-you') return;
 
   await ensureMaterialWebLoaded();
-  upgradeSwitchesToMaterialWeb();
   upgradeAppearanceSwitchToMaterialWeb();
 
-  // Watch for any dynamic UI insertions (like settings drawer reopening)
+  // 性能优化：首屏刷新时设置面板处于折叠状态，绝不占用主线程批量实例化 Web Components。
+  // 若面板已打开则立即水合；否则移至 requestIdleCallback 闲时低优先级执行。
+  const isSettingsOpen = document.querySelector('.ft-is-open, .ft-settings-open');
+  if (isSettingsOpen) {
+    upgradeSwitchesToMaterialWeb();
+  } else {
+    const idle = (typeof window !== 'undefined' && window.requestIdleCallback) || ((fn: Function) => setTimeout(fn, 1200));
+    idle(() => {
+      upgradeSwitchesToMaterialWeb();
+    }, { timeout: 3000 });
+  }
+
+  // Watch for dynamic UI insertions (like settings dialog or overlays in #astro-overlay-root)
   if (!(window as any).__m3ObserverBound) {
     (window as any).__m3ObserverBound = true;
     const observer = new MutationObserver(() => {
       if (document.documentElement.dataset.siteTheme === 'material-you') {
-        upgradeSwitchesToMaterialWeb();
+        const isOpen = document.querySelector('.ft-is-open, .ft-settings-open');
+        if (isOpen) {
+          upgradeSwitchesToMaterialWeb();
+        }
         upgradeAppearanceSwitchToMaterialWeb();
       }
     });
-    observer.observe(document.body, { childList: true, subtree: true });
+    const overlayRoot = document.getElementById('astro-overlay-root');
+    if (overlayRoot) {
+      observer.observe(overlayRoot, { childList: true });
+    }
   }
 }
 

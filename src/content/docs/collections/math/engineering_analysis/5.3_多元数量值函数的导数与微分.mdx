@@ -16,10 +16,6 @@ import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 import Exercise from '@/components/Exercise.astro';
 
-本节将把一元函数的导数与微分概念推广到多元数量值函数。我们以二元函数为主进行讲解，然后推广到 $n$ 元函数。先介绍多元数量值函数的偏导数与全微分以及方向导数与梯度，再介绍高阶偏导数与高阶全微分以及复合函数的链式法则，最后介绍隐函数及其微分法。
-
-### 第三节 多元数量值函数的导数与微分
-
 本节将把一元函数的导数与微分概念推广到多元数量值函数。我们将以二元函数为主进行讲解，然后推广到 $n$ 元函数。先介绍多元数量值函数的偏导数与全微分以及方向导数与梯度，再介绍高阶偏导数与高阶全微分以及复合函数的链式法则，最后介绍隐函数及其微分法。
 
 ### 3.1 偏导数
@@ -1243,11 +1239,58 @@ $$
 
 在一元函数的求导法中，复合函数的链式法则发挥了非常重要的作用。本段将把链式法则推广到多元函数。为了论述简洁，我们以由两个中间变量和两个自变量构成的复合函数 $z = f[u(x, y), v(x, y)]$ 为例来论述链式法则。
 
-### 复合函数求导法则与隐函数微分法
+<Knowledge title="定理 3.5">
+若 $u=u(x, y)$ 和 $v=v(x, y)$ 均在点 $(x, y)$ 处可微，且函数 $z=f(u, v)$ 在对应的点 $(u, v)$ 处可微，则复合函数 $z=f[u(x, y), v(x, y)]$ 在点 $(x, y)$ 处也必可微，且其全微分为
 
-<SideNote title="思路分析">
-在证明多元函数可微性时，通过对增量 $\Delta u, \Delta v$ 的阶数分析，可以证明其偏导数存在且连续时，函数必可微。
+$$
+\mathrm{d}z = \left( \frac{\partial z}{\partial u} \frac{\partial u}{\partial x} + \frac{\partial z}{\partial v} \frac{\partial v}{\partial x} \right) \mathrm{d}x + \left( \frac{\partial z}{\partial u} \frac{\partial u}{\partial y} + \frac{\partial z}{\partial v} \frac{\partial v}{\partial y} \right) \mathrm{d}y. \tag{3.25}
+$$
+</Knowledge>
+
+<SideNote title="注">
+在一元函数中，若函数 $u=\varphi(x)$ 在 $x_0$ 处可导，而函数 $y=f(u)$ 在与 $x_0$ 对应的 $u_0$ 处可导，则复合函数 $y=f[\varphi(x)]$ 在 $x_0$ 处必可导，且其导数为 $\left.\frac{\mathrm{d}y}{\mathrm{d}x}\right|_{x_0} = f'(u_0)\varphi'(x_0)$。由于一元函数中可导与可微是等价的，所以定理 3.5 可看作是一元复合函数求导法则在多元复合函数中的直接推广。
 </SideNote>
+
+<Solution title="证">
+令自变量 $x, y$ 分别有改变量 $\Delta x, \Delta y$，相应地，函数 $u, v$ 分别有改变量 $\Delta u, \Delta v$，从而函数 $f$ 有改变量 $\Delta z$。由于 $u, v$ 均在点 $(x, y)$ 处可微，故有
+
+$$
+\Delta u = \frac{\partial u}{\partial x} \Delta x + \frac{\partial u}{\partial y} \Delta y + o_1(\rho), \tag{3.26}
+$$
+
+$$
+\Delta v = \frac{\partial v}{\partial x} \Delta x + \frac{\partial v}{\partial y} \Delta y + o_2(\rho), \tag{3.27}
+$$
+
+其中 $\rho = \sqrt{\Delta x^2 + \Delta y^2}$，$o_i(\rho) \ (i=1, 2)$ 是当 $\rho \to 0$ 时关于 $\rho$ 的高阶无穷小。又由于函数 $f$ 在 $(x, y)$ 所对应的 $(u, v)$ 处可微，故有
+
+$$
+\Delta z = \frac{\partial z}{\partial u} \Delta u + \frac{\partial z}{\partial v} \Delta v + o(\sqrt{\Delta u^2 + \Delta v^2}). \tag{3.28}
+$$
+
+将 (3.26)、(3.27) 式代入 (3.28) 式并加以整理，则得复合函数 $z=f[u(x, y), v(x, y)]$ 的改变量为
+
+$$
+\Delta z = \left( \frac{\partial z}{\partial u} \frac{\partial u}{\partial x} + \frac{\partial z}{\partial v} \frac{\partial v}{\partial x} \right) \Delta x + \left( \frac{\partial z}{\partial u} \frac{\partial u}{\partial y} + \frac{\partial z}{\partial v} \frac{\partial v}{\partial y} \right) \Delta y + \alpha, \tag{3.29}
+$$
+
+其中
+
+$$
+\alpha = \frac{\partial z}{\partial u} o_1(\rho) + \frac{\partial z}{\partial v} o_2(\rho) + o(\sqrt{\Delta u^2 + \Delta v^2}).
+$$
+
+要证明 (3.25) 式，只需证明 (3.29) 式中的 $\alpha$ 为 $\rho$ 的高阶无穷小，即
+
+$$
+\lim_{\rho \to 0} \frac{\alpha}{\rho} = \lim_{\rho \to 0} \left[ \frac{\partial z}{\partial u} \frac{o_1(\rho)}{\rho} + \frac{\partial z}{\partial v} \frac{o_2(\rho)}{\rho} + \frac{o(\sqrt{\Delta u^2 + \Delta v^2})}{\rho} \right] = 0.
+$$
+
+事实上，注意到 $\frac{\partial z}{\partial u}, \frac{\partial z}{\partial v}$ 均与 $\rho$ 无关，以及 $\lim_{\rho \to 0} \frac{o_i(\rho)}{\rho} = 0 \ (i=1, 2)$，从而有
+
+$$
+\lim_{\rho \to 0} \frac{1}{\rho} \left[ \frac{\partial z}{\partial u} o_1(\rho) + \frac{\partial z}{\partial v} o_2(\rho) \right] = 0,
+$$
 
 因此，以下只需证明：
 
@@ -1288,6 +1331,7 @@ $$
 \lim_{\rho \to 0} \frac{o(\sqrt{\Delta u^2 + \Delta v^2})}{\rho} = 0.
 
 $$
+</Solution>
 
 当 $u=u(x, y), v=v(x, y)$ 与 $z=f(u, v)$ 均可微时，由 (3.25) 式可见，对复合函数 $z=f[u(x, y), v(x, y)]$ 有下列链式法则：
 

@@ -1,0 +1,116 @@
+---
+title: 加入习题册
+description: 为 AstroLib 教材关联结构化课后习题、真题库、KaTeX 预渲染与前端挂钩。
+---
+
+本文档介绍如何为教材关联结构化课后习题与自测试卷。
+
+---
+
+## 1. 架构与执行流水线
+
+AstroLib 习题系统采用构建期预处理架构：
+
+```text
+src/data/exercises/<book_slug>_exercises.json (原始题库 JSON)
+                   │
+                   ▼ (npm run build:exercises / scripts/build-exercise-data.mjs)
+public/data/exercises/<book_slug>/
+   ├── ch1.json ... chN.json    (各章节预渲染与瘦身后的轻量题库)
+   ├── papers.json              (整卷试卷列表索引)
+   └── papers/p*.json           (单张完整试卷题目包)
+                   │
+                   ▼ (浏览器前端按需异步拉取)
+Sideload Dock (右侧栏) / ExerciseModal (全屏自测模态窗)
+```
+
+通过将 LaTeX 公式在构建期预先转为 KaTeX HTML，前端在加载成百上千道题目时无需进行繁重客户端运算，保障低配移动设备上的流畅交互。
+
+---
+
+## 2. 题目数据规范（QuestionItem Schema）
+
+题库源文件位于 `src/data/exercises/` 目录下，文件统一命名为：
+`src/data/exercises/<book_slug>_exercises.json`
+
+每个题目对象必须遵循如下数据规范：
+
+```json
+{
+  "id": "MATH-CH02-Q001",
+  "source": {
+    "paper_id": 1,
+    "raw_title": "第二章导数与微分测试卷",
+    "exam_type": "midterm"
+  },
+  "meta": {
+    "type": "choice",
+    "order_in_paper": 1,
+    "difficulty": 2
+  },
+  "content": {
+    "stem": "设函数 $f(x)$ 在 $x=0$ 处可导，且 $f(0)=0$，则 $\\lim_{x \\to 0} \\frac{f(x^2)}{x}$ 的值为：",
+    "options": [
+      { "key": "A", "text": "$f'(0)$" },
+      { "key": "B", "text": "$0$" },
+      { "key": "C", "text": "不存在" },
+      { "key": "D", "text": "$\\infty$" }
+    ]
+  },
+  "solution": {
+    "answer": "B",
+    "steps": "根据导数定义，原极限可变形为：\n$$\\lim_{x \\to 0} \\frac{f(x^2)-f(0)}{x^2} \\cdot x = f'(0) \\cdot 0 = 0$$\n故正确答案为 B。"
+  },
+  "mapping": {
+    "chapter": 2,
+    "section": "2.1",
+    "knowledge_points": ["导数的定义", "极限计算"]
+  }
+}
+```
+
+### 字段说明
+- `meta.type`：题型，支持 `choice`（单选）、`blank`（填空）、`calc`（计算题）、`proof`（证明题）、`comprehensive`（综合题）。
+- `content.stem`：题干文本，数学公式严格使用 `$...$` 或 `$$...$$` 包裹。
+- `solution.answer`：标准答案选项（如 `"A"`）或最终数值结果。
+- `solution.steps`：官方或参考推导过程，支持 Markdown 与 KaTeX 公式混排。
+- `mapping.chapter` 与 `mapping.section`：与正文教材章节的数字映射（用于在正文中过滤当前节习题）。
+
+---
+
+## 3. 关联与构建步骤
+
+### 3.1 放置源数据
+将结构化题库 JSON 放置到：
+`src/data/exercises/<book_slug>_exercises.json`
+
+### 3.2 运行预编译
+在项目根目录下执行习题构建命令：
+```bash
+npm run build:exercises
+```
+脚本将自动解析公式、执行 KaTeX 静态转换、校验题目完整性，并将按章切片的分块数据写入 `public/data/exercises/<book_slug>/` 目录。
+
+### 3.3 在正文章节中嵌入习题挂钩
+打开该书的章节 MDX 文件（例如 `src/content/docs/collections/math/linear_algebra/2.1_导数的概念.mdx`），在正文末尾引入并声明 `<ExerciseTrigger>` 组件：
+
+```mdx
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+{/* 正文推导内容 ... */}
+
+<ExerciseTrigger chapter={2} section="2.1" title="2.1 导数的概念 课后练习" />
+```
+
+---
+
+## 4. 界面效果验证
+
+启动本地开发服务后访问该章节：
+```bash
+npm run dev
+```
+
+1. **正文触发器**：章节末尾将展示整洁的习题触发卡片，显示该节关联题目数量；
+2. **侧载栏交互**：点击卡片后，页面右侧 Sideload Dock 将自动从大纲（TOC）平滑切换至习题面板；
+3. **功能检查**：测试选择题即时判题、点击“展开解析”核对步骤、公式排版是否正常对齐。

@@ -16,16 +16,88 @@ import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 import Exercise from '@/components/Exercise.astro';
 
+
+
 无穷小量与无穷大量是与极限有密切关系的两个概念，在微积分理论中起着重要作用。本节重点讲解无穷小量的概念、性质及其阶，以及用无穷小等价代换求极限的方法，最后简要介绍无穷大量。
 
-- 页面 79-88：1.4节无穷小量与无穷大量推导、例题、定理及习题前终结。
-- 组件与KaTeX严格对齐规范。
+### 4.1 无穷小量的概念与性质
 
-$-M|\alpha(x)| \leqslant \alpha(x)f(x) \leqslant M|\alpha(x)| .$
+<Knowledge title="定义 4.1 (无穷小量)">
+当 $x \to x_0$ ($x \to \infty$) 时，以零为极限的函数 $\alpha(x)$ 称为当 $x \to x_0$ ($x \to \infty$) 时的**无穷小量**，简称为**无穷小**。
+</Knowledge>
 
-由于 $\lim_{x \to x_0} \alpha(x) = 0$，由夹逼性得知 $\lim_{x \to x_0} \alpha(x)f(x) = 0$，所以 $\alpha(x)$ 是当 $x \to x_0$ 时的无穷小。
+例如，$x^2, \sin x, \tan x$ 都是当 $x \to 0$ 时的无穷小；而 $\frac{1}{x}, \frac{\sin x}{x}$ 都是当 $x \to \infty$ 时的无穷小。显然，以零为极限的数列也是当 $n \to \infty$ 时的无穷小，例如 $\frac{1}{n^2}, \sin \frac{1}{n}$ 等。
+
+应当注意，无穷小是一个以零为极限的变量，不能把它与绝对值很小的常数混为一谈。除零之外，其他常数，不论其绝对值如何小，都不是无穷小。
+
+一个函数是否为无穷小，与自变量的变化趋势有关。例如，$\frac{1}{x}$ 是当 $x \to \infty$ 时的无穷小，但不能笼统地说 $\frac{1}{x}$ 是无穷小。因为当 $x \to x_0 \neq 0$ 时，$\frac{1}{x} \to \frac{1}{x_0}$；而当 $x \to 0$ 时，$\frac{1}{x} \to \infty$，在这两种情况下，$\frac{1}{x}$ 都不是无穷小。
+
+<SideNote title="想一想">
+(1) 无穷小量的定义中有哪几点是应当注意的？
+
+(2) 用 $\varepsilon$-$\delta$ 语言写出 $\alpha(x)$ 是当 $x \to x_0$ 时无穷小量的定义。
+</SideNote>
+
+今后，如果极限符号下面未标明自变量的变化趋势，那么，表示它对于 $x \to x_0$ 与 $x \to \infty$ 等各种情形都适用。
+
+<Knowledge title="定理 4.1">
+$$
+\lim f(x) = a \iff f(x) = a + \alpha(x),
+$$
+其中 $\alpha(x)$ 是一个无穷小。
+</Knowledge>
+
+<Solution title="证">
+仅就 $x \to x_0$ 的情形来证明，其他情形证法类似，留给读者。
+
+**必要性** 设 $\lim_{x \to x_0} f(x) = a$，则 $\lim_{x \to x_0} [f(x) - a] = 0$。令 $\alpha(x) = f(x) - a$，则 $\alpha(x)$ 是当 $x \to x_0$ 时的无穷小，并且 $f(x) = a + \alpha(x)$。
+
+**充分性** 设 $f(x) = a + \alpha(x)$，$\alpha(x)$ 是当 $x \to x_0$ 时的无穷小。则
+
+$$
+\lim_{x \to x_0} f(x) = \lim_{x \to x_0} [a + \alpha(x)] = a + \lim_{x \to x_0} \alpha(x) = a.
+$$
+</Solution>
+
+该定理阐明了函数的极限与无穷小量间的密切关系。由此，可以从无穷小量出发来定义极限，进而建立极限理论。
+
+利用极限的有理运算法则和夹逼性不难证明无穷小量的下列运算性质：
+
+<Knowledge title="定理 4.2">
+在自变量有相同变化趋势的条件下，我们有：
+
+(1) 有限个无穷小量的代数和是无穷小量；
+
+(2) 有限个无穷小量的乘积是无穷小量。
+</Knowledge>
+
+<SideNote title="注意">
+定理 4.2 中的两个结论对于无穷多个无穷小量不一定成立，就是说，无穷多个无穷小量的代数和或乘积不一定是无穷小量。
+</SideNote>
+
+<Knowledge title="定理 4.3">
+设 $\alpha(x)$ 是当 $x \to x_0$ 时的无穷小，$f$ 是在 $x_0$ 处局部有界的函数，则 $\alpha(x)f(x)$ 是当 $x \to x_0$ 时的无穷小。
+</Knowledge>
+
+<Solution title="证">
+由已知，$f$ 在 $x_0$ 处是局部有界的，故 $\exists M > 0, \delta > 0, \forall x \in \mathring{U}(x_0, \delta)$，恒有 $|f(x)| \leqslant M$。从而，$\forall x \in \mathring{U}(x_0, \delta)$，
+
+$$
+|\alpha(x)f(x)| \leqslant M|\alpha(x)|,
+$$
+
+故
+
+$$
+-M|\alpha(x)| \leqslant \alpha(x)f(x) \leqslant M|\alpha(x)|.
+$$
+
+由于 $\lim_{x \to x_0} \alpha(x) = 0$，由夹逼性得知 $\lim_{x \to x_0} \alpha(x)f(x) = 0$，所以 $\alpha(x)f(x)$ 是当 $x \to x_0$ 时的无穷小。
 
 类似的方法可以证明，若定理 4.3 中 $\alpha(x)$ 是当 $x \to \infty$ 时的无穷小，$f$ 在 $U(\infty)$ 内有界（即 $\exists M > 0, \forall x \in U(\infty)$，恒有 $|f(x)| \leqslant M$），则 $\alpha(x)f(x)$ 是当 $x \to \infty$ 时的无穷小。
+</Solution>
+
+<QRCodeVideo id="1.4.1" title="无限个无穷小的乘积不是无穷小的例子" url="#" />
 
 <Example title="例 4.1">
 求极限 $\lim_{x \to 0} x \sin \frac{1}{x}$。

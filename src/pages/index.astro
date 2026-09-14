@@ -2,18 +2,50 @@
 import '@fontsource-variable/noto-sans-sc';
 import '@fontsource-variable/noto-serif-sc';
 import '@fontsource-variable/plus-jakarta-sans';
+import '../styles/tokens/layers.css';
+import '../themes/material-you/tokens.css';
+import '../styles/fonts.css';
+
 import VpNav from '../components/VpNav.astro';
 import Analytics from '../components/Analytics.astro';
 import { collections, getAllBooks } from '../config/collections.config.mjs';
+import { features } from '../config/features.config.mjs';
 import { cleanSlug } from '../utils/slug.mjs';
+
+const siteUrl = (features.seo?.config?.siteUrl || 'https://astrolib.cloud').replace(/\/$/, '');
+const siteTitle = 'AstroLib · 理工科数学与物理教材数字化平台';
+const pageDescription = features.seo?.config?.defaultDescription || 'AstroLib 是面向高校师生与自学者的大学理工科教材与学术资料数字化阅读与自测系统。提供高清数学排版、推导过程、离线 EPUB 与配套习题检索。收录数学分析、高等代数、工科数学分析、概率论与数理统计、大学物理等经典教材。';
+const pageKeywords = 'AstroLib, 数学分析, 工科数学分析, 线性代数, 概率论与数理统计, 大学物理, 数学教材, 高等数学, 考研数学, 教材电子书, 教材真题';
+
+const homeSchema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': `${siteUrl}/#website`,
+      url: `${siteUrl}/`,
+      name: 'AstroLib',
+      alternateName: 'AstroLib 数学与物理教材数字化阅读系统',
+      description: pageDescription,
+      inLanguage: 'zh-CN',
+    },
+    {
+      '@type': 'EducationalOrganization',
+      '@id': `${siteUrl}/#organization`,
+      name: 'AstroLib',
+      url: `${siteUrl}/`,
+      logo: `${siteUrl}/astrolib-logo.png`,
+      sameAs: [
+        'https://github.com/Ariesagittarius/AstroLib',
+      ],
+    },
+  ],
+};
 
 const allBooks = getAllBooks().map(book => ({
   ...book,
   readUrl: `/collections/${book.collectionSlug}/${book.slug}/${cleanSlug(book.entryPoint)}/`,
 }));
-
-const totalBooks = allBooks.length;
-const totalCollections = collections.length;
 
 // 按学科分类组织教材
 const collectionsWithBooks = collections.map(col => ({
@@ -23,105 +55,152 @@ const collectionsWithBooks = collections.map(col => ({
     readUrl: `/collections/${col.slug}/${book.slug}/${cleanSlug(book.entryPoint)}/`,
   })),
 }));
+
+// 快捷学科分类 Chips (Google Play 交互范式：初始均未选中)
+const disciplineChips = [
+  { id: 'math', label: '数学', query: 'math', type: 'collection' },
+  { id: 'physics', label: '物理', query: 'science', type: 'collection' },
+  { id: 'math-analysis', label: '数学分析', query: '数学分析', type: 'keyword' },
+  { id: 'engineering-analysis', label: '工科分析', query: '工科数学分析', type: 'keyword' },
+  { id: 'linear-algebra', label: '线性代数', query: '线性代数', type: 'keyword' },
+  { id: 'probability-statistics', label: '概率统计', query: '概率论', type: 'keyword' },
+];
 ---
 
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-site-theme="material-you">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AstroLib · 数学与物理教材</title>
+    <title>{siteTitle}</title>
+    <meta name="description" content={pageDescription} />
+    <meta name="keywords" content={pageKeywords} />
+    <link rel="canonical" href={`${siteUrl}/`} />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={siteTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:url" content={`${siteUrl}/`} />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content={`${siteUrl}/astrolib-logo.png`} />
+    <meta property="og:locale" content="zh_CN" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={siteTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    <meta name="twitter:image" content={`${siteUrl}/astrolib-logo.png`} />
+
+    <!-- 站长工具验证（配置时注入） -->
+    {features.seo?.config?.googleSiteVerification && (
+      <meta name="google-site-verification" content={features.seo.config.googleSiteVerification} />
+    )}
+    {features.seo?.config?.bingSiteVerification && (
+      <meta name="msvalidate.01" content={features.seo.config.bingSiteVerification} />
+    )}
+
+    <!-- Schema.org 结构化数据 (JSON-LD) -->
+    <script type="application/ld+json" set:html={JSON.stringify(homeSchema)} />
+
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- 首屏免闪烁即时初始化脚本 (Anti-Flicker Script) -->
+    <script is:inline>
+      (function () {
+        try {
+          var themeKey = 'starlight-site-theme';
+          var theme = localStorage.getItem(themeKey);
+          if (!theme || theme === 'vitepress' || theme === 'starlight') {
+            theme = 'material-you';
+          }
+          document.documentElement.dataset.siteTheme = theme;
+
+          var colorThemeKey = 'starlight-theme';
+          var colorTheme = localStorage.getItem(colorThemeKey);
+          if (colorTheme === 'dark' || colorTheme === 'light') {
+            document.documentElement.dataset.theme = colorTheme;
+          } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.dataset.theme = 'dark';
+          } else {
+            document.documentElement.dataset.theme = 'light';
+          }
+
+          var fontKey = 'starlight-font';
+          var rawFont = localStorage.getItem(fontKey);
+          if (rawFont) {
+            var parsed = JSON.parse(rawFont);
+            if (parsed && typeof parsed === 'object') {
+              if (parsed.latin) document.documentElement.dataset.fontLatin = parsed.latin;
+              if (parsed.cjk) document.documentElement.dataset.fontCjk = parsed.cjk;
+            }
+          }
+          var colorKey = 'starlight-m3-theme-color';
+          var m3Color = localStorage.getItem(colorKey);
+          if (m3Color) document.documentElement.dataset.m3ThemeColor = m3Color;
+
+          var cachedCss = localStorage.getItem('astrolib_m3_cached_css');
+          if (cachedCss && theme === 'material-you') {
+            var styleEl = document.createElement('style');
+            styleEl.id = 'm3-dynamic-color-theme';
+            styleEl.textContent = cachedCss;
+            document.head.appendChild(styleEl);
+          }
+        } catch (e) {}
+      })();
+    </script>
+
     <style>
-      :root {
-        --font-sans: 'Noto Sans SC Variable', 'Noto Sans SC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        --font-serif: 'Noto Serif SC Variable', 'Noto Serif SC', 'Songti SC', 'Source Han Serif SC', STSong, Georgia, serif;
-        --font-brand: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, sans-serif;
-        --font-math: 'KaTeX_Main', Georgia, 'Times New Roman', serif;
-
-        /* Light Theme */
-        --vp-c-bg: #fafafa;
-        --vp-c-bg-alt: #f4f4f5;
-        --vp-c-bg-soft: #f0f0f2;
-        --vp-c-bg-elv: #ffffff;
-        --vp-c-divider: #e4e4e7;
-        --vp-c-border: #e4e4e7;
-        --vp-c-text-1: #18181b;
-        --vp-c-text-2: #52525b;
-        --vp-c-text-3: #71717a;
-        --vp-c-brand-1: #3451b2;
-        --vp-c-brand-2: #284094;
-        --vp-c-brand-soft: rgba(52, 81, 178, 0.08);
-
-        /* Mathematical Watermark Tone */
-        --math-watermark-color: #27272a;
-        --math-watermark-opacity: 0.02;
-      }
-
-      :root[data-theme='dark'] {
-        /* Dark Theme */
-        --vp-c-bg: #121214;
-        --vp-c-bg-alt: #18181b;
-        --vp-c-bg-soft: #1a1a1e;
-        --vp-c-bg-elv: #202024;
-        --vp-c-divider: rgba(255, 255, 255, 0.08);
-        --vp-c-border: rgba(255, 255, 255, 0.09);
-        --vp-c-text-1: #ececed;
-        --vp-c-text-2: #a1a1aa;
-        --vp-c-text-3: #71717a;
-        --vp-c-brand-1: #818cf8;
-        --vp-c-brand-2: #6366f1;
-        --vp-c-brand-soft: rgba(129, 140, 248, 0.12);
-
-        /* Subtle Mathematical Watermark Tone */
-        --math-watermark-color: #e4e4e7;
-        --math-watermark-opacity: 0.03;
-      }
-
       * {
         box-sizing: border-box;
       }
       body {
         margin: 0;
-        font-family: var(--font-sans);
-        background-color: var(--vp-c-bg);
-        color: var(--vp-c-text-1);
+        font-family: var(--md-font-google-sans, 'Google Sans', 'Google Sans Text', 'Noto Sans SC', system-ui, sans-serif);
+        background-color: var(--md-sys-color-background, #ffffff);
+        color: var(--md-sys-color-on-background, #1f1f1f);
         -webkit-font-smoothing: antialiased;
         min-height: 100vh;
         overflow-x: hidden;
+        transition: background-color 0.2s ease, color 0.2s ease;
       }
       a {
         color: inherit;
         text-decoration: none;
       }
 
-      .vp-container {
+      .m3-container {
         max-width: 1040px;
         margin: 0 auto;
         padding: 0 1.5rem;
       }
 
       /* ==========================================================================
-         Hero Section — Quiet STEM Header
+         Hero Section — Google Chrome / Material You Quiet STEM Header
          ========================================================================== */
-      .vp-hero-wrapper {
+      .m3-hero-wrapper {
         position: relative;
         overflow: hidden;
-        border-bottom: 1px solid var(--vp-c-divider);
-        background-color: var(--vp-c-bg);
+        border-bottom: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+        background-color: var(--md-sys-color-surface, #ffffff);
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+      }
+      :global([data-theme='dark']) .m3-hero-wrapper {
+        background-color: var(--md-sys-color-surface, #1e1f20);
+        border-bottom-color: var(--md-sys-color-outline-variant, #3c4043);
       }
 
+      /* Subtle Mathematical Watermark */
       .math-watermark-plane {
         position: absolute;
         inset: 0;
         pointer-events: none;
         user-select: none;
         overflow: hidden;
-        z-index: 0;
+        z-index: var(--layer-base, 0);
       }
       .math-watermark-svg {
         position: absolute;
@@ -130,358 +209,560 @@ const collectionsWithBooks = collections.map(col => ({
         width: 100%;
         height: 100%;
         min-width: 960px;
-        color: var(--math-watermark-color);
-        opacity: var(--math-watermark-opacity);
+        color: var(--md-sys-color-on-surface, #1f1f1f);
+        opacity: 0.025;
         transform: translate3d(0, 0, 0);
       }
+      :global([data-theme='dark']) .math-watermark-svg {
+        color: var(--md-sys-color-on-surface, #e3e3e3);
+        opacity: 0.035;
+      }
 
-      .vp-hero {
+      .m3-hero {
         position: relative;
         z-index: 1;
-        padding: 2.75rem 0 2.25rem;
+        padding: 3.25rem 0 2.75rem;
         display: flex;
         flex-direction: column;
         align-items: flex-start;
       }
 
-      .vp-hero-header {
-        margin-bottom: 1.35rem;
+      .m3-hero-header {
+        margin-bottom: 1.5rem;
       }
-      .vp-hero-brand-line {
+      .m3-hero-brand-line {
         display: flex;
         align-items: baseline;
-        gap: 0.75rem;
+        gap: 0.85rem;
+        flex-wrap: wrap;
       }
-      .vp-hero-title {
-        font-family: var(--font-brand);
-        font-size: clamp(1.85rem, 4vw, 2.5rem);
-        font-weight: 700;
+      .m3-hero-title {
+        font-family: var(--md-sys-typescale-title-large-font, 'Google Sans', 'Plus Jakarta Sans', system-ui, sans-serif);
+        font-size: clamp(2rem, 4.5vw, 2.75rem);
+        font-weight: 600;
         letter-spacing: -0.025em;
         line-height: 1.1;
         margin: 0;
-        color: var(--vp-c-text-1);
+        color: var(--md-sys-color-on-surface, #1f1f1f);
       }
-      .vp-hero-subtitle {
-        font-family: var(--font-sans);
+      :global([data-theme='dark']) .m3-hero-title {
+        color: var(--md-sys-color-on-surface, #e3e3e3);
+      }
+      .m3-hero-subtitle {
+        font-family: var(--font-sans, system-ui, sans-serif);
         font-size: clamp(0.95rem, 1.8vw, 1.125rem);
         font-weight: 400;
-        color: var(--vp-c-text-3);
+        color: var(--md-sys-color-on-surface-variant, #444746);
+      }
+      :global([data-theme='dark']) .m3-hero-subtitle {
+        color: var(--md-sys-color-on-surface-variant, #c4c7c5);
       }
 
-      /* Search Bar */
-      .vp-hero-search {
+      /* Google Chrome Omnibox / Google Search Field */
+      .m3-hero-search {
         width: 100%;
         max-width: 680px;
-        margin-bottom: 0.9rem;
+        margin-bottom: 1.25rem;
       }
-      .vp-search-form {
+      .m3-search-form {
         display: flex;
         align-items: center;
-        border: 1px solid var(--vp-c-border);
-        border-radius: 4px;
-        background-color: var(--vp-c-bg-soft);
-        padding: 0.35rem 0.5rem 0.35rem 0.75rem;
-        transition: border-color 0.15s, background-color 0.15s;
+        height: 52px;
+        border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+        border-radius: var(--md-shape-corner-full, 9999px);
+        background-color: var(--md-sys-color-surface-container-high, #e8eaed);
+        padding: 0 0.5rem 0 1.25rem;
+        transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
       }
-      .vp-search-form:focus-within {
-        border-color: var(--vp-c-brand-1);
-        background-color: var(--vp-c-bg);
+      :global([data-theme='dark']) .m3-search-form {
+        background-color: var(--md-sys-color-surface-container-high, #28292a);
+        border-color: var(--md-sys-color-outline-variant, #3c4043);
       }
-      .vp-search-icon {
-        width: 1rem;
-        height: 1rem;
-        color: var(--vp-c-text-3);
-        margin-right: 0.5rem;
+      .m3-search-form:hover {
+        background-color: var(--md-sys-color-surface-container-highest, #dadce0);
+        box-shadow: var(--md-elevation-level-1, 0 1px 3px rgba(60, 64, 67, 0.1));
+      }
+      :global([data-theme='dark']) .m3-search-form:hover {
+        background-color: var(--md-sys-color-surface-container-highest, #333537);
+      }
+      .m3-search-form:focus-within {
+        border-color: var(--md-sys-color-primary, #0b57d0);
+        background-color: var(--md-sys-color-surface, #ffffff);
+        box-shadow: 0 0 0 3px var(--md-sys-color-primary-container, #d3e3fd);
+      }
+      :global([data-theme='dark']) .m3-search-form:focus-within {
+        background-color: var(--md-sys-color-surface-container-lowest, #0b0c0d);
+        border-color: var(--md-sys-color-primary, #a8c7fa);
+        box-shadow: 0 0 0 3px var(--md-sys-color-primary-container, #0842a0);
+      }
+
+      .m3-search-icon {
+        width: 20px;
+        height: 20px;
+        color: var(--md-sys-color-on-surface-variant, #444746);
+        margin-right: 0.75rem;
         flex-shrink: 0;
       }
-      .vp-search-input {
+      :global([data-theme='dark']) .m3-search-icon {
+        color: var(--md-sys-color-on-surface-variant, #c4c7c5);
+      }
+      .m3-search-input {
         flex: 1;
         border: none;
         outline: none;
         background: transparent;
-        font-size: 0.9rem;
-        color: var(--vp-c-text-1);
+        font-size: 0.95rem;
+        color: var(--md-sys-color-on-surface, #1f1f1f);
         font-family: inherit;
-        padding: 0.2rem 0;
+        padding: 0.5rem 0;
       }
-      .vp-search-input::placeholder {
-        color: var(--vp-c-text-3);
+      :global([data-theme='dark']) .m3-search-input {
+        color: var(--md-sys-color-on-surface, #e3e3e3);
       }
-      .vp-search-submit {
-        background: transparent;
-        color: var(--vp-c-text-2);
-        border: 1px solid var(--vp-c-border);
-        border-radius: 3px;
-        padding: 0.2rem 0.55rem;
-        font-size: 0.775rem;
-        font-family: inherit;
-        cursor: pointer;
-        transition: color 0.15s, border-color 0.15s;
+      .m3-search-input::placeholder {
+        color: var(--md-sys-color-outline, #72777d);
       }
-      .vp-search-submit:hover {
-        color: var(--vp-c-brand-1);
-        border-color: var(--vp-c-brand-1);
+      :global([data-theme='dark']) .m3-search-input::placeholder {
+        color: var(--md-sys-color-outline, #8e918f);
       }
 
-      /* Discipline Navigation */
-      .vp-discipline-nav {
+      /* Clear button */
+      .m3-search-clear {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: transparent;
+        color: var(--md-sys-color-on-surface-variant, #444746);
+        border-radius: var(--md-shape-corner-full, 9999px);
+        cursor: pointer;
+        padding: 0;
+        margin-right: 0.25rem;
+        transition: background-color 0.15s ease;
+      }
+      .m3-search-clear:hover {
+        background-color: var(--md-sys-color-surface-container-highest, #dadce0);
+      }
+      .m3-search-clear.is-visible {
+        display: inline-flex;
+      }
+
+      .m3-search-submit {
+        background-color: var(--md-sys-color-primary, #0b57d0);
+        color: var(--md-sys-color-on-primary, #ffffff);
+        border: none;
+        border-radius: var(--md-shape-corner-full, 9999px);
+        padding: 0.45rem 1.15rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background-color 0.15s ease, box-shadow 0.15s ease;
+        flex-shrink: 0;
+      }
+      :global([data-theme='dark']) .m3-search-submit {
+        background-color: var(--md-sys-color-primary, #a8c7fa);
+        color: var(--md-sys-color-on-primary, #062e6f);
+      }
+      .m3-search-submit:hover {
+        box-shadow: var(--md-elevation-level-1, 0 1px 2px rgba(60, 64, 67, 0.1));
+        filter: brightness(0.95);
+      }
+
+      /* Discipline Filter Chips (Google Play Archetype) */
+      .m3-chip-set {
         display: flex;
         align-items: center;
         flex-wrap: wrap;
-        gap: 0.45rem;
-        font-size: 0.825rem;
-        color: var(--vp-c-text-3);
+        gap: 0.5rem;
       }
-      .vp-discipline-link {
-        color: var(--vp-c-text-2);
-        transition: color 0.15s;
+      .m3-filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        height: 32px;
+        padding: 0 0.85rem;
+        border-radius: var(--md-shape-corner-small, 8px);
+        border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+        background-color: transparent;
+        color: var(--md-sys-color-on-surface-variant, #444746);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+        user-select: none;
       }
-      .vp-discipline-link:hover {
-        color: var(--vp-c-brand-1);
-        text-decoration: underline;
-        text-underline-offset: 3px;
+      :global([data-theme='dark']) .m3-filter-chip {
+        border-color: var(--md-sys-color-outline-variant, #3c4043);
+        color: var(--md-sys-color-on-surface-variant, #c4c7c5);
       }
-      .vp-discipline-dot {
-        opacity: 0.35;
+      .m3-filter-chip:hover {
+        background-color: var(--md-sys-color-surface-container-high, #e8eaed);
+        color: var(--md-sys-color-on-surface, #1f1f1f);
+      }
+      :global([data-theme='dark']) .m3-filter-chip:hover {
+        background-color: var(--md-sys-color-surface-container-high, #28292a);
+        color: var(--md-sys-color-on-surface, #e3e3e3);
+      }
+      .m3-filter-chip.is-selected {
+        background-color: var(--md-sys-color-secondary-container, #c2e7ff);
+        color: var(--md-sys-color-on-secondary-container, #001d35);
+        border-color: transparent;
+        font-weight: 600;
+      }
+      :global([data-theme='dark']) .m3-filter-chip.is-selected {
+        background-color: var(--md-sys-color-secondary-container, #004a77);
+        color: var(--md-sys-color-on-secondary-container, #c2e7ff);
+        border-color: transparent;
+      }
+      .m3-chip-check {
+        display: none;
+        width: 14px;
+        height: 14px;
+      }
+      .m3-filter-chip.is-selected .m3-chip-check {
+        display: inline-block;
       }
 
       /* ==========================================================================
-         Recent Reading — Simple Banner
+         Recent Reading — M3 Filled Tonal Card
          ========================================================================== */
       .recent-reading-wrapper {
-        border-bottom: 1px solid var(--vp-c-divider);
-        background-color: var(--vp-c-bg-alt);
-        padding: 0.65rem 0;
-        font-size: 0.825rem;
+        padding: 1.25rem 0 0;
       }
-      .recent-reading-bar {
+      .recent-reading-card {
+        position: relative;
+        overflow: hidden;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 1rem;
         flex-wrap: wrap;
+        padding: 0.85rem 1.25rem;
+        border-radius: var(--md-shape-corner-large, 16px);
+        background-color: var(--md-sys-color-surface-container-low, #f8f9fa);
+        border: none;
+        font-family: 'Noto Sans SC Variable', 'Noto Sans SC', 'Source Han Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        transition: background-color 0.2s ease;
       }
+      :global([data-theme='dark']) .recent-reading-card {
+        background-color: var(--md-sys-color-surface-container-low, #18191a);
+      }
+      .recent-reading-card:hover {
+        background-color: var(--md-sys-color-surface-container, #f0f2f5);
+      }
+      :global([data-theme='dark']) .recent-reading-card:hover {
+        background-color: var(--md-sys-color-surface-container, #1e1f20);
+      }
+
       .recent-reading-left {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        color: var(--vp-c-text-2);
+        gap: 0.6rem;
+        font-size: 0.85rem;
+        color: var(--md-sys-color-on-surface-variant, #444746);
         min-width: 0;
+        font-family: 'Noto Sans SC Variable', 'Noto Sans SC', 'Source Han Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      }
+      :global([data-theme='dark']) .recent-reading-left {
+        color: var(--md-sys-color-on-surface-variant, #c4c7c5);
+      }
+      .recent-reading-icon {
+        width: 20px;
+        height: 20px;
+        color: var(--md-sys-color-primary, #0b57d0);
+        flex-shrink: 0;
+      }
+      :global([data-theme='dark']) .recent-reading-icon {
+        color: var(--md-sys-color-primary, #a8c7fa);
       }
       .recent-reading-label {
+        color: var(--md-sys-color-outline, #72777d);
         font-weight: 500;
-        color: var(--vp-c-text-3);
+        white-space: nowrap;
+        font-family: 'Noto Sans SC Variable', 'Noto Sans SC', 'Source Han Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      }
+      :global([data-theme='dark']) .recent-reading-label {
+        color: var(--md-sys-color-outline, #8e918f);
       }
       .recent-reading-book {
-        font-weight: 500;
-        color: var(--vp-c-text-1);
+        font-weight: 600;
+        color: var(--md-sys-color-on-surface, #1f1f1f);
+        white-space: nowrap;
+        font-family: 'Noto Sans SC Variable', 'Noto Sans SC', 'Source Han Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      }
+      :global([data-theme='dark']) .recent-reading-book {
+        color: var(--md-sys-color-on-surface, #e3e3e3);
+      }
+      .recent-reading-sep {
+        opacity: 0.4;
       }
       .recent-reading-chapter {
-        color: var(--vp-c-text-2);
+        color: var(--md-sys-color-on-surface-variant, #444746);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        font-family: 'Noto Sans SC Variable', 'Noto Sans SC', 'Source Han Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
       }
-      .recent-reading-sep {
-        opacity: 0.35;
+      :global([data-theme='dark']) .recent-reading-chapter {
+        color: var(--md-sys-color-on-surface-variant, #c4c7c5);
       }
       .recent-reading-cta {
-        color: var(--vp-c-brand-1);
-        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.35rem 0.85rem;
+        border-radius: var(--md-shape-corner-full, 9999px);
+        background-color: var(--md-sys-color-surface-container-high, #e8eaed);
+        color: var(--md-sys-color-primary, #0b57d0);
+        font-size: 0.8125rem;
+        font-weight: 600;
         white-space: nowrap;
+        font-family: 'Noto Sans SC Variable', 'Noto Sans SC', 'Source Han Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        transition: background-color 0.15s ease;
+      }
+      :global([data-theme='dark']) .recent-reading-cta {
+        background-color: var(--md-sys-color-surface-container-high, #28292a);
+        color: var(--md-sys-color-primary, #a8c7fa);
       }
       .recent-reading-cta:hover {
-        text-decoration: underline;
-        text-underline-offset: 3px;
+        background-color: var(--md-sys-color-surface-container-highest, #dadce0);
+        transform: none !important;
+      }
+      :global([data-theme='dark']) .recent-reading-cta:hover {
+        background-color: var(--md-sys-color-surface-container-highest, #333537);
+        transform: none !important;
       }
 
       /* ==========================================================================
-         Catalogue Section
+         Book Results Section — Material You Filled Tonal Cards (整卡可点击)
          ========================================================================== */
-      .catalogue-section {
-        padding: 2.75rem 0 4.5rem;
+      .book-results-section {
+        padding: 2.25rem 0 4.5rem;
+        transition: opacity 0.25s ease;
       }
-      .catalogue-header {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        padding-bottom: 0.85rem;
-        border-bottom: 1px solid var(--vp-c-divider);
-        margin-bottom: 2rem;
-      }
-      .catalogue-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        margin: 0;
-        color: var(--vp-c-text-1);
-      }
-      .search-filter-status {
-        font-size: 0.8rem;
-        color: var(--vp-c-brand-1);
-      }
-
-      /* Collection Groups */
-      .collection-group {
-        margin-bottom: 2.75rem;
-      }
-      .collection-header {
-        margin-bottom: 0.5rem;
-      }
-      .collection-title {
-        font-size: 1.05rem;
-        font-weight: 600;
-        margin: 0;
-        color: var(--vp-c-text-2);
-        letter-spacing: 0.02em;
-      }
-
-      /* Bibliographic Entries List */
-      .biblio-list {
+      .m3-book-list {
         display: flex;
         flex-direction: column;
-        border-top: 1px solid var(--vp-c-divider);
+        gap: 0.85rem;
       }
 
-      .biblio-entry {
+      /* Material You Filled Tonal Card (整卡可点击，无悬停位移动效，思源黑体，支持 Ripple) */
+      .m3-book-card {
+        position: relative;
+        overflow: hidden;
         display: flex;
         align-items: flex-start;
-        gap: 1.15rem;
-        padding: 1.15rem 0;
-        border-bottom: 1px solid var(--vp-c-divider);
+        gap: 1.35rem;
+        padding: 1.25rem 1.5rem;
+        border-radius: var(--md-shape-corner-large, 16px);
+        background-color: var(--md-sys-color-surface-container-low, #f8f9fa);
+        border: none;
+        text-decoration: none;
+        color: inherit;
+        cursor: pointer;
+        font-family: 'Noto Sans SC Variable', 'Noto Sans SC', 'Source Han Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        transform: none !important;
+        box-shadow: none !important;
+        transition: background-color 0.15s ease;
+      }
+      :global([data-theme='dark']) .m3-book-card {
+        background-color: var(--md-sys-color-surface-container-low, #18191a);
+      }
+      .m3-book-card:hover {
+        background-color: var(--md-sys-color-surface-container, #f0f2f5);
+        transform: none !important;
+        box-shadow: none !important;
+      }
+      :global([data-theme='dark']) .m3-book-card:hover {
+        background-color: var(--md-sys-color-surface-container, #222325);
+        transform: none !important;
+        box-shadow: none !important;
       }
 
-      /* Small Cover Thumbnail */
-      .biblio-cover-col {
+      /* Material Ripple 基础层 */
+      md-ripple {
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        --md-ripple-hover-opacity: 0.04;
+        --md-ripple-pressed-opacity: 0.12;
+        --md-ripple-pressed-color: var(--md-sys-color-primary, #0b57d0);
+      }
+      :global([data-theme='dark']) md-ripple {
+        --md-ripple-pressed-color: var(--md-sys-color-primary, #a8c7fa);
+      }
+
+      /* Book Cover Thumbnail */
+      .m3-book-cover-col {
         flex-shrink: 0;
       }
-      .biblio-cover-wrap {
-        width: 50px;
-        height: 70px;
-        border-radius: 2px;
+      .m3-book-cover-wrap {
+        width: 56px;
+        height: 78px;
+        border-radius: var(--md-shape-corner-small, 8px);
         overflow: hidden;
-        border: 1px solid var(--vp-c-border);
-        background-color: var(--vp-c-bg-soft);
+        border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+        background-color: var(--md-sys-color-surface-container, #f0f2f5);
+        box-shadow: var(--md-elevation-level-1, 0 1px 3px rgba(60, 64, 67, 0.1));
         display: flex;
         align-items: center;
         justify-content: center;
       }
-      .biblio-cover-img {
+      :global([data-theme='dark']) .m3-book-cover-wrap {
+        border-color: var(--md-sys-color-outline-variant, #3c4043);
+        background-color: var(--md-sys-color-surface-container, #1e1f20);
+      }
+      .m3-book-cover-img {
         width: 100%;
         height: 100%;
         object-fit: cover;
         display: block;
       }
 
-      /* Metadata & Content */
-      .biblio-main-col {
+      /* Metadata & Content (统一使用思源黑体) */
+      .m3-book-main-col {
         flex: 1;
         min-width: 0;
+        font-family: 'Noto Sans SC Variable', 'Noto Sans SC', 'Source Han Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
-      .biblio-headline {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 0.75rem;
-        margin-bottom: 0.25rem;
-        flex-wrap: wrap;
-      }
-      .biblio-title {
-        font-family: var(--font-serif);
-        font-size: 1.075rem;
+      .m3-book-title {
+        font-family: 'Noto Sans SC Variable', 'Noto Sans SC', 'Source Han Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        font-size: 1.15rem;
         font-weight: 600;
         line-height: 1.35;
-        margin: 0;
-        color: var(--vp-c-text-1);
+        margin: 0 0 0.35rem;
+        color: var(--md-sys-color-on-surface, #1f1f1f);
+        transition: color 0.15s ease;
       }
-      .biblio-title a {
-        color: inherit;
-        transition: color 0.15s;
+      :global([data-theme='dark']) .m3-book-title {
+        color: var(--md-sys-color-on-surface, #e3e3e3);
       }
-      .biblio-title a:hover {
-        color: var(--vp-c-brand-1);
+      .m3-book-card:hover .m3-book-title {
+        color: var(--md-sys-color-primary, #0b57d0);
       }
-
-      .biblio-tags {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        font-size: 0.725rem;
-        color: var(--vp-c-text-3);
-      }
-      .biblio-tag {
-        border: 1px solid var(--vp-c-border);
-        border-radius: 2px;
-        padding: 0.05rem 0.3rem;
-        background-color: var(--vp-c-bg-soft);
+      :global([data-theme='dark']) .m3-book-card:hover .m3-book-title {
+        color: var(--md-sys-color-primary, #a8c7fa);
       }
 
-      /* Citation Meta Line */
-      .biblio-meta-line {
-        font-size: 0.8rem;
-        color: var(--vp-c-text-3);
-        margin-bottom: 0.4rem;
+      /* Metadata Chip Group (使用主题色与官方 md-assist-chip) */
+      .m3-book-chip-set {
         display: flex;
         flex-wrap: wrap;
-        align-items: center;
         gap: 0.4rem;
+        margin: 0.35rem 0 0.6rem;
+        pointer-events: none;
+        --md-assist-chip-container-shape: var(--md-shape-corner-small, 8px);
+        --md-assist-chip-container-color: var(--md-sys-color-secondary-container, #c2e7ff);
+        --md-assist-chip-label-text-color: var(--md-sys-color-on-secondary-container, #001d35);
+        --md-assist-chip-outline-color: transparent;
+        --md-assist-chip-outline-width: 0px;
+        --md-assist-chip-container-height: 26px;
+        --md-assist-chip-label-text-size: 0.775rem;
+        --md-assist-chip-label-text-weight: 500;
+        --md-assist-chip-label-text-font: 'Noto Sans SC Variable', 'Noto Sans SC', 'Source Han Sans SC', sans-serif;
       }
-      .biblio-meta-sep {
-        opacity: 0.4;
+      :global([data-theme='dark']) .m3-book-chip-set {
+        --md-assist-chip-container-color: var(--md-sys-color-secondary-container, #004a77);
+        --md-assist-chip-label-text-color: var(--md-sys-color-on-secondary-container, #c2e7ff);
       }
 
-      .biblio-desc {
-        font-size: 0.835rem;
-        line-height: 1.55;
-        color: var(--vp-c-text-2);
-        margin: 0 0 0.5rem;
-      }
-
-      /* Reading Action Link */
-      .biblio-action-row {
-        display: flex;
-        align-items: center;
-      }
-      .biblio-read-link {
-        font-size: 0.825rem;
-        color: var(--vp-c-brand-1);
+      /* Fallback and styling before hydration */
+      md-assist-chip:not(:defined) {
         display: inline-flex;
         align-items: center;
-        gap: 0.2rem;
+        height: 26px;
+        padding: 0 0.65rem;
+        border-radius: var(--md-shape-corner-small, 8px);
+        background-color: var(--md-sys-color-secondary-container, #c2e7ff);
+        color: var(--md-sys-color-on-secondary-container, #001d35);
+        font-size: 0.775rem;
+        font-weight: 500;
+        font-family: 'Noto Sans SC Variable', 'Noto Sans SC', 'Source Han Sans SC', sans-serif;
+        border: none;
+        box-sizing: border-box;
       }
-      .biblio-read-link:hover {
-        text-decoration: underline;
-        text-underline-offset: 3px;
+      :global([data-theme='dark']) md-assist-chip:not(:defined) {
+        background-color: var(--md-sys-color-secondary-container, #004a77);
+        color: var(--md-sys-color-on-secondary-container, #c2e7ff);
+      }
+      md-assist-chip:defined .m3-chip-fallback {
+        display: none;
+      }
+
+      .m3-book-desc {
+        font-family: 'Noto Sans SC Variable', 'Noto Sans SC', 'Source Han Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        font-size: 0.875rem;
+        line-height: 1.6;
+        color: var(--md-sys-color-on-surface-variant, #444746);
+        margin: 0;
+      }
+      :global([data-theme='dark']) .m3-book-desc {
+        color: var(--md-sys-color-on-surface-variant, #c4c7c5);
       }
 
       /* Catalogue Empty State */
       .catalogue-empty {
-        padding: 2.5rem 1.5rem;
+        padding: 3.5rem 1.5rem;
         text-align: center;
-        font-size: 0.875rem;
-        color: var(--vp-c-text-3);
-        border: 1px dashed var(--vp-c-divider);
-        border-radius: 3px;
-        background-color: var(--vp-c-bg-alt);
-        margin-top: 1rem;
+        font-size: 0.95rem;
+        color: var(--md-sys-color-on-surface-variant, #444746);
+        border: 1px dashed var(--md-sys-color-outline-variant, #e0e3e7);
+        border-radius: var(--md-shape-corner-large, 16px);
+        background-color: var(--md-sys-color-surface-container-low, #f8f9fa);
+        margin-top: 1.5rem;
       }
-      .catalogue-empty a {
-        color: var(--vp-c-brand-1);
-        text-decoration: underline;
-        text-underline-offset: 3px;
+      :global([data-theme='dark']) .catalogue-empty {
+        background-color: var(--md-sys-color-surface-container-low, #18191a);
+        border-color: var(--md-sys-color-outline-variant, #3c4043);
+        color: var(--md-sys-color-on-surface-variant, #c4c7c5);
+      }
+      .empty-icon {
+        width: 40px;
+        height: 40px;
+        color: var(--md-sys-color-outline, #72777d);
+        margin-bottom: 0.75rem;
+      }
+      :global([data-theme='dark']) .empty-icon {
+        color: var(--md-sys-color-outline, #8e918f);
+      }
+      .catalogue-empty-btn {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 0.75rem;
+        padding: 0.4rem 1.15rem;
+        border-radius: var(--md-shape-corner-full, 9999px);
+        background-color: var(--md-sys-color-primary, #0b57d0);
+        color: var(--md-sys-color-on-primary, #ffffff);
+        font-size: 0.85rem;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+      }
+      :global([data-theme='dark']) .catalogue-empty-btn {
+        background-color: var(--md-sys-color-primary, #a8c7fa);
+        color: var(--md-sys-color-on-primary, #062e6f);
       }
 
       /* ==========================================================================
-         Footer
+         Footer — Material You Clean Minimal Footer (无分割线、纯净单行)
          ========================================================================== */
       .site-footer {
-        padding: 2.5rem 0 2rem;
-        background-color: var(--vp-c-bg);
-        font-size: 0.8rem;
-        color: var(--vp-c-text-3);
-        border-top: 1px solid var(--vp-c-divider);
+        padding: 2.5rem 0;
+        background-color: var(--md-sys-color-surface, #ffffff);
+        font-size: 0.8125rem;
+        color: var(--md-sys-color-outline, #72777d);
+        border: none;
+        transition: background-color 0.2s ease;
+      }
+      :global([data-theme='dark']) .site-footer {
+        background-color: var(--md-sys-color-surface-container-low, #131314);
+        border: none;
+        color: var(--md-sys-color-outline, #8e918f);
       }
       .footer-inner {
         display: flex;
@@ -489,52 +770,66 @@ const collectionsWithBooks = collections.map(col => ({
         align-items: center;
         flex-wrap: wrap;
         gap: 1rem;
-        padding-bottom: 1.25rem;
-        border-bottom: 1px solid var(--vp-c-divider);
+        padding-bottom: 0;
+        border: none;
+      }
+      :global([data-theme='dark']) .footer-inner {
+        border: none;
       }
       .footer-brand {
+        font-family: var(--md-sys-typescale-title-medium-font, 'Google Sans', sans-serif);
         font-weight: 600;
-        color: var(--vp-c-text-1);
+        font-size: 0.95rem;
+        color: var(--md-sys-color-on-surface, #1f1f1f);
+      }
+      :global([data-theme='dark']) .footer-brand {
+        color: var(--md-sys-color-on-surface, #e3e3e3);
       }
       .footer-links {
         display: flex;
-        gap: 1.25rem;
+        gap: 1.5rem;
       }
       .footer-links a {
-        color: var(--vp-c-text-2);
-        transition: color 0.15s;
+        color: var(--md-sys-color-on-surface-variant, #444746);
+        transition: color 0.15s ease;
+      }
+      :global([data-theme='dark']) .footer-links a {
+        color: var(--md-sys-color-on-surface-variant, #c4c7c5);
       }
       .footer-links a:hover {
-        color: var(--vp-c-brand-1);
+        color: var(--md-sys-color-primary, #0b57d0);
       }
-      .footer-bottom {
-        padding-top: 1rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0.5rem;
+      :global([data-theme='dark']) .footer-links a:hover {
+        color: var(--md-sys-color-primary, #a8c7fa);
       }
 
       /* ==========================================================================
          Responsive Breakpoints
          ========================================================================== */
       @media (max-width: 680px) {
-        .vp-hero {
-          padding: 2rem 0 1.75rem;
+        .m3-hero {
+          padding: 2.25rem 0 2rem;
         }
-        .catalogue-section {
-          padding: 2rem 0 3rem;
+        .m3-search-form {
+          height: 48px;
+          padding: 0 0.35rem 0 1rem;
         }
-        .biblio-entry {
+        .m3-search-submit {
+          padding: 0.4rem 0.9rem;
+          font-size: 0.8125rem;
+        }
+        .book-results-section {
+          padding: 1.75rem 0 3.5rem;
+        }
+        .m3-book-card {
           gap: 0.85rem;
-          padding: 1rem 0;
+          padding: 1rem 1rem;
         }
-        .biblio-cover-wrap {
-          width: 44px;
-          height: 62px;
+        .m3-book-cover-wrap {
+          width: 46px;
+          height: 66px;
         }
-        .footer-inner, .footer-bottom {
+        .footer-inner {
           flex-direction: column;
           align-items: flex-start;
           gap: 0.75rem;
@@ -543,11 +838,11 @@ const collectionsWithBooks = collections.map(col => ({
     </style>
   </head>
   <body>
-    <!-- Top Navigation Bar -->
+    <!-- Top Navigation Bar (Chrome Top App Bar) -->
     <VpNav currentPath="/" />
 
     <!-- Hero Section -->
-    <section class="vp-hero-wrapper">
+    <section class="m3-hero-wrapper">
       <!-- Watermark Background -->
       <div class="math-watermark-plane" aria-hidden="true">
         <svg class="math-watermark-svg" viewBox="0 0 1200 600" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -588,57 +883,74 @@ const collectionsWithBooks = collections.map(col => ({
         </svg>
       </div>
 
-      <div class="vp-container">
-        <div class="vp-hero">
-          <div class="vp-hero-header">
-            <div class="vp-hero-brand-line">
-              <h1 class="vp-hero-title">AstroLib</h1>
-              <span class="vp-hero-subtitle">数学与物理教材</span>
+      <div class="m3-container">
+        <div class="m3-hero">
+          <div class="m3-hero-header">
+            <div class="m3-hero-brand-line">
+              <h1 class="m3-hero-title">AstroLib</h1>
+              <span class="m3-hero-subtitle">数学与物理教材</span>
             </div>
           </div>
 
-          <!-- Search Input -->
-          <div class="vp-hero-search">
-            <form action="/library/" method="GET" class="vp-search-form" id="search-form">
-              <svg class="vp-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                <circle cx="8.5" cy="8.5" r="5.5" />
-                <path d="M12.5 12.5L17 17" stroke-linecap="round" />
+          <!-- Google Omnibox Search Input -->
+          <div class="m3-hero-search">
+            <form action="/library/" method="GET" class="m3-search-form" id="search-form" role="search">
+              <svg class="m3-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
               <input
                 type="text"
                 name="q"
                 id="homepage-search-input"
-                class="vp-search-input"
+                class="m3-search-input"
                 placeholder="搜索书名、作者、ISBN 或章节……"
                 autocomplete="off"
+                aria-label="搜索书名、作者、ISBN 或章节"
               />
-              <button type="submit" class="vp-search-submit">搜索</button>
+              <button type="button" class="m3-search-clear" id="homepage-search-clear" aria-label="清空搜索词" title="清空">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+              <button type="submit" class="m3-search-submit">搜索</button>
             </form>
           </div>
 
-          <!-- Quick Navigation Links -->
-          <nav class="vp-discipline-nav" aria-label="分类导航">
-            <a href="#collection-math" class="vp-discipline-link">数学</a>
-            <span class="vp-discipline-dot">·</span>
-            <a href="#collection-science" class="vp-discipline-link">物理</a>
-            <span class="vp-discipline-dot">·</span>
-            <a href="#book-math-analysis" class="vp-discipline-link">数学分析</a>
-            <span class="vp-discipline-dot">·</span>
-            <a href="#book-engineering-analysis" class="vp-discipline-link">工科分析</a>
-            <span class="vp-discipline-dot">·</span>
-            <a href="#book-linear-algebra" class="vp-discipline-link">线性代数</a>
-            <span class="vp-discipline-dot">·</span>
-            <a href="#book-probability-statistics" class="vp-discipline-link">概率统计</a>
-          </nav>
+          <!-- Discipline Filter Chips (Google Play Archetype: 仅在点击时展示) -->
+          <div class="m3-chip-set" id="discipline-chip-set" role="toolbar" aria-label="学科分类筛选">
+            {disciplineChips.map((chip) => (
+              <button
+                type="button"
+                class="m3-filter-chip"
+                data-discipline-id={chip.id}
+                data-type={chip.type}
+                data-query={chip.query}
+                role="button"
+                aria-pressed="false"
+              >
+                <svg class="m3-chip-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>{chip.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Recent Reading (Client-side populated) -->
+    <!-- Recent Reading (M3 Filled Tonal Card - Client-side populated) -->
     <section id="recent-reading-section" class="recent-reading-wrapper" style="display: none;">
-      <div class="vp-container">
-        <div class="recent-reading-bar">
+      <div class="m3-container">
+        <div class="recent-reading-card">
+          <md-ripple></md-ripple>
           <div class="recent-reading-left">
+            <svg class="recent-reading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
             <span class="recent-reading-label">最近阅读：</span>
             <span class="recent-reading-book" id="recent-reading-book"></span>
             <span class="recent-reading-sep" aria-hidden="true">·</span>
@@ -649,89 +961,74 @@ const collectionsWithBooks = collections.map(col => ({
       </div>
     </section>
 
-    <!-- Main Content: Catalogue -->
-    <main class="vp-container">
-      <section class="catalogue-section">
-        <!-- Section Header -->
-        <header class="catalogue-header">
-          <h2 class="catalogue-title">教材目录</h2>
-          <div id="search-filter-status" class="search-filter-status" aria-live="polite"></div>
-        </header>
+    <!-- Main Content: Book Results (按需呈现：默认隐藏，仅在 Chip 选中或搜索时展示) -->
+    <main class="m3-container">
+      <section class="book-results-section" id="book-results-section" style="display: none;">
+        <!-- Book Cards Stack (Material You Filled Tonal Cards) -->
+        <div class="m3-book-list" id="book-list">
+          {collectionsWithBooks.map(col =>
+            col.books.map(book => (
+              <a
+                href={book.readUrl}
+                class="m3-book-card"
+                id={`book-${book.id}`}
+                data-collection-id={col.id}
+                data-search-text={`${book.title} ${book.author} ${book.publisher} ${book.edition || ''} ${book.isbn || ''} ${book.description} ${col.title}`.toLowerCase()}
+              >
+                <md-ripple></md-ripple>
+                <!-- Left: Cover Thumbnail -->
+                <div class="m3-book-cover-col">
+                  <div class="m3-book-cover-wrap">
+                    <img src={book.cover} alt={book.title} class="m3-book-cover-img" loading="lazy" />
+                  </div>
+                </div>
 
-        <!-- Catalogue Entries Grouped by Discipline -->
-        <div id="catalogue-groups">
-          {collectionsWithBooks.map(col => (
-            <div class="collection-group" id={`collection-${col.id}`} data-collection-id={col.id}>
-              <div class="collection-header">
-                <h3 class="collection-title">{col.title}</h3>
-              </div>
+                <!-- Right: Title, Citation Meta Chips & Abstract (无标签、无开始阅读字样，整卡可点) -->
+                <div class="m3-book-main-col">
+                  <h3 class="m3-book-title">{book.title}</h3>
 
-              <div class="biblio-list">
-                {col.books.map(book => (
-                  <article
-                    class="biblio-entry"
-                    id={`book-${book.id}`}
-                    data-search-text={`${book.title} ${book.author} ${book.publisher} ${book.edition || ''} ${book.isbn || ''} ${book.description} ${(book.tags || []).join(' ')}`.toLowerCase()}
-                  >
-                    <!-- Left: Cover Thumbnail -->
-                    <div class="biblio-cover-col">
-                      <div class="biblio-cover-wrap">
-                        <img src={book.cover} alt={book.title} class="biblio-cover-img" loading="lazy" />
-                      </div>
-                    </div>
+                  <md-chip-set class="m3-book-chip-set" role="list" aria-label="教材元数据">
+                    <md-assist-chip label={book.author}>
+                      <span class="m3-chip-fallback">{book.author}</span>
+                    </md-assist-chip>
+                    <md-assist-chip label={`${book.publisher}${book.edition ? ` (${book.edition})` : ''}`}>
+                      <span class="m3-chip-fallback">{book.publisher}{book.edition ? ` (${book.edition})` : ''}</span>
+                    </md-assist-chip>
+                    {book.isbn && (
+                      <md-assist-chip label={`ISBN ${book.isbn}`}>
+                        <span class="m3-chip-fallback">ISBN {book.isbn}</span>
+                      </md-assist-chip>
+                    )}
+                  </md-chip-set>
 
-                    <!-- Right: Bibliographic Citation and Abstract -->
-                    <div class="biblio-main-col">
-                      <div class="biblio-headline">
-                        <h4 class="biblio-title">
-                          <a href={book.readUrl}>{book.title}</a>
-                        </h4>
-                        <div class="biblio-tags">
-                          <span class="biblio-tag">{book.stageLabel}</span>
-                          <span class="biblio-tag">{book.categoryLabel}</span>
-                        </div>
-                      </div>
-
-                      <div class="biblio-meta-line">
-                        <span>{book.author}</span>
-                        <span class="biblio-meta-sep">·</span>
-                        <span>{book.publisher} {book.edition ? `(${book.edition})` : ''}</span>
-                        {book.isbn && (
-                          <>
-                            <span class="biblio-meta-sep">·</span>
-                            <span>ISBN {book.isbn}</span>
-                          </>
-                        )}
-                      </div>
-
-                      <p class="biblio-desc">{book.description}</p>
-
-                      <div class="biblio-action-row">
-                        <a href={book.readUrl} class="biblio-read-link">
-                          阅读 →
-                        </a>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </div>
-          ))}
+                  <p class="m3-book-desc">{book.description}</p>
+                </div>
+              </a>
+            ))
+          )}
         </div>
 
         <!-- Empty Match State -->
         <div id="catalogue-empty" class="catalogue-empty" style="display: none;">
-          <p style="margin: 0 0 0.35rem;">未找到匹配教材。</p>
-          <p style="margin: 0; font-size: 0.825rem;">
-            可尝试简化关键词，或按回车进入 <a id="catalogue-empty-link" href="/library/">检索页</a>。
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            <line x1="8" y1="11" x2="14" y2="11"></line>
+          </svg>
+          <p style="margin: 0 0 0.4rem; font-weight: 500; font-size: 1rem;">未找到匹配教材</p>
+          <p style="margin: 0 0 0.85rem; font-size: 0.85rem; color: var(--md-sys-color-outline, #72777d);">
+            可尝试简化关键词，或进入完整检索页进行多维度筛选。
           </p>
+          <button type="button" class="catalogue-empty-btn" id="catalogue-reset-btn">
+            重置筛选条件
+          </button>
         </div>
       </section>
     </main>
 
-    <!-- Footer -->
+    <!-- Footer (无分割线、纯净单行) -->
     <footer class="site-footer">
-      <div class="vp-container">
+      <div class="m3-container">
         <div class="footer-inner">
           <div class="footer-brand">
             <span>AstroLib</span>
@@ -740,17 +1037,16 @@ const collectionsWithBooks = collections.map(col => ({
           <div class="footer-links">
             <a href="/library/">目录</a>
             <a href="/library/?focus=search">搜索</a>
+            <a href="/sitemap/">网站地图</a>
             <a href="/dev/">开发文档</a>
-            <a href="https://github.com/withastro/starlight" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://github.com/Ariesagittarius/AstroLib" target="_blank" rel="noopener noreferrer">GitHub</a>
           </div>
-        </div>
-
-        <div class="footer-bottom">
-          <span>数学与物理教材数字化整理</span>
-          <span>© {new Date().getFullYear()} AstroLib</span>
         </div>
       </div>
     </footer>
+
+    <!-- 全局视窗挂载容器 (Overlay Root for Modals / Settings) -->
+    <div id="astro-overlay-root"></div>
 
     <!-- Client-Side Recent Reading & Real-Time Catalogue Filter -->
     <script is:inline>
@@ -776,7 +1072,7 @@ const collectionsWithBooks = collections.map(col => ({
                     'probability_statistics': '概率论与数理统计教程',
                     'university_physics': '大学物理学'
                   };
-                  bookEl.textContent = slugNames[data.bookSlug] || '章节';
+                  bookEl.textContent = slugNames[data.bookSlug] || data.bookTitle || '章节';
                 }
                 chapterEl.textContent = data.chapterTitle;
                 linkEl.href = data.url;
@@ -786,54 +1082,136 @@ const collectionsWithBooks = collections.map(col => ({
           }
         } catch {}
 
-        // 2. 首页目录即时过滤交互
+        // 2. 首页 Filter Chip 驱动式教材展示与实时搜索
         const searchInput = document.getElementById('homepage-search-input');
-        const filterStatus = document.getElementById('search-filter-status');
+        const clearBtn = document.getElementById('homepage-search-clear');
+        const resultsSection = document.getElementById('book-results-section');
         const emptyBox = document.getElementById('catalogue-empty');
-        const emptyLink = document.getElementById('catalogue-empty-link');
-        const entries = Array.from(document.querySelectorAll('.biblio-entry'));
-        const groups = Array.from(document.querySelectorAll('.collection-group'));
+        const resetBtn = document.getElementById('catalogue-reset-btn');
+        const cards = Array.from(document.querySelectorAll('.m3-book-card'));
+        const chips = Array.from(document.querySelectorAll('.m3-filter-chip'));
 
-        if (searchInput && entries.length > 0) {
-          searchInput.addEventListener('input', () => {
-            const query = (searchInput.value || '').trim().toLowerCase();
+        let activeChipId = null;
 
-            if (!query) {
-              entries.forEach(el => { el.style.display = ''; });
-              groups.forEach(g => { g.style.display = ''; });
-              if (filterStatus) filterStatus.textContent = '';
-              if (emptyBox) emptyBox.style.display = 'none';
-              return;
-            }
+        function updateDisplay() {
+          const query = (searchInput?.value || '').trim().toLowerCase();
 
-            let matchCount = 0;
-            entries.forEach(el => {
-              const text = el.getAttribute('data-search-text') || '';
-              const matched = text.includes(query);
-              el.style.display = matched ? '' : 'none';
-              if (matched) matchCount++;
-            });
+          // 切换 Clear 按钮可见性
+          if (clearBtn) {
+            clearBtn.classList.toggle('is-visible', query.length > 0);
+          }
 
-            groups.forEach(g => {
-              const visibleEntries = g.querySelectorAll('.biblio-entry:not([style*="display: none"])');
-              g.style.display = visibleEntries.length > 0 ? '' : 'none';
-            });
+          // 核心逻辑：仅在 chip 选中或者搜索框中有内容时，才展现书籍容器
+          if (!activeChipId && !query) {
+            if (resultsSection) resultsSection.style.display = 'none';
+            return;
+          }
 
-            if (filterStatus) {
-              filterStatus.textContent = matchCount > 0 ? `找到 ${matchCount} 本教材` : '';
-            }
+          if (resultsSection) resultsSection.style.display = 'block';
 
-            if (emptyBox) {
-              emptyBox.style.display = matchCount === 0 ? 'block' : 'none';
-              if (emptyLink) {
-                emptyLink.href = `/library/?q=${encodeURIComponent(query)}`;
+          let matchCount = 0;
+          const activeChip = chips.find(c => c.getAttribute('data-discipline-id') === activeChipId);
+          const chipType = activeChip?.getAttribute('data-type');
+          const chipQuery = activeChip?.getAttribute('data-query')?.toLowerCase() || '';
+
+          cards.forEach(card => {
+            const text = card.getAttribute('data-search-text') || '';
+            const colId = card.getAttribute('data-collection-id') || '';
+
+            let matches = true;
+
+            // Chip 过滤
+            if (activeChipId) {
+              if (chipType === 'collection') {
+                matches = colId === chipQuery;
+              } else if (chipType === 'keyword') {
+                matches = text.includes(chipQuery);
               }
             }
+
+            // 搜索输入过滤
+            if (matches && query) {
+              matches = text.includes(query);
+            }
+
+            card.style.display = matches ? 'flex' : 'none';
+            if (matches) matchCount++;
+          });
+
+          if (emptyBox) {
+            emptyBox.style.display = matchCount === 0 ? 'block' : 'none';
+          }
+        }
+
+        // 绑定搜索输入
+        if (searchInput) {
+          searchInput.addEventListener('input', () => {
+            updateDisplay();
+          });
+        }
+
+        // 绑定清空按钮
+        if (clearBtn && searchInput) {
+          clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            searchInput.focus();
+            updateDisplay();
+          });
+        }
+
+        // 绑定 Chip 点击 (点击已激活的 Chip 则取消选中并重新收起列表)
+        chips.forEach(chip => {
+          chip.addEventListener('click', () => {
+            const id = chip.getAttribute('data-discipline-id');
+            if (activeChipId === id) {
+              // 反选取消
+              activeChipId = null;
+              chip.classList.remove('is-selected');
+              chip.setAttribute('aria-pressed', 'false');
+            } else {
+              // 选中新 chip
+              activeChipId = id;
+              chips.forEach(c => {
+                const isTarget = c === chip;
+                c.classList.toggle('is-selected', isTarget);
+                c.setAttribute('aria-pressed', isTarget ? 'true' : 'false');
+              });
+            }
+            updateDisplay();
+          });
+        });
+
+        // 绑定空状态重置按钮
+        if (resetBtn) {
+          resetBtn.addEventListener('click', () => {
+            if (searchInput) searchInput.value = '';
+            activeChipId = null;
+            chips.forEach(c => {
+              c.classList.remove('is-selected');
+              c.setAttribute('aria-pressed', 'false');
+            });
+            updateDisplay();
           });
         }
       })();
     </script>
 
+    <!-- 异步载入 Material You 运行时组件及 Web Components -->
+    <script>
+      import '@material/web/chips/chip-set.js';
+      import '@material/web/chips/assist-chip.js';
+      import '@material/web/ripple/ripple.js';
+
+      import('../themes/material-you/index')
+        .then((m) => {
+          m.initMaterialYouTheme?.();
+          m.initColorEngine?.();
+        })
+        .catch(() => {});
+    </script>
+
     <Analytics />
   </body>
 </html>
+
+

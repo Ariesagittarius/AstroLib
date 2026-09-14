@@ -268,6 +268,8 @@ export function resolveSeedColor(colorIdOrHex: string): { seedHex: string; isAut
   return { seedHex: '#0b57d0', isAuto: false };
 }
 
+export const STORAGE_KEY_M3_CACHED_CSS = 'astrolib_m3_cached_css';
+
 /**
  * 将生成的 M3 动态色彩注入 DOM
  */
@@ -276,17 +278,30 @@ export function applyThemeColor(colorIdOrHex?: string): void {
 
   const currentPref = colorIdOrHex || loadThemeColor();
   const { seedHex } = resolveSeedColor(currentPref);
+  const schemeCss = generateSchemeCss(seedHex);
+
+  // 持久化缓存动态 CSS 供首屏内联脚本在首次绘制前秒级注入，杜绝 FOUC 与二次样式重算
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_M3_CACHED_CSS, schemeCss);
+    }
+  } catch {}
 
   const styleId = 'm3-dynamic-color-theme';
   let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;
   if (!styleEl) {
     styleEl = document.createElement('style');
     styleEl.id = styleId;
+    styleEl.textContent = schemeCss;
     document.head.appendChild(styleEl);
+  } else if (styleEl.textContent !== schemeCss) {
+    // 仅当样式内容真正发生变化时才更新 textContent，避免无效的 DOM 突变与全局样式重排
+    styleEl.textContent = schemeCss;
   }
 
-  styleEl.textContent = generateSchemeCss(seedHex);
-  document.documentElement.dataset.m3ThemeColor = currentPref;
+  if (document.documentElement.dataset.m3ThemeColor !== currentPref) {
+    document.documentElement.dataset.m3ThemeColor = currentPref;
+  }
 
   window.dispatchEvent(
     new CustomEvent('m3-theme-color-change', {

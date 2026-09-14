@@ -1,0 +1,73 @@
+# AI 模型 API Key 申请与配置
+
+AstroLib 采用客户端 BYOK（Bring Your Own Key）隐私优先架构：所有用户配置的 API Key 均存储在本地浏览器的 `localStorage` 中，直接在端侧与模型提供商进行 HTTPS 通信，不经过任何中间服务器，完全保障个人凭证与提问记录的私密性。
+
+全站 AI 问答与习题推导统一共用同一套配置，一处填写，全站生效。
+
+---
+
+## 1. Google Gemini
+
+### 1.1 获取方式
+1. 访问 [Google AI Studio](https://aistudio.google.com/)；
+2. 使用 Google 账号登录后，点击左侧菜单的 **Get API key**；
+3. 点击 **Create API key**，复制生成的以 `AIzaSy` 开头的字符串。
+4. Google AI Studio 为开发者提供免费调用额度。
+
+### 1.2 网络环境要求（重要说明）
+- ⚠️ **必须处于海外网络/科学上网代理环境**：Google Gemini 官方服务未对中国大陆境内 IP 开放。在境内访问官方接口（`generativelanguage.googleapis.com`）时，**网络连接必须全局或按域名走代理**，否则会导致网络连接重置或超时（Failed to fetch）。
+- **本地开发代理支持**：在通过 `npm run dev` 运行本地开发服务器时，系统内置了 Node.js 进程反向代理（`/api/proxy/gemini/...`），可自动协助绕过浏览器的 CORS 预检，但底层计算机仍需具备通畅访问 Google 端点的网络环境。
+
+### 1.3 推荐模型
+- `gemini-3.8-flash`（推荐）：当前具备强劲理科推导与长上下文能力的 Flash 模型，适合深度问答与公式推演。
+- `gemini-3.5-flash`：经典均衡模型，响应迅速。
+- `gemini-3.5-flash-lite`：轻量高并发模型，延迟极低。
+
+---
+
+## 2. DeepSeek
+
+### 2.1 获取方式
+1. 访问 [DeepSeek 开放平台](https://platform.deepseek.com/)；
+2. 注册并登录后，进入左侧 **API keys** 页面；
+3. 点击 **创建 API key**，复制生成的以 `sk-` 开头的字符串。
+
+### 2.2 网络环境优势
+- **国内直接访问，无需任何代理**：DeepSeek 服务部署在国内，网络请求直连，延迟极低且稳定，完全不受境外网络波动影响。
+- **数理逻辑优异**：在高等数学、物理公式推导与定理证明方面具备极高精度，且调用资费极为低廉。
+
+### 2.3 推荐模型
+- `deepseek-flash`（推荐）：新一代理科推理架构，综合性能优秀。
+- `deepseek-v4-pro`：高精度专业数学推理。
+
+---
+
+## 3. 自定义提供商（OpenAI 兼容端点）
+
+若希望使用其他大模型服务商（如 SiliconFlow 硅基流动、Moonshot Kimi、OpenRouter），或在本地部署开源大模型（如 Ollama），可选用“自定义”提供商：
+
+| 配置项 | 说明与示例 |
+| :--- | :--- |
+| **提供商选择** | 在下拉菜单中选择“自定义” |
+| **端点 URL** | 完整的 Chat Completions 端点地址，例如：<br>· 本地 Ollama：`http://localhost:11434/v1/chat/completions`<br>· 硅基流动：`https://api.siliconflow.cn/v1/chat/completions` |
+| **API Key** | 对应平台的访问凭证（如使用本地 Ollama 可随意填入任意字符） |
+| **模型 ID** | 目标模型的具体标识（例如 `deepseek-ai/DeepSeek-V3`、`qwen2.5:14b` 等） |
+
+---
+
+## 4. 在系统中配置与测试
+
+在 AstroLib 页面中，可通过以下任意入口填入并保存：
+
+1. **入口一（顶栏设置）**：
+   - 点击页面顶栏右上角齿轮图标（“快速设置”）；
+   - 展开“AI 问答设置”折叠面板；
+   - 选择模型提供商（Google Gemini / DeepSeek / 自定义）；
+   - 在输入框中粘贴 API Key；
+   - 从模型列表中选择期望启用的模型（或填写自定义模型 ID）；
+   - 输入框失焦或点击确定后自动持久化。
+2. **入口二（问答/习题面板）**：
+   - 打开右侧 Sideload AI 问答面板或习题推导卡片；
+   - 若尚未配置密钥，界面将提示输入；直接粘贴即可一键激活。
+
+配置完成后，系统将自动触发响应式同步事件，问答对话框与习题推导功能即刻就绪。
