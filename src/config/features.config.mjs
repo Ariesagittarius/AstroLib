@@ -378,7 +378,7 @@ const featureDefs = {
       defaultDescription: 'AstroLib 是面向高校师生与自学者的大学理工科教材与学术数字化阅读系统，提供高清数学排版、推导过程、离线 EPUB 与课后真题练习。',
       googleSiteVerification: (typeof process !== 'undefined' && process.env?.GOOGLE_SITE_VERIFICATION) || '',
       bingSiteVerification: (typeof process !== 'undefined' && process.env?.BING_SITE_VERIFICATION) || '',
-      indexNowKey: (typeof process !== 'undefined' && process.env?.INDEXNOW_KEY) || '',
+      indexNowKey: (typeof process !== 'undefined' && process.env?.INDEXNOW_KEY) || 'f774bb6a2e78400d9863cad353421e5c',
     },
   }),
 };
