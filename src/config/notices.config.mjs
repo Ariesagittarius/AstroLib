@@ -1,18 +1,3 @@
-/**
- * notices.config.mjs
- * ============================================================================
- * 全站提示框架（Notice Framework）配置、模板中心与通用插值引擎
- * 
- * 遵循架构规范：
- * 1. UI 不是数据模型，本文件是全站提示项的结构、模板与预设唯一声明源；
- * 2. 泛化模板架构：框架不硬编码业务字段，支持任意自定义占位符（如 {model}, {author}, {reviewer}）；
- * 3. 图书在 collections.config.mjs 或 MDX Frontmatter 中通过 notices 数组声明提示，支持跨层级级联与参数覆写。
- * ============================================================================
- */
-
-/**
- * 系统保留控制属性（不作为普通业务参数插值传递）
- */
 const RESERVED_NOTICE_KEYS = new Set([
   'id',
   'template',
@@ -22,7 +7,7 @@ const RESERVED_NOTICE_KEYS = new Set([
   'icon',
   'message',
   'title',
-  'subtitle', // 已废弃，向后兼容忽略
+  'subtitle',
   'tags',
   'tagPosition',
   'items',
@@ -33,14 +18,6 @@ const RESERVED_NOTICE_KEYS = new Set([
   'params',
 ]);
 
-/**
- * 文本参数通用插值工具
- * 将目标字符串中的 {fieldName} 或 {fieldName|fallback} 置换为实际参数
- * 
- * @param {string} text 原始模板文本
- * @param {Record<string, any>} params 参数键值字典
- * @returns {string} 插值后的文本
- */
 export function interpolateText(text, params = {}) {
   if (typeof text !== 'string' || !text.includes('{')) {
     return text;
@@ -54,15 +31,8 @@ export function interpolateText(text, params = {}) {
   });
 }
 
-/**
- * Wiki 提示通用模板库 (NOTICE_TEMPLATES)
- * 允许在 message、tags、items 中使用任意自定义占位符，并在 defaults 中声明回退默认值。
- */
 export const NOTICE_TEMPLATES = {
-  /**
-   * AI 生成内容提示模板
-   * 支持覆盖字段：model, visualModel, verifyStatus 等任意参数
-   */
+
   aiGenerated: {
     id: 'ai-generated',
     variant: 'wiki',
@@ -83,10 +53,6 @@ export const NOTICE_TEMPLATES = {
     }
   },
 
-  /**
-   * 视觉 OCR 自动化提取书目提示模板
-   * 支持覆盖字段：engine, targetEngine 等任意参数
-   */
   ocr: {
     id: 'mineru-ocr-notice',
     variant: 'wiki',
@@ -104,10 +70,6 @@ export const NOTICE_TEMPLATES = {
     }
   },
 
-  /**
-   * 学术翻译与讲义引进模板
-   * 支持覆盖字段：originalBook, author, status, reviewer, termVersion 等
-   */
   translation: {
     id: 'translation-notice',
     variant: 'wiki',
@@ -130,10 +92,6 @@ export const NOTICE_TEMPLATES = {
     }
   },
 
-  /**
-   * 同行审订与重校模板
-   * 支持覆盖字段：institution, reviewer, grade, date 等
-   */
   peerReview: {
     id: 'peer-review-notice',
     variant: 'wiki',
@@ -149,9 +107,6 @@ export const NOTICE_TEMPLATES = {
     }
   },
 
-  /**
-   * 实验性功能与探索性数学笔记模板
-   */
   experimental: {
     id: 'experimental-notice',
     variant: 'wiki',
@@ -163,12 +118,6 @@ export const NOTICE_TEMPLATES = {
   }
 };
 
-/**
- * 动态注册新模板的辅助工具函数
- * @param {string} name 模板唯一标识名
- * @param {object} templateConfig 模板定义
- * @returns {object}
- */
 export function defineNoticeTemplate(name, templateConfig) {
   if (!name || typeof name !== 'string') {
     throw new Error('[NoticeFramework] Template name must be a non-empty string');
@@ -177,12 +126,6 @@ export function defineNoticeTemplate(name, templateConfig) {
   return templateConfig;
 }
 
-/**
- * 创建提示项声明的工厂函数（供 JS 配置文件使用）
- * @param {string | object} templateOrNotice 模板名称或即席提示对象
- * @param {object} [overrides] 覆写或附加的自定义参数
- * @returns {object}
- */
 export function createNotice(templateOrNotice, overrides = {}) {
   if (typeof templateOrNotice === 'string') {
     return { template: templateOrNotice, ...overrides };
@@ -190,10 +133,6 @@ export function createNotice(templateOrNotice, overrides = {}) {
   return { ...templateOrNotice, ...overrides };
 }
 
-/**
- * 既有预设向后兼容集合
- * 保持 collections.config.mjs 与历史代码无缝运行
- */
 export const NOTICE_PRESETS = {
   get mineruOcr() {
     return createNotice('ocr');
@@ -201,17 +140,13 @@ export const NOTICE_PRESETS = {
   get devDocsAi() {
     return createNotice('aiGenerated', { tags: ['AI生成'] });
   },
-  // 模板库直接映射为预设
+
   ...NOTICE_TEMPLATES
 };
 
-/**
- * 路由规则与范围提示匹配表（按 URL 路径前缀或正则匹配批量附加提示）
- * @type {Array<{ pattern: string | RegExp, notices: Array<string | object> }>}
- */
 export const ROUTE_NOTICES = [
   {
-    // 全站所有开发文档路由 (/dev/* 或 /dev)
+
     pattern: /^\/dev(\/|$)/,
     notices: [
       createNotice('aiGenerated', {
@@ -223,18 +158,13 @@ export const ROUTE_NOTICES = [
   },
 ];
 
-/**
- * 根据模板名称或别名查找匹配的模板
- */
 function findTemplate(name) {
   if (!name || typeof name !== 'string') return null;
   if (NOTICE_TEMPLATES[name]) return NOTICE_TEMPLATES[name];
 
-  // 驼峰与短横线兼容查找 (e.g. ai-generated -> aiGenerated)
   const camelName = name.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
   if (NOTICE_TEMPLATES[camelName]) return NOTICE_TEMPLATES[camelName];
 
-  // 常见历史别名兼容
   if (name === 'mineru-ocr' || name === 'mineruOcr') return NOTICE_TEMPLATES.ocr;
   if (name === 'dev-docs-ai' || name === 'devDocsAi' || name === 'chatgpt-luna' || name === 'chatgptLuna') {
     return NOTICE_TEMPLATES.aiGenerated;
@@ -242,9 +172,6 @@ function findTemplate(name) {
   return null;
 }
 
-/**
- * 派生提示项的稳定 ID
- */
 function deriveNoticeId(notice, fallbackId) {
   if (notice.id) return String(notice.id);
   if (fallbackId) return String(fallbackId);
@@ -261,9 +188,6 @@ function deriveNoticeId(notice, fallbackId) {
   return `notice-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-/**
- * 规范化并插值 items 清单条目
- */
 function normalizeItems(items, params) {
   if (!Array.isArray(items)) return [];
   return items.map(item => {
@@ -280,9 +204,6 @@ function normalizeItems(items, params) {
   });
 }
 
-/**
- * 规范化并插值 tags 标签列表
- */
 function normalizeTags(tags, params) {
   if (!Array.isArray(tags)) return [];
   return tags
@@ -290,10 +211,6 @@ function normalizeTags(tags, params) {
     .filter(Boolean);
 }
 
-/**
- * 归一化单个提示声明项
- * 自动完成模板匹配、参数提取、文本插值与结构极净化
- */
 function resolveSingleNotice(raw) {
   if (!raw) return null;
 
@@ -307,7 +224,6 @@ function resolveSingleNotice(raw) {
   const templateKey = item.template || item.preset;
   const templateConfig = findTemplate(templateKey) || {};
 
-  // 提取自定义用户参数（非保留字段自动作为参数）
   const customParams = {};
   for (const [key, value] of Object.entries(item)) {
     if (!RESERVED_NOTICE_KEYS.has(key)) {
@@ -315,7 +231,6 @@ function resolveSingleNotice(raw) {
     }
   }
 
-  // 参数合并优先级：template.defaults -> item.defaults -> item.params -> 自定义顶层参数
   const mergedParams = {
     ...(templateConfig.defaults || {}),
     ...(item.defaults || {}),
@@ -323,23 +238,19 @@ function resolveSingleNotice(raw) {
     ...customParams,
   };
 
-  // 文案合一：message 优先，title 作为回退，完全忽略无用的 subtitle
   const rawMessage = item.message || item.title || templateConfig.message || templateConfig.title || '';
   const message = interpolateText(rawMessage, mergedParams);
 
-  // 标签插值
   const rawTags = item.tags !== undefined ? item.tags : (templateConfig.tags || []);
   const tags = normalizeTags(rawTags, mergedParams);
 
-  // 展开抽屉条目插值与规范化
   const rawItems = item.items !== undefined ? item.items : (templateConfig.items || []);
   const items = normalizeItems(rawItems, mergedParams);
 
-  // 派生稳定唯一 ID
   const id = deriveNoticeId(item, templateConfig.id || templateKey);
 
-  const collapsible = item.collapsible !== undefined 
-    ? Boolean(item.collapsible) 
+  const collapsible = item.collapsible !== undefined
+    ? Boolean(item.collapsible)
     : (templateConfig.collapsible !== undefined ? Boolean(templateConfig.collapsible) : items.length > 0);
 
   return {
@@ -358,14 +269,6 @@ function resolveSingleNotice(raw) {
   };
 }
 
-/**
- * 将路由、合集、图书与章节 frontmatter 中的提示声明归一化为完整对象列表
- * 优先级（从低到高）：Route (路由规则) -> Collection (合集级) -> Book (图书级) -> Frontmatter (页面级)
- * 相同 id 的提示项，后声明者覆盖前者；若指定 disabled: true 则可单页静默屏蔽该提示。
- * 
- * @param {...Array<string | object>} noticeGroups 各层级提示数组
- * @returns {Array<object>}
- */
 export function resolveNotices(...noticeGroups) {
   const combined = noticeGroups.flat().filter(Boolean);
   if (!combined.length) return [];
@@ -378,12 +281,10 @@ export function resolveNotices(...noticeGroups) {
     }
   }
 
-  // 按 ID 去重，后声明者覆盖前者（支持级联覆盖与单页 disabled 屏蔽）
   const map = new Map();
   for (const n of list) {
     map.set(n.id, n);
   }
 
-  // 过滤已被显式禁用的条目 (disabled: true)
   return Array.from(map.values()).filter(n => !n.disabled);
 }

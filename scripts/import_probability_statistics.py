@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+
 """
 把 task/ 中《概率论与数理统计教程（第三版，茆诗松/程依明/濮晓龙，高等教育出版社）》
 的 3 个 MinerU 产物批量转换为站点 MDX。
@@ -29,7 +29,6 @@ SEC_RE = re.compile(r'^#{1,6}\s*\\?\*?§?\s*(\d+)\.(\d+)(?!\.)(?:\s+(.*))?\s*$')
 SUBSEC_HEAD_RE = re.compile(r'^#{1,6}\s*\\?\*?(\d+)\.(\d+)\.(\d+)\s')
 SUMMARY_RE = re.compile(r'^#{0,6}\s*本章小结\s*$')
 TABLE_CAP_RE = re.compile(r'^表\s*(\d+(?:\.\d+)?)\s')
-
 
 def split_book_chapters(lines, converter):
     """按节号（§X.Y）切分章节，章号由节号推断。"""
@@ -90,7 +89,6 @@ def split_book_chapters(lines, converter):
     close()
     return chapters, order
 
-
 def main():
     converter = BookConverter(
         book_slug='probability_statistics',
@@ -118,7 +116,6 @@ def main():
     chapters, order = split_book_chapters(combined, converter)
     print(f"章节顺序: {order}")
 
-    # ---------- 00 内容简介 ----------
     intro_body = (
         '\n\n'.join(intro_lines).strip()
         + '\n\n本书为茆诗松、程依明、濮晓龙编著，高等教育出版社出版。全书共八章：'
@@ -129,12 +126,10 @@ def main():
     )
     converter.write_intro('内容简介', intro_body)
 
-    # ---------- 01 第三版前言 ----------
     pref_body = converter.card_parser.render_body(pref_lines)
     converter.write_mdx('01_第三版前言.mdx', '第三版前言', pref_body)
     print('  [page] 生成 01_第三版前言.mdx')
 
-    # ---------- 章节 ----------
     for ch in order:
         info = chapters[ch]
         sections = info['sections']
@@ -164,7 +159,6 @@ def main():
                 first = False
             converter.write_section(ch, sec, sec_title, body)
 
-    # ---------- 习题参考答案 ----------
     ans_groups = converter.chunker.group_answers_by_sec(answers_lines)
     for ch in sorted(ans_groups):
         items = ans_groups[ch]
@@ -173,7 +167,6 @@ def main():
         n = LAST_SEC.get(ch, 9) + 1
         converter.write_answers_page(ch, n, f"第{ch}章 习题参考答案", ans_body)
 
-    # ---------- 附表 ----------
     table_idx = len(tables_lines)
     for i, line in enumerate(tables_lines):
         if TABLE_CAP_RE.match(line.strip()) and line.strip().startswith('表 6'):
@@ -188,17 +181,14 @@ def main():
         converter.write_mdx('a2_附表（检验临界值表）.mdx', '附表（检验临界值表 表6-表14）', converter.card_parser.render_body(a2))
         print('  [page] 生成 a2_附表（检验临界值表）.mdx')
 
-    # ---------- 参考文献 ----------
     refs_body = converter.card_parser.render_body(refs_lines)
     if refs_body.strip():
         converter.write_appendix('a3', '参考文献', refs_body)
 
-    # ---------- 资产拷贝 ----------
     print('== 拷贝图片与封面 ==')
     converter.copy_images()
     converter.copy_cover('c6d0295bdf6b3cf099ddf7474e335c979c5f5d469b6d0b11e63f89e1cbc5f58f.jpg')
     print('== 完成 ==')
-
 
 if __name__ == '__main__':
     sys.exit(main())

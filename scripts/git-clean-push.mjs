@@ -10,7 +10,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 
-// 1. 查找可用 Git 可执行文件路径
 function getGitPath() {
   const candidates = [
     'git',
@@ -22,7 +21,7 @@ function getGitPath() {
       execSync(`"${cmd}" --version`, { stdio: 'ignore' });
       return cmd;
     } catch {
-      // continue
+
     }
   }
   throw new Error('未找到 Git 可执行程序，请确认系统已安装 Git！');
@@ -35,11 +34,10 @@ function runGit(args, cwd = PROJECT_ROOT, options = {}) {
   return execSync(cmd, { cwd, encoding: 'utf8', stdio: options.stdio || 'pipe', ...options });
 }
 
-// 2. 解析 CLI 参数
 function parseArgs() {
   const args = process.argv.slice(2);
   const options = {
-    mode: 'clean', // 'clean', 'private', 'all'
+    mode: 'clean',
     dryRun: false,
     force: false,
     remote: 'origin',
@@ -97,7 +95,6 @@ AstroLib Git 双模式推送工具 (Clean / Private / All)
 `);
 }
 
-// 3. 检查并获取当前分支与提交
 function getRepoInfo() {
   const branch = runGit('rev-parse --abbrev-ref HEAD').trim();
   const commit = runGit('rev-parse HEAD').trim();
@@ -106,7 +103,6 @@ function getRepoInfo() {
   return { branch, commit, commitMsg, remotes };
 }
 
-// 4. 执行私有仓库推送（完整注释版）
 async function pushPrivate(options, repoInfo) {
   console.log('\n🔒 [1/2] 正在准备推送【私有完整注释版】...');
   const targetBranch = options.branch || repoInfo.branch;
@@ -136,7 +132,6 @@ async function pushPrivate(options, repoInfo) {
   return true;
 }
 
-// 5. 执行公共仓库推送（剥离注释版，基于 Git Worktree 隔离沙箱）
 async function pushClean(options, repoInfo) {
   console.log('\n🧹 [2/2] 正在准备推送【公共无注释版】...');
   const targetBranch = options.branch || repoInfo.branch;
@@ -146,22 +141,19 @@ async function pushClean(options, repoInfo) {
     throw new Error(`未找到指定的公共远程仓库: '${remote}'`);
   }
 
-  // 临时沙箱目录
   const tempDir = path.join(PROJECT_ROOT, 'node_modules', '.cache', `_git_clean_${Date.now()}`);
   fs.mkdirSync(path.dirname(tempDir), { recursive: true });
 
   console.log(`📦 创建临时 Worktree 沙箱: ${path.basename(tempDir)}`);
   try {
-    // 创建 detached worktree，指向当前 HEAD
+
     runGit(`worktree add --detach "${tempDir}" HEAD`);
 
-    // 获取沙箱中所有被 Git 追踪的文件
     const trackedFiles = runGit('ls-files', tempDir)
       .split(/\r?\n/)
       .map(f => f.trim())
       .filter(Boolean);
 
-    // 净化沙箱：移除任何 Agent/Skill 目录或文件
     const bannedPrefixes = ['.agents', '.dsh', '.codex', '.cmd', 'CLAUDE.md', '.gemini', '.antigravity'];
     let agentCleanedCount = 0;
     for (const relPath of trackedFiles) {
@@ -209,7 +201,6 @@ async function pushClean(options, repoInfo) {
 
     console.log(`✨ 已成功剥离 ${strippedCount} 个文件中的注释！`);
 
-    // 运行语法校验 (scan-mdx)
     console.log('🧪 正在对无注释沙箱执行 MDX 语法健康校验...');
     try {
       execSync('node scripts/scan-mdx.mjs src/content/docs/collections/math/math_analysis', {
@@ -221,7 +212,6 @@ async function pushClean(options, repoInfo) {
       console.warn('⚠️  快速语法抽检跳过或提示警告');
     }
 
-    // 检查沙箱是否有修改
     const status = runGit('status --porcelain', tempDir).trim();
     let strippedCommit = repoInfo.commit;
 
@@ -236,7 +226,6 @@ async function pushClean(options, repoInfo) {
       console.log(`ℹ️  未产生注释差异，直接使用当前提交: ${strippedCommit.slice(0, 8)}`);
     }
 
-    // 推送到远程公共仓库（纯净镜像分支需 --force 覆盖发布）
     const forceFlag = ' --force';
     const pushCmd = `push ${remote} ${strippedCommit}:refs/heads/${targetBranch}${forceFlag}`;
 
@@ -249,7 +238,7 @@ async function pushClean(options, repoInfo) {
       console.log(`🎉 公共仓库推送成功（已完全剥离注释，Agent读取零干扰）！`);
     }
   } finally {
-    // 清理 Worktree
+
     try {
       console.log('🧹 正在清理临时 Worktree 沙箱...');
       runGit(`worktree remove --force "${tempDir}"`, PROJECT_ROOT);
@@ -258,12 +247,11 @@ async function pushClean(options, repoInfo) {
         fs.rmSync(tempDir, { recursive: true, force: true });
       }
     } catch (cleanupErr) {
-      // ignore cleanup errors
+
     }
   }
 }
 
-// 主入口
 async function main() {
   const options = parseArgs();
   if (options.help) {

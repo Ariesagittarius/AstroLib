@@ -1,16 +1,3 @@
-/**
- * src/components/exercises/exercise-sidebar-controller.ts
- * 课后习题右侧栏抽屉控制器 & M3 Rich Tooltip 交互调度器
- *
- * 核心职责：
- * 1. 拦截各章节末尾 `ExerciseTrigger` 中的 `<md-filter-chip>` 点击事件；
- * 2. 调度右侧边栏（`PageSidebar`）：将章内大纲收纳至顶栏，展开习题专属抽屉；
- * 3. 动态拉取对应章节题目数据并按当前节及选定题库进行过滤；
- * 4. 渲染极简学术风格的轻量 MD 卡片与折叠式推导解析；
- * 5. 挂载 M3 Rich Tooltip，展示开源协议信息并提供原项目 GitHub 外链；
- * 6. 联动全屏自测模态框（ExerciseModal）。
- */
-
 import type { SlimQuestionItem, ChapterData } from '../../types/exercises';
 import { getExerciseBankById, type ExerciseBank } from '../../config/exercise-banks.config';
 import { streamChat } from '../../ai/llm.mjs';
@@ -46,9 +33,9 @@ class ExerciseSidebarController {
   private unsubSideload: (() => void) | null = null;
 
   constructor() {
-    // 监听全局按键：Esc 退出习题模式（与顶栏大纲及全量模态题库状态独立）
+
     if (typeof window !== 'undefined') {
-      // 监听页面卸载，自动收起并中止运行中 AI 流
+
       document.addEventListener('astrolib:page-unload', () => {
         if (this.isOpen) this.closeInternal();
       });
@@ -56,7 +43,6 @@ class ExerciseSidebarController {
       window.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
 
-        // 0. 若 AI Rich Tooltip 浮窗处于打开状态，优先由浮窗消费 Esc 并关闭
         if (this.activeTooltipQid) {
           this.closeAiRichTooltip();
           return;
@@ -64,22 +50,18 @@ class ExerciseSidebarController {
 
         if (!this.isOpen) return;
 
-        // 1. 若全屏题库中心处于打开状态 (is-open)，优先由模态框消费 Esc，右侧栏保持开启
         const modal = document.getElementById('exercise-modal-root');
         if (modal && modal.classList.contains('is-open')) {
           return;
         }
 
-        // 2. 若顶栏大纲浮层处于打开状态 (mobile-toc-open)，优先由大纲浮层消费 Esc，右侧栏保持开启
         if (document.body.classList.contains('mobile-toc-open')) {
           return;
         }
 
-        // 3. 仅当无前台浮层与弹窗时，Esc 才收起右侧习题抽屉
         this.close();
       });
 
-      // 监听全局点击：点击浮窗外部自动关闭 M3 Rich Tooltip（若处于固定状态则忽略）
       window.addEventListener('pointerdown', (e) => {
         if (!this.activeTooltipQid || !this.tooltipEl) return;
         if (this.isTooltipPinned) return;
@@ -90,7 +72,6 @@ class ExerciseSidebarController {
         this.closeAiRichTooltip();
       });
 
-      // 监听窗口尺寸变化：自适应微调浮窗位置
       window.addEventListener('resize', () => {
         if (this.activeTooltipQid) {
           if (this.isCustomPositioned && this.tooltipEl) {
@@ -108,14 +89,10 @@ class ExerciseSidebarController {
     }
   }
 
-  /**
-   * 初始化挂载事件监听（在 DOMContentLoaded 与 astro:page-load 时执行）
-   */
   public init() {
     this.bindTriggerChips();
     this.bindPanelActions();
 
-    // 幂等订阅统一侧载状态变化，避免跨章节切换时监听器无节制叠加
     if (this.unsubSideload) {
       this.unsubSideload();
       this.unsubSideload = null;
@@ -127,9 +104,6 @@ class ExerciseSidebarController {
     });
   }
 
-  /**
-   * 绑定章节末尾 ExerciseTrigger 内部的 Chip 点击事件
-   */
   private bindTriggerChips() {
     const triggerCards = document.querySelectorAll('[data-exercise-trigger-card]');
     triggerCards.forEach((card) => {
@@ -147,9 +121,6 @@ class ExerciseSidebarController {
     });
   }
 
-  /**
-   * 绑定右侧栏习题面板内的关闭与“打开完整题库”按钮
-   */
   private bindPanelActions() {
     const closeBtn = document.getElementById('ex-sidebar-close');
     if (closeBtn) {
@@ -167,9 +138,6 @@ class ExerciseSidebarController {
     }
   }
 
-  /**
-   * 响应读者点击习题册 Chip
-   */
   private handleChipClick(
     chip: HTMLElement,
     bankId: string,
@@ -177,20 +145,18 @@ class ExerciseSidebarController {
     section: string,
     book: string
   ) {
-    // 若点击已选中的 Chip，则取消选中并关闭右侧习题栏
+
     if (this.isOpen && this.activeBankId === bankId) {
       this.close();
       return;
     }
 
-    // 取消其他 chip 的 selected 状态
     document.querySelectorAll('.ex-bank-chip').forEach((c: any) => {
       if (typeof c.selected === 'boolean') {
         c.selected = false;
       }
     });
 
-    // 选中当前 Chip
     if (typeof (chip as any).selected === 'boolean') {
       (chip as any).selected = true;
     }
@@ -203,13 +169,9 @@ class ExerciseSidebarController {
     this.open();
   }
 
-  /**
-   * 打开右侧栏习题面板，统一调度侧载宿主
-   */
   public async open() {
     this.isOpen = true;
 
-    // 1. 通过统一侧载管理器激活习题面板（驱动宽度平滑自适应与正文协同）
     sideloadManager.open('exercises');
 
     const panel = document.getElementById('exercise-sidebar-panel');
@@ -218,7 +180,6 @@ class ExerciseSidebarController {
       panel.classList.add('active');
     }
 
-    // 2. 更新面板头部信息
     const bankConfig = this.activeBankId ? getExerciseBankById(this.activeBankId) : undefined;
     const titleEl = document.getElementById('ex-sidebar-title');
     if (titleEl) {
@@ -230,7 +191,6 @@ class ExerciseSidebarController {
       countEl.textContent = '加载中...';
     }
 
-    // 3. 渲染骨架加载态
     const contentEl = document.getElementById('ex-sidebar-content');
     if (contentEl) {
       contentEl.innerHTML = createM3LoadingHtml({
@@ -242,33 +202,23 @@ class ExerciseSidebarController {
       });
     }
 
-    // 4. 加载数据并渲染题目
     await this.loadAndRenderQuestions();
   }
 
-  /**
-   * 关闭右侧习题面板，切回大纲原生显示
-   */
   public close() {
     this.closeInternal();
     sideloadManager.switchToDefault();
   }
 
-  /**
-   * 内部状态与控制器清理（不直接触发外部状态循环）
-   */
   public closeInternal() {
     this.isOpen = false;
     this.activeBankId = null;
 
-    // 关闭 AI Rich Tooltip 浮窗
     this.closeAiRichTooltip();
 
-    // 中止正在流式推导的 AI 控制器
     this.aiControllers.forEach((c) => c.abort());
     this.aiControllers.clear();
 
-    // 取消 chip 选中态
     if (this.activeChip && typeof (this.activeChip as any).selected === 'boolean') {
       (this.activeChip as any).selected = false;
     }
@@ -286,9 +236,6 @@ class ExerciseSidebarController {
     }
   }
 
-  /**
-   * 调取 ExerciseModal 全屏打开完整题库
-   */
   public async openInFullModal() {
     try {
       window.dispatchEvent(
@@ -304,9 +251,6 @@ class ExerciseSidebarController {
     }
   }
 
-  /**
-   * 加载本章 JSON 并过滤渲染本节题目
-   */
   private async loadAndRenderQuestions() {
     const cacheKey = `${this.currentBook}_ch${this.currentChapter}`;
     let chapterData = this.chapterCache.get(cacheKey);
@@ -338,14 +282,12 @@ class ExerciseSidebarController {
     const bankConfig = this.activeBankId ? getExerciseBankById(this.activeBankId) : undefined;
     const targetSourceType = bankConfig?.sourceType || 'exam';
 
-    // 筛选适用于当前节与题库类型的题目
     const allQuestions = chapterData.questions || [];
     const filtered = allQuestions.filter((q) => {
-      // 1. 过滤题库来源类型
+
       const qSourceType = q.source_type || 'exam';
       if (qSourceType !== targetSourceType) return false;
 
-      // 2. 过滤小节
       if (this.currentSection === 'all') return true;
       if (q.sec === this.currentSection) return true;
       if (q.sec_slug && q.sec_slug.startsWith(this.currentSection)) return true;
@@ -380,22 +322,16 @@ class ExerciseSidebarController {
       return;
     }
 
-    // 缓存题目对象方便 AI 调用
     filtered.forEach((q, idx) => {
       this.questionsMap.set(q.id, q);
       this.questionIndexMap.set(q.id, idx + 1);
     });
 
-    // 渲染协议卡片（若有）与轻量 MD 卡片列表
     contentEl.innerHTML = licenseBannerHtml + filtered.map((q, idx) => this.renderQuestionCard(q, idx)).join('');
 
-    // 绑定卡片内部推导解析与 Ask AI 交互
     this.bindQuestionCardInteractions(contentEl);
   }
 
-  /**
-   * 构造单道题目的轻量 Material 3 Filled 卡片 HTML
-   */
   private renderQuestionCard(q: SlimQuestionItem, index: number): string {
     const typeNames: Record<string, string> = {
       choice: '单选题',
@@ -406,7 +342,6 @@ class ExerciseSidebarController {
     const typeLabel = typeNames[q.type] || '练习题';
     const sourceLabel = q.source || q.paper_title || `第 ${q.paper_q_num || index + 1} 题`;
 
-    // 选项列表（单选题）
     let optionsHtml = '';
     if (q.type === 'choice' && q.options && q.options.length > 0) {
       optionsHtml = `
@@ -425,7 +360,6 @@ class ExerciseSidebarController {
       `;
     }
 
-    // 解题答案与推导步骤
     const hasAnswer = Boolean(q.answer_html || q.answer);
     const hasSteps = Boolean(q.steps_html);
     const hasHints = Boolean(q.hints_html);
@@ -527,11 +461,8 @@ class ExerciseSidebarController {
     `;
   }
 
-  /**
-   * 绑定题目卡片交互：官方解析展开与 Ask AI 流式推导
-   */
   private bindQuestionCardInteractions(contentEl: HTMLElement) {
-    // 1. 官方解析展开/收起
+
     contentEl.querySelectorAll<HTMLElement>('.ex-card-toggle-sol').forEach((btn) => {
       btn.onclick = () => {
         const qid = btn.getAttribute('data-qid');
@@ -546,7 +477,6 @@ class ExerciseSidebarController {
       };
     });
 
-    // 2. Ask AI 展开与推导
     contentEl.querySelectorAll<HTMLElement>('.ex-card-ask-ai').forEach((btn) => {
       btn.onclick = () => {
         const qid = btn.getAttribute('data-qid');
@@ -569,7 +499,6 @@ class ExerciseSidebarController {
         btn.setAttribute('aria-expanded', 'true');
         btn.classList.add('active');
 
-        // 检查本地已有缓存
         const cached = this.getStoredAiSolution(qid);
         if (cached) {
           this.renderCompletedAiSolution(qid, cached);
@@ -583,9 +512,6 @@ class ExerciseSidebarController {
     });
   }
 
-  /**
-   * 获取本地缓存的题解
-   */
   private getStoredAiSolution(qid: string): string | null {
     if (this.aiSolutions.has(qid)) return this.aiSolutions.get(qid)!;
     try {
@@ -600,9 +526,6 @@ class ExerciseSidebarController {
     return null;
   }
 
-  /**
-   * 获取本地缓存的深度思考推导链 (CoT)
-   */
   private getStoredAiReasoning(qid: string): string | null {
     if (this.aiReasonings.has(qid)) return this.aiReasonings.get(qid)!;
     try {
@@ -617,9 +540,6 @@ class ExerciseSidebarController {
     return null;
   }
 
-  /**
-   * 渲染 M3 CoT (深度推导思路 / Chain-of-Thought) 折叠手风琴组件
-   */
   private renderCotAccordionHtml(reasoningMd: string, isStreamingReasoning = false): string {
     if (!reasoningMd && !isStreamingReasoning) return '';
 
@@ -650,9 +570,6 @@ class ExerciseSidebarController {
     `;
   }
 
-  /**
-   * 绑定 Tooltip 内 CoT 折叠栏的交互
-   */
   private bindCotToggle() {
     const box = document.getElementById('ex-tooltip-cot-box');
     const toggle = document.getElementById('ex-tooltip-cot-toggle');
@@ -664,7 +581,7 @@ class ExerciseSidebarController {
       const isExpanded = box.classList.toggle('is-expanded');
       toggle.setAttribute('aria-expanded', String(isExpanded));
       if (isExpanded && content) {
-        // 展开时立即执行一次高保真 Markdown 与 KaTeX 排版渲染
+
         const qid = this.activeTooltipQid;
         const reasoning = qid ? (this.aiReasonings.get(qid) || this.getStoredAiReasoning(qid) || '') : '';
         if (reasoning) {
@@ -678,9 +595,6 @@ class ExerciseSidebarController {
     };
   }
 
-  /**
-   * 触发 AI 规范推导生成
-   */
   private async triggerAiGeneration(qid: string, q: SlimQuestionItem, forceRetry = false) {
     const aiBody = document.getElementById(`ai-body-${qid}`);
     if (!aiBody) return;
@@ -691,7 +605,6 @@ class ExerciseSidebarController {
       return;
     }
 
-    // 中止已有推导
     const oldCtrl = this.aiControllers.get(qid);
     if (oldCtrl) oldCtrl.abort();
 
@@ -745,7 +658,6 @@ class ExerciseSidebarController {
       </div>
     `;
 
-    // 绑定弹出浮窗按钮与收回按钮
     const popoutBtn = document.getElementById(`ai-popout-${qid}`);
     if (popoutBtn) {
       popoutBtn.onclick = () => {
@@ -757,7 +669,6 @@ class ExerciseSidebarController {
       this.closeAiRichTooltip();
     });
 
-    // 绑定停止按钮
     document.getElementById(`ai-stop-${qid}`)?.addEventListener('click', () => {
       scheduler.stop();
       controller.abort();
@@ -775,7 +686,6 @@ class ExerciseSidebarController {
       document.getElementById(`ai-retry-${qid}`)?.classList.remove('hidden');
     });
 
-    // 绑定转入书内问答按钮
     document.getElementById(`ai-chat-${qid}`)?.addEventListener('click', () => {
       window.dispatchEvent(
         new CustomEvent('aiask:query', {
@@ -791,7 +701,6 @@ class ExerciseSidebarController {
     let accumulatedMd = '';
     let accumulatedReasoning = '';
 
-    // 初始化流式批处理节流调度器（100ms 窗口）
     const scheduler = new StreamThrottleScheduler(() => {
       this.aiSolutions.set(qid, accumulatedMd);
       if (accumulatedReasoning) {
@@ -866,7 +775,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
       const hasContent = Boolean(accumulatedMd && accumulatedMd.trim());
       const hasReasoning = Boolean(accumulatedReasoning && accumulatedReasoning.trim());
 
-      // 1. 若完全未收到任何内容（空响应）
       if (!hasContent && !hasReasoning) {
         if (contentEl) {
           contentEl.innerHTML = `
@@ -882,8 +790,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
         return;
       }
 
-      // 2. 关键防御：若模型输出了深度思考思路但正文未输出（例如 Token 限制、上游截断）
-      // 绝对禁止将思考链冒充赋给正文（杜绝草稿冒充最终解答与虚假对勾）
       if (!hasContent && hasReasoning) {
         this.aiReasonings.set(qid, accumulatedReasoning);
         try {
@@ -919,7 +825,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
         document.getElementById(`ai-stop-${qid}`)?.classList.add('hidden');
         document.getElementById(`ai-retry-${qid}`)?.classList.remove('hidden');
 
-        // 同步至浮窗：保留思考折叠栏，但在正文区明确展示中断提示
         this.syncStreamingToRichTooltip(qid, '', accumulatedReasoning, false);
         const tooltipSol = document.getElementById('ex-tooltip-solution');
         if (tooltipSol) {
@@ -934,7 +839,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
         return;
       }
 
-      // 3. 正常完成（正文非空）
       this.aiSolutions.set(qid, accumulatedMd);
       if (accumulatedReasoning) {
         this.aiReasonings.set(qid, accumulatedReasoning);
@@ -977,9 +881,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     }
   }
 
-  /**
-   * 渲染推导完成后的 AI 面板工具栏与操作
-   */
   private finishAiBoxView(qid: string, q: SlimQuestionItem, solutionMd: string, reasoningMd?: string) {
     const statusEl = document.getElementById(`ai-status-${qid}`);
     if (statusEl) {
@@ -1028,9 +929,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     }
   }
 
-  /**
-   * 渲染已缓存的完成题解
-   */
   private renderCompletedAiSolution(qid: string, solutionMd: string) {
     const aiBody = document.getElementById(`ai-body-${qid}`);
     if (!aiBody) return;
@@ -1114,9 +1012,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     }
   }
 
-  /**
-   * 渲染未配置 API Key 时的快速输入引导卡片
-   */
   private renderAiKeyPrompt(qid: string, q: SlimQuestionItem) {
     const aiBody = document.getElementById(`ai-body-${qid}`);
     if (!aiBody) return;
@@ -1151,9 +1046,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     });
   }
 
-  /**
-   * 构造题库专属的 Material 3 主题色 Fill 开源协议与来源声明卡片
-   */
   private renderLicenseBannerCard(bank: ExerciseBank): string {
     const lic = bank.license;
     if (!lic) return '';
@@ -1200,9 +1092,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     `;
   }
 
-  /**
-   * 获取或初始化 Material 3 Rich Tooltip DOM 挂载容器
-   */
   private getOrCreateRichTooltip(): HTMLElement {
     let el = document.getElementById('ex-ai-rich-tooltip');
     if (!el) {
@@ -1218,9 +1107,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     return el;
   }
 
-  /**
-   * 切换 AI 规范推导的 M3 Rich Tooltip 浮窗
-   */
   private toggleAiRichTooltip(qid: string, triggerBtn: HTMLElement) {
     if (this.activeTooltipQid === qid) {
       this.closeAiRichTooltip();
@@ -1229,17 +1115,10 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     }
   }
 
-  /**
-   * 打开并定位 M3 Rich Tooltip 浮窗
-   */
-  /**
-   * 打开并定位 M3 Rich Tooltip 浮窗（并让渡收起右侧栏推导）
-   */
   private openAiRichTooltip(qid: string, triggerBtn: HTMLElement) {
     const q = this.questionsMap.get(qid);
     if (!q) return;
 
-    // 若之前已有其他题目的浮窗打开，恢复其侧栏展示
     if (this.activeTooltipQid && this.activeTooltipQid !== qid) {
       document.getElementById(`ai-body-${this.activeTooltipQid}`)?.classList.remove('tooltip-active-ceded');
     }
@@ -1254,10 +1133,8 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     const solutionMd = this.getStoredAiSolution(qid) || '';
     const reasoningMd = this.getStoredAiReasoning(qid) || '';
 
-    // 让渡显示：在右侧栏为当前题目添加 .tooltip-active-ceded，隐藏冗长的推导内容
     document.getElementById(`ai-body-${qid}`)?.classList.add('tooltip-active-ceded');
 
-    // 更新触发按钮激活态
     document.querySelectorAll('.ex-ai-popout-btn').forEach((btn) => {
       btn.classList.toggle('active', btn.id === `ai-popout-${qid}`);
     });
@@ -1348,11 +1225,9 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
       </div>
     `;
 
-    // 绑定内部交互
     document.getElementById('ex-tooltip-close')?.addEventListener('click', () => this.closeAiRichTooltip());
     document.getElementById('ex-tooltip-dismiss')?.addEventListener('click', () => this.closeAiRichTooltip());
 
-    // 绑定固定 (Pin) 交互
     const pinBtn = document.getElementById('ex-tooltip-pin') as any;
     if (pinBtn) {
       const syncPin = (newPinned: boolean) => {
@@ -1379,11 +1254,10 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
       });
     }
 
-    // 绑定拖动 (Drag) 交互
     const dragBtn = document.getElementById('ex-tooltip-drag') as HTMLElement;
     if (dragBtn) {
       dragBtn.addEventListener('pointerdown', (e: PointerEvent) => {
-        if (e.button !== 0) return; // 仅限主键
+        if (e.button !== 0) return;
         if (!this.tooltipEl) return;
 
         try {
@@ -1396,7 +1270,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
         const initialLeft = rect.left;
         const initialTop = rect.top;
 
-        // 切换为显式 left/top 定位，脱离右侧栏相对 right 锚定
         this.tooltipEl.style.left = `${initialLeft}px`;
         this.tooltipEl.style.right = 'auto';
         this.tooltipEl.style.top = `${initialTop}px`;
@@ -1414,7 +1287,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
           const newLeft = initialLeft + deltaX;
           const newTop = initialTop + deltaY;
 
-          // 视口安全边界约束（上下左右保留 8px 呼吸间距，严禁移出屏幕）
           const clampX = Math.max(8, Math.min(newLeft, window.innerWidth - currentW - 8));
           const clampY = Math.max(8, Math.min(newTop, window.innerHeight - currentH - 8));
 
@@ -1482,69 +1354,53 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
       } catch {}
     }
 
-    // 计算定位：位于右侧栏的左侧
     this.repositionRichTooltip(triggerBtn);
 
-    // 展示
     tooltip.classList.add('visible');
     tooltip.setAttribute('aria-hidden', 'false');
 
-    // 双重校验定位（确保真实 DOM 渲染后的高度准确收拢）
     requestAnimationFrame(() => {
       this.repositionRichTooltip(triggerBtn);
     });
   }
 
-  /**
-   * 动态自适应定位 Rich Tooltip 到右侧栏左侧，并精准约束视口边界（杜绝下部遮挡）
-   */
   private repositionRichTooltip(triggerBtn: HTMLElement) {
     if (!this.tooltipEl) return;
     const btnRect = triggerBtn.getBoundingClientRect();
     const sidebar = document.querySelector('.custom-page-sidebar') || document.getElementById('exercise-sidebar-panel');
     const sidebarRect = sidebar ? sidebar.getBoundingClientRect() : { left: window.innerWidth - 320 };
 
-    // 1. 水平定位：位于右侧栏的左侧，留出 14px 呼吸间距
     const rightDist = window.innerWidth - sidebarRect.left + 14;
     this.tooltipEl.style.right = `${Math.max(16, rightDist)}px`;
     this.tooltipEl.style.left = 'auto';
 
-    // 2. 垂直视口边界约束
     const viewportH = window.innerHeight;
-    const navHeight = 72; // 顶栏避让区
-    const bottomPadding = 24; // 底部安全留白，确保底部动作栏 100% 完整可见
+    const navHeight = 72;
+    const bottomPadding = 24;
     const maxAvailableH = Math.max(260, viewportH - navHeight - bottomPadding);
 
-    // 舒适阅读目标高度（最大 620px，但不超过可用视口高度）
     const targetH = Math.min(maxAvailableH, 620);
 
-    // 3. 自适应计算 top
-    // 理想情况下，窗口上边略微高于触发按钮
     const btnCenterY = btnRect.top + btnRect.height / 2;
     let top = btnRect.top - 24;
 
-    // 如果按钮偏下，导致 top + targetH 超过屏幕下界，则向上收拢
     const maxTop = Math.max(navHeight, viewportH - targetH - bottomPadding);
     top = Math.max(navHeight, Math.min(top, maxTop));
 
     this.tooltipEl.style.top = `${top}px`;
-    // 动态限定 maxHeight，即使在超矮屏幕也能保证 footer 绝对不溢出视口
+
     this.tooltipEl.style.maxHeight = `${viewportH - top - bottomPadding}px`;
 
-    // 4. Caret 小角动态对齐按钮中心
     const caret = this.tooltipEl.querySelector('.ex-ai-rich-tooltip-caret') as HTMLElement;
     if (caret) {
       const caretTop = btnCenterY - top - 6;
-      // 限制小角在浮窗卡片自身上下边界内
+
       const actualHeight = this.tooltipEl.offsetHeight || targetH;
       const clampedCaretTop = Math.max(20, Math.min(caretTop, actualHeight - 36));
       caret.style.top = `${clampedCaretTop}px`;
     }
   }
 
-  /**
-   * 关闭 M3 Rich Tooltip 浮窗并恢复右侧栏推导让渡显示
-   */
   private closeAiRichTooltip() {
     const prevQid = this.activeTooltipQid;
     this.isTooltipPinned = false;
@@ -1558,12 +1414,11 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     });
     this.activeTooltipQid = null;
 
-    // 让渡恢复：移除右侧栏对应题目的 .tooltip-active-ceded 状态，重新展示完整推导
     if (prevQid) {
       const aiBody = document.getElementById(`ai-body-${prevQid}`);
       if (aiBody) {
         aiBody.classList.remove('tooltip-active-ceded');
-        // 若推导内容已生成，确保 KaTeX 在侧栏中正确渲染
+
         const contentEl = document.getElementById(`ai-content-${prevQid}`);
         if (contentEl) {
           try {
@@ -1574,13 +1429,9 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     }
   }
 
-  /**
-   * 实时将流式内容与思考过程同步渲染进打开的 Rich Tooltip 中
-   */
   private syncStreamingToRichTooltip(qid: string, md: string, reasoningMd = '', isStreaming = true) {
     if (this.activeTooltipQid !== qid) return;
 
-    // 1. 同步 CoT 思考过程组件（原地更新摘要，杜绝暴力销毁重建 DOM 容器）
     const cotContainer = document.getElementById('ex-tooltip-cot-container');
     if (cotContainer) {
       let box = document.getElementById('ex-tooltip-cot-box');
@@ -1591,7 +1442,7 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
       }
 
       if (box) {
-        // 原地更新摘要标签（纯文本变更，开销极低）
+
         const summaryEl = document.getElementById('ex-tooltip-cot-summary');
         if (summaryEl) {
           summaryEl.textContent = isStreaming && !md
@@ -1599,7 +1450,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
             : `已完成思考 · 共 ${reasoningMd.length} 字`;
         }
 
-        // 仅在已展开的情况下按需进行 Markdown 与 KaTeX 排版；折叠状态下绝不触碰隐藏 DOM
         const isExpanded = box.classList.contains('is-expanded');
         if (isExpanded) {
           const content = document.getElementById('ex-tooltip-cot-content');
@@ -1613,7 +1463,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
       }
     }
 
-    // 2. 同步推导正文
     const solutionEl = document.getElementById('ex-tooltip-solution');
     if (solutionEl) {
       solutionEl.innerHTML = renderSolutionMarkdown(md, isStreaming);
@@ -1632,7 +1481,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
   }
 }
 
-// 单例模式暴露
 let sidebarControllerInstance: ExerciseSidebarController | null = null;
 
 export function getExerciseSidebarController(): ExerciseSidebarController {

@@ -1,14 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/test-phase4-gate.mjs
- * AstroLib Phase 4.5 架构关卡综合验证与审计套件
- *
- * 核心任务：
- * 1. 5 套 Presets × 双态 (deterministic vs adaptive) 编译测试 (共 10 组 Specimen)
- * 2. 8 组 Legacy Combination Matrix (cjkFont × mathFont) 规范化正交编译测试
- * 3. 嵌入字体深度审计 (Requested vs Resolved vs Embedded)
- * 4. 视觉排版层级与解题环境碎片化审查
- */
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -32,7 +22,6 @@ console.log('================================================================');
 console.log('🛡️ AstroLib Phase 4.5 Typography Gate: 双态解析与 Legacy 矩阵审计');
 console.log('================================================================\n');
 
-// 探测本地 xelatex
 function findXelatex() {
   const candidates = [
     'xelatex',
@@ -55,14 +44,12 @@ if (!xelatexBin) {
 }
 console.log(`🔍 本地编译器: ${xelatexBin}\n`);
 
-// 拷贝宏包
 const stySource = fs.readFileSync(
   path.join(ROOT, 'src', 'publishing', 'latex', 'templates', 'astrolib-chapter.sty'),
   'utf8'
 );
 fs.writeFileSync(path.join(GATE_DIR, 'astrolib-chapter.sty'), stySource, 'utf8');
 
-// Python 字体提取辅助函数
 function inspectPdfEmbeddedFonts(pdfPath) {
   if (!fs.existsSync(pdfPath)) return [];
   try {
@@ -95,7 +82,6 @@ print(';'.join(sorted(base_fonts)))
   }
 }
 
-// 核心 Specimen 正文
 const SPECIMEN_BODY = `
 \\renewcommand{\\astrolibchapternum}{2.}
 \\renewcommand{\\astrolibbooktitle}{工科数学分析基础（第三版）}
@@ -142,9 +128,6 @@ const SPECIMEN_BODY = `
 \\astrolibdigitalresource[国家精品开放课程]{反函数求导法则高清微课}{https://astrolib.org/res/1}
 `;
 
-// =============================================================================
-// [任务 1] 4 套 Preset × 双态 (Deterministic vs Adaptive) 评测
-// =============================================================================
 console.log('--- [阶段 1] 4 套 Preset × 双态解析测试 ---');
 const presets = listTypographyPresets().map((p) => p.id);
 const modes = ['deterministic', 'adaptive'];
@@ -188,7 +171,6 @@ ${SPECIMEN_BODY}
     const embedded = inspectPdfEmbeddedFonts(pdfPath);
     const preset = PRESET_REGISTRY[pId];
 
-    // 分析 CJK 主体嵌入情况
     const hasSourceHan = embedded.some((f) => f.includes('SourceHan'));
     const hasFandolSong = embedded.some((f) => f.includes('FandolSong'));
     const hasWenKai = embedded.some((f) => f.includes('WenKai'));
@@ -232,9 +214,6 @@ console.table(
   }))
 );
 
-// =============================================================================
-// [任务 2] 8 组 Legacy Combination Matrix (cjkFont × mathFont) 评测
-// =============================================================================
 console.log('\n--- [阶段 2] Legacy 规范化正交组合矩阵测试 (2 × 4 = 8 组) ---');
 const legacyCjks = ['default', 'sourcehan'];
 const legacyMaths = ['typst', 'modern', 'times', 'pagella'];
@@ -303,7 +282,6 @@ console.table(
   }))
 );
 
-// 统计总判定
 const allDualPass = dualResults.every((r) => r.success);
 const allLegacyPass = legacyResults.every((r) => r.success);
 

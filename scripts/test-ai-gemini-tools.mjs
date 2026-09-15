@@ -1,16 +1,3 @@
-/**
- * scripts/test-ai-gemini-tools.mjs
- * -----------------------------------------------------------------------------
- * 单元与集成测试：Google Gemini 工具调用 (Tool Calling / thought_signature)
- * 验证四层纵深防御：
- * 1. streamChat 流式响应中 extra_content / thought_signature 的全层级捕获；
- * 2. streamChat 发送前对 Gemini 的签名自动补齐 (skip_thought_signature_validator) 与真实签名保留；
- * 3. streamChat 发送前对非 Gemini 提供商 (DeepSeek / OpenAI) 的特异字段自动清洗；
- * 4. dev-server-plugin 中继反代的请求体二次兜底注入；
- * 5. error-handler 对 thought_signature 异常的精准分类与诊断提示。
- * =============================================================================
- */
-
 import assert from 'node:assert/strict';
 import { parseAiError } from '../src/ai/error-handler.ts';
 
@@ -46,7 +33,7 @@ async function runGeminiToolTests() {
   console.log('✔ error-handler 精准分类与诊断验证通过\n');
 
   console.log('=== 2. 验证 streamChat 对 messages 的提供商特异性归一化 ===');
-  // 模拟待发送的 messages 数组（包含工具调用）
+
   const sampleMessagesWithMissingSig = [
     { role: 'system', content: 'You are an academic tutor.' },
     { role: 'user', content: '什么是挠率？' },
@@ -69,13 +56,11 @@ async function runGeminiToolTests() {
     },
   ];
 
-  // 动态导入 llm.mjs 内部的归一化逻辑（测试 streamChat 中的规范化处理）
-  // 模拟拦截 fetch 请求体，测试真实 streamChat 准备发送给上游的内容
   let capturedBody = null;
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url, options) => {
     capturedBody = JSON.parse(options.body);
-    // 返回模拟 SSE 流
+
     const mockSse = [
       'data: {"choices":[{"delta":{"content":"挠率是描述曲线旋转程度的几何量。"}}]}',
       'data: [DONE]',
@@ -88,7 +73,6 @@ async function runGeminiToolTests() {
 
   const { streamChat } = await import('../src/ai/llm.mjs');
 
-  // 测试用例 2.1: 目标为 Gemini 且缺失签名时 -> 必须自动补齐 skip_thought_signature_validator
   await streamChat({
     endpoint: '/api/proxy/gemini/v1beta/openai/chat/completions',
     model: 'gemini-3.8-flash',
@@ -105,7 +89,6 @@ async function runGeminiToolTests() {
   );
   console.log('✔ Gemini 缺失签名自动注入官方兜底标记验证通过');
 
-  // 测试用例 2.2: 目标为 Gemini 且已有真实签名时 -> 必须保留真实签名，严禁被覆盖
   const sampleWithRealSig = [
     { role: 'user', content: 'test' },
     {
@@ -133,7 +116,6 @@ async function runGeminiToolTests() {
   );
   console.log('✔ Gemini 真实签名完整保留验证通过');
 
-  // 测试用例 2.3: 目标为 DeepSeek 等非 Gemini 端点 -> 必须清洗 extra_content，防止严格模式报错
   await streamChat({
     endpoint: 'https://api.deepseek.com/v1/chat/completions',
     model: 'deepseek-flash',
@@ -145,7 +127,7 @@ async function runGeminiToolTests() {
   console.log('✔ 非 Gemini 提供商 (DeepSeek) 自动剥离特异字段验证通过\n');
 
   console.log('=== 3. 验证 streamChat 对流式 tool_calls 中 extra_content 的全层级捕获 ===');
-  // 模拟 Gemini 流式返回工具调用与思维签名
+
   globalThis.fetch = async () => {
     const sseChunks = [
       'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_gemini_789","type":"function","function":{"name":"book_retrieve","arguments":""},"extra_content":{"google":{"thought_signature":"STREAM_CAPTURED_SIG_999"}}}]}}]}',
@@ -176,7 +158,7 @@ async function runGeminiToolTests() {
   console.log('✔ 流式 tool_calls 的 extra_content 捕获验证通过\n');
 
   console.log('=== 4. 验证 dev-server-plugin 中继反代的请求体兜底机制 ===');
-  // 测试 dev-server-plugin 的注入逻辑
+
   const sampleReqBody = JSON.stringify({
     model: 'gemini-3.8-flash',
     messages: [
@@ -193,7 +175,6 @@ async function runGeminiToolTests() {
     ],
   });
 
-  // 模拟 dev-server-plugin 逻辑
   const parsed = JSON.parse(sampleReqBody);
   for (const m of parsed.messages) {
     if (m && m.role === 'assistant' && Array.isArray(m.tool_calls)) {
@@ -216,7 +197,6 @@ async function runGeminiToolTests() {
   );
   console.log('✔ 中继反代层兜底注入逻辑验证通过\n');
 
-  // 恢复原始 fetch
   globalThis.fetch = originalFetch;
 
   console.log('========================================');

@@ -1,14 +1,3 @@
-/**
- * m3-loading-indicator.ts —— Google Material 3 灵动形变与原生统一加载指示器组件
- *
- * 功能说明：
- *   1. 完整集成开源项目 @alerix/m3-loading-indicator (M3 Expressive Loading Indicator)；
- *   2. 支持 7 种官方形态春生物理形变动画（Soft Burst → Cookie 9 → Pentagon → Pill → Sunny → Cookie 4 → Oval）；
- *   3. 兼容双轨模式（支持用户在偏好设置中自由决定使用「第三方灵动形变实现」或「官方 @material/web 原生实现」）；
- *   4. 作为标准 Web Component `<m3-loading-indicator>` 注册，支持 SSR 与客户端动态注入；
- *   5. 深度集成 Material You 动态主题系统，自动计算与解析 CSS 变量色值。
- */
-
 import {
   M3Animator,
   getMorphedShape,
@@ -21,25 +10,23 @@ export type LoadingIndicatorStyle = 'morph' | 'native';
 export const LOADING_STYLE_STORAGE_KEY = 'astrolib_loading_style';
 export const LOADING_STYLE_CHANGE_EVENT = 'astrolib:loading-style-changed';
 
-/** 获取读者当前选中的加载动画偏好（默认为 morph 灵动形变） */
 export function getLoadingIndicatorStyle(): LoadingIndicatorStyle {
   if (typeof window === 'undefined') return 'morph';
   try {
     const saved = localStorage.getItem(LOADING_STYLE_STORAGE_KEY);
     if (saved === 'native' || saved === 'morph') return saved;
   } catch {
-    // ignore
+
   }
   return 'morph';
 }
 
-/** 切换并持久化加载动画风格，通知全站指示器即时重绘 */
 export function setLoadingIndicatorStyle(style: LoadingIndicatorStyle): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(LOADING_STYLE_STORAGE_KEY, style);
   } catch {
-    // ignore
+
   }
   document.documentElement.setAttribute('data-loading-style', style);
   window.dispatchEvent(
@@ -49,29 +36,24 @@ export function setLoadingIndicatorStyle(style: LoadingIndicatorStyle): void {
   );
 }
 
-/** 辅助方法：从元素解析实时 CSS 颜色值 */
 function resolveColor(el: HTMLElement, colorValue: string, fallback: string): string {
   if (!colorValue) return fallback;
   const trimmed = colorValue.trim();
 
-  // 若已经是十六进制或 rgb
   if (trimmed.startsWith('#') || trimmed.startsWith('rgb') || trimmed.startsWith('hsl')) {
     return trimmed;
   }
 
-  // 若为 currentColor
   if (trimmed === 'currentColor') {
     return getComputedStyle(el).color || fallback;
   }
 
-  // 若为 var(--xxx)
   if (trimmed.startsWith('var(')) {
     const varName = trimmed.slice(4, -1).trim();
     const val = getComputedStyle(el).getPropertyValue(varName).trim();
     return val || fallback;
   }
 
-  // 若为 --xxx
   if (trimmed.startsWith('--')) {
     const val = getComputedStyle(el).getPropertyValue(trimmed).trim();
     return val || fallback;
@@ -80,7 +62,6 @@ function resolveColor(el: HTMLElement, colorValue: string, fallback: string): st
   return trimmed;
 }
 
-/** 尺寸字符串到数值的换算 */
 export function parseIndicatorSize(sizeAttr: string | number | null | undefined): number {
   if (typeof sizeAttr === 'number') return sizeAttr;
   if (!sizeAttr) return 40;
@@ -101,9 +82,6 @@ export function parseIndicatorSize(sizeAttr: string | number | null | undefined)
   }
 }
 
-/**
- * <m3-loading-indicator> 自定义 Web Component
- */
 export class M3LoadingIndicatorElement extends HTMLElement {
   static get observedAttributes() {
     return ['size', 'variant', 'mode', 'color', 'container-color', 'speed', 'paused'];
@@ -122,11 +100,10 @@ export class M3LoadingIndicatorElement extends HTMLElement {
   }
 
   connectedCallback() {
-    // 监听全局风格切换事件
+
     this._boundStyleHandler = () => this.render();
     window.addEventListener(LOADING_STYLE_CHANGE_EVENT, this._boundStyleHandler);
 
-    // 挂载 IntersectionObserver，仅在可视时执行动画循环以节省 CPU / 电池
     if (typeof IntersectionObserver !== 'undefined') {
       this._intersectionObserver = new IntersectionObserver((entries) => {
         for (const entry of entries) {
@@ -182,7 +159,6 @@ export class M3LoadingIndicatorElement extends HTMLElement {
     return this.hasAttribute('paused');
   }
 
-  /** 获取当前实际生效的渲染模式 */
   private _resolveActiveMode(): LoadingIndicatorStyle {
     if (this.mode === 'morph' || this.mode === 'native') {
       return this.mode;
@@ -206,7 +182,7 @@ export class M3LoadingIndicatorElement extends HTMLElement {
     this.style.height = `${cssSize}px`;
 
     if (effectiveMode === 'morph') {
-      // ===== 渲染 M3 灵动形变 Canvas 实现 =====
+
       const canvas = document.createElement('canvas');
       canvas.className = 'm3-morph-canvas';
       this.appendChild(canvas);
@@ -225,7 +201,7 @@ export class M3LoadingIndicatorElement extends HTMLElement {
         this._renderNative(cssSize, isContained);
       }
     } else {
-      // ===== 渲染 Google 官方原生 @material/web 实现 =====
+
       this._renderNative(cssSize, isContained);
     }
   }
@@ -266,7 +242,6 @@ export class M3LoadingIndicatorElement extends HTMLElement {
     const cssSize = this.size;
     const isContained = this.variant === 'contained';
 
-    // 动态解析 Material 主题颜色
     const colorVal = resolveColor(
       this,
       this.getAttribute('color') || 'var(--md-sys-color-primary)',
@@ -311,7 +286,6 @@ export class M3LoadingIndicatorElement extends HTMLElement {
   }
 }
 
-// 自动在全局浏览器环境中注册 Custom Element
 if (typeof window !== 'undefined' && !customElements.get('m3-loading-indicator')) {
   customElements.define('m3-loading-indicator', M3LoadingIndicatorElement);
 }

@@ -35,7 +35,6 @@ async function main() {
       const hasTrigger = html.includes('exercise-trigger') || html.includes('ExerciseTrigger') || html.includes('课后真题与自测练习');
       const is200 = res.status === 200;
 
-      // Check all <img> tags in html
       const imgRegex = /<img[^>]+src=["']([^"']+)["']/g;
       let match;
       const images = [];
@@ -50,7 +49,6 @@ async function main() {
         console.log(`   - 习题触发器: ${hasTrigger ? '已就绪' : '未挂载'}`);
         console.log(`   - 检测到图片元素: ${images.length} 处`);
 
-        // Verify each image HTTP status
         let imgFails = 0;
         for (const img of images) {
           const imgUrl = img.startsWith('http') ? img : 'http://localhost:4321' + img;

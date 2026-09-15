@@ -1,10 +1,3 @@
-/**
- * src/publishing/latex/latex-generator.ts
- * 生产级大学数学教材/学术练习册 LaTeX 源码生成引擎
- * 基于 CTAN / TeX Live 官方收录的 Jinwen-XU/homework 宏包标准架构开发
- * 遵循极简学术排版哲学：The content is the design. The mathematics is the interface.
- * 原生直出 LaTeX/KaTeX 数学公式，零转译损耗，100% 还原公式韵律。
- */
 import type { SlimQuestionItem } from '../../types/exercises';
 import type {
   ChapterDocument,
@@ -33,9 +26,6 @@ export const DEFAULT_CHAPTER_LATEX_CONFIG: ChapterLatexConfig & { embedStyle?: b
   embedStyle: false,
 };
 
-/**
- * HTML 实体解码与清理
- */
 function decodeHtmlEntities(str: string): string {
   if (!str) return '';
   return str
@@ -55,12 +45,9 @@ function decodeHtmlEntities(str: string): string {
     .replace(/&infin;/g, '\\infty ');
 }
 
-/**
- * 清理与标准化数学公式内部语法（如规范化分段函数、修复换行、保护填空下划线）
- */
 function cleanMathFormula(inner: string): string {
   let res = inner;
-  // 转换伪分段函数 \left\{\begin{aligned} ... \end{aligned}\right. 为标准 \begin{cases} ... \end{cases}
+
   res = res.replace(/\\left\\\{\s*\\begin\{aligned\}([\s\S]*?)\\end\{aligned\}\s*(?:\\right\.?)?/g, (_m, body) => {
     const cleanedRows = body
       .split('\\\\')
@@ -69,16 +56,12 @@ function cleanMathFormula(inner: string): string {
     return `\\begin{cases}\n  ${cleanedRows}\n\\end{cases}`;
   });
 
-  // 修复 cases/matrix 中误写单反斜杠换行错误 (如 \ 0, & -> \\ 0, &)
   res = res.replace(/([^\\])\\\s+([0-9a-zA-Z\$\\]+,\s*&)/g, '$1 \\\\ $2');
 
-  // 修复换行后紧跟中括号被 LaTeX 误解析为可选行距参数 \\[<dim>] 引发 "Missing number"
   res = res.replace(/\\\\\s*\[/g, '\\\\ \\relax [');
 
-  // 修复 OCR 粘连：缺失空格导致命令与后续字母粘连（如 \cupB -> \cup B, \capA -> \cap A）
   res = res.replace(/\\(cup|cap|pm|mp|div|wedge|vee|sim|times)([a-zA-Z])/g, '\\$1 $2');
 
-  // 修复 \begin{array}{...} 声明列数少于实际 & 分隔列数引发的 "Extra alignment tab has been changed to \cr"
   res = res.replace(/\\begin\{array\}\{([^}]+)\}([\s\S]*?)\\end\{array\}/g, (_m, colsDecl, body) => {
     const rawRows = body.split('\\\\');
     let maxCols = 1;
@@ -98,11 +81,9 @@ function cleanMathFormula(inner: string): string {
     return `\\begin{array}{${newCols}}${body}\\end{array}`;
   });
 
-  // 填空题下划线保护：使用学术排版标准 \rule[-0.2ex]{3.5em}{0.4pt}
   res = res.replace(/\\underline\{\s*(\\quad)*\s*\}/g, '\\rule[-0.2ex]{3.5em}{0.4pt}');
   res = res.replace(/_{3,}/g, '\\rule[-0.2ex]{3.5em}{0.4pt}');
 
-  // 修复 amsmath 限制：\tag 严禁放在 aligned 内部，必须移至 \end{aligned} 外部
   res = res.replace(/(\\begin\{aligned\}[\s\S]*?)\s*\\tag(\*?\{[^}]+\})([\s\S]*?\\end\{aligned\})/g, '$1$3 \\tag$2');
 
   return res;
@@ -168,22 +149,17 @@ const UNICODE_MATH_MAP: Record<string, string> = {
 const MATH_COMMAND_REGEX =
   /\\(sqrt|frac|dfrac|tfrac|pi|alpha|beta|gamma|delta|epsilon|varepsilon|zeta|eta|theta|vartheta|iota|kappa|lambda|mu|nu|xi|rho|varrho|sigma|varsigma|tau|upsilon|phi|varphi|chi|psi|omega|Gamma|Delta|Theta|Lambda|Xi|Pi|Sigma|Upsilon|Phi|Psi|Omega|sin|cos|tan|cot|sec|csc|arcsin|arccos|arctan|ln|log|exp|lim|sum|prod|int|iint|iiint|oint|partial|nabla|infty|pm|mp|times|div|cdot|cdots|ldots|vdots|ddots|circ|le|ge|ne|leq|geq|neq|approx|sim|simeq|equiv|subset|supset|subseteq|supseteq|cup|cap|emptyset|varnothing|in|notin|ni|forall|exists|vec|hat|bar|tilde|dot|ddot|mathbf|mathbb|mathrm|mathcal|mathscr|mathfrak)(?![a-zA-Z])/;
 
-/**
- * 规范化 Unicode 数学字符与控制字符
- */
 export function normalizeUnicodeMath(text: string): string {
   if (!text) return '';
   let res = text.replace(/\r\n/g, '\n').replace(/\r/g, '');
   res = res.replace(/\\n(?![a-zA-Z])/g, '\n');
   res = res.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '');
 
-  // 转换 Unicode 数学斜体英文字母 (U+1D44E .. U+1D467) 为常规 ASCII 字母
   res = res.replace(/[\uD835][\uDC4E-\uDC67]/g, (match) => {
     const code = match.codePointAt(0) || 0;
     return String.fromCharCode(code - 0x1d44e + 0x61);
   });
 
-  // 转换全角/特殊 Unicode 罗马数字 (Ⅰ..Ⅹ) 为标准 ASCII
   const romanMap: Record<string, string> = {
     'Ⅰ': 'I',
     'Ⅱ': 'II',
@@ -207,9 +183,6 @@ export function normalizeUnicodeMath(text: string): string {
   return res;
 }
 
-/**
- * 自动检测并修复文本中因 OCR 或输入遗漏的未闭合 $ 定界符
- */
 export function balanceDollars(text: string): string {
   if (!text) return '';
   let res = '';
@@ -255,21 +228,15 @@ export function balanceDollars(text: string): string {
   return res;
 }
 
-/**
- * 安全识别文本中裸露的数学命令与公式表达式，包裹 $...$
- * 必须在现有公式已受占位符保护的前提下运行
- */
 export function sanitizeBareMath(text: string): string {
   if (!text) return text;
 
-  // 1. 保护已有占位符 (格式为 §§MBX...§§ 或 §§IMG...§§)
   const mbxPlaceholders: string[] = [];
   let s = text.replace(/§§[A-Z0-9_#]+§§/g, (m) => {
     mbxPlaceholders.push(m);
     return `§§P${mbxPlaceholders.length - 1}P§§`;
   });
 
-  // 2. 若整段文本不含中文字符、不含换行、且非题号 (如 "(1)" 或 "A.")
   const trimmed = s.trim();
   const hasChinese = /[\u4e00-\u9fa5]/.test(trimmed);
   const isSubLabel = /^\(?[0-9a-zA-ZivxIVX]+\)?[\.\s]*$/.test(trimmed);
@@ -285,7 +252,6 @@ export function sanitizeBareMath(text: string): string {
     }
   }
 
-  // 3. 中西文混排情况：识别夹在中文、全角标点、换行之间的非中文公式片段
   s = s.replace(
     /(^|[\u4e00-\u9fa5，。！？；：（）“”《》【】、\n])([^\u4e00-\u9fa5，。！？；：（）“”《》【】\n§]+)(?=[\u4e00-\u9fa5，。！？；：（）“”《》【】、\n]|$)/g,
     (_match, prefix, content) => {
@@ -307,15 +273,10 @@ export function sanitizeBareMath(text: string): string {
     }
   );
 
-  // 4. 还原占位符
   s = s.replace(/§§P(\d+)P§§/g, (_m, idx) => mbxPlaceholders[Number(idx)] || '');
   return s;
 }
 
-/**
- * 清理 HTML 标签与规范化 Markdown 语法为 LaTeX 语法
- * 保护数学公式 ($...$ 与 $$...$$) 内部不被错误处理
- */
 export function formatLatexContent(text: string): string {
   if (!text) return '';
 
@@ -323,12 +284,9 @@ export function formatLatexContent(text: string): string {
   raw = normalizeUnicodeMath(raw);
   raw = balanceDollars(raw);
 
-  // 1. 规范化换行与字面量转义换行符 (消除 JSON 中 \\n 引起的 Undefined control sequence)
   raw = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   raw = raw.replace(/\\n(?![a-zA-Z])/g, '\n');
 
-
-  // 2. 规范化 HTML 换行与段落 (严格校验标签边界，防止误伤 0<p<1 等数学不等式)
   raw = raw.replace(/<br\s*\/?>/gi, '\n');
   raw = raw.replace(/<\/p>/gi, '\n\n');
   raw = raw.replace(/<p(\s+[^>]*)?>/gi, '');
@@ -341,7 +299,6 @@ export function formatLatexContent(text: string): string {
   raw = raw.replace(/<em(\s+[^>]*)?>([\s\S]*?)<\/em>/gi, '\\textit{$2}');
   raw = raw.replace(/<i(\s+[^>]*)?>([\s\S]*?)<\/i>/gi, '\\textit{$2}');
 
-  // 3. 处理 Markdown 图片语法 (![alt](url))，使用占位符保护防止被后续裸公式识别器误处理
   const imgBlocks: string[] = [];
   raw = raw.replace(/!\[(.*?)\]\((.*?)\)/g, (_m, alt, url) => {
     const cleanUrl = url.trim();
@@ -357,17 +314,14 @@ export function formatLatexContent(text: string): string {
     return `§§IMG${imgBlocks.length - 1}XGMI§§`;
   });
 
-  // 4. 处理填空题下划线与括号留白 (在提取公式前执行，防止下划线引发数学模式误判)
   raw = raw.replace(/\\underline\{\s*(\\quad)*\s*\}/g, '\\rule[-0.2ex]{3.5em}{0.4pt}');
   raw = raw.replace(/\\underline\{\s*\}/g, '\\rule[-0.2ex]{3.5em}{0.4pt}');
   raw = raw.replace(/_{3,}/g, '\\rule[-0.2ex]{3.5em}{0.4pt}');
   raw = raw.replace(/（\s*）/g, '（\\quad）');
   raw = raw.replace(/\(\s*\)/g, '(\\quad)');
 
-  // 5. 占位保护公式块 ($$ 与 $) - 使用不含下划线、不含井号、不含反斜杠的独立标记
   const mathBlocks: string[] = [];
 
-  // 保护 display math: $$...$$ 与 \[...\]
   raw = raw.replace(/\$\$([\s\S]*?)\$\$/g, (_m, inner) => {
     mathBlocks.push(`\\[\n${cleanMathFormula(inner.trim())}\n\\]`);
     return `§§MBX${mathBlocks.length - 1}XMBX§§`;
@@ -377,26 +331,21 @@ export function formatLatexContent(text: string): string {
     return `§§MBX${mathBlocks.length - 1}XMBX§§`;
   });
 
-  // 保护 inline math: \(...\)
   raw = raw.replace(/\\\(([\s\S]*?)\\\)/g, (_m, inner) => {
     mathBlocks.push(`$${cleanMathFormula(inner.trim())}$`);
     return `§§MBX${mathBlocks.length - 1}XMBX§§`;
   });
 
-  // 保护 inline math: $...$ (支持同段内多行公式，不跨段落)
   raw = raw.replace(/\$((?:[^\$\n]|\n(?!\s*\n))+?)\$/g, (_m, inner) => {
     mathBlocks.push(`$${cleanMathFormula(inner)}$`);
     return `§§MBX${mathBlocks.length - 1}XMBX§§`;
   });
 
-  // 6. 识别并包裹裸露公式与数学命令 (如 最大值为 2\sqrt{7} 或 a=2, b=-2，积分值为 \pi^2)
   raw = sanitizeBareMath(raw);
 
-  // 7. 处理文本段 Markdown 加粗与斜体
   raw = raw.replace(/\*\*([^*]+)\*\*/g, '\\textbf{$1}');
   raw = raw.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1\\textit{$2}');
 
-  // 带圈数字转换 (支持中西文排版标准)
   const circledMap: Record<string, string> = {
     '①': '\\textcircled{\\scriptsize 1}',
     '②': '\\textcircled{\\scriptsize 2}',
@@ -411,25 +360,19 @@ export function formatLatexContent(text: string): string {
   };
   raw = raw.replace(/[①②③④⑤⑥⑦⑧⑨⑩]/g, (m) => circledMap[m] || m);
 
-  // 7.1 转义文本中的保留字符 (此时公式与图片均已被保护在占位符内)
   raw = raw.replace(/(?<!\\)&/g, '\\&');
   raw = raw.replace(/(?<!\\)%/g, '\\%');
   raw = raw.replace(/(?<!\\)#/g, '\\#');
 
-  // 7.2 处理正文文本模式下的 \tag 语法（转换为标准右对齐编号，避免 amsmath "\tag not allowed here" 报错）
   raw = raw.replace(/\\tag\*?\{([^}]+)\}/g, '\\hfill ($1)');
   raw = raw.replace(/\\tag\*?\s*([0-9a-zA-Z\.\-]+)/g, '\\hfill ($1)');
 
-  // 8. 还原所有公式块与图片块
   raw = raw.replace(/§§MBX(\d+)XMBX§§/g, (_m, idx) => mathBlocks[Number(idx)] || '');
   raw = raw.replace(/§§IMG(\d+)XGMI§§/g, (_m, idx) => imgBlocks[Number(idx)] || '');
 
   return raw.trim();
 }
 
-/**
- * 精准测量中西文混排视觉渲染宽度 (中文字符/全角标点记为 2，半角字符记为 1)
- */
 export function getVisualWidth(str: string): number {
   if (!str) return 0;
   const plain = str.replace(/\\[a-zA-Z]+/g, '').replace(/[{}\$]/g, '');
@@ -449,21 +392,18 @@ export function getVisualWidth(str: string): number {
   return w;
 }
 
-/**
- * 格式化选择题选项，生成 tasks 宏包标准语法
- */
 function formatChoiceTasks(options: Array<{ key: string; text_raw?: string; text_html?: string }>): string {
   if (!options || options.length === 0) return '';
 
   const cleanedOptions = options.map((opt) => {
     let t = (opt.text_raw || opt.text_html || '').trim();
-    // 去除选项前可能自带的 A. B. C. D. 避免重复编号
+
     t = t.replace(/^[A-Da-d][\.\、\s]\s*/, '');
     return formatLatexContent(t);
   });
 
   const maxVisualWidth = Math.max(...cleanedOptions.map((o) => getVisualWidth(o)));
-  // 精准列数计算：长选项 (>=30) 排 1 列，中等 (>=10) 排 2 列，短选项 (<10) 排 4 列
+
   const cols = maxVisualWidth >= 30 ? 1 : maxVisualWidth >= 10 ? 2 : 4;
 
   let code = `\\begin{tasks}(${cols})\n`;
@@ -474,9 +414,6 @@ function formatChoiceTasks(options: Array<{ key: string; text_raw?: string; text
   return code;
 }
 
-/**
- * 获取自然书写留白空间对应的 LaTeX 命令
- */
 function getSpaceLatex(type: string, writingSpace: 'comfortable' | 'compact' | 'none'): string {
   if (writingSpace === 'none' || type === 'choice') return '';
 
@@ -487,16 +424,12 @@ function getSpaceLatex(type: string, writingSpace: 'comfortable' | 'compact' | '
     return '\\vspace{3.0cm}\n';
   }
 
-  // comfortable
   if (type === 'blank') return '\\vspace{1.2cm}\n';
   if (type === 'calc') return '\\vspace{6.0cm}\n';
   if (type === 'proof') return '\\vspace{8.5cm}\n';
   return '\\vspace{4.5cm}\n';
 }
 
-/**
- * LaTeX 特殊字符转义（用于标题、课程名等纯文本元数据）
- */
 function escapeLatexMeta(str: string): string {
   if (!str) return '';
   return str
@@ -506,16 +439,12 @@ function escapeLatexMeta(str: string): string {
     .replace(/\^/g, '\\textasciicircum{}');
 }
 
-/**
- * 主生成函数：根据题目列表与配置生成纯正 Jinwen-XU/homework 宏包标准的 LaTeX 源码
- */
 export function generateLatexDocument(
   questions: SlimQuestionItem[],
   userConfig: Partial<LatexExportConfig> = {}
 ): string {
   const config: LatexExportConfig = { ...DEFAULT_LATEX_CONFIG, ...userConfig };
 
-  // 题型分组统计
   const typeGroups: Record<string, SlimQuestionItem[]> = {
     choice: [],
     blank: [],
@@ -533,7 +462,6 @@ export function generateLatexDocument(
   const paperOption = config.paperSize === 'b5' ? 'b5paper' : 'a4paper';
   const fontPt = `${config.fontSize === 10.5 ? '10.5pt' : `${config.fontSize}pt`}`;
 
-  // 构建 documentclass options (严格遵循 Jinwen-XU/homework 宏包规范)
   const classOptions: string[] = [
     paperOption,
     fontPt === '10.5pt' ? '11pt' : fontPt,
@@ -557,14 +485,12 @@ export function generateLatexDocument(
     classOptions.push('colored solution');
   }
 
-  // 学术排版与字体配置 (统一委托至 Academic Typography System 唯一入口)
   const typographyCode = renderFontPreamble(config, {
     includePackage: false,
     resolutionMode: config.resolutionMode || 'deterministic',
     userExplicit: userConfig,
   });
 
-  // 页码设置
   let pageNumberCode = '';
   if (config.pageNumbering === 'simple') {
     pageNumberCode = `
@@ -629,9 +555,6 @@ ${typographyCode}${pageNumberCode}
 }
 `;
 
-  // -------------------------------------------------------------------------
-  // 卷头与元数据 (Header & Metadata Control)
-  // -------------------------------------------------------------------------
   if (config.headerMode === 'standard') {
     const titleSub = config.showSubtitle && config.subtitle && config.subtitle.trim()
       ? ` \\\\\n  \\large\\normalfont ${escapeLatexMeta(config.subtitle)}`
@@ -683,15 +606,12 @@ ${dateCode}
 \\vspace{0.3em}\\hrule\\vspace{1.0em}
 `;
   } else {
-    // headerMode === 'none' (无卷头纯题面，最大化节约纸张)
+
     code += `
 \\begin{document}
 `;
   }
 
-  // -------------------------------------------------------------------------
-  // 题目正文列表渲染
-  // -------------------------------------------------------------------------
   const sectionRoman = ['一', '二', '三', '四', '五', '六', '七', '八'];
   let currentSectionIdx = 0;
 
@@ -721,12 +641,10 @@ ${dateCode}
       code += `\\begin{problem}\n`;
       code += `  ${stemLatex}\n`;
 
-      // 选择题选项排版 (tasks 宏包)
       if (q.type === 'choice' && q.options && q.options.length > 0) {
         code += `\n  ${formatChoiceTasks(q.options)}\n`;
       }
 
-      // 如果是随题附答案模式 (inline solution)
       if (config.answerPlacement === 'inline') {
         const ans = formatLatexContent(q.answer || '');
         const steps = formatLatexContent(q.steps_html || q.hints_html || '');
@@ -740,7 +658,7 @@ ${dateCode}
         }
         code += `\\end{solution}\n\n`;
       } else {
-        // 纯题干留白空间
+
         if (spaceCmd) {
           code += `\n  ${spaceCmd}`;
         }
@@ -749,11 +667,8 @@ ${dateCode}
     });
   });
 
-  // -------------------------------------------------------------------------
-  // 参考答案与详细推导附录 (Appendix Mode)
-  // -------------------------------------------------------------------------
   if (config.answerPlacement === 'appendix') {
-    // 按照大题顺序组装题目列表，保证题号严格一一对应
+
     const orderedQuestions: SlimQuestionItem[] = [];
     typeOrder.forEach(({ type }) => {
       const list = typeGroups[type] || [];
@@ -766,7 +681,6 @@ ${dateCode}
     code += `\\clearpage\n`;
     code += `\\section*{参考答案与详细推导}\n\n`;
 
-    // 1. 答案速查三线表 (longtable + booktabs，支持长题库自动分页)
     code += `\\subsection*{一、参考答案速查}\n\n`;
     code += `\\begin{longtable}{c p{5.5cm} c p{5.5cm}}\n`;
     code += `  \\toprule\n`;
@@ -808,7 +722,6 @@ ${dateCode}
 
     code += `\\end{longtable}\n\n`;
 
-    // 2. 详细解答与证明过程 (按 Jinwen-XU/homework 的 solution 环境)
     code += `\\subsection*{二、详细推导与证明过程}\n\n`;
 
     let qIdx = 1;
@@ -845,15 +758,6 @@ ${dateCode}
   return code;
 }
 
-// =========================================================================
-// 章节级别学术教材 / 讲义 LaTeX 生成引擎 (Chapter LaTeX Renderer)
-// 纯粹的 Publishing 表现层渲染器，接受 ChapterDocument 语义数据模型，输出纯正 ctexart / ctexbook
-// =========================================================================
-
-/**
- * 剥离章节与节标题前手工书写的冗余数字前缀（如 '1.1 集合及其运算' -> '集合及其运算'）
- * 遵循 Rule 13: 编号由 LaTeX 计数器负责，保持交叉引用与自动层级一致
- */
 export function stripLeadingNumber(text: string): string {
   if (!text) return '';
   return text
@@ -862,11 +766,6 @@ export function stripLeadingNumber(text: string): string {
     .trim() || text;
 }
 
-/**
- * 剥离定理/例题/定义等学术模块标题中的前缀与编号，仅保留名称
- * 例如 '定义 1.1 实数集的有界性' -> '实数集的有界性'，'例 1.1' -> ''
- * 由 tcolorbox 负责自动编号，避免 '定义 1.1 (定义 1.1 实数集的有界性)' 重复
- */
 export function stripTheoremPrefix(text: string): string {
   if (!text) return '';
   return text
@@ -874,14 +773,10 @@ export function stripTheoremPrefix(text: string): string {
     .trim();
 }
 
-/**
- * 将数学公式转换为纯文本/Unicode 文本（供 PDF 书签及超链接回退使用）
- */
 export function mathToBookmarkText(math: string): string {
   if (!math) return '';
   let res = math.trim();
 
-  // 1. 希腊字母映射
   const GREEK_MAP: Record<string, string> = {
     '\\alpha': 'α',
     '\\beta': 'β',
@@ -928,7 +823,6 @@ export function mathToBookmarkText(math: string): string {
     res = res.replace(new RegExp(cmd.replace('\\', '\\\\') + '(?![a-zA-Z])', 'g'), sym);
   }
 
-  // 2. 常见数学符号与算符
   res = res.replace(/\\(le|leqslant)(?![a-zA-Z])/g, '≤');
   res = res.replace(/\\(ge|geqslant)(?![a-zA-Z])/g, '≥');
   res = res.replace(/\\(ne|neq)(?![a-zA-Z])/g, '≠');
@@ -944,7 +838,6 @@ export function mathToBookmarkText(math: string): string {
   res = res.replace(/\\(cdots|ldots)(?![a-zA-Z])/g, '…');
   res = res.replace(/\\cdot(?![a-zA-Z])/g, '·');
 
-  // 3. 上标
   const supMap: Record<string, string> = {
     '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
     '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
@@ -953,7 +846,6 @@ export function mathToBookmarkText(math: string): string {
   res = res.replace(/\^\{?([0-9nkipm\+\-])\}?/g, (_m, char) => supMap[char] || char);
   res = res.replace(/\^\{\\circ\}|\^\\circ/g, '°');
 
-  // 4. 下标
   const subMap: Record<string, string> = {
     '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄',
     '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
@@ -961,7 +853,6 @@ export function mathToBookmarkText(math: string): string {
   };
   res = res.replace(/_\{?([0-9ijknmp])\}?/g, (_m, char) => subMap[char] || char);
 
-  // 5. 格式宏与括号剥离
   res = res.replace(/\\(mathbf|mathrm|mathit|mathcal|mathbb|bm|boldsymbol)\s*\{([^}]*)\}/g, '$2');
   res = res.replace(/\\(left|right|big|Big|bigg|Bigg)[()\[\]|.\\]/g, '');
   res = res.replace(/[{}\\]/g, '');
@@ -969,9 +860,6 @@ export function mathToBookmarkText(math: string): string {
   return res.trim();
 }
 
-/**
- * 格式化章节标题：使用 \texorpdfstring 保护公式，杜绝 hyperref 书签展开崩溃
- */
 export function formatHeadingLatex(title: string): string {
   if (!title) return '';
   let raw = decodeHtmlEntities(title);
@@ -980,7 +868,6 @@ export function formatHeadingLatex(title: string): string {
 
   const texorPlaceholders: string[] = [];
 
-  // 匹配 $...$
   raw = raw.replace(/\$((?:[^\$\n]|\n(?!\s*\n))+?)\$/g, (_m, math) => {
     const cleanMath = cleanMathFormula(math.trim());
     const bookmark = mathToBookmarkText(math);
@@ -988,7 +875,6 @@ export function formatHeadingLatex(title: string): string {
     return `§§TOPDF_${texorPlaceholders.length - 1}§§`;
   });
 
-  // 匹配 \( ... \)
   raw = raw.replace(/\\\(([\s\S]*?)\\\)/g, (_m, math) => {
     const cleanMath = cleanMathFormula(math.trim());
     const bookmark = mathToBookmarkText(math);
@@ -996,21 +882,14 @@ export function formatHeadingLatex(title: string): string {
     return `§§TOPDF_${texorPlaceholders.length - 1}§§`;
   });
 
-  // 转义文本中的特殊字符
   raw = raw.replace(/(?<!\\)&/g, '\\&');
   raw = raw.replace(/(?<!\\)%/g, '\\%');
   raw = raw.replace(/(?<!\\)#/g, '\\#');
 
-  // 还原占位符
   raw = raw.replace(/§§TOPDF_(\d+)§§/g, (_m, idx) => texorPlaceholders[Number(idx)] || '');
   return raw.trim();
 }
 
-/**
- * 渲染单个表格节点为 booktabs 标准学术三线表
- * @param tableData 表格数据模型
- * @param inBox 是否处于 tcolorbox (定理/定义/例题等) 容器内部。内部严禁使用浮动体 \\begin{table}
- */
 export function renderLatexTable(tableData: SemanticTableData, inBox = false): string {
   if (!tableData) return '';
   const headers = tableData.headers || [];
@@ -1048,7 +927,7 @@ export function renderLatexTable(tableData: SemanticTableData, inBox = false): s
   lines.push('    \\bottomrule');
 
   const tabularCode = `\\begin{tabular}{${colAligns.join(' ')}}\n${lines.join('\n')}\n  \\end{tabular}`;
-  // 使用 adjustbox 约束宽度不超过版心，杜绝超宽表格撑破右边距
+
   const wrappedTabular = `\\begin{adjustbox}{max width=\\linewidth}\n  ${tabularCode}\n  \\end{adjustbox}`;
 
   let captionCode = '';
@@ -1057,7 +936,7 @@ export function renderLatexTable(tableData: SemanticTableData, inBox = false): s
   }
 
   if (inBox) {
-    // 处于 tcolorbox (定理/例题/定义等) 容器内部时，使用居中非浮动环境，杜绝 "Not in outer par mode"
+
     let code = `\\begin{center}\n  \\small\n`;
     if (captionCode) {
       code += `  {\\small\\kaishu ${captionCode}}\\par\\vspace{0.4em}\n`;
@@ -1066,7 +945,6 @@ export function renderLatexTable(tableData: SemanticTableData, inBox = false): s
     return code;
   }
 
-  // 处于正文顶层时，使用标准的浮动体 table 环境与三线表
   let code = `\\begin{table}[htbp]\n  \\centering\n  \\small\n`;
   if (captionCode) {
     code += `  \\caption{${captionCode}}\n`;
@@ -1075,9 +953,6 @@ export function renderLatexTable(tableData: SemanticTableData, inBox = false): s
   return code;
 }
 
-/**
- * 渲染单个列表节点
- */
 function renderLatexList(listData: SemanticListData, config: ChapterLatexConfig, inBox = false): string {
   if (!listData || !listData.items) return '';
   const env = listData.ordered ? 'enumerate' : 'itemize';
@@ -1092,9 +967,6 @@ function renderLatexList(listData: SemanticListData, config: ChapterLatexConfig,
   return code;
 }
 
-/**
- * 渲染插图与图题节点 (遵循 ImageSizingPolicy 约束，基于 adjustbox 防止大图/竖图撑爆版面)
- */
 export function renderLatexFigure(
   figureData: SemanticFigureData,
   policy: ImageSizingPolicy = DEFAULT_IMAGE_POLICY
@@ -1121,9 +993,6 @@ export function renderLatexFigure(
   return code;
 }
 
-/**
- * 递归渲染语义块列表 (SemanticBlock[]) 为纯正 LaTeX 语法
- */
 export function renderSemanticBlocks(
   blocks: SemanticBlock[],
   config: ChapterLatexConfig,
@@ -1161,7 +1030,7 @@ export function renderSemanticBlocks(
       case 'math': {
         if (block.content) {
           const trimmed = cleanMathFormula(block.content.trim());
-          // 修复 amsmath 限制：若包含 \tag{...} 则必须使用 equation 环境，严禁使用 \[ ... \]
+
           if (trimmed.includes('\\tag{') || trimmed.includes('\\tag*{')) {
             code += `\\begin{equation}\n${trimmed}\n\\end{equation}\n\n`;
           } else {
@@ -1202,7 +1071,6 @@ export function renderSemanticBlocks(
         break;
       }
 
-      // 核心定理族 (kaobook 标准可选标题环境)
       case 'definition':
       case 'theorem':
       case 'lemma':
@@ -1217,7 +1085,7 @@ export function renderSemanticBlocks(
       case 'method':
       case 'exercise': {
         let rawTitle = block.title ? formatLatexContent(stripTheoremPrefix(block.title)).trim() : '';
-        // 剥离外层多余括号，防止与 amsthm 自身的附加括号叠加产生 ((...))
+
         rawTitle = rawTitle.replace(/^[\(（](.*)[\)）]$/, '$1').trim();
         const titleArg = rawTitle ? `[${rawTitle}]` : '';
         const labelArg = block.label || (block.number ? `${block.kind}:${block.number.replace(/\./g, '-')}` : '');
@@ -1362,15 +1230,6 @@ export function renderSemanticBlocks(
   return code;
 }
 
-/**
- * 核心导出函数：将 ChapterDocument 语义领域模型渲染为完整可编译的 LaTeX 源码
- * 严格遵循 .agents/skills/latex-document-skill/ 官方规范与 assets/templates/book.tex 模板架构：
- * - 采用标准 book 类（双面开本、openright 章节右开）
- * - 采用 Palatino 正文与数学字体（TeX Gyre Pagella + TeX Gyre Pagella Math + Inconsolata）
- * - 经典书籍不对称版心几何、linespread{1.35} 舒适行高、fancyhdr 双面页眉与 titlesec 经典章标题
- * - 纯正 amsthm 定理族系统，彻底杜绝任何花哨卡片与边框背景
- * - 原生无缝融合 ctex 中文混排与 XeLaTeX 官方编译规范
- */
 export function renderChapterLatexDocument(
   chapter: ChapterDocument,
   userConfig: Partial<ChapterLatexConfig & { embedStyle?: boolean }> = {}
@@ -1379,14 +1238,12 @@ export function renderChapterLatexDocument(
   const paperOption = config.paperSize === 'b5' ? 'b5paper' : 'a4paper';
   const fontPt = (config.fontSize === 10.5 || !config.fontSize) ? '11pt' : `${config.fontSize}pt`;
 
-  // 章节层级元数据权威注入 (来自 Core / Catalog 层的 ChapterCanonicalMetadata)
   const meta = chapter.metadata;
   const bookTitle = meta?.bookTitle || chapter.bookTitle || '';
   const cleanTitle = stripLeadingNumber(chapter.title) || chapter.title || '章节内容';
   const fullTitle = meta?.fullTitle || chapter.title || config.title || cleanTitle;
   const authorName = meta?.bookAuthor || chapter.author || config.author || bookTitle || 'AstroLib';
 
-  // 解析章序号 (例如 "2.2 求导的基本法则" -> 章序号 2)
   let chapNum: number | null = meta?.chapterNumber != null ? meta.chapterNumber : null;
   if (chapNum == null) {
     const m = (chapter.title || '').match(/^(\d+)/);
@@ -1788,7 +1645,6 @@ ${counterCode}
 
 `;
 
-  // 过滤开头与章标题重复的首个 H1 节点
   const chapterCleanNorm = cleanTitle.replace(/^[第\d\.\s一二三四五六七八九十]+[章节篇讲]\s*/, '').trim();
   const blocksToRender = (chapter.blocks || []).filter((b, idx) => {
     if (idx <= 1 && b.kind === 'heading' && b.level === 1) {
@@ -1800,7 +1656,6 @@ ${counterCode}
     return true;
   });
 
-  // 渲染正文语义块
   code += renderSemanticBlocks(blocksToRender, config);
 
   code += `\\end{document}\n`;

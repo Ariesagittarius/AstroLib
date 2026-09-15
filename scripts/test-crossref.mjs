@@ -1,6 +1,3 @@
-// 验证脚本：用与 Astro MDX 同款的 @mdx-js/mdx createProcessor + VFile 渲染单篇 .mdx，
-// 验证 rehype-cross-ref 构建期徽章下沉插件（方案 B）的输出。
-// 用法：node scripts/test-crossref.mjs [mdx路径]
 import { createProcessor } from '@mdx-js/mdx';
 import { VFile } from 'vfile';
 import remarkMath from 'remark-math';
@@ -43,7 +40,6 @@ const stats = {
 };
 console.log(JSON.stringify(stats, null, 2));
 
-// 打印前 6 处 badge 上下文（观察结构是否正确）
 const idx = code.indexOf('block-ref-badge');
 if (idx >= 0) {
   console.log('--- first badge context ---');

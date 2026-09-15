@@ -21,7 +21,6 @@ async function runUnitTests() {
 
   let passed = 0;
 
-  // 1. 测试通用参数插值工具 interpolateText
   try {
     const text1 = interpolateText('由 {author} 基于 {model} 生成', { author: '张三', model: 'Claude 3.7' });
     assert(text1 === '由 张三 基于 Claude 3.7 生成', '基础参数插值');
@@ -38,7 +37,6 @@ async function runUnitTests() {
     console.error('  [1/6] 通用文本插值工具测试失败 ❌', err.message);
   }
 
-  // 2. 测试内置 AI 生成模板字段覆写 (修改 model 等任意字段)
   try {
     const result = resolveNotices([
       {
@@ -61,7 +59,6 @@ async function runUnitTests() {
     console.error('  [2/6] AI 模板自定义字段覆写测试失败 ❌', err.message);
   }
 
-  // 3. 测试用户自定义新模板 (defineNoticeTemplate)
   try {
     defineNoticeTemplate('customLesson', {
       severity: 'accent',
@@ -99,7 +96,6 @@ async function runUnitTests() {
     console.error('  [3/6] 用户自定义新模板测试失败 ❌', err.message);
   }
 
-  // 4. 测试页面即席动态提示 (Ad-hoc Inline Notice)
   try {
     const result = resolveNotices([
       {
@@ -122,7 +118,6 @@ async function runUnitTests() {
     console.error('  [4/6] 页面即席动态提示测试失败 ❌', err.message);
   }
 
-  // 5. 测试数据结构精简与规范化 (items 纯文本、title 回退、自动 ID)
   try {
     const result = resolveNotices([
       {
@@ -141,7 +136,6 @@ async function runUnitTests() {
     console.error('  [5/6] 数据结构精简测试失败 ❌', err.message);
   }
 
-  // 6. 测试历史向后兼容性 (NOTICE_PRESETS 与字符串简写)
   try {
     const legacyResult = resolveNotices(
       ['mineru-ocr'],
@@ -151,7 +145,6 @@ async function runUnitTests() {
     assert(legacyResult[0].message.includes('MinerU OCR'), 'MinerU 提示正常生成');
     assert(legacyResult[1].message.includes('ChatGPT 5.6 Luna'), 'AI 提示正常生成');
 
-    // 测试单页屏蔽 disabled: true
     const disabledResult = resolveNotices(
       ['mineru-ocr'],
       [{ id: 'mineru-ocr-notice', disabled: true }]
@@ -199,7 +192,7 @@ async function runIntegrationTests() {
     try {
       const res = await fetch(encodeURI(t.url));
       const html = await res.text();
-      
+
       const hasNoticeBox = html.includes('data-notice-id=');
       const hasWikiNotice = html.includes('astrolib-notice-wiki') && hasNoticeBox;
       const hasTitle = t.expectTitle ? html.includes(t.expectTitle) : true;

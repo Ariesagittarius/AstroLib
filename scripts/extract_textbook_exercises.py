@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 scripts/extract_textbook_exercises.py
 从《工科数学分析基础》38个小节MDX正文底部精准抽取课后习题（A组与B组），
@@ -39,7 +38,7 @@ CHAPTER_TITLES = {
 }
 
 def clean_section_title(raw_name: str) -> str:
-    # E.g. '1.1_集合映射与函数.mdx' -> '集合映射与函数'
+
     base = os.path.splitext(raw_name)[0]
     m = re.match(r'^\d+\.\d+_(.*)$', base)
     if m:
@@ -57,7 +56,7 @@ def infer_question_type(stem: str) -> str:
     return 'calc'
 
 def extract_sub_questions(stem: str) -> list[dict]:
-    # Extract sub-questions like (1), (2), (3)...
+
     sub_pattern = r'(?:^|\n)\s*[\(（](\d+)[\)）]\s*'
     matches = list(re.finditer(sub_pattern, stem))
     if not matches or len(matches) < 2:
@@ -75,13 +74,12 @@ def extract_sub_questions(stem: str) -> list[dict]:
     return subs
 
 def parse_section_exercises(sec_id: str, sec_title: str, ch_id: int, body: str, copy_images: bool = True):
-    # Split into group A and B
-    # Matches patterns like **（$A$）**, **（A）**, （A）, (A), **（$B$）**, **（B）**, etc.
+
     group_header_re = re.compile(
         r'(?:^|\n)(?:#{1,6}\s*)?(?:\*\*|###)?\s*[\(（]\s*[$]?([ABab])[$]?\s*[\)）]\s*(?:\*\*)?\s*(?:\n|$)'
     )
     splits = list(group_header_re.finditer(body))
-    
+
     groups = []
     if not splits:
         groups.append(('A', body))
@@ -91,27 +89,24 @@ def parse_section_exercises(sec_id: str, sec_title: str, ch_id: int, body: str, 
             start_pos = match.end()
             end_pos = splits[i+1].start() if i + 1 < len(splits) else len(body)
             groups.append((group_name, body[start_pos:end_pos].strip()))
-            
+
     questions = []
     running_order = 0
-    
+
     for group_name, group_text in groups:
-        # Match numbered questions: e.g. "1. ", "2. ", "## 5. "
+
         q_header_re = re.compile(r'(?:^|\n)(?:#{1,6}\s*)?(\d+)\.\s+')
         q_splits = list(q_header_re.finditer(group_text))
-        
+
         for j, q_match in enumerate(q_splits):
             running_order += 1
             q_num = int(q_match.group(1))
             q_start = q_match.end()
             q_end = q_splits[j+1].start() if j + 1 < len(q_splits) else len(group_text)
             raw_stem = group_text[q_start:q_end].strip()
-            
-            # Clean up OCR heading artifacts in stem
+
             clean_stem = re.sub(r'#{1,6}\s*', '', raw_stem).strip()
-            
-            # Replace images and copy if needed
-            # ![](images/xxx.jpg) -> ![](/data/exercises/engineering_analysis/images/xxx.jpg)
+
             img_matches = re.findall(r'!\[(.*?)\]\((images/[^)]+)\)', clean_stem)
             for alt, img_rel in img_matches:
                 img_name = os.path.basename(img_rel)
@@ -119,19 +114,19 @@ def parse_section_exercises(sec_id: str, sec_title: str, ch_id: int, body: str, 
                 dest_path = os.path.join(PUBLIC_IMG_DIR, img_name)
                 if copy_images and os.path.exists(src_path):
                     shutil.copy2(src_path, dest_path)
-                
+
                 clean_img_url = f"/data/exercises/engineering_analysis/images/{img_name}"
                 clean_stem = clean_stem.replace(img_rel, clean_img_url)
-                
+
             q_id = f"EA-TB-{sec_id}-{group_name}-Q{q_num:02d}"
             q_type = infer_question_type(clean_stem)
             subs = extract_sub_questions(clean_stem)
-            
+
             group_label = "A组 基础训练" if group_name == 'A' else "B组 综合提高"
             source_desc = f"《工科数学分析基础》第 {sec_id} 节习题 · {group_label}第 {q_num} 题"
             paper_id = 1000 + ch_id
             paper_title = f"《工科数学分析基础》{CHAPTER_TITLES[ch_id]} 课后习题集"
-            
+
             q_obj = {
                 "id": q_id,
                 "source_type": "textbook",
@@ -179,21 +174,21 @@ def parse_section_exercises(sec_id: str, sec_title: str, ch_id: int, body: str, 
                 }
             }
             questions.append(q_obj)
-            
+
     return questions
 
 def process_all(dry_run: bool = False):
     os.makedirs(PUBLIC_IMG_DIR, exist_ok=True)
     os.makedirs(os.path.dirname(OUT_JSON), exist_ok=True)
-    
+
     pattern = os.path.join(DOCS_DIR, '[1-7].*.mdx')
     files = sorted(glob.glob(pattern))
-    
+
     all_questions_by_chapter = {str(ch): [] for ch in range(1, 8)}
     total_extracted = 0
-    
+
     print(f"开始扫描并拆解《工科数学分析》38 个小节课后习题 (dry_run={dry_run})...")
-    
+
     for fpath in files:
         fname = os.path.basename(fpath)
         m_sec = re.match(r'^(\d+\.\d+)', fname)
@@ -202,32 +197,29 @@ def process_all(dry_run: bool = False):
         sec_id = m_sec.group(1)
         ch_id = int(sec_id.split('.')[0])
         sec_title = clean_section_title(fname)
-        
+
         with open(fpath, 'r', encoding='utf-8') as fp:
             raw_content = fp.read()
-            
+
         block_m = re.search(r'<Block title="([^"]*习题[^"]*)">([\s\S]*?)</Block>', raw_content)
         if not block_m:
             print(f"  [跳过] {fname} 未发现 <Block title=\"习题...\">")
             continue
-            
+
         block_body = block_m.group(2).strip()
-        
-        # 1. 抽取习题
+
         qs = parse_section_exercises(sec_id, sec_title, ch_id, block_body, copy_images=not dry_run)
         all_questions_by_chapter[str(ch_id)].extend(qs)
         total_extracted += len(qs)
-        
+
         print(f"  [{sec_id} {sec_title}] 成功解析 {len(qs)} 题 (A组: {sum(1 for q in qs if q['meta']['group']=='A')}, B组: {sum(1 for q in qs if q['meta']['group']=='B')})")
-        
-        # 2. 从 MDX 移除该 <Block>
+
         if not dry_run:
             new_content = raw_content[:block_m.start()].rstrip() + '\n\n' + raw_content[block_m.end():].lstrip()
             new_content = re.sub(r'\n{3,}', '\n\n', new_content).strip() + '\n'
             with open(fpath, 'w', encoding='utf-8') as fp:
                 fp.write(new_content)
-                
-    # 3. 写入提取出来的结构化 JSON 数据库
+
     if not dry_run:
         payload = {
             "book": "engineering_analysis",
@@ -237,7 +229,7 @@ def process_all(dry_run: bool = False):
         }
         with open(OUT_JSON, 'w', encoding='utf-8') as fp:
             json.dump(payload, fp, ensure_ascii=False, indent=2)
-            
+
         print(f"\n课后习题拆解入库成功：共收录 {total_extracted} 道题目！")
         print(f"题目数据库导出至: {OUT_JSON}")
         print(f"配图静态资源导出至: {PUBLIC_IMG_DIR}")

@@ -193,6 +193,3 @@ When designing or refining UI layouts, flows, and interactive components, agents
 - **桌面端 (≥ 72rem)**：Docked 常驻分栏。正文 `.main-pane` 与右栏由 `--sl-sideload-width` 动态协调，禁止产生公式重排跳跃。
 - **平板端 (50rem - 72rem)**：激活非大纲面板时转为标准 M3 Side Sheet 浮层（`position: fixed; width: min(25rem, 85vw); z-index: 400;`），伴随半透明 Scrim 遮罩，正文不被挤压。
 - **移动端 (< 50rem)**：激活非大纲面板时转为标准 M3 Bottom Sheet 底部抽屉（`position: fixed; width: 100vw; max-height: 85vh; border-radius: 16px 16px 0 0;`），**严禁出现设置固定像素宽度（如 24rem / 384px）撑爆移动端视口**。
-
-
-

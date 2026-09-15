@@ -1,16 +1,4 @@
 ---
-/**
- * HeadOverride.astro
- * ============================================================================
- * 全站 SEO 核心增强组件（覆盖 Starlight 原生 Head 组件）：
- * 1. 动态强化 <title>：章节自动追加所属图书名（《...》）与学科标识，增强 Google/Bing 核心检索力；
- * 2. 智能合成 <meta name="description">：针对 100% 缺失摘要的章节，服务端自动合成出版级学术摘要；
- * 3. 补全 Keywords、OpenGraph (og:image, og:description) 与 Twitter Cards；
- * 4. 自动注入高校学术级 Schema.org 结构化数据（BreadcrumbList 面包屑与 TechArticle/Book 实体）；
- * 5. 支持 Google Search Console 与 Bing Webmaster 站长验证标签；
- * 6. 构建期完全静态渲染，客户端运行时 0 KB JS 开销。
- * ============================================================================
- */
 import { collections } from '../config/collections.config.mjs';
 import { features } from '../config/features.config.mjs';
 import { cleanSlug } from '../utils/slug.mjs';
@@ -20,7 +8,6 @@ const { head = [], entry } = route || {};
 const pathname = Astro.url.pathname;
 const rawTitle = entry?.data?.title || route?.siteTitle || 'AstroLib';
 
-// 净化 Title 中的 LaTeX 宏与特殊字符，保证在搜索引擎中以纯文本完美呈现
 const cleanTitle = String(rawTitle)
   .replace(/\$([^\$]+)\$/g, '$1')
   .replace(/\\(?:mathbf|boldsymbol|pmb|text|mathbb|mathrm)\{([^}]+)\}/g, '$1')
@@ -31,7 +18,6 @@ const cleanTitle = String(rawTitle)
 const entryId = entry?.id || '';
 const entrySlug = entry?.slug || '';
 
-// 深度匹配当前路由所属图书及合集
 let currentBook = null;
 let currentCol = null;
 
@@ -50,17 +36,14 @@ for (const col of collections) {
 const siteUrl = (features.seo?.config?.siteUrl || 'https://astrolib.cloud').replace(/\/$/, '');
 const defaultDesc = features.seo?.config?.defaultDescription || '大学理工科教材与学术资料数字化阅读与自测系统';
 
-// 1. 标题策略：有图书归属时强化为「章节名 · 《书名》 - AstroLib」
 const enhancedTitle = currentBook
   ? `${cleanTitle} · 《${currentBook.title}》 - AstroLib`
   : `${cleanTitle} - AstroLib`;
 
-// 2. 摘要策略：无手动 description 时自动生成出版级学术摘要
 const finalDescription = entry?.data?.description || (currentBook
   ? `《${currentBook.title}》（${currentBook.author || 'AstroLib'}，${currentBook.publisher || ''}）${cleanTitle}。提供高保真数学排版、推导过程与核心例题解析。`
   : defaultDesc);
 
-// 3. 关键词策略
 const keywords = currentBook
   ? [
       cleanTitle,
@@ -75,7 +58,6 @@ const keywords = currentBook
     ].filter(Boolean)
   : ['AstroLib', cleanTitle, '理工科教材', '学术资料', '在线阅读'];
 
-// 4. 社交卡片封面图
 let resolvedCover = `${siteUrl}/astrolib-logo.png`;
 if (currentBook?.cover) {
   resolvedCover = currentBook.cover.startsWith('http')
@@ -83,7 +65,6 @@ if (currentBook?.cover) {
     : `${siteUrl}${currentBook.cover.startsWith('/') ? '' : '/'}${currentBook.cover}`;
 }
 
-// 5. 过滤并覆写 Starlight 原生 head 项，避免重复标签
 const processedHead = head.filter(item => {
   if (item.tag === 'title') return false;
   if (item.tag === 'meta') {
@@ -96,11 +77,10 @@ const processedHead = head.filter(item => {
   return true;
 });
 
-// 6. 构造 Schema.org 结构化数据 (JSON-LD)
 const schemaGraph = [];
 
 if (currentBook && currentCol) {
-  // (1) 面包屑导航 BreadcrumbList
+
   const bookReadUrl = `${siteUrl}/collections/${currentCol.slug}/${currentBook.slug}/${cleanSlug(currentBook.entryPoint)}/`;
   schemaGraph.push({
     '@type': 'BreadcrumbList',
@@ -132,7 +112,6 @@ if (currentBook && currentCol) {
     ],
   });
 
-  // (2) 学术教材章节 TechArticle / Chapter
   schemaGraph.push({
     '@type': 'TechArticle',
     headline: `${cleanTitle} · 《${currentBook.title}》`,
@@ -151,7 +130,7 @@ if (currentBook && currentCol) {
     },
   });
 } else {
-  // 非书籍页面（如 /dev/ 系列技术文档）
+
   schemaGraph.push({
     '@type': 'TechArticle',
     headline: enhancedTitle,
@@ -167,36 +146,29 @@ const jsonLdString = JSON.stringify({
   '@graph': schemaGraph,
 });
 
-// 7. 站长平台验证码
 const googleVerification = features.seo?.config?.googleSiteVerification;
 const bingVerification = features.seo?.config?.bingSiteVerification;
 ---
 
-<!-- 1. Starlight 原生基础与样式链接（过滤后的） -->
 {processedHead.map(({ tag: Tag, attrs, content }) => <Tag {...attrs} set:html={content} />)}
 
-<!-- 2. 强化标题与基础元数据 -->
 <title>{enhancedTitle}</title>
 <meta name="description" content={finalDescription} />
 <meta name="keywords" content={keywords.join(', ')} />
 {currentBook?.author && <meta name="author" content={currentBook.author} />}
 
-<!-- 3. Open Graph 社交图谱 -->
 <meta property="og:title" content={enhancedTitle} />
 <meta property="og:description" content={finalDescription} />
 <meta property="og:image" content={resolvedCover} />
 <meta property="og:type" content="article" />
 <meta property="og:locale" content="zh_CN" />
 
-<!-- 4. Twitter Cards -->
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content={enhancedTitle} />
 <meta name="twitter:description" content={finalDescription} />
 <meta name="twitter:image" content={resolvedCover} />
 
-<!-- 5. 站长工具验证（配置时注入） -->
 {googleVerification && <meta name="google-site-verification" content={googleVerification} />}
 {bingVerification && <meta name="msvalidate.01" content={bingVerification} />}
 
-<!-- 6. Schema.org 学术级结构化数据 (JSON-LD) -->
 <script type="application/ld+json" set:html={jsonLdString} />

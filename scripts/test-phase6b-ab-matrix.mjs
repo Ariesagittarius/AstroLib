@@ -1,17 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/test-phase6b-ab-matrix.mjs
- * AstroLib Phase 6B: Typography Metrics Controlled A/B Matrix Testing Engine
- *
- * 核心任务：
- * 1. 真实大学教材连贯多页文本 (>= 2 页，涵盖正文、定理、证明、公式、例题、解答、表格、题注、脚注)
- * 2. 实验一：Libertinus Scale A/B 评测 (1.00 vs 1.01 vs 1.015 vs 1.02)
- * 3. 实验二：FandolSong 行高基准 A/B 评测 (1.00 vs 1.10 vs 1.20 vs 1.25 vs 1.30)
- * 4. 实验三：LXGW WenKai 行高基准 A/B 评测 (1.15 vs 1.20 vs 1.25 vs 1.30 vs 1.35)
- * 5. 提取每组编译耗时、产物体积、总页数、行距垂直跨度与版面告警
- *
- * 产物输出目录：.tmp/typography-ab-tests/
- */
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -29,13 +16,11 @@ const AB_DIR = path.join(ROOT, '.tmp', 'typography-ab-tests');
 
 fs.mkdirSync(AB_DIR, { recursive: true });
 
-// 拷贝宏包
 const styPath = path.join(ROOT, 'src', 'publishing', 'latex', 'templates', 'astrolib-chapter.sty');
 if (fs.existsSync(styPath)) {
   fs.copyFileSync(styPath, path.join(AB_DIR, 'astrolib-chapter.sty'));
 }
 
-// 探测本地可用 xelatex
 function findXelatex() {
   const candidates = [
     'xelatex',
@@ -56,10 +41,6 @@ if (!xelatexBin) {
   console.error('❌ 未找到可用 xelatex 编译器');
   process.exit(1);
 }
-
-// -----------------------------------------------------------------------------
-// 真实教材连续多页正文 (2+ 页全要素严谨学术内容)
-// -----------------------------------------------------------------------------
 
 const REALISTIC_CHAPTER_CONTENT = `
 \\renewcommand{\\astrolibchapternum}{4.}
@@ -182,10 +163,6 @@ const REALISTIC_CHAPTER_CONTENT = `
 \\end{center}
 `;
 
-// -----------------------------------------------------------------------------
-// 编译辅助函数与诊断提取
-// -----------------------------------------------------------------------------
-
 function runXeLatexCompile(jobKey, texContent) {
   const texPath = path.join(AB_DIR, `${jobKey}.tex`);
   const pdfPath = path.join(AB_DIR, `${jobKey}.pdf`);
@@ -199,7 +176,7 @@ function runXeLatexCompile(jobKey, texContent) {
       cwd: AB_DIR,
       stdio: 'pipe',
     });
-    // 双遍编译确保交叉引用收敛
+
     execSync(`"${xelatexBin}" -file-line-error -interaction=nonstopmode ${jobKey}.tex`, {
       cwd: AB_DIR,
       stdio: 'pipe',
@@ -241,10 +218,6 @@ function runXeLatexCompile(jobKey, texContent) {
   };
 }
 
-// =============================================================================
-// 实验 1: Libertinus Scale A/B 测试 (1.00 vs 1.01 vs 1.015 vs 1.02)
-// =============================================================================
-
 console.log('================================================================');
 console.log('🧪 实验 1: Libertinus Scale A/B 评测 (Mathematical 预设)');
 console.log('================================================================\n');
@@ -254,7 +227,7 @@ const exp1Results = [];
 
 for (const sc of scaleCandidates) {
   const keyTag = `mathematical_scale_${String(sc).replace('.', '')}`;
-  // 克隆基线预设，仅改变 scale
+
   const preset = JSON.parse(JSON.stringify(PRESET_REGISTRY.mathematical));
   preset.latinText.scale = sc === 1.00 ? undefined : sc;
   preset.math.scale = sc === 1.00 ? undefined : sc;
@@ -282,10 +255,6 @@ ${REALISTIC_CHAPTER_CONTENT}
   });
   console.log(`[Scale=${sc}] -> ${res.success ? '✅ PASS' : '❌ FAIL'} | ${res.fileSizeKb} KB | 页数: ${res.pageCount} | 耗时: ${(res.durationMs/1000).toFixed(2)}s | 告警: ${res.warningsCount}`);
 }
-
-// =============================================================================
-// 实验 2: FandolSong 行高基准 A/B 测试 (1.00 vs 1.10 vs 1.20 vs 1.25 vs 1.30)
-// =============================================================================
 
 console.log('\n================================================================');
 console.log('🧪 实验 2: FandolSong 行高基准 A/B 评测 (Scholarly 预设)');
@@ -323,10 +292,6 @@ ${REALISTIC_CHAPTER_CONTENT}
   console.log(`[Stretch=${st}] -> ${res.success ? '✅ PASS' : '❌ FAIL'} | ${res.fileSizeKb} KB | 页数: ${res.pageCount} | 耗时: ${(res.durationMs/1000).toFixed(2)}s | 告警: ${res.warningsCount}`);
 }
 
-// =============================================================================
-// 实验 3: LXGW WenKai 行高基准 A/B 测试 (1.15 vs 1.20 vs 1.25 vs 1.30 vs 1.35)
-// =============================================================================
-
 console.log('\n================================================================');
 console.log('🧪 实验 3: LXGW WenKai 行高基准 A/B 评测 (Lecture 预设)');
 console.log('================================================================\n');
@@ -362,10 +327,6 @@ ${REALISTIC_CHAPTER_CONTENT}
   });
   console.log(`[Stretch=${st}] -> ${res.success ? '✅ PASS' : '❌ FAIL'} | ${res.fileSizeKb} KB | 页数: ${res.pageCount} | 耗时: ${(res.durationMs/1000).toFixed(2)}s | 告警: ${res.warningsCount}`);
 }
-
-// -----------------------------------------------------------------------------
-// 保存 A/B 测试结果摘要
-// -----------------------------------------------------------------------------
 
 const summaryData = {
   experiment1_libertinus_scale: exp1Results,

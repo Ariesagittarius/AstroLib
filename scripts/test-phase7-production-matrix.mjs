@@ -1,15 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/test-phase7-production-matrix.mjs
- * AstroLib Phase 7 Production Integration 真实教材章节生产矩阵检验与字体嵌入审计
- *
- * 核心验证：
- * 1. 真实教材长章节（1.1 集合映射与函数.mdx，含 15 张真实插图、3 项流式数字资源、完整定理与解答）
- * 2. 覆盖 4 套正式学术预设：scholarly, classic, mathematical, lecture
- * 3. 强制以 deterministic 确定性模式执行物理 XeLaTeX 双遍编译
- * 4. 深度提取并审计 PDF 嵌入字体（/BaseFont），确认零 Variable Font、零字形缺失、无隐藏回退
- * 5. 验证版面结构：页数、卷头书名、解题标签、题注与数字资源
- */
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -38,7 +27,6 @@ if (!fs.existsSync(MDX_ABS_PATH)) {
 
 const mdxSource = fs.readFileSync(MDX_ABS_PATH, 'utf8');
 
-// 探测本地 xelatex
 function findXelatex() {
   const candidates = [
     'xelatex',
@@ -63,7 +51,6 @@ if (!xelatexBin) {
 }
 console.log(`🔍 本地编译器: ${xelatexBin}\n`);
 
-// 从 PDF 二进制流中提取所有嵌入的 BaseFont
 function extractPdfEmbeddedFonts(pdfBuffer) {
   const decompressed = [];
   const streamRegex = /stream[\r\n]+([\s\S]*?)[\r\n]+endstream/g;
@@ -90,7 +77,6 @@ function extractPdfEmbeddedFonts(pdfBuffer) {
   return Array.from(baseFonts).sort();
 }
 
-// 从 log 文件中提取总页数
 function extractPageCountFromLog(logContent) {
   const m = logContent.match(/Output written on [^\r\n]+ \((\d+) pages/);
   return m ? parseInt(m[1], 10) : null;
@@ -108,7 +94,6 @@ for (const presetId of PRESETS) {
   const presetOutDir = path.join(OUT_BASE_DIR, presetId);
   fs.mkdirSync(presetOutDir, { recursive: true });
 
-  // 1. 调用统一门面生成 LaTeX 源码与打包资源
   const exportResult = exportChapterToLatex({
     mdxSource,
     slug: '1.1_集合映射与函数',
@@ -125,7 +110,6 @@ for (const presetId of PRESETS) {
     },
   });
 
-  // 2. 写入源码、宏包与配图
   const mainTexPath = path.join(presetOutDir, 'main.tex');
   fs.writeFileSync(mainTexPath, exportResult.tex, 'utf8');
 
@@ -138,7 +122,6 @@ for (const presetId of PRESETS) {
     fs.copyFileSync(asset.localPath, dest);
   }
 
-  // 3. 校验 LaTeX 代码结构要素
   const hasDigitalRes = (exportResult.tex.match(/\\astrolibdigitalresource/g) || []).length === 3;
   const hasSolutionHook = exportResult.styleSource.includes('\\astrolibsolutionhead');
   const hasNoCover = !exportResult.tex.includes('\\maketitle');
@@ -156,7 +139,6 @@ for (const presetId of PRESETS) {
     process.exit(1);
   }
 
-  // 4. 执行物理双遍编译
   const t0 = Date.now();
   try {
     execSync(`"${xelatexBin}" -file-line-error -interaction=nonstopmode main.tex`, {
@@ -189,11 +171,9 @@ for (const presetId of PRESETS) {
   const logContent = fs.readFileSync(path.join(presetOutDir, 'main.log'), 'utf8');
   const pageCount = extractPageCountFromLog(logContent);
 
-  // 5. 深度 PDF 字体嵌入审计
   const embeddedFonts = extractPdfEmbeddedFonts(pdfBuf);
   const hasVariableFont = embeddedFonts.some((fn) => /VF|Variable/i.test(fn));
 
-  // 检查关键字体是否按确定性契约嵌入 (包含主选设计字体 LXGW / SourceHan 或确定性兜底 Fandol)
   const hasCjk = embeddedFonts.some((fn) =>
     fn.includes('Fandol') || fn.includes('LXGW') || fn.includes('SourceHan') || fn.includes('Noto')
   );
@@ -228,7 +208,6 @@ for (const presetId of PRESETS) {
   console.log(`   嵌入主要字体: ${embeddedFonts.slice(0, 6).join(', ')}...`);
 }
 
-// 输出汇总表格
 console.log('\n================================================================');
 console.log('📊 Phase 7 Production Matrix 物理检验与字体审计汇总');
 console.log('================================================================');
@@ -248,7 +227,6 @@ console.table(
   }))
 );
 
-// 保存全量审计 JSON
 const auditSummaryPath = path.join(OUT_BASE_DIR, 'production_matrix_audit.json');
 fs.writeFileSync(auditSummaryPath, JSON.stringify(matrixResults, null, 2), 'utf8');
 console.log(`\n📄 生产矩阵审计报告已固化至: ${path.relative(ROOT, auditSummaryPath)}`);

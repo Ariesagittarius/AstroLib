@@ -1,14 +1,4 @@
 ---
-/**
- * sitemap.astro
- * ============================================================================
- * 全站纯静态 HTML 站点地图（HTML Sitemap）
- * 作用：
- * 1. 供搜索引擎爬虫在 1-2 次跳转内直接遍历全站所有学科合集、图书与 150+ 篇章节；
- * 2. 供人类读者按树形层级速览全站知识库架构；
- * 3. 严格遵循 Rule 1/2/5 规范，采用 buildBookCatalog 单一领域模型驱动。
- * ============================================================================
- */
 import { collections } from '../config/collections.config.mjs';
 import { features } from '../config/features.config.mjs';
 import { buildBookCatalog } from '../core/catalog/book-catalog.mjs';
@@ -20,7 +10,6 @@ const siteUrl = (features.seo?.config?.siteUrl || 'https://astrolib.cloud').repl
 const pageTitle = '网站地图 · 全书目录索引 - AstroLib';
 const pageDescription = 'AstroLib 全站教材目录与章节索引。包含高等数学、数学分析、工科数分、线性代数、概率统计与大学物理全书章节导航。';
 
-// 为每本图书扫描章节目录树
 const sitemapData = collections.map(col => {
   return {
     ...col,
@@ -34,7 +23,6 @@ const sitemapData = collections.map(col => {
   };
 });
 
-// 计算全站总章节数
 let totalChapters = 0;
 function countChapters(nodes: any[]): number {
   let count = 0;
@@ -60,7 +48,6 @@ sitemapData.forEach(col => {
     <meta name="description" content={pageDescription} />
     <link rel="canonical" href={`${siteUrl}/sitemap/`} />
 
-    <!-- Open Graph -->
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={pageDescription} />
     <meta property="og:url" content={`${siteUrl}/sitemap/`} />
@@ -68,7 +55,6 @@ sitemapData.forEach(col => {
     <meta property="og:image" content={`${siteUrl}/astrolib-logo.png`} />
     <meta property="og:locale" content="zh_CN" />
 
-    <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={pageDescription} />
@@ -82,8 +68,7 @@ sitemapData.forEach(col => {
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
-    <style>
-      :root {
+    <style>:root {
         --m3-bg: #fdfcff;
         --m3-surface: #ffffff;
         --m3-surface-container: #f0f4f9;
@@ -200,7 +185,7 @@ sitemapData.forEach(col => {
         padding-top: 0.5rem;
         border-top: 1px dashed var(--m3-outline);
       }
-    </style>
+</style>
   </head>
   <body>
     <VpNav />

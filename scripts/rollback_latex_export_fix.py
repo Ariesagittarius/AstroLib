@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """一键回滚脚本：将 LaTeX 导出核心模块恢复至本次修改前备份副本。"""
 import os
 import shutil

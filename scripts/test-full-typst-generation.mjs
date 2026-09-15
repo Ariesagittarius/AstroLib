@@ -37,7 +37,7 @@ for (const [ch, qList] of Object.entries(rawEx.chapters)) {
   }));
 
   try {
-    // 测试 handout 模板
+
     const docHandout = generateTypstDocument(sample, {
       template: 'handout',
       title: `第 ${ch} 章 练习`,
@@ -45,7 +45,6 @@ for (const [ch, qList] of Object.entries(rawEx.chapters)) {
     });
     compiler.pdf({ mainFileContent: docHandout });
 
-    // 测试 exam 模板
     const docExam = generateTypstDocument(sample, {
       template: 'exam',
       title: `第 ${ch} 章 自测模拟`,
