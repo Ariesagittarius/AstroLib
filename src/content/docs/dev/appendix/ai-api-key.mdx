@@ -1,0 +1,41 @@
+---
+title: 配置 AI 问答 API Key
+description: 配置 Gemini、DeepSeek 和自定义 OpenAI 兼容提供商。
+---
+
+## 在页面内配置
+
+打开右上角“快速设置”中的“AI”区域，选择提供商、模型，填写 API Key，必要时填写端点，然后点击“测试连接”。设置保存在当前浏览器的 `localStorage`，不会写入仓库；换浏览器或清除站点数据后需要重新填写。
+
+## Gemini
+
+选择 **Google Gemini**，粘贴 Google AI Studio 生成的 Key，并选择列表中的模型。生产站点使用 Google OpenAI 兼容端点；开发服务器默认把请求转到 `/api/proxy/gemini/v1beta/openai/chat/completions`。
+
+Gemini 服务通常需要代理环境或能够访问 Google 的网络出口。代理只解决网络可达性，不会替你申请 Key，也不应把 Key 写入代理脚本或公开日志。开发代理只随 `npm run dev` 的 Vite 插件启用。
+
+## DeepSeek
+
+选择 **DeepSeek**，填写以 `sk-` 开头的 Key，端点默认是：
+
+```text
+https://api.deepseek.com/v1/chat/completions
+```
+
+选择可用模型后测试连接。是否能从浏览器直连取决于服务商的 CORS、网络和账户策略；失败时优先检查端点、余额、模型名称和网络。
+
+## 自定义提供商
+
+选择“自定义”，添加模型 ID、显示名称和 OpenAI 兼容端点，例如：
+
+```text
+https://api.example.com/v1/chat/completions
+```
+
+端点必须接受 `POST`、`messages`、`model` 和流式响应格式。Ollama、Moonshot、SiliconFlow 等服务只有在其端点兼容该协议且允许浏览器请求时才可用。项目不会替自定义服务转换鉴权格式。
+
+## 安全与排错
+
+- 不把 Key 放进 `src/config/features.config.mjs`、`.env`、截图、Issue 或提交历史。
+- 看到 401/403，检查 Key 和账户权限；看到 404，检查模型 ID；看到超额或频率错误，检查配额。
+- Gemini 连接失败时先检查代理和开发代理地址；DeepSeek 或自定义端点失败时检查 CORS 和协议兼容性。
+- 仅在可信的本地浏览器中使用个人 Key；公共电脑使用后清除站点数据。

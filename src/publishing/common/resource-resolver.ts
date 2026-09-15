@@ -23,7 +23,7 @@ export interface ResolvedAsset {
 const ROOT = path.resolve(process.cwd());
 
 /**
- * 获取 astrolib-chapter.sty 官方宏包模版路径
+ * 获取官方宏包模版路径 (astrolib-chapter.sty)
  */
 export function getChapterStylePath(): string {
   const candidate = path.join(ROOT, 'src', 'publishing', 'latex', 'templates', 'astrolib-chapter.sty');

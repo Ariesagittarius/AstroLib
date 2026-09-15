@@ -1343,23 +1343,6 @@ html[data-site-theme='material-you'] .ft-test-spinner svg circle,
   stroke: currentColor !important;
 }
 
-html[data-site-theme='material-you'] .ft-test-spinner svg path,
-.ft-test-spinner svg path {
-  fill: none !important;
-  stroke: currentColor !important;
-}
-
-html[data-site-theme='material-you'] .ft-test-spinner svg,
-.ft-test-spinner svg,
-.ft-test-chip-spinner {
-  animation: ft-spin 0.85s linear infinite !important;
-}
-
-@keyframes ft-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
 /* DEV Chip */
 html[data-site-theme='material-you'] .ft-m3-dev-chip {
   height: 18px !important;
@@ -2889,19 +2872,6 @@ html[data-sideload-active='exercises'] .sideload-panel-view[data-panel-id='exerc
   text-align: center !important;
 }
 
-.ex-sb-spinner {
-  width: 28px !important;
-  height: 28px !important;
-  border: 3px solid var(--md-sys-color-surface-container-high) !important;
-  border-top-color: var(--md-sys-color-primary) !important;
-  border-radius: 50% !important;
-  animation: ex-spin 0.8s linear infinite !important;
-}
-
-@keyframes ex-spin {
-  to { transform: rotate(360deg); }
-}
-
 .ex-sb-empty {
   display: flex !important;
   flex-direction: column !important;
@@ -3928,11 +3898,37 @@ html[data-site-theme='material-you'][data-theme='dark'] .ex-card-ai-body {
   background-color: var(--md-sys-color-surface-container-highest) !important;
 }
 
-/* 6.2 Main Exercise Modal Window & Backdrop (M3 28px Dialog) */
+/* 6.2 Main Exercise Modal Window & Backdrop (Material You M3 Dialog) */
 html[data-site-theme='material-you'] .ex-modal-backdrop {
-  background-color: rgba(0, 0, 0, 0.4) !important;
-  backdrop-filter: blur(8px) !important;
-  -webkit-backdrop-filter: blur(8px) !important;
+  background-color: rgba(0, 0, 0, 0.38) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+html[data-site-theme='material-you'] md-dialog#exercise-modal-dialog,
+html[data-site-theme='material-you'] .ex-modal-m3-dialog {
+  --md-dialog-container-shape: var(--md-shape-corner-extra-large, 28px);
+  --md-dialog-container-color: var(--md-sys-color-surface);
+  --md-dialog-scrim-color: rgba(0, 0, 0, 0.38);
+  width: min(960px, calc(100vw - 3.5rem)) !important;
+  max-width: min(960px, calc(100vw - 3.5rem)) !important;
+  height: min(84vh, 800px) !important;
+  max-height: min(84vh, 800px) !important;
+  z-index: var(--layer-dialog, 500);
+  margin: auto !important;
+}
+
+/* 极简学术 M3 渐现微缩放动效（告别大落差坠落与伸缩） */
+html[data-site-theme='material-you'] md-dialog#exercise-modal-dialog[quick] {
+  transition: opacity 0.2s cubic-bezier(0.05, 0.7, 0.1, 1), transform 0.2s cubic-bezier(0.05, 0.7, 0.1, 1) !important;
+}
+
+html[data-site-theme='material-you'][data-theme='light'] md-dialog#exercise-modal-dialog {
+  --md-dialog-container-color: #ffffff !important;
+}
+
+html[data-site-theme='material-you'][data-theme='dark'] md-dialog#exercise-modal-dialog {
+  --md-dialog-container-color: #141218 !important;
 }
 
 html[data-site-theme='material-you'] .ex-modal-window {
@@ -3942,19 +3938,30 @@ html[data-site-theme='material-you'] .ex-modal-window {
   border-radius: var(--md-shape-corner-extra-large, 28px) !important;
   box-shadow: var(--md-elevation-level-3) !important;
   overflow: hidden !important;
-  transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1), opacity 0.22s ease !important;
+  transition: transform 0.2s cubic-bezier(0.05, 0.7, 0.1, 1), opacity 0.2s ease !important;
 }
 
+html[data-site-theme='material-you'] md-dialog#exercise-modal-dialog.is-fullscreen,
 html[data-site-theme='material-you'] .ex-modal-window.is-fullscreen {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  --md-dialog-container-shape: 0px !important;
   border-radius: 0 !important;
   border: none !important;
+  margin: 0 !important;
 }
 
-/* 6.3 Header Chrome & M3 Controls */
+/* 6.3 Header Chrome & M3 Controls (Top App Bar & Segmented Control) */
 html[data-site-theme='material-you'] .ex-header {
-  background-color: var(--md-sys-color-surface-container) !important;
+  background-color: var(--md-sys-color-surface) !important;
   border-bottom: 1px solid var(--md-sys-color-outline-variant) !important;
-  padding: 0.75rem 1.5rem !important;
+  padding: 0.85rem 1.75rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 1rem !important;
 }
 
 /* M3 Outlined Select (Chapter & Paper Selector) */
@@ -3965,7 +3972,7 @@ html[data-site-theme='material-you'] .ex-paper-select {
   border: 1px solid var(--md-sys-color-outline-variant) !important;
   background-color: var(--md-sys-color-surface) !important;
   color: var(--md-sys-color-on-surface) !important;
-  font-family: var(--md-sys-typescale-title-small-font) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
   font-size: 0.875rem !important;
   font-weight: 500 !important;
   padding: 0 2rem 0 0.875rem !important;
@@ -3993,27 +4000,36 @@ html[data-site-theme='material-you'] .ex-paper-select:focus {
   outline-offset: -1px !important;
 }
 
-/* M3 Primary Tabs (章节自测 / 试卷整卷) */
+/* M3 Segmented Button Group (章节自测 / 试卷整卷) */
 html[data-site-theme='material-you'] .ex-header-center {
-  gap: 0.5rem !important;
-  padding: 0.2rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 38px !important;
+  padding: 3px !important;
+  border: 1px solid var(--md-sys-color-outline-variant) !important;
+  border-radius: var(--md-shape-corner-full, 9999px) !important;
+  background-color: var(--md-sys-color-surface-container-low) !important;
+  gap: 2px !important;
 }
 
 html[data-site-theme='material-you'] .ex-mode-tab {
-  height: 38px !important;
-  padding: 0 1.25rem !important;
-  font-family: var(--md-sys-typescale-title-small-font) !important;
-  font-size: 0.875rem !important;
-  font-weight: 500 !important;
-  color: var(--md-sys-color-on-surface-variant) !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  padding: 0 16px !important;
   border-radius: var(--md-shape-corner-full, 9999px) !important;
-  background: transparent !important;
-  transition: all 0.15s ease !important;
   border: none !important;
+  background: transparent !important;
+  color: var(--md-sys-color-on-surface-variant) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
+  font-size: 0.84rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.15s cubic-bezier(0.2, 0, 0, 1) !important;
+  white-space: nowrap !important;
 }
 
 html[data-site-theme='material-you'] .ex-mode-tab:hover {
-  background-color: var(--md-sys-color-surface-container-highest) !important;
+  background-color: var(--md-sys-color-surface-container-high) !important;
   color: var(--md-sys-color-on-surface) !important;
 }
 
@@ -4021,6 +4037,7 @@ html[data-site-theme='material-you'] .ex-mode-tab.active {
   background-color: var(--md-sys-color-secondary-container) !important;
   color: var(--md-sys-color-on-secondary-container) !important;
   font-weight: 600 !important;
+  box-shadow: var(--md-elevation-level-1) !important;
 }
 
 html[data-site-theme='material-you'] .ex-mode-tab.active::after {
@@ -4029,20 +4046,25 @@ html[data-site-theme='material-you'] .ex-mode-tab.active::after {
 
 /* Header Right Actions */
 html[data-site-theme='material-you'] .ex-header-right {
+  display: flex !important;
+  align-items: center !important;
   gap: 0.5rem !important;
 }
 
 html[data-site-theme='material-you'] .ex-secondary-btn,
 html[data-site-theme='material-you'] #ex-open-latex-btn {
   height: 36px !important;
-  padding: 0 16px !important;
+  padding: 0 14px !important;
   border-radius: var(--md-shape-corner-full, 9999px) !important;
-  background-color: var(--md-sys-color-surface-container-high) !important;
+  background-color: var(--md-sys-color-surface) !important;
   border: 1px solid var(--md-sys-color-outline-variant) !important;
   color: var(--md-sys-color-primary) !important;
-  font-family: var(--md-sys-typescale-label-large-font) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
   font-size: 0.8125rem !important;
   font-weight: 500 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
   box-shadow: none !important;
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
 }
@@ -4056,8 +4078,8 @@ html[data-site-theme='material-you'] #ex-open-latex-btn:hover {
 
 html[data-site-theme='material-you'] .ex-fullscreen-btn,
 html[data-site-theme='material-you'] .ex-close-btn {
-  width: 38px !important;
-  height: 38px !important;
+  width: 36px !important;
+  height: 36px !important;
   border-radius: 50% !important;
   border: none !important;
   background: transparent !important;
@@ -4078,24 +4100,24 @@ html[data-site-theme='material-you'] .ex-close-btn:hover {
 html[data-site-theme='material-you'] .ex-toolbar {
   background-color: var(--md-sys-color-surface-container-low) !important;
   border-bottom: 1px solid var(--md-sys-color-outline-variant) !important;
-  padding: 0.75rem 1.5rem !important;
+  padding: 0.75rem 1.75rem !important;
   gap: 0.75rem !important;
 }
 
 html[data-site-theme='material-you'] .ex-stat-item {
-  font-family: var(--md-sys-typescale-body-medium-font) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
   color: var(--md-sys-color-on-surface-variant) !important;
   font-size: 0.8125rem !important;
 }
 
 html[data-site-theme='material-you'] .ex-stat-total {
-  color: var(--md-sys-color-primary) !important;
+  color: var(--md-sys-color-on-surface) !important;
   font-weight: 600 !important;
 }
 
-/* M3 Full-Pill Search Field */
+/* M3 Search Field (Google Drive / Play Style) */
 html[data-site-theme='material-you'] .ex-search-box {
-  height: 38px !important;
+  height: 36px !important;
   min-width: 280px !important;
   border-radius: var(--md-shape-corner-full, 9999px) !important;
   background-color: var(--md-sys-color-surface-container-high) !important;
@@ -4124,7 +4146,7 @@ html[data-site-theme='material-you'] .ex-search-input {
   border: none !important;
   background: transparent !important;
   color: var(--md-sys-color-on-surface) !important;
-  font-family: var(--md-sys-typescale-body-medium-font) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
   font-size: 0.84rem !important;
 }
 
@@ -4153,13 +4175,13 @@ html[data-site-theme='material-you'] .ex-search-clear:hover {
 /* M3 Scope Toggle Button & Toolbar Toggle Button (Filter Chips) */
 html[data-site-theme='material-you'] .ex-scope-toggle-btn,
 html[data-site-theme='material-you'] .ex-toolbar-toggle-btn {
-  height: 36px !important;
-  padding: 0 14px !important;
+  height: 32px !important;
+  padding: 0 12px !important;
   border-radius: var(--md-shape-corner-small, 8px) !important;
   border: 1px solid var(--md-sys-color-outline-variant) !important;
   background-color: var(--md-sys-color-surface) !important;
   color: var(--md-sys-color-on-surface-variant) !important;
-  font-family: var(--md-sys-typescale-label-large-font) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
   font-size: 0.8125rem !important;
   font-weight: 500 !important;
   gap: 6px !important;
@@ -4179,9 +4201,45 @@ html[data-site-theme='material-you'] .ex-scope-toggle-btn.active {
   font-weight: 600 !important;
 }
 
-/* 6.5 M3 Filter Chips (Directory Flow & Pills) */
+/* 6.5 M3 Filter Drawer (Smooth Accordion Grid Motion) & Filter Chips */
+html[data-site-theme='material-you'] .ex-filter-drawer {
+  display: grid !important;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  width: 100% !important;
+  transition: grid-template-rows 280ms cubic-bezier(0.2, 0, 0, 1),
+              opacity 200ms cubic-bezier(0.2, 0, 0, 1) !important;
+}
+
+html[data-site-theme='material-you'] .ex-filter-inner {
+  overflow: hidden !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+html[data-site-theme='material-you'] .ex-toolbar.is-collapsed .ex-filter-drawer {
+  grid-template-rows: 0fr !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+html[data-site-theme='material-you'] .ex-toolbar.is-collapsed .ex-toggle-chevron {
+  transform: rotate(180deg) !important;
+}
+
+html[data-site-theme='material-you'] .ex-toggle-chevron {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: transform 280ms cubic-bezier(0.2, 0, 0, 1) !important;
+}
+
 html[data-site-theme='material-you'] .ex-filter-row {
-  gap: 0.85rem !important;
+  gap: 0.75rem !important;
   padding-top: 0.35rem !important;
 }
 
@@ -4192,18 +4250,18 @@ html[data-site-theme='material-you'] .ex-nav-flow {
 html[data-site-theme='material-you'] .ex-source-pills,
 html[data-site-theme='material-you'] .ex-group-pills {
   border-right: 1px solid var(--md-sys-color-outline-variant) !important;
-  padding-right: 0.85rem !important;
+  padding-right: 0.75rem !important;
 }
 
 html[data-site-theme='material-you'] .ex-nav-item {
-  height: 32px !important;
-  padding: 0 12px !important;
+  height: 30px !important;
+  padding: 0 10px !important;
   border-radius: var(--md-shape-corner-small, 8px) !important;
   border: 1px solid var(--md-sys-color-outline-variant) !important;
   background-color: var(--md-sys-color-surface) !important;
   color: var(--md-sys-color-on-surface-variant) !important;
-  font-family: var(--md-sys-typescale-label-large-font) !important;
-  font-size: 0.8125rem !important;
+  font-family: var(--md-font-google-sans), inherit !important;
+  font-size: 0.78rem !important;
   font-weight: 500 !important;
   text-decoration: none !important;
   display: inline-flex !important;
@@ -4229,39 +4287,42 @@ html[data-site-theme='material-you'] .ex-nav-item.active {
 html[data-site-theme='material-you'] .ex-nav-count {
   color: inherit !important;
   opacity: 0.75 !important;
-  font-size: 0.75rem !important;
+  font-size: 0.72rem !important;
 }
 
-/* 6.6 Question Body & M3 Outlined Question Cards */
+/* 6.6 Question Body & M3 Outlined Question Stream Cards */
 html[data-site-theme='material-you'] .ex-body {
   background-color: var(--md-sys-color-surface) !important;
-  padding: 1.5rem 1.75rem 3.5rem !important;
-  gap: 1.25rem !important;
+  padding: 1.75rem 2.25rem 4.5rem !important;
+  gap: 1.75rem !important;
 }
 
 html[data-site-theme='material-you'] .ex-q-card {
-  background-color: var(--md-sys-color-surface-container-low) !important;
+  background-color: var(--md-sys-color-surface-container-lowest, #ffffff) !important;
   border: 1px solid var(--md-sys-color-outline-variant) !important;
   border-radius: var(--md-shape-corner-large, 16px) !important;
-  padding: 1.25rem 1.5rem !important;
-  gap: 0.95rem !important;
+  padding: 1.65rem 2rem !important;
+  gap: 1.35rem !important;
   box-shadow: none !important;
   transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease, border-color 0.2s ease !important;
 }
 
 html[data-site-theme='material-you'] .ex-q-card:hover {
-  background-color: var(--md-sys-color-surface-container) !important;
+  background-color: var(--md-sys-color-surface) !important;
+  border-color: var(--md-sys-color-outline) !important;
   box-shadow: var(--md-elevation-level-1) !important;
 }
 
 /* Question Header Meta */
 html[data-site-theme='material-you'] .ex-q-header {
-  border-bottom: 1px dashed var(--md-sys-color-outline-variant) !important;
-  padding-bottom: 0.65rem !important;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant) !important;
+  opacity: 0.9 !important;
+  padding-bottom: 0.85rem !important;
+  margin-bottom: 0.25rem !important;
 }
 
 html[data-site-theme='material-you'] .ex-q-num {
-  font-family: var(--md-sys-typescale-title-medium-font) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
   font-size: 1.05rem !important;
   font-weight: 600 !important;
   color: var(--md-sys-color-on-surface) !important;
@@ -4272,35 +4333,41 @@ html[data-site-theme='material-you'] .ex-q-type-label {
   color: var(--md-sys-color-on-surface-variant) !important;
 }
 
-/* M3 Assist Chips for Question Source Badges */
+/* M3 Assist Chips for Question Source Badges (Eliminate Garish Purple Pill) */
 html[data-site-theme='material-you'] .ex-q-source-badge {
-  font-family: var(--md-sys-typescale-label-large-font) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
   font-size: 0.72rem !important;
   font-weight: 500 !important;
-  padding: 0.15rem 0.5rem !important;
-  border-radius: var(--md-shape-corner-extra-small, 4px) !important;
-  border: none !important;
+  padding: 0.12rem 0.5rem !important;
+  border-radius: 4px !important;
+  background-color: var(--md-sys-color-surface-container-high) !important;
+  color: var(--md-sys-color-on-surface-variant) !important;
+  border: 1px solid var(--md-sys-color-outline-variant) !important;
 }
 
 html[data-site-theme='material-you'] .ex-q-source-badge.textbook {
-  background-color: var(--md-sys-color-primary-container) !important;
-  color: var(--md-sys-color-on-primary-container) !important;
+  background-color: var(--md-sys-color-surface-container-high) !important;
+  color: var(--md-sys-color-on-surface-variant) !important;
 }
 
 html[data-site-theme='material-you'] .ex-q-source-badge.exam {
-  background-color: var(--md-sys-color-tertiary-container) !important;
-  color: var(--md-sys-color-on-tertiary-container) !important;
+  background-color: var(--md-sys-color-surface-container-high) !important;
+  color: var(--md-sys-color-on-surface-variant) !important;
 }
 
 /* Question Header Action Links (报错, 源码) */
 html[data-site-theme='material-you'] .ex-text-link-btn {
-  font-family: var(--md-sys-typescale-label-large-font) !important;
-  font-size: 0.78rem !important;
+  font-family: var(--md-font-google-sans), inherit !important;
+  font-size: 0.75rem !important;
   font-weight: 500 !important;
   color: var(--md-sys-color-on-surface-variant) !important;
   padding: 0.2rem 0.55rem !important;
-  border-radius: var(--md-shape-corner-full, 9999px) !important;
+  border-radius: 4px !important;
   text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background: transparent !important;
   transition: all 0.15s ease !important;
 }
 
@@ -4308,6 +4375,12 @@ html[data-site-theme='material-you'] .ex-text-link-btn:hover {
   background-color: var(--md-sys-color-surface-container-highest) !important;
   color: var(--md-sys-color-primary) !important;
   text-decoration: none !important;
+}
+
+html[data-site-theme='material-you'] .ex-meta-svg {
+  width: 13px !important;
+  height: 13px !important;
+  opacity: 0.75 !important;
 }
 
 /* Question Stem (Protected Academic Typography) */
@@ -4320,7 +4393,7 @@ html[data-site-theme='material-you'] .ex-q-stem {
 /* 6.7 Interactive Solving Area (Multiple Choice & Blank) */
 html[data-site-theme='material-you'] .ex-options-grid {
   gap: 0.65rem !important;
-  margin-top: 0.4rem !important;
+  margin-top: 0.5rem !important;
 }
 
 html[data-site-theme='material-you'] .ex-option-btn {
@@ -4328,7 +4401,7 @@ html[data-site-theme='material-you'] .ex-option-btn {
   border: 1px solid var(--md-sys-color-outline-variant) !important;
   background-color: var(--md-sys-color-surface) !important;
   color: var(--md-sys-color-on-surface) !important;
-  padding: 0.65rem 1rem !important;
+  padding: 0.7rem 1rem !important;
   font-size: 0.9rem !important;
   transition: all 0.15s ease !important;
 }
@@ -4339,15 +4412,16 @@ html[data-site-theme='material-you'] .ex-option-btn:hover:not(.disabled) {
 }
 
 html[data-site-theme='material-you'] .ex-option-key {
-  font-family: var(--md-sys-typescale-title-small-font) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
   color: var(--md-sys-color-primary) !important;
   font-weight: 600 !important;
 }
 
-html[data-site-theme='material-you'] .ex-option-btn.selected {
+html[data-site-theme='material-you'] .ex-option-btn.selected,
+html[data-site-theme='material-you'] .ex-option-btn.is-selected {
   background-color: var(--md-sys-color-secondary-container) !important;
   color: var(--md-sys-color-on-secondary-container) !important;
-  border-color: transparent !important;
+  border-color: var(--md-sys-color-secondary) !important;
 }
 
 html[data-site-theme='material-you'] .ex-option-btn.is-correct {
@@ -4383,7 +4457,7 @@ html[data-site-theme='material-you'] .ex-blank-check-btn {
   background-color: var(--md-sys-color-secondary-container) !important;
   color: var(--md-sys-color-on-secondary-container) !important;
   border: none !important;
-  font-family: var(--md-sys-typescale-label-large-font) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
   font-weight: 500 !important;
   cursor: pointer !important;
   transition: all 0.15s ease !important;
@@ -4409,109 +4483,197 @@ html[data-site-theme='material-you'] .ex-source-link:hover {
   text-decoration: underline !important;
 }
 
-/* 6.8 Card Action Buttons */
+/* 6.8 Card Action Buttons (M3 Three-Tier Hierarchy) */
 html[data-site-theme='material-you'] .ex-card-actions {
-  padding-top: 0.35rem !important;
-  gap: 0.65rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding-top: 0.85rem !important;
+  border-top: 1px solid var(--md-sys-color-outline-variant) !important;
+  margin-top: 0.5rem !important;
+  gap: 0.75rem !important;
 }
 
 html[data-site-theme='material-you'] .ex-left-actions,
 html[data-site-theme='material-you'] .ex-right-actions {
+  display: flex !important;
+  align-items: center !important;
   gap: 0.65rem !important;
 }
 
-/* M3 Outlined Buttons for Reveal Steps & Hints */
-html[data-site-theme='material-you'] .ex-action-btn {
+/* M3 Outlined Button for Reveal Steps */
+html[data-site-theme='material-you'] .ex-action-btn.ex-toggle-steps-btn {
   height: 34px !important;
   padding: 0 14px !important;
   border-radius: var(--md-shape-corner-full, 9999px) !important;
   border: 1px solid var(--md-sys-color-outline-variant) !important;
   background-color: var(--md-sys-color-surface) !important;
   color: var(--md-sys-color-on-surface-variant) !important;
-  font-family: var(--md-sys-typescale-label-large-font) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
   font-size: 0.8125rem !important;
   font-weight: 500 !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
+  gap: 6px !important;
   transition: all 0.15s ease !important;
 }
 
-html[data-site-theme='material-you'] .ex-action-btn:hover {
+html[data-site-theme='material-you'] .ex-action-btn.ex-toggle-steps-btn:hover {
+  background-color: var(--md-sys-color-surface-container-high) !important;
+  color: var(--md-sys-color-on-surface) !important;
+  border-color: var(--md-sys-color-outline) !important;
+}
+
+/* M3 Text Button for Hints */
+html[data-site-theme='material-you'] .ex-action-btn.ex-toggle-hints-btn {
+  height: 34px !important;
+  padding: 0 12px !important;
+  border-radius: var(--md-shape-corner-full, 9999px) !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--md-sys-color-on-surface-variant) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  transition: all 0.15s ease !important;
+}
+
+html[data-site-theme='material-you'] .ex-action-btn.ex-toggle-hints-btn:hover {
   background-color: var(--md-sys-color-surface-container-high) !important;
   color: var(--md-sys-color-on-surface) !important;
 }
 
-html[data-site-theme='material-you'] .ex-action-btn.active {
-  background-color: var(--md-sys-color-surface-container-highest) !important;
-  color: var(--md-sys-color-primary) !important;
-  border-color: var(--md-sys-color-primary) !important;
-}
-
 /* M3 Filled Tonal Button for Ask AI */
-html[data-site-theme='material-you'] .ex-ask-ai-btn {
+html[data-site-theme='material-you'] .ex-action-btn.ex-ask-ai-btn {
   height: 34px !important;
   padding: 0 16px !important;
   border-radius: var(--md-shape-corner-full, 9999px) !important;
-  background-color: var(--md-sys-color-primary-container) !important;
-  color: var(--md-sys-color-on-primary-container) !important;
+  background-color: var(--md-sys-color-secondary-container) !important;
+  color: var(--md-sys-color-on-secondary-container) !important;
   border: none !important;
-  font-family: var(--md-sys-typescale-label-large-font) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
   font-size: 0.8125rem !important;
   font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
   box-shadow: none !important;
   transition: all 0.15s ease !important;
 }
 
-html[data-site-theme='material-you'] .ex-ask-ai-btn:hover {
-  background-color: color-mix(in srgb, var(--md-sys-color-primary-container) 88%, var(--md-sys-color-on-primary-container) 12%) !important;
+html[data-site-theme='material-you'] .ex-action-btn.ex-ask-ai-btn:hover {
+  background-color: color-mix(in srgb, var(--md-sys-color-secondary-container) 88%, var(--md-sys-color-on-secondary-container) 12%) !important;
   box-shadow: var(--md-elevation-level-1) !important;
+}
+
+/* Material Symbols / md-icon 标准样式规范 */
+html[data-site-theme='material-you'] #exercise-modal-root md-icon,
+html[data-site-theme='material-you'] .ex-modal-m3-dialog md-icon {
+  font-family: 'Material Symbols Outlined' !important;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  line-height: 1 !important;
+  user-select: none !important;
+}
+
+html[data-site-theme='material-you'] .ex-btn-mdicon {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  flex-shrink: 0 !important;
+}
+
+html[data-site-theme='material-you'] .ex-meta-mdicon {
+  font-size: 14px !important;
+  width: 14px !important;
+  height: 14px !important;
+  opacity: 0.8 !important;
+  flex-shrink: 0 !important;
+}
+
+html[data-site-theme='material-you'] .ex-header-right md-icon {
+  font-size: 20px !important;
+  width: 20px !important;
+  height: 20px !important;
+}
+
+html[data-site-theme='material-you'] .ex-submodal-close md-icon {
+  font-size: 20px !important;
+  width: 20px !important;
+  height: 20px !important;
+}
+
+html[data-site-theme='material-you'] .ex-upvote-mdicon {
+  font-size: 14px !important;
+  width: 14px !important;
+  height: 14px !important;
+}
+
+html[data-site-theme='material-you'] .ex-btn-svg {
+  width: 15px !important;
+  height: 15px !important;
+  flex-shrink: 0 !important;
 }
 
 /* 6.9 Solutions, Steps & In-Place AI Panels */
 html[data-site-theme='material-you'] .ex-solution-box {
-  background-color: var(--md-sys-color-surface-container) !important;
+  background-color: var(--md-sys-color-surface-container-low) !important;
   border-radius: var(--md-shape-corner-medium, 12px) !important;
   border: 1px solid var(--md-sys-color-outline-variant) !important;
-  border-left: 4px solid var(--md-sys-color-primary) !important;
-  padding: 1.1rem 1.35rem !important;
+  border-left: 3px solid var(--md-sys-color-primary) !important;
+  padding: 1.15rem 1.4rem !important;
 }
 
 html[data-site-theme='material-you'] .ex-solution-title {
   color: var(--md-sys-color-on-surface) !important;
-  font-family: var(--md-sys-typescale-title-small-font) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
   font-size: 0.95rem !important;
+  font-weight: 600 !important;
 }
 
 html[data-site-theme='material-you'] .ex-solution-steps {
   color: var(--md-sys-color-on-surface) !important;
+  line-height: 1.7 !important;
 }
 
 html[data-site-theme='material-you'] .ex-k-tag {
   background-color: var(--md-sys-color-surface) !important;
   border: 1px solid var(--md-sys-color-outline-variant) !important;
-  border-radius: var(--md-shape-corner-small, 8px) !important;
+  border-radius: 4px !important;
   color: var(--md-sys-color-on-surface-variant) !important;
   padding: 0.15rem 0.5rem !important;
+  font-size: 0.75rem !important;
 }
 
 /* In-Place AI Panel */
 html[data-site-theme='material-you'] .ex-ai-box {
-  background-color: var(--md-sys-color-surface-container) !important;
+  background-color: var(--md-sys-color-surface-container-low) !important;
   border-radius: var(--md-shape-corner-medium, 12px) !important;
   border: 1px solid var(--md-sys-color-outline-variant) !important;
-  padding: 1.1rem 1.35rem !important;
+  padding: 1.15rem 1.4rem !important;
 }
 
 html[data-site-theme='material-you'] .ex-ai-header {
-  border-bottom: 1px dashed var(--md-sys-color-outline-variant) !important;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant) !important;
+  padding-bottom: 0.5rem !important;
 }
 
 html[data-site-theme='material-you'] .ex-ai-model-badge {
-  background-color: var(--md-sys-color-secondary-container) !important;
-  color: var(--md-sys-color-on-secondary-container) !important;
-  padding: 0.15rem 0.55rem !important;
-  border-radius: var(--md-shape-corner-extra-small, 4px) !important;
+  background-color: var(--md-sys-color-surface-container-highest) !important;
+  color: var(--md-sys-color-on-surface-variant) !important;
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+  font-size: 0.72rem !important;
+  font-weight: 500 !important;
 }
 
 html[data-site-theme='material-you'] .ex-ai-tool-btn {
@@ -4521,8 +4683,11 @@ html[data-site-theme='material-you'] .ex-ai-tool-btn {
   border: 1px solid var(--md-sys-color-outline-variant) !important;
   background-color: var(--md-sys-color-surface) !important;
   color: var(--md-sys-color-on-surface-variant) !important;
-  font-family: var(--md-sys-typescale-label-large-font) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
   font-size: 0.74rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
 }
 
 html[data-site-theme='material-you'] .ex-ai-tool-btn:hover {
@@ -4531,22 +4696,24 @@ html[data-site-theme='material-you'] .ex-ai-tool-btn:hover {
 }
 
 html[data-site-theme='material-you'] .ex-ai-ver-tab {
-  padding: 0.2rem 0.6rem !important;
+  padding: 0.25rem 0.7rem !important;
   border-radius: var(--md-shape-corner-small, 8px) !important;
   color: var(--md-sys-color-on-surface-variant) !important;
   text-decoration: none !important;
+  font-size: 0.78rem !important;
 }
 
 html[data-site-theme='material-you'] .ex-ai-ver-tab.active {
   background-color: var(--md-sys-color-secondary-container) !important;
   color: var(--md-sys-color-on-secondary-container) !important;
+  font-weight: 600 !important;
   text-decoration: none !important;
 }
 
 /* 6.10 Sub-Modals (Feedback / Dev Editor / AI Upload / Settings) */
 html[data-site-theme='material-you'] .ex-submodal-overlay {
-  background-color: rgba(0, 0, 0, 0.45) !important;
-  backdrop-filter: blur(6px) !important;
+  background-color: rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(4px) !important;
 }
 
 html[data-site-theme='material-you'] .ex-submodal-box {
@@ -4563,17 +4730,19 @@ html[data-site-theme='material-you'] .ex-submodal-header {
 }
 
 html[data-site-theme='material-you'] .ex-submodal-title {
-  font-family: var(--md-sys-typescale-title-medium-font) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
   font-size: 1.125rem !important;
   font-weight: 600 !important;
   color: var(--md-sys-color-on-surface) !important;
 }
 
 html[data-site-theme='material-you'] .ex-submodal-close {
-  width: 38px !important;
-  height: 38px !important;
+  width: 36px !important;
+  height: 36px !important;
   border-radius: 50% !important;
   color: var(--md-sys-color-on-surface-variant) !important;
+  border: none !important;
+  background: transparent !important;
 }
 
 html[data-site-theme='material-you'] .ex-submodal-close:hover {
@@ -4619,7 +4788,7 @@ html[data-site-theme='material-you'] .ex-code-editor {
 
 /* Dialog Action Buttons */
 html[data-site-theme='material-you'] .ex-btn {
-  font-family: var(--md-sys-typescale-label-large-font) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
   font-size: 0.875rem !important;
   font-weight: 500 !important;
   border-radius: var(--md-shape-corner-full, 9999px) !important;
@@ -4632,6 +4801,7 @@ html[data-site-theme='material-you'] .ex-btn-primary {
   background-color: var(--md-sys-color-primary) !important;
   color: var(--md-sys-color-on-primary) !important;
   border: none !important;
+  font-weight: 500 !important;
 }
 
 html[data-site-theme='material-you'] .ex-btn-primary:hover {
@@ -4640,13 +4810,14 @@ html[data-site-theme='material-you'] .ex-btn-primary:hover {
 }
 
 html[data-site-theme='material-you'] .ex-btn-secondary {
-  background-color: transparent !important;
+  background-color: var(--md-sys-color-surface-container-high) !important;
   border: 1px solid var(--md-sys-color-outline-variant) !important;
   color: var(--md-sys-color-on-surface-variant) !important;
+  font-weight: 500 !important;
 }
 
 html[data-site-theme='material-you'] .ex-btn-secondary:hover {
-  background-color: var(--md-sys-color-surface-container-high) !important;
+  background-color: var(--md-sys-color-surface-container-highest) !important;
   color: var(--md-sys-color-on-surface) !important;
 }
 
@@ -4658,18 +4829,19 @@ html[data-site-theme='material-you'] .ex-toast {
   border: none !important;
   border-left: none !important;
   box-shadow: var(--md-elevation-level-3) !important;
-  font-family: var(--md-sys-typescale-body-medium-font) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
 }
 
 /* 6.12 Load More & Finished States */
 html[data-site-theme='material-you'] .ex-load-more-btn {
-  height: 38px !important;
+  height: 36px !important;
   padding: 0 20px !important;
   border-radius: var(--md-shape-corner-full, 9999px) !important;
   border: 1px solid var(--md-sys-color-outline-variant) !important;
   background-color: var(--md-sys-color-surface-container-low) !important;
   color: var(--md-sys-color-primary) !important;
-  font-family: var(--md-sys-typescale-label-large-font) !important;
+  font-family: var(--md-font-google-sans), inherit !important;
+  font-size: 0.8125rem !important;
   font-weight: 500 !important;
   transition: all 0.15s ease !important;
 }
@@ -4682,12 +4854,16 @@ html[data-site-theme='material-you'] .ex-load-more-btn:hover {
 
 /* 6.13 Mobile Responsive Adaptations */
 @media (max-width: 640px) {
-  html[data-site-theme='material-you'] .ex-modal-window {
+  html[data-site-theme='material-you'] .ex-modal-window,
+  html[data-site-theme='material-you'] md-dialog#exercise-modal-dialog {
     width: 100vw !important;
+    max-width: 100vw !important;
     height: 100vh !important;
     max-height: 100vh !important;
+    --md-dialog-container-shape: 0px !important;
     border-radius: 0 !important;
     border: none !important;
+    margin: 0 !important;
   }
 
   html[data-site-theme='material-you'] .ex-header {
@@ -4817,7 +4993,6 @@ html[data-site-theme='material-you'] .sl-fb-textarea {
 /* --------------------------------------------------------------------------
    8. Publishing, Export & Inspector Dialogs (M3 Dialog & Chips)
    -------------------------------------------------------------------------- */
-html[data-site-theme='material-you'] .chapter-export-dialog,
 html[data-site-theme='material-you'] .insp-panel,
 html[data-site-theme='material-you'] .brg-modal {
   background-color: var(--md-sys-color-surface) !important;
@@ -5588,8 +5763,28 @@ html[data-site-theme='material-you'] .expressive-code {
   overflow: hidden !important;
 }
 
-html[data-site-theme='material-you'] .sl-markdown-content .expressive-code pre {
+/* 无顶栏代码块：pre 四角统一中圆角 */
+html[data-site-theme='material-you'] .sl-markdown-content .expressive-code:not(:has(.has-title, .is-terminal)) pre,
+html[data-site-theme='material-you'] .expressive-code:not(:has(.has-title, .is-terminal)) pre {
   border-radius: var(--md-shape-corner-medium, 10px) !important;
+}
+
+/* 具顶栏代码块（终端/文件页签）：pre 顶部平直贴合顶栏，底部保留圆角 */
+html[data-site-theme='material-you'] .sl-markdown-content .expressive-code:is(:has(.has-title, .is-terminal)) pre,
+html[data-site-theme='material-you'] .expressive-code:is(:has(.has-title, .is-terminal)) pre {
+  border-radius: 0 0 var(--md-shape-corner-medium, 10px) var(--md-shape-corner-medium, 10px) !important;
+}
+
+/* 12.3.2 行内代码 (Material 3 Chip-styled Inline Code) */
+html[data-site-theme='material-you'] .sl-markdown-content :not(pre) > code {
+  font-family: var(--sl-font-mono, ui-monospace, 'Menlo', 'Monaco', monospace) !important;
+  font-size: 0.85em !important;
+  padding: 0.16em 0.42em !important;
+  border-radius: 4px !important;
+  background-color: var(--md-sys-color-surface-container-high, rgba(125, 125, 125, 0.12)) !important;
+  color: var(--md-sys-color-on-surface, var(--sl-color-white)) !important;
+  border: 1px solid var(--md-sys-color-outline-variant, rgba(125, 125, 125, 0.15)) !important;
+  word-break: break-word;
 }
 
 /* 12.4 数字资源卡片（多媒体交互附着物卡片，区别于理论概念卡片） */
@@ -6029,6 +6224,165 @@ html[data-site-theme='material-you'][data-theme='dark'] .ex-license-dialog {
   gap: 8px !important;
   padding-top: 6px !important;
 }
+
+/* ==========================================================================
+   Material 3 Official Loading Indicator & Universal Template Tokens
+   (Aligning with m3.material.io Loading & progress spec)
+   ========================================================================== */
+
+.m3-loading-root {
+  box-sizing: border-box;
+  font-family: var(--sl-font, system-ui, -apple-system, sans-serif);
+  color: var(--md-sys-color-on-surface-variant, var(--sl-color-gray-2));
+  line-height: 1.4;
+}
+
+/* Layout variants */
+.m3-loading-layout-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  vertical-align: middle;
+}
+
+.m3-loading-layout-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.m3-loading-layout-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--md-sys-color-surface, var(--sl-color-bg, #ffffff)) 88%, transparent);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  border-radius: inherit;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.m3-loading-overlay-host {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: auto;
+  border-radius: inherit;
+}
+
+/* Circular Core Component Style Override */
+.m3-loading-circular-core {
+  --md-circular-progress-active-indicator-color: var(--md-sys-color-primary, var(--sl-color-text-accent));
+  flex-shrink: 0;
+  display: inline-flex;
+}
+
+/* Linear Core Component Style Override */
+.m3-loading-linear-core {
+  --md-linear-progress-active-indicator-color: var(--md-sys-color-primary, var(--sl-color-text-accent));
+  --md-linear-progress-track-color: var(--md-sys-color-surface-container-highest, var(--sl-color-hairline));
+  width: 100%;
+  max-width: 240px;
+}
+
+/* Contained Configuration (M3 Spec: 48px round container with primary-container color) */
+.m3-loading-contained-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--md-sys-shape-corner-full, 9999px);
+  background-color: var(--md-sys-color-primary-container, var(--sl-color-accent-low));
+  box-shadow: var(--md-elevation-level-1, 0 1px 3px rgba(0, 0, 0, 0.08));
+  flex-shrink: 0;
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.m3-loading-contained-compact {
+  width: 28px;
+  height: 28px;
+}
+
+.m3-loading-contained-small {
+  width: 36px;
+  height: 36px;
+}
+
+.m3-loading-contained-medium {
+  width: 48px;
+  height: 48px;
+}
+
+.m3-loading-contained-large {
+  width: 60px;
+  height: 60px;
+}
+
+/* Contained indicator color mapped to on-primary-container */
+.m3-loading-contained-box .m3-loading-circular-core {
+  --md-circular-progress-active-indicator-color: var(--md-sys-color-on-primary-container, var(--sl-color-text-accent));
+}
+
+/* Label Typography */
+.m3-loading-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface-variant, var(--sl-color-gray-2));
+  letter-spacing: 0.015em;
+  text-align: center;
+}
+
+.m3-loading-size-compact .m3-loading-label {
+  font-size: 0.75rem;
+}
+
+.m3-loading-size-large .m3-loading-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* M3 Loading Indicator Web Component & Morphing Canvas */
+m3-loading-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+m3-loading-indicator .m3-morph-canvas {
+  display: block;
+  pointer-events: none;
+}
+
+.m3-loading-text-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.m3-loading-layout-inline .m3-loading-text-group {
+  align-items: flex-start;
+}
+
+.m3-loading-sublabel {
+  font-size: 0.75rem;
+  color: var(--md-sys-color-on-surface-variant, var(--sl-color-gray-3));
+  opacity: 0.8;
+  text-align: center;
+}
+
 
 
 

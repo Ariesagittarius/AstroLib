@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 
 console.log('================================================================');
-console.log('🧪 开始运行 AstroLib 教材章节 LaTeX / PDF 导出与编译自动化测试');
+console.log('🧪 开始运行 AstroLib 教材章节 book.tex LaTeX / PDF 导出与编译测试');
 console.log('================================================================\n');
 
 // 1. 选择真实教材样本 MDX 进行全量解析与导出 (2.2 求导的基本法则，含定理、图示、例题)
@@ -33,7 +33,7 @@ if (!fs.existsSync(sampleMdxPath)) {
 
 const mdxSource = fs.readFileSync(sampleMdxPath, 'utf8');
 
-console.log('--- [阶段 1] MDX -> Semantic Document -> LaTeX 导出转换 ---');
+console.log('--- [阶段 1] MDX -> Semantic Document -> book.tex LaTeX 导出转换 ---');
 const exportResult = exportChapterToLatex({
   mdxSource,
   slug: '2.2_求导的基本法则',
@@ -42,7 +42,8 @@ const exportResult = exportChapterToLatex({
   bookTitle: '工科数学分析基础（第三版）',
   courseName: '工科数学分析',
   latexConfig: {
-    documentclass: 'ctexart',
+    documentclass: 'book',
+    mathFont: 'pagella',
   },
 });
 
@@ -122,9 +123,32 @@ if (syntaxErrors.length > 0) {
 console.log('✅ LaTeX 语法平衡检查全部通过！');
 
 // 3. 测试 ZIP 归档包生成
-console.log('\n--- [阶段 3] 测试可离线编译的 ZIP 包打包 ---');
+console.log('\n--- [阶段 3] 测试可离线编译的 ZIP 包打包与 book.tex 特性断言 ---');
 const zipBuffer = createChapterZipPackage(exportResult);
 console.log(`✅ ZIP 打包成功，包体大小: ${(zipBuffer.length / 1024).toFixed(1)} KB`);
+
+// 验证 book.tex 关键特征
+if (!/\\documentclass\[.*11pt.*twoside.*\]\{book\}/.test(exportResult.tex)) {
+  console.error('❌ 未找到 book.tex 核心文档类声明: \\documentclass[...11pt,twoside...]{book}');
+  process.exit(1);
+}
+if (!exportResult.tex.includes('\\setmainfont{TeX Gyre Pagella}')) {
+  console.error('❌ 未找到 Palatino 官方主字体声明: \\setmainfont{TeX Gyre Pagella}');
+  process.exit(1);
+}
+if (!exportResult.tex.includes('\\setmathfont{TeX Gyre Pagella Math}') && !exportResult.tex.includes('\\setmathfont{texgyrepagella-math.otf}')) {
+  console.error('❌ 未找到 Palatino 数学字体声明: \\setmathfont{TeX Gyre Pagella Math} 或 \\setmathfont{texgyrepagella-math.otf}');
+  process.exit(1);
+}
+if (!exportResult.tex.includes('\\definecolor{chapterblue}{HTML}{1E3A5F}')) {
+  console.error('❌ 未找到 book.tex 官方颜色定义: chapterblue');
+  process.exit(1);
+}
+if (exportResult.tex.includes('kaobook') || exportResult.tex.includes('kaobox')) {
+  console.error('❌ 检测到外来 kaobook / kaobox 残余！');
+  process.exit(1);
+}
+console.log('✅ book.tex 模板架构特征（Palatino、amsthm、chapterblue、不对称版心）断言全部通过！');
 
 const testWorkspace = path.join(ROOT, '.tmp', 'test-chapter-latex');
 try {
@@ -134,16 +158,13 @@ try {
 const texPath = path.join(testWorkspace, 'chapter.tex');
 fs.writeFileSync(texPath, exportResult.tex, 'utf8');
 
-const styPath = path.join(testWorkspace, 'astrolib-chapter.sty');
-fs.writeFileSync(styPath, exportResult.styleSource, 'utf8');
-
 // 拷贝相关插图
 for (const asset of exportResult.assets) {
   const destPath = path.join(testWorkspace, asset.targetPath);
   fs.mkdirSync(path.dirname(destPath), { recursive: true });
   fs.copyFileSync(asset.localPath, destPath);
 }
-console.log(`✅ 测试目录已准备: .tmp/test-chapter-latex/`);
+console.log(`✅ 测试目录已就绪: .tmp/test-chapter-latex/`);
 
 // 5. 调用本地 XeLaTeX 进行编译验证
 console.log('\n--- [阶段 4] 本地 XeLaTeX 编译真实验证 ---');

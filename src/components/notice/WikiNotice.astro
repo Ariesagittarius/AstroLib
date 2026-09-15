@@ -18,13 +18,15 @@ interface Props {
     variant?: string;
     severity?: 'warning' | 'info' | 'neutral' | 'accent';
     icon?: string;
+    message: string;
     title?: string;
-    subtitle?: string;
-    message?: string;
+    subtitle?: string; // 已废弃
+    tagPosition?: 'lead' | 'trail';
     tags?: string[];
-    items?: Array<{ icon?: string; text: string }>;
+    items?: Array<{ icon?: string; text: string } | string>;
     collapsible?: boolean;
     dismissible?: boolean;
+    params?: Record<string, any>;
   };
 }
 
@@ -48,6 +50,42 @@ const severity = notice.severity || 'warning';
         <svg class="notice-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
         </svg>
+      ) : notice.icon === 'rate_review' ? (
+        <svg class="notice-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </svg>
+      ) : notice.icon === 'translate' ? (
+        <svg class="notice-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m5 8 6 6" />
+          <path d="m4 14 6-6 2-3" />
+          <path d="M2 5h12" />
+          <path d="M7 2h1" />
+          <path d="m22 22-5-10-5 10" />
+          <path d="M14 18h6" />
+        </svg>
+      ) : notice.icon === 'school' ? (
+        <svg class="notice-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+          <path d="M6 12v5c3 3 9 3 12 0v-5" />
+        </svg>
+      ) : notice.icon === 'science' ? (
+        <svg class="notice-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 2v7.5a2 2 0 0 1-.2.9L4.7 20.5A1 1 0 0 0 5.6 22h12.8a1 1 0 0 0 .9-1.5l-5.1-10.1a2 2 0 0 1-.2-.9V2" />
+          <path d="M8.5 2h7" />
+          <path d="M7 16h10" />
+        </svg>
+      ) : notice.icon === 'warning' ? (
+        <svg class="notice-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+          <line x1="12" y1="9" x2="12" y2="13" />
+          <line x1="12" y1="17" x2="12.01" y2="17" stroke-width="2.5" />
+        </svg>
+      ) : notice.icon === 'verified' ? (
+        <svg class="notice-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          <path d="m9 12 2 2 4-4" />
+        </svg>
       ) : (
         <svg class="notice-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10" />
@@ -59,8 +97,19 @@ const severity = notice.severity || 'warning';
 
     <div class="wiki-content-col">
       <div class="wiki-text-line">
+        {notice.tags && notice.tags.length > 0 && notice.tagPosition === 'lead' && (
+          <span class="wiki-tags-inline wiki-tags-lead">
+            <md-chip-set class="wiki-chip-set" role="list">
+              {notice.tags.map(tag => (
+                <md-assist-chip class="wiki-meta-chip" label={tag}>
+                  <span class="m3-chip-text">{tag}</span>
+                </md-assist-chip>
+              ))}
+            </md-chip-set>
+          </span>
+        )}
         <span class="wiki-message">{notice.message || notice.title}</span>
-        {notice.tags && notice.tags.length > 0 && (
+        {notice.tags && notice.tags.length > 0 && notice.tagPosition !== 'lead' && (
           <span class="wiki-tags-inline">
             <md-chip-set class="wiki-chip-set" role="list">
               {notice.tags.map(tag => (
@@ -79,7 +128,7 @@ const severity = notice.severity || 'warning';
             {notice.items.map(item => (
               <li class="wiki-item-li">
                 <span class="wiki-item-bullet">•</span>
-                <span class="wiki-item-text">{item.text}</span>
+                <span class="wiki-item-text">{typeof item === 'string' ? item : item.text}</span>
               </li>
             ))}
           </ul>
@@ -222,6 +271,11 @@ const severity = notice.severity || 'warning';
     vertical-align: middle;
   }
 
+  .wiki-tags-inline.wiki-tags-lead {
+    margin-inline-start: 0;
+    margin-inline-end: 0.5rem;
+  }
+
   .wiki-chip-set {
     display: inline-flex !important;
     flex-wrap: wrap;
@@ -312,7 +366,7 @@ const severity = notice.severity || 'warning';
   }
 
   .wiki-item-bullet {
-    color: #ea580c;
+    color: var(--wiki-accent-color);
     font-weight: bold;
     flex-shrink: 0;
   }

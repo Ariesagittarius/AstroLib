@@ -11,6 +11,7 @@
 
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
+import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import * as remarkMdx from 'remark-mdx';
 import type {
@@ -26,6 +27,7 @@ import type {
 import { resolveChapterCanonicalMetadata } from '../../core/catalog/chapter-metadata.ts';
 
 const mdxPlugin = (remarkMdx as any).remarkMdx ?? (remarkMdx as any).default ?? remarkMdx;
+const gfmPlugin = (remarkGfm as any).default ?? remarkGfm;
 
 /** 剥离 Frontmatter 并返回元数据字典与正文 Body */
 export function extractFrontmatter(source: string): { frontmatter: Record<string, string>; body: string } {
@@ -317,12 +319,18 @@ function parseAstNodes(
         if (isSingleImage) {
           const img = node.children[0];
           const imgUrl = img.url || '';
-          imageCollector.push({ alt: img.alt || '', url: imgUrl, originalPath: imgUrl });
+          const altText = (img.alt || '').trim();
+          imageCollector.push({ alt: altText, url: imgUrl, originalPath: imgUrl });
+          let caption: string | undefined = undefined;
+          if (altText && (/^图\s*[\d\.\-－]/i.test(altText) || altText.length > 3)) {
+            caption = altText;
+          }
           blocks.push({
             kind: 'figure',
             figureData: {
               url: imgUrl,
-              alt: img.alt || '',
+              alt: altText,
+              caption,
             },
           });
         } else {
@@ -394,8 +402,13 @@ function parseAstNodes(
         };
         const rows = node.children || [];
         if (rows.length > 0) {
-          const headRow = rows[0];
-          tableData.headers = (headRow.children || []).map((cell: any) => serializeInlineNodes(cell.children).trim());
+          const rawHeaders = (rows[0].children || []).map((cell: any) => serializeInlineNodes(cell.children).trim());
+          const hasNonEmptyHeader = rawHeaders.some((h: string) => h.length > 0);
+          if (hasNonEmptyHeader) {
+            tableData.headers = rawHeaders;
+          } else {
+            tableData.headers = [];
+          }
           for (let i = 1; i < rows.length; i++) {
             const rowCells = (rows[i].children || []).map((cell: any) => serializeInlineNodes(cell.children).trim());
             tableData.rows.push(rowCells);
@@ -428,6 +441,7 @@ function parseAstNodes(
       case 'mdxJsxTextElement': {
         const name = node.name;
         const titleAttr = getJsxAttr(node, 'title') || '';
+        const typeAttr = getJsxAttr(node, 'type') || '';
         const idAttr = getJsxAttr(node, 'id') || '';
         const urlAttr = getJsxAttr(node, 'url') || '';
 
@@ -498,16 +512,30 @@ function parseAstNodes(
             children: childBlocks,
           });
         }
-        // 5. Note 组件 (注记/想一想)
-        else if (name === 'Note') {
+        // 5. SideNote / MarginNote / Note 组件 (侧注/想一想/注意/注记/例题等)
+        else if (name === 'SideNote' || name === 'MarginNote' || name === 'Note') {
+          let sideTitle = titleAttr.trim();
+          if (!sideTitle && typeAttr) {
+            const typeMap: Record<string, string> = {
+              think: '想一想',
+              caution: '注意',
+              analysis: '思路分析',
+              geom: '几何意义',
+              note: '注',
+            };
+            sideTitle = typeMap[typeAttr.toLowerCase()] || typeAttr;
+          }
+          if (!sideTitle) {
+            sideTitle = '注';
+          }
           const childBlocks = parseAstNodes(node.children || [], imageCollector, {
-            kind: 'remark',
-            id: titleAttr,
-            title: titleAttr,
+            kind: 'sidenote',
+            id: idAttr || sideTitle,
+            title: sideTitle,
           });
           blocks.push({
-            kind: 'remark',
-            title: titleAttr,
+            kind: 'sidenote',
+            title: sideTitle,
             children: childBlocks,
           });
         }
@@ -636,20 +664,32 @@ function parseAstNodes(
           let figImg: string | undefined;
           let figAlt = '';
           let figCap = '';
-          for (const c of node.children || []) {
-            if (c.type === 'paragraph') {
-              for (const p of c.children || []) {
-                if (p.type === 'image') {
-                  figImg = p.url;
-                  figAlt = p.alt || '';
+
+          function walkFigureNodes(nodes: any[]) {
+            for (const c of nodes || []) {
+              if (c.type === 'image') {
+                if (!figImg) {
+                  figImg = c.url;
+                  figAlt = c.alt || '';
                   imageCollector.push({ alt: figAlt, url: figImg, originalPath: figImg });
                 }
+              } else if (c.name === 'figcaption' || c.type === 'figcaption') {
+                if (!figCap) {
+                  figCap = serializeInlineNodes(c.children || []).trim();
+                }
               }
-            } else if (c.name === 'figcaption') {
-              figCap = serializeInlineNodes(c.children || []).trim();
+              if (c.children && c.children.length > 0) {
+                walkFigureNodes(c.children);
+              }
             }
           }
+
+          walkFigureNodes(node.children || []);
+
           if (figImg) {
+            if (!figCap && figAlt && (/^图\s*[\d\.\-－]/i.test(figAlt.trim()) || figAlt.trim().length > 3)) {
+              figCap = figAlt.trim();
+            }
             blocks.push({
               kind: 'figure',
               figureData: {
@@ -700,8 +740,8 @@ export function parseMdxChapter(
   const title = metadata.fullTitle || rawTitle;
   const cleanTitle = metadata.sectionTitle || rawTitle.replace(/^[\d\.\s_-]+/, '').trim() || rawTitle;
 
-  // 2. 使用 unified + remark 编译器管线解析 AST
-  const processor = unified().use(remarkParse).use(mdxPlugin).use(remarkMath);
+  // 2. 使用 unified + remark 编译器管线解析 AST (含 GFM 表格扩展)
+  const processor = unified().use(remarkParse).use(gfmPlugin).use(mdxPlugin).use(remarkMath);
   const ast = processor.parse(body);
 
   const images: ChapterImageItem[] = [];

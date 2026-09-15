@@ -21,6 +21,7 @@
  */
 
 import { mountToOverlayRoot } from '../overlay/overlay-root';
+import { createM3LoadingHtml, showM3LoadingOverlay, hideM3LoadingOverlay } from '../../components/common/m3-loading-helper';
 
 export interface ModuleItem {
   id: string;
@@ -524,6 +525,29 @@ class ModuleInspectorController {
   private renderLoading(isLoading: boolean) {
     const refreshBtn = this.rootEl?.querySelector('.insp-refresh-btn');
     refreshBtn?.classList.toggle('spinning', isLoading);
+
+    const listEl = this.rootEl?.querySelector<HTMLElement>('.insp-list');
+    if (listEl) {
+      if (isLoading) {
+        if (!this.scanData) {
+          listEl.innerHTML = createM3LoadingHtml({
+            variant: 'contained',
+            size: 'medium',
+            layout: 'block',
+            label: '正在扫描全书模块结构...',
+            sublabel: '解析章节卡片并构建索引',
+          });
+        } else {
+          showM3LoadingOverlay(listEl, {
+            variant: 'contained',
+            size: 'medium',
+            label: '正在更新模块索引...',
+          });
+        }
+      } else {
+        hideM3LoadingOverlay(listEl);
+      }
+    }
   }
 
   private renderError() {

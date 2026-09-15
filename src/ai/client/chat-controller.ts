@@ -45,6 +45,7 @@ import {
   onAiConfigChange,
 } from '../ai-config';
 import { parseAiError, renderErrorCardHtml } from '../error-handler';
+import { createM3LoadingHtml } from '../../components/common/m3-loading-helper';
 
 const HISTORY_MAX = 12;
 const THREADS_PREFIX = 'dsh-aiask-threads-';
@@ -1455,6 +1456,15 @@ export class AIAskElement extends HTMLElement {
     const blocksEl = aiMsg.querySelector('.ask-blocks') as HTMLElement;
     const sourcesEl = aiMsg.querySelector('.ask-sources') as HTMLElement;
     if (discussion) sourcesEl.style.display = 'none';
+
+    // 立即插入 Material 3 官方微光思考占位
+    blocksEl.innerHTML = createM3LoadingHtml({
+      variant: 'default',
+      size: 'compact',
+      layout: 'inline',
+      label: discussion ? 'AI 正在深入思考与推导...' : '正在检索本书知识库...',
+      className: 'ask-msg-thinking-placeholder',
+    });
     this._scrollThread();
 
     status.textContent = discussion ? '深度讨论中：AI 正在基于理解作答，需要时按需检索本书…' : '正在检索本书知识库…';
@@ -1469,6 +1479,7 @@ export class AIAskElement extends HTMLElement {
         const retriever = ai.createRetriever(idx.chunks);
         hits = retriever.search(q, { topK: params.topK });
         if (!hits.length) {
+          blocksEl.innerHTML = '';
           this._appendMdBlock(blocksEl, '没有在本书中找到相关内容。');
           status.textContent = '没有在本书中找到相关内容。';
           this._busy = false;
@@ -1496,6 +1507,8 @@ export class AIAskElement extends HTMLElement {
         this._appendToThread(q, text, sources, tools, res.segments);
         status.textContent = '完成。';
       } else {
+        const placeholder = blocksEl.querySelector('.ask-msg-thinking-placeholder');
+        if (placeholder) placeholder.remove();
         this._appendMdBlock(blocksEl, discussion
           ? '未配置 API Key（或模型/端点缺失），无法生成深度讨论回答。可在设置中配置 Key、选择模型后继续。'
           : '未配置 API Key（或模型/端点缺失），已仅展示检索来源（点击可跳转原文）。可在设置中配置 Key、选择模型后生成答案。', false);
@@ -1503,6 +1516,8 @@ export class AIAskElement extends HTMLElement {
         status.textContent = '';
       }
     } catch (e: any) {
+      const placeholder = blocksEl.querySelector('.ask-msg-thinking-placeholder');
+      if (placeholder) placeholder.remove();
       const provider = getAiProvider();
       const modelDef = this._selectedModel();
       const errInfo = parseAiError(e, {
@@ -1597,6 +1612,8 @@ export class AIAskElement extends HTMLElement {
           tools: toolDefs, toolChoice: 'auto',
           signal: this._abort.signal,
           onDelta: (d: string) => {
+            const placeholder = blocksEl.querySelector('.ask-msg-thinking-placeholder');
+            if (placeholder) placeholder.remove();
             if (usedTools) {
               this._collapseTools(blocksEl);
             }
@@ -1626,6 +1643,20 @@ export class AIAskElement extends HTMLElement {
           });
           flushReply();
           for (const tc of res.toolCalls) {
+            const placeholder = blocksEl.querySelector('.ask-msg-thinking-placeholder');
+            if (placeholder) placeholder.remove();
+
+            const inFlight = document.createElement('div');
+            inFlight.className = 'ask-tool-in-flight';
+            inFlight.innerHTML = createM3LoadingHtml({
+              variant: 'default',
+              size: 'compact',
+              layout: 'inline',
+              label: `正在检索章节知识库 [${tc.name}]...`,
+            });
+            blocksEl.appendChild(inFlight);
+            this._scrollThread();
+
             let out: any, summary: string;
             try {
               if (!toolCtx.index && tc.name !== 'list_books') toolCtx.index = await this._getIndex();
@@ -1634,6 +1665,8 @@ export class AIAskElement extends HTMLElement {
             } catch (e: any) {
               out = { error: e.message || String(e) };
               summary = '执行失败';
+            } finally {
+              inFlight.remove();
             }
             const t = { name: tc.name, args: tc.arguments || {}, summary, resultRaw: out, resultText: capJsonText(out) };
             toolLog.push(t);
@@ -1647,6 +1680,8 @@ export class AIAskElement extends HTMLElement {
       }
       flushReply();
     } catch (e: any) {
+      const placeholder = blocksEl.querySelector('.ask-msg-thinking-placeholder');
+      if (placeholder) placeholder.remove();
       if (e.name !== 'AbortError') {
         const provider = getAiProvider();
         const errInfo = parseAiError(e, {

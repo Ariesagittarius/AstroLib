@@ -1,0 +1,30 @@
+---
+title: 内容、版权与故障排查
+description: 新贡献者常见的边界、许可和构建问题。
+---
+
+## 内容与版权
+
+书籍、封面、题库和扫描图片必须有可核验的来源与许可。`src/config/exercise-banks.config.ts` 中的题库应填写 SPDX 标识和来源仓库。不能因为内容可以被 OCR 或模型读取，就默认拥有再发布权。
+
+## 常见问题
+
+### 修改正文后 AI 问答没有变化
+
+重新运行 `npm run build`，或至少运行 `node scripts/build-ai-index.mjs`。问答读取 `public/ai-index/` 的派生索引，不会在浏览器中实时解析 MDX。
+
+### EPUB 或 LaTeX 缺图片
+
+检查图片是否在书籍目录的 `images/` 中、文件名大小写是否一致，并确认元数据中的封面是 `public/` 下的绝对 URL 路径（例如 `/covers/book.jpg`）。
+
+### 题库页面为空
+
+确认 `applicableBooks` 使用的是书籍 `slug`，然后运行 `npm run build:exercises`。不要直接编辑 `public/data/exercises/`。
+
+### 构建找不到包
+
+先在项目根目录执行 `npm install`。如果是 Python 脚本，再根据脚本导入错误安装对应 Python 依赖；不要把虚拟环境目录提交到仓库。
+
+### 公式或 MDX 报错
+
+先缩小到单本书运行 `node scripts/scan-mdx.mjs <目录>`，检查未闭合组件、代码围栏和数学定界符，再运行 `npm run check:katex`。

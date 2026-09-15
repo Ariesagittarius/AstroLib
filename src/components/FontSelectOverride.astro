@@ -314,6 +314,7 @@ import { LATIN_PRESETS, CJK_PRESETS } from '../scripts/font-presets';
       saveFontPref(next);
       applyFontPref(next);
       this.syncAll(next);
+      window.dispatchEvent(new CustomEvent('astrolib:font-change', { detail: next }));
     }
 
     /** 同步所有实例的高亮选中态。 */
@@ -360,6 +361,12 @@ import { LATIN_PRESETS, CJK_PRESETS } from '../scripts/font-presets';
   // 在自定义元素上注册，避免其它框架在同一 document 上的 click 监听互相干扰。
   if (!window.__vpFontDocHandlers) {
     window.__vpFontDocHandlers = true;
+    window.addEventListener('astrolib:font-change', (e: any) => {
+      const pref = e?.detail || loadFontPref();
+      document
+        .querySelectorAll<StarlightFontSelect>('starlight-font-select')
+        .forEach((el) => el.syncSelected(pref));
+    });
     document.addEventListener('click', (e) => {
       document.querySelectorAll<StarlightFontSelect>('starlight-font-select').forEach((el) => {
         if (!el.contains(e.target as Node)) el.close();

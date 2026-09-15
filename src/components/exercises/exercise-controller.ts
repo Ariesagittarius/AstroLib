@@ -33,6 +33,7 @@ import {
   onAiConfigChange,
 } from '../../ai/ai-config';
 import { parseAiError } from '../../ai/error-handler';
+import { createM3LoadingHtml } from '../common/m3-loading-helper';
 
 function sanitizeLatexString(val: string): string {
   if (typeof val !== 'string') return '';
@@ -92,6 +93,7 @@ const PAGE_SIZE = 15;
 
 class ExerciseCenterController {
   private root: HTMLElement | null = null;
+  private dialogEl: HTMLElement | null = null;
   private windowEl: HTMLElement | null = null;
   private chapterSelect: HTMLSelectElement | null = null;
   private paperSelect: HTMLSelectElement | null = null;
@@ -251,7 +253,8 @@ class ExerciseCenterController {
         document.body.appendChild(this.root);
       }
 
-      this.windowEl = this.root.querySelector('.ex-modal-window');
+      this.dialogEl = this.root.querySelector('#exercise-modal-dialog');
+      this.windowEl = (this.dialogEl || this.root.querySelector('.ex-modal-window')) as HTMLElement;
       this.chapterSelect = this.root.querySelector('.ex-chapter-select');
       this.paperSelect = this.root.querySelector('.ex-paper-select');
       this.sourcePillsContainer = this.root.querySelector('.ex-source-pills');
@@ -453,17 +456,26 @@ class ExerciseCenterController {
     const backdrop = this.root.querySelector('.ex-modal-backdrop');
     if (backdrop) backdrop.addEventListener('click', () => this.close());
 
+    if (this.dialogEl) {
+      this.dialogEl.addEventListener('cancel', (e: Event) => {
+        if (this.isSubmodalOpen()) {
+          e.preventDefault();
+          this.closeAllSubmodals();
+          return;
+        }
+        this.close();
+      });
+      this.dialogEl.addEventListener('closed', () => {
+        this.isOpen = false;
+        this.root?.classList.remove('is-open');
+        document.body.style.overflow = '';
+        this.closeAllSubmodals();
+      });
+    }
+
     if (this.closeBtn) this.closeBtn.addEventListener('click', () => this.close());
     if (this.fullscreenBtn) this.fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
     if (this.toolbarToggleBtn) this.toolbarToggleBtn.addEventListener('click', () => this.toggleFilterCollapse());
-
-    const mobileConfirmBtn = this.root.querySelector('#ex-mobile-confirm-btn');
-    if (mobileConfirmBtn) {
-      mobileConfirmBtn.addEventListener('click', () => {
-        this.setFilterCollapsed(true);
-        if (this.bodyContainer) this.bodyContainer.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-    }
 
     if (this.toolbarEl) {
       this.toolbarEl.addEventListener('click', (e) => {
@@ -634,6 +646,84 @@ class ExerciseCenterController {
     }
   }
 
+  private ensureDialogCentered(targetModal: HTMLElement) {
+    targetModal.setAttribute('quick', '');
+    (targetModal as any).quick = true;
+    const shadow = targetModal.shadowRoot;
+    if (!shadow) return;
+    const nativeDialog = shadow.querySelector('dialog');
+    if (nativeDialog) {
+      nativeDialog.style.margin = 'auto';
+      nativeDialog.style.inset = '0';
+    }
+    let style = shadow.querySelector('#m3-dialog-centering-style') as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'm3-dialog-centering-style';
+      shadow.appendChild(style);
+    }
+    style.textContent = `
+      dialog {
+        margin: auto !important;
+        inset: 0 !important;
+        transform-origin: center center;
+        width: inherit !important;
+        height: inherit !important;
+        max-width: inherit !important;
+        max-height: inherit !important;
+        border-radius: inherit !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      .container {
+        border-radius: inherit !important;
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+      }
+      .scroller {
+        overflow: hidden !important;
+        display: flex !important;
+        flex: 1 !important;
+        flex-direction: column !important;
+        min-height: 0 !important;
+      }
+      .content {
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+      }
+      slot[name=headline]::slotted(*) {
+        padding: 0 !important;
+        width: 100% !important;
+      }
+      slot[name=content]::slotted(*) {
+        padding: 0 !important;
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        min-height: 0 !important;
+      }
+      .scrim {
+        background-color: rgba(0, 0, 0, 0.38) !important;
+        backdrop-filter: blur(4px) !important;
+        -webkit-backdrop-filter: blur(4px) !important;
+        z-index: var(--layer-dialog, 500) !important;
+      }
+      ::backdrop {
+        background: rgba(0, 0, 0, 0.38) !important;
+        backdrop-filter: blur(4px) !important;
+        -webkit-backdrop-filter: blur(4px) !important;
+      }
+    `;
+  }
+
   public open(chapter = 1, section = 'all') {
     if (!this.root) this.root = document.getElementById('exercise-modal-root');
     if (!this.root) return;
@@ -645,6 +735,16 @@ class ExerciseCenterController {
     this.isOpen = true;
     this.root.classList.add('is-open');
     document.body.style.overflow = 'hidden';
+
+    if (this.dialogEl) {
+      this.ensureDialogCentered(this.dialogEl);
+      const dlg = this.dialogEl as any;
+      if (typeof dlg.show === 'function') {
+        dlg.show();
+      } else {
+        dlg.open = true;
+      }
+    }
 
     this.currentChapter = chapter;
     this.currentSection = section;
@@ -669,6 +769,16 @@ class ExerciseCenterController {
     this.root.classList.add('is-open');
     document.body.style.overflow = 'hidden';
 
+    if (this.dialogEl) {
+      this.ensureDialogCentered(this.dialogEl);
+      const dlg = this.dialogEl as any;
+      if (typeof dlg.show === 'function') {
+        dlg.show();
+      } else {
+        dlg.open = true;
+      }
+    }
+
     this.currentPaperId = paperId;
     this.currentPaperSection = 'all';
     this.displayedLimit = PAGE_SIZE;
@@ -688,12 +798,31 @@ class ExerciseCenterController {
     this.root.classList.remove('is-open');
     document.body.style.overflow = '';
     this.closeAllSubmodals();
+
+    if (this.dialogEl) {
+      const dlg = this.dialogEl as any;
+      if (typeof dlg.close === 'function') {
+        dlg.close();
+      } else {
+        dlg.open = false;
+      }
+    }
   }
 
   private toggleFullscreen() {
     this.isFullscreen = !this.isFullscreen;
-    if (this.windowEl) {
+    if (this.dialogEl) {
+      this.dialogEl.classList.toggle('is-fullscreen', this.isFullscreen);
+    }
+    if (this.windowEl && this.windowEl !== this.dialogEl) {
       this.windowEl.classList.toggle('is-fullscreen', this.isFullscreen);
+    }
+    const fsIcon = this.root?.querySelector('#ex-fullscreen-icon');
+    if (fsIcon) {
+      fsIcon.textContent = this.isFullscreen ? 'fullscreen_exit' : 'fullscreen';
+    }
+    if (this.fullscreenBtn) {
+      this.fullscreenBtn.setAttribute('title', this.isFullscreen ? '退出全屏 (F)' : '全屏/窗口切换 (F)');
     }
   }
 
@@ -900,14 +1029,13 @@ class ExerciseCenterController {
 
   private renderLoading(msg: string) {
     if (!this.bodyContainer) return;
-    this.bodyContainer.innerHTML = `
-      <div class="ex-loading-state">
-        <svg class="ex-loading-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-        </svg>
-        <span>${msg}</span>
-      </div>
-    `;
+    this.bodyContainer.innerHTML = createM3LoadingHtml({
+      variant: 'contained',
+      size: 'medium',
+      layout: 'block',
+      label: msg,
+      className: 'ex-loading-state',
+    });
   }
 
   private renderError(msg: string) {
@@ -1108,13 +1236,15 @@ class ExerciseCenterController {
             <span class="ex-q-type-label">· ${typeLabel}</span>
             ${q.source_type === 'textbook'
               ? `<span class="ex-q-source-badge textbook">教材 · ${q.group || 'A'}组</span>`
-              : `<span class="ex-q-source-badge exam" title="来源：《大邮数学集》（CC BY-NC-SA 4.0）">大邮数学集 · CC协议</span>`}
+              : `<span class="ex-q-source-badge exam" title="来源：《大邮数学集》（CC BY-NC-SA 4.0）">真题自测</span>`}
           </div>
           <div class="ex-q-meta-right">
             <button type="button" class="ex-text-link-btn" data-action="open-feedback" data-qid="${qid}" title="向开发团队报告题干/公式/答案错误">
+              <md-icon class="ex-meta-mdicon">flag</md-icon>
               <span>报错</span>
             </button>
             <button type="button" class="ex-text-link-btn" data-action="open-source-editor" data-qid="${qid}" title="查看或直接修改题目 JSON/LaTeX 源码 (Dev-Only)">
+              <md-icon class="ex-meta-mdicon">code</md-icon>
               <span>源码</span>
             </button>
           </div>
@@ -1140,16 +1270,19 @@ class ExerciseCenterController {
             ${
               qType !== 'choice' && qType !== 'blank'
                 ? `<button type="button" class="ex-action-btn ex-toggle-steps-btn" data-action="toggle-steps" data-qid="${qid}">
+                    <md-icon class="ex-btn-mdicon">${record.revealedSolution ? 'visibility_off' : 'visibility'}</md-icon>
                     <span>${record.revealedSolution ? '收起解析' : '查看解析'}</span>
                   </button>`
                 : ''
             }
             <button type="button" class="ex-action-btn ex-toggle-hints-btn" data-action="toggle-hints" data-qid="${qid}">
+              <md-icon class="ex-btn-mdicon">lightbulb</md-icon>
               <span>思路与考点</span>
             </button>
           </div>
           <div class="ex-right-actions">
             <button type="button" class="ex-action-btn ex-ask-ai-btn" data-action="ask-ai" data-qid="${qid}" title="在此题下方生成或查看 AI 规范推导">
+              <md-icon class="ex-btn-mdicon">auto_awesome</md-icon>
               <span>问 AI 题解</span>
             </button>
           </div>
@@ -1199,9 +1332,7 @@ class ExerciseCenterController {
                 <span>停止</span>
               </button>
               <button type="button" class="ex-ai-tool-btn ex-ai-toggle-btn" data-action="toggle-ai-box" data-qid="${qid}" title="收起/展开">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="ex-ai-chevron">
-                  <polyline points="18 15 12 9 6 15" />
-                </svg>
+                <md-icon class="ex-ai-chevron">expand_less</md-icon>
               </button>
             </div>
           </div>
@@ -1246,9 +1377,7 @@ class ExerciseCenterController {
             <span class="ex-ver-author">by ${this.esc(sol.author_name)}</span>
           </button>
           <button type="button" class="ex-ai-upvote-btn ${isUpvoted ? 'upvoted' : ''}" data-action="upvote-sol" data-sol-id="${sol.id}" data-qid="${qid}" title="点赞支持此题解">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
-            </svg>
+            <md-icon class="ex-upvote-mdicon">thumb_up</md-icon>
             <span class="ex-upvote-count">${sol.upvotes || 0}</span>
           </button>
         </div>
@@ -1535,6 +1664,8 @@ class ExerciseCenterController {
     solBox.classList.toggle('hidden', !record.revealedSolution);
     const btn = card.querySelector('.ex-toggle-steps-btn span');
     if (btn) btn.textContent = record.revealedSolution ? '收起解析' : '查看解析';
+    const icon = card.querySelector('.ex-toggle-steps-btn md-icon');
+    if (icon) icon.textContent = record.revealedSolution ? 'visibility_off' : 'visibility';
   }
 
   private toggleHints(qid: string) {

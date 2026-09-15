@@ -133,33 +133,49 @@
   z-index: var(--layer-local-surface);
 }
 
-.ex-modal-window {
+.ex-modal-window,
+md-dialog.ex-modal-m3-dialog {
   position: relative;
   z-index: var(--layer-local-elevated);
-  width: min(1040px, calc(100vw - 2.5rem));
-  height: min(88vh, 860px);
+  width: min(960px, calc(100vw - 3.5rem));
+  height: min(84vh, 800px);
   background: var(--ex-bg);
   color: var(--ex-text-1);
   border: 1px solid var(--ex-border);
-  border-radius: 4px;
+  border-radius: 12px;
   box-shadow: var(--ex-shadow);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: all 0.2s ease;
-  transform: translateY(6px);
+  opacity: 0;
+  transform: scale(0.97);
+  transition: opacity 0.2s cubic-bezier(0.05, 0.7, 0.1, 1), transform 0.2s cubic-bezier(0.05, 0.7, 0.1, 1);
 }
 
-.ex-modal-root.is-open .ex-modal-window {
-  transform: translateY(0);
+.ex-modal-root.is-open .ex-modal-window,
+.ex-modal-root.is-open md-dialog.ex-modal-m3-dialog,
+md-dialog.ex-modal-m3-dialog[open] {
+  opacity: 1;
+  transform: scale(1);
 }
 
 /* 全屏模式 */
-.ex-modal-window.is-fullscreen {
+.ex-modal-window.is-fullscreen,
+md-dialog.ex-modal-m3-dialog.is-fullscreen {
   width: 100vw;
   height: 100vh;
   border-radius: 0;
   border: none;
+}
+
+.ex-modal-dialog-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
 }
 
 /* --------------------------------------------------------------------------
@@ -449,23 +465,43 @@
 }
 
 .ex-toggle-chevron {
-  width: 0.8rem;
-  height: 0.8rem;
-  transition: transform 0.2s ease;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 280ms cubic-bezier(0.2, 0, 0, 1);
 }
 
-/* 目录流导航 (Directory Flow) */
+/* 目录流导航筛选抽屉 (M3 Grid Accordion Motion) */
+.ex-filter-drawer {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  width: 100%;
+  transition: grid-template-rows 280ms cubic-bezier(0.2, 0, 0, 1),
+              opacity 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.ex-filter-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
 .ex-filter-row {
   display: flex;
   align-items: center;
   gap: 1.25rem;
   flex-wrap: wrap;
-  padding-top: 0.1rem;
+  padding-top: 0.25rem;
 }
 
-/* 折叠状态 */
-.ex-toolbar.is-collapsed .ex-filter-row {
-  display: none !important;
+/* 折叠状态：使用 0fr 网格高度配合渐隐，彻底告别突兀隐藏 */
+.ex-toolbar.is-collapsed .ex-filter-drawer {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .ex-toolbar.is-collapsed .ex-toggle-chevron {
@@ -877,6 +913,18 @@
 .ex-action-btn.active {
   color: var(--ex-text-1);
   font-weight: 600;
+}
+
+.ex-btn-svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.ex-meta-svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
 }
 
 /* 答题反馈与详细解答 */
@@ -2853,44 +2901,10 @@
     background: var(--ex-bg-mute) !important;
   }
 
-  /* 4. 准备态：多维筛选展开为移动端优雅 Bottom Sheet */
-  .ex-toolbar:not(.is-collapsed) .ex-filter-row {
-    position: fixed !important;
-    inset: auto 0 0 0 !important;
-    max-height: 75vh !important;
-    overflow-y: auto !important;
-    background: var(--ex-bg) !important;
-    border-top: 1px solid var(--ex-border) !important;
-    border-radius: 1rem 1rem 0 0 !important;
-    box-shadow: 0 -10px 35px rgba(0, 0, 0, 0.4) !important;
-    z-index: var(--layer-local-nested) !important;
-    padding: 1.25rem 1rem 2.5rem !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 1.15rem !important;
-    animation: slideUpMobileExFilter 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-  }
-
-  @keyframes slideUpMobileExFilter {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-  }
-
-  /* 筛选抽屉遮罩 */
-  .ex-toolbar:not(.is-collapsed)::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-    z-index: var(--layer-local-surface);
-    animation: fadeInFilterBackdrop 0.2s ease forwards;
-  }
-
-  @keyframes fadeInFilterBackdrop {
-    from { opacity: 0; }
-    to { opacity: 1; }
+  /* 4. 移动端筛选：工具栏内平滑流动展开，无需阻断式弹窗 */
+  .ex-filter-row {
+    gap: 0.5rem !important;
+    padding-top: 0.4rem !important;
   }
 
   /* 5. 沉浸态做题区：正文占满，消除外框压迫 */
@@ -2901,7 +2915,7 @@
   .ex-q-card {
     padding: 1rem 0.85rem !important;
     margin-bottom: 0.85rem !important;
-    border-radius: 4px !important;
+    border-radius: 8px !important;
   }
 
   .ex-q-header {
@@ -2923,32 +2937,6 @@
     padding: 0.25rem 0;
     margin: 0.5rem 0;
     scrollbar-width: thin;
-  }
-
-  /* 移动端筛选抽屉底部确认动作条 */
-  .ex-mobile-confirm-bar {
-    display: block !important;
-    padding-top: 0.6rem;
-    margin-top: 0.25rem;
-    width: 100%;
-  }
-
-  .ex-mobile-confirm-btn {
-    width: 100% !important;
-    padding: 0.65rem 1rem !important;
-    background: var(--sl-color-text-accent, #3b82f6) !important;
-    color: #ffffff !important;
-    font-size: 0.86rem !important;
-    font-weight: 600 !important;
-    border: none !important;
-    border-radius: 4px !important;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    transition: opacity 0.15s ease;
-  }
-
-  .ex-mobile-confirm-btn:active {
-    opacity: 0.85;
   }
 }
 .ex-link-tip:hover {

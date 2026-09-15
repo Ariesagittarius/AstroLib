@@ -1,0 +1,38 @@
+---
+title: 贡献新的书籍
+description: 使用 OCR、Gemma 或 Gemini 辅助清洗一本书，并提交可复核的 MDX。
+---
+
+## 贡献内容的最低要求
+
+先确认你有权处理和发布原书、图片及题目。提交中应提供来源、版本、处理方式和仍然存在的不确定性。AI 只能做辅助清洗，不能代替数学内容的人工复核。
+
+## 推荐的清洗流水线
+
+1. 用 MinerU 或其他 OCR 工具提取文本、公式和图片，保留页码或原图作为对照。
+2. 让 Gemma 26B（本地部署）或 Gemini 3.5 Flash Lite 做结构化清洗：修复断行、统一标题层级、识别公式和图注；要求模型只返回约定格式，不要改写数学结论。
+3. 将结果转换为 MDX，使用项目的 `<Example>`、`<Knowledge>`、`<Method>`、`<Solution>` 等组件表达语义。
+4. 对公式、定理、图注、章节顺序和交叉引用逐项人工复核。
+5. 对 OCR 后的卡片边界和图注，可试用 `node scripts/ai_fix_card_boundaries.mjs` 与 `node scripts/ai_fix_figures.mjs`；它们需要 Gemini API Key，且不是无人工审核的批处理器。
+6. 运行 `scan-mdx.mjs`、`npm run build`、EPUB 和章节 LaTeX 导出。
+
+## 可复用提示词
+
+将下列提示词作为附件或任务模板，输入中附上页码标记和原始文本：
+
+```text
+你是学术教材排版清洗器。只清洗结构，不补写、不证明、不改写数学结论。
+请完成：1) 合并 OCR 误断行；2) 保留原编号；3) 将公式放在 $...$ 或 $$...$$；
+4) 保留图题与页码标记；5) 识别标题、定义、定理、例题、证明、习题边界。
+输出 JSON：{"blocks":[{"type":"heading|paragraph|formula|figure|example|theorem|exercise",
+"text":"...","source_page":"..."}],"warnings":["..."]}。
+遇到无法确定的字符写入 warnings，不要猜测。不要输出 Markdown 代码围栏。
+```
+
+Gemini 3.5 Flash Lite 适合快速初筛；Gemma 26B 适合在本地处理不希望上传的材料。两者都要保留原始文本和模型输出，便于复查。项目没有内置 Gemma 推理服务。
+
+完整纯文本模板也放在 [`public/dev/prompts/book-cleaning-prompt.txt`](https://github.com/Ariesagittarius/AstroLib/blob/main/public/dev/prompts/book-cleaning-prompt.txt)。
+
+## 提交内容
+
+提交正文、元数据、必要图片、来源说明和检查结果。不要提交 API Key、模型原始缓存或未经许可的扫描件。

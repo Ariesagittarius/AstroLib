@@ -8,6 +8,10 @@
  * ============================================================================
  */
 import NoticeFramework from './notice/NoticeFramework.astro';
+
+const pathname = Astro.url.pathname;
+const entryData = (Astro.props as any)?.entry?.data || (Astro.locals as any)?.starlightRoute?.entry?.data;
+const isDevDoc = pathname.startsWith('/dev') || entryData?.pageType === 'dev' || entryData?.pageType === 'technical' || entryData?.noindent === true;
 ---
 
 <div class="lg:sl-flex">
@@ -20,7 +24,7 @@ import NoticeFramework from './notice/NoticeFramework.astro';
 			</aside>
 		)
 	}
-	<div class="main-pane">
+	<div class:list={['main-pane', { 'is-dev-doc': isDevDoc }]}>
 		<NoticeFramework />
 		<slot />
 	</div>

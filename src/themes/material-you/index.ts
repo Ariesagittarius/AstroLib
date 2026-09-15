@@ -33,8 +33,12 @@ import '@material/web/textfield/outlined-text-field.js';
 import '@material/web/radio/radio.js';
 import '@material/web/ripple/ripple.js';
 import '@material/web/slider/slider.js';
+import '@material/web/progress/circular-progress.js';
+import '@material/web/progress/linear-progress.js';
+import '../../components/common/m3-loading-indicator';
 import { initColorEngine, applyThemeColor } from './color-engine';
 export { initColorEngine, applyThemeColor };
+export * from '../../components/common/m3-loading-helper';
 
 let materialWebLoaded = true;
 

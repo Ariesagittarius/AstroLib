@@ -1,0 +1,56 @@
+---
+title: 添加一本新书
+description: 把一本新书接入 AstroLib 的目录、正文、索引和导出流程。
+---
+
+## 1. 准备内容目录
+
+在 `src/content/docs/collections/<collection-slug>/<book-slug>/` 放置章节文件和可选的 `images/`。章节使用 `.mdx` 或 `.md`，文件名建议以章节序号开头，便于 EPUB 的自然排序。
+
+先用 `scripts/scan-mdx.mjs` 检查转换结果。图片路径应相对于章节或书籍目录实际存在，不能只在本机引用绝对路径。
+
+## 2. 注册书籍元数据
+
+编辑 `src/config/collections.config.mjs`，在合适的 collection 的 `books` 数组加入：
+
+```js
+{
+  id: 'my-book',
+  slug: 'my_book',
+  title: '书名',
+  author: '作者',
+  publisher: '出版社',
+  edition: '版本',
+  stage: 'university',
+  stageLabel: '大学本科',
+  category: 'textbook',
+  categoryLabel: '教材',
+  subject: 'math',
+  subjectLabel: '数学',
+  description: '简短说明',
+  tags: ['主题'],
+  entryPoint: '00_内容说明',
+  trackClasses: ['.example-card', '.knowledge-card'],
+  modules: {}
+}
+```
+
+`slug` 必须与目录名一致，`entryPoint` 必须与实际文件名（不含扩展名）一致。不要修改生成的索引 JSON 来“注册”书籍。
+
+## 3. 运行构建链
+
+```powershell
+node scripts/scan-mdx.mjs src/content/docs/collections/<collection-slug>/<book-slug>
+npm run build
+npm run epub
+```
+
+构建会自动生成 AI 索引、跨引用、关系图和模块索引。检查站点侧栏、章节跳转、图片、EPUB 和章节 LaTeX 导出。
+
+## 4. 提交前检查
+
+- 书籍元数据和目录 slug 一致。
+- 每个章节可以独立渲染，公式没有明显 KaTeX 错误。
+- 书中引用使用项目的跨引用写法，不手写不稳定的原始文件 URL。
+- 版权、来源和 OCR 不确定性写在书籍说明或 notice 中。
+- 不提交 `public/` 下的临时日志、PDF 中间文件或测试产物。

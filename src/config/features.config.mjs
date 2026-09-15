@@ -242,6 +242,17 @@ const featureDefs = {
     ui: true,
   }),
 
+  // 加载动画风格指示器：支持 M3 灵动形变 (aler1x/m3-loading-indicator) 与 Google 官方原生组件 (@material/web)
+  loadingIndicator: defineFeature({
+    id: 'loadingIndicator',
+    cat: 'reader',
+    label: 'M3 加载动画风格',
+    desc: '在 M3 灵动形变指示器与官方原生圆环 (@material/web) 之间自由切换',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+  }),
+
   // 在线精修工具：dev 下点击渲染页可视化改 MDX 并写回；生产零污染
   editor: defineFeature({
     id: 'editor',

@@ -41,6 +41,8 @@ export const DEFAULT_IMAGE_POLICY: ImageSizingPolicy = {
   captionStyle: 'kaishu',
 };
 
+export type SidenoteLayoutMode = 'inline' | 'margin';
+
 export interface BaseExportSettings {
   paperSize: 'a4' | 'b5';
   fontSize: 10 | 10.5 | 11 | 12;
@@ -59,6 +61,12 @@ export interface BaseExportSettings {
   /** @deprecated 请改用 typography 预设。保留向下兼容 */
   cjkFont?: 'default' | 'sourcehan';
   headerMode: 'standard' | 'compact' | 'none';
+  /**
+   * 侧注排版模式：
+   * - 'inline': 正文流式注记模式 (标准学术版式，解决重叠与截断)
+   * - 'margin': 边栏侧注模式 (原书版式，宽外边距 marginnote)
+   */
+  sidenoteMode?: SidenoteLayoutMode;
   imagePolicy: ImageSizingPolicy;
   title?: string;
   subtitle?: string;
@@ -68,7 +76,7 @@ export interface BaseExportSettings {
 }
 
 export interface ChapterExportSettings extends BaseExportSettings {
-  documentclass: 'ctexart' | 'ctexbook';
+  documentclass: 'book' | 'ctexbook' | 'ctexart';
   numberingDepth: number;
   showToc: boolean;
 }
@@ -87,15 +95,16 @@ export interface ExerciseExportSettings extends BaseExportSettings {
 }
 
 export const DEFAULT_CHAPTER_EXPORT_SETTINGS: ChapterExportSettings = {
-  documentclass: 'ctexart',
+  documentclass: 'book',
   paperSize: 'a4',
   fontSize: 11,
   fontFamily: 'serif',
   typography: DEFAULT_TYPOGRAPHY_PRESET_ID,
   resolutionMode: 'deterministic',
   mathFont: 'typst',
-  cjkFont: 'default',
+  cjkFont: 'sourcehan',
   headerMode: 'standard',
+  sidenoteMode: 'inline',
   numberingDepth: 3,
   showToc: false,
   imagePolicy: DEFAULT_IMAGE_POLICY,
@@ -138,6 +147,7 @@ export const SHARED_EXPORT_STORAGE_KEYS = {
   FONT_SIZE: 'astrolib_latex_font_size',
   PAPER_SIZE: 'astrolib_latex_paper_size',
   FONT_FAMILY: 'astrolib_latex_font_family',
+  SIDENOTE_MODE: 'astrolib_latex_sidenote_mode',
   GH_TOKEN: 'astrolib_compiler_gh_token',
   GH_OWNER: 'astrolib_compiler_owner',
   GH_REPO: 'astrolib_compiler_repo',
@@ -188,6 +198,8 @@ export function getStoredExportSettings(): Partial<BaseExportSettings> {
     const fontSize = parseFloat(localStorage.getItem(SHARED_EXPORT_STORAGE_KEYS.FONT_SIZE) || '11') as any;
     const paperSize = (localStorage.getItem(SHARED_EXPORT_STORAGE_KEYS.PAPER_SIZE) || 'a4') as any;
     const fontFamily = (localStorage.getItem(SHARED_EXPORT_STORAGE_KEYS.FONT_FAMILY) || 'serif') as any;
+    const storedSidenote = localStorage.getItem(SHARED_EXPORT_STORAGE_KEYS.SIDENOTE_MODE);
+    const sidenoteMode: SidenoteLayoutMode = (storedSidenote === 'margin' || storedSidenote === 'inline') ? storedSidenote : 'inline';
 
     // 历史配置静默升级迁移 (Legacy LocalStorage -> TypographyPresetId)
     if (!typography || !isTypographyPresetId(typography)) {
@@ -209,6 +221,7 @@ export function getStoredExportSettings(): Partial<BaseExportSettings> {
       fontSize,
       paperSize,
       fontFamily,
+      sidenoteMode,
     };
   } catch {
     return {};
@@ -238,6 +251,9 @@ export function saveStoredExportSettings(settings: Partial<BaseExportSettings>):
     }
     if (settings.fontFamily) {
       localStorage.setItem(SHARED_EXPORT_STORAGE_KEYS.FONT_FAMILY, settings.fontFamily);
+    }
+    if (settings.sidenoteMode) {
+      localStorage.setItem(SHARED_EXPORT_STORAGE_KEYS.SIDENOTE_MODE, settings.sidenoteMode);
     }
   } catch {}
 }

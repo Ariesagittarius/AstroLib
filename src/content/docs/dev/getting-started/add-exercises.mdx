@@ -1,0 +1,41 @@
+---
+title: 加入一本习题册
+description: 注册题库、准备源数据并把习题册挂接到对应书籍。
+---
+
+## 题库的组成
+
+题库配置在 `src/config/exercise-banks.config.ts`，源数据位于 `src/data/exercises/`。当前示例包括大邮数学集和《工科数学分析》课后习题。一个题库需要唯一 `id`、标题、来源类型和适用书籍 slug；有版权信息时必须同时填写许可证和来源仓库。
+
+```ts
+{
+  id: 'my-exercises',
+  title: '题库名称',
+  sourceType: 'exam',
+  applicableBooks: ['engineering_analysis'],
+  license: {
+    spdx: 'CC-BY-NC-SA-4.0',
+    shortName: 'CC-BY-NC-SA 4.0',
+    name: '完整许可证名称',
+    repoUrl: 'https://example.com/source'
+  }
+}
+```
+
+## 推荐流程
+
+1. 将原始题目整理为项目已有 JSON 结构，放到 `src/data/exercises/`；先参考同目录的题库文件，不要直接编辑 `public/data/exercises/`。
+2. 在 `EXERCISE_BANKS` 注册题库，并把 `applicableBooks` 填成 `collections.config.mjs` 中的 `book.slug`。
+3. 如果题目来自 PDF，可使用 `scripts/extract_textbook_exercises.py` 或 `scripts/process_bupt_math_archive.py` 生成初稿，再人工校对公式、题号、答案和来源。
+4. 运行：
+
+```powershell
+npm run build:exercises
+node scripts/check-all-datasets.mjs
+```
+
+5. 打开对应书籍的习题侧栏，验证章节筛选、题目渲染、答案展开和 AI 讲解入口。
+
+## 许可与质量
+
+没有明确授权的扫描题库不要提交。OCR 或模型生成的答案必须由熟悉该课程的贡献者复核；解析中引用的章节必须能回到书籍原文。题库生成文件可以重建，不应手工修补。

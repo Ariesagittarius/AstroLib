@@ -19,8 +19,10 @@ import { parseAiError } from '../../ai/error-handler';
 import renderMathInElement from 'katex/dist/contrib/auto-render.mjs';
 import { StreamThrottleScheduler } from './stream-scheduler';
 import { sideloadManager } from '../sideload/sideload-manager';
+import { createM3LoadingHtml } from '../common/m3-loading-helper';
 import '@material/web/iconbutton/icon-button.js';
 import '@material/web/icon/icon.js';
+import '@material/web/progress/circular-progress.js';
 
 import { renderAcademicSolutionMarkdown as renderSolutionMarkdown, EXERCISE_KATEX_OPTIONS as KATEX_OPTIONS } from './exercise-markdown';
 
@@ -231,12 +233,13 @@ class ExerciseSidebarController {
     // 3. 渲染骨架加载态
     const contentEl = document.getElementById('ex-sidebar-content');
     if (contentEl) {
-      contentEl.innerHTML = `
-        <div class="ex-sb-loading">
-          <div class="ex-sb-spinner"></div>
-          <span>正在加载本节题目与 KaTeX 公式...</span>
-        </div>
-      `;
+      contentEl.innerHTML = createM3LoadingHtml({
+        variant: 'default',
+        size: 'small',
+        layout: 'inline',
+        label: '正在加载本节题目与 KaTeX 公式...',
+        className: 'ex-sb-loading',
+      });
     }
 
     // 4. 加载数据并渲染题目
@@ -703,7 +706,7 @@ class ExerciseSidebarController {
           </svg>
           <span class="ex-ai-box-title">AI 规范推导</span>
           <span class="ex-ai-status-indicator" id="ai-status-${qid}" title="正在推理...">
-            <span class="ex-ai-status-spinner"></span>
+            <md-circular-progress indeterminate style="--md-circular-progress-size: 14px; width: 14px; height: 14px; display: inline-flex; vertical-align: middle;"></md-circular-progress>
           </span>
         </div>
         <div class="ex-ai-box-actions">
@@ -725,7 +728,13 @@ class ExerciseSidebarController {
         </div>
       </div>
       <div class="ex-ai-box-content" id="ai-content-${qid}">
-        <div class="ex-ai-placeholder">正在连接学术模型，准备进行规范推导...</div>
+        ${createM3LoadingHtml({
+          variant: 'default',
+          size: 'compact',
+          layout: 'inline',
+          label: '正在连接学术模型，准备进行规范推导...',
+          className: 'ex-ai-placeholder',
+        })}
       </div>
       <div class="ex-ai-ceded-notice" id="ai-ceded-${qid}">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">

@@ -145,6 +145,7 @@ async function handle(req, res) {
     const cjkFont = url.searchParams.get('cjkFont');
     const fontSize = url.searchParams.get('fontSize');
     const paperSize = url.searchParams.get('paperSize');
+    const sidenoteMode = url.searchParams.get('sidenoteMode');
 
     if (!pagePathname) {
       sendJson(res, 400, { ok: false, message: '缺少 pathname 参数' });
@@ -171,6 +172,7 @@ async function handle(req, res) {
 
       if (typography) {
         cmdArgs.push(`--typography "${typography}"`);
+        if (cjkFont) cmdArgs.push(`--cjk-font "${cjkFont}"`);
       } else {
         if (mathFont) cmdArgs.push(`--math-font "${mathFont}"`);
         if (cjkFont) cmdArgs.push(`--cjk-font "${cjkFont}"`);
@@ -178,6 +180,7 @@ async function handle(req, res) {
       if (mode) cmdArgs.push(`--mode "${mode}"`);
       if (fontSize) cmdArgs.push(`--font-size "${fontSize}"`);
       if (paperSize) cmdArgs.push(`--paper-size "${paperSize}"`);
+      if (sidenoteMode) cmdArgs.push(`--sidenote-mode "${sidenoteMode}"`);
 
       if (format === 'zip') {
         cmdArgs.push('--zip');

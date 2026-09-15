@@ -1,0 +1,42 @@
+---
+title: 部署、运行与环境变量
+description: 在 Windows、macOS 或 Linux 上安装依赖、启动开发服务器并构建 AstroLib。
+---
+
+## 前置条件
+
+- Node.js 版本以 Astro 7 支持范围为准，建议使用当前 LTS。
+- npm 与 Git。
+- 若要编译 PDF，需要额外安装 XeLaTeX（例如 TeX Live）；网站运行本身不依赖 LaTeX。
+- 若要运行 Python 导入或视觉脚本，需要 Python 3 和脚本所列的依赖。
+
+## 安装与运行
+
+```powershell
+git clone https://github.com/Ariesagittarius/AstroLib.git
+cd AstroLib
+npm install
+npm run dev
+```
+
+浏览器打开终端显示的本地地址，通常是 `http://localhost:4321`。生产构建和预览：
+
+```powershell
+npm run build
+npm run preview
+```
+
+`npm run build` 会先编译习题、AI 索引、关系图、跨引用和模块索引，再执行 Astro 构建。
+
+## 开发期 Gemini 代理
+
+Gemini 在开发模式下默认使用 `/api/proxy/gemini/...`，由 Vite 插件转发到 Google 端点；这主要用于浏览器跨域和网络环境处理。生产构建会使用 Google 官方 OpenAI 兼容端点。使用 Gemini 时，仍需要自己的 API Key，并且访问 Google 服务通常需要可用的代理或网络出口。
+
+## 本地检查
+
+```powershell
+npm run check:katex
+node scripts/scan-mdx.mjs src/content/docs/collections/math/math_analysis
+```
+
+不要把 API Key 写入 `.env`、MDX 或 Git。当前问答设置由浏览器本地存储保存，详见[配置 AI 问答 API Key](/dev/appendix/ai-api-key/)。

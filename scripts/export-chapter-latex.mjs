@@ -49,6 +49,7 @@ if (args.length === 0 || args.includes('-h') || args.includes('--help')) {
   --typography <preset>  学术排版预设 (scholarly | classic | mathematical | lecture，默认: scholarly)
   --font-size <pt>       正文字号 (10.5 | 11 | 12，默认: 11)
   --paper-size <size>    纸张规格 (a4 | b5，默认: a4)
+  --sidenote-mode <mode> 注记呈现模式 (inline: 正文注记 | margin: 边栏侧注，默认: inline)
 `);
   process.exit(0);
 }
@@ -63,9 +64,10 @@ let customCourse = '';
 let typography = 'scholarly';
 let resolutionMode = 'deterministic';
 let mathFont = 'typst';
-let cjkFont = 'default';
+let cjkFont = 'sourcehan';
 let fontSize = 11;
 let paperSize = 'a4';
+let sidenoteMode = 'inline';
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
@@ -81,6 +83,8 @@ for (let i = 0; i < args.length; i++) {
     customCourse = args[++i];
   } else if (arg === '--typography' && i + 1 < args.length) {
     typography = args[++i];
+  } else if (arg === '--sidenote-mode' && i + 1 < args.length) {
+    sidenoteMode = args[++i];
   } else if (arg === '--mode' && i + 1 < args.length) {
     resolutionMode = args[++i];
   } else if (arg === '--math-font' && i + 1 < args.length) {
@@ -145,7 +149,8 @@ const exportResult = exportChapterToLatex({
     cjkFont,
     fontSize,
     paperSize,
-    documentclass: 'ctexart',
+    sidenoteMode,
+    documentclass: 'book',
   },
 });
 
@@ -164,11 +169,7 @@ fs.writeFileSync(texFilePath, exportResult.tex, 'utf8');
 const mainTexPath = path.join(targetDir, 'main.tex');
 fs.writeFileSync(mainTexPath, exportResult.tex, 'utf8');
 
-// 3. 写入宏包
-const styFilePath = path.join(targetDir, 'astrolib-chapter.sty');
-fs.writeFileSync(styFilePath, exportResult.styleSource, 'utf8');
-
-// 4. 拷贝配图
+// 3. 拷贝配图
 if (exportResult.assets.length > 0) {
   for (const asset of exportResult.assets) {
     const dest = path.join(targetDir, asset.targetPath);
@@ -182,7 +183,6 @@ if (exportResult.assets.length > 0) {
 }
 
 console.log(`✅ LaTeX 源码已生成: ${path.relative(ROOT, texFilePath)}`);
-console.log(`✅ 独立样式包已就绪: ${path.relative(ROOT, styFilePath)}`);
 console.log(`✅ 配图资源已复制: ${exportResult.assets.length} 张`);
 
 // 5. 生成 ZIP 归档包
@@ -235,10 +235,21 @@ if (shouldCompile) {
       const pdfDest = path.join(targetDir, targetPdfName);
 
       if (fs.existsSync(pdfSrc)) {
-        fs.copyFileSync(pdfSrc, pdfDest);
-        const stat = fs.statSync(pdfDest);
+        let copied = false;
+        try {
+          fs.copyFileSync(pdfSrc, pdfDest);
+          copied = true;
+        } catch (copyErr) {
+          if (copyErr.code === 'EBUSY') {
+            console.warn(`⚠️ 目标文件 ${targetPdfName} 被其他程序（如 PDF 阅读器）占用，已保留主产物 main.pdf`);
+          } else {
+            throw copyErr;
+          }
+        }
+        const finalPdf = copied ? pdfDest : pdfSrc;
+        const stat = fs.statSync(finalPdf);
         console.log(`\n🎉 PDF 编译完成！`);
-        console.log(`📄 目标 PDF: ${path.relative(ROOT, pdfDest)} (${(stat.size / 1024).toFixed(1)} KB)`);
+        console.log(`📄 目标 PDF: ${path.relative(ROOT, finalPdf)} (${(stat.size / 1024).toFixed(1)} KB)`);
       }
     } catch (err) {
       console.error('❌ XeLaTeX 编译失败:');

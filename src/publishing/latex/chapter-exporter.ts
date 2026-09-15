@@ -116,21 +116,20 @@ export function exportChapterToLatex(options: ExportChapterOptions): ChapterExpo
 
 /**
  * 将章节导出产物一键打包为可直接独立编译的 ZIP 归档包
- * 包含：chapter.tex、astrolib-chapter.sty 宏包以及 assets/ 目录下的所有插图
+ * 严格遵循 book.tex 规范：标准 TeX Live 开箱即用，无需第三方私有宏包
+ * 包含：chapter.tex (主源码)、main.tex (标准入口) 以及 assets/ 目录下的所有配图
  */
 export function createChapterZipPackage(exportResult: ChapterExportResult): Buffer {
   const entries: Array<{ name: string; data: Buffer | string }> = [];
 
-  // 1. LaTeX 主文件
+  // 1. LaTeX 主文件 (chapter.tex 与 main.tex)
   entries.push({
     name: 'chapter.tex',
     data: Buffer.from(exportResult.tex, 'utf8'),
   });
-
-  // 2. 学术样式宏包
   entries.push({
-    name: 'astrolib-chapter.sty',
-    data: Buffer.from(exportResult.styleSource, 'utf8'),
+    name: 'main.tex',
+    data: Buffer.from(exportResult.tex, 'utf8'),
   });
 
   // 3. 所有配图

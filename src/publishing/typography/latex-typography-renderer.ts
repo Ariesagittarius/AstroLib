@@ -351,6 +351,30 @@ ${kaiCode}
 % 重新定义 \\kaishu 宏指向统一楷体字族
 \\renewcommand{\\kaishu}{\\CJKfamily{zhkai}}
 
+% --- 2.5 标宋/高字重思源宋体专用字族 (\\biaosong) ---
+\\IfFontExistsTF{SourceHanSerifSC-Bold.otf}{%
+  \\setCJKfamilyfont{zhbiaosong}{SourceHanSerifSC-Bold.otf}%
+}{%
+  \\IfFontExistsTF{Source Han Serif SC Bold}{%
+    \\setCJKfamilyfont{zhbiaosong}{Source Han Serif SC Bold}%
+  }{%
+    \\IfFontExistsTF{Noto Serif CJK SC Bold}{%
+      \\setCJKfamilyfont{zhbiaosong}{Noto Serif CJK SC Bold}%
+    }{%
+      \\IfFontExistsTF{FandolSong-Bold.otf}{%
+        \\setCJKfamilyfont{zhbiaosong}{FandolSong-Bold.otf}%
+      }{%
+        \\IfFontExistsTF{STZhongsong}{%
+          \\setCJKfamilyfont{zhbiaosong}{STZhongsong}%
+        }{%
+          \\setCJKfamilyfont{zhbiaosong}{SimSun}[AutoFakeBold=true]%
+        }%
+      }%
+    }%
+  }%
+}
+\\providecommand{\\biaosong}{\\CJKfamily{zhbiaosong}}
+
 % --- 3. 数学公式字体 (OpenType Math Font) ---
 ${mathCode}
 % --- 4. 学术版面度量与行高对齐 (Typography Metrics) ---
@@ -359,8 +383,8 @@ ${lineSpreadCode}
 \\setlength{\\parskip}{${preset.metrics.parSkip}}
 
 % --- 5. 学术语义层级字体命令 (Semantic Typography Hooks) ---
-% 保障解题前缀【解】采用纯正黑体方案，消除粗宋断裂
-\\providecommand{\\astrolibsolutionhead}[1][解]{{\\normalfont\\sffamily\\bfseries 【#1】}}
+% 保障解题前缀【解】采用典雅思源宋体粗体/标宋方案，与正文韵律统一
+\\providecommand{\\astrolibsolutionhead}[1][解]{{\\normalfont\\biaosong\\bfseries 【#1】}}
 \\providecommand{\\astrolibcaptionfont}{\\small\\normalfont}
 \\providecommand{\\astrolibremarkfont}{\\small\\normalfont}
 `;

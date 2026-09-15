@@ -102,6 +102,9 @@ function cleanMathFormula(inner: string): string {
   res = res.replace(/\\underline\{\s*(\\quad)*\s*\}/g, '\\rule[-0.2ex]{3.5em}{0.4pt}');
   res = res.replace(/_{3,}/g, '\\rule[-0.2ex]{3.5em}{0.4pt}');
 
+  // 修复 amsmath 限制：\tag 严禁放在 aligned 内部，必须移至 \end{aligned} 外部
+  res = res.replace(/(\\begin\{aligned\}[\s\S]*?)\s*\\tag(\*?\{[^}]+\})([\s\S]*?\\end\{aligned\})/g, '$1$3 \\tag$2');
+
   return res;
 }
 
@@ -259,9 +262,9 @@ export function balanceDollars(text: string): string {
 export function sanitizeBareMath(text: string): string {
   if (!text) return text;
 
-  // 1. 保护已有占位符 (格式为 §§MBX#123§§ 或 §§IMG#123§§)
+  // 1. 保护已有占位符 (格式为 §§MBX...§§ 或 §§IMG...§§)
   const mbxPlaceholders: string[] = [];
-  let s = text.replace(/§§[A-Z0-9_]+#\d+§§/g, (m) => {
+  let s = text.replace(/§§[A-Z0-9_#]+§§/g, (m) => {
     mbxPlaceholders.push(m);
     return `§§P${mbxPlaceholders.length - 1}P§§`;
   });
@@ -344,10 +347,14 @@ export function formatLatexContent(text: string): string {
     const cleanUrl = url.trim();
     const cleanAlt = alt ? alt.trim() : '';
     const escapedAlt = (cleanAlt || cleanUrl).replace(/([_&%$#])/g, '\\$1');
+    let captionLatex = '';
+    if (cleanAlt && (/^图\s*[\d\.\-－]/i.test(cleanAlt) || cleanAlt.length > 3)) {
+      captionLatex = `  \\par\\vspace{0.4em}{\\small\\kaishu ${cleanAlt}}\n`;
+    }
     imgBlocks.push(
-      `\n\\begin{center}\n  \\IfFileExists{../public${cleanUrl}}{\\includegraphics[width=0.48\\linewidth,keepaspectratio]{../public${cleanUrl}}}{\\IfFileExists{public${cleanUrl}}{\\includegraphics[width=0.48\\linewidth,keepaspectratio]{public${cleanUrl}}}{\\fbox{\\small\\itshape [图示] ${escapedAlt}}}}\n\\end{center}\n`
+      `\n\\begin{center}\n  \\IfFileExists{../public${cleanUrl}}{\\includegraphics[width=0.48\\linewidth,keepaspectratio]{../public${cleanUrl}}}{\\IfFileExists{public${cleanUrl}}{\\includegraphics[width=0.48\\linewidth,keepaspectratio]{public${cleanUrl}}}{\\fbox{\\small\\itshape [图示] ${escapedAlt}}}}\n${captionLatex}\\end{center}\n`
     );
-    return `§§IMG#${imgBlocks.length - 1}§§`;
+    return `§§IMG${imgBlocks.length - 1}XGMI§§`;
   });
 
   // 4. 处理填空题下划线与括号留白 (在提取公式前执行，防止下划线引发数学模式误判)
@@ -357,29 +364,29 @@ export function formatLatexContent(text: string): string {
   raw = raw.replace(/（\s*）/g, '（\\quad）');
   raw = raw.replace(/\(\s*\)/g, '(\\quad)');
 
-  // 5. 占位保护公式块 ($$ 与 $) - 使用不含下划线、不含反斜杠的独立标记 §§MBX#0§§
+  // 5. 占位保护公式块 ($$ 与 $) - 使用不含下划线、不含井号、不含反斜杠的独立标记
   const mathBlocks: string[] = [];
 
   // 保护 display math: $$...$$ 与 \[...\]
   raw = raw.replace(/\$\$([\s\S]*?)\$\$/g, (_m, inner) => {
     mathBlocks.push(`\\[\n${cleanMathFormula(inner.trim())}\n\\]`);
-    return `§§MBX#${mathBlocks.length - 1}§§`;
+    return `§§MBX${mathBlocks.length - 1}XMBX§§`;
   });
   raw = raw.replace(/\\\[([\s\S]*?)\\\]/g, (_m, inner) => {
     mathBlocks.push(`\\[\n${cleanMathFormula(inner.trim())}\n\\]`);
-    return `§§MBX#${mathBlocks.length - 1}§§`;
+    return `§§MBX${mathBlocks.length - 1}XMBX§§`;
   });
 
   // 保护 inline math: \(...\)
   raw = raw.replace(/\\\(([\s\S]*?)\\\)/g, (_m, inner) => {
     mathBlocks.push(`$${cleanMathFormula(inner.trim())}$`);
-    return `§§MBX#${mathBlocks.length - 1}§§`;
+    return `§§MBX${mathBlocks.length - 1}XMBX§§`;
   });
 
   // 保护 inline math: $...$ (支持同段内多行公式，不跨段落)
   raw = raw.replace(/\$((?:[^\$\n]|\n(?!\s*\n))+?)\$/g, (_m, inner) => {
     mathBlocks.push(`$${cleanMathFormula(inner)}$`);
-    return `§§MBX#${mathBlocks.length - 1}§§`;
+    return `§§MBX${mathBlocks.length - 1}XMBX§§`;
   });
 
   // 6. 识别并包裹裸露公式与数学命令 (如 最大值为 2\sqrt{7} 或 a=2, b=-2，积分值为 \pi^2)
@@ -407,10 +414,15 @@ export function formatLatexContent(text: string): string {
   // 7.1 转义文本中的保留字符 (此时公式与图片均已被保护在占位符内)
   raw = raw.replace(/(?<!\\)&/g, '\\&');
   raw = raw.replace(/(?<!\\)%/g, '\\%');
+  raw = raw.replace(/(?<!\\)#/g, '\\#');
+
+  // 7.2 处理正文文本模式下的 \tag 语法（转换为标准右对齐编号，避免 amsmath "\tag not allowed here" 报错）
+  raw = raw.replace(/\\tag\*?\{([^}]+)\}/g, '\\hfill ($1)');
+  raw = raw.replace(/\\tag\*?\s*([0-9a-zA-Z\.\-]+)/g, '\\hfill ($1)');
 
   // 8. 还原所有公式块与图片块
-  raw = raw.replace(/§§MBX#(\d+)§§/g, (_m, idx) => mathBlocks[Number(idx)] || '');
-  raw = raw.replace(/§§IMG#(\d+)§§/g, (_m, idx) => imgBlocks[Number(idx)] || '');
+  raw = raw.replace(/§§MBX(\d+)XMBX§§/g, (_m, idx) => mathBlocks[Number(idx)] || '');
+  raw = raw.replace(/§§IMG(\d+)XGMI§§/g, (_m, idx) => imgBlocks[Number(idx)] || '');
 
   return raw.trim();
 }
@@ -1000,10 +1012,16 @@ export function formatHeadingLatex(title: string): string {
  * @param inBox 是否处于 tcolorbox (定理/定义/例题等) 容器内部。内部严禁使用浮动体 \\begin{table}
  */
 export function renderLatexTable(tableData: SemanticTableData, inBox = false): string {
-  if (!tableData || !tableData.headers || tableData.headers.length === 0) return '';
+  if (!tableData) return '';
+  const headers = tableData.headers || [];
+  const rows = tableData.rows || [];
+  if (headers.length === 0 && rows.length === 0) return '';
+
+  const hasHeaderRow = headers.length > 0 && headers.some((h) => h.trim().length > 0);
   const colCount = Math.max(
-    tableData.headers.length,
-    ...(tableData.rows || []).map((r) => r.length)
+    headers.length,
+    ...rows.map((r) => r.length),
+    1
   );
 
   const colAligns = (tableData.aligns || []).map((a) => {
@@ -1015,19 +1033,21 @@ export function renderLatexTable(tableData: SemanticTableData, inBox = false): s
     colAligns.push('c');
   }
 
-  const tableBody = [
-    `    \\toprule`,
-    `    ${tableData.headers.map((h) => formatLatexContent(h)).join(' & ')} \\\\`,
-    `    \\midrule`,
-    ...(tableData.rows || []).map((row) => {
-      const paddedRow = [...row];
-      while (paddedRow.length < colCount) paddedRow.push('');
-      return `    ${paddedRow.map((c) => formatLatexContent(c)).join(' & ')} \\\\`;
-    }),
-    `    \\bottomrule`,
-  ].join('\n');
+  const lines: string[] = ['    \\toprule'];
+  if (hasHeaderRow) {
+    const paddedHeaders = [...headers];
+    while (paddedHeaders.length < colCount) paddedHeaders.push('');
+    lines.push(`    ${paddedHeaders.map((h) => formatLatexContent(h)).join(' & ')} \\\\`);
+    lines.push('    \\midrule');
+  }
+  for (const row of rows) {
+    const paddedRow = [...row];
+    while (paddedRow.length < colCount) paddedRow.push('');
+    lines.push(`    ${paddedRow.map((c) => formatLatexContent(c)).join(' & ')} \\\\`);
+  }
+  lines.push('    \\bottomrule');
 
-  const tabularCode = `\\begin{tabular}{${colAligns.join(' ')}}\n${tableBody}\n  \\end{tabular}`;
+  const tabularCode = `\\begin{tabular}{${colAligns.join(' ')}}\n${lines.join('\n')}\n  \\end{tabular}`;
   // 使用 adjustbox 约束宽度不超过版心，杜绝超宽表格撑破右边距
   const wrappedTabular = `\\begin{adjustbox}{max width=\\linewidth}\n  ${tabularCode}\n  \\end{adjustbox}`;
 
@@ -1091,9 +1111,10 @@ export function renderLatexFigure(
   let code = `\\begin{center}\n`;
   code += `  \\IfFileExists{${cleanUrl}}{\\includegraphics[${imgOptions}]{${cleanUrl}}}{\\IfFileExists{${figureData.url}}{\\includegraphics[${imgOptions}]{${figureData.url}}}{\\fbox{\\small\\itshape [图示] ${escapedAlt}}}}\n`;
 
-  if (figureData.caption && figureData.caption.trim()) {
+  const captionText = figureData.caption || (figureData.alt && (/^图\s*[\d\.\-－]/i.test(figureData.alt.trim()) || figureData.alt.trim().length > 3) ? figureData.alt : '');
+  if (captionText && captionText.trim()) {
     const captionFont = policy.captionStyle === 'kaishu' ? '\\kaishu' : '\\normalfont';
-    code += `  \\par\\vspace{0.4em}{\\small${captionFont} ${formatLatexContent(figureData.caption.trim())}}\n`;
+    code += `  \\par\\vspace{0.4em}{\\small${captionFont} ${formatLatexContent(captionText.trim())}}\n`;
   }
 
   code += `\\end{center}\n\n`;
@@ -1117,14 +1138,9 @@ export function renderSemanticBlocks(
     switch (block.kind) {
       case 'heading': {
         const level = block.level || 2;
-        const cleanTitle = formatHeadingLatex(stripLeadingNumber(block.title || block.content || ''));
-        if (level === 1) {
-          if (config.documentclass === 'ctexbook') {
-            code += `\\chapter{${cleanTitle}}\n\n`;
-          } else {
-            code += `\\section{${cleanTitle}}\n\n`;
-          }
-        } else if (level === 2) {
+        const rawTitle = block.title || block.content || '';
+        const cleanTitle = formatHeadingLatex(stripLeadingNumber(rawTitle));
+        if (level === 1 || level === 2) {
           code += `\\section{${cleanTitle}}\n\n`;
         } else if (level === 3) {
           code += `\\subsection{${cleanTitle}}\n\n`;
@@ -1144,7 +1160,13 @@ export function renderSemanticBlocks(
 
       case 'math': {
         if (block.content) {
-          code += `\\[\n${cleanMathFormula(block.content.trim())}\n\\]\n\n`;
+          const trimmed = cleanMathFormula(block.content.trim());
+          // 修复 amsmath 限制：若包含 \tag{...} 则必须使用 equation 环境，严禁使用 \[ ... \]
+          if (trimmed.includes('\\tag{') || trimmed.includes('\\tag*{')) {
+            code += `\\begin{equation}\n${trimmed}\n\\end{equation}\n\n`;
+          } else {
+            code += `\\[\n${trimmed}\n\\]\n\n`;
+          }
         }
         break;
       }
@@ -1180,7 +1202,7 @@ export function renderSemanticBlocks(
         break;
       }
 
-      // 核心定理族 (tcolorbox 自动编号定理环境)
+      // 核心定理族 (kaobook 标准可选标题环境)
       case 'definition':
       case 'theorem':
       case 'lemma':
@@ -1192,10 +1214,17 @@ export function renderSemanticBlocks(
       case 'academicblock':
       case 'example':
       case 'variant':
-      case 'method': {
-        const titleArg = block.title ? formatLatexContent(stripTheoremPrefix(block.title)) : '';
+      case 'method':
+      case 'exercise': {
+        let rawTitle = block.title ? formatLatexContent(stripTheoremPrefix(block.title)).trim() : '';
+        // 剥离外层多余括号，防止与 amsthm 自身的附加括号叠加产生 ((...))
+        rawTitle = rawTitle.replace(/^[\(（](.*)[\)）]$/, '$1').trim();
+        const titleArg = rawTitle ? `[${rawTitle}]` : '';
         const labelArg = block.label || (block.number ? `${block.kind}:${block.number.replace(/\./g, '-')}` : '');
-        code += `\\begin{${block.kind}}{${titleArg}}{${labelArg}}\n`;
+        code += `\\begin{${block.kind}}${titleArg}\n`;
+        if (labelArg) {
+          code += `\\label{${labelArg}}\n`;
+        }
         const inner = renderSemanticBlocks(block.children || [], config, true).trim();
         if (inner) {
           code += `${inner}\n`;
@@ -1215,8 +1244,10 @@ export function renderSemanticBlocks(
       }
 
       case 'solution': {
-        const title = block.title ? formatLatexContent(block.title) : '解';
-        code += `\\begin{solution}[${title}]\n`;
+        const rawTitle = block.title ? formatLatexContent(block.title).trim() : '解';
+        const cleanTitle = rawTitle.replace(/[\.．。\s]+$/, '').trim();
+        const optTitle = cleanTitle && cleanTitle !== '解' ? `[${cleanTitle}]` : '';
+        code += `\\begin{solution}${optTitle}\n`;
         const inner = renderSemanticBlocks(block.children || [], config, true).trim();
         if (inner) {
           code += `${inner}\n`;
@@ -1225,9 +1256,37 @@ export function renderSemanticBlocks(
         break;
       }
 
+      case 'sidenote': {
+        if (config.sidenoteMode === 'margin') {
+          const title = block.title ? formatLatexContent(block.title).trim() : '注';
+          const inner = renderSemanticBlocks(block.children || [], config, true).trim();
+          if (inBox) {
+            code += `\\par\\vspace{0.4em}\\noindent{\\small\\kaishu{\\biaosong\\bfseries 【${title}】}\\; ${inner}}\\par\\vspace{0.4em}\n\n`;
+          } else {
+            code += `\\astrolibsidenote[${title}]{${inner}}%\n`;
+          }
+          break;
+        }
+
+        const rawTitle = block.title ? formatLatexContent(block.title).trim() : '注';
+        const cleanTitle = rawTitle.replace(/^[【\[（\(]/, '').replace(/[】\]）\)]$/, '').trim() || '注';
+        const inner = renderSemanticBlocks(block.children || [], config, true).trim();
+        if (inBox) {
+          code += `\\par\\vspace{0.4em}\\noindent{\\small\\kaishu{\\biaosong\\bfseries 【${cleanTitle}】}\\; ${inner}}\\par\\vspace{0.4em}\n\n`;
+        } else if (cleanTitle.includes('思路') || cleanTitle.includes('分析')) {
+          const optTitle = cleanTitle === '思路分析' ? '' : `[${cleanTitle}]`;
+          code += `\\begin{analysis}${optTitle}\n${inner}\n\\end{analysis}\n\n`;
+        } else {
+          const optTitle = (cleanTitle === '注' || cleanTitle === '注记') ? '' : `[${cleanTitle}]`;
+          code += `\\begin{remark}${optTitle}\n${inner}\n\\end{remark}\n\n`;
+        }
+        break;
+      }
+
       case 'remark': {
-        const title = block.title ? formatLatexContent(block.title) : '注记';
-        code += `\\begin{remark}[${title}]\n`;
+        const title = block.title ? formatLatexContent(block.title).trim() : '注';
+        const optTitle = title && title !== '注' && title !== '注记' ? `[${title}]` : '';
+        code += `\\begin{remark}${optTitle}\n`;
         const inner = renderSemanticBlocks(block.children || [], config, true).trim();
         if (inner) {
           code += `${inner}\n`;
@@ -1237,8 +1296,10 @@ export function renderSemanticBlocks(
       }
 
       case 'analysis': {
-        const title = block.title ? formatLatexContent(block.title) : '思路分析';
-        code += `\\begin{analysis}[${title}]\n`;
+        const rawTitle = block.title ? formatLatexContent(block.title).trim() : '思路分析';
+        const cleanTitle = rawTitle.replace(/[\.．。\s]+$/, '').trim();
+        const optTitle = cleanTitle && cleanTitle !== '思路分析' ? `[${cleanTitle}]` : '';
+        code += `\\begin{analysis}${optTitle}\n`;
         const inner = renderSemanticBlocks(block.children || [], config, true).trim();
         if (inner) {
           code += `${inner}\n`;
@@ -1248,7 +1309,7 @@ export function renderSemanticBlocks(
       }
 
       case 'guide': {
-        const title = block.title ? formatLatexContent(block.title) : '本节导读';
+        const title = block.title ? formatLatexContent(block.title).trim() : '本节导读';
         code += `\\begin{guide}[${title}]\n`;
         const inner = renderSemanticBlocks(block.children || [], config, true).trim();
         if (inner) {
@@ -1259,7 +1320,7 @@ export function renderSemanticBlocks(
       }
 
       case 'summary': {
-        const title = block.title ? formatLatexContent(block.title) : '本节总结';
+        const title = block.title ? formatLatexContent(block.title).trim() : '本节总结';
         code += `\\begin{summary}[${title}]\n`;
         const inner = renderSemanticBlocks(block.children || [], config, true).trim();
         if (inner) {
@@ -1269,24 +1330,17 @@ export function renderSemanticBlocks(
         break;
       }
 
-      case 'exercise': {
-        const title = block.title ? formatLatexContent(block.title) : '课后习题';
-        code += `\\begin{exercise}[${title}]\n`;
-        const inner = renderSemanticBlocks(block.children || [], config, true).trim();
-        if (inner) {
-          code += `${inner}\n`;
-        }
-        code += `\\end{exercise}\n\n`;
-        break;
-      }
-
       case 'digital_resource':
       case 'qrcode': {
         const res = block.resourceData;
         const categoryLabel = res?.categoryLabel || (block.title?.includes('微课') ? '微课视频' : '配套数字资源');
         const title = res?.title || block.title || '数字资源';
-        const url = res?.url || block.content || '';
-        code += `\\astrolibdigitalresource[${escapeLatexMeta(categoryLabel)}]{${escapeLatexMeta(title)}}{${url ? url.trim() : ''}}\n\n`;
+        let rawUrl = (res?.url || block.content || '').trim();
+        if (rawUrl === '#' || rawUrl === '###' || rawUrl.startsWith('javascript:')) {
+          rawUrl = '';
+        }
+        const safeUrl = rawUrl.replace(/#/g, '\\#').replace(/%/g, '\\%');
+        code += `\\astrolibdigitalresource[${escapeLatexMeta(categoryLabel)}]{${escapeLatexMeta(title)}}{${safeUrl}}\n\n`;
         break;
       }
 
@@ -1310,113 +1364,444 @@ export function renderSemanticBlocks(
 
 /**
  * 核心导出函数：将 ChapterDocument 语义领域模型渲染为完整可编译的 LaTeX 源码
- * 遵循极简学术规范：单章输出默认基于 ctexart，取消封面大标题页，第 1 页直接以学术紧凑卷头展开正文
+ * 严格遵循 .agents/skills/latex-document-skill/ 官方规范与 assets/templates/book.tex 模板架构：
+ * - 采用标准 book 类（双面开本、openright 章节右开）
+ * - 采用 Palatino 正文与数学字体（TeX Gyre Pagella + TeX Gyre Pagella Math + Inconsolata）
+ * - 经典书籍不对称版心几何、linespread{1.35} 舒适行高、fancyhdr 双面页眉与 titlesec 经典章标题
+ * - 纯正 amsthm 定理族系统，彻底杜绝任何花哨卡片与边框背景
+ * - 原生无缝融合 ctex 中文混排与 XeLaTeX 官方编译规范
  */
 export function renderChapterLatexDocument(
   chapter: ChapterDocument,
   userConfig: Partial<ChapterLatexConfig & { embedStyle?: boolean }> = {}
 ): string {
   const config = { ...DEFAULT_CHAPTER_EXPORT_SETTINGS, ...userConfig };
-  const isBook = config.documentclass === 'ctexbook';
   const paperOption = config.paperSize === 'b5' ? 'b5paper' : 'a4paper';
-  const fontPt = config.fontSize === 10.5 ? '10.5pt' : `${config.fontSize}pt`;
-
-  // 学术排版与字体配置 (统一委托至 Academic Typography System 唯一入口)
-  const typographyCode = renderFontPreamble(config, {
-    includePackage: true,
-    resolutionMode: config.resolutionMode || 'deterministic',
-    userExplicit: userConfig,
-  });
-
-  // 样式引入模式：使用独立宏包 vs 内嵌宏包代码（独立单文件开箱即用）
-  let styleCode = '\\usepackage{astrolib-chapter}\n';
-  if (config.embedStyle && config.styleSource) {
-    styleCode = `\n% ================= 内联 AstroLib 学术教材排版样式 =================\n${config.styleSource}\n% ==================================================================\n`;
-  }
+  const fontPt = (config.fontSize === 10.5 || !config.fontSize) ? '11pt' : `${config.fontSize}pt`;
 
   // 章节层级元数据权威注入 (来自 Core / Catalog 层的 ChapterCanonicalMetadata)
   const meta = chapter.metadata;
-  let chapterPrefix = meta?.numberingPrefix;
-  if (!chapterPrefix && meta?.chapterNumber != null) {
-    chapterPrefix = `${meta.chapterNumber}.`;
-  }
-  if (!chapterPrefix) {
-    const m = (chapter.title || '').match(/^(\d+)\./);
-    chapterPrefix = m ? `${m[1]}.` : '';
+  const bookTitle = meta?.bookTitle || chapter.bookTitle || '';
+  const cleanTitle = stripLeadingNumber(chapter.title) || chapter.title || '章节内容';
+  const fullTitle = meta?.fullTitle || chapter.title || config.title || cleanTitle;
+  const authorName = meta?.bookAuthor || chapter.author || config.author || bookTitle || 'AstroLib';
+
+  // 解析章序号 (例如 "2.2 求导的基本法则" -> 章序号 2)
+  let chapNum: number | null = meta?.chapterNumber != null ? meta.chapterNumber : null;
+  if (chapNum == null) {
+    const m = (chapter.title || '').match(/^(\d+)/);
+    if (m) chapNum = parseInt(m[1], 10);
   }
 
-  let classOptionsStr = `${paperOption}, ${fontPt === '10.5pt' ? '11pt' : fontPt}, UTF8, punct=kaiming`;
-  if (isBook) {
-    classOptionsStr += `, openany, oneside`;
+  let counterCode = '';
+  if (chapNum != null && chapNum > 0) {
+    counterCode = `\\setcounter{chapter}{${chapNum - 1}}\n`;
   }
+  if (bookTitle) {
+    counterCode += `\\renewcommand{\\astrolibbooktitle}{${escapeLatexMeta(bookTitle)}}\n`;
+  }
+
+  const safeLabel = `ch:${(chapter.slug || 'chapter').replace(/[^a-zA-Z0-9]/g, '-')}`;
+
+  const mathFontMap: Record<string, string> = {
+    typst: 'NewCMMath-Book.otf',
+    modern: 'latinmodern-math.otf',
+    times: 'texgyretermes-math.otf',
+    pagella: 'texgyrepagella-math.otf',
+  };
+  const mathFontOtf = (config.mathFont && mathFontMap[config.mathFont]) || 'TeX Gyre Pagella Math';
+
+  let cjkFontCode = '';
+  if (config.cjkFont === 'default') {
+    cjkFontCode = `\\providecommand{\\biaosong}{\\songti\\bfseries}\n`;
+  } else {
+    cjkFontCode = `%=============================================================================
+% CJK FONTS (思源宋体正文 + 思源宋体粗体高字重标宋)
+%=============================================================================
+% 1. 中文主字体与 BoldFont 精准绑定 (标宋/高字重思源宋体)
+\\IfFontExistsTF{SourceHanSerifSC-Regular.otf}{%
+  \\setCJKmainfont{SourceHanSerifSC-Regular.otf}[
+    BoldFont={SourceHanSerifSC-Bold.otf},
+    AutoFakeBold=true
+  ]%
+}{%
+  \\IfFontExistsTF{Source Han Serif SC}{%
+    \\setCJKmainfont{Source Han Serif SC}[
+      BoldFont={Source Han Serif SC Bold},
+      AutoFakeBold=true
+    ]%
+  }{%
+    \\IfFontExistsTF{Noto Serif CJK SC}{%
+      \\setCJKmainfont{Noto Serif CJK SC}[
+        BoldFont={Noto Serif CJK SC Bold},
+        AutoFakeBold=true
+      ]%
+    }{%
+      \\IfFontExistsTF{FandolSong-Regular.otf}{%
+        \\setCJKmainfont{FandolSong-Regular.otf}[
+          BoldFont=FandolSong-Bold.otf,
+          AutoFakeBold=true
+        ]%
+      }{%
+        \\IfFontExistsTF{STSong}{%
+          \\setCJKmainfont{STSong}[
+            BoldFont={STZhongsong},
+            AutoFakeBold=true
+          ]%
+        }{%
+          \\setCJKmainfont{SimSun}[
+            BoldFont={STZhongsong},
+            AutoFakeBold=true
+          ]%
+        }%
+      }%
+    }%
+  }%
+}
+
+% 2. 标宋/高字重思源宋体专用字族 (\\biaosong)
+\\IfFontExistsTF{SourceHanSerifSC-Bold.otf}{%
+  \\setCJKfamilyfont{zhbiaosong}{SourceHanSerifSC-Bold.otf}%
+}{%
+  \\IfFontExistsTF{Source Han Serif SC Bold}{%
+    \\setCJKfamilyfont{zhbiaosong}{Source Han Serif SC Bold}%
+  }{%
+    \\IfFontExistsTF{Noto Serif CJK SC Bold}{%
+      \\setCJKfamilyfont{zhbiaosong}{Noto Serif CJK SC Bold}%
+    }{%
+      \\IfFontExistsTF{FandolSong-Bold.otf}{%
+        \\setCJKfamilyfont{zhbiaosong}{FandolSong-Bold.otf}%
+      }{%
+        \\IfFontExistsTF{STZhongsong}{%
+          \\setCJKfamilyfont{zhbiaosong}{STZhongsong}%
+        }{%
+          \\setCJKfamilyfont{zhbiaosong}{SimSun}[AutoFakeBold=true]%
+        }%
+      }%
+    }%
+  }%
+}
+\\providecommand{\\biaosong}{\\CJKfamily{zhbiaosong}}
+
+% 3. 中文无衬线字族 (\\setCJKsansfont)
+\\IfFontExistsTF{SourceHanSansSC-Regular.otf}{%
+  \\setCJKsansfont{SourceHanSansSC-Regular.otf}[AutoFakeBold=true]%
+}{%
+  \\IfFontExistsTF{Source Han Sans SC}{%
+    \\setCJKsansfont{Source Han Sans SC}[AutoFakeBold=true]%
+  }{%
+    \\IfFontExistsTF{Noto Sans CJK SC}{%
+      \\setCJKsansfont{Noto Sans CJK SC}[AutoFakeBold=true]%
+    }{%
+      \\IfFontExistsTF{FandolHei-Regular.otf}{%
+        \\setCJKsansfont{FandolHei-Regular.otf}[AutoFakeBold=true]%
+      }{%
+        \\setCJKsansfont{SimHei}[AutoFakeBold=true]%
+      }%
+    }%
+  }%
+}
+`;
+  }
+
+  const sidenoteMode = config.sidenoteMode === 'margin' ? 'margin' : 'inline';
+  const geometryMargins = sidenoteMode === 'margin'
+    ? `inner=0.9in,
+    outer=1.85in,
+    top=1in,
+    bottom=1.4in,
+    bindingoffset=0.25in,`
+    : `inner=1.0in,
+    outer=1.25in,
+    top=1in,
+    bottom=1.4in,
+    bindingoffset=0.25in,`;
+
+  const sidenotePreamble = sidenoteMode === 'margin'
+    ? `%=============================================================================
+% MARGIN NOTES (book.tex Academic Sidenote Standard - Margin Mode)
+%=============================================================================
+\\usepackage{marginnote}
+\\setlength{\\marginparwidth}{1.35in}
+\\setlength{\\marginparsep}{0.18in}
+\\NewDocumentCommand\\astrolibsidenote{ O{注} +m }{%
+  \\marginnote{\\footnotesize\\kaishu\\raggedright{\\biaosong\\bfseries 【#1】}\\par #2}%
+}`
+    : `%=============================================================================
+% SIDENOTE FALLBACK (Inline Flow Remark Mode)
+%=============================================================================
+\\NewDocumentCommand\\astrolibsidenote{ O{注} +m }{%
+  \\begin{remark}[#1]
+    #2
+  \\end{remark}%
+}`;
 
   let code = `% =========================================================================
-% AstroLib Academic Textbook / Lecture Notes Chapter
-% Clean, minimal, publication-grade academic layout (${config.documentclass || 'ctexart'} + tcolorbox + amsthm)
+% AstroLib Academic Textbook Chapter
+% Typeset with official book.tex standard (latex-document-skill)
+% Clean, minimal, publication-grade academic layout (Palatino + amsthm)
 % Generated by AstroLib Headless Publishing System
 % =========================================================================
 
-\\documentclass[
-  ${classOptionsStr}
-]{${config.documentclass || 'ctexart'}}
+\\documentclass[${paperOption},${fontPt},twoside,openright]{book}
 
-${styleCode}
-% 图形查找路径配置（优先 assets/，兼容 images/ 与当前目录）
+%=============================================================================
+% ENCODING AND FONTS (Palatino text & math + Inconsolata monospace + CJK)
+%=============================================================================
+\\usepackage{ctex}
+\\usepackage{mathtools}
+\\usepackage{amssymb}
+\\usepackage{fontspec}
+\\setmainfont{TeX Gyre Pagella}
+\\usepackage{unicode-math}
+\\setmathfont{${mathFontOtf}}
+\\usepackage[scaled=0.95]{inconsolata}
+${cjkFontCode}
+\\newcommand{\\astrolibbooktitle}{${escapeLatexMeta(bookTitle || 'AstroLib')}}
+
+%=============================================================================
+% PAGE LAYOUT AND TYPOGRAPHY (book.tex Classical Asymmetric Margins)
+%=============================================================================
+\\usepackage[${paperOption},
+    ${geometryMargins}
+    headheight=14pt]{geometry}
+\\usepackage[final,protrusion=true]{microtype}
+\\usepackage{setspace}
+\\linespread{1.35}                % ~135% leading for comfortable book reading
+\\usepackage{emptypage}           % Blank verso pages have no headers/footers
+
+%=============================================================================
+% GRAPHICS AND FIGURES
+%=============================================================================
+\\usepackage{graphicx}
+\\usepackage[export]{adjustbox}
+\\usepackage[font=small,labelfont=bf,format=hang]{caption}
+\\usepackage{subcaption}
 \\graphicspath{{assets/}{images/}{./}}
 
-${typographyCode}
-`;
+%=============================================================================
+% TABLES
+%=============================================================================
+\\usepackage{booktabs}
+\\usepackage{array}
+\\usepackage{multirow}
 
-  // 卷头与元数据排版 (Page 1 Restrained Academic Header - No Standalone Cover Page)
-  const bookTitle = meta?.bookTitle || chapter.bookTitle || '';
-  const chapterTitle = meta?.chapterTitle || '';
-  const fullTitle = meta?.fullTitle || chapter.title || config.title || '';
-  const authorName = meta?.bookAuthor || chapter.author || config.author || '';
+%=============================================================================
+% LISTS (latex-document-skill Anti-Pattern 4 Compaction Standard)
+%=============================================================================
+\\usepackage{enumitem}
+\\setlist[itemize]{nosep, leftmargin=*, topsep=2pt, partopsep=0pt}
+\\setlist[enumerate]{nosep, leftmargin=*, topsep=2pt, partopsep=0pt}
+\\setlist[enumerate,1]{label=\\arabic*., nosep, leftmargin=*}
+\\setlist[enumerate,2]{label=(\\arabic*), nosep, leftmargin=*}
+\\setlist[enumerate,3]{label=(\\alph*), nosep, leftmargin=*}
 
-  // 动态对齐教材大章编号与计数器（节号与定理编号）及页眉书名
-  let counterCode = '';
-  if (!isBook && chapterPrefix) {
-    counterCode = `% 动态对齐教材大章编号与节计数器\n\\renewcommand{\\astrolibchapternum}{${chapterPrefix}}\n\\renewcommand{\\thesection}{\\astrolibchapternum\\arabic{section}}\n`;
-  }
-  if (bookTitle) {
-    counterCode += `% 页眉右上角书名绑定 (纯粹学术，无品牌杂讯)\n\\renewcommand{\\astrolibbooktitle}{${escapeLatexMeta(bookTitle)}}\n`;
-  }
+%=============================================================================
+% TCOLORBOX (lecture-notes.tex Academic Breakable Boxes)
+%=============================================================================
+\\usepackage[most]{tcolorbox}
+\\tcbuselibrary{skins,breakable}
 
-  if (config.headerMode === 'standard') {
-    code += `\\begin{document}
+\\newtcolorbox{remark}[1][注]{
+  blanker,
+  breakable,
+  left=1.2em,
+  borderline west={1.2pt}{0pt}{black!35},
+  fonttitle=\\biaosong\\bfseries,
+  coltitle=black!85,
+  title={【#1】},
+  attach title to upper={\\;\\ },
+  fontupper=\\small\\kaishu,
+  before skip=0.9em plus 0.2em minus 0.1em,
+  after skip=0.9em plus 0.2em minus 0.1em
+}
+
+\\newtcolorbox{analysis}[1][思路分析]{
+  blanker,
+  breakable,
+  left=1.2em,
+  borderline west={0.9pt}{0pt}{black!28},
+  fonttitle=\\sffamily\\itshape,
+  coltitle=black!75,
+  title={【#1】},
+  attach title to upper={\\;\\ },
+  fontupper=\\small\\kaishu,
+  before skip=0.8em plus 0.2em minus 0.1em,
+  after skip=0.8em plus 0.2em minus 0.1em
+}
+
+${sidenotePreamble}
+
+%=============================================================================
+% COLORS (book.tex Academic Palette)
+%=============================================================================
+\\usepackage{xcolor}
+\\definecolor{chapterblue}{HTML}{1E3A5F}
+\\definecolor{sectiongray}{HTML}{333333}
+\\definecolor{linkblue}{RGB}{0,51,153}
+
+%=============================================================================
+% HEADER/FOOTER (book.tex Running Headers)
+%=============================================================================
+\\usepackage{fancyhdr}
+\\pagestyle{fancy}
+\\fancyhf{}
+\\fancyhead[LE]{\\small\\slshape\\nouppercase{\\astrolibbooktitle}}
+\\fancyhead[RO]{\\small\\slshape\\nouppercase{\\rightmark}}
+\\fancyfoot[C]{\\small\\thepage}
+\\renewcommand{\\headrulewidth}{0.4pt}
+\\renewcommand{\\footrulewidth}{0pt}
+
+% Plain style for chapter opening pages
+\\fancypagestyle{plain}{
+    \\fancyhf{}
+    \\fancyfoot[C]{\\small\\thepage}
+    \\renewcommand{\\headrulewidth}{0pt}
+}
+
+%=============================================================================
+% CHAPTER AND SECTION TITLE STYLING (book.tex Display Titles)
+%=============================================================================
+\\usepackage{titlesec}
+\\titleformat{\\chapter}[display]
+  {\\normalfont\\biaosong\\huge\\bfseries\\color{chapterblue}}
+  {\\chaptertitlename\\ \\thechapter}{20pt}{\\Huge}
+\\titlespacing*{\\chapter}{0pt}{-20pt}{40pt}
+
+\\titleformat{\\section}
+  {\\normalfont\\biaosong\\Large\\bfseries\\color{sectiongray}}
+  {\\thesection}{1em}{}
+
+\\titleformat{\\subsection}
+  {\\normalfont\\biaosong\\large\\bfseries\\color{sectiongray}}
+  {\\thesubsection}{1em}{}
+
+%=============================================================================
+% EPIGRAPHS & DROP CAPS
+%=============================================================================
+\\usepackage{epigraph}
+\\setlength{\\epigraphwidth}{0.6\\textwidth}
+\\setlength{\\epigraphrule}{0pt}
+
+\\usepackage{lettrine}
+\\setcounter{DefaultLines}{3}
+\\renewcommand{\\DefaultLoversize}{0.1}
+
+%=============================================================================
+% THEOREMS (Clean amsthm, zero cards, authentic book.tex style)
+%=============================================================================
+\\usepackage{amsthm}
+\\newtheoremstyle{astrolibplain}%
+  {0.6em plus 0.2em minus 0.1em}%
+  {0.6em plus 0.2em minus 0.1em}%
+  {\\normalfont}%
+  {}%
+  {\\biaosong\\bfseries}%
+  {.}%
+  {0.5em}%
+  {}
+\\newtheoremstyle{astrolibdefinition}%
+  {0.6em plus 0.2em minus 0.1em}%
+  {0.6em plus 0.2em minus 0.1em}%
+  {\\normalfont}%
+  {}%
+  {\\biaosong\\bfseries}%
+  {.}%
+  {0.5em}%
+  {}
+
+\\theoremstyle{astrolibplain}
+\\newtheorem{theorem}{定理}[chapter]
+\\newtheorem{lemma}[theorem]{引理}
+\\newtheorem{proposition}[theorem]{命题}
+\\newtheorem{corollary}[theorem]{推论}
+\\newtheorem{axiom}[theorem]{公理}
+\\newtheorem{property}[theorem]{性质}
+\\newtheorem{criterion}[theorem]{准则}
+\\newtheorem{academicblock}[theorem]{法则}
+
+\\theoremstyle{astrolibdefinition}
+\\newtheorem{definition}[theorem]{定义}
+\\newtheorem{example}[theorem]{例}
+\\newtheorem{variant}[theorem]{变式}
+\\newtheorem{method}[theorem]{方法}
+\\newtheorem{exercise}[theorem]{习题}
+
+\\renewcommand{\\proofname}{\\biaosong\\bfseries 证明}
+\\newenvironment{solution}[1][解]{\\par\\noindent{\\biaosong\\textbf{#1.}} }{\\par\\vspace{0.8em}}
+\\newenvironment{guide}[1][本节导读]{\\par\\vspace{0.5em}\\noindent{\\biaosong\\textbf{#1}}\\par\\itshape}{\\par\\vspace{0.8em}}
+\\newenvironment{summary}[1][本节总结]{\\par\\vspace{0.5em}\\noindent{\\biaosong\\textbf{#1}}\\par\\itshape}{\\par\\vspace{0.8em}}
+\\newcommand{\\astrolibdigitalresource}[3][配套数字资源]{%
+  \\par\\vspace{0.4em}%
+  \\noindent{\\small\\kaishu #1\\,\\cdot\\,}\\href{#3}{\\small #2}%
+  \\par\\vspace{0.4em}%
+}
+
+%=============================================================================
+% ALGORITHMS & SI UNITS
+%=============================================================================
+\\usepackage{algorithm}
+\\usepackage{algpseudocode}
+\\usepackage{siunitx}
+\\sisetup{detect-all}
+
+%=============================================================================
+% HYPERLINKS & CLEVEREF (load near end)
+%=============================================================================
+\\usepackage{bookmark}
+\\usepackage{hyperref}
+\\hypersetup{
+    colorlinks=true,
+    linkcolor=chapterblue,
+    citecolor=linkblue,
+    urlcolor=linkblue,
+    pdfauthor={${escapeLatexMeta(authorName)}},
+    pdftitle={${escapeLatexMeta(fullTitle)}},
+    pdfsubject={${escapeLatexMeta(bookTitle)}},
+    bookmarks=true,
+    bookmarksnumbered=true,
+    bookmarksopen=true,
+}
+\\usepackage{cleveref}
+
+%=============================================================================
+% CUSTOM MATH COMMANDS (book.tex standard commands)
+%=============================================================================
+\\newcommand{\\R}{\\mathbb{R}}
+\\newcommand{\\N}{\\mathbb{N}}
+\\newcommand{\\Z}{\\mathbb{Z}}
+\\newcommand{\\C}{\\mathbb{C}}
+\\DeclareMathOperator*{\\argmax}{arg\\,max}
+\\DeclareMathOperator*{\\argmin}{arg\\,min}
+\\DeclarePairedDelimiter{\\abs}{\\lvert}{\\rvert}
+\\DeclarePairedDelimiter{\\norm}{\\lVert}{\\rVert}
+\\DeclarePairedDelimiter{\\inner}{\\langle}{\\rangle}
+
+\\title{${escapeLatexMeta(fullTitle)}}
+\\author{${escapeLatexMeta(authorName)}}
+\\date{\\today}
+
+\\begin{document}
 ${counterCode}
-% =========================================================================
-% 学术讲义/单章卷头 (Page 1 Restrained Academic Header - No Cover Page)
-% =========================================================================
-\\begin{center}
-${bookTitle || chapterTitle ? `  {\\zihao{4}\\kaishu ${escapeLatexMeta([bookTitle, chapterTitle].filter(Boolean).join('　'))}}\\par\\vspace{0.5em}\n` : ''}  {\\zihao{2}\\sffamily\\bfseries ${escapeLatexMeta(fullTitle)}}\\par\\vspace{0.6em}
-${authorName ? `  {\\small\\normalfont ${escapeLatexMeta(authorName)}}\\par\\vspace{0.6em}\n` : ''}\\end{center}
-\\vspace{-0.2em}\\hrule height 0.6pt\\vspace{1.5em}
+\\chapter{${formatHeadingLatex(cleanTitle)}}
+\\label{${safeLabel}}
+
 `;
-  } else if (config.headerMode === 'compact') {
-    code += `\\begin{document}
-${counterCode}
-\\begin{center}
-  {\\zihao{3}\\sffamily\\bfseries ${escapeLatexMeta(fullTitle)}}\\par\\vspace{0.3em}
-${bookTitle ? `  {\\small\\kaishu ${escapeLatexMeta(bookTitle)}}\\par\\vspace{0.3em}\n` : ''}\\end{center}
-\\vspace{-0.3em}\\hrule height 0.4pt\\vspace{1.0em}
-`;
-  } else {
-    code += `\\begin{document}\n${counterCode}`;
-  }
 
-  if (config.showToc) {
-    code += `\\tableofcontents\\vspace{1.5em}\\hrule\\vspace{1.5em}\n`;
-  }
+  // 过滤开头与章标题重复的首个 H1 节点
+  const chapterCleanNorm = cleanTitle.replace(/^[第\d\.\s一二三四五六七八九十]+[章节篇讲]\s*/, '').trim();
+  const blocksToRender = (chapter.blocks || []).filter((b, idx) => {
+    if (idx <= 1 && b.kind === 'heading' && b.level === 1) {
+      const hClean = stripLeadingNumber(b.title || b.content || '').replace(/^[第\d\.\s一二三四五六七八九十]+[章节篇讲]\s*/, '').trim();
+      if (hClean && (chapterCleanNorm.includes(hClean) || hClean.includes(chapterCleanNorm))) {
+        return false;
+      }
+    }
+    return true;
+  });
 
-  // 若为 ctexbook 且首个节点非 level:1 heading，则显式输出章标题
-  const hasH1 = (chapter.blocks || []).some((b) => b.kind === 'heading' && b.level === 1);
-  if (isBook && !hasH1) {
-    code += `\\chapter{${formatHeadingLatex(stripLeadingNumber(chapter.title))}}\n\n`;
-  }
-
-  // 渲染正文块
-  code += renderSemanticBlocks(chapter.blocks || [], config);
+  // 渲染正文语义块
+  code += renderSemanticBlocks(blocksToRender, config);
 
   code += `\\end{document}\n`;
   return code;

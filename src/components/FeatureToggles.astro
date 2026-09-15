@@ -6,7 +6,7 @@
 // -----------------------------------------------------------------------------
 import { features } from '../config/features.config.mjs';
 import { siteThemes } from '../config/themes.config.mjs';
-import { CJK_PRESETS, LATIN_PRESETS } from '../scripts/font-presets';
+import { CJK_PRESETS, LATIN_PRESETS, DEFAULT_PREF } from '../scripts/font-presets';
 import { THEME_COLOR_PRESETS } from '../themes/material-you/color-engine';
 
 const isDev = import.meta.env.DEV;
@@ -93,6 +93,8 @@ const metaJson = JSON.stringify(featureMeta);
                       label={opt.label}
                       data-font-setting="cjk"
                       data-font-val={opt.value}
+                      selected={opt.value === DEFAULT_PREF.cjk ? true : undefined}
+                      has-selected-icon={opt.value === DEFAULT_PREF.cjk ? true : undefined}
                       title={opt.label}
                     ></md-filter-chip>
                   ))}
@@ -109,6 +111,8 @@ const metaJson = JSON.stringify(featureMeta);
                       label={opt.label}
                       data-font-setting="latin"
                       data-font-val={opt.value}
+                      selected={opt.value === DEFAULT_PREF.latin ? true : undefined}
+                      has-selected-icon={opt.value === DEFAULT_PREF.latin ? true : undefined}
                       title={opt.label}
                     ></md-filter-chip>
                   ))}
@@ -142,6 +146,8 @@ const metaJson = JSON.stringify(featureMeta);
                 class="ft-font-chip ft-punct-chip"
                 label="数理圆点 (．)"
                 data-punct-val="dot"
+                selected
+                has-selected-icon
                 title="大学数理专著标准实心圆点"
               ></md-filter-chip>
               <md-filter-chip
@@ -376,6 +382,19 @@ const metaJson = JSON.stringify(featureMeta);
                   <span class="ft-switch-slider"></span>
                 </label>
               </div>
+
+              <!-- 加载动画风格 (Segmented Button) -->
+              <div class="ft-segment-wrapper ft-loading-style-wrapper">
+                <div class="ft-sub-label">加载动画风格</div>
+                <div class="ft-segment-track ft-grid-2 ft-loading-style-track">
+                  <button type="button" class="ft-loading-style-btn" data-loading-style-val="morph" title="M3 灵动形变指示器（基于 @alerix/m3-loading-indicator，春生物理形变）">
+                    灵动形变 (Morph)
+                  </button>
+                  <button type="button" class="ft-loading-style-btn" data-loading-style-val="native" title="Google 官方原生指示器（@material/web progress，经典圆环）">
+                    官方原生 (Native)
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )
@@ -523,10 +542,7 @@ const metaJson = JSON.stringify(featureMeta);
                   <svg class="ft-chip-icon ft-test-chip-icon-err hidden" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
                     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
                   </svg>
-                  <svg class="ft-chip-icon ft-test-chip-spinner hidden" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <circle cx="12" cy="12" r="9" stroke-opacity="0.25"></circle>
-                    <path d="M12 3a9 9 0 0 1 9 9" stroke-linecap="round"></path>
-                  </svg>
+                  <m3-loading-indicator size="12" class="ft-chip-icon ft-test-chip-spinner hidden"></m3-loading-indicator>
                   <span class="ft-test-chip-text"></span>
                 </div>
 
@@ -605,12 +621,7 @@ const metaJson = JSON.stringify(featureMeta);
                         <path d="M11 21h-1l1-7H7.5c-.88 0-.33-.75-.31-.78L13.5 3h1l-1 7h3.5c.66 0 .44.62.33.82L11.5 21z"/>
                       </svg>
                     </md-icon>
-                    <md-icon class="ft-test-spinner hidden">
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <circle cx="12" cy="12" r="9" stroke-opacity="0.25"></circle>
-                        <path d="M12 3a9 9 0 0 1 9 9" stroke-linecap="round"></path>
-                      </svg>
-                    </md-icon>
+                    <m3-loading-indicator size="16" class="ft-test-spinner hidden"></m3-loading-indicator>
                   </md-icon-button>
                 </md-outlined-text-field>
               </div>
@@ -1252,15 +1263,6 @@ const metaJson = JSON.stringify(featureMeta);
     display: none !important;
   }
 
-  .ft-test-spinner svg {
-    fill: none !important;
-  }
-  .ft-test-spinner svg circle,
-  .ft-test-spinner svg path {
-    fill: none !important;
-    stroke: currentColor !important;
-  }
-
   .ft-ai-custom-form {
     display: flex;
     flex-direction: column;
@@ -1358,15 +1360,6 @@ const metaJson = JSON.stringify(featureMeta);
   .ft-ai-test-icon-btn:disabled {
     opacity: 0.6;
     cursor: wait;
-  }
-
-  .ft-test-spinner {
-    animation: ft-spin 1s linear infinite;
-  }
-
-  @keyframes ft-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
   }
 
   .ft-ai-key-chip {
@@ -1753,7 +1746,8 @@ const metaJson = JSON.stringify(featureMeta);
   .ft-font-btn,
   .ft-theme-chip,
   .ft-prewarm-btn,
-  .ft-cache-btn {
+  .ft-cache-btn,
+  .ft-loading-style-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1773,14 +1767,16 @@ const metaJson = JSON.stringify(featureMeta);
   .ft-font-btn:hover,
   .ft-theme-chip:hover,
   .ft-prewarm-btn:hover,
-  .ft-cache-btn:hover {
+  .ft-cache-btn:hover,
+  .ft-loading-style-btn:hover {
     color: var(--sl-color-white);
   }
 
   .ft-font-btn:focus-visible,
   .ft-theme-chip:focus-visible,
   .ft-prewarm-btn:focus-visible,
-  .ft-cache-btn:focus-visible {
+  .ft-cache-btn:focus-visible,
+  .ft-loading-style-btn:focus-visible {
     outline: 2px solid var(--sl-color-text-accent);
     outline-offset: 1px;
   }
@@ -1788,7 +1784,8 @@ const metaJson = JSON.stringify(featureMeta);
   .ft-font-btn.active,
   .ft-theme-chip.active,
   .ft-prewarm-btn.active,
-  .ft-cache-btn.active {
+  .ft-cache-btn.active,
+  .ft-loading-style-btn.active {
     background-color: var(--sl-color-bg);
     color: var(--sl-color-accent);
     font-weight: 600;
@@ -1818,6 +1815,8 @@ const metaJson = JSON.stringify(featureMeta);
 
   .ft-font-chip {
     cursor: pointer;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   /* 正文字号调节滑块 (M3 md-slider) */
@@ -1909,14 +1908,35 @@ const metaJson = JSON.stringify(featureMeta);
     text-overflow: ellipsis;
   }
 
-  /* 字体族预设直接作用于按钮文字，实现所见即所得预览 */
-  .ft-cjk-sans { font-family: var(--font-cjk-sans, sans-serif); }
-  .ft-cjk-serif { font-family: var(--font-cjk-serif, serif); }
-  .ft-cjk-han-sans { font-family: 'Noto Sans SC Variable', var(--font-cjk-sans, sans-serif); }
-  .ft-cjk-han-serif { font-family: 'Noto Serif SC Variable', var(--font-cjk-serif, serif); }
-  .ft-latin-sans { font-family: var(--font-latin-sans, sans-serif); }
-  .ft-latin-serif { font-family: var(--font-latin-serif, serif); }
-  .ft-latin-katex { font-family: var(--font-latin-katex, KaTeX_Main, serif); }
+  /* 官方 Material 3 md-filter-chip 字体所见即所得预览（通过 CSS 自定义属性穿透 Shadow DOM） */
+  .ft-cjk-sans {
+    --md-filter-chip-label-text-font: var(--font-cjk-sans);
+    font-family: var(--font-cjk-sans);
+  }
+  .ft-cjk-serif {
+    --md-filter-chip-label-text-font: var(--font-cjk-serif);
+    font-family: var(--font-cjk-serif);
+  }
+  .ft-cjk-han-sans {
+    --md-filter-chip-label-text-font: 'Noto Sans SC Variable', local('Source Han Sans SC'), local('Source Han Sans CN'), local('Noto Sans SC'), local('Noto Sans CJK SC'), local('思源黑体'), var(--font-cjk-sans);
+    font-family: 'Noto Sans SC Variable', local('Source Han Sans SC'), local('Source Han Sans CN'), local('Noto Sans SC'), local('Noto Sans CJK SC'), local('思源黑体'), var(--font-cjk-sans);
+  }
+  .ft-cjk-han-serif {
+    --md-filter-chip-label-text-font: 'Noto Serif SC Variable', local('Source Han Serif SC'), local('Source Han Serif CN'), local('Noto Serif SC'), local('Noto Serif CJK SC'), local('思源宋体'), var(--font-cjk-serif);
+    font-family: 'Noto Serif SC Variable', local('Source Han Serif SC'), local('Source Han Serif CN'), local('Noto Serif SC'), local('Noto Serif CJK SC'), local('思源宋体'), var(--font-cjk-serif);
+  }
+  .ft-latin-sans {
+    --md-filter-chip-label-text-font: var(--font-latin-sans), var(--font-cjk-sans);
+    font-family: var(--font-latin-sans), var(--font-cjk-sans);
+  }
+  .ft-latin-serif {
+    --md-filter-chip-label-text-font: var(--font-latin-serif), var(--font-cjk-serif);
+    font-family: var(--font-latin-serif), var(--font-cjk-serif);
+  }
+  .ft-latin-katex {
+    --md-filter-chip-label-text-font: var(--font-latin-katex), var(--font-cjk-serif);
+    font-family: var(--font-latin-katex), var(--font-cjk-serif);
+  }
 
   /* 巡检快捷键按钮 */
   .ft-open-inspector-btn {

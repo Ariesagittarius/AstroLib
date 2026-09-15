@@ -16,9 +16,14 @@ const typographyPresets = listTypographyPresets();
 
 <div id="exercise-modal-root" class="ex-modal-root" aria-label="章节习题与真题自测中心">
   <div class="ex-modal-backdrop"></div>
-  <div class="ex-modal-window" role="dialog" aria-modal="true" aria-label="真题自测、试卷整卷与题库检索">
-    <!-- 模态窗顶部 Header -->
-    <header class="ex-header">
+  <md-dialog
+    id="exercise-modal-dialog"
+    class="ex-modal-window ex-modal-m3-dialog"
+    quick
+    aria-label="真题自测、试卷整卷与题库检索"
+  >
+    <!-- 模态窗顶部 Header (slot="headline") -->
+    <header slot="headline" class="ex-header">
       <div class="ex-header-left">
         <!-- 章节选择下拉 (自测模式使用) -->
         <select class="ex-chapter-select" title="选择要练习的章节">
@@ -37,12 +42,12 @@ const typographyPresets = listTypographyPresets();
         </select>
       </div>
 
-      <!-- 模式切换 Tab -->
-      <div class="ex-header-center">
-        <button type="button" class="ex-mode-tab active" data-mode="practice" title="按章节教材目录自测练习">
+      <!-- 模式切换 Tab (M3 Segmented Button) -->
+      <div class="ex-header-center" role="group" aria-label="练习模式切换">
+        <button type="button" class="ex-mode-tab active" data-mode="practice" title="按章节教材目录自测练习" aria-pressed="true">
           <span>章节自测</span>
         </button>
-        <button type="button" class="ex-mode-tab" data-mode="paper" title="按真实期末/期中试卷整卷刷题">
+        <button type="button" class="ex-mode-tab" data-mode="paper" title="按真实期末/期中试卷整卷刷题" aria-pressed="false">
           <span>试卷整卷</span>
         </button>
       </div>
@@ -50,23 +55,21 @@ const typographyPresets = listTypographyPresets();
       <!-- 窗口控制操作 -->
       <div class="ex-header-right">
         <button type="button" class="ex-secondary-btn" id="ex-open-latex-btn" title="导出学术 LaTeX 练习册 / 考场试卷" aria-label="导出 LaTeX 文档">
+          <md-icon class="ex-btn-mdicon">description</md-icon>
           <span>导出 LaTeX</span>
         </button>
         <button type="button" class="ex-icon-btn ex-fullscreen-btn" title="全屏/窗口切换 (F)" aria-label="全屏切换">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-          </svg>
+          <md-icon class="ex-btn-mdicon" id="ex-fullscreen-icon">fullscreen</md-icon>
         </button>
         <button type="button" class="ex-icon-btn ex-close-btn" title="关闭 (Esc)" aria-label="关闭">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <md-icon class="ex-btn-mdicon">close</md-icon>
         </button>
       </div>
     </header>
 
-    <!-- 工具栏：统计与多维筛选 -->
+    <!-- 主体内容区域 (slot="content") -->
+    <div slot="content" class="ex-modal-dialog-content">
+      <!-- 工具栏：统计与多维筛选 -->
     <div class="ex-toolbar">
       <div class="ex-toolbar-top">
         <div class="ex-stats-row">
@@ -75,97 +78,75 @@ const typographyPresets = listTypographyPresets();
 
         <div class="ex-toolbar-actions">
           <div class="ex-search-box">
-            <svg class="ex-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
-              <circle cx="8.5" cy="8.5" r="5.5" />
-              <path d="M12.5 12.5L17 17" />
-            </svg>
+            <md-icon class="ex-search-icon">search</md-icon>
             <input type="text" class="ex-search-input" placeholder="输入题干关键字、LaTeX 或考点..." autocomplete="off" />
             <button type="button" class="ex-search-clear" title="清空检索" aria-label="清空检索">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
-                <line x1="12" y1="4" x2="4" y2="12" />
-                <line x1="4" y1="4" x2="12" y2="12" />
-              </svg>
+              <md-icon class="ex-search-clear-icon">close</md-icon>
             </button>
           </div>
 
           <button type="button" class="ex-scope-toggle-btn" id="ex-scope-toggle-btn" title="切换检索范围：当前章节 / 全库跨章节检索">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="2" y1="12" x2="22" y2="12" />
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-            </svg>
+            <md-icon class="ex-scope-icon">public</md-icon>
             <span class="ex-scope-label">全库检索</span>
           </button>
 
           <button type="button" class="ex-toolbar-toggle-btn" id="ex-toolbar-toggle-btn" title="收起/展开筛选" aria-label="收起/展开筛选">
             <span class="ex-toggle-label">收起筛选</span>
-            <svg class="ex-toggle-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M4 10L8 6L12 10" />
-            </svg>
+            <md-icon class="ex-toggle-chevron">expand_less</md-icon>
           </button>
         </div>
       </div>
 
-      <div class="ex-filter-row">
-        <!-- 来源分类筛选 (自测模式) -->
-        <div class="ex-nav-flow ex-source-pills">
-          <button type="button" class="ex-nav-item active" data-source="all">全部来源</button>
-          <button type="button" class="ex-nav-item" data-source="textbook">教材课后习题</button>
-          <button type="button" class="ex-nav-item" data-source="exam">大邮数学集（真题）</button>
-        </div>
+      <!-- M3 平滑折叠抽屉容器 -->
+      <div class="ex-filter-drawer">
+        <div class="ex-filter-inner">
+          <div class="ex-filter-row">
+            <!-- 来源分类筛选 (自测模式) -->
+            <div class="ex-nav-flow ex-source-pills">
+              <button type="button" class="ex-nav-item active" data-source="all">全部来源</button>
+              <button type="button" class="ex-nav-item" data-source="textbook">教材课后习题</button>
+              <button type="button" class="ex-nav-item" data-source="exam">大邮数学集（真题）</button>
+            </div>
 
-        <!-- 课后习题组别筛选 (选择教材习题时展开) -->
-        <div class="ex-nav-flow ex-group-pills hidden">
-          <button type="button" class="ex-nav-item active" data-group="all">全部组别</button>
-          <button type="button" class="ex-nav-item" data-group="A">A组基础</button>
-          <button type="button" class="ex-nav-item" data-group="B">B组提高</button>
-        </div>
+            <!-- 课后习题组别筛选 (选择教材习题时展开) -->
+            <div class="ex-nav-flow ex-group-pills hidden">
+              <button type="button" class="ex-nav-item active" data-group="all">全部组别</button>
+              <button type="button" class="ex-nav-item" data-group="A">A组基础</button>
+              <button type="button" class="ex-nav-item" data-group="B">B组提高</button>
+            </div>
 
-        <!-- 小节快捷筛选 (自测模式) -->
-        <div class="ex-nav-flow ex-section-pills"></div>
+            <!-- 小节快捷筛选 (自测模式) -->
+            <div class="ex-nav-flow ex-section-pills"></div>
 
-        <!-- 试卷大纲结构导航 (整卷模式) -->
-        <div class="ex-nav-flow ex-paper-outline-bar hidden"></div>
+            <!-- 试卷大纲结构导航 (整卷模式) -->
+            <div class="ex-nav-flow ex-paper-outline-bar hidden"></div>
 
-        <!-- 题型筛选 -->
-        <div class="ex-nav-flow ex-type-pills">
-          <button type="button" class="ex-nav-item active" data-type="all">全部题型</button>
-          <button type="button" class="ex-nav-item" data-type="choice">单选</button>
-          <button type="button" class="ex-nav-item" data-type="blank">填空</button>
-          <button type="button" class="ex-nav-item" data-type="calc">计算</button>
-          <button type="button" class="ex-nav-item" data-type="proof">证明</button>
-        </div>
-
-        <!-- 移动端专属：确定筛选并进入沉浸做题态按钮 -->
-        <div class="ex-mobile-confirm-bar">
-          <button type="button" class="ex-mobile-confirm-btn" id="ex-mobile-confirm-btn">
-            完成筛选 · 进入做题
-          </button>
+            <!-- 题型筛选 -->
+            <div class="ex-nav-flow ex-type-pills">
+              <button type="button" class="ex-nav-item active" data-type="all">全部题型</button>
+              <button type="button" class="ex-nav-item" data-type="choice">单选</button>
+              <button type="button" class="ex-nav-item" data-type="blank">填空</button>
+              <button type="button" class="ex-nav-item" data-type="calc">计算</button>
+              <button type="button" class="ex-nav-item" data-type="proof">证明</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 题目列表滚动视口 -->
     <div class="ex-body"></div>
-  </div>
 
   <!-- 1. 读者题目勘误反馈子模态窗 -->
   <div id="ex-feedback-modal" class="ex-submodal-overlay hidden" role="dialog" aria-modal="true" aria-label="读者题目勘误反馈">
     <div class="ex-submodal-box">
       <div class="ex-submodal-header">
         <div class="ex-submodal-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
+          <md-icon class="ex-submodal-icon">rate_review</md-icon>
           <span>题目勘误与读者反馈</span>
         </div>
         <button type="button" class="ex-submodal-close" data-action="close-feedback-modal" aria-label="关闭">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <md-icon class="ex-submodal-close-icon">close</md-icon>
         </button>
       </div>
       <div class="ex-submodal-body">
@@ -214,9 +195,7 @@ const typographyPresets = listTypographyPresets();
       <div class="ex-submodal-footer">
         <button type="button" class="ex-btn ex-btn-secondary" data-action="close-feedback-modal">取消</button>
         <button type="button" class="ex-btn ex-btn-primary" id="ex-fb-submit-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
+          <md-icon class="ex-btn-mdicon">send</md-icon>
           <span>提交反馈</span>
         </button>
       </div>
@@ -228,25 +207,16 @@ const typographyPresets = listTypographyPresets();
     <div class="ex-submodal-box ex-editor-box">
       <div class="ex-submodal-header">
         <div class="ex-submodal-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="16 18 22 12 16 6" />
-            <polyline points="8 6 2 12 8 18" />
-          </svg>
+          <md-icon class="ex-submodal-icon">code</md-icon>
           <span>题目源码查看与热持久化编辑器</span>
           <span class="ex-dev-tag">Developer Mode</span>
         </div>
         <div class="ex-header-actions">
           <button type="button" class="ex-icon-btn" id="ex-src-copy-btn" title="复制完整 JSON 源码">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-            </svg>
+            <md-icon class="ex-btn-mdicon">content_copy</md-icon>
           </button>
           <button type="button" class="ex-submodal-close" data-action="close-source-modal" aria-label="关闭">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <md-icon class="ex-submodal-close-icon">close</md-icon>
           </button>
         </div>
       </div>
@@ -260,11 +230,7 @@ const typographyPresets = listTypographyPresets();
         <div class="ex-footer-status" id="ex-src-status-msg"></div>
         <button type="button" class="ex-btn ex-btn-secondary" data-action="close-source-modal">取消</button>
         <button type="button" class="ex-btn ex-btn-primary" id="ex-src-save-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-            <polyline points="17 21 17 13 7 13 7 21" />
-            <polyline points="7 3 7 8 15 8" />
-          </svg>
+          <md-icon class="ex-btn-mdicon">save</md-icon>
           <span>保存修改并热重载</span>
         </button>
       </div>
@@ -276,16 +242,11 @@ const typographyPresets = listTypographyPresets();
     <div class="ex-submodal-box">
       <div class="ex-submodal-header">
         <div class="ex-submodal-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-          </svg>
+          <md-icon class="ex-submodal-icon">auto_awesome</md-icon>
           <span>分享我的 AI 规范题解</span>
         </div>
         <button type="button" class="ex-submodal-close" data-action="close-upload-modal" aria-label="关闭">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <md-icon class="ex-submodal-close-icon">close</md-icon>
         </button>
       </div>
       <div class="ex-submodal-body">
@@ -318,11 +279,7 @@ const typographyPresets = listTypographyPresets();
       <div class="ex-submodal-footer">
         <button type="button" class="ex-btn ex-btn-secondary" data-action="close-upload-modal">取消</button>
         <button type="button" class="ex-btn ex-btn-primary" id="ex-ai-upload-submit-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="16 16 12 12 8 16" />
-            <line x1="12" y1="12" x2="12" y2="21" />
-            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
-          </svg>
+          <md-icon class="ex-btn-mdicon">cloud_upload</md-icon>
           <span>上传并全网共享</span>
         </button>
       </div>
@@ -335,13 +292,7 @@ const typographyPresets = listTypographyPresets();
       <!-- 模态窗顶栏: 学术标题与关闭入口 -->
       <div class="ex-submodal-header">
         <div class="ex-submodal-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
-            <polyline points="10 9 9 9 8 9" />
-          </svg>
+          <md-icon class="ex-submodal-icon">description</md-icon>
           <div class="ex-submodal-title-wrap">
             <span class="ex-submodal-title-text">导出学术 LaTeX / PDF</span>
             <span class="ex-submodal-title-sub" id="ex-latex-modal-meta">当前选定题量加载中...</span>
@@ -349,10 +300,7 @@ const typographyPresets = listTypographyPresets();
         </div>
         <div class="ex-header-actions">
           <button type="button" class="ex-submodal-close" data-action="close-latex-modal" aria-label="关闭" title="关闭 (Esc)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <md-icon class="ex-submodal-close-icon">close</md-icon>
           </button>
         </div>
       </div>
@@ -588,11 +536,7 @@ const typographyPresets = listTypographyPresets();
                 </div>
                 <div class="ex-delivery-card-action">
                   <button type="button" class="ex-btn ex-btn-primary" id="ex-latex-overleaf-btn" title="在 Overleaf 在线打开排版">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-                      <path d="M2 12h20" />
-                    </svg>
+                    <md-icon class="ex-btn-mdicon">open_in_new</md-icon>
                     <span>在 Overleaf 中排版 ↗</span>
                   </button>
                 </div>
@@ -608,18 +552,11 @@ const typographyPresets = listTypographyPresets();
                 </div>
                 <div class="ex-delivery-card-action ex-delivery-actions-row">
                   <button type="button" class="ex-btn ex-btn-secondary" id="ex-latex-download-btn" title="下载 .tex 源码文档">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="7 10 12 15 17 10" />
-                      <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
+                    <md-icon class="ex-btn-mdicon">download</md-icon>
                     <span>下载 .tex 源码</span>
                   </button>
                   <button type="button" class="ex-btn ex-btn-secondary" id="ex-latex-copy-btn" title="复制完整 LaTeX 代码至剪贴板">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                    </svg>
+                    <md-icon class="ex-btn-mdicon">content_copy</md-icon>
                     <span>复制代码</span>
                   </button>
                 </div>
@@ -631,10 +568,7 @@ const typographyPresets = listTypographyPresets();
                   <div class="ex-delivery-card-header-row">
                     <div class="ex-delivery-card-title">自动化云端生成 PDF</div>
                     <button type="button" class="ex-card-cfg-link" id="ex-latex-open-settings-btn" title="配置 GitHub Actions 编译凭据">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3" />
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                      </svg>
+                      <md-icon class="ex-card-cfg-icon">settings</md-icon>
                       <span>编译凭据</span>
                     </button>
                   </div>
@@ -644,13 +578,7 @@ const typographyPresets = listTypographyPresets();
                 </div>
                 <div class="ex-delivery-card-action">
                   <button type="button" class="ex-btn ex-btn-secondary" id="ex-latex-start-compile-btn" title="发起云端 XeLaTeX 编译生成 PDF">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                      <line x1="12" y1="18" x2="12" y2="12" />
-                      <line x1="9" y1="15" x2="12" y2="18" />
-                      <line x1="15" y1="15" x2="12" y2="18" />
-                    </svg>
+                    <md-icon class="ex-btn-mdicon">play_arrow</md-icon>
                     <span>开始生成 PDF →</span>
                   </button>
                 </div>
@@ -660,17 +588,12 @@ const typographyPresets = listTypographyPresets();
               <details class="ex-latex-code-drawer" id="ex-latex-code-drawer">
                 <summary class="ex-latex-code-summary">
                   <div class="ex-drawer-summary-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="16 18 22 12 16 6" />
-                      <polyline points="8 6 2 12 8 18" />
-                    </svg>
+                    <md-icon class="ex-drawer-icon">code</md-icon>
                     <span>查看完整 LaTeX 源码</span>
                   </div>
                   <div class="ex-drawer-summary-meta">
                     <span id="ex-latex-stat-lines" class="ex-code-stat-text">0 行代码</span>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ex-drawer-arrow">
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
+                    <md-icon class="ex-drawer-arrow">expand_more</md-icon>
                   </div>
                 </summary>
                 <div class="ex-latex-code-body">
@@ -708,9 +631,7 @@ const typographyPresets = listTypographyPresets();
         <!-- 交付顶栏导航 -->
         <div class="ex-result-header">
           <button type="button" class="ex-btn ex-btn-secondary ex-btn-sm" id="ex-latex-back-config-btn" title="返回修改排版参数">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
+            <md-icon class="ex-btn-mdicon">arrow_back</md-icon>
             <span>返回修改配置</span>
           </button>
           <div class="ex-result-status-wrap">
@@ -726,7 +647,7 @@ const typographyPresets = listTypographyPresets();
           <div class="ex-pipeline-viewer" id="ex-pipeline-viewer">
             <!-- 编译等待动效卡片 -->
             <div class="ex-pipeline-loading hidden" id="ex-pipeline-loading-card">
-              <div class="ex-pipeline-spinner"></div>
+              <md-circular-progress indeterminate class="m3-loading-circular-core" style="--md-circular-progress-size: 38px; width: 38px; height: 38px; margin-bottom: 0.75rem;"></md-circular-progress>
               <div class="ex-pipeline-loading-title" id="ex-loading-title">正在排版生成 PDF...</div>
               <div class="ex-pipeline-loading-sub" id="ex-loading-sub">GitHub Actions 正在载入 TeX Live 2024 环境并编译宏包</div>
               <div class="ex-pipeline-progress-track">
@@ -737,10 +658,7 @@ const typographyPresets = listTypographyPresets();
             <!-- 耗时较长挂起卡片 -->
             <div class="ex-pipeline-timeout hidden" id="ex-pipeline-timeout-card">
               <div class="ex-pipeline-timeout-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
+                <md-icon class="ex-pipeline-timeout-mdicon">hourglass_empty</md-icon>
               </div>
               <div class="ex-pipeline-timeout-title">云端编译仍在进行中</div>
               <div class="ex-pipeline-timeout-desc" id="ex-pipeline-timeout-desc">
@@ -761,10 +679,7 @@ const typographyPresets = listTypographyPresets();
           <!-- 折叠诊断日志 (排查编译问题时可展开查看) -->
           <details class="ex-pipeline-log-drawer" id="ex-pipeline-log-drawer">
             <summary class="ex-log-summary">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="4 17 10 11 4 5" />
-                <line x1="12" y1="19" x2="20" y2="19" />
-              </svg>
+              <md-icon class="ex-log-icon">terminal</md-icon>
               <span>查看 XeLaTeX 编译诊断日志</span>
             </summary>
             <pre class="ex-log-terminal" id="ex-latex-log-pre">等待编译启动...</pre>
@@ -785,21 +700,13 @@ const typographyPresets = listTypographyPresets();
 
             <!-- 编译就绪次级打印 -->
             <button type="button" class="ex-btn ex-btn-secondary hidden" id="ex-latex-print-btn" title="调起系统打印面板">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 6 2 18 2 18 9" />
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                <rect x="6" y="14" width="12" height="8" />
-              </svg>
+              <md-icon class="ex-btn-mdicon">print</md-icon>
               <span>调起打印</span>
             </button>
 
             <!-- 编译就绪主 CTA: 下载 PDF -->
             <button type="button" class="ex-btn ex-btn-primary" id="ex-latex-download-pdf-btn" title="下载高清矢量 PDF 文件">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
+              <md-icon class="ex-btn-mdicon">download</md-icon>
               <span id="ex-latex-download-pdf-text">下载 PDF</span>
             </button>
           </div>
@@ -813,17 +720,11 @@ const typographyPresets = listTypographyPresets();
     <div class="ex-submodal-box ex-settings-dialog-box">
       <div class="ex-submodal-header">
         <div class="ex-submodal-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-          </svg>
+          <md-icon class="ex-submodal-icon">settings</md-icon>
           <span>GitHub Actions 编译池凭证设置</span>
         </div>
         <button type="button" class="ex-submodal-close" id="ex-close-settings-modal-btn" aria-label="关闭">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <md-icon class="ex-submodal-close-icon">close</md-icon>
         </button>
       </div>
       <div class="ex-settings-dialog-body">
@@ -862,11 +763,16 @@ const typographyPresets = listTypographyPresets();
     </div>
   </div>
 
-  <!-- 全局 Toast 提示容器 -->
-  <div id="ex-toast-box" class="ex-toast-box" aria-live="polite"></div>
+    <!-- 全局 Toast 提示容器 -->
+    <div id="ex-toast-box" class="ex-toast-box" aria-live="polite"></div>
+  </div>
+  </md-dialog>
 </div>
 
 <script>
+  import '@material/web/dialog/dialog.js';
+  import '@material/web/icon/icon.js';
+  import '@material/web/progress/circular-progress.js';
   let controllerPromise: Promise<any> | null = null;
   async function loadAndOpen(detail?: any) {
     try {

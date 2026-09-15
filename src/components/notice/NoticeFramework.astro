@@ -13,11 +13,14 @@
  */
 
 import { collections } from '@/config/collections.config.mjs';
-import { resolveNotices } from '@/config/notices.config.mjs';
+import { resolveNotices, NOTICE_PRESETS, ROUTE_NOTICES } from '@/config/notices.config.mjs';
 import WikiNotice from './WikiNotice.astro';
 import ChromeNotice from './ChromeNotice.astro';
 
 const pathname = Astro.url.pathname;
+const entry = (Astro.locals as any)?.starlightRoute?.entry;
+const entryId = entry?.id || '';
+const entrySlug = entry?.slug || '';
 
 let currentBook = null;
 let currentCol = null;
@@ -31,15 +34,36 @@ for (const col of collections) {
   }
 }
 
-// 提取当前章节 frontmatter 中的 notices (若有)
-const frontmatterNotices = (Astro.locals as any)?.starlightRoute?.entry?.data?.notices || [];
+// 1. 匹配路由/范围规则提示 (ROUTE_NOTICES)
+const matchedRouteNotices = (ROUTE_NOTICES || [])
+  .filter(rule => {
+    if (typeof rule.pattern === 'string') {
+      return pathname.startsWith(rule.pattern) || entryId.startsWith(rule.pattern) || entrySlug.startsWith(rule.pattern);
+    }
+    if (rule.pattern instanceof RegExp) {
+      return rule.pattern.test(pathname) || rule.pattern.test(entryId) || rule.pattern.test(entrySlug);
+    }
+    return false;
+  })
+  .flatMap(rule => rule.notices || []);
 
-// 解析得到当前页激活的所有提示
-const notices = resolveNotices(currentBook?.notices, frontmatterNotices);
+// 2. 识别是否为开发文档页面（/dev 系列技术文档）
+const isDevDoc = pathname.includes('/dev') || entryId.startsWith('dev') || entrySlug.startsWith('dev');
+
+// 3. 提取当前章节 frontmatter 中的 notices (若有)
+const frontmatterNotices = entry?.data?.notices || [];
+
+// 4. 多层级优先级解析：Route -> Collection -> Book -> Frontmatter
+const notices = resolveNotices(
+  matchedRouteNotices,
+  currentCol?.notices,
+  currentBook?.notices,
+  frontmatterNotices
+);
 ---
 
 {notices && notices.length > 0 && (
-  <div class="astrolib-notice-framework" data-book-slug={currentBook?.slug}>
+  <div class="astrolib-notice-framework" data-book-slug={currentBook?.slug || (isDevDoc ? 'dev' : undefined)}>
     {notices.map(notice => (
       notice.variant === 'chrome' ? (
         <ChromeNotice notice={notice} />

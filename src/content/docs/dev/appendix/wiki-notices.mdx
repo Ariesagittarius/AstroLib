@@ -1,0 +1,261 @@
+---
+title: 文章提示条与 Wiki 标签使用指南
+description: 如何在单篇文章、整本书或特定路由范围添加与自定义 Wiki 提示条，以及如何创建可复用的参数化模板。
+notices:
+  - template: aiGenerated
+    model: Gemini 3.8 Flash
+    tags: [AI撰写, Gemini 3.8 Flash]
+---
+
+## 概述与层级模型
+
+AstroLib 内置了声明式的全站提示框架（**Notice Framework**），支持在正文上方以 **MediaWiki ambox** 风格（`WikiNotice`）展示学术出版提示、AI 生成说明、自动化提取免责声明、勘误指引或翻译说明。
+
+全站提示条采用**多层级继承与级联覆盖模型**。自顶向下的生效优先级如下：
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  1. 页面级 Frontmatter (最高优先级，可局部微调或单页禁用)    │
+│     src/content/docs/**/*.mdx                               │
+├─────────────────────────────────────────────────────────────┤
+│  2. 图书级 Book Notices (整本书生效)                        │
+│     src/config/collections.config.mjs -> book.notices       │
+├─────────────────────────────────────────────────────────────┤
+│  3. 合集级 Collection Notices (整个学科合集生效)            │
+│     src/config/collections.config.mjs -> col.notices        │
+├─────────────────────────────────────────────────────────────┤
+│  4. 路由级 Route Notices (路径前缀或正则匹配批量生效)         │
+│     src/config/notices.config.mjs -> ROUTE_NOTICES          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+> [!NOTE]
+> 同一个 `id`（若未指定则默认采用 `template` 名称）的提示项，后声明的高优先级规则会自动覆盖低优先级规则。如果高层级配置了 `{ template: 'ocr', disabled: true }` 或 `{ id: 'xxx', disabled: true }`，则可针对该范围静默屏蔽来自底层的继承提示。
+
+---
+
+## 场景一：在文章 Frontmatter 中使用模板并修改字段
+
+直接编辑目标章节的 `.mdx` 文件，在头部 Frontmatter 中声明 `notices` 数组。
+
+### 1. 使用内置模板并覆写参数（如修改 AI 模型）
+
+框架内置了通用参数插值引擎，模板内定义的任何 `{param}` 占位符均可在使用时直接传入覆盖：
+
+```yaml
+---
+title: 8.4 函数的凸性
+description: 函数凸性的定义、判定定理及应用例题。
+notices:
+  - template: aiGenerated
+    model: Gemini 1.5 Pro # 仅覆写模型字段！
+---
+```
+
+若需同时覆写模型、补充标签或修改展开清单项：
+
+```yaml
+---
+title: 3.2 矩阵分解
+notices:
+  - template: aiGenerated
+    model: Claude 3.7 Sonnet
+    tags: [AI生成, Claude辅助, 已人工复核]
+    items:
+      - 视觉推理模型：Nougat-v0.5
+      - 人工核对状态：定理与推导均已核对无误
+---
+```
+
+### 2. 使用内置模板的最简别名引用（使用默认值）
+
+若无需修改任何字段，直接写别名即可：
+
+```yaml
+---
+title: 导言
+notices:
+  - ocr          # 视觉 OCR 提取提示（默认 MinerU OCR）
+  - ai-generated # AI 辅助生成提示（默认 ChatGPT 5.6 Luna）
+---
+```
+
+### 3. 单篇免注册的即席动态提示（Ad-hoc Inline Notice）
+
+若只在某一篇特例文章中临时使用带变量的提示，**无需修改全局配置**，直接在 Frontmatter 中使用 `{占位符}` 并传入同名字段：
+
+```yaml
+---
+title: 习题课 04
+notices:
+  - message: 本章习题解答由 {solver} 于 {date} 整理，参考讲义第 {lectureNo} 讲。
+    solver: 李助教
+    date: 2026-09-15
+    lectureNo: 12
+    severity: neutral
+    icon: school
+    tags: [随堂讲义, 第 12 讲]
+    items:
+      - 勘误通道：通过左侧栏反馈入口提交
+---
+```
+
+---
+
+## 场景二：创建您自己的 Wiki 提示模板
+
+当需要新增一类全站通用的提示（例如“学术翻译”、“同行审阅”、“课程讲义”、“勘误说明”），可直接在 `src/config/notices.config.mjs` 的 `NOTICE_TEMPLATES` 中声明。
+
+### 1. 声明新模板
+
+在模板对象的 `message`、`tags` 和 `items` 中，可自由使用任意 `{fieldName}` 占位符，并在 `defaults` 中指定回退默认值：
+
+```javascript
+// src/config/notices.config.mjs
+export const NOTICE_TEMPLATES = {
+  // 自定义模板示例：学术翻译提示
+  translation: {
+    id: 'translation-notice',
+    severity: 'info',               // 'warning' | 'info' | 'neutral' | 'accent'
+    icon: 'translate',              // 官方矢量图标
+    tagPosition: 'lead',            // 'lead' (前置) | 'trail' (后置)
+    tags: ['中文翻译', '{status}'], // 标签也支持动态插值！
+    message: '本篇译自《{originalBook}》（原作者：{author}），目前处于 {status} 阶段。',
+    items: [
+      '主审人：{reviewer}',
+      '术语对照表标准：{termVersion}'
+    ],
+    collapsible: true,              // 展开折叠支持
+    defaults: {
+      originalBook: '经典学术教材',
+      author: '原作者',
+      status: '校订中',
+      reviewer: '教研团队',
+      termVersion: '2026.03 版'
+    }
+  },
+
+  // 自定义模板示例：同行评审提示
+  peerReview: {
+    id: 'peer-review-notice',
+    severity: 'warning',
+    icon: 'rate_review',
+    tags: ['同行评议', '{grade}'],
+    message: '本章节经 {institution} 的 {reviewer} 评审（{date}），评级推荐为：{grade}。',
+    defaults: {
+      institution: '专家组',
+      reviewer: '特邀专家',
+      date: '2026年',
+      grade: '核心研读'
+    }
+  }
+};
+```
+
+### 2. 在 MDX 中调用新模板
+
+```yaml
+---
+title: 1.1 拓扑空间与连续映射
+notices:
+  - template: translation
+    originalBook: General Topology
+    author: J. L. Kelley
+    status: 精修定稿
+    reviewer: 中国科学院数学所
+---
+```
+
+渲染系统将自动合并 `defaults` 并替换所有占位符。
+
+---
+
+## 场景三：在整本书或全局路由中批量添加提示
+
+### 1. 整本书统一生效（Book 级别）
+
+编辑 `src/config/collections.config.mjs`，在目标图书下通过 `createNotice` 或声明式对象配置：
+
+```javascript
+// src/config/collections.config.mjs
+import { createNotice, NOTICE_PRESETS } from './notices.config.mjs';
+
+{
+  id: 'math_analysis',
+  slug: 'math_analysis',
+  title: '数学分析',
+  notices: [
+    // 方式 1：使用工厂函数传递可变字段
+    createNotice('aiGenerated', { model: 'DeepSeek-R1' }),
+
+    // 方式 2：纯声明式对象
+    { template: 'ocr', engine: 'Nougat' },
+
+    // 方式 3：经典预设别名
+    NOTICE_PRESETS.mineruOcr
+  ],
+  modules: { ... }
+}
+```
+
+### 2. 路由或目录规则批量生效（Route 级别）
+
+编辑 `src/config/notices.config.mjs` 中的 `ROUTE_NOTICES`：
+
+```javascript
+// src/config/notices.config.mjs
+export const ROUTE_NOTICES = [
+  {
+    // 针对所有开发文档路由
+    pattern: /^\/dev(\/|$)/,
+    notices: [
+      createNotice('aiGenerated', {
+        id: 'dev-docs-ai-notice',
+        model: 'ChatGPT 5.6 Luna',
+        tags: ['AI生成']
+      })
+    ],
+  },
+];
+```
+
+---
+
+## 场景四：单篇排除 / 关闭继承的提示
+
+若某本书已全局继承了某个提示，但其中某几篇经过精细校对无需显示，可在该章节 Frontmatter 中显式声明 `disabled: true`：
+
+```yaml
+---
+title: 1.1 极限的严格定义
+notices:
+  - template: ocr
+    disabled: true # 针对此章节静默移除该提示
+---
+```
+
+---
+
+## 数据结构与字段全参考
+
+为了学术出版的极简与高效，数据结构已经过全面精简：
+
+| 属性名 | 类型 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `template` | `string` | `''` | 模板名称（如 `aiGenerated`, `ocr`, `translation`），支持短横线或驼峰式。 |
+| `message` | `string` | `''` | **核心提示正文**。支持 `{param}` 占位符。若传入遗留 `title` 字段会自动合一为 `message`。 |
+| `[自定义字段]` | `any` | - | **任意扩展参数**（如 `model`, `author`, `reviewer`, `date` 等），直接作为模板占位符的插值输入。 |
+| `severity` | `'warning' \| 'info' \| 'neutral' \| 'accent'` | `'warning'` | 强调色级别（橙黄警示 / 信息蓝 / 中性灰 / 品牌强调色）。 |
+| `icon` | `string` | `'smart_toy'` | 官方标准矢量图标。支持 `auto_awesome`、`smart_toy`、`rate_review`、`translate`、`school`、`science`、`warning`、`verified`、`info`。 |
+| `tags` | `string[]` | `[]` | 标签列表。支持 `{param}` 占位符插值，使用 M3 `<md-assist-chip>` 渲染。 |
+| `tagPosition` | `'lead' \| 'trail'` | `'trail'` | 标签位置。`lead` 前置于正文，`trail` 位于正文尾部。 |
+| `items` | `Array<string \| { text: string }>` | `[]` | 展开抽屉条目列表。**支持纯文本字符串数组**，条目内容全面支持占位符插值。 |
+| `collapsible`| `boolean` | `true (若有 items)` | 是否允许展开折叠抽屉。 |
+| `dismissible`| `boolean` | `false` | 是否显示会话级关闭按钮。 |
+| `id` | `string` | *(自动推导)* | 提示项唯一标识符。**通常无需手动填写**，自动根据模板名或内容哈希派生。仅在跨层级强制屏蔽时显式指定。 |
+| `disabled` | `boolean` | `false` | 设置为 `true` 时，在多级合并后彻底移除该提示项。 |
+
+> [!TIP]
+> **已废弃冗余字段**：
+> - `subtitle`：在 Wiki 风格通栏提示中无任何视觉语义，已彻底剔除，不再需要维护；
+> - `variant`：默认即为 `'wiki'`，无需重复显式指定。

@@ -1,0 +1,51 @@
+---
+title: 脚本索引与常用命令
+description: 项目 package scripts、构建脚本、导入脚本和检查脚本的用途。
+---
+
+## package.json 命令
+
+| 命令 | 用途 |
+| --- | --- |
+| `npm run dev` / `npm start` | 启动 Astro 开发服务器 |
+| `npm run build` | 构建全部派生数据并生成生产站点 |
+| `npm run build:exercises` | 编译题库静态数据 |
+| `npm run build:all` | 先生成 EPUB，再执行完整构建 |
+| `npm run preview` | 预览最近一次生产构建 |
+| `npm run epub` | 生成全部书籍 EPUB |
+| `npm run check:katex` / `npm run fix:katex` | 检查或修复公式度量 |
+| `npm run check:commit` | 检查提交信息格式 |
+| `npm run test:stripper` | 测试公共推送前的注释剥离器 |
+| `npm run push` / `npm run update` | 执行项目约定的一键提交和分发流程 |
+
+## 构建与内容检查
+
+- `build-ai-index.mjs`：为每本书生成 `public/ai-index/*.json`。
+- `build-exercise-data.mjs`：合并配置的题库并生成 `public/data/exercises/`。
+- `build-cross-ref-data.mjs`：生成跨章节引用数据。
+- `build-relation-graphs.mjs`：生成章节关系图数据。
+- `build-inspector-data.mjs`：生成模块索引数据。
+- `scan-mdx.mjs <dir>`：检查 MDX 结构和常见转换问题。
+- `check-all-datasets.mjs`：检查题库源数据。
+
+## 导入、导出与维护
+
+- `generate-epub.mjs [--only <book-slug>]`：将书籍目录打包为 EPUB。
+- `export-chapter-latex.mjs <mdx> --zip`：导出章节 LaTeX 离线包；加 `--compile` 可调用本地 XeLaTeX。
+- `process_bupt_math_archive.py`：处理大邮数学集，支持 `--mode vision`、`--sample`、`--workers` 和 `--paper-ids`。
+- `import_*.py`：现有几本书的导入脚本；运行前先阅读脚本顶部的输入路径和输出路径。
+- `clean-cjk-punctuation.mjs`、`fix-import-blank.mjs`、`fix-katex-metrics.mjs`：针对正文的维护脚本。
+- `ai_fix_card_boundaries.mjs`、`ai_fix_figures.mjs`：调用 Gemini 辅助修正 OCR 后的卡片边界和图注。
+- `format_all_figures.mjs`、`screen_figures.mjs`、`process-qrcodes.mjs`：图像与二维码处理。
+
+## 测试脚本
+
+`test-*.mjs` 覆盖 LaTeX、Typst、EPUB、跨引用、题库、AI 工具、字体和 UI 等场景。它们不是全部挂在 npm scripts 中；需要专项验证时直接运行：
+
+```powershell
+node scripts/test-crossref.mjs
+node scripts/test-typst-export.mjs
+node scripts/test-export-acceptance.mjs
+```
+
+脚本可能依赖本地字体、Python 包、XeLaTeX 或已安装的 Node 依赖。缺少依赖时先执行 `npm install`，不要把生成物提交进源目录。

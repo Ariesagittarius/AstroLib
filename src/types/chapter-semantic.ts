@@ -24,6 +24,7 @@ export type SemanticBlockKind =
   | 'solution'         // 例题解答 Solution
   | 'remark'           // 注记 Remark
   | 'note'             // 思考/注意 Note
+  | 'sidenote'         // 侧注/边注 Sidenote / Marginnote
   | 'analysis'         // 思路分析 Analysis
   | 'method'           // 方法总结 Method
   | 'academicblock'    // 法则/公式块 Academic Block

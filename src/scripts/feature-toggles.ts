@@ -72,6 +72,12 @@ import {
   saveAiAutoCollapsePreceding,
 } from '../ai/ai-config';
 
+import {
+  getLoadingIndicatorStyle,
+  setLoadingIndicatorStyle,
+  type LoadingIndicatorStyle,
+} from '../components/common/m3-loading-indicator';
+
 /** 运行时开关存储键 */
 const STORAGE_KEY = 'starlight-features';
 
@@ -532,6 +538,7 @@ export function syncAllAiSettings(): void {
       const pId = chip.getAttribute('data-provider-id');
       const isSelected = pId === activeProviderId;
       chip.selected = isSelected;
+      chip.toggleAttribute('selected', isSelected);
       chip.classList.toggle('active', isSelected);
     });
 
@@ -592,6 +599,7 @@ export function syncAllAiSettings(): void {
       const chipVal = chip.getAttribute('data-ai-mode-val');
       const isSelected = chipVal === mode;
       chip.selected = isSelected;
+      chip.toggleAttribute('selected', isSelected);
       chip.classList.toggle('active', isSelected);
     });
 
@@ -600,6 +608,7 @@ export function syncAllAiSettings(): void {
       const chipVal = chip.getAttribute('data-ai-src-val');
       const isSelected = chipVal === srcOpen;
       chip.selected = isSelected;
+      chip.toggleAttribute('selected', isSelected);
       chip.classList.toggle('active', isSelected);
     });
 
@@ -634,6 +643,7 @@ export function syncAllAiSettings(): void {
       const chipVal = chip.getAttribute('data-ai-win-val');
       const isSelected = chipVal === dimensions.preset;
       chip.selected = isSelected;
+      chip.toggleAttribute('selected', isSelected);
       chip.classList.toggle('active', isSelected);
       if (chipVal === 'custom') {
         const custW = dimensions.customWidth || dimensions.width;
@@ -783,13 +793,14 @@ function syncAllCheckboxes(): void {
 }
 
 /** 同步当前所有实例的数理标点风格 Chips */
-export function syncAllPunctChips(): void {
-  const current = loadPunctStyle();
+export function syncAllPunctChips(targetStyle?: PunctStyle): void {
+  const current = targetStyle || loadPunctStyle();
   document.querySelectorAll<any>('.ft-panel .ft-punct-chip, starlight-feature-toggles .ft-punct-chip').forEach((chip) => {
     const val = chip.getAttribute('data-punct-val');
     const active = val === current;
     chip.classList.toggle('active', active);
     chip.setAttribute('aria-selected', String(active));
+    chip.toggleAttribute('selected', active);
     if ('selected' in chip) {
       chip.selected = active;
     }
@@ -797,14 +808,15 @@ export function syncAllPunctChips(): void {
 }
 
 /** 同步当前所有实例的字体高亮按钮与官方 Chip 状态 */
-function syncAllFontButtons(): void {
-  const pref = loadFontPref();
+export function syncAllFontButtons(targetPref?: FontPref): void {
+  const pref = targetPref || loadFontPref();
   document.querySelectorAll<any>('.ft-panel .ft-font-btn, starlight-feature-toggles .ft-font-btn, .ft-panel .ft-font-chip, starlight-feature-toggles .ft-font-chip').forEach((el) => {
     const setting = el.getAttribute('data-font-setting');
     const val = el.getAttribute('data-font-val');
     const active = setting === 'latin' ? val === pref.latin : val === pref.cjk;
     el.classList.toggle('active', active);
     el.setAttribute('aria-selected', String(active));
+    el.toggleAttribute('selected', active);
     if ('selected' in el) {
       el.selected = active;
     }
@@ -1115,6 +1127,28 @@ class StarlightFeatureToggles extends HTMLElement {
       });
     });
 
+    // 加载动画风格 (M3 Morph vs M3 Native) 切换
+    const currentLoadingStyle = getLoadingIndicatorStyle();
+    const styleBtns = root.querySelectorAll<HTMLButtonElement>('.ft-loading-style-btn');
+    const updateStyleBtns = (style: string) => {
+      styleBtns.forEach((btn) => {
+        btn.classList.toggle('active', btn.getAttribute('data-loading-style-val') === style);
+      });
+    };
+    updateStyleBtns(currentLoadingStyle);
+
+    styleBtns.forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const nextStyle = btn.getAttribute('data-loading-style-val') as LoadingIndicatorStyle;
+        if (nextStyle === 'morph' || nextStyle === 'native') {
+          setLoadingIndicatorStyle(nextStyle);
+          updateStyleBtns(nextStyle);
+        }
+      });
+    });
+
     root.querySelectorAll<HTMLButtonElement>('[data-action="reset-defaults"]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -1168,16 +1202,20 @@ class StarlightFeatureToggles extends HTMLElement {
     // 标点风格切换 Chips
     root.querySelectorAll<HTMLElement>('.ft-punct-chip').forEach((chip) => {
       const handleSelect = (e: Event) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const val = chip.getAttribute('data-punct-val') as PunctStyle;
-        if (val) {
-          savePunctStyle(val);
-          syncAllPunctChips();
+        const val = chip.getAttribute('data-punct-val') as PunctStyle | null;
+        if (!val) return;
+        const current = loadPunctStyle();
+        // 单选互斥守卫：如果读者点击的是当前已激活项，禁止反选为空
+        if (val === current) {
+          e.preventDefault();
+          syncAllPunctChips(current);
+          return;
         }
+        e.stopPropagation();
+        savePunctStyle(val);
+        syncAllPunctChips(val);
       };
       chip.addEventListener('click', handleSelect);
-      chip.addEventListener('change', handleSelect);
     });
 
     // 正文字号调节滑块 (md-slider)
@@ -1203,21 +1241,31 @@ class StarlightFeatureToggles extends HTMLElement {
     const root = this.panel || this;
     root.querySelectorAll<HTMLElement>('.ft-font-btn, .ft-font-chip').forEach((btn) => {
       const handleSelect = (e: Event) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const setting = btn.getAttribute('data-font-setting');
+        const setting = btn.getAttribute('data-font-setting') as 'latin' | 'cjk' | null;
         const val = btn.getAttribute('data-font-val');
+        if (!setting || !val) return;
+
         const current = loadFontPref();
+        const currentVal = setting === 'latin' ? current.latin : current.cjk;
+
+        // 单选互斥守卫：如果读者点击的是当前已经处于激活状态的项，禁止反选为空
+        if (val === currentVal) {
+          e.preventDefault();
+          syncAllFontButtons(current);
+          return;
+        }
+
+        e.stopPropagation();
         const next: FontPref =
           setting === 'latin'
             ? { ...current, latin: parseLatin(val) }
             : { ...current, cjk: parseCjk(val) };
         saveFontPref(next);
         applyFontPref(next);
-        syncAllFontButtons();
+        syncAllFontButtons(next);
+        window.dispatchEvent(new CustomEvent('astrolib:font-change', { detail: next }));
       };
       btn.addEventListener('click', handleSelect);
-      btn.addEventListener('change', handleSelect);
     });
   }
 
@@ -1384,14 +1432,19 @@ class StarlightFeatureToggles extends HTMLElement {
     const providerChips = root.querySelectorAll<any>('.ft-ai-provider-chip-set md-filter-chip');
     providerChips.forEach((chip) => {
       chip.addEventListener('click', (e: Event) => {
-        e.preventDefault();
-        e.stopPropagation();
         const pId = chip.getAttribute('data-provider-id') as any;
-        if (pId) {
-          saveAiActiveProvider(pId);
-          clearTestStatus();
+        if (!pId) return;
+        const currentPId = getActiveAiProviderId();
+        // 单选互斥守卫：点击已激活项禁止反选
+        if (pId === currentPId) {
+          e.preventDefault();
           syncAllAiSettings();
+          return;
         }
+        e.stopPropagation();
+        saveAiActiveProvider(pId);
+        clearTestStatus();
+        syncAllAiSettings();
       });
     });
 
@@ -1512,26 +1565,36 @@ class StarlightFeatureToggles extends HTMLElement {
     // 绑定回答方式 Chips
     root.querySelectorAll<any>('.ft-ai-mode-chip-set md-filter-chip').forEach((chip) => {
       chip.addEventListener('click', (e: Event) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const modeVal = chip.getAttribute('data-ai-mode-val') as 'retrieve' | 'discussion';
-        if (modeVal) {
-          saveAiAnswerMode(modeVal);
+        const modeVal = chip.getAttribute('data-ai-mode-val') as 'retrieve' | 'discussion' | null;
+        if (!modeVal) return;
+        const currentMode = getAiAnswerMode();
+        // 单选互斥守卫：点击已激活项禁止反选
+        if (modeVal === currentMode) {
+          e.preventDefault();
           syncAllAiSettings();
+          return;
         }
+        e.stopPropagation();
+        saveAiAnswerMode(modeVal);
+        syncAllAiSettings();
       });
     });
 
     // 绑定来源跳转方式 Chips
     root.querySelectorAll<any>('.ft-ai-src-chip-set md-filter-chip').forEach((chip) => {
       chip.addEventListener('click', (e: Event) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const srcVal = chip.getAttribute('data-ai-src-val') as 'new' | 'same';
-        if (srcVal) {
-          saveAiSourceOpen(srcVal);
+        const srcVal = chip.getAttribute('data-ai-src-val') as 'new' | 'same' | null;
+        if (!srcVal) return;
+        const currentSrc = getAiSourceOpen();
+        // 单选互斥守卫：点击已激活项禁止反选
+        if (srcVal === currentSrc) {
+          e.preventDefault();
           syncAllAiSettings();
+          return;
         }
+        e.stopPropagation();
+        saveAiSourceOpen(srcVal);
+        syncAllAiSettings();
       });
     });
 
@@ -1569,9 +1632,16 @@ class StarlightFeatureToggles extends HTMLElement {
     // 绑定问答窗口宽度预设 Chips
     root.querySelectorAll<any>('.ft-ai-win-chip-set md-filter-chip').forEach((chip) => {
       chip.addEventListener('click', (e: Event) => {
-        e.preventDefault();
-        e.stopPropagation();
         const preset = chip.getAttribute('data-ai-win-val');
+        if (!preset) return;
+        const currentDims = getAiPanelDimensions();
+        // 单选互斥守卫：点击已激活项禁止反选
+        if (preset === currentDims.preset) {
+          e.preventDefault();
+          syncAllAiSettings();
+          return;
+        }
+        e.stopPropagation();
         const dims = getAiPanelDimensions();
         let width = 560;
         let height = dims.height;
@@ -1710,8 +1780,24 @@ export function initFeatureToggles(): void {
 
   apply();
   syncAllThemeModes();
+  syncAllFontButtons();
   syncAllPunctChips();
   syncAllFontSizeSliders();
+
+  // 当 @material/web 的 md-filter-chip 完成注册后触发初次水合对齐
+  if (typeof customElements !== 'undefined' && customElements.whenDefined) {
+    customElements.whenDefined('md-filter-chip').then(() => {
+      syncAllFontButtons();
+      syncAllPunctChips();
+      syncAllAiSettings();
+    }).catch(() => {});
+  }
+
+  // 监听全局字体变更（与顶栏 FontSelectOverride 保持双向联动）
+  window.addEventListener('astrolib:font-change', (e: any) => {
+    const pref = e?.detail || loadFontPref();
+    syncAllFontButtons(pref);
+  });
 
   onAiConfigChange(() => {
     syncAllAiSettings();
@@ -1762,6 +1848,9 @@ export function initFeatureToggles(): void {
     } else if (e.key === 'starlight-m3-theme-color') {
       applyThemeColor();
       syncAllThemeColors();
+    } else if (e.key === 'starlight-font') {
+      applyFontPref(loadFontPref());
+      syncAllFontButtons();
     } else if (e.key === PREWARM_PAGES_KEY) {
       syncAllPrewarmButtons();
     } else if (e.key === MAX_PAGE_CACHE_KEY) {

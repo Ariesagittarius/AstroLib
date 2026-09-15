@@ -198,6 +198,20 @@ html[data-paragraph-indent="false"] .fallback-content > p {
   text-indent: 0 !important;
 }
 
+/* 核心防御 4: 首个直接子元素为代码或代码标识的段落绝对禁止首行缩进 */
+.sl-markdown-content p:has(> code:first-child),
+.sl-markdown-content p:has(> :first-child:is(code, kbd, samp)) {
+  text-indent: 0 !important;
+}
+
+/* 核心防御 5: 项目开发与架构技术文档（/dev/*）全面顶格排版，采用标准技术文档的垂直段距流 */
+.main-pane.is-dev-doc .sl-markdown-content p,
+html[data-page-type='dev'] .sl-markdown-content p {
+  text-indent: 0 !important;
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.85rem !important;
+}
+
 /* 显式顶格排版类（支持 LaTeX \noindent 语义，如紧随公式后的“式中：/其中：”） */
 .noindent,
 .sl-markdown-content p.noindent {
@@ -547,7 +561,7 @@ html[data-paragraph-indent="false"] .fallback-content > p {
 /* ==========================================================================
    正文插图与图注专有排版系统 (VitePress-Styled Figure & Caption)
    ========================================================================== */
-.sl-markdown-content figure,
+.sl-markdown-content figure:not(.frame),
 .sl-markdown-content .vp-figure {
   margin: 1.5rem auto;
   text-align: center;
@@ -558,7 +572,7 @@ html[data-paragraph-indent="false"] .fallback-content > p {
   justify-content: center;
 }
 
-.sl-markdown-content figure img,
+.sl-markdown-content figure:not(.frame) img,
 .sl-markdown-content .vp-figure img {
   display: block;
   margin: 0 auto;
@@ -567,7 +581,7 @@ html[data-paragraph-indent="false"] .fallback-content > p {
   border-radius: 6px;
 }
 
-.sl-markdown-content figcaption,
+.sl-markdown-content figcaption:not(.header),
 .sl-markdown-content .vp-figure figcaption {
   margin-top: 0.625rem;
   font-size: 0.875rem;
@@ -577,6 +591,52 @@ html[data-paragraph-indent="false"] .fallback-content > p {
   text-align: center;
   letter-spacing: 0.02em;
   transition: color 0.2s ease;
+}
+
+/* --------------------------------------------------------------------------
+   代码块防污染与布局基准 (Expressive Code Code Block Isolation)
+   彻底杜绝正文图表排版规则（figure/figcaption 弹性居中）对代码块的意外入侵，保证满宽与左对齐
+   -------------------------------------------------------------------------- */
+.sl-markdown-content .expressive-code,
+.expressive-code {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 1.25rem 0 !important;
+  text-align: left !important;
+}
+
+.sl-markdown-content .expressive-code figure.frame,
+.expressive-code figure.frame {
+  all: unset !important;
+  display: block !important;
+  position: relative !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  text-align: left !important;
+  box-sizing: border-box !important;
+}
+
+.sl-markdown-content .expressive-code figcaption.header,
+.expressive-code figcaption.header {
+  margin-top: 0 !important;
+  letter-spacing: 0.025ch !important;
+}
+
+.sl-markdown-content .expressive-code pre,
+.expressive-code pre {
+  text-align: left !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.sl-markdown-content .expressive-code code,
+.expressive-code code,
+.sl-markdown-content .expressive-code .ec-line,
+.expressive-code .ec-line,
+.sl-markdown-content .expressive-code .ec-line .code,
+.expressive-code .ec-line .code {
+  text-align: left !important;
 }
 
 /* 多子图混排网格 (Subfigure Grid) */

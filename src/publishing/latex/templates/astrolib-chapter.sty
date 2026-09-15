@@ -7,14 +7,15 @@
 % 特性：极简、克制、纯正黑白灰阶学术版式，无任何 SaaS UI 杂讯与无谓装饰
 % =========================================================================
 
-% 基础版面与几何设定 (大学教材标准版心，舒适留白)
+% 基础版面与几何设定 (大学教材标准学术版心，对齐 book.tex 标准，告别畸窄正文与重叠侧注)
 \RequirePackage{geometry}
 \geometry{
   a4paper,
   top=2.6cm,
   bottom=2.6cm,
-  left=2.8cm,
-  right=2.8cm,
+  inner=2.5cm,
+  outer=3.2cm,
+  bindingoffset=0.6cm,
   headheight=14pt,
   headsep=1.2em,
   footskip=2.0em
@@ -38,13 +39,23 @@
 \RequirePackage{tcolorbox}
 \tcbuselibrary{skins,breakable,theorems}
 
-% 列表与枚举控制 (增强最大嵌套深度至 8 级，防止答案/复杂嵌套列表报 Too deeply nested)
+% 列表与枚举控制 (latex-document-skill Anti-Pattern 4 紧凑度量标准，增强最大嵌套深度至 8 级)
 \RequirePackage{enumitem}
 \setlistdepth{8}
 \renewlist{itemize}{itemize}{8}
-\setlist[itemize]{label=\textbullet, nosep, leftmargin=2em}
+\setlist[itemize]{label=\textbullet, nosep, leftmargin=*, topsep=2pt, partopsep=0pt}
 \renewlist{enumerate}{enumerate}{8}
-\setlist[enumerate]{label=\arabic*., nosep, leftmargin=2em}
+\setlist[enumerate]{nosep, leftmargin=*, topsep=2pt, partopsep=0pt}
+\setlist[enumerate,1]{label=\arabic*., nosep, leftmargin=*}
+\setlist[enumerate,2]{label=(\arabic*), nosep, leftmargin=*}
+\setlist[enumerate,3]{label=(\alph*), nosep, leftmargin=*}
+
+% 学术注记兜底宏（直接映射至流式 remark 环境）
+\NewDocumentCommand\astrolibsidenote{ O{注} +m }{%
+  \begin{remark}[#1]
+    #2
+  \end{remark}%
+}
 
 % 页眉页脚 (fancyhdr) - 顶栏选用典雅楷体
 \RequirePackage{fancyhdr}
@@ -58,30 +69,56 @@
 \fancyfoot[C]{\small\normalfont 第 \thepage\ 页}
 
 % =========================================================================
-% 章节标题排版规范：统一采用黑体方案（\sffamily\bfseries），彻底杜绝加粗宋体
+% 标宋 (高字重思源宋体/标宋) 专用字族 (\biaosong)
+% =========================================================================
+\IfFontExistsTF{SourceHanSerifSC-Bold.otf}{%
+  \setCJKfamilyfont{zhbiaosong}{SourceHanSerifSC-Bold.otf}%
+}{%
+  \IfFontExistsTF{Source Han Serif SC Bold}{%
+    \setCJKfamilyfont{zhbiaosong}{Source Han Serif SC Bold}%
+  }{%
+    \IfFontExistsTF{Noto Serif CJK SC Bold}{%
+      \setCJKfamilyfont{zhbiaosong}{Noto Serif CJK SC Bold}%
+    }{%
+      \IfFontExistsTF{FandolSong-Bold.otf}{%
+        \setCJKfamilyfont{zhbiaosong}{FandolSong-Bold.otf}%
+      }{%
+        \IfFontExistsTF{STZhongsong}{%
+          \setCJKfamilyfont{zhbiaosong}{STZhongsong}%
+        }{%
+          \setCJKfamilyfont{zhbiaosong}{SimSun}[AutoFakeBold=true]%
+        }%
+      }%
+    }%
+  }%
+}
+\providecommand{\biaosong}{\CJKfamily{zhbiaosong}}
+
+% =========================================================================
+% 章节标题排版规范：统一采用思源宋体高字重/标宋方案（\biaosong\bfseries）
 % =========================================================================
 \ctexset{
   section = {
-    format = \Large\bfseries\sffamily,
+    format = \Large\bfseries\biaosong,
     aftername = \quad,
   },
   subsection = {
-    format = \large\bfseries\sffamily,
+    format = \large\bfseries\biaosong,
     aftername = \quad,
   },
   subsubsection = {
-    format = \normalsize\bfseries\sffamily,
+    format = \normalsize\bfseries\biaosong,
     aftername = \quad,
   },
   paragraph = {
-    format = \normalsize\bfseries\sffamily,
+    format = \normalsize\bfseries\biaosong,
     aftername = \quad,
   }
 }
 \@ifclassloaded{ctexbook}{
   \ctexset{
     chapter = {
-      format = \huge\bfseries\sffamily\centering,
+      format = \huge\bfseries\biaosong\centering,
       aftername = \quad,
     }
   }
@@ -181,7 +218,7 @@
     boxrule=0.38pt,
     colback=white,
     colframe=black!32,
-    fonttitle=\sffamily\bfseries,
+    fonttitle=\biaosong\bfseries,
     coltitle=black,
     attach title to upper={\;\ },
     separator sign={},
@@ -200,7 +237,7 @@
   colframe=black!45,
   colback=white,
   separator sign={\ },
-  description font=\sffamily,
+  description font=\biaosong,
 }{thm}
 \makeatletter
 \renewcommand{\thetcb@cnt@theorem}{\astrolibchapternum\arabic{tcb@cnt@theorem}}
@@ -211,56 +248,56 @@
   colframe=black!35,
   colback=white,
   separator sign={\ },
-  description font=\sffamily,
+  description font=\biaosong,
 }{def}
 \newtcbtheorem[use counter from=theorem]{lemma}{引理}{
   astrolib-box,
   colframe=black!38,
   colback=white,
   separator sign={\ },
-  description font=\sffamily,
+  description font=\biaosong,
 }{lem}
 \newtcbtheorem[use counter from=theorem]{corollary}{推论}{
   astrolib-box,
   colframe=black!38,
   colback=white,
   separator sign={\ },
-  description font=\sffamily,
+  description font=\biaosong,
 }{cor}
 \newtcbtheorem[use counter from=theorem]{proposition}{命题}{
   astrolib-box,
   colframe=black!38,
   colback=white,
   separator sign={\ },
-  description font=\sffamily,
+  description font=\biaosong,
 }{prop}
 \newtcbtheorem[use counter from=theorem]{axiom}{公理}{
   astrolib-box,
   colframe=black!45,
   colback=white,
   separator sign={\ },
-  description font=\sffamily,
+  description font=\biaosong,
 }{axm}
 \newtcbtheorem[use counter from=theorem]{property}{性质}{
   astrolib-box,
   colframe=black!35,
   colback=white,
   separator sign={\ },
-  description font=\sffamily,
+  description font=\biaosong,
 }{prp}
 \newtcbtheorem[use counter from=theorem]{criterion}{准则}{
   astrolib-box,
   colframe=black!42,
   colback=white,
   separator sign={\ },
-  description font=\sffamily,
+  description font=\biaosong,
 }{crit}
 \newtcbtheorem[use counter from=theorem]{academicblock}{法则}{
   astrolib-box,
   colframe=black!32,
   colback=white,
   separator sign={\ },
-  description font=\sffamily,
+  description font=\biaosong,
 }{blk}
 
 % 2. 例题与变式系统 (独立按 astrolibchapternum 编号，柔和微浅灰底)
@@ -269,7 +306,7 @@
   colframe=black!28,
   colback=black!1.8,
   separator sign={\ },
-  description font=\sffamily,
+  description font=\biaosong,
 }{ex}
 \makeatletter
 \renewcommand{\thetcb@cnt@example}{\astrolibchapternum\arabic{tcb@cnt@example}}
@@ -280,7 +317,7 @@
   colframe=black!22,
   colback=black!1.2,
   separator sign={\ },
-  description font=\sffamily,
+  description font=\biaosong,
 }{var}
 
 % 3. 方法总结与解题指南
@@ -289,16 +326,16 @@
   colframe=black!35,
   colback=black!1.5,
   separator sign={\ },
-  description font=\sffamily,
+  description font=\biaosong,
 }{meth}
 
 % 4. 证明环境 (严谨 amsthm 标准，结尾自动附加 Halmos 墓碑符 \qedsymbol)
-\renewcommand{\proofname}{\sffamily\bfseries 证明}
+\renewcommand{\proofname}{\biaosong\bfseries 证明}
 % amsthm 原生 proof 已经非常完美，此处保留其纯正行为
 
 % 5. 解题环境 (例题解答，与严谨证明在学术语义上严格区分)
 % 消费 Academic Typography Hooks 保证与正文字体同阶同族，消除粗黑断裂
-\providecommand{\astrolibsolutionhead}[1][解]{{\normalfont\sffamily\bfseries 【#1】}}
+\providecommand{\astrolibsolutionhead}[1][解]{{\normalfont\biaosong\bfseries 【#1】}}
 \newenvironment{solution}[1][解]{%
   \par\vspace{0.4em}\noindent\astrolibsolutionhead[#1]\;\ %
 }{%
@@ -311,12 +348,13 @@
   breakable,
   left=1.2em,
   borderline west={1.2pt}{0pt}{black!35},
-  fonttitle=\sffamily\bfseries,
-  coltitle=black!80,
+  fonttitle=\biaosong\bfseries,
+  coltitle=black!85,
   title={【#1】},
   attach title to upper={\;\ },
-  before skip=1.0em plus 0.2em minus 0.1em,
-  after skip=1.0em plus 0.2em minus 0.1em
+  fontupper=\small\kaishu,
+  before skip=0.9em plus 0.2em minus 0.1em,
+  after skip=0.9em plus 0.2em minus 0.1em
 }
 
 % 7. 思路分析 (弱化学术引导)
@@ -326,11 +364,12 @@
   left=1.2em,
   borderline west={0.9pt}{0pt}{black!28},
   fonttitle=\sffamily\itshape,
-  coltitle=black!70,
+  coltitle=black!75,
   title={【#1】},
   attach title to upper={\;\ },
-  before skip=0.8em,
-  after skip=0.8em
+  fontupper=\small\kaishu,
+  before skip=0.8em plus 0.2em minus 0.1em,
+  after skip=0.8em plus 0.2em minus 0.1em
 }
 
 % 8. 导读与总结
