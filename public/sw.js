@@ -5,7 +5,8 @@
  * 1. App Shell 预缓存：仅缓存核心骨架与离线兜底页，拒绝盲目全量预取
  * 2. 静态长效缓存 (CacheFirst)：思源字体切片 (woff2)、KaTeX 样式与静态图标
  * 3. 动态阅读缓存 (NetworkFirst)：读者读到哪一章，自动持久化哪一章，断网秒开
- * 4. LRU 容量守卫：限制动态章节缓存最大数量（60篇），杜绝磁盘无节制膨胀
+ * 4. 离线全量数据包专属缓存 (PACK_CACHE)：接收从 GitHub 下载的数据包，不受 LRU 淘汰
+ * 5. LRU 容量守卫：仅限制临时动态章节缓存（60篇），杜绝磁盘无节制膨胀
  * ============================================================================
  */
 
@@ -13,6 +14,7 @@ const CACHE_VERSION = 'astrolib-pwa-v1';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
+const PACK_CACHE = `${CACHE_VERSION}-pack`; // 离线数据包专属缓存桶，永久保存不受 LRU 修剪
 
 // 仅预缓存极轻量的核心外壳 (< 500KB)，保障秒级完成激活
 const PRECACHE_URLS = [
@@ -25,11 +27,11 @@ const PRECACHE_URLS = [
   '/favicon.svg'
 ];
 
-// 动态缓存上限（保留最近访问的 60 个页面/数据条目）
+// 动态临时缓存上限（仅针对日常访问产生的 RUNTIME_CACHE）
 const MAX_RUNTIME_ITEMS = 60;
 
 /**
- * LRU 清理：防止动态缓存超出条目上限
+ * LRU 清理：防止动态缓存超出条目上限（严格限定于 runtime 桶）
  */
 async function trimCache(cacheName, maxItems) {
   try {
@@ -140,12 +142,28 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(async () => {
-          // 断网或拉取失败：优先寻找本地已读过的缓存
-          const cachedResponse = await caches.match(request);
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-          // 若为 HTML 导航且无本地缓存，返回优雅离线提示页
+          // 断网或拉取失败：依次在各个缓存桶中寻找
+          // 1. 先查日常动态缓存 (RUNTIME_CACHE)
+          let cachedResponse = await (await caches.open(RUNTIME_CACHE)).match(request);
+          if (cachedResponse) return cachedResponse;
+
+          // 2. 再查从 GitHub 导入的离线数据包专属缓存 (PACK_CACHE)
+          try {
+            const packCache = await caches.open(PACK_CACHE);
+            cachedResponse = await packCache.match(request);
+            if (!cachedResponse) {
+              // 兼容可能带或不带末尾斜杠的请求
+              const altPath = url.pathname.endsWith('/') ? url.pathname.slice(0, -1) : url.pathname + '/';
+              cachedResponse = await packCache.match(altPath);
+            }
+            if (cachedResponse) return cachedResponse;
+          } catch (e) {}
+
+          // 3. 全局匹配 (SHELL_CACHE)
+          cachedResponse = await caches.match(request);
+          if (cachedResponse) return cachedResponse;
+
+          // 4. 若为 HTML 导航且无本地缓存，返回优雅离线提示页
           if (isNavigation) {
             const offlinePage = await caches.match('/offline.html');
             if (offlinePage) {
@@ -169,8 +187,34 @@ self.addEventListener('fetch', (event) => {
 });
 
 // 4. 客户端与 Service Worker 实时通信通道
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
+self.addEventListener('message', async (event) => {
+  const data = event.data;
+  if (!data) return;
+
+  if (data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  } else if (data.type === 'CLEAR_PACK_CACHE') {
+    try {
+      await caches.delete(PACK_CACHE);
+      if (event.ports && event.ports[0]) {
+        event.ports[0].postMessage({ success: true });
+      }
+    } catch (err) {
+      if (event.ports && event.ports[0]) {
+        event.ports[0].postMessage({ success: false, error: String(err) });
+      }
+    }
+  } else if (data.type === 'GET_PACK_COUNT') {
+    try {
+      const packCache = await caches.open(PACK_CACHE);
+      const keys = await packCache.keys();
+      if (event.ports && event.ports[0]) {
+        event.ports[0].postMessage({ count: keys.length });
+      }
+    } catch {
+      if (event.ports && event.ports[0]) {
+        event.ports[0].postMessage({ count: 0 });
+      }
+    }
   }
 });

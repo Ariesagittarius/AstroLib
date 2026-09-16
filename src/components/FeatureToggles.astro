@@ -105,10 +105,11 @@ const metaJson = JSON.stringify(featureMeta);
         </div>
       </div>
 
-      <!-- 核心能力：独立应用与离线 (PWA) -->
+      <!-- 核心能力：独立应用与全量离线 (PWA) -->
       {
         features.pwa?.enabled && (
           <div class="ft-pwa-card" id="ft-pwa-card">
+            <!-- 1. 独立窗口安装行 -->
             <div class="ft-pwa-main">
               <div class="ft-pwa-icon-wrap" aria-hidden="true">
                 <!-- Google Material Symbols 官方 Outlined 电脑与应用安装 (install_desktop) -->
@@ -122,13 +123,53 @@ const metaJson = JSON.stringify(featureMeta);
                   <span class="ft-pwa-badge" data-pwa-badge aria-live="polite">可安装</span>
                 </div>
                 <div class="ft-pwa-desc" data-pwa-desc>
-                  在专用独立窗口中运行，支持离线阅读与断网秒开
+                  在专用独立窗口中运行，享纯净沉浸学术阅读
                 </div>
               </div>
               <div class="ft-pwa-action">
                 <button type="button" class="ft-pwa-install-btn" data-pwa-install-btn title="安装 AstroLib 为独立应用">
                   <span class="ft-pwa-btn-text">安装应用</span>
                 </button>
+              </div>
+            </div>
+
+            <!-- 分割细线 -->
+            <div class="ft-pwa-divider" aria-hidden="true"></div>
+
+            <!-- 2. 全量离线数据包下载行 (零主站流量 · 从 GitHub 拉取) -->
+            <div class="ft-pwa-pack-box">
+              <div class="ft-pwa-pack-header">
+                <div class="ft-pwa-pack-icon-wrap" aria-hidden="true">
+                  <!-- Google Material Symbols 官方 Outlined 云端下载 (cloud_download) -->
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                    <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+                  </svg>
+                </div>
+                <div class="ft-pwa-pack-texts">
+                  <div class="ft-pwa-title-row">
+                    <span class="ft-pwa-pack-title">离线数据包</span>
+                    <span class="ft-pwa-badge ft-pwa-pack-badge" data-pwa-pack-badge aria-live="polite">未下载</span>
+                  </div>
+                  <div class="ft-pwa-desc ft-pwa-pack-desc" data-pwa-pack-desc>
+                    从 GitHub 一次性下载全站离线包，断网秒开，不消耗主站流量
+                  </div>
+                </div>
+                <div class="ft-pwa-pack-actions">
+                  <button type="button" class="ft-pwa-pack-btn ft-pwa-download-pack-btn" data-pwa-download-pack-btn title="从 GitHub 下载全站离线数据包">
+                    <span class="ft-pwa-pack-btn-text">下载离线包</span>
+                  </button>
+                  <button type="button" class="ft-pwa-pack-btn ft-pwa-clear-pack-btn hidden" data-pwa-clear-pack-btn title="清除本地已缓存离线数据包并释放存储">
+                    <span>清空</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 进度条容器 (默认隐藏，下载时激活) -->
+              <div class="ft-pwa-progress-container hidden" data-pwa-progress-wrap>
+                <div class="ft-pwa-progress-bar-bg">
+                  <div class="ft-pwa-progress-bar-fill" data-pwa-progress-fill style="width: 0%;"></div>
+                </div>
+                <div class="ft-pwa-progress-status-text" data-pwa-progress-text>准备下载...</div>
               </div>
             </div>
           </div>
@@ -1318,6 +1359,151 @@ const metaJson = JSON.stringify(featureMeta);
     border-color: var(--sl-color-gray-5);
     background-color: transparent;
     color: var(--sl-color-gray-3);
+  }
+
+  /* PWA 卡片内分割线 */
+  .ft-pwa-divider {
+    height: 1px;
+    background-color: var(--sl-color-hairline, #e2e2e3);
+    margin: 0.65rem 0 0.55rem 0;
+    opacity: 0.6;
+  }
+
+  /* 离线数据包子区域 */
+  .ft-pwa-pack-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .ft-pwa-pack-header {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  .ft-pwa-pack-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.85rem;
+    height: 1.85rem;
+    border-radius: 50%;
+    background-color: var(--sl-color-gray-6, rgba(125, 125, 125, 0.08));
+    color: var(--sl-color-gray-2);
+    flex-shrink: 0;
+  }
+
+  .ft-pwa-pack-texts {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .ft-pwa-pack-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--sl-color-white, #1a1a1a);
+    line-height: 1.2;
+  }
+
+  .ft-pwa-pack-badge {
+    background-color: var(--sl-color-gray-6, rgba(125, 125, 125, 0.12));
+    color: var(--sl-color-gray-3);
+  }
+
+  .ft-pwa-pack-badge.is-loaded {
+    background-color: var(--sl-color-text-accent);
+    color: #ffffff;
+  }
+
+  .ft-pwa-pack-desc {
+    font-size: 0.7rem;
+    color: var(--sl-color-gray-3, #71717a);
+    line-height: 1.3;
+  }
+
+  .ft-pwa-pack-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+  }
+
+  .ft-pwa-pack-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.24rem 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 500;
+    border-radius: 6px;
+    border: 1px solid var(--sl-color-hairline, #d1d5db);
+    background-color: var(--sl-color-bg, #ffffff);
+    color: var(--sl-color-gray-1, #374151);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1.2;
+  }
+
+  .ft-pwa-pack-btn:hover:not(:disabled) {
+    border-color: var(--sl-color-text-accent);
+    color: var(--sl-color-text-accent);
+    background-color: var(--sl-color-accent-low, rgba(52, 81, 178, 0.06));
+  }
+
+  .ft-pwa-pack-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .ft-pwa-download-pack-btn {
+    border-color: var(--sl-color-text-accent);
+    background-color: var(--sl-color-accent-low, rgba(52, 81, 178, 0.08));
+    color: var(--sl-color-text-accent);
+  }
+
+  .ft-pwa-clear-pack-btn {
+    color: var(--sl-color-gray-3, #71717a);
+  }
+
+  .ft-pwa-clear-pack-btn:hover {
+    color: #ef4444 !important;
+    border-color: #ef4444 !important;
+  }
+
+  /* 进度指示条 (Material 3 Linear Progress) */
+  .ft-pwa-progress-container {
+    padding: 0.35rem 0.2rem 0.1rem 0.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .ft-pwa-progress-container.hidden {
+    display: none;
+  }
+
+  .ft-pwa-progress-bar-bg {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background-color: var(--sl-color-gray-6, rgba(125, 125, 125, 0.15));
+    overflow: hidden;
+  }
+
+  .ft-pwa-progress-bar-fill {
+    height: 100%;
+    background-color: var(--sl-color-text-accent);
+    transition: width 0.2s ease;
+  }
+
+  .ft-pwa-progress-status-text {
+    font-size: 0.68rem;
+    color: var(--sl-color-text-accent);
+    font-weight: 500;
   }
 
   /* 低性能模式下被锁定的控件容器 */

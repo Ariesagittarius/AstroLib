@@ -45,6 +45,11 @@ import {
 } from '../themes/material-you/color-engine';
 import { enableFormulaActions, disableFormulaActions } from './formula/ui';
 import {
+  getOfflinePackStatus,
+  downloadAndInstallOfflinePack,
+  clearOfflinePack,
+} from './pwa-offline-manager';
+import {
   getAllAiProviders,
   getAiProvider,
   getActiveAiProviderId,
@@ -946,6 +951,47 @@ export function syncAllPwaCard(): void {
       }
     }
   });
+
+  // 同步全量离线数据包状态
+  getOfflinePackStatus().then((status) => {
+    document.querySelectorAll<HTMLElement>('.ft-pwa-pack-box').forEach((box) => {
+      const badge = box.querySelector<HTMLElement>('[data-pwa-pack-badge]');
+      const desc = box.querySelector<HTMLElement>('[data-pwa-pack-desc]');
+      const downloadBtn = box.querySelector<HTMLButtonElement>('[data-pwa-download-pack-btn]');
+      const downloadBtnText = downloadBtn?.querySelector<HTMLElement>('.ft-pwa-pack-btn-text');
+      const clearBtn = box.querySelector<HTMLButtonElement>('[data-pwa-clear-pack-btn]');
+
+      if (status.hasPack && status.count > 0) {
+        if (badge) {
+          badge.textContent = `已离线 (${status.count} 篇)`;
+          badge.classList.add('is-loaded');
+        }
+        if (desc) {
+          desc.textContent = `已离线全站 ${status.count} 篇章节 (约占 ${status.approxSizeMb} MB)，断网秒开`;
+        }
+        if (downloadBtnText) {
+          downloadBtnText.textContent = '重新同步';
+        }
+        if (clearBtn) {
+          clearBtn.classList.remove('hidden');
+        }
+      } else {
+        if (badge) {
+          badge.textContent = '未下载';
+          badge.classList.remove('is-loaded');
+        }
+        if (desc) {
+          desc.textContent = '从 GitHub 一次性下载全站离线包，断网秒开，不消耗主站流量';
+        }
+        if (downloadBtnText) {
+          downloadBtnText.textContent = '下载离线包';
+        }
+        if (clearBtn) {
+          clearBtn.classList.add('hidden');
+        }
+      }
+    });
+  }).catch(() => {});
 }
 
 /** 同步当前所有实例的低性能模式开关与受控样式 */
@@ -1479,6 +1525,69 @@ class StarlightFeatureToggles extends HTMLElement {
           }
         } else {
           alert('请点击浏览器地址栏右侧的【安装】图标（或在浏览器设置菜单中选择【安装 AstroLib】/【添加到主屏幕】），即可在计算机专用窗口中运行。');
+        }
+      });
+    });
+
+    // PWA 离线全量数据包下载按钮 (从 GitHub 拉取，0 消耗主站流量)
+    root.querySelectorAll<HTMLButtonElement>('[data-pwa-download-pack-btn]').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const card = btn.closest('.ft-pwa-card');
+        const progressWrap = card?.querySelector<HTMLElement>('[data-pwa-progress-wrap]');
+        const progressFill = card?.querySelector<HTMLElement>('[data-pwa-progress-fill]');
+        const progressText = card?.querySelector<HTMLElement>('[data-pwa-progress-text]');
+        const clearBtn = card?.querySelector<HTMLButtonElement>('[data-pwa-clear-pack-btn]');
+
+        btn.disabled = true;
+        if (clearBtn) clearBtn.disabled = true;
+        if (progressWrap) progressWrap.classList.remove('hidden');
+
+        try {
+          await downloadAndInstallOfflinePack(undefined, (pct, text) => {
+            if (progressFill) progressFill.style.width = `${pct}%`;
+            if (progressText) progressText.textContent = text;
+          });
+
+          // 下载完成短暂保留状态后隐藏
+          setTimeout(() => {
+            if (progressWrap) progressWrap.classList.add('hidden');
+            btn.disabled = false;
+            if (clearBtn) clearBtn.disabled = false;
+            syncAllPwaCard();
+          }, 1200);
+        } catch (err: any) {
+          if (progressText) {
+            progressText.textContent = `下载失败: ${err.message || '网络中断'}`;
+            progressText.style.color = '#ef4444';
+          }
+          setTimeout(() => {
+            if (progressWrap) progressWrap.classList.add('hidden');
+            if (progressText) progressText.style.color = '';
+            btn.disabled = false;
+            if (clearBtn) clearBtn.disabled = false;
+          }, 3000);
+        }
+      });
+    });
+
+    // PWA 清空离线数据包按钮
+    root.querySelectorAll<HTMLButtonElement>('[data-pwa-clear-pack-btn]').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const confirmed = window.confirm('确定要清空本地已缓存的离线全站数据包吗？清空后断网时将无法访问未翻阅过的章节。');
+        if (!confirmed) return;
+
+        btn.disabled = true;
+        try {
+          await clearOfflinePack();
+          syncAllPwaCard();
+        } finally {
+          btn.disabled = false;
         }
       });
     });
@@ -2230,6 +2339,10 @@ export function initFeatureToggles(): void {
       deferredInstallPrompt = null;
       syncAllPwaCard();
       console.info('[PWA] AstroLib 已成功安装为独立应用');
+    });
+
+    window.addEventListener('astrolib:pwa-pack-updated', () => {
+      syncAllPwaCard();
     });
 
     // 初次启动同步 PWA 状态

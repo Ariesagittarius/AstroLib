@@ -402,6 +402,16 @@ const featureDefs = {
     enabled: true,
     devOnly: false,
     ui: true,
+    config: {
+      // 离线数据包托管于 GitHub Releases，避免消耗生产站点服务器有限流量
+      releaseBaseUrl: 'https://github.com/Ariesagittarius/AstroLib/releases/latest/download',
+      packFileName: 'astrolib-offline-pack.json',
+      // 本地与国内高速加速备用镜像源
+      mirrors: [
+        'https://github.com/Ariesagittarius/AstroLib/releases/latest/download/astrolib-offline-pack.json',
+        'https://fastly.jsdelivr.net/gh/Ariesagittarius/AstroLib-Assets@main/offline-packs/astrolib-offline-pack.json',
+      ],
+    },
   }),
 };
 
