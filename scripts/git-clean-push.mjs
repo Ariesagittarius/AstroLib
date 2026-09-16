@@ -161,11 +161,42 @@ async function pushClean(options, repoInfo) {
       .map(f => f.trim())
       .filter(Boolean);
 
-    // 净化沙箱：移除任何 Agent/Skill 目录或文件
-    const bannedPrefixes = ['.agents', '.dsh', '.codex', '.cmd', 'CLAUDE.md', '.gemini', '.antigravity'];
+    // 净化沙箱：移除任何 Agent/Skill 目录、本地 Windows 脚本、构建衍生数据与孤儿文件
+    const bannedPrefixes = ['.agents', '.dsh', '.codex', '.gemini', '.antigravity', '.backups'];
+    const bannedExact = new Set([
+      'CLAUDE.md',
+      'academic-semantic-hierarchy-audit.md',
+      'academic-typography-audit.md',
+      'performance-baseline.md',
+      'performance-optimization-report.md',
+      'src/data/exercises/bupt_math_full_database.json',
+      'src/components/ChapterQuiz.astro',
+      'src/components/VpFooter.astro',
+    ]);
+    const bannedSubstrings = [
+      'public/data/exercises/',
+      'public/inspector-data/',
+      'public/relation-graphs/',
+      'public/data/cross-ref/',
+      'public/ai-index/',
+      'public/epub/',
+      'src/data/exercises/raw_papers/',
+      'src/data/exercises/legacy_pages/',
+    ];
+
+    function isBannedFile(relPath) {
+      const normalized = relPath.replace(/\\/g, '/');
+      if (bannedPrefixes.some(p => normalized === p || normalized.startsWith(p + '/'))) return true;
+      if (bannedExact.has(normalized)) return true;
+      if (bannedSubstrings.some(sub => normalized.startsWith(sub) || normalized.includes('/' + sub))) return true;
+      if (normalized.endsWith('.cmd') || normalized.endsWith('.bak')) return true;
+      if (normalized.startsWith('scripts/_test-') || normalized.startsWith('scripts/rollback_')) return true;
+      return false;
+    }
+
     let agentCleanedCount = 0;
     for (const relPath of trackedFiles) {
-      if (bannedPrefixes.some(prefix => relPath === prefix || relPath.startsWith(prefix + '/') || relPath.startsWith(prefix + '\\'))) {
+      if (isBannedFile(relPath)) {
         const fullPath = path.join(tempDir, relPath);
         if (fs.existsSync(fullPath)) {
           fs.rmSync(fullPath, { recursive: true, force: true });
@@ -175,7 +206,7 @@ async function pushClean(options, repoInfo) {
     }
     if (agentCleanedCount > 0) {
       runGit('add -u', tempDir);
-      console.log(`🧹 已从发布沙箱中剔除 ${agentCleanedCount} 个 Agent / Skill 相关私有文件`);
+      console.log(`🧹 已从发布沙箱中剔除 ${agentCleanedCount} 个本地配置、衍生数据或历史冗余文件`);
     }
 
     console.log(`🔍 正在扫描并剥离代码注释 (共 ${trackedFiles.length} 个被追踪文件)...`);
