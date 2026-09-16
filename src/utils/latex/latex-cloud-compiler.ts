@@ -567,6 +567,9 @@ export function printPdfDirectly(pdfUrl: string): void {
   let iframe = document.getElementById(frameId) as HTMLIFrameElement;
 
   if (iframe) {
+    try {
+      iframe.src = 'about:blank';
+    } catch {}
     iframe.remove();
   }
 
@@ -583,14 +586,28 @@ export function printPdfDirectly(pdfUrl: string): void {
 
   iframe.src = pdfUrl;
 
+  const cleanup = () => {
+    setTimeout(() => {
+      const f = document.getElementById(frameId) as HTMLIFrameElement;
+      if (f) {
+        try {
+          f.src = 'about:blank';
+        } catch {}
+        f.remove();
+      }
+    }, 1000);
+  };
+
   iframe.onload = () => {
     setTimeout(() => {
       try {
         iframe.contentWindow?.focus();
         iframe.contentWindow?.print();
+        cleanup();
       } catch {
         // 跨域或安全拦截回退：直接弹窗打开 PDF 供用户打印
         window.open(pdfUrl, '_blank');
+        cleanup();
       }
     }, 300);
   };

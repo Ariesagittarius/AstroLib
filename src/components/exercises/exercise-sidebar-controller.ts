@@ -44,13 +44,22 @@ class ExerciseSidebarController {
   private isTooltipPinned = false;
   private isCustomPositioned = false;
   private unsubSideload: (() => void) | null = null;
+  private displayedSidebarLimit = 12;
+  private currentFilteredList: SlimQuestionItem[] = [];
 
   constructor() {
     // 监听全局按键：Esc 退出习题模式（与顶栏大纲及全量模态题库状态独立）
     if (typeof window !== 'undefined') {
-      // 监听页面卸载，自动收起并中止运行中 AI 流
+      // 监听页面卸载，自动收起并中止运行中 AI 流，清理全部大对象缓存与 DOM
       document.addEventListener('astrolib:page-unload', () => {
-        if (this.isOpen) this.closeInternal();
+        this.closeInternal();
+        this.chapterCache.clear();
+        this.aiSolutions.clear();
+        this.aiReasonings.clear();
+        if (this.tooltipEl) {
+          this.tooltipEl.remove();
+          this.tooltipEl = null;
+        }
       });
 
       window.addEventListener('keydown', (e) => {
@@ -279,10 +288,35 @@ class ExerciseSidebarController {
       }
     });
 
+    // 释放题目索引与当前过滤列表
+    this.questionsMap.clear();
+    this.questionIndexMap.clear();
+    this.currentFilteredList = [];
+
     const panel = document.getElementById('exercise-sidebar-panel');
     if (panel) {
       panel.setAttribute('aria-hidden', 'true');
       panel.classList.remove('active');
+    }
+
+    // 清空 DOM 释放 KaTeX 节点内存
+    const contentEl = document.getElementById('ex-sidebar-content');
+    if (contentEl) {
+      contentEl.innerHTML = '';
+    }
+  }
+
+  /**
+   * LRU 缓存淘汰策略：保持最多保活 max 个章节 JSON，防止内存单调无上限膨胀
+   */
+  private trimChapterCache(max = 2) {
+    while (this.chapterCache.size > max) {
+      const oldestKey = this.chapterCache.keys().next().value;
+      if (oldestKey) {
+        this.chapterCache.delete(oldestKey);
+      } else {
+        break;
+      }
     }
   }
 
@@ -317,6 +351,7 @@ class ExerciseSidebarController {
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         chapterData = (await resp.json()) as ChapterData;
         this.chapterCache.set(cacheKey, chapterData);
+        this.trimChapterCache(2);
       } catch (err) {
         console.error('[ExerciseSidebar] 拉取题目失败:', err);
         const contentEl = document.getElementById('ex-sidebar-content');
@@ -380,17 +415,77 @@ class ExerciseSidebarController {
       return;
     }
 
-    // 缓存题目对象方便 AI 调用
+    // 缓存题目对象方便 AI 与解析调用
     filtered.forEach((q, idx) => {
       this.questionsMap.set(q.id, q);
       this.questionIndexMap.set(q.id, idx + 1);
     });
 
-    // 渲染协议卡片（若有）与轻量 MD 卡片列表
-    contentEl.innerHTML = licenseBannerHtml + filtered.map((q, idx) => this.renderQuestionCard(q, idx)).join('');
+    this.currentFilteredList = filtered;
+    this.displayedSidebarLimit = 12;
 
-    // 绑定卡片内部推导解析与 Ask AI 交互
+    // 分块渲染题目列表与加载更多按钮
+    this.renderSidebarQuestionsChunk(contentEl, licenseBannerHtml);
+  }
+
+  /**
+   * 分块按需渲染侧栏题目列表
+   */
+  private renderSidebarQuestionsChunk(contentEl: HTMLElement, licenseBannerHtml = '') {
+    const total = this.currentFilteredList.length;
+    const chunk = this.currentFilteredList.slice(0, this.displayedSidebarLimit);
+    const hasMore = total > this.displayedSidebarLimit;
+
+    const cardsHtml = chunk.map((q, idx) => this.renderQuestionCard(q, idx)).join('');
+    const loadMoreHtml = hasMore
+      ? `
+        <div class="ex-sb-load-more-wrap" id="ex-sb-load-more-wrap">
+          <button type="button" class="ex-sb-load-more-btn" id="ex-sb-load-more">
+            加载更多题目 (${chunk.length}/${total})
+          </button>
+        </div>
+      `
+      : '';
+
+    contentEl.innerHTML = `${licenseBannerHtml}<div class="ex-sb-cards-list" id="ex-sb-cards-list">${cardsHtml}</div>${loadMoreHtml}`;
+
     this.bindQuestionCardInteractions(contentEl);
+    this.bindLoadMoreAction();
+  }
+
+  /**
+   * 绑定加载更多按钮交互（仅追加 DOM 片段，不销毁已挂载卡片状态）
+   */
+  private bindLoadMoreAction() {
+    const loadMoreBtn = document.getElementById('ex-sb-load-more');
+    if (!loadMoreBtn) return;
+
+    loadMoreBtn.onclick = () => {
+      const cardsList = document.getElementById('ex-sb-cards-list');
+      const loadMoreWrap = document.getElementById('ex-sb-load-more-wrap');
+      if (!cardsList) return;
+
+      const currentCount = this.displayedSidebarLimit;
+      const nextCount = currentCount + 12;
+      const nextChunk = this.currentFilteredList.slice(currentCount, nextCount);
+      this.displayedSidebarLimit = nextCount;
+
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = nextChunk.map((q, idx) => this.renderQuestionCard(q, currentCount + idx)).join('');
+
+      this.bindQuestionCardInteractions(tempDiv);
+      while (tempDiv.firstChild) {
+        cardsList.appendChild(tempDiv.firstChild);
+      }
+
+      const total = this.currentFilteredList.length;
+      if (this.displayedSidebarLimit >= total) {
+        loadMoreWrap?.remove();
+      } else {
+        const displayed = Math.min(this.displayedSidebarLimit, total);
+        loadMoreBtn.textContent = `加载更多题目 (${displayed}/${total})`;
+      }
+    };
   }
 
   /**
@@ -425,7 +520,7 @@ class ExerciseSidebarController {
       `;
     }
 
-    // 解题答案与推导步骤
+    // 解题答案与推导步骤是否存在
     const hasAnswer = Boolean(q.answer_html || q.answer);
     const hasSteps = Boolean(q.steps_html);
     const hasHints = Boolean(q.hints_html);
@@ -481,43 +576,10 @@ class ExerciseSidebarController {
           </button>
         </div>
 
-        <!-- 官方解析面板 (默认折叠) -->
+        <!-- 官方解析面板 (按需挂载，初始为空以防内存膨胀) -->
         ${
           hasSolution
-            ? `
-          <div class="ex-card-solution-body" id="sol-body-${q.id}" hidden>
-            ${
-              hasAnswer
-                ? `
-              <div class="ex-sol-block ex-sol-answer">
-                <span class="ex-sol-label">参考答案</span>
-                <div class="ex-sol-content">${q.answer_html || q.answer}</div>
-              </div>
-            `
-                : ''
-            }
-            ${
-              hasSteps
-                ? `
-              <div class="ex-sol-block ex-sol-steps">
-                <span class="ex-sol-label">推导过程</span>
-                <div class="ex-sol-content">${q.steps_html}</div>
-              </div>
-            `
-                : ''
-            }
-            ${
-              hasHints
-                ? `
-              <div class="ex-sol-block ex-sol-hints">
-                <span class="ex-sol-label">解题思路</span>
-                <div class="ex-sol-content">${q.hints_html}</div>
-              </div>
-            `
-                : ''
-            }
-          </div>
-        `
+            ? `<div class="ex-card-solution-body" id="sol-body-${q.id}" hidden></div>`
             : ''
         }
 
@@ -528,10 +590,52 @@ class ExerciseSidebarController {
   }
 
   /**
+   * 延迟构造官方推导与解析 HTML
+   */
+  private renderSolutionBodyHtml(q: SlimQuestionItem): string {
+    const hasAnswer = Boolean(q.answer_html || q.answer);
+    const hasSteps = Boolean(q.steps_html);
+    const hasHints = Boolean(q.hints_html);
+
+    return `
+      ${
+        hasAnswer
+          ? `
+        <div class="ex-sol-block ex-sol-answer">
+          <span class="ex-sol-label">参考答案</span>
+          <div class="ex-sol-content">${q.answer_html || q.answer}</div>
+        </div>
+      `
+          : ''
+      }
+      ${
+        hasSteps
+          ? `
+        <div class="ex-sol-block ex-sol-steps">
+          <span class="ex-sol-label">推导过程</span>
+          <div class="ex-sol-content">${q.steps_html}</div>
+        </div>
+      `
+          : ''
+      }
+      ${
+        hasHints
+          ? `
+        <div class="ex-sol-block ex-sol-hints">
+          <span class="ex-sol-label">解题思路</span>
+          <div class="ex-sol-content">${q.hints_html}</div>
+        </div>
+      `
+          : ''
+      }
+    `;
+  }
+
+  /**
    * 绑定题目卡片交互：官方解析展开与 Ask AI 流式推导
    */
   private bindQuestionCardInteractions(contentEl: HTMLElement) {
-    // 1. 官方解析展开/收起
+    // 1. 官方解析展开/收起 (按需延迟挂载 DOM 与 KaTeX)
     contentEl.querySelectorAll<HTMLElement>('.ex-card-toggle-sol').forEach((btn) => {
       btn.onclick = () => {
         const qid = btn.getAttribute('data-qid');
@@ -540,6 +644,12 @@ class ExerciseSidebarController {
         if (!solBody) return;
 
         const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+        if (!isExpanded && !solBody.hasChildNodes()) {
+          const q = this.questionsMap.get(qid);
+          if (q) {
+            solBody.innerHTML = this.renderSolutionBodyHtml(q);
+          }
+        }
         btn.setAttribute('aria-expanded', String(!isExpanded));
         btn.classList.toggle('active', !isExpanded);
         solBody.hidden = isExpanded;

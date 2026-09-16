@@ -643,6 +643,13 @@ if (features.epub.enabled && bookMatch) {
 
         document.title = title || document.title;
 
+        // 0. 在 DOM 置换前派发全站页面卸载生命周期，通知各控制器析构旧页面资源、断开观察器并解除脱体引用
+        try {
+          document.dispatchEvent(new CustomEvent('astrolib:page-unload'));
+        } catch (e) {
+          console.warn('[SPA] page-unload error:', e);
+        }
+
         // 1. 跨图书切换时若侧边栏结构不同则同步替换侧边栏（同书导航保留侧边栏 DOM 避免滚动条弹回顶部）
         const currentBookKey = currentPathname.match(/\/collections\/([^/]+)\/([^/]+)/)?.[0];
         const targetBookKey = normPath(url.pathname).match(/\/collections\/([^/]+)\/([^/]+)/)?.[0];
@@ -1045,6 +1052,11 @@ if (features.epub.enabled && bookMatch) {
     });
 
     window.addEventListener('beforeunload', saveSidebarScroll);
+    document.addEventListener('astro:before-swap', () => {
+      try {
+        document.dispatchEvent(new CustomEvent('astrolib:page-unload'));
+      } catch {}
+    });
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') saveSidebarScroll();
     });

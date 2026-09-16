@@ -180,6 +180,7 @@ class ExerciseCenterController {
   private compileTimerInterval: any = null;
   private compileStartTime: number = 0;
   private compileAbortController: AbortController | null = null;
+  private latexDebounceTimer: any = null;
 
   private toolbarEl: HTMLElement | null = null;
   private toolbarToggleBtn: HTMLButtonElement | null = null;
@@ -375,6 +376,27 @@ class ExerciseCenterController {
 
     document.addEventListener('astro:page-load', setup);
 
+    // 监听页面卸载，释放全屏题库、PDF 渲染引擎与长周期缓存
+    document.addEventListener('astrolib:page-unload', () => {
+      if (this.isOpen) {
+        this.close();
+      }
+      this.releaseLatexPdfViewer();
+      if (this.compileTimerInterval) {
+        clearInterval(this.compileTimerInterval);
+        this.compileTimerInterval = null;
+      }
+      if (this.latexDebounceTimer) {
+        clearTimeout(this.latexDebounceTimer);
+        this.latexDebounceTimer = null;
+      }
+      this.compileAbortController?.abort();
+      this.chapterCache.clear();
+      this.paperCache.clear();
+      this.allQuestionsCache = [];
+      this.boundRoot = null;
+    });
+
     const win = window as any;
     if (!win.__exerciseGlobalBound) {
       win.__exerciseGlobalBound = true;
@@ -432,7 +454,23 @@ class ExerciseCenterController {
     this.feedbackModal?.classList.add('hidden');
     this.sourceEditorModal?.classList.add('hidden');
     this.aiUploadModal?.classList.add('hidden');
+    this.closeLatexModal();
+  }
+
+  private closeLatexModal() {
     this.latexModal?.classList.add('hidden');
+    this.releaseLatexPdfViewer();
+  }
+
+  /**
+   * 彻底释放 PDFium / Chrome 内部 PDF 渲染引擎与位图表面
+   * 将 iframe 导航至 about:blank，中断跨页面历史记录与 BFCache 对大位图的驻留
+   */
+  private releaseLatexPdfViewer() {
+    if (this.latexPdfIframe) {
+      this.latexPdfIframe.src = 'about:blank';
+    }
+    this.currentCompiledPdfUrl = null;
   }
 
   private detectCurrentChapter(): number {
@@ -530,6 +568,9 @@ class ExerciseCenterController {
         }
         if (this.isGlobalSearch) {
           await this.ensureAllQuestionsLoaded();
+        } else {
+          this.allQuestionsCache = [];
+          this.trimChapterCache(2);
         }
         this.displayedLimit = PAGE_SIZE;
         this.filterAndRender();
@@ -798,6 +839,9 @@ class ExerciseCenterController {
     this.root.classList.remove('is-open');
     document.body.style.overflow = '';
     this.closeAllSubmodals();
+    this.allQuestionsCache = [];
+    this.trimChapterCache(2);
+    this.trimPaperCache(2);
 
     if (this.dialogEl) {
       const dlg = this.dialogEl as any;
@@ -805,6 +849,34 @@ class ExerciseCenterController {
         dlg.close();
       } else {
         dlg.open = false;
+      }
+    }
+  }
+
+  /**
+   * LRU 缓存淘汰策略：保持最多保活 max 个章节 JSON，防止内存无上限膨胀
+   */
+  private trimChapterCache(max = 2) {
+    while (this.chapterCache.size > max) {
+      const oldestKey = this.chapterCache.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.chapterCache.delete(oldestKey);
+      } else {
+        break;
+      }
+    }
+  }
+
+  /**
+   * LRU 缓存淘汰策略：保持最多保活 max 套试卷 JSON
+   */
+  private trimPaperCache(max = 2) {
+    while (this.paperCache.size > max) {
+      const oldestKey = this.paperCache.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.paperCache.delete(oldestKey);
+      } else {
+        break;
       }
     }
   }
@@ -874,6 +946,7 @@ class ExerciseCenterController {
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data: ChapterData = await resp.json();
       this.chapterCache.set(chId, data);
+      this.trimChapterCache(2);
       this.isLoading = false;
       this.updateSectionPills(data);
       this.filterAndRender();
@@ -938,6 +1011,7 @@ class ExerciseCenterController {
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data: SinglePaperData = await resp.json();
       this.paperCache.set(paperId, data);
+      this.trimPaperCache(2);
       this.isLoading = false;
       this.updatePaperOutlineBar(data);
       this.filterAndRender();
@@ -1289,26 +1363,7 @@ class ExerciseCenterController {
         </div>
 
         <div class="ex-solution-box ${record.answered || record.revealedSolution ? '' : 'hidden'}" id="sol-${qid}">
-          <div class="ex-solution-title">
-            <span>【参考答案】${q.answer_html || '详见解析'}</span>
-          </div>
-          ${q.steps_html ? `<div class="ex-solution-steps">${q.steps_html}</div>` : ''}
-          ${q.hints_html ? `<div class="ex-solution-steps"><strong>【思路提示】</strong>${q.hints_html}</div>` : ''}
-          <div class="ex-solution-footer">
-            <div class="ex-knowledge-tags">
-              <span class="ex-k-label">考察考点：</span>
-              ${knowledgePoints.map((kp) => `<span class="ex-k-tag">${kp}</span>`).join('')}
-            </div>
-            ${
-              qType !== 'choice' && qType !== 'blank'
-                ? `<div class="ex-mastery-btns">
-                    <button type="button" class="ex-action-btn ${record.mastered ? 'active' : ''}" data-action="master" data-qid="${qid}">
-                      <span>${record.mastered ? '已掌握' : '标为已掌握'}</span>
-                    </button>
-                  </div>`
-                : ''
-            }
-          </div>
+          ${(record.answered || record.revealedSolution) ? this.renderSolutionBoxContent(q) : ''}
         </div>
 
         <div class="ex-ai-box ${hasAnySolution ? '' : 'hidden'}" id="ai-box-${qid}">
@@ -1568,6 +1623,48 @@ class ExerciseCenterController {
     });
   }
 
+  /**
+   * 构造参考答案、推导步骤与考点提示 HTML (按需执行，避免全量 KaTeX DOM 挂载)
+   */
+  private renderSolutionBoxContent(q: SlimQuestionItem): string {
+    const qid = q.id;
+    const qType = q.type;
+    const record = this.practiceRecords.get(qid) || { answered: false };
+    const knowledgePoints = q.kps || [];
+
+    return `
+      <div class="ex-solution-title">
+        <span>【参考答案】${q.answer_html || '详见解析'}</span>
+      </div>
+      ${q.steps_html ? `<div class="ex-solution-steps">${q.steps_html}</div>` : ''}
+      ${q.hints_html ? `<div class="ex-solution-steps"><strong>【思路提示】</strong>${q.hints_html}</div>` : ''}
+      <div class="ex-solution-footer">
+        <div class="ex-knowledge-tags">
+          <span class="ex-k-label">考察考点：</span>
+          ${knowledgePoints.map((kp) => `<span class="ex-k-tag">${kp}</span>`).join('')}
+        </div>
+        ${
+          qType !== 'choice' && qType !== 'blank'
+            ? `<div class="ex-mastery-btns">
+                <button type="button" class="ex-action-btn ${record.mastered ? 'active' : ''}" data-action="master" data-qid="${qid}">
+                  <span>${record.mastered ? '已掌握' : '标为已掌握'}</span>
+                </button>
+              </div>`
+            : ''
+        }
+      </div>
+    `;
+  }
+
+  private ensureSolutionBoxRendered(qid: string, solBox: Element) {
+    if (!solBox.hasChildNodes()) {
+      const q = this.currentFilteredQuestions.find((item) => item.id === qid);
+      if (q) {
+        solBox.innerHTML = this.renderSolutionBoxContent(q);
+      }
+    }
+  }
+
   private handleOptionSelect(qid: string, userKey: string) {
     const card = this.bodyContainer?.querySelector(`#q-card-${qid}`);
     if (!card) return;
@@ -1594,7 +1691,10 @@ class ExerciseCenterController {
     });
 
     const solBox = card.querySelector(`#sol-${qid}`);
-    if (solBox) solBox.classList.remove('hidden');
+    if (solBox) {
+      this.ensureSolutionBoxRendered(qid, solBox);
+      solBox.classList.remove('hidden');
+    }
 
     this.filterAndRenderStatsOnly();
   }
@@ -1646,7 +1746,10 @@ class ExerciseCenterController {
     if (btn) btn.textContent = isCorrect ? '正确' : '重做';
 
     const solBox = card.querySelector(`#sol-${qid}`);
-    if (solBox) solBox.classList.remove('hidden');
+    if (solBox) {
+      this.ensureSolutionBoxRendered(qid, solBox);
+      solBox.classList.remove('hidden');
+    }
 
     this.filterAndRenderStatsOnly();
   }
@@ -1661,6 +1764,9 @@ class ExerciseCenterController {
     record.revealedSolution = !record.revealedSolution;
     this.practiceRecords.set(qid, record);
 
+    if (record.revealedSolution) {
+      this.ensureSolutionBoxRendered(qid, solBox);
+    }
     solBox.classList.toggle('hidden', !record.revealedSolution);
     const btn = card.querySelector('.ex-toggle-steps-btn span');
     if (btn) btn.textContent = record.revealedSolution ? '收起解析' : '查看解析';
@@ -1673,6 +1779,7 @@ class ExerciseCenterController {
     if (!card) return;
     const solBox = card.querySelector(`#sol-${qid}`);
     if (!solBox) return;
+    this.ensureSolutionBoxRendered(qid, solBox);
     solBox.classList.toggle('hidden');
   }
 
@@ -2051,7 +2158,7 @@ $$
     }
 
     this.root.querySelectorAll('[data-action="close-latex-modal"]').forEach((btn) => {
-      btn.addEventListener('click', () => this.latexModal?.classList.add('hidden'));
+      btn.addEventListener('click', () => this.closeLatexModal());
     });
 
     // 模板版式分段控制器切换 (handout / exam)
@@ -2071,7 +2178,7 @@ $$
               ? '大学数学教材体例 · 经典双线页眉 · 纯正学术出版排版'
               : '标准自测测试卷头 · 紧凑排版 · 纯净无干扰题面';
         }
-        this.refreshLatexPreview();
+        this.scheduleRefreshLatexPreview();
       });
     });
 
@@ -2080,7 +2187,7 @@ $$
     if (paperSelect) {
       paperSelect.addEventListener('change', (e) => {
         this.currentLatexConfig.paperSize = (e.target as HTMLSelectElement).value as any;
-        this.refreshLatexPreview();
+        this.scheduleRefreshLatexPreview();
       });
     }
 
@@ -2090,7 +2197,7 @@ $$
         const typo = (e.target as HTMLSelectElement).value as any;
         this.currentLatexConfig.typography = typo;
         saveStoredExportSettings({ typography: typo });
-        this.refreshLatexPreview();
+        this.scheduleRefreshLatexPreview();
       });
     }
 
@@ -2098,7 +2205,7 @@ $$
     if (fontSelect) {
       fontSelect.addEventListener('change', (e) => {
         this.currentLatexConfig.fontFamily = (e.target as HTMLSelectElement).value as any;
-        this.refreshLatexPreview();
+        this.scheduleRefreshLatexPreview();
       });
     }
 
@@ -2106,7 +2213,7 @@ $$
     if (mathFontSelect) {
       mathFontSelect.addEventListener('change', (e) => {
         this.currentLatexConfig.mathFont = (e.target as HTMLSelectElement).value as any;
-        this.refreshLatexPreview();
+        this.scheduleRefreshLatexPreview();
       });
     }
 
@@ -2114,7 +2221,7 @@ $$
     if (sizeSelect) {
       sizeSelect.addEventListener('change', (e) => {
         this.currentLatexConfig.fontSize = (parseFloat((e.target as HTMLSelectElement).value) || 11) as any;
-        this.refreshLatexPreview();
+        this.scheduleRefreshLatexPreview();
       });
     }
 
@@ -2122,7 +2229,7 @@ $$
     if (pageNumberingSelect) {
       pageNumberingSelect.addEventListener('change', (e) => {
         this.currentLatexConfig.pageNumbering = (e.target as HTMLSelectElement).value as any;
-        this.refreshLatexPreview();
+        this.scheduleRefreshLatexPreview();
       });
     }
 
@@ -2130,7 +2237,7 @@ $$
     this.root.querySelectorAll('input[name="ex-latex-writing-space"]').forEach((radio) => {
       radio.addEventListener('change', (e) => {
         this.currentLatexConfig.writingSpace = (e.target as HTMLInputElement).value as any;
-        this.refreshLatexPreview();
+        this.scheduleRefreshLatexPreview();
       });
     });
 
@@ -2138,7 +2245,7 @@ $$
     this.root.querySelectorAll('input[name="ex-latex-answer-mode"]').forEach((radio) => {
       radio.addEventListener('change', (e) => {
         this.currentLatexConfig.answerPlacement = (e.target as HTMLInputElement).value as any;
-        this.refreshLatexPreview();
+        this.scheduleRefreshLatexPreview();
       });
     });
 
@@ -2595,6 +2702,7 @@ $$
     if (stage === 'config') {
       this.latexConfigView?.classList.remove('hidden');
       this.latexResultView?.classList.add('hidden');
+      this.releaseLatexPdfViewer();
     } else {
       this.latexConfigView?.classList.add('hidden');
       this.latexResultView?.classList.remove('hidden');
@@ -2629,7 +2737,7 @@ $$
 
     if (state === 'idle') {
       this.isCompiling = false;
-      this.currentCompiledPdfUrl = null;
+      this.releaseLatexPdfViewer();
       if (this.compileTimerInterval) clearInterval(this.compileTimerInterval);
 
       this.pipelineLoadingCard?.classList.add('hidden');
@@ -2658,6 +2766,7 @@ $$
       }
     } else if (state === 'compiling') {
       this.isCompiling = true;
+      this.releaseLatexPdfViewer();
       this.switchLatexStage('result');
       this.pipelineLoadingCard?.classList.remove('hidden');
       this.pipelineTimeoutCard?.classList.add('hidden');
@@ -2712,6 +2821,7 @@ $$
       }
     } else if (state === 'timeout') {
       this.isCompiling = false;
+      this.releaseLatexPdfViewer();
       this.switchLatexStage('result');
       if (this.compileTimerInterval) clearInterval(this.compileTimerInterval);
 
@@ -2742,6 +2852,7 @@ $$
       }
     } else if (state === 'failed') {
       this.isCompiling = false;
+      this.releaseLatexPdfViewer();
       this.switchLatexStage('result');
       if (this.compileTimerInterval) clearInterval(this.compileTimerInterval);
 
@@ -2783,7 +2894,11 @@ $$
       return;
     }
 
-    if (!this.currentGeneratedLatexCode) {
+    if (this.latexDebounceTimer) {
+      clearTimeout(this.latexDebounceTimer);
+      this.latexDebounceTimer = null;
+      this.refreshLatexPreview();
+    } else if (!this.currentGeneratedLatexCode) {
       this.refreshLatexPreview();
     }
 
@@ -2852,7 +2967,11 @@ $$
 
       this.currentCompiledPdfUrl = pdfUrl;
       if (this.latexPdfIframe) {
-        this.latexPdfIframe.src = pdfUrl;
+        try {
+          this.latexPdfIframe.contentWindow?.location.replace(pdfUrl);
+        } catch {
+          this.latexPdfIframe.src = pdfUrl;
+        }
       }
       const totalElapsed = Math.floor((Date.now() - this.compileStartTime) / 1000);
       this.setLatexExportState('ready', `✓ 编译成功！文档已生成 (总耗时 ${totalElapsed}s)`);
@@ -2915,7 +3034,13 @@ $$
       );
 
       this.currentCompiledPdfUrl = pdfUrl;
-      if (this.latexPdfIframe) this.latexPdfIframe.src = pdfUrl;
+      if (this.latexPdfIframe) {
+        try {
+          this.latexPdfIframe.contentWindow?.location.replace(pdfUrl);
+        } catch {
+          this.latexPdfIframe.src = pdfUrl;
+        }
+      }
       const totalElapsed = Math.floor((Date.now() - this.compileStartTime) / 1000);
       this.setLatexExportState('ready', `✓ 编译成功！已获取 PDF (总耗时 ${totalElapsed}s)`);
       this.showToast('✓ XeLaTeX 编译完成！已生成高清矢量 PDF');
@@ -2937,7 +3062,13 @@ $$
     const pdfUrl = await checkReleaseDirectly(this.currentCompileJobId, config);
     if (pdfUrl) {
       this.currentCompiledPdfUrl = pdfUrl;
-      if (this.latexPdfIframe) this.latexPdfIframe.src = pdfUrl;
+      if (this.latexPdfIframe) {
+        try {
+          this.latexPdfIframe.contentWindow?.location.replace(pdfUrl);
+        } catch {
+          this.latexPdfIframe.src = pdfUrl;
+        }
+      }
       const totalElapsed = Math.floor((Date.now() - this.compileStartTime) / 1000);
       this.setLatexExportState('ready', `✓ 检测到云端已生成 PDF！(耗时 ${totalElapsed}s)`);
       this.showToast('✓ 成功获取已编译好的 PDF！');
@@ -2950,6 +3081,27 @@ $$
     this.compileAbortController?.abort();
     this.setLatexExportState('idle', '已取消本次排版编译');
     this.showToast('已取消编译');
+  }
+
+  /**
+   * 防抖触发 LaTeX 源码生成与排版预览，防止连续切换配置时造成大量字符串分配与 CPU 停顿
+   */
+  private scheduleRefreshLatexPreview(immediate = false) {
+    if (immediate) {
+      if (this.latexDebounceTimer) {
+        clearTimeout(this.latexDebounceTimer);
+        this.latexDebounceTimer = null;
+      }
+      this.refreshLatexPreview();
+      return;
+    }
+    if (this.latexDebounceTimer) {
+      clearTimeout(this.latexDebounceTimer);
+    }
+    this.latexDebounceTimer = setTimeout(() => {
+      this.latexDebounceTimer = null;
+      this.refreshLatexPreview();
+    }, 250);
   }
 
   private refreshLatexPreview() {
