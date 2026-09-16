@@ -981,6 +981,9 @@ const bookSlug = currentBook.slug;
   let relationGraphLoading: Promise<void> | null = null;
 
   async function activateRelationGraph() {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('astrolib_lite_mode') === 'true') {
+      return; // 低性能模式下严禁唤起与渲染重型 ECharts 关系图谱
+    }
     if (!relationGraphLoading) {
       relationGraphLoading = (async () => {
         const { initRelationGraphClient } = await import('../utils/relation-graph/relation-graph-client');
@@ -998,6 +1001,7 @@ const bookSlug = currentBook.slug;
   document.addEventListener(
     'pointerenter',
     (e) => {
+      if (typeof localStorage !== 'undefined' && localStorage.getItem('astrolib_lite_mode') === 'true') return;
       if (relationGraphLoaded || relationGraphLoading) return;
       const target = e.target instanceof Element ? e.target : (e.target as Node | null)?.parentElement;
       if (target?.closest?.('[data-open-relation-graph], .relation-graph-trigger')) {

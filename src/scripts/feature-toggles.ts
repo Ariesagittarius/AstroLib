@@ -84,6 +84,50 @@ const STORAGE_KEY = 'starlight-features';
 /** 主题切换动画偏好存储键：'instant'（即时切换，默认，无过渡）| 'animate'（柔和过渡） */
 const THEME_TRANSITION_KEY = 'starlight-theme-transition';
 
+/** 低性能模式存储键：'true' (开启) | 'false' / null (关闭，默认) */
+export const LITE_MODE_KEY = 'astrolib_lite_mode';
+
+/** 低性能模式启用前的用户偏好快照备份键（用于关闭时无损还原） */
+export const LITE_BACKUP_KEY = 'astrolib_lite_backup';
+
+/** 低性能模式下强制禁用的高开销模块列表 */
+export const LITE_DISABLED_FEATURES = [
+  'formulaActions',
+  'relationGraph',
+  'aiAsk',
+  'exercises',
+  'inspector',
+  'feedback',
+  'mermaid',
+];
+
+export interface LiteModeBackup {
+  prewarmPages: number;
+  maxPageCache: number;
+  sidebarHover: boolean;
+  toggles: Record<string, boolean>;
+  themeTransition: string;
+}
+
+/** 读取当前是否处于低性能模式 */
+export function loadLiteMode(): boolean {
+  try {
+    return typeof localStorage !== 'undefined' && localStorage.getItem(LITE_MODE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/** 保存低性能模式偏好并应用 */
+export function saveLiteMode(enabled: boolean): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(LITE_MODE_KEY, enabled ? 'true' : 'false');
+    }
+  } catch {}
+  applyLiteMode(enabled);
+}
+
 /** 章节后台空闲预加载页面数存储键：1 (前后各 1 页滑动窗口，默认) | 2 | 3 | -1 (全书拉取) | 0 (关闭) */
 export const PREWARM_PAGES_KEY = 'astrolib_prewarm_pages';
 export const DEFAULT_PREWARM_PAGES = 1;
@@ -459,10 +503,13 @@ export function isRuntimeSwitchable(id: string): boolean {
   return !!m && m.runtime && m.build;
 }
 
-/** 有效启用：构建层 enabled && 运行时未关闭 */
+/** 有效启用：构建层 enabled && 运行时未关闭（低性能模式下自动拦截重型功能） */
 export function isEnabled(id: string): boolean {
   const m = metaOf(id);
   if (!m || !m.build) return false;
+  if (loadLiteMode() && LITE_DISABLED_FEATURES.includes(id)) {
+    return false;
+  }
   return toggles[id] !== false;
 }
 
@@ -474,8 +521,16 @@ export function resetToggles(): void {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(THEME_TRANSITION_KEY);
       localStorage.removeItem('starlight-m3-theme-color');
+      localStorage.removeItem(LITE_MODE_KEY);
+      localStorage.removeItem(LITE_BACKUP_KEY);
     }
   } catch {}
+
+  if (typeof document !== 'undefined') {
+    document.documentElement.dataset.liteMode = 'false';
+    document.documentElement.classList.remove('astrolib-lite-mode');
+    window.dispatchEvent(new CustomEvent('astrolib:lite-mode-change', { detail: { enabled: false } }));
+  }
 
   // 重置字体偏好
   saveFontPref(DEFAULT_PREF);
@@ -516,6 +571,7 @@ export function resetToggles(): void {
   syncAllAiSettings();
   syncAllPunctChips();
   syncAllFontSizeSliders();
+  syncAllLiteMode();
   apply();
 }
 
@@ -712,18 +768,24 @@ function applyFormulaActions(): void {
   }
 }
 
-/** 应用到页面：显隐 [data-feature] 元素 + 字体 + 引用联动 + 编辑器放行 + 广播 */
+/** 应用到页面：显隐 [data-feature] 元素 + 字体 + 引用联动 + 编辑器放行 + 低性能模式 + 广播 */
 export function apply(): void {
   if (meta.length === 0) return;
+
+  const isLite = loadLiteMode();
+  if (typeof document !== 'undefined') {
+    document.documentElement.dataset.liteMode = isLite ? 'true' : 'false';
+    document.documentElement.classList.toggle('astrolib-lite-mode', isLite);
+  }
 
   for (const el of document.querySelectorAll('[data-feature]')) {
     const id = el.getAttribute('data-feature') || '';
     el.classList.toggle('dsh-feature-off', !isEnabled(id));
   }
 
-  // 主题切换动画子选项：仅当 theme 功能启用时可调（避免无意义交互）
+  // 主题切换动画子选项：仅当 theme 功能启用且未开启低性能模式时可调（避免无意义交互）
   document.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-theme-transition]').forEach((cb) => {
-    cb.disabled = !isEnabled('theme');
+    cb.disabled = isLite || !isEnabled('theme');
   });
 
   applyFont();
@@ -733,22 +795,253 @@ export function apply(): void {
   document.dispatchEvent(new CustomEvent('dsh:feature-change'));
 }
 
+/** 应用并切换低性能模式 */
+export function applyLiteMode(enabled: boolean = loadLiteMode()): void {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  root.dataset.liteMode = enabled ? 'true' : 'false';
+  root.classList.toggle('astrolib-lite-mode', enabled);
+
+  if (enabled) {
+    // 1. 备份当前配置（若尚无备份）
+    try {
+      if (typeof localStorage !== 'undefined' && !localStorage.getItem(LITE_BACKUP_KEY)) {
+        const backup: LiteModeBackup = {
+          prewarmPages: loadPrewarmPref(),
+          maxPageCache: loadMaxPageCachePref(),
+          sidebarHover: loadSidebarHoverPref(),
+          toggles: { ...toggles },
+          themeTransition: loadThemeTransition(),
+        };
+        localStorage.setItem(LITE_BACKUP_KEY, JSON.stringify(backup));
+      }
+    } catch {}
+
+    // 2. 内存与网络减法：预热归零、缓存归零、悬停预取关闭
+    savePrewarmPref(0);
+    saveMaxPageCachePref(0);
+    saveSidebarHoverPref(false);
+
+    // 3. 重型模块减法：关闭公式交互、AI、图谱、做题、模块速查、反馈与Mermaid
+    LITE_DISABLED_FEATURES.forEach((fid) => {
+      toggles[fid] = false;
+    });
+    saveToggles();
+
+    // 4. 动效减法：强制 instant 主题过渡
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(THEME_TRANSITION_KEY, 'instant');
+      }
+    } catch {}
+  } else {
+    // 恢复先前备份或默认配置
+    try {
+      let backup: LiteModeBackup | null = null;
+      if (typeof localStorage !== 'undefined') {
+        const raw = localStorage.getItem(LITE_BACKUP_KEY);
+        if (raw) backup = JSON.parse(raw);
+        localStorage.removeItem(LITE_BACKUP_KEY);
+      }
+      if (backup) {
+        savePrewarmPref(backup.prewarmPages);
+        saveMaxPageCachePref(backup.maxPageCache);
+        saveSidebarHoverPref(backup.sidebarHover);
+        toggles = { ...backup.toggles };
+        saveToggles();
+        if (backup.themeTransition) {
+          localStorage.setItem(THEME_TRANSITION_KEY, backup.themeTransition);
+        }
+      } else {
+        savePrewarmPref(DEFAULT_PREWARM_PAGES);
+        saveMaxPageCachePref(DEFAULT_MAX_PAGE_CACHE);
+        saveSidebarHoverPref(DEFAULT_SIDEBAR_HOVER_PREFETCH);
+        LITE_DISABLED_FEATURES.forEach((fid) => {
+          delete toggles[fid];
+        });
+        saveToggles();
+      }
+    } catch {}
+  }
+
+  // 广播模式变更事件，通知侧边栏释放缓存、侧载底座锁定大纲
+  window.dispatchEvent(new CustomEvent('astrolib:lite-mode-change', { detail: { enabled } }));
+
+  // 执行各子模块状态应用
+  apply();
+  syncAllCheckboxes();
+  syncAllPrewarmButtons();
+  syncAllCacheButtons();
+  syncAllLiteMode();
+  syncAllPwaCard();
+}
+
+/** PWA 独立应用安装提示事件暂存 */
+let deferredInstallPrompt: any = null;
+
+/** 供外部或事件获取当前暂存的安装提示 */
+export function getDeferredInstallPrompt(): any {
+  return deferredInstallPrompt;
+}
+
+/** 同步当前所有实例的 PWA 独立应用卡片状态 */
+export function syncAllPwaCard(): void {
+  if (typeof document === 'undefined') return;
+  const isStandalone = (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as any).standalone === true ||
+    document.referrer.includes('android-app://')
+  );
+
+  document.querySelectorAll<HTMLElement>('.ft-pwa-card').forEach((card) => {
+    const badge = card.querySelector<HTMLElement>('[data-pwa-badge]');
+    const desc = card.querySelector<HTMLElement>('[data-pwa-desc]');
+    const btn = card.querySelector<HTMLButtonElement>('[data-pwa-install-btn]');
+    const btnText = btn?.querySelector<HTMLElement>('.ft-pwa-btn-text');
+
+    if (isStandalone) {
+      card.classList.add('is-installed');
+      if (badge) {
+        badge.textContent = '已运行';
+        badge.classList.add('is-installed');
+      }
+      if (desc) {
+        desc.textContent = '当前正在专用独立窗口中运行，享纯净沉浸学术阅读';
+      }
+      if (btn) {
+        btn.disabled = true;
+      }
+      if (btnText) {
+        btnText.textContent = '已安装';
+      }
+    } else if (deferredInstallPrompt) {
+      card.classList.remove('is-installed');
+      if (badge) {
+        badge.textContent = '可安装';
+        badge.classList.remove('is-installed');
+      }
+      if (desc) {
+        desc.textContent = '安装到电脑/设备桌面，支持离线阅读与断网秒开';
+      }
+      if (btn) {
+        btn.disabled = false;
+      }
+      if (btnText) {
+        btnText.textContent = '安装应用';
+      }
+    } else {
+      card.classList.remove('is-installed');
+      if (badge) {
+        badge.textContent = '应用模式';
+        badge.classList.remove('is-installed');
+      }
+      if (desc) {
+        desc.textContent = '支持添加到桌面或浏览器地址栏一键安装独立应用';
+      }
+      if (btn) {
+        btn.disabled = false;
+      }
+      if (btnText) {
+        btnText.textContent = '安装应用';
+      }
+    }
+  });
+}
+
+/** 同步当前所有实例的低性能模式开关与受控样式 */
+export function syncAllLiteMode(): void {
+  if (typeof document === 'undefined') return;
+  const isLite = loadLiteMode();
+
+  document.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-lite-mode]').forEach((cb) => {
+    cb.checked = isLite;
+  });
+  document.querySelectorAll<any>('md-switch[data-lite-mode]').forEach((sw) => {
+    sw.selected = isLite;
+  });
+
+  document.querySelectorAll<HTMLElement>('.ft-lite-mode-card').forEach((card) => {
+    card.classList.toggle('is-active', isLite);
+    const badge = card.querySelector<HTMLElement>('.ft-lite-mode-badge');
+    if (badge) {
+      badge.textContent = isLite ? '已开启 · 极速低耗' : '未开启';
+      badge.classList.toggle('is-active', isLite);
+    }
+  });
+
+  // 预加载与缓存按钮禁用态
+  document.querySelectorAll<HTMLElement>('.ft-prewarm-track, .ft-prewarm-wrapper').forEach((el) => {
+    el.classList.toggle('is-lite-locked', isLite);
+  });
+  document.querySelectorAll<HTMLButtonElement>('.ft-prewarm-btn, .ft-prewarm-chip').forEach((btn) => {
+    btn.disabled = isLite;
+  });
+
+  document.querySelectorAll<HTMLElement>('.ft-cache-track, .ft-cache-wrapper').forEach((el) => {
+    el.classList.toggle('is-lite-locked', isLite);
+  });
+  document.querySelectorAll<HTMLButtonElement>('.ft-cache-btn, .ft-cache-chip').forEach((btn) => {
+    btn.disabled = isLite;
+  });
+
+  document.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-sidebar-hover-prefetch]').forEach((cb) => {
+    cb.disabled = isLite;
+  });
+  document.querySelectorAll<any>('md-switch[data-sidebar-hover-prefetch]').forEach((sw) => {
+    sw.disabled = isLite;
+  });
+
+  // 受控功能开关
+  LITE_DISABLED_FEATURES.forEach((fid) => {
+    document.querySelectorAll<HTMLInputElement>(`input[type="checkbox"][data-feature-id="${fid}"]`).forEach((cb) => {
+      if (isLite) {
+        cb.disabled = true;
+        cb.checked = false;
+      } else {
+        cb.disabled = !isRuntimeSwitchable(fid);
+        cb.checked = toggles[fid] !== false;
+      }
+    });
+    document.querySelectorAll<any>(`md-switch[data-feature-id="${fid}"]`).forEach((sw) => {
+      if (isLite) {
+        sw.disabled = true;
+        sw.selected = false;
+      } else {
+        sw.disabled = !isRuntimeSwitchable(fid);
+        sw.selected = toggles[fid] !== false;
+      }
+    });
+  });
+}
+
 /** 同步当前所有实例的复选框/滑块状态 */
 function syncAllCheckboxes(): void {
+  const isLite = loadLiteMode();
+
   document
     .querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-feature-id]')
     .forEach((cb) => {
       const id = cb.getAttribute('data-feature-id') || '';
-      cb.checked = toggles[id] !== false;
-      cb.disabled = !isRuntimeSwitchable(id);
+      if (isLite && LITE_DISABLED_FEATURES.includes(id)) {
+        cb.checked = false;
+        cb.disabled = true;
+      } else {
+        cb.checked = toggles[id] !== false;
+        cb.disabled = !isRuntimeSwitchable(id);
+      }
     });
 
   document
     .querySelectorAll<any>('md-switch[data-feature-id]')
     .forEach((sw) => {
       const id = sw.getAttribute('data-feature-id') || '';
-      sw.selected = toggles[id] !== false;
-      sw.disabled = !isRuntimeSwitchable(id);
+      if (isLite && LITE_DISABLED_FEATURES.includes(id)) {
+        sw.selected = false;
+        sw.disabled = true;
+      } else {
+        sw.selected = toggles[id] !== false;
+        sw.disabled = !isRuntimeSwitchable(id);
+      }
     });
 
   document
@@ -927,6 +1220,7 @@ class StarlightFeatureToggles extends HTMLElement {
     this.bindThemeColors();
     this.bindPrewarm();
     this.bindCache();
+    this.bindLiteMode();
     this.bindAiSettings();
 
     syncAllCheckboxes();
@@ -939,6 +1233,7 @@ class StarlightFeatureToggles extends HTMLElement {
     syncAllAiSettings();
     syncAllPunctChips();
     syncAllFontSizeSliders();
+    syncAllLiteMode();
     apply();
   }
 
@@ -1154,6 +1449,37 @@ class StarlightFeatureToggles extends HTMLElement {
         e.preventDefault();
         e.stopPropagation();
         resetToggles();
+      });
+    });
+
+    // PWA 独立应用安装按钮
+    root.querySelectorAll<HTMLButtonElement>('[data-pwa-install-btn]').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const isStandalone = (
+          window.matchMedia('(display-mode: standalone)').matches ||
+          (window.navigator as any).standalone === true ||
+          document.referrer.includes('android-app://')
+        );
+
+        if (isStandalone) return;
+
+        if (deferredInstallPrompt) {
+          try {
+            deferredInstallPrompt.prompt();
+            const choice = await deferredInstallPrompt.userChoice;
+            if (choice && choice.outcome === 'accepted') {
+              deferredInstallPrompt = null;
+              syncAllPwaCard();
+            }
+          } catch (err) {
+            console.debug('[PWA] 安装调用异常:', err);
+          }
+        } else {
+          alert('请点击浏览器地址栏右侧的【安装】图标（或在浏览器设置菜单中选择【安装 AstroLib】/【添加到主屏幕】），即可在计算机专用窗口中运行。');
+        }
       });
     });
 
@@ -1379,6 +1705,23 @@ class StarlightFeatureToggles extends HTMLElement {
       };
       chip.addEventListener('click', handleSelect);
       chip.addEventListener('change', handleSelect);
+    });
+  }
+
+  bindLiteMode() {
+    const root = this.panel || this;
+    root.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-lite-mode]').forEach((cb) => {
+      cb.checked = loadLiteMode();
+      cb.addEventListener('change', () => {
+        saveLiteMode(cb.checked);
+      });
+    });
+
+    root.querySelectorAll<any>('md-switch[data-lite-mode]').forEach((sw) => {
+      sw.selected = loadLiteMode();
+      sw.addEventListener('change', () => {
+        saveLiteMode(sw.selected);
+      });
     });
   }
 
@@ -1827,6 +2170,7 @@ export function initFeatureToggles(): void {
     syncAllAiSettings();
     syncAllPunctChips();
     syncAllFontSizeSliders();
+    syncAllPwaCard();
   });
 
   window.addEventListener('site-theme-change', () => {
@@ -1866,8 +2210,29 @@ export function initFeatureToggles(): void {
     } else if (e.key === FONT_SIZE_KEY) {
       applyFontSize();
       syncAllFontSizeSliders();
+    } else if (e.key === LITE_MODE_KEY) {
+      applyLiteMode();
+      syncAllLiteMode();
     } else if (e.key?.startsWith('astrolib_ai_') || e.key?.startsWith('dsh-aiask-')) {
       syncAllAiSettings();
     }
   });
+
+  // 监听浏览器 PWA 安装横幅事件与安装完成事件
+  if (typeof window !== 'undefined') {
+    window.addEventListener('beforeinstallprompt', (e: Event) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      syncAllPwaCard();
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      syncAllPwaCard();
+      console.info('[PWA] AstroLib 已成功安装为独立应用');
+    });
+
+    // 初次启动同步 PWA 状态
+    syncAllPwaCard();
+  }
 }

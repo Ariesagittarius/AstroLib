@@ -78,6 +78,13 @@ class SideloadManager {
       }
     });
 
+    // 监听全站低性能模式切换：激活时自动退回本节大纲
+    window.addEventListener('astrolib:lite-mode-change', (e: any) => {
+      if (e?.detail?.enabled) {
+        this.switchToDefault();
+      }
+    });
+
     // 同步初态至 DOM
     this.syncDom();
   }
@@ -95,6 +102,11 @@ class SideloadManager {
   public open(panelId: string, payload?: any): void {
     if (!this.panels.has(panelId)) {
       console.warn(`[SideloadManager] 未知侧载面板: ${panelId}`);
+      return;
+    }
+
+    // 低性能模式守卫：严禁打开重型非大纲视图（如习题面板），确保纯净正文阅读
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('astrolib_lite_mode') === 'true' && panelId !== 'toc') {
       return;
     }
 

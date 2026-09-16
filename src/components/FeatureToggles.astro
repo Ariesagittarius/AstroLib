@@ -24,6 +24,7 @@ const RUNTIME_IDS = new Set([
   'aiAsk',
   'editor',
   'inspector',
+  'pwa',
 ]);
 
 const featureMeta = Object.entries(features).map(([id, f]) => ({
@@ -77,6 +78,63 @@ const metaJson = JSON.stringify(featureMeta);
     </div>
 
     <div class="ft-panel-body">
+      <!-- 核心模式：低性能模式 (Material 3 Outlined Container) -->
+      <div class="ft-lite-mode-card" id="ft-lite-mode-card">
+        <div class="ft-lite-mode-main">
+          <div class="ft-lite-mode-icon-wrap" aria-hidden="true">
+            <!-- Google Material Symbols 官方 Outlined 闪电 (bolt) -->
+            <svg class="ft-lite-mode-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M11 21h-1l1-7H7.5c-.88 0-.33-.75-.31-.78L13.5 3h1l-1 7h3.5c.66 0 .44.62.33.82L11.5 21z" />
+            </svg>
+          </div>
+          <div class="ft-lite-mode-texts">
+            <div class="ft-lite-mode-title-row">
+              <span class="ft-lite-mode-title">低性能模式</span>
+              <span class="ft-lite-mode-badge" aria-live="polite">未开启</span>
+            </div>
+            <div class="ft-lite-mode-desc">
+              关闭预载、缓存与动效，为受限设备释放计算与内存，纯净阅读
+            </div>
+          </div>
+          <div class="ft-lite-mode-action">
+            <label class="ft-switch" title="开启/关闭低性能模式">
+              <input type="checkbox" data-lite-mode />
+              <span class="ft-switch-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 核心能力：独立应用与离线 (PWA) -->
+      {
+        features.pwa?.enabled && (
+          <div class="ft-pwa-card" id="ft-pwa-card">
+            <div class="ft-pwa-main">
+              <div class="ft-pwa-icon-wrap" aria-hidden="true">
+                <!-- Google Material Symbols 官方 Outlined 电脑与应用安装 (install_desktop) -->
+                <svg class="ft-pwa-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                  <path d="M20 17H4V5h16m0-2H4c-1.11 0-2 .89-2 2v12c0 1.1.89 2 2 2h4v2h8v-2h4c1.1 0 2-.9 2-2V5c0-1.11-.9-2-2-2m-3 8-5 5-5-5h3V7h4v4h3z"/>
+                </svg>
+              </div>
+              <div class="ft-pwa-texts">
+                <div class="ft-pwa-title-row">
+                  <span class="ft-pwa-title">独立应用 (PWA)</span>
+                  <span class="ft-pwa-badge" data-pwa-badge aria-live="polite">可安装</span>
+                </div>
+                <div class="ft-pwa-desc" data-pwa-desc>
+                  在专用独立窗口中运行，支持离线阅读与断网秒开
+                </div>
+              </div>
+              <div class="ft-pwa-action">
+                <button type="button" class="ft-pwa-install-btn" data-pwa-install-btn title="安装 AstroLib 为独立应用">
+                  <span class="ft-pwa-btn-text">安装应用</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
       <!-- 分组一：字体 -->
       {
         features.fonts.enabled && (
@@ -1057,6 +1115,216 @@ const metaJson = JSON.stringify(featureMeta);
   .ft-panel-body::-webkit-scrollbar-thumb {
     background: var(--sl-color-gray-5);
     border-radius: 3px;
+  }
+
+  /* 核心模式：低性能模式专属卡片 (Material 3 Outlined Container) */
+  .ft-lite-mode-card {
+    padding: 0.65rem 0.75rem;
+    border-radius: 10px;
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    background-color: var(--sl-color-bg, #ffffff);
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+    margin-bottom: 0.25rem;
+  }
+
+  .ft-lite-mode-card.is-active {
+    border-color: var(--sl-color-text-accent);
+    background-color: var(--sl-color-accent-low, rgba(52, 81, 178, 0.06));
+  }
+
+  .ft-lite-mode-main {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  .ft-lite-mode-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: var(--sl-color-gray-6, rgba(125, 125, 125, 0.1));
+    color: var(--sl-color-gray-2);
+    flex-shrink: 0;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .ft-lite-mode-card.is-active .ft-lite-mode-icon-wrap {
+    background-color: var(--sl-color-text-accent);
+    color: #ffffff;
+  }
+
+  .ft-lite-mode-texts {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .ft-lite-mode-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .ft-lite-mode-title {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--sl-color-white, #1a1a1a);
+    line-height: 1.2;
+  }
+
+  .ft-lite-mode-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.08rem 0.35rem;
+    border-radius: 999px;
+    background-color: var(--sl-color-gray-6, rgba(125, 125, 125, 0.12));
+    color: var(--sl-color-gray-3);
+    line-height: 1.2;
+    transition: all 0.2s ease;
+  }
+
+  .ft-lite-mode-badge.is-active {
+    background-color: var(--sl-color-text-accent);
+    color: #ffffff;
+  }
+
+  .ft-lite-mode-desc {
+    font-size: 0.72rem;
+    color: var(--sl-color-gray-3, #71717a);
+    line-height: 1.35;
+  }
+
+  .ft-lite-mode-action {
+    flex-shrink: 0;
+  }
+
+  /* 核心能力：独立应用 (PWA) 专属卡片 (Material 3 Outlined Container) */
+  .ft-pwa-card {
+    padding: 0.65rem 0.75rem;
+    border-radius: 10px;
+    border: 1px solid var(--sl-color-hairline, #e2e2e3);
+    background-color: var(--sl-color-bg, #ffffff);
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+    margin-bottom: 0.5rem;
+  }
+
+  .ft-pwa-card.is-installed {
+    border-color: var(--sl-color-text-accent);
+    background-color: var(--sl-color-accent-low, rgba(52, 81, 178, 0.06));
+  }
+
+  .ft-pwa-main {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  .ft-pwa-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: var(--sl-color-gray-6, rgba(125, 125, 125, 0.1));
+    color: var(--sl-color-gray-2);
+    flex-shrink: 0;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .ft-pwa-card.is-installed .ft-pwa-icon-wrap {
+    background-color: var(--sl-color-text-accent);
+    color: #ffffff;
+  }
+
+  .ft-pwa-texts {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .ft-pwa-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .ft-pwa-title {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--sl-color-white, #1a1a1a);
+    line-height: 1.2;
+  }
+
+  .ft-pwa-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.08rem 0.35rem;
+    border-radius: 999px;
+    background-color: var(--sl-color-gray-6, rgba(125, 125, 125, 0.12));
+    color: var(--sl-color-gray-3);
+    line-height: 1.2;
+    transition: all 0.2s ease;
+  }
+
+  .ft-pwa-badge.is-installed {
+    background-color: var(--sl-color-text-accent);
+    color: #ffffff;
+  }
+
+  .ft-pwa-desc {
+    font-size: 0.72rem;
+    color: var(--sl-color-gray-3, #71717a);
+    line-height: 1.35;
+  }
+
+  .ft-pwa-action {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .ft-pwa-install-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.28rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 6px;
+    border: 1px solid var(--sl-color-text-accent);
+    background-color: var(--sl-color-accent-low, rgba(52, 81, 178, 0.08));
+    color: var(--sl-color-text-accent);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+    line-height: 1.2;
+  }
+
+  .ft-pwa-install-btn:hover:not(:disabled) {
+    background-color: var(--sl-color-text-accent);
+    color: #ffffff;
+  }
+
+  .ft-pwa-install-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+    border-color: var(--sl-color-gray-5);
+    background-color: transparent;
+    color: var(--sl-color-gray-3);
+  }
+
+  /* 低性能模式下被锁定的控件容器 */
+  .is-lite-locked {
+    opacity: 0.55;
+    pointer-events: none;
+    filter: grayscale(0.4);
   }
 
   /* 分组 */

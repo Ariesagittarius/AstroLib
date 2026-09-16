@@ -39,6 +39,14 @@ const clarityProjectId = analyticsConfig.clarityProjectId || 'y9on8roaw3';
       (function () {
         if (window.__astrolibClarityInjected) return;
 
+        // 0. 低性能模式守卫：若用户开启了低性能模式，彻底阻断 Clarity 录屏与热力图探针注入
+        try {
+          if (localStorage.getItem('astrolib_lite_mode') === 'true') {
+            window.__astrolibTrack = function () {};
+            return;
+          }
+        } catch (e) {}
+
         var hostname = window.location.hostname;
         var pathname = window.location.pathname;
 

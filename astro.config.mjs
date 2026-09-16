@@ -8,9 +8,8 @@ import rehypeKatex from 'rehype-katex';
 import { collections } from './src/config/collections.config.mjs';
 import { generateStarlightBookSidebar } from './src/server/adapters/starlight-sidebar.mjs';
 
-// 全站功能注册表：统一声明各功能 enabled/devOnly/ui，并动态装配下方配置。
-// 关闭某功能即从构建产物中彻底移除（插件/CSS/组件/生成脚本），实现性能最大化。
-import { features, isEffective, crossRefRefs } from './src/config/features.config.mjs';
+import { features, isEffective, crossRefRefs, IS_DEV } from './src/config/features.config.mjs';
+
 // 公式源码回填插件：让每个 KaTeX 公式携带 data-latex 原始源码（供前端一键复制）
 import { rehypeKatexAnnotate, rehypeKatexPromote } from './src/plugins/rehype/rehype-katex-source.mjs';
 // 数学变量智能提升插件：构建期提升正文漏网单字母变量与简式为 KaTeX 公式
@@ -138,9 +137,10 @@ if (features.crossRef.enabled) {
   rehypePlugins.push([rehypeCrossRef, { collections, refs: crossRefRefs() }]);
 }
 if (isEffective('editor') || isEffective('feedback')) {
-  // 源码位置注入（用于在线精修与读者段落级勘误定位）
-  rehypePlugins.push(rehypeEditorAnnotate);
+  // 源码位置注入（用于在线精修与读者段落级勘误定位；生产环境轻量化注入）
+  rehypePlugins.push([rehypeEditorAnnotate, { isDev: IS_DEV }]);
 }
+
 if (features.mermaid.enabled) {
   // Mermaid 图表代码块拦截
   rehypePlugins.push(rehypeMermaid);
@@ -184,6 +184,7 @@ const componentOverrides = {
   SocialIcons: './src/components/SocialIconsOverride.astro', // 顶栏 GitHub 社交入口：覆盖默认黑底硬币圆盘，使用官方净标
   TwoColumnContent: './src/components/TwoColumnContentOverride.astro', // 正文两栏布局覆盖：在正文卡片上方挂载 NoticeFramework
   Head: './src/components/HeadOverride.astro', // 全站 SEO 增强：智能 Title 补齐书名、Description 自动合成、Schema.org 与站长验证
+  MarkdownContent: './src/components/MarkdownContentOverride.astro', // 正文语义增强：包裹为 <article role="article"> 赋能 Chrome 朗读/阅读模式
 };
 if (features.theme.enabled) {
   componentOverrides.ThemeSelect = './src/components/ThemeSelectOverride.astro'; // 顶栏外观与主题切换按钮

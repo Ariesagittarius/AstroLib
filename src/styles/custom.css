@@ -52,6 +52,20 @@
   text-align: center;
 }
 
+/* 供 Chrome 侧边栏阅读模式与屏幕阅读器提取的纯文本自愈节点（视觉严格隐藏，零占据尺寸） */
+.katex-reader-text {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border-width: 0 !important;
+  user-select: none !important;
+}
+
 /* 公式末尾编号（\tag）：标准学术版心右对齐与正统教材墨黑 */
 .katex-display > .katex > .katex-html > .tag {
   position: absolute;
@@ -126,7 +140,27 @@
   background-color: transparent;
 }
 
+/* --------------------------------------------------------------------------
+   正文数学密集卡片与插图视口外延迟渲染 (CSS Content Visibility Containment)
+   跳过视口外深层 KaTeX DOM 树的初次样式计算与排版绘制，大幅降低首屏长任务与内存
+   注意：严格排除标题（h1~h6），确保右侧大纲 TOC 与 scroll-spy 锚点定位平稳无抖动
+   -------------------------------------------------------------------------- */
+.sl-markdown-content > .example-card,
+.sl-markdown-content > .solution-details,
+.sl-markdown-content > .vp-figure,
+.sl-markdown-content > .knowledge-card,
+.sl-markdown-content > .method-card,
+.sl-markdown-content > .guide-block,
+.sl-markdown-content > .variant-card,
+.sl-markdown-content > .exercise-card,
+.sl-markdown-content > .astrolib-sidenote.sidenote-inline,
+.sl-markdown-content > .katex-display {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 200px;
+}
+
 /* ==========================================================================
+
    学术出版段落排版规范 (Academic Paragraph Typesetting & Indentation)
    --------------------------------------------------------------------------
    遵循中国高校数理专著、国家标准与 LaTeX ctex 宏包排版规范：

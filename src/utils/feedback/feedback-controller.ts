@@ -80,8 +80,14 @@ function getPageMetadata(): { bookTitle: string; bookSlug: string; chapterTitle:
 
 function extractTargetData(el: HTMLElement, rawTarget?: Element | null): BlockTarget {
   const line = parseInt(el.getAttribute('data-src-line') || '0', 10);
-  const file = el.getAttribute('data-src-file') || guessFile();
+  const file =
+    el.getAttribute('data-src-file') ||
+    el.closest('[data-src-file]')?.getAttribute('data-src-file') ||
+    document.querySelector('.sl-markdown-content [data-src-file], main [data-src-file], [data-src-file]')?.getAttribute('data-src-file') ||
+    guessFile();
   const kind = el.getAttribute('data-src-kind') || 'paragraph';
+
+
 
   // Check if click was directly on a KaTeX formula
   const katexEl = rawTarget?.closest('.katex[data-latex], .katex-display[data-latex]');

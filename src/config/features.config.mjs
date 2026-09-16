@@ -392,6 +392,17 @@ const featureDefs = {
       indexNowKey: (typeof process !== 'undefined' && process.env?.INDEXNOW_KEY) || 'f774bb6a2e78400d9863cad353421e5c',
     },
   }),
+
+  // 独立应用与离线阅读 (PWA)：支持将网站安装为独立桌面/移动端应用，并提供离线断网缓存
+  pwa: defineFeature({
+    id: 'pwa',
+    cat: 'extra',
+    label: '独立应用与离线 (PWA)',
+    desc: '支持在电脑与手机上安装为专用独立窗口应用，并提供离线阅读缓存',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+  }),
 };
 
 /** 全站功能表（id → manifest） */

@@ -175,6 +175,16 @@ const bingVerification = features.seo?.config?.bingSiteVerification;
 <!-- 1. Starlight 原生基础与样式链接（过滤后的） -->
 {processedHead.map(({ tag: Tag, attrs, content }) => <Tag {...attrs} set:html={content} />)}
 
+<!-- 0. 首屏 0ms 低性能模式状态守卫（防止毛玻璃与复杂动效首屏闪烁） -->
+<script is:inline>
+  try {
+    if (localStorage.getItem('astrolib_lite_mode') === 'true') {
+      document.documentElement.dataset.liteMode = 'true';
+      document.documentElement.classList.add('astrolib-lite-mode');
+    }
+  } catch (e) {}
+</script>
+
 <!-- 2. 强化标题与基础元数据 -->
 <title>{enhancedTitle}</title>
 <meta name="description" content={finalDescription} />
@@ -200,3 +210,37 @@ const bingVerification = features.seo?.config?.bingSiteVerification;
 
 <!-- 6. Schema.org 学术级结构化数据 (JSON-LD) -->
 <script type="application/ld+json" set:html={jsonLdString} />
+
+<!-- 7. PWA 渐进式独立应用与移动端全屏元数据 -->
+{features.pwa?.enabled && (
+  <>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#fdfcff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111318" media="(prefers-color-scheme: dark)" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="AstroLib" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <script is:inline>
+      if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then((reg) => {
+            reg.addEventListener('updatefound', () => {
+              const newWorker = reg.installing;
+              if (newWorker) {
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.info('[PWA] AstroLib 离线应用已更新至最新版本');
+                  }
+                });
+              }
+            });
+          }).catch((err) => {
+            console.debug('[PWA] Service Worker 注册状态:', err);
+          });
+        });
+      }
+    </script>
+  </>
+)}

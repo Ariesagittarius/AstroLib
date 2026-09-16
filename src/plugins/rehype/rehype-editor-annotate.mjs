@@ -53,7 +53,9 @@ const BLOCK_KIND = {
 /** 组件节点的 data 属性统一为字符串 */
 const str = (v) => (v == null ? '' : String(v));
 
-export default function rehypeEditorAnnotate() {
+export default function rehypeEditorAnnotate(options = {}) {
+  const isDev = Boolean(options.isDev);
+
   return (tree, file) => {
     // 注入插件运行在 rehype 阶段，file.path 为源文件绝对路径（若可用）。
     // 转成项目根相对路径供写回端使用；不可用时由前端兜底（从页面 URL 推导）。
@@ -65,6 +67,8 @@ export default function rehypeEditorAnnotate() {
       /* 忽略，前端兜底 */
     }
 
+    let fileInjected = false;
+
     // 1) 卡片组件节点：追加 mdxJsxAttribute（编译后成为组件 props）
     visit(tree, 'mdxJsxFlowElement', (node) => {
       const kind = CARD_COMPONENTS[node.name];
@@ -74,7 +78,13 @@ export default function rehypeEditorAnnotate() {
       const add = (name, value) => {
         attrs.push({ type: 'mdxJsxAttribute', name, value: str(value) });
       };
-      add('data-src-file', srcFile);
+      
+      // 生产环境仅在首个节点注入一次全局 data-src-file，消除全页百次重复路径字符串
+      if (isDev || (!fileInjected && srcFile)) {
+        add('data-src-file', srcFile);
+        fileInjected = true;
+      }
+
       add('data-src-line', node.position.start.line);
       add('data-src-kind', kind);
       node.attributes = attrs;
@@ -90,7 +100,12 @@ export default function rehypeEditorAnnotate() {
       if (kind) {
         const pos = el.position?.start?.line;
         if (!pos) return;
-        props.dataSrcFile = srcFile;
+
+        if (isDev || (!fileInjected && srcFile)) {
+          props.dataSrcFile = srcFile;
+          fileInjected = true;
+        }
+
         props.dataSrcLine = pos;
         props.dataSrcKind = kind;
         return;
@@ -101,10 +116,16 @@ export default function rehypeEditorAnnotate() {
       if (classes.includes('katex-display') || classes.includes('math-display')) {
         const pos = el.position?.start?.line || props.dataKatexLine;
         if (!pos) return;
-        props.dataSrcFile = srcFile;
+
+        if (isDev || (!fileInjected && srcFile)) {
+          props.dataSrcFile = srcFile;
+          fileInjected = true;
+        }
+
         props.dataSrcLine = Number(pos);
         props.dataSrcKind = 'formula';
       }
     });
   };
 }
+

@@ -18,6 +18,7 @@
 import { visitParents, SKIP } from 'unist-util-visit-parents';
 import { visit } from 'unist-util-visit';
 import { toText } from 'hast-util-to-text';
+import { latexToReadableText } from './latex-to-readable-text.mjs';
 
 /** 数学节点的类名标记（与 rehype-katex 判定的口径完全一致） */
 function isMathClasses(classes) {
@@ -108,6 +109,19 @@ export function rehypeKatexPromote() {
           ...(element.properties.dataKatexLine ? { dataKatexLine: element.properties.dataKatexLine } : {}),
         };
         if (element.position) root.position = element.position;
+
+        // 生成专供 Chrome 朗读/阅读模式及屏幕阅读器的可读纯文本自愈节点
+        const readableText = latexToReadableText(element.properties.dataKatexSrc);
+        if (readableText) {
+          root.children.unshift({
+            type: 'element',
+            tagName: 'span',
+            properties: {
+              className: ['katex-reader-text', 'sr-only'],
+            },
+            children: [{ type: 'text', value: readableText }],
+          });
+        }
       }
 
       // 用占位符的子元素替换占位符本身（解包），并从该位置继续遍历

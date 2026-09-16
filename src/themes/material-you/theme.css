@@ -6383,6 +6383,89 @@ m3-loading-indicator .m3-morph-canvas {
   text-align: center;
 }
 
+/* ============================================================================
+   7. 全站【低性能模式】(Lite Mode / 纯净低耗模式) 极简样式矩阵
+   ============================================================================
+   目标：
+   1. 彻底消灭所有 backdrop-filter 模糊滤镜，杜绝 GPU 离屏合成图层（Off-screen Layer Pass）；
+   2. 动画与过渡时长归零 (0.001ms)，杜绝页面切换与样式变动的帧率掉帧；
+   3. 消除复杂重阴影 (box-shadow)，改用轻量发丝边框；
+   4. 隐藏水波纹 (md-ripple) 与非必要重型外挂微件；
+   5. 保留纯粹的高清数学公式排版与大纲定位。
+   ============================================================================ */
+
+html[data-lite-mode="true"],
+html.astrolib-lite-mode {
+  --sl-transition-duration: 0s !important;
+}
+
+/* 1. 强制消除全站毛玻璃滤镜与文字阴影 */
+html[data-lite-mode="true"] *,
+html[data-lite-mode="true"] *::before,
+html[data-lite-mode="true"] *::after,
+html.astrolib-lite-mode *,
+html.astrolib-lite-mode *::before,
+html.astrolib-lite-mode *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  text-shadow: none !important;
+}
+
+/* 2. 强制关闭全站过渡与关键帧动画（瞬间响应） */
+html[data-lite-mode="true"] *:not(.ft-panel):not(.custom-page-sidebar),
+html[data-lite-mode="true"] *:not(.ft-panel):not(.custom-page-sidebar)::before,
+html[data-lite-mode="true"] *:not(.ft-panel):not(.custom-page-sidebar)::after,
+html.astrolib-lite-mode *:not(.ft-panel):not(.custom-page-sidebar),
+html.astrolib-lite-mode *:not(.ft-panel):not(.custom-page-sidebar)::before,
+html.astrolib-lite-mode *:not(.ft-panel):not(.custom-page-sidebar)::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* 3. 消除复杂阴影，降低 GPU Compositing 内存开销 */
+html[data-lite-mode="true"] .right-sidebar-container,
+html[data-lite-mode="true"] .sidebar-pane,
+html[data-lite-mode="true"] .vp-header-inner,
+html[data-lite-mode="true"] .toc-container,
+html.astrolib-lite-mode .right-sidebar-container,
+html.astrolib-lite-mode .sidebar-pane,
+html.astrolib-lite-mode .vp-header-inner,
+html.astrolib-lite-mode .toc-container {
+  box-shadow: none !important;
+}
+
+/* 4. 彻底隐藏水波纹 (Material Ripple) */
+html[data-lite-mode="true"] md-ripple,
+html.astrolib-lite-mode md-ripple {
+  display: none !important;
+}
+
+/* 5. 彻底隐藏重型浮层外挂（AI 问答悬浮球、关系图谱触发器等） */
+html[data-lite-mode="true"] .ask-fab,
+html[data-lite-mode="true"] #dsh-relation-graph-root,
+html[data-lite-mode="true"] .relation-graph-trigger,
+html[data-lite-mode="true"] #dsh-inspector-root,
+html[data-lite-mode="true"] #dsh-feedback-root,
+html[data-lite-mode="true"] .formula-actions-toolbar,
+html.astrolib-lite-mode .ask-fab,
+html.astrolib-lite-mode #dsh-relation-graph-root,
+html.astrolib-lite-mode .relation-graph-trigger,
+html.astrolib-lite-mode #dsh-inspector-root,
+html.astrolib-lite-mode #dsh-feedback-root,
+html.astrolib-lite-mode .formula-actions-toolbar {
+  display: none !important;
+}
+
+/* 6. 顶栏背景降级为轻纯静态不透明色，杜绝半透重绘 */
+html[data-lite-mode="true"] .header,
+html[data-lite-mode="true"] header.header,
+html.astrolib-lite-mode .header,
+html.astrolib-lite-mode header.header {
+  background-color: var(--sl-color-bg, #ffffff) !important;
+  border-bottom: 1px solid var(--sl-color-hairline, #e2e2e3) !important;
+}
+
 
 
 

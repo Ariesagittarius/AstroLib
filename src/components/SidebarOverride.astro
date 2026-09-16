@@ -224,6 +224,9 @@ if (features.epub.enabled && bookMatch) {
      */
     function getMaxPageCacheSize() {
       try {
+        if (localStorage.getItem('astrolib_lite_mode') === 'true') {
+          return 0; // 低性能模式下坚决不缓存历史页面 DOM，彻底释放内存
+        }
         const saved = localStorage.getItem('astrolib_max_page_cache');
         if (saved !== null && saved !== undefined && saved !== '') {
           const val = parseInt(saved, 10);
@@ -801,8 +804,8 @@ if (features.epub.enabled && bookMatch) {
         }
       } catch {}
 
-      // 若用户设置为 0 则完全关闭后台空闲预热
-      if (prewarmPages === 0) {
+      // 若用户设置为 0 或处于低性能模式，则完全关闭后台空闲预热
+      if (prewarmPages === 0 || localStorage.getItem('astrolib_lite_mode') === 'true') {
         prewarmQueue = [];
         return;
       }
@@ -1039,6 +1042,31 @@ if (features.epub.enabled && bookMatch) {
         if (hoverAbortController) {
           hoverAbortController.abort();
         }
+      }
+    });
+
+    // 监听全站【低性能模式】切换事件并深度释放缓存
+    window.addEventListener('astrolib:lite-mode-change', (e) => {
+      const isLite = e && e.detail && typeof e.detail.enabled === 'boolean' ? e.detail.enabled : false;
+      if (isLite) {
+        // 立即彻底清空并断开页面内存缓存中的全部母版字符串引用
+        for (const [, rec] of pageCache) {
+          if (rec) {
+            rec.mainHtml = null;
+            rec.rightHtml = null;
+            rec.sidebarHtml = null;
+            rec.textSnippet = null;
+          }
+        }
+        pageCache.clear();
+        prewarmQueue = [];
+        isPrewarmingActive = false;
+        clearTimeout(hoverPrefetchTimer);
+        if (hoverAbortController) {
+          hoverAbortController.abort();
+        }
+      } else {
+        triggerIdlePrewarming();
       }
     });
 
