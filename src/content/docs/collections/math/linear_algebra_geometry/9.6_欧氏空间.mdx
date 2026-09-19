@@ -1,0 +1,262 @@
+---
+title: '9.6* 欧氏空间'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+本节将 $\mathbf{R}^n$ 中向量的长度与夹角等几何度量性质推广到一般的 $n$ 维实线性空间。
+
+## 一、向量的内积与度量性质
+
+<Knowledge title="定义 7 内积与欧氏空间">
+
+设 $V$ 是 $n$ 维实线性空间。如果对 $V$ 中任意两个向量 $\boldsymbol{\alpha}, \boldsymbol{\beta}$，都有唯一确定的实数（记作 $(\boldsymbol{\alpha}, \boldsymbol{\beta})$）与之对应，且满足下面的三条性质，则称实数 $(\boldsymbol{\alpha}, \boldsymbol{\beta})$ 为向量 $\boldsymbol{\alpha}$ 与 $\boldsymbol{\beta}$ 的**内积**：
+
+(1) **对称性**：对任意的 $\boldsymbol{\alpha}, \boldsymbol{\beta} \in V, (\boldsymbol{\alpha}, \boldsymbol{\beta}) = (\boldsymbol{\beta}, \boldsymbol{\alpha})$；
+
+(2) **线性性**：对任意的 $\boldsymbol{\alpha}, \boldsymbol{\beta}, \boldsymbol{\gamma} \in V, (\boldsymbol{\alpha} + \boldsymbol{\beta}, \boldsymbol{\gamma}) = (\boldsymbol{\alpha}, \boldsymbol{\gamma}) + (\boldsymbol{\beta}, \boldsymbol{\gamma})$；且对任意的 $\boldsymbol{\alpha}, \boldsymbol{\beta} \in V$ 及任意 $k \in \mathbf{R}, (k\boldsymbol{\alpha}, \boldsymbol{\beta}) = k(\boldsymbol{\alpha}, \boldsymbol{\beta})$；
+
+(3) **正定性**：对任意的 $\boldsymbol{\alpha} \in V, (\boldsymbol{\alpha}, \boldsymbol{\alpha}) \geqslant 0$，而且 $(\boldsymbol{\alpha}, \boldsymbol{\alpha}) = 0 \iff \boldsymbol{\alpha} = \boldsymbol{0}$。
+
+定义了内积运算的 $n$ 维实线性空间 $V$ 称为 $n$ 维**欧氏空间**。
+
+</Knowledge>
+
+<Example title="例 17 ~ 20 典型的内积构造">
+
+(1) 在 $\mathbf{R}^n$ 中，定义内积 $(\boldsymbol{\alpha}, \boldsymbol{\beta}) = \boldsymbol{\alpha}^\mathrm{T} \boldsymbol{\beta}$（$\forall \boldsymbol{\alpha}, \boldsymbol{\beta} \in \mathbf{R}^n$）。这个内积显然满足定义 7 中的三条性质，$\mathbf{R}^n$ 构成一个 $n$ 维欧氏空间，称这个内积为 $\mathbf{R}^n$ 的**标准内积**。
+
+(2) 设 $\boldsymbol{A}$ 为 $n$ 阶正定矩阵。在 $\mathbf{R}^n$ 中定义 $(\boldsymbol{\alpha}, \boldsymbol{\beta}) = \boldsymbol{\alpha}^\mathrm{T} \boldsymbol{A} \boldsymbol{\beta}$（$\forall \boldsymbol{\alpha}, \boldsymbol{\beta} \in \mathbf{R}^n$）。因为 $\boldsymbol{A}^\mathrm{T} = \boldsymbol{A}$ 且 $\boldsymbol{A}$ 正定，容易验证其满足对称性、线性性与正定性，因此也是 $\mathbf{R}^n$ 中的内积。
+
+(3) 设 $V$ 为全体 $n$ 阶实矩阵。在 $V$ 中定义
+
+$$
+(\boldsymbol{A}, \boldsymbol{B}) = \operatorname{tr}(\boldsymbol{A}^\mathrm{T}\boldsymbol{B}), \quad \forall \boldsymbol{A}, \boldsymbol{B} \in V.
+$$
+
+利用迹的性质 $\operatorname{tr}(\boldsymbol{M}^\mathrm{T}) = \operatorname{tr}(\boldsymbol{M})$ 与线性性质，以及 $(\boldsymbol{A}, \boldsymbol{A}) = \operatorname{tr}(\boldsymbol{A}^\mathrm{T}\boldsymbol{A}) = \sum_{i,j=1}^n a_{ij}^2 \geqslant 0$，可知该运算构成 $V$ 中的内积。
+
+(4) 设 $\mathbf{R}[x]_n$ 为全体次数小于 $n$ 的实系数多项式空间。在 $\mathbf{R}[x]_n$ 中定义
+
+$$
+(f(x), g(x)) = \int_0^1 f(x)g(x) \mathrm{d}x, \quad \forall f(x), g(x) \in \mathbf{R}[x]_n.
+$$
+
+由定积分的线性性质与连续函数积分的保号性，易见满足三条性质，因此也是 $\mathbf{R}[x]_n$ 中的内积。
+
+</Example>
+
+<Knowledge title="定理 6 柯西-施瓦茨（Cauchy-Schwarz）不等式">
+
+设 $V$ 为 $n$ 维欧氏空间，对任意 $\boldsymbol{\alpha}, \boldsymbol{\beta} \in V$，有
+
+$$
+(\boldsymbol{\alpha}, \boldsymbol{\beta})^2 \leqslant (\boldsymbol{\alpha}, \boldsymbol{\alpha})(\boldsymbol{\beta}, \boldsymbol{\beta}),
+$$
+
+等号当且仅当 $\boldsymbol{\alpha}$ 与 $\boldsymbol{\beta}$ 线性相关时成立。
+
+</Knowledge>
+
+<Knowledge title="定义 8 ~ 9 向量长度、夹角与正交">
+
+设 $V$ 为 $n$ 维欧氏空间：
+
+(1) 对任意 $\boldsymbol{\alpha} \in V$，令 $\|\boldsymbol{\alpha}\| = \sqrt{(\boldsymbol{\alpha}, \boldsymbol{\alpha})}$，称 $\|\boldsymbol{\alpha}\|$ 为 $\boldsymbol{\alpha}$ 的**长度**（或**范数**）。当 $\|\boldsymbol{\alpha}\| = 1$ 时，称 $\boldsymbol{\alpha}$ 为**单位向量**。长度具有非负性、齐次性与三角不等式：
+
+$$
+\|\boldsymbol{\alpha} + \boldsymbol{\beta}\| \leqslant \|\boldsymbol{\alpha}\| + \|\boldsymbol{\beta}\|.
+$$
+
+(2) 对 $V$ 中的任意非零向量 $\boldsymbol{\alpha}, \boldsymbol{\beta}$，称
+
+$$
+\theta = \arccos \frac{(\boldsymbol{\alpha}, \boldsymbol{\beta})}{\|\boldsymbol{\alpha}\| \cdot \|\boldsymbol{\beta}\|} \quad (0 \leqslant \theta \leqslant \pi)
+$$
+
+为 $\boldsymbol{\alpha}$ 与 $\boldsymbol{\beta}$ 的**夹角**。
+
+(3) 特别地，当 $\theta = \frac{\pi}{2}$ 即 $(\boldsymbol{\alpha}, \boldsymbol{\beta}) = 0$ 时，称 $\boldsymbol{\alpha}$ 与 $\boldsymbol{\beta}$ **正交**，记为 $\boldsymbol{\alpha} \perp \boldsymbol{\beta}$。规定零向量与任意向量都正交。
+
+</Knowledge>
+
+<SideNote title="多项式向量的夹角计算示例">
+如在例 20 中取 $f(x) = x, g(x) = x^2$，由定义可得 $f(x)$ 与 $g(x)$ 的夹角为
+
+$$
+\theta = \arccos \frac{\int_0^1 x^3 \mathrm{d}x}{\sqrt{\int_0^1 x^2 \mathrm{d}x} \sqrt{\int_0^1 x^4 \mathrm{d}x}} = \arccos \frac{\frac{1}{4}}{\sqrt{\frac{1}{3}}\sqrt{\frac{1}{5}}} = \arccos \frac{\sqrt{15}}{4}.
+$$
+</SideNote>
+
+## 二、标准正交基与施密特正交化
+
+<Knowledge title="定义 10 ~ 11 标准正交基">
+
+设 $V$ 为 $n$ 维欧氏空间：
+
+(1) 如果 $V$ 中的非零元素 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_m$ 两两正交，则称 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_m$ 为**正交向量组**。由单位向量构成的正交向量组称为**标准正交向量组**（或规范正交向量组）。
+
+(2) 如果 $V$ 中有一组基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 两两正交且都是单位向量，则称 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 为 $V$ 的一组**标准正交基**。
+
+</Knowledge>
+
+<Knowledge title="定理 7 正交向量组的线性无关性">
+
+设 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_m$ 为正交向量组，则 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_m$ 必线性无关。
+
+</Knowledge>
+
+<Knowledge title="定理 8 施密特（Schmidt）正交化方法">
+
+设 $V$ 为 $n$ 维欧氏空间，$\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_m$ 是 $V$ 中线性无关的向量组。令
+
+$$
+\begin{aligned}
+\boldsymbol{\beta}_1 &= \boldsymbol{\alpha}_1, \\
+\boldsymbol{\beta}_2 &= \boldsymbol{\alpha}_2 - \frac{(\boldsymbol{\alpha}_2, \boldsymbol{\beta}_1)}{(\boldsymbol{\beta}_1, \boldsymbol{\beta}_1)}\boldsymbol{\beta}_1, \\
+\boldsymbol{\beta}_3 &= \boldsymbol{\alpha}_3 - \frac{(\boldsymbol{\alpha}_3, \boldsymbol{\beta}_1)}{(\boldsymbol{\beta}_1, \boldsymbol{\beta}_1)}\boldsymbol{\beta}_1 - \frac{(\boldsymbol{\alpha}_3, \boldsymbol{\beta}_2)}{(\boldsymbol{\beta}_2, \boldsymbol{\beta}_2)}\boldsymbol{\beta}_2, \\
+&\vdots \\
+\boldsymbol{\beta}_m &= \boldsymbol{\alpha}_m - \frac{(\boldsymbol{\alpha}_m, \boldsymbol{\beta}_1)}{(\boldsymbol{\beta}_1, \boldsymbol{\beta}_1)}\boldsymbol{\beta}_1 - \frac{(\boldsymbol{\alpha}_m, \boldsymbol{\beta}_2)}{(\boldsymbol{\beta}_2, \boldsymbol{\beta}_2)}\boldsymbol{\beta}_2 - \cdots - \frac{(\boldsymbol{\alpha}_m, \boldsymbol{\beta}_{m-1})}{(\boldsymbol{\beta}_{m-1}, \boldsymbol{\beta}_{m-1})}\boldsymbol{\beta}_{m-1},
+\end{aligned}
+$$
+
+则 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_m$ 两两正交且与 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_m$ 等价。再取 $\boldsymbol{e}_i = \frac{\boldsymbol{\beta}_i}{\|\boldsymbol{\beta}_i\|}$ ($i = 1, 2, \cdots, m$)，即得标准正交向量组。
+
+</Knowledge>
+
+<Example title="例 21 多项式欧氏空间的正交基构造">
+
+在 $\mathbf{R}[x]_3$ 中，取基 $\boldsymbol{\alpha}_1 = 1, \boldsymbol{\alpha}_2 = x, \boldsymbol{\alpha}_3 = x^2$。按内积 $(f(x), g(x)) = \int_0^1 f(x)g(x)\mathrm{d}x$ 求 $\mathbf{R}[x]_3$ 的一组标准正交基。
+
+</Example>
+
+<Solution title="解">
+
+令
+
+$$
+\boldsymbol{\beta}_1 = \boldsymbol{\alpha}_1 = 1,
+$$
+
+$$
+\boldsymbol{\beta}_2 = \boldsymbol{\alpha}_2 - \frac{(\boldsymbol{\alpha}_2, \boldsymbol{\beta}_1)}{(\boldsymbol{\beta}_1, \boldsymbol{\beta}_1)}\boldsymbol{\beta}_1 = x - \frac{\int_0^1 x \mathrm{d}x}{\int_0^1 1^2 \mathrm{d}x} = x - \frac{1}{2},
+$$
+
+$$
+\boldsymbol{\beta}_3 = \boldsymbol{\alpha}_3 - \frac{(\boldsymbol{\alpha}_3, \boldsymbol{\beta}_1)}{(\boldsymbol{\beta}_1, \boldsymbol{\beta}_1)}\boldsymbol{\beta}_1 - \frac{(\boldsymbol{\alpha}_3, \boldsymbol{\beta}_2)}{(\boldsymbol{\beta}_2, \boldsymbol{\beta}_2)}\boldsymbol{\beta}_2
+$$
+
+$$
+= x^2 - \frac{\int_0^1 x^2 \mathrm{d}x}{\int_0^1 1^2 \mathrm{d}x} - \frac{\int_0^1 x^2\left(x - \frac{1}{2}\right)\mathrm{d}x}{\int_0^1 \left(x - \frac{1}{2}\right)^2 \mathrm{d}x}\left(x - \frac{1}{2}\right) = x^2 - x + \frac{1}{6}.
+$$
+
+计算各向量的范数并单位化：
+
+$$
+\boldsymbol{e}_1 = \frac{\boldsymbol{\beta}_1}{\|\boldsymbol{\beta}_1\|} = \frac{1}{\sqrt{\int_0^1 1^2 \mathrm{d}x}} = 1,
+$$
+
+$$
+\boldsymbol{e}_2 = \frac{\boldsymbol{\beta}_2}{\|\boldsymbol{\beta}_2\|} = \frac{x - \frac{1}{2}}{\sqrt{\int_0^1 \left(x - \frac{1}{2}\right)^2 \mathrm{d}x}} = 2\sqrt{3}\left(x - \frac{1}{2}\right),
+$$
+
+$$
+\boldsymbol{e}_3 = \frac{\boldsymbol{\beta}_3}{\|\boldsymbol{\beta}_3\|} = \frac{x^2 - x + \frac{1}{6}}{\sqrt{\int_0^1 \left(x^2 - x + \frac{1}{6}\right)^2 \mathrm{d}x}} = 6\sqrt{5}\left(x^2 - x + \frac{1}{6}\right).
+$$
+
+$\boldsymbol{e}_1, \boldsymbol{e}_2, \boldsymbol{e}_3$ 即为 $\mathbf{R}[x]_3$ 的一组标准正交基。
+
+</Solution>
+
+## 三、度量矩阵
+
+在 $n$ 维欧氏空间 $V$ 中取定一组基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 以后，$V$ 中的任意向量 $\boldsymbol{\alpha} = x_1 \boldsymbol{\alpha}_1 + x_2 \boldsymbol{\alpha}_2 + \cdots + x_n \boldsymbol{\alpha}_n$ 与其坐标向量 $\boldsymbol{x} = (x_1, x_2, \cdots, x_n)^\mathrm{T}$ 之间是一一对应的。借助这个对应关系，可将 $V$ 中抽象的内积运算对应成 $\mathbf{R}^n$ 中具体的内积运算。
+
+<Knowledge title="定义 12 度量矩阵">
+
+设 $V$ 为 $n$ 维欧氏空间，$\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 为 $V$ 的一组基。称矩阵
+
+$$
+\boldsymbol{A} =
+\begin{pmatrix}
+(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_1) & (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2) & \cdots & (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_n) \\
+(\boldsymbol{\alpha}_2, \boldsymbol{\alpha}_1) & (\boldsymbol{\alpha}_2, \boldsymbol{\alpha}_2) & \cdots & (\boldsymbol{\alpha}_2, \boldsymbol{\alpha}_n) \\
+\vdots & \vdots & & \vdots \\
+(\boldsymbol{\alpha}_n, \boldsymbol{\alpha}_1) & (\boldsymbol{\alpha}_n, \boldsymbol{\alpha}_2) & \cdots & (\boldsymbol{\alpha}_n, \boldsymbol{\alpha}_n)
+\end{pmatrix}
+$$
+
+为 $V$ 在基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 下的**度量矩阵**。
+
+</Knowledge>
+
+<Knowledge title="定理 9 坐标形式的内积计算与度量矩阵的正定性">
+
+设 $V$ 为 $n$ 维欧氏空间，$\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 为 $V$ 的一组基，$\boldsymbol{A}$ 为 $V$ 在该基下的度量矩阵。任取 $\boldsymbol{\alpha}, \boldsymbol{\beta} \in V$，分别设 $\boldsymbol{\alpha}, \boldsymbol{\beta}$ 在该基下的坐标为 $\boldsymbol{x} = (x_1, x_2, \cdots, x_n)^\mathrm{T}$ 与 $\boldsymbol{y} = (y_1, y_2, \cdots, y_n)^\mathrm{T}$，则
+
+$$
+(\boldsymbol{\alpha}, \boldsymbol{\beta}) = \boldsymbol{x}^\mathrm{T} \boldsymbol{A} \boldsymbol{y}.
+$$
+
+且度量矩阵 $\boldsymbol{A}$ 是**实对称正定矩阵**。特别地，当基为标准正交基时，$\boldsymbol{A} = \boldsymbol{E}$，内积化为标准内积 $\boldsymbol{x}^\mathrm{T}\boldsymbol{y}$。
+
+</Knowledge>
+
+<Block title="证明">
+
+记 $a_{ij} = (\boldsymbol{\alpha}_i, \boldsymbol{\alpha}_j)$，则 $\boldsymbol{A} = (a_{ij})$。已知 $\boldsymbol{\alpha} = \sum_{i=1}^n x_i \boldsymbol{\alpha}_i, \boldsymbol{\beta} = \sum_{j=1}^n y_j \boldsymbol{\alpha}_j$。于是
+
+$$
+(\boldsymbol{\alpha}, \boldsymbol{\beta}) = \left(\sum_{i=1}^n x_i \boldsymbol{\alpha}_i, \sum_{j=1}^n y_j \boldsymbol{\alpha}_j\right) = \sum_{i,j=1}^n x_i y_j a_{ij} = \boldsymbol{x}^\mathrm{T} \boldsymbol{A} \boldsymbol{y}.
+$$
+
+由此可得 $(\boldsymbol{\alpha}, \boldsymbol{\alpha}) = \boldsymbol{x}^\mathrm{T} \boldsymbol{A} \boldsymbol{x}$。由内积正定性，对任意非零向量 $\boldsymbol{\alpha}$（即 $\boldsymbol{x} \neq \boldsymbol{0}$），恒有 $\boldsymbol{x}^\mathrm{T} \boldsymbol{A} \boldsymbol{x} > 0$。由内积对称性知 $a_{ij} = a_{ji}$，故 $\boldsymbol{A}$ 为实对称正定矩阵。
+
+</Block>
+
+<Knowledge title="定理 10 度量矩阵的基变换与合同关系">
+
+设 $V$ 为 $n$ 维欧氏空间，$\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 与 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_n$ 为 $V$ 的两组基，$V$ 在基 $\boldsymbol{\alpha}_1, \cdots, \boldsymbol{\alpha}_n$ 与基 $\boldsymbol{\beta}_1, \cdots, \boldsymbol{\beta}_n$ 下的度量矩阵分别为 $\boldsymbol{A}, \boldsymbol{B}$。从基 $\boldsymbol{\alpha}_1, \cdots, \boldsymbol{\alpha}_n$ 到基 $\boldsymbol{\beta}_1, \cdots, \boldsymbol{\beta}_n$ 的过渡矩阵为 $\boldsymbol{P}$，则
+
+$$
+\boldsymbol{B} = \boldsymbol{P}^\mathrm{T} \boldsymbol{A} \boldsymbol{P}.
+$$
+
+即 $n$ 维欧氏空间 $V$ 在不同基下的度量矩阵是**合同**的。
+
+</Knowledge>
+
+<Block title="证明">
+
+记 $\boldsymbol{A} = (a_{ij}), \boldsymbol{B} = (b_{ij}), \boldsymbol{P} = (p_{ij})$，由已知得
+
+$$
+(\boldsymbol{\alpha}_i, \boldsymbol{\alpha}_j) = a_{ij}, \quad (\boldsymbol{\beta}_i, \boldsymbol{\beta}_j) = b_{ij},
+$$
+
+$$
+\boldsymbol{\beta}_i = p_{1i}\boldsymbol{\alpha}_1 + p_{2i}\boldsymbol{\alpha}_2 + \cdots + p_{ni}\boldsymbol{\alpha}_n, \quad i = 1, 2, \cdots, n.
+$$
+
+设 $\boldsymbol{P}^\mathrm{T} \boldsymbol{A} \boldsymbol{P} = (c_{ij})$，只需证明 $b_{ij} = c_{ij}$：
+
+$$
+b_{ij} = (\boldsymbol{\beta}_i, \boldsymbol{\beta}_j) = \left(\sum_{k=1}^n p_{ki}\boldsymbol{\alpha}_k, \sum_{l=1}^n p_{lj}\boldsymbol{\alpha}_l\right) = \sum_{k,l=1}^n p_{ki} p_{lj} (\boldsymbol{\alpha}_k, \boldsymbol{\alpha}_l) = \sum_{k,l=1}^n p_{ki} a_{kl} p_{lj} = c_{ij}.
+$$
+
+因此 $\boldsymbol{B} = \boldsymbol{P}^\mathrm{T} \boldsymbol{A} \boldsymbol{P}$。
+
+</Block>
+
+<ExerciseTrigger chapter={9} section="9.6" title="9.6 欧氏空间 课后真题与自测练习" />

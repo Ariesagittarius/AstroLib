@@ -67,7 +67,7 @@ export async function fetchGlobalIndex(aside: HTMLElement | null): Promise<Recor
 
 export function getGlobalIndex(aside: HTMLElement | null): Record<string, string> {
   const key = aside?.getAttribute('data-book-key') || '';
-  if (globalIndexCache.has(key)) return globalIndexCache.get(key);
+  if (globalIndexCache.has(key)) return globalIndexCache.get(key) || {};
   const raw = aside?.getAttribute('data-global-index') || '{}';
   const idx = raw === '{}' ? {} : JSON.parse(raw);
   globalIndexCache.set(key, idx);
@@ -202,9 +202,9 @@ export function buildBookTOC(
       if (currentGroup.headingChunk !== null || currentGroup.cardChunks.length > 0) {
         sectionGroups.push(currentGroup);
       }
-      currentGroup = { headingChunk: chunk, cardChunks: [] };
+      currentGroup = { headingChunk: chunk as any, cardChunks: [] };
     } else {
-      currentGroup.cardChunks.push(chunk);
+      currentGroup.cardChunks.push(chunk as any);
     }
   });
 
@@ -515,7 +515,6 @@ if (typeof document !== 'undefined') {
  */
 export function initPageSidebar(): void {
   teardownPageSidebar();
-  formatMultipleChoiceQuestions();
   initJumpNavigator();
 
   const aside = document.querySelector('.custom-page-sidebar') as HTMLElement | null;
@@ -530,6 +529,7 @@ export function initPageSidebar(): void {
     const idle = window.requestIdleCallback || ((fn) => window.setTimeout(fn, 150));
     idle(
       async () => {
+        formatMultipleChoiceQuestions();
         if (refsMode !== 'static') {
           const globalBlockIndex = await fetchGlobalIndex(aside);
           linkPageElements(bookConfig, globalBlockIndex, refsMode, parseTitleFromConfig);

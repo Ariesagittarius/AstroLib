@@ -1,0 +1,201 @@
+---
+title: '1.3 n 阶行列式的概念'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+为了把二、三阶行列式的概念推广到一般的 $n$ 阶行列式，下面先研究三阶行列式的结构。
+
+把三阶行列式写为
+
+$$
+D_3 = \begin{vmatrix}
+a_{11} & a_{12} & a_{13} \\
+a_{21} & a_{22} & a_{23} \\
+a_{31} & a_{32} & a_{33}
+\end{vmatrix} \tag{1.8}
+$$
+
+$$
+= a_{11}a_{22}a_{33} + a_{12}a_{23}a_{31} + a_{13}a_{21}a_{32} - a_{13}a_{22}a_{31} - a_{12}a_{21}a_{33} - a_{11}a_{23}a_{32}.
+$$
+
+可以看出：
+1. 三阶行列式的每一项都是不同行不同列的三个元素的乘积；
+2. 每一项的三个元素的行标排成自然排列 $123$ 时，列标都是 $1, 2, 3$ 的某一个全排列，这样的排列共有 $3! = 6$ 种，故三阶行列式共有 6 项；
+3. 带正号的三项的列标排列是 $123, 231, 312$，经计算可知其逆序数全为偶数（即偶排列）；
+4. 带负号的三项的列标排列是 $132, 213, 321$，经计算可知其逆序数全为奇数（即奇排列）。
+
+因此，三阶行列式可写为
+
+$$
+D_3 = \begin{vmatrix}
+a_{11} & a_{12} & a_{13} \\
+a_{21} & a_{22} & a_{23} \\
+a_{31} & a_{32} & a_{33}
+\end{vmatrix} = \sum_{p_1 p_2 p_3} (-1)^{\tau(p_1 p_2 p_3)} a_{1 p_1} a_{2 p_2} a_{3 p_3}. \tag{1.9}
+$$
+
+其中 $\sum$ 表示对 $1, 2, 3$ 三个数的所有排列 $p_1 p_2 p_3$ 求和。用式 (1.9)，可以把行列式推广到一般情形。
+
+## 一、$n$ 阶行列式的定义
+
+<Knowledge title="定义 1.6 n 阶行列式">
+
+将 $n^2$ 个数 $a_{ij}$ ($i, j = 1, 2, \cdots, n$) 排成 $n$ 行 $n$ 列，在其左右两侧加两条竖线，按照下式
+
+$$
+D_n = \begin{vmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+a_{21} & a_{22} & \cdots & a_{2n} \\
+\vdots & \vdots & & \vdots \\
+a_{n1} & a_{n2} & \cdots & a_{nn}
+\end{vmatrix} = \sum_{p_1 p_2 \cdots p_n} (-1)^{\tau(p_1 p_2 \cdots p_n)} a_{1 p_1} a_{2 p_2} \cdots a_{n p_n} \tag{1.10}
+$$
+
+计算得到的一个数，称为 **$n$ 阶行列式**，简记作 $D = \det(a_{ij})$，其中 $\sum$ 表示对所有 $n$ 元排列 $p_1 p_2 \cdots p_n$ 求和。
+
+</Knowledge>
+
+<SideNote title="定义项结构说明">
+式 (1.10) 右边的每一项 $(-1)^{\tau(p_1 p_2 \cdots p_n)} a_{1 p_1} a_{2 p_2} \cdots a_{n p_n}$ 中的每一个元素取自 $D$ 中不同的行和列，行标排成自然排列，相应的列标是 $1, 2, \cdots, n$ 的一个全排列 $p_1 p_2 \cdots p_n$。行列式 $D_n$ 中共有 $n!$ 个乘积项。
+</SideNote>
+
+定义 1.6 也适用于二、三阶行列式，按此定义的行列式与 1.1 节中用对角线法则定义的结果是一致的。对于一阶行列式 $|a_{11}| = a_{11}$，注意这里的记号 $|a_{11}|$ 不表示 $a_{11}$ 的绝对值。
+
+<Knowledge title="特殊类型行列式概念">
+
+- 主对角线以下的元素全为 0 的行列式叫作**上三角形行列式**；
+- 主对角线以上的元素全为 0 的行列式叫作**下三角形行列式**；
+- 上三角形行列式与下三角形行列式统称为**三角形行列式**；
+- 主对角线以外的元素全为 0 的行列式叫作**对角形行列式**。
+
+</Knowledge>
+
+<Example title="例 5 上三角形与下三角形行列式求值">
+
+证明上三角形行列式的值等于主对角线上元素的乘积：
+
+$$
+D = \begin{vmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+0 & a_{22} & \cdots & a_{2n} \\
+\vdots & \vdots & & \vdots \\
+0 & 0 & \cdots & a_{nn}
+\end{vmatrix} = a_{11} a_{22} \cdots a_{nn}.
+$$
+
+</Example>
+
+<Solution title="证明">
+
+由于当 $j < i$ 时 $a_{ij} = 0$，故 $D$ 中可能不为 0 的元素是 $a_{ip_i}$，其下标应满足 $p_i \ge i$，即
+
+$$
+p_1 \ge 1, p_2 \ge 2, \cdots, p_n \ge n.
+$$
+
+在所有排列 $p_1 p_2 \cdots p_n$ 中，能满足上述关系的排列只有一个，即自然排列 $1 2 \cdots n$。所以 $D$ 中可能不为 0 的项只有一项：
+
+$$
+(-1)^{\tau(1 2 \cdots n)} a_{11} a_{22} \cdots a_{nn}.
+$$
+
+由于 $1 2 \cdots n$ 是偶排列（逆序数为 0），此项的符号为正号，所以
+
+$$
+D = a_{11} a_{22} \cdots a_{nn}.
+$$
+
+同理，对于下三角形行列式有
+
+$$
+D = \begin{vmatrix}
+a_{11} & 0 & \cdots & 0 \\
+a_{21} & a_{22} & \cdots & 0 \\
+\vdots & \vdots & & \vdots \\
+a_{n1} & a_{n2} & \cdots & a_{nn}
+\end{vmatrix} = a_{11} a_{22} \cdots a_{nn}.
+$$
+
+特别地，对于对角形行列式有
+
+$$
+D = \begin{vmatrix}
+a_{11} & 0 & \cdots & 0 \\
+0 & a_{22} & \cdots & 0 \\
+\vdots & \vdots & & \vdots \\
+0 & 0 & \cdots & a_{nn}
+\end{vmatrix} = a_{11} a_{22} \cdots a_{nn}.
+$$
+
+</Solution>
+
+<Example title="例 6 利用定义证明行列式为零">
+
+证明行列式
+
+$$
+D = \begin{vmatrix}
+a_{11} & a_{12} & a_{13} & a_{14} & a_{15} \\
+a_{21} & a_{22} & a_{23} & a_{24} & a_{25} \\
+0 & 0 & 0 & a_{34} & a_{35} \\
+0 & 0 & 0 & a_{44} & a_{45} \\
+0 & 0 & 0 & a_{54} & a_{55}
+\end{vmatrix} = 0.
+$$
+
+</Example>
+
+<Solution title="证明">
+
+由行列式定义可知，它的每一项都是取自不同行和不同列的 5 个元素的乘积。在第 1、2、3 列中，由于第 3、4、5 行的对应元素全为 0，前 3 列的非零元素只能取自第 1 行或第 2 行。
+
+但是前 3 列需要取出 3 个不同行的元素，而第 1 行和第 2 行最多只能提供 2 个不同行的元素，根据抽屉原理，必有至少一个元素取自第 3、4、5 行的 0 元素。因此，展开式中的每一项都含有至少一个 0 因子，从而每一项都等于 0，所以 $D = 0$。
+
+</Solution>
+
+## 二、行列式的等价定义
+
+在定义 1.6 中，每一项元素的行标排成自然排列，列标排成排列 $p_1 p_2 \cdots p_n$。如果先把列标排成自然排列，而行标排成排列 $q_1 q_2 \cdots q_n$，乘积各项的符号是否有变化？
+
+考虑任一项 $(-1)^{\tau(p_1 p_2 \cdots p_n)} a_{1 p_1} a_{2 p_2} \cdots a_{n p_n}$。当把列标的排列 $p_1 p_2 \cdots p_n$ 经 $N$ 次对换变成自然排列 $1 2 \cdots n$ 的同时，相应的行标排列 $1 2 \cdots n$ 也经 $N$ 次对换变成了排列 $q_1 q_2 \cdots q_n$，这样
+
+$$
+a_{1 p_1} a_{2 p_2} \cdots a_{n p_n} = a_{q_1 1} a_{q_2 2} \cdots a_{q_n n}.
+$$
+
+根据定理 1.1 的推论，对换次数 $N$ 与 $\tau(p_1 p_2 \cdots p_n)$ 有相同的奇偶性，而 $\tau(q_1 q_2 \cdots q_n)$ 与 $N$ 也有相同的奇偶性，从而 $\tau(p_1 p_2 \cdots p_n)$ 与 $\tau(q_1 q_2 \cdots q_n)$ 有相同的奇偶性，即
+
+$$
+(-1)^{\tau(p_1 p_2 \cdots p_n)} = (-1)^{\tau(q_1 q_2 \cdots q_n)}.
+$$
+
+<Knowledge title="定理 1.2 行标排列形式的等价定义">
+
+$n$ 阶行列式也可以定义为
+
+$$
+D_n = \sum_{p_1 p_2 \cdots p_n} (-1)^{\tau(p_1 p_2 \cdots p_n)} a_{p_1 1} a_{p_2 2} \cdots a_{p_n n}.
+$$
+
+其中 $\sum$ 表示对所有 $n$ 元排列求和。
+
+</Knowledge>
+
+<SideNote title="行标与列标的对称性">
+定理 1.2 表明：在行列式的定义中，行标与列标的地位是对称的。凡是关于行成立的性质，关于列也同样成立。
+</SideNote>
+
+<ExerciseTrigger chapter={1} section="1.3" title="1.3 n 阶行列式的概念 课后真题与自测练习" />

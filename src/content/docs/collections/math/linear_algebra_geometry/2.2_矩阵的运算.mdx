@@ -1,0 +1,729 @@
+---
+title: '2.2 矩阵的运算'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+矩阵的代数运算是线性代数的核心计算基础。本节系统讨论矩阵的五大基本代数运算：加法与减法、数乘运算、矩阵乘法、转置运算（及对称矩阵与反对称矩阵）以及方阵的行列式，重点阐释矩阵乘法不满足交换律与消去律的本质特征及其在网络连通分析中的几何应用。
+
+## 一、矩阵的加法
+
+<Knowledge title="定义 2 矩阵的加法">
+
+设有两个同型的 $m \times n$ 矩阵 $\boldsymbol{A} = (a_{ij})_{m \times n}$ 和 $\boldsymbol{B} = (b_{ij})_{m \times n}$，由 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 的对应元素相加所得到的一个 $m \times n$ 矩阵，称为 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 的和，记为 $\boldsymbol{A} + \boldsymbol{B}$，即
+
+$$
+\boldsymbol{A} + \boldsymbol{B} = (a_{ij} + b_{ij})_{m \times n}.
+$$
+
+</Knowledge>
+
+<SideNote title="加法前提">
+只有当两个矩阵 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 是同型矩阵时，它们才可以相加。不同型的矩阵之间没有加法运算。
+</SideNote>
+
+### 矩阵加法的运算律
+
+设 $\boldsymbol{A}, \boldsymbol{B}, \boldsymbol{C}$ 都是 $m \times n$ 矩阵，$\boldsymbol{O} = (0)_{m \times n}$ 是同型零矩阵，则有：
+
+1. **交换律**：$\boldsymbol{A} + \boldsymbol{B} = \boldsymbol{B} + \boldsymbol{A}$；
+2. **结合律**：$(\boldsymbol{A} + \boldsymbol{B}) + \boldsymbol{C} = \boldsymbol{A} + (\boldsymbol{B} + \boldsymbol{C})$；
+3. **零元性质**：$\boldsymbol{A} + \boldsymbol{O} = \boldsymbol{O} + \boldsymbol{A} = \boldsymbol{A}$；
+4. **消去律**：$\boldsymbol{A} + \boldsymbol{C} = \boldsymbol{B} + \boldsymbol{C} \iff \boldsymbol{A} = \boldsymbol{B}$。
+
+### 负矩阵与减法
+
+设 $\boldsymbol{A} = (a_{ij})_{m \times n}$，称矩阵
+
+$$
+\begin{pmatrix}
+-a_{11} & -a_{12} & \cdots & -a_{1n} \\
+-a_{21} & -a_{22} & \cdots & -a_{2n} \\
+\vdots & \vdots & \ddots & \vdots \\
+-a_{m1} & -a_{m2} & \cdots & -a_{mn}
+\end{pmatrix}
+$$
+
+为 $\boldsymbol{A}$ 的**负矩阵**，记为 $-\boldsymbol{A}$。显然有
+
+$$
+\boldsymbol{A} + (-\boldsymbol{A}) = (-\boldsymbol{A}) + \boldsymbol{A} = \boldsymbol{O}.
+$$
+
+由此定义矩阵的**减法**为：
+
+$$
+\boldsymbol{A} - \boldsymbol{B} = \boldsymbol{A} + (-\boldsymbol{B}) = (a_{ij} - b_{ij})_{m \times n}.
+$$
+
+## 二、数乘运算
+
+<Knowledge title="定义 3 数乘矩阵">
+
+对于任意一个矩阵 $\boldsymbol{A} = (a_{ij})_{m \times n}$ 和任意一个数 $k$，规定 $k$ 与 $\boldsymbol{A}$ 的乘积为
+
+$$
+k\boldsymbol{A} = \begin{pmatrix}
+ka_{11} & ka_{12} & \cdots & ka_{1n} \\
+ka_{21} & ka_{22} & \cdots & ka_{2n} \\
+\vdots & \vdots & \ddots & \vdots \\
+ka_{m1} & ka_{m2} & \cdots & ka_{mn}
+\end{pmatrix}.
+$$
+
+</Knowledge>
+
+<SideNote title="核心区别">
+数 $k$ 与矩阵 $\boldsymbol{A}$ 的乘积是矩阵 $\boldsymbol{A}$ 中的**所有元素**都要乘 $k$。这与行列式提公因式仅针对单行（列）有着本质区别。
+</SideNote>
+
+根据数乘矩阵运算的定义可知，数量矩阵 $a\boldsymbol{E}_n$ 就是数 $a$ 与单位矩阵 $\boldsymbol{E}_n$ 的乘积。而且对任意矩阵 $\boldsymbol{A}$ 有 $-\boldsymbol{A} = (-1)\boldsymbol{A} = (-a_{ij})_{m \times n}$。
+
+### 线性运算律
+
+矩阵的加法与数乘运算合称为矩阵的**线性运算**，满足下面的运算律（设 $\boldsymbol{A}, \boldsymbol{B}$ 为 $m \times n$ 矩阵，$k, l$ 为常数）：
+
+1. **结合律**：$(kl)\boldsymbol{A} = k(l\boldsymbol{A}) = l(k\boldsymbol{A})$；
+2. **分配律**：$k(\boldsymbol{A} + \boldsymbol{B}) = k\boldsymbol{A} + k\boldsymbol{B}$，$(k + l)\boldsymbol{A} = k\boldsymbol{A} + l\boldsymbol{A}$。
+
+<Example title="例 5 矩阵线性组合计算">
+
+已知
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+-1 & 2 & 3 & 1 \\
+0 & 2 & -1 & 3 \\
+4 & 2 & 0 & 5
+\end{pmatrix}, \qquad \boldsymbol{B} = \begin{pmatrix}
+1 & 2 & -1 & 0 \\
+4 & -3 & 1 & 1 \\
+1 & 0 & 2 & 5
+\end{pmatrix},
+$$
+
+求 $2\boldsymbol{A} - 3\boldsymbol{B}$。
+
+</Example>
+
+<Solution title="解">
+
+根据数乘与减法运算法则：
+
+$$
+\begin{aligned}
+2\boldsymbol{A} - 3\boldsymbol{B} &= 2\begin{pmatrix}
+-1 & 2 & 3 & 1 \\
+0 & 2 & -1 & 3 \\
+4 & 2 & 0 & 5
+\end{pmatrix} - 3\begin{pmatrix}
+1 & 2 & -1 & 0 \\
+4 & -3 & 1 & 1 \\
+1 & 0 & 2 & 5
+\end{pmatrix} \\
+&= \begin{pmatrix}
+-2 - 3 & 4 - 6 & 6 + 3 & 2 - 0 \\
+0 - 12 & 4 + 9 & -2 - 3 & 6 - 3 \\
+8 - 3 & 4 - 0 & 0 - 6 & 10 - 15
+\end{pmatrix} = \begin{pmatrix}
+-5 & -2 & 9 & 2 \\
+-12 & 13 & -5 & 3 \\
+5 & 4 & -6 & -5
+\end{pmatrix}.
+\end{aligned}
+$$
+
+</Solution>
+
+<Example title="例 6 解简单矩阵方程">
+
+已知
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+3 & 0 & -1 & 2 \\
+2 & 8 & 3 & 1
+\end{pmatrix}, \qquad \boldsymbol{B} = \begin{pmatrix}
+5 & 6 & 3 & 2 \\
+2 & 4 & 7 & -1
+\end{pmatrix},
+$$
+
+且 $\boldsymbol{A} + 2\boldsymbol{X} = \boldsymbol{B}$，求 $\boldsymbol{X}$。
+
+</Example>
+
+<Solution title="解">
+
+由方程可得 $2\boldsymbol{X} = \boldsymbol{B} - \boldsymbol{A}$，因此
+
+$$
+\boldsymbol{X} = \frac{1}{2}(\boldsymbol{B} - \boldsymbol{A}) = \frac{1}{2}\begin{pmatrix}
+2 & 6 & 4 & 0 \\
+0 & -4 & 4 & -2
+\end{pmatrix} = \begin{pmatrix}
+1 & 3 & 2 & 0 \\
+0 & -2 & 2 & -1
+\end{pmatrix}.
+$$
+
+</Solution>
+
+## 三、矩阵的乘法
+
+矩阵的乘法是矩阵最具特色的运算。在给出它的定义之前，先看下面的变量代换模型。
+
+<Example title="例 7 线性变换的复合">
+
+设变量 $y_1, y_2, y_3$ 能用变量 $x_1, x_2, x_3$ 线性地表示为
+
+$$
+\begin{cases}
+y_1 = b_{11}x_1 + b_{12}x_2 + b_{13}x_3, \\
+y_2 = b_{21}x_1 + b_{22}x_2 + b_{23}x_3, \\
+y_3 = b_{31}x_1 + b_{32}x_2 + b_{33}x_3,
+\end{cases} \tag{2.4}
+$$
+
+其中 $b_{ij}$ 都是常数，式 (2.4) 是由变量 $x_1, x_2, x_3$ 到变量 $y_1, y_2, y_3$ 的线性变换。
+
+如果另有变量 $y_1, y_2, y_3$ 到变量 $z_1, z_2, z_3$ 的线性变换
+
+$$
+\begin{cases}
+z_1 = a_{11}y_1 + a_{12}y_2 + a_{13}y_3, \\
+z_2 = a_{21}y_1 + a_{22}y_2 + a_{23}y_3, \\
+z_3 = a_{31}y_1 + a_{32}y_2 + a_{33}y_3,
+\end{cases} \tag{2.5}
+$$
+
+将 (2.4) 代入 (2.5)，整理后可得由变量 $x_1, x_2, x_3$ 到变量 $z_1, z_2, z_3$ 的复合线性变换：
+
+$$
+\begin{cases}
+z_1 = (a_{11}b_{11} + a_{12}b_{21} + a_{13}b_{31})x_1 + (a_{11}b_{12} + a_{12}b_{22} + a_{13}b_{32})x_2 + (a_{11}b_{13} + a_{12}b_{23} + a_{13}b_{33})x_3, \\
+z_2 = (a_{21}b_{11} + a_{22}b_{21} + a_{23}b_{31})x_1 + (a_{21}b_{12} + a_{22}b_{22} + a_{23}b_{32})x_2 + (a_{21}b_{13} + a_{22}b_{23} + a_{23}b_{33})x_3, \\
+z_3 = (a_{31}b_{11} + a_{32}b_{21} + a_{33}b_{31})x_1 + (a_{31}b_{12} + a_{32}b_{22} + a_{33}b_{32})x_2 + (a_{31}b_{13} + a_{32}b_{23} + a_{33}b_{33})x_3.
+\end{cases} \tag{2.6}
+$$
+
+如果将线性变换 (2.4), (2.5), (2.6) 的系数矩阵分别记为 $\boldsymbol{B} = (b_{ij}), \boldsymbol{A} = (a_{ij})$ 和 $\boldsymbol{C} = (c_{ij})$，则矩阵元素之间的关系为：
+
+$$
+c_{ij} = a_{i1}b_{1j} + a_{i2}b_{2j} + a_{i3}b_{3j} = \sum_{k=1}^3 a_{ik}b_{kj} \quad (i, j = 1, 2, 3).
+$$
+
+即矩阵 $\boldsymbol{C}$ 的第 $i$ 行第 $j$ 列位置的元素等于矩阵 $\boldsymbol{A}$ 的第 $i$ 行元素与矩阵 $\boldsymbol{B}$ 的第 $j$ 列对应元素乘积的和。
+
+</Example>
+
+由此自然引出一般矩阵相乘的定义：
+
+<Knowledge title="定义 4 矩阵的乘法">
+
+设矩阵 $\boldsymbol{A} = (a_{ij})_{m \times s}, \boldsymbol{B} = (b_{ij})_{s \times n}$。令 $\boldsymbol{C} = (c_{ij})_{m \times n}$ 是由
+
+$$
+c_{ij} = a_{i1}b_{1j} + a_{i2}b_{2j} + \cdots + a_{is}b_{sj} = \sum_{k=1}^s a_{ik}b_{kj} \quad (i = 1, 2, \dots, m;\; j = 1, 2, \dots, n)
+$$
+
+构成的 $m$ 行 $n$ 列矩阵，称矩阵 $\boldsymbol{C}$ 为矩阵 $\boldsymbol{A}$ 与矩阵 $\boldsymbol{B}$ 的乘积，记为 $\boldsymbol{C} = \boldsymbol{A}\boldsymbol{B}$。
+
+</Knowledge>
+
+<SideNote title="相乘维度匹配">
+两个矩阵 $\boldsymbol{A}$ 和 $\boldsymbol{B}$ 可以相乘，当且仅当 $\boldsymbol{A}$ 的**列数**与 $\boldsymbol{B}$ 的**行数**相等。当 $\boldsymbol{C} = \boldsymbol{A}\boldsymbol{B}$ 时，$\boldsymbol{C}$ 的行数等于 $\boldsymbol{A}$ 的行数，$\boldsymbol{C}$ 的列数等于 $\boldsymbol{B}$ 的列数。
+</SideNote>
+
+<Example title="例 8 矩阵乘法规则计算">
+
+设矩阵
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+1 & 0 & -1 \\
+2 & 1 & 0 \\
+3 & 2 & -1
+\end{pmatrix}, \qquad \boldsymbol{B} = \begin{pmatrix}
+1 & 0 \\
+3 & 1 \\
+0 & 2
+\end{pmatrix},
+$$
+
+求 $\boldsymbol{A}\boldsymbol{B}$。
+
+</Example>
+
+<Solution title="解">
+
+根据乘法定义：
+
+$$
+\begin{aligned}
+\boldsymbol{A}\boldsymbol{B} &= \begin{pmatrix}
+1 & 0 & -1 \\
+2 & 1 & 0 \\
+3 & 2 & -1
+\end{pmatrix} \begin{pmatrix}
+1 & 0 \\
+3 & 1 \\
+0 & 2
+\end{pmatrix} \\
+&= \begin{pmatrix}
+1 \times 1 + 0 \times 3 + (-1) \times 0 & 1 \times 0 + 0 \times 1 + (-1) \times 2 \\
+2 \times 1 + 1 \times 3 + 0 \times 0 & 2 \times 0 + 1 \times 1 + 0 \times 2 \\
+3 \times 1 + 2 \times 3 + (-1) \times 0 & 3 \times 0 + 2 \times 1 + (-1) \times 2
+\end{pmatrix} = \begin{pmatrix}
+1 & -2 \\
+5 & 1 \\
+9 & 0
+\end{pmatrix}.
+\end{aligned}
+$$
+
+这里矩阵 $\boldsymbol{A}$ 是 $3 \times 3$ 矩阵，而矩阵 $\boldsymbol{B}$ 是 $3 \times 2$ 矩阵，由于 $\boldsymbol{B}$ 的列数与 $\boldsymbol{A}$ 的行数不相等，所以 $\boldsymbol{B}\boldsymbol{A}$ 没有意义。
+
+</Solution>
+
+<SideNote title="极其重要的警示">
+在矩阵的乘法中，必须特别注意矩阵相乘的顺序！若 $\boldsymbol{A}$ 是 $m \times n$ 矩阵，$\boldsymbol{B}$ 是 $n \times m$ 矩阵，则 $\boldsymbol{A}\boldsymbol{B}$ 与 $\boldsymbol{B}\boldsymbol{A}$ 均有意义，但 $\boldsymbol{A}\boldsymbol{B}$ 是 $m$ 阶方阵，而 $\boldsymbol{B}\boldsymbol{A}$ 是 $n$ 阶方阵。当 $m \neq n$ 时，$\boldsymbol{A}\boldsymbol{B} \neq \boldsymbol{B}\boldsymbol{A}$。即使 $m = n$，即 $\boldsymbol{A}, \boldsymbol{B}$ 是同阶方阵，$\boldsymbol{A}\boldsymbol{B}$ 与 $\boldsymbol{B}\boldsymbol{A}$ 仍然通常不相等。
+</SideNote>
+
+<Example title="例 9 乘法不满足交换律与零因子">
+
+设矩阵
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+1 & 0 \\
+1 & 0
+\end{pmatrix}, \qquad \boldsymbol{B} = \begin{pmatrix}
+0 & 0 \\
+1 & 1
+\end{pmatrix},
+$$
+
+求 $\boldsymbol{A}\boldsymbol{B}$ 和 $\boldsymbol{B}\boldsymbol{A}$。
+
+</Example>
+
+<Solution title="解">
+
+直接计算可得：
+
+$$
+\boldsymbol{A}\boldsymbol{B} = \begin{pmatrix}
+1 & 0 \\
+1 & 0
+\end{pmatrix} \begin{pmatrix}
+0 & 0 \\
+1 & 1
+\end{pmatrix} = \begin{pmatrix}
+0 & 0 \\
+0 & 0
+\end{pmatrix},
+$$
+
+$$
+\boldsymbol{B}\boldsymbol{A} = \begin{pmatrix}
+0 & 0 \\
+1 & 1
+\end{pmatrix} \begin{pmatrix}
+1 & 0 \\
+1 & 0
+\end{pmatrix} = \begin{pmatrix}
+0 & 0 \\
+2 & 0
+\end{pmatrix}.
+$$
+
+此例明确揭示了矩阵乘法的两个根本事实：
+1. **矩阵乘法一般不满足交换律**，即一般有 $\boldsymbol{A}\boldsymbol{B} \neq \boldsymbol{B}\boldsymbol{A}$；
+2. **当 $\boldsymbol{A}\boldsymbol{B} = \boldsymbol{O}$ 时，一般不能推出 $\boldsymbol{A} = \boldsymbol{O}$ 或 $\boldsymbol{B} = \boldsymbol{O}$**。这说明矩阵乘法不满足消去律。若 $ab = 0$，在实数范围内必有 $a = 0$ 或 $b = 0$；但在矩阵世界中，两个非零矩阵的乘积完全可以是零矩阵。
+
+</Solution>
+
+### 矩阵乘法的运算律
+
+当两个方阵满足 $\boldsymbol{A}\boldsymbol{B} = \boldsymbol{B}\boldsymbol{A}$ 时，称 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 是**可交换的**（此时 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 必为同阶方阵）。
+
+矩阵乘法满足下列运算律（假设运算都是有意义的）：
+1. **结合律**：$(\boldsymbol{A}\boldsymbol{B})\boldsymbol{C} = \boldsymbol{A}(\boldsymbol{B}\boldsymbol{C})$；
+2. **分配律**：$(\boldsymbol{A} + \boldsymbol{B})\boldsymbol{C} = \boldsymbol{A}\boldsymbol{C} + \boldsymbol{B}\boldsymbol{C}$，$\boldsymbol{A}(\boldsymbol{B} + \boldsymbol{C}) = \boldsymbol{A}\boldsymbol{B} + \boldsymbol{A}\boldsymbol{C}$；
+3. **数乘结合律**：$k(\boldsymbol{A}\boldsymbol{B}) = (k\boldsymbol{A})\boldsymbol{B} = \boldsymbol{A}(k\boldsymbol{B})$（$k$ 为任意实数）；
+4. **单位阵性质**：$\boldsymbol{E}_m \boldsymbol{A}_{m \times n} = \boldsymbol{A}_{m \times n} \boldsymbol{E}_n = \boldsymbol{A}_{m \times n}$。
+
+<SideNote title="消去律失效注意">
+关于矩阵乘法应高度警惕：当 $\boldsymbol{A} = \boldsymbol{B}$ 时，在可乘条件下必可推出 $\boldsymbol{A}\boldsymbol{C} = \boldsymbol{B}\boldsymbol{C}$ 和 $\boldsymbol{C}\boldsymbol{A} = \boldsymbol{C}\boldsymbol{B}$；但反之由 $\boldsymbol{A}\boldsymbol{C} = \boldsymbol{B}\boldsymbol{C}$ 且 $\boldsymbol{C} \neq \boldsymbol{O}$，**未必能推出** $\boldsymbol{A} = \boldsymbol{B}$。
+</SideNote>
+
+利用矩阵乘法，式 (2.2) 中的线性变换可紧凑表示为：
+
+$$
+\boldsymbol{y} = \boldsymbol{A}\boldsymbol{x},
+$$
+
+其中 $\boldsymbol{x} = (x_1, x_2, \dots, x_n)^{\mathrm{T}}, \boldsymbol{y} = (y_1, y_2, \dots, y_n)^{\mathrm{T}}, \boldsymbol{A} = (a_{ij})_{n \times n}$，$\boldsymbol{A}$ 称为该线性变换的系数矩阵。
+
+### 方阵的幂与多项式
+
+设 $\boldsymbol{A}$ 为 $n$ 阶方阵，由于矩阵乘法满足结合律，所以 $\underbrace{\boldsymbol{A}\boldsymbol{A}\cdots\boldsymbol{A}}_{k\text{ 个}}$ 可以不加括号而有完全确定的意义。规定：
+
+$$
+\boldsymbol{A}^0 = \boldsymbol{E}, \quad \boldsymbol{A}^1 = \boldsymbol{A}, \quad \boldsymbol{A}^2 = \boldsymbol{A}\boldsymbol{A}, \quad \dots, \quad \boldsymbol{A}^k = \underbrace{\boldsymbol{A}\boldsymbol{A}\cdots\boldsymbol{A}}_{k\text{ 个}}.
+$$
+
+方阵的幂满足指数运算法则：
+
+$$
+\boldsymbol{A}^k \boldsymbol{A}^l = \boldsymbol{A}^{k+l}, \qquad (\boldsymbol{A}^k)^l = \boldsymbol{A}^{kl} \quad (k, l \in \mathbb{N}^+).
+$$
+
+<SideNote title="注意">
+由于矩阵乘法一般不满足交换律，对于两个同阶方阵 $\boldsymbol{A}$ 与 $\boldsymbol{B}$，一般有 $(\boldsymbol{A}\boldsymbol{B})^k \neq \boldsymbol{A}^k \boldsymbol{B}^k$。只有当 $\boldsymbol{A}\boldsymbol{B} = \boldsymbol{B}\boldsymbol{A}$ 时该等式才成立。
+</SideNote>
+
+设 $x$ 的 $m$ 次多项式 $f(x) = a_0 x^m + a_1 x^{m-1} + \cdots + a_{m-1}x + a_m$。定义 $\boldsymbol{A}$ 的 $m$ 次多项式为：
+
+$$
+f(\boldsymbol{A}) = a_0 \boldsymbol{A}^m + a_1 \boldsymbol{A}^{m-1} + \cdots + a_{m-1}\boldsymbol{A} + a_m \boldsymbol{E}.
+$$
+
+<Example title="例 10 求可交换矩阵">
+
+设矩阵 $\boldsymbol{A} = \begin{pmatrix} 1 & 0 \\ 2 & 1 \end{pmatrix}$，求所有与 $\boldsymbol{A}$ 可交换的矩阵。
+
+</Example>
+
+<Solution title="解">
+
+因为与 $\boldsymbol{A}$ 可交换的矩阵必为二阶矩阵，设 $\boldsymbol{X} = \begin{pmatrix} x_{11} & x_{12} \\ x_{21} & x_{22} \end{pmatrix}$。由 $\boldsymbol{A}\boldsymbol{X} = \boldsymbol{X}\boldsymbol{A}$：
+
+$$
+\boldsymbol{A}\boldsymbol{X} = \begin{pmatrix} 1 & 0 \\ 2 & 1 \end{pmatrix} \begin{pmatrix} x_{11} & x_{12} \\ x_{21} & x_{22} \end{pmatrix} = \begin{pmatrix} x_{11} & x_{12} \\ 2x_{11} + x_{21} & 2x_{12} + x_{22} \end{pmatrix},
+$$
+
+$$
+\boldsymbol{X}\boldsymbol{A} = \begin{pmatrix} x_{11} & x_{12} \\ x_{21} & x_{22} \end{pmatrix} \begin{pmatrix} 1 & 0 \\ 2 & 1 \end{pmatrix} = \begin{pmatrix} x_{11} + 2x_{12} & x_{12} \\ x_{21} + 2x_{22} & x_{22} \end{pmatrix}.
+$$
+
+对比对应元素：$x_{11} = x_{11} + 2x_{12} \implies x_{12} = 0$；$2x_{11} + x_{21} = x_{21} + 2x_{22} \implies x_{11} = x_{22}$。
+
+而 $x_{11}, x_{21}$ 可取任意值。因此所有与 $\boldsymbol{A}$ 可交换的矩阵具有形式：
+
+$$
+\boldsymbol{X} = \begin{pmatrix} x_{11} & 0 \\ x_{21} & x_{11} \end{pmatrix}.
+$$
+
+</Solution>
+
+<Example title="例 11 矩阵高次幂归纳法">
+
+用数学归纳法证明以下矩阵等式：
+1. $\begin{pmatrix} 1 & 1 \\ 0 & 1 \end{pmatrix}^n = \begin{pmatrix} 1 & n \\ 0 & 1 \end{pmatrix}$；
+2. $\begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix}^n = 2^{n-1}\begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix}$。
+
+</Example>
+
+<Solution title="证明">
+
+(1) 当 $n = 1$ 时显然成立。假设当 $n = k$ 时等式成立，则当 $n = k+1$ 时：
+
+$$
+\begin{pmatrix} 1 & 1 \\ 0 & 1 \end{pmatrix}^{k+1} = \begin{pmatrix} 1 & 1 \\ 0 & 1 \end{pmatrix}^k \begin{pmatrix} 1 & 1 \\ 0 & 1 \end{pmatrix} = \begin{pmatrix} 1 & k \\ 0 & 1 \end{pmatrix} \begin{pmatrix} 1 & 1 \\ 0 & 1 \end{pmatrix} = \begin{pmatrix} 1 & k+1 \\ 0 & 1 \end{pmatrix}.
+$$
+
+由数学归纳法，对任意正整数 $n$ 等式成立。
+
+(2) 当 $n = 1$ 时等式两端均为 $\begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix}$，成立。假设当 $n = k$ 时成立，则当 $n = k+1$ 时：
+
+$$
+\begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix}^{k+1} = \begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix}^k \begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix} = 2^{k-1}\begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix} \begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix} = 2^{k-1}\begin{pmatrix} 2 & 2 \\ 2 & 2 \end{pmatrix} = 2^k \begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix}.
+$$
+
+由数学归纳法，结论对任意正整数 $n$ 成立。
+
+</Solution>
+
+<Example title="例 12 降维乘积与零方阵技巧">
+
+设 $\boldsymbol{A} = \begin{pmatrix} 1 & -2 \\ -2 & 4 \\ 1 & -2 \end{pmatrix}, \boldsymbol{B} = \begin{pmatrix} 1 & 2 & 3 \\ 3 & 2 & 1 \end{pmatrix}$。令 $\boldsymbol{C} = \boldsymbol{A}\boldsymbol{B}, \boldsymbol{D} = \boldsymbol{B}\boldsymbol{A}$。求 $\boldsymbol{C}, \boldsymbol{D}, \boldsymbol{C}^2, \boldsymbol{C}^3$ 和 $\boldsymbol{C}^n$（$n \ge 2$）。
+
+</Example>
+
+<Solution title="解">
+
+先计算 $\boldsymbol{D}$：
+
+$$
+\boldsymbol{D} = \boldsymbol{B}\boldsymbol{A} = \begin{pmatrix} 1 & 2 & 3 \\ 3 & 2 & 1 \end{pmatrix} \begin{pmatrix} 1 & -2 \\ -2 & 4 \\ 1 & -2 \end{pmatrix} = \begin{pmatrix} 0 & 0 \\ 0 & 0 \end{pmatrix} = \boldsymbol{O}.
+$$
+
+再计算 $\boldsymbol{C} = \boldsymbol{A}\boldsymbol{B}$：
+
+$$
+\boldsymbol{C} = \begin{pmatrix} 1 & -2 \\ -2 & 4 \\ 1 & -2 \end{pmatrix} \begin{pmatrix} 1 & 2 & 3 \\ 3 & 2 & 1 \end{pmatrix} = \begin{pmatrix} -5 & -2 & 1 \\ 10 & 4 & -2 \\ -5 & -2 & 1 \end{pmatrix}.
+$$
+
+利用结合律与 $\boldsymbol{B}\boldsymbol{A} = \boldsymbol{O}$：
+
+$$
+\boldsymbol{C}^2 = (\boldsymbol{A}\boldsymbol{B})^2 = \boldsymbol{A}(\boldsymbol{B}\boldsymbol{A})\boldsymbol{B} = \boldsymbol{A}\boldsymbol{O}\boldsymbol{B} = \boldsymbol{O},
+$$
+
+$$
+\boldsymbol{C}^3 = (\boldsymbol{A}\boldsymbol{B})^3 = \boldsymbol{A}(\boldsymbol{B}\boldsymbol{A})(\boldsymbol{B}\boldsymbol{A})\boldsymbol{B} = \boldsymbol{O}.
+$$
+
+一般地，对任意 $n \ge 2$：
+
+$$
+\boldsymbol{C}^n = (\boldsymbol{A}\boldsymbol{B})^n = \boldsymbol{A}\underbrace{(\boldsymbol{B}\boldsymbol{A})\cdots(\boldsymbol{B}\boldsymbol{A})}_{n-1\text{ 个}}\boldsymbol{B} = \boldsymbol{O}.
+$$
+
+</Solution>
+
+<Example title="例 13 计算方阵多项式">
+
+若 $f(x) = x^2 - 2x + 2$，$\boldsymbol{A} = \begin{pmatrix} 2 & 0 & 1 \\ -3 & 1 & 2 \\ 1 & -1 & 0 \end{pmatrix}$，求 $f(\boldsymbol{A})$。
+
+</Example>
+
+<Solution title="解">
+
+$$
+f(\boldsymbol{A}) = \boldsymbol{A}^2 - 2\boldsymbol{A} + 2\boldsymbol{E} = \begin{pmatrix} 2 & 0 & 1 \\ -3 & 1 & 2 \\ 1 & -1 & 0 \end{pmatrix}^2 - 2\begin{pmatrix} 2 & 0 & 1 \\ -3 & 1 & 2 \\ 1 & -1 & 0 \end{pmatrix} + 2\begin{pmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \end{pmatrix}.
+$$
+
+计算 $\boldsymbol{A}^2$：
+
+$$
+\boldsymbol{A}^2 = \begin{pmatrix} 5 & -1 & 2 \\ -7 & -1 & -1 \\ 5 & -1 & -1 \end{pmatrix}.
+$$
+
+代入求得：
+
+$$
+f(\boldsymbol{A}) = \begin{pmatrix} 5 & -1 & 2 \\ -7 & -1 & -1 \\ 5 & -1 & -1 \end{pmatrix} - \begin{pmatrix} 4 & 0 & 2 \\ -6 & 2 & 4 \\ 2 & -2 & 0 \end{pmatrix} + \begin{pmatrix} 2 & 0 & 0 \\ 0 & 2 & 0 \\ 0 & 0 & 2 \end{pmatrix} = \begin{pmatrix} 3 & -1 & 0 \\ -1 & -1 & -5 \\ 3 & 1 & 1 \end{pmatrix}.
+$$
+
+</Solution>
+
+### 矩阵乘法在网络连通分析中的应用
+
+回顾例 2 中的通信网络邻接矩阵：
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+0 & 1 & 1 & 1 \\
+1 & 0 & 1 & 0 \\
+1 & 1 & 0 & 1 \\
+1 & 0 & 1 & 0
+\end{pmatrix}, \qquad \boldsymbol{A}^2 = \begin{pmatrix}
+3 & 1 & 2 & 1 \\
+1 & 2 & 1 & 2 \\
+2 & 1 & 3 & 1 \\
+1 & 2 & 1 & 2
+\end{pmatrix}.
+$$
+
+由矩阵乘法定义可知，$\boldsymbol{A}^2$ 的第 $i$ 行第 $j$ 列元素为：
+
+$$
+[\boldsymbol{A}^2]_{ij} = a_{i1}a_{1j} + a_{i2}a_{2j} + a_{i3}a_{3j} + a_{i4}a_{4j}.
+$$
+
+由于 $a_{it}a_{tj} = 1 \iff a_{it} = a_{tj} = 1$（即点 $i$ 与点 $t$、点 $t$ 与点 $j$ 均连通），因此 $[\boldsymbol{A}^2]_{ij}$ 正好表示从通信点 $i$ 经由一个中间中转点 $t$ 传输信息至通信点 $j$ 的**通路数目**！例如 $[\boldsymbol{A}^2]_{24} = 2$，表示第 2 点经由一个中间点到第 4 点有 2 条通道（即 $2 \to 1 \to 4$ 和 $2 \to 3 \to 4$）。
+
+进而矩阵
+
+$$
+\boldsymbol{M}_2 = \boldsymbol{A} + \boldsymbol{A}^2 = \begin{pmatrix}
+3 & 2 & 3 & 2 \\
+2 & 2 & 2 & 2 \\
+3 & 2 & 3 & 2 \\
+2 & 2 & 2 & 2
+\end{pmatrix}
+$$
+
+的元素 $[\boldsymbol{M}_2]_{ij}$ 表示从点 $i$ 出发，直接或者经由一个中转点传达至点 $j$ 的总通路数目。
+
+## 四、转置矩阵、对称矩阵和反对称矩阵
+
+<Knowledge title="定义 5 转置矩阵">
+
+把矩阵 $\boldsymbol{A}$ 的所有行换成相应的列所得到的矩阵，称为矩阵 $\boldsymbol{A}$ 的**转置矩阵**，记为 $\boldsymbol{A}^{\mathrm{T}}$ 或 $\boldsymbol{A}'$。若
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+a_{21} & a_{22} & \cdots & a_{2n} \\
+\vdots & \vdots & \ddots & \vdots \\
+a_{m1} & a_{m2} & \cdots & a_{mn}
+\end{pmatrix}_{m \times n}, \quad \text{则} \quad \boldsymbol{A}^{\mathrm{T}} = \begin{pmatrix}
+a_{11} & a_{21} & \cdots & a_{m1} \\
+a_{12} & a_{22} & \cdots & a_{m2} \\
+\vdots & \vdots & \ddots & \vdots \\
+a_{1n} & a_{2n} & \cdots & a_{mn}
+\end{pmatrix}_{n \times m}.
+$$
+
+</Knowledge>
+
+显然 $\boldsymbol{A}$ 与 $\boldsymbol{A}^{\mathrm{T}}$ 互为转置矩阵。特别地，$n$ 维行向量的转置为 $n$ 维列向量。
+
+### 转置矩阵的运算律
+
+设运算均有意义，$k$ 为实数：
+1. $(\boldsymbol{A}^{\mathrm{T}})^{\mathrm{T}} = \boldsymbol{A}$；
+2. $(\boldsymbol{A} + \boldsymbol{B})^{\mathrm{T}} = \boldsymbol{A}^{\mathrm{T}} + \boldsymbol{B}^{\mathrm{T}}$；
+3. $(k\boldsymbol{A})^{\mathrm{T}} = k\boldsymbol{A}^{\mathrm{T}}$；
+4. **反序律**：$(\boldsymbol{A}\boldsymbol{B})^{\mathrm{T}} = \boldsymbol{B}^{\mathrm{T}}\boldsymbol{A}^{\mathrm{T}}$。推广到多个矩阵：$(\boldsymbol{A}_1 \boldsymbol{A}_2 \cdots \boldsymbol{A}_k)^{\mathrm{T}} = \boldsymbol{A}_k^{\mathrm{T}} \cdots \boldsymbol{A}_2^{\mathrm{T}} \boldsymbol{A}_1^{\mathrm{T}}$。
+
+<Solution title="反序律证明">
+
+设 $\boldsymbol{A} = (a_{ij})_{m \times s}, \boldsymbol{B} = (b_{ij})_{s \times n}$。显然 $(\boldsymbol{A}\boldsymbol{B})^{\mathrm{T}}$ 和 $\boldsymbol{B}^{\mathrm{T}}\boldsymbol{A}^{\mathrm{T}}$ 都是 $n \times m$ 矩阵。
+
+$(\boldsymbol{A}\boldsymbol{B})^{\mathrm{T}}$ 的第 $(i, j)$ 元素为：
+
+$$
+[(\boldsymbol{A}\boldsymbol{B})^{\mathrm{T}}]_{ij} = [\boldsymbol{A}\boldsymbol{B}]_{ji} = \sum_{t=1}^s a_{jt}b_{ti} = \sum_{t=1}^s b_{ti}a_{jt}.
+$$
+
+而 $\boldsymbol{B}^{\mathrm{T}}$ 的第 $i$ 行为 $(b_{1i}, b_{2i}, \dots, b_{si})$，$\boldsymbol{A}^{\mathrm{T}}$ 的第 $j$ 列为 $(a_{j1}, a_{j2}, \dots, a_{js})^{\mathrm{T}}$。故 $\boldsymbol{B}^{\mathrm{T}}\boldsymbol{A}^{\mathrm{T}}$ 的第 $(i, j)$ 元素也是 $\sum_{t=1}^s b_{ti}a_{jt}$。因此 $(\boldsymbol{A}\boldsymbol{B})^{\mathrm{T}} = \boldsymbol{B}^{\mathrm{T}}\boldsymbol{A}^{\mathrm{T}}$。
+
+</Solution>
+
+### 对称矩阵与反对称矩阵
+
+<Knowledge title="定义 6 对称矩阵与反对称矩阵">
+
+设 $\boldsymbol{A} = (a_{ij})$ 为 $n$ 阶方阵。
+1. 若 $\boldsymbol{A}$ 满足 $\boldsymbol{A}^{\mathrm{T}} = \boldsymbol{A}$，即 $a_{ij} = a_{ji}$（$i, j = 1, 2, \dots, n$），则称 $\boldsymbol{A}$ 为**对称矩阵**；
+2. 若 $\boldsymbol{A}$ 满足 $\boldsymbol{A}^{\mathrm{T}} = -\boldsymbol{A}$，即 $a_{ij} = -a_{ji}$（$i, j = 1, 2, \dots, n$），则称 $\boldsymbol{A}$ 为**反对称矩阵**。
+
+</Knowledge>
+
+<SideNote title="对角元特征">
+对于反对称矩阵，当 $i = j$ 时有 $a_{ii} = -a_{ii} \implies a_{ii} = 0$。即反对称矩阵的主对角元必全为零！
+</SideNote>
+
+<Example title="例 14 方阵的对称与反对称唯一分解">
+
+证明任意一个方阵 $\boldsymbol{A}$ 都可以唯一地表示为一个对称矩阵与一个反对称矩阵之和。
+
+</Example>
+
+<Solution title="证明">
+
+设 $\boldsymbol{A} = \boldsymbol{X} + \boldsymbol{Y}$，其中 $\boldsymbol{X}^{\mathrm{T}} = \boldsymbol{X}$，$\boldsymbol{Y}^{\mathrm{T}} = -\boldsymbol{Y}$。两端取转置：
+
+$$
+\boldsymbol{A}^{\mathrm{T}} = \boldsymbol{X}^{\mathrm{T}} + \boldsymbol{Y}^{\mathrm{T}} = \boldsymbol{X} - \boldsymbol{Y}.
+$$
+
+联立方程：
+
+$$
+\begin{cases}
+\boldsymbol{X} + \boldsymbol{Y} = \boldsymbol{A}, \\
+\boldsymbol{X} - \boldsymbol{Y} = \boldsymbol{A}^{\mathrm{T}}.
+\end{cases}
+$$
+
+解得唯一解：
+
+$$
+\boldsymbol{X} = \frac{1}{2}(\boldsymbol{A} + \boldsymbol{A}^{\mathrm{T}}), \qquad \boldsymbol{Y} = \frac{1}{2}(\boldsymbol{A} - \boldsymbol{A}^{\mathrm{T}}).
+$$
+
+易验：$\boldsymbol{X}^{\mathrm{T}} = \frac{1}{2}(\boldsymbol{A}^{\mathrm{T}} + \boldsymbol{A}) = \boldsymbol{X}$，$\boldsymbol{Y}^{\mathrm{T}} = \frac{1}{2}(\boldsymbol{A}^{\mathrm{T}} - \boldsymbol{A}) = -\boldsymbol{Y}$。
+
+</Solution>
+
+## 五、方阵的行列式
+
+<Knowledge title="定义 7 方阵的行列式">
+
+由 $n$ 阶方阵 $\boldsymbol{A}$ 的元素按照原来的顺序构成的行列式称为方阵 $\boldsymbol{A}$ 的行列式，记作 $|\boldsymbol{A}|$ 或 $\det(\boldsymbol{A})$。
+
+</Knowledge>
+
+<SideNote title="定义域警示">
+当且仅当 $\boldsymbol{A}$ 为方阵时，才可以取行列式。对于不是方阵的长方矩阵，绝对不存在行列式。
+</SideNote>
+
+### 方阵行列式的运算性质
+
+设 $\boldsymbol{A}, \boldsymbol{B}$ 为 $n$ 阶方阵，$k$ 为数：
+1. $|\boldsymbol{A}^{\mathrm{T}}| = |\boldsymbol{A}|$；
+2. $|k\boldsymbol{A}| = k^n |\boldsymbol{A}|$；
+3. **行列式乘法定理**：$|\boldsymbol{A}\boldsymbol{B}| = |\boldsymbol{A}| \cdot |\boldsymbol{B}|$。
+
+<SideNote title="推论">
+对于同阶方阵 $\boldsymbol{A}, \boldsymbol{B}$，虽然一般有 $\boldsymbol{A}\boldsymbol{B} \neq \boldsymbol{B}\boldsymbol{A}$，但由乘法定理可知它们的行列式恒相等：
+$$
+|\boldsymbol{A}\boldsymbol{B}| = |\boldsymbol{A}| \cdot |\boldsymbol{B}| = |\boldsymbol{B}| \cdot |\boldsymbol{A}| = |\boldsymbol{B}\boldsymbol{A}|.
+$$
+</SideNote>
+
+<Example title="例 15 验证行列式乘法性质">
+
+设 $\boldsymbol{A} = \begin{pmatrix} 1 & 3 \\ 2 & -2 \end{pmatrix}, \boldsymbol{B} = \begin{pmatrix} 2 & 5 \\ 3 & 4 \end{pmatrix}$。
+
+计算验证 $|\boldsymbol{A}\boldsymbol{B}| = |\boldsymbol{B}\boldsymbol{A}| = |\boldsymbol{A}| \cdot |\boldsymbol{B}|$。
+
+</Example>
+
+<Solution title="解">
+
+计算乘积：
+
+$$
+\boldsymbol{A}\boldsymbol{B} = \begin{pmatrix} 1 & 3 \\ 2 & -2 \end{pmatrix}\begin{pmatrix} 2 & 5 \\ 3 & 4 \end{pmatrix} = \begin{pmatrix} 11 & 17 \\ -2 & 2 \end{pmatrix}, \qquad |\boldsymbol{A}\boldsymbol{B}| = 11 \times 2 - 17 \times (-2) = 56.
+$$
+
+$$
+\boldsymbol{B}\boldsymbol{A} = \begin{pmatrix} 2 & 5 \\ 3 & 4 \end{pmatrix}\begin{pmatrix} 1 & 3 \\ 2 & -2 \end{pmatrix} = \begin{pmatrix} 12 & -4 \\ 11 & 1 \end{pmatrix}, \qquad |\boldsymbol{B}\boldsymbol{A}| = 12 \times 1 - (-4) \times 11 = 56.
+$$
+
+而 $|\boldsymbol{A}| = -2 - 6 = -8$，$|\boldsymbol{B}| = 8 - 15 = -7$。因此 $|\boldsymbol{A}| \cdot |\boldsymbol{B}| = (-8) \times (-7) = 56$。等式完全成立。
+
+</Solution>
+
+<Example title="例 16 正交性质方阵行列式求值">
+
+设 $\boldsymbol{A}$ 是 $n$ 阶方阵，满足 $\boldsymbol{A}\boldsymbol{A}^{\mathrm{T}} = \boldsymbol{E}$，且 $|\boldsymbol{A}| = -1$。求 $|\boldsymbol{A} + \boldsymbol{E}|$。
+
+</Example>
+
+<Solution title="解">
+
+由于 $\boldsymbol{A}\boldsymbol{A}^{\mathrm{T}} = \boldsymbol{E}$：
+
+$$
+\begin{aligned}
+|\boldsymbol{A} + \boldsymbol{E}| &= |\boldsymbol{A} + \boldsymbol{A}\boldsymbol{A}^{\mathrm{T}}| = |\boldsymbol{A}(\boldsymbol{E} + \boldsymbol{A}^{\mathrm{T}})| \\
+&= |\boldsymbol{A}| \cdot |\boldsymbol{E} + \boldsymbol{A}^{\mathrm{T}}| \\
+&= -|(\boldsymbol{E} + \boldsymbol{A})^{\mathrm{T}}| \\
+&= -|\boldsymbol{E} + \boldsymbol{A}| = -|\boldsymbol{A} + \boldsymbol{E}|.
+\end{aligned}
+$$
+
+因此 $2|\boldsymbol{A} + \boldsymbol{E}| = 0 \implies |\boldsymbol{A} + \boldsymbol{E}| = 0$。
+
+</Solution>
+
+<ExerciseTrigger chapter={2} section="2.2" title="2.2 矩阵的运算 课后真题与自测练习" />

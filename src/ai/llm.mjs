@@ -104,21 +104,49 @@ export function buildSystemPrompt(bookTitle = '本书', opts = {}) {
 /**
  * 组装初始 messages：system + 历史（多轮） + 当前用户问题。
  * 返回数组后可被调用方继续 push assistant(tool_calls) / tool 消息，构成工具循环。
- * @param {{ question:string, context:string, bookTitle?:string, history?:Array<{role:string,content:string}>, toolsDesc?:string, discussion?:boolean }} params
+ * @param {{ question:string, context:string, bookTitle?:string, history?:Array<{role:string,content:string}>, toolsDesc?:string, discussion?:boolean, chapterRef?:{title?:string, url?:string, text?:string}, chapterRefs?:Array<{title?:string, url?:string, text?:string}>, extendedThinking?:boolean }} params
  */
-export function buildMessages({ question, context, bookTitle = '本书', history = [], toolsDesc = '', discussion = false }) {
+export function buildMessages({ question, context, bookTitle = '本书', history = [], toolsDesc = '', discussion = false, chapterRef = null, chapterRefs = null, extendedThinking = false }) {
   const messages = [{ role: 'system', content: buildSystemPrompt(bookTitle, { toolsDesc, discussion }) }];
   for (const h of history || []) {
     if (h && h.role && typeof h.content === 'string' && h.content) {
       messages.push({ role: h.role === 'assistant' ? 'assistant' : 'user', content: h.content });
     }
   }
+
+  const refs = Array.isArray(chapterRefs) && chapterRefs.length > 0
+    ? chapterRefs
+    : (chapterRef && chapterRef.title ? [chapterRef] : []);
+
+  let chapterPrefix = '';
+  let chapterHint = '';
+
+  if (refs.length === 1) {
+    const r = refs[0];
+    chapterPrefix = `【读者当前正在查看的本章节】：${r.title}${r.url ? `（链接：${r.url}）` : ''}\n${
+      r.text ? `本章正文片段：\n${r.text.slice(0, 4000)}\n\n` : '\n'
+    }`;
+    chapterHint = `（优先结合当前引用的《${r.title}》章节内容）`;
+  } else if (refs.length > 1) {
+    const lines = refs.map((r, i) => {
+      return `${i + 1}. 《${r.title}》${r.url ? `（链接：${r.url}）` : ''}\n${
+        r.text ? `   正文片段：\n   ${r.text.slice(0, 2500)}\n` : ''
+      }`;
+    });
+    chapterPrefix = `【读者引用的相关章节内容】：\n${lines.join('\n')}\n\n`;
+    chapterHint = `（优先结合读者引用的《${refs.map((r) => r.title).filter(Boolean).join('》、《')}》等章节内容进行交叉分析与讲解）`;
+  }
+
+  const thinkingHint = extendedThinking
+    ? '\n【思考深度模式】：已开启扩展深度思考，请在回答中展开全面、深入、步骤详尽的逻辑推演与数学论证，条理分明地阐明核心机制。'
+    : '';
+
   messages.push({
     role: 'user',
-    // discussion：不注入片段上下文，只带问题本身（AI 基于理解与历史讨论；能否检索由模型按需决定）。
+    // discussion：不注入检索片段上下文，若携带本章引用则附带本章信息；AI 基于理解与历史讨论
     content: discussion
-      ? `${question}\n\n【回答要求】：请直接给出有深度、有逻辑、有推导的实质性中文学术解答，把具体概念、定理或推导讲透彻；严禁仅罗列检索条目或来源清单！`
-      : `书中片段（每段有来源编号与“来源 url”，可据此引用并生成指向原文的链接）：\n\n${context}\n\n【用户提问】：\n${question}\n\n【回答要求】：\n请根据以上片段及你的专业学科知识，直接给出具有实质学术价值、有逻辑、有推导的完整中文汇总解答。把具体的定义、定理、公式推导或计算步骤讲解透彻；引用来源在句末用上标 [编号] 标注，并为关键内容自然附上指向原文的 markdown 链接。严禁仅罗列片段或来源清单！`,
+      ? `${chapterPrefix}${question}\n\n【回答要求】：请直接给出有深度、有逻辑、有推导的实质性中文学术解答${chapterHint}，把具体概念、定理或推导讲透彻；严禁仅罗列检索条目或来源清单！${thinkingHint}`
+      : `${chapterPrefix}书中检索片段（每段有来源编号与“来源 url”，可据此引用并生成指向原文的链接）：\n\n${context}\n\n【用户提问】：\n${question}\n\n【回答要求】：\n请根据以上片段及你的专业学科知识${chapterHint}，直接给出具有实质学术价值、有逻辑、有推导的完整中文汇总解答。把具体的定义、定理、公式推导或计算步骤讲解透彻；引用来源在句末用上标 [编号] 标注，并为关键内容自然附上指向原文的 markdown 链接。严禁仅罗列片段或来源清单！${thinkingHint}`,
   });
   return messages;
 }
@@ -136,7 +164,7 @@ export function buildMessages({ question, context, bookTitle = '本书', history
  * @param {{
  *   endpoint:string, apiKey?:string, model:string,
  *   messages:Array, onDelta?:(t:string)=>void, onReasoningDelta?:(t:string)=>void, signal?:AbortSignal,
- *   tools?:Array, toolChoice?:string|object,
+ *   tools?:Array, toolChoice?:string|object, maxTokens?:number,
  * }} opts
  */
 export async function streamChat({

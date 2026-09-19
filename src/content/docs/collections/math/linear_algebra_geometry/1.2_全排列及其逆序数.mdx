@@ -1,0 +1,149 @@
+---
+title: '1.2 全排列及其逆序数'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+用对角线法则计算行列式，虽然直观，但对于四阶及更高阶的行列式，该方法就不适用了。为了求解四元及四元以上的线性方程组，需要把二、三阶行列式的概念进一步推广。下面先介绍全排列及其逆序数的概念及性质。
+
+## 一、排列的逆序数
+
+自然数 $1, 2, 3, \cdots, n$ 按一定顺序排成一排，称为一个 **$n$ 元排列**，记为 $p_1 p_2 \cdots p_n$。排列 $1 2 3 \cdots n$ 称为**自然排列**。$n$ 元排列共有 $n!$ 个。例如自然数 $1, 2, 3$ 共有 $3! = 6$ 个全排列：
+
+$$
+123, 231, 312, 132, 213, 321.
+$$
+
+将自然排列规定为标准次序。下面定义排列的逆序数。
+
+<Knowledge title="定义 1.3 逆序与逆序数">
+
+在一个 $n$ 元排列 $p_1 p_2 \cdots p_n$ 中，若一个大的数排在一个小的数的前面（即与标准次序不同时），则称这两个数形成一个**逆序**。
+
+一个排列中所有逆序的总数叫做这个排列的**逆序数**，记为 $\tau(p_1 p_2 \cdots p_n)$。
+
+</Knowledge>
+
+例如，在四元排列 $4132$ 中出现的逆序为 $(4,1), (4,3), (4,2), (3,2)$，所以 $\tau(4132) = 4$。在自然排列（标准次序）中没有逆序，其逆序数为 $0$。
+
+<SideNote title="逆序数实用计算方法">
+设 $p_1 p_2 \cdots p_n$ 为 $n$ 个自然数 $1, 2, 3, \cdots, n$ 的一个排列。考虑元素 $p_i$ ($i = 1, 2, \cdots, n$)，如果比 $p_i$ 大且排在 $p_i$ 前面的数有 $t_i$ 个，就说 $p_i$ 这个元素的逆序数为 $t_i$，全体元素的逆序数的总和就是这个排列的逆序数。
+</SideNote>
+
+按此计算方法，有
+
+$$
+\tau(p_1 p_2 \cdots p_n) = t_1 + t_2 + \cdots + t_n = \sum_{i=1}^n t_i. \tag{1.7}
+$$
+
+<Example title="例 4 求排列的逆序数">
+
+求下列排列的逆序数：
+(1) $31524$；
+(2) $n(n-1)\cdots 21$。
+
+</Example>
+
+<Solution title="解">
+
+(1) 在排列 $31524$ 中：
+- $3$ 排在首位，逆序数为 $0$；
+- $1$ 的前面比 $1$ 大的数有一个（即 $3$），逆序数为 $1$；
+- $5$ 是最大数，逆序数为 $0$；
+- $2$ 的前面比 $2$ 大的数有两个（即 $3, 5$），逆序数为 $2$；
+- $4$ 的前面比 $4$ 大的数有一个（即 $5$），逆序数为 $1$。
+
+因此这个排列的逆序数为
+
+$$
+\tau(31524) = 0 + 1 + 0 + 2 + 1 = 4.
+$$
+
+(2) 同理可得
+
+$$
+\tau[n(n-1)\cdots 21] = 0 + 1 + 2 + \cdots + (n-2) + (n-1) = \frac{n(n-1)}{2}.
+$$
+
+</Solution>
+
+## 二、逆序数的性质
+
+<Knowledge title="定义 1.4 奇排列与偶排列">
+
+逆序数为奇数的排列称为**奇排列**，逆序数为偶数的排列称为**偶排列**。
+
+</Knowledge>
+
+例如，自然数 $1, 2, 3$ 的 6 个排列中，经计算可知偶排列为 $123, 231, 312$；奇排列为 $321, 132, 213$。
+
+<Knowledge title="定义 1.5 对换">
+
+将一个排列中的某两个数的位置互换，而其余的数不动，就得到了一个新的排列，称这样的变换为一次**对换**。将相邻两个数对换，称为**相邻对换**。
+
+</Knowledge>
+
+<Knowledge title="定理 1.1 对换的奇偶性改变定理">
+
+对排列进行一次对换则改变其奇偶性。
+
+</Knowledge>
+
+<Solution title="证明">
+
+**首先证明相邻对换的情形**：
+
+设排列为 $a_1 \cdots a_l a b b_1 \cdots b_m$，对换 $a$ 与 $b$ 得到新的排列 $a_1 \cdots a_l b a b_1 \cdots b_m$。显然，元素 $a_1, \cdots, a_l; b_1, \cdots, b_m$ 的逆序数没有改变，只有元素 $a$ 和 $b$ 的逆序数改变了：
+- 当 $a < b$ 时，对换后 $a$ 的逆序数增加 1，而 $b$ 的逆序数不变；
+- 当 $a > b$ 时，对换后 $a$ 的逆序数不变，而 $b$ 的逆序数减少 1。
+
+因此，对换后新的排列与原排列的奇偶性不同。
+
+**再证明一般对换的情形**：
+
+设排列为 $a_1 \cdots a_l a b_1 \cdots b_k b c_1 \cdots c_s$。$a$ 和 $b$ 之间相隔 $k$ 个数。要实现 $a$ 与 $b$ 的对换，可先将 $a$ 与 $b_1$ 做相邻对换，再将 $a$ 与 $b_2$ 做相邻对换，照此继续下去，经 $k+1$ 次相邻对换，调换成
+
+$$
+a_1 \cdots a_l b_1 \cdots b_k b a c_1 \cdots c_s.
+$$
+
+然后再把 $b$ 依次与 $b_k, b_{k-1}, \cdots, b_1$ 做相邻对换，调换成
+
+$$
+a_1 \cdots a_l b b_1 \cdots b_k a c_1 \cdots c_s.
+$$
+
+这样，对换 $a$ 和 $b$，共经过了 $(k+1) + k = 2k+1$ 次相邻对换。因为奇数次相邻对换每一次都改变排列的奇偶性，所以这两个排列的奇偶性正好相反。
+
+</Solution>
+
+<Knowledge title="推论 1.1 对换次数与奇偶性">
+
+奇排列调成自然排列的对换次数为奇数，偶排列调成自然排列的对换次数为偶数。
+
+</Knowledge>
+
+<Solution title="证明">
+
+因为自然排列 $1 2 3 \cdots n$ 是偶排列（自然排列的逆序数为 $0$），由定理 1.1 可知，一次对换改变排列的奇偶性，当排列 $p_1 p_2 \cdots p_n$ 是奇（偶）排列时，必须做奇（偶）次对换才能变成自然排列 $1 2 3 \cdots n$。故所做的对换次数与排列具有相同的奇偶性。
+
+</Solution>
+
+<Knowledge title="推论 1.2 奇偶排列平分定理">
+
+全体 $n$ 元排列 ($n > 1$) 的集合中，奇排列与偶排列各占一半，各有 $\frac{n!}{2}$ 个。
+
+</Knowledge>
+
+<ExerciseTrigger chapter={1} section="1.2" title="1.2 全排列及其逆序数 课后真题与自测练习" />

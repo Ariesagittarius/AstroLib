@@ -1,0 +1,432 @@
+---
+title: '2.4 矩阵的秩与初等变换'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+矩阵的秩是线性代数中的核心概念之一，刻画了矩阵内部行（或列）向量之间的本质线性独立维数与结构特征。按子式定义直接计算矩阵的秩计算量庞大，为此本节引入矩阵的三种初等变换，证明初等变换不改变矩阵的秩这一核心定理，进而建立行阶梯形矩阵、行最简形矩阵与等价标准形，最后阐明利用初等行变换高效求解齐次线性方程组的算法原理。
+
+## 一、矩阵的秩
+
+对于一般的 $m \times n$ 矩阵，若行数与列数不相等，则矩阵自身不能构成行列式。为此引入矩阵的子式概念。
+
+在 $m \times n$ 矩阵 $\boldsymbol{A}$ 中，任意取定某 $k$ 行（$i_1 < i_2 < \cdots < i_k$）和某 $k$ 列（$j_1 < j_2 < \cdots < j_k$，$k \le \min\{m, n\}$），位于这些行与列交叉处的 $k^2$ 个元素按原来的相对顺序排成的 $k$ 阶行列式
+
+$$
+\begin{vmatrix}
+a_{i_1 j_1} & a_{i_1 j_2} & \cdots & a_{i_1 j_k} \\
+a_{i_2 j_1} & a_{i_2 j_2} & \cdots & a_{i_2 j_k} \\
+\vdots & \vdots & \ddots & \vdots \\
+a_{i_k j_1} & a_{i_k j_2} & \cdots & a_{i_k j_k}
+\end{vmatrix}
+$$
+
+称为 $\boldsymbol{A}$ 的一个 **$k$ 阶子式**。显然，在 $m \times n$ 矩阵 $\boldsymbol{A}$ 中，$k$ 阶子式的总数为 $\mathrm{C}_m^k \times \mathrm{C}_n^k$。把 $\boldsymbol{A}$ 中对应不同 $k$ 的所有 $k$ 阶子式放在一起，可以分成值为零与值不为零两大类。值不为零的子式称为非零子式。
+
+<Knowledge title="定义 10 矩阵的秩">
+
+设在矩阵 $\boldsymbol{A}$ 中有一个 $r$ 阶非零子式，且所有的 $r+1$ 阶子式（如果存在的话）全等于零，则称矩阵 $\boldsymbol{A}$ 的**秩**（rank）为 $r$，记为 $r(\boldsymbol{A}) = r$（有时也可用 $\mathrm{rank}(\boldsymbol{A})$ 表示）。零矩阵的秩规定为 $0$。
+
+</Knowledge>
+
+<Knowledge title="矩阵秩的基本性质">
+
+由定义可以直接得到以下性质：
+
+1. 若 $\boldsymbol{A}$ 为 $m \times n$ 矩阵，则 $\boldsymbol{A}$ 的秩不会大于行数，也不会大于列数，即
+
+$$
+r(\boldsymbol{A}) \le \min\{m, n\};
+$$
+
+2. $r(\boldsymbol{A}^\mathrm{T}) = r(\boldsymbol{A})$；对于任意非零常数 $k$，有 $r(k\boldsymbol{A}) = r(\boldsymbol{A})$；
+3. 若 $r(\boldsymbol{A}) = r$，则 $\boldsymbol{A}$ 中所有大于 $r$ 阶的子式全为零，即 $r$ 为 $\boldsymbol{A}$ 中不等于零的子式的最高阶数；
+4. 若 $\boldsymbol{A}$ 的所有 $r+1$ 阶子式全为零，则 $r(\boldsymbol{A}) \le r$；
+5. 若 $\boldsymbol{A}$ 中存在一个 $r$ 阶子式不为零，则 $r(\boldsymbol{A}) \ge r$。
+
+</Knowledge>
+
+<Example title="例 23 按定义求矩阵的秩">
+
+求矩阵
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+2 & -3 & 8 & 2 \\
+2 & 12 & -2 & 12 \\
+1 & 3 & 1 & 4
+\end{pmatrix}
+$$
+
+的秩。
+
+</Example>
+
+<Solution title="解">
+
+容易算出其中的一个二阶子式
+
+$$
+\begin{vmatrix} 2 & -3 \\ 2 & 12 \end{vmatrix} = 30 \neq 0.
+$$
+
+而矩阵 $\boldsymbol{A}$ 的所有三阶子式共 $\mathrm{C}_3^3 \times \mathrm{C}_4^3 = 4$ 个：
+
+$$
+\begin{aligned}
+\begin{vmatrix} 2 & -3 & 8 \\ 2 & 12 & -2 \\ 1 & 3 & 1 \end{vmatrix} &= 0, & \begin{vmatrix} 2 & -3 & 2 \\ 2 & 12 & 12 \\ 1 & 3 & 4 \end{vmatrix} &= 0, \\
+\begin{vmatrix} -3 & 8 & 2 \\ 12 & -2 & 12 \\ 3 & 1 & 4 \end{vmatrix} &= 0, & \begin{vmatrix} 2 & 8 & 2 \\ 2 & -2 & 12 \\ 1 & 1 & 4 \end{vmatrix} &= 0.
+\end{aligned}
+$$
+
+因为存在二阶非零子式，且所有三阶子式全为零，所以 $r(\boldsymbol{A}) = 2$。
+
+</Solution>
+
+<SideNote title="定义法计算秩的局限性">
+
+由上例可以看出，按定义求矩阵的秩需要计算大量行列式，非常繁琐。下面引入初等变换方法，为求矩阵的秩提供极为高效的统一工具。
+
+</SideNote>
+
+## 二、矩阵的初等变换
+
+<Knowledge title="定义 11 矩阵的初等变换">
+
+对矩阵 $\boldsymbol{A} = (a_{ij})_{m \times n}$ 施行以下三种变换，称为矩阵的**初等行变换**：
+
+1. **对调变换**：对调 $\boldsymbol{A}$ 的某两行（对调 $i, j$ 两行，记作 $r_i \leftrightarrow r_j$）；
+2. **数乘变换**：用一个非零数 $k$（$k \neq 0$）乘 $\boldsymbol{A}$ 的某一行中的所有元素（第 $i$ 行乘 $k$，记作 $k r_i$）；
+3. **倍加变换**：把某一行所有元素的 $k$ 倍加到另一行对应的元素上去（第 $j$ 行的 $k$ 倍加到第 $i$ 行上，记作 $r_i + k r_j$）。
+
+类似地，若将上述定义中的“行”换成“列”，即得到矩阵的三种**初等列变换**（记号用 $c$ 代替 $r$）。矩阵的初等行变换和初等列变换统称为矩阵的**初等变换**。
+
+三种初等变换都是可逆变换，且其逆变换也是同类型的初等变换：
+- $r_i \leftrightarrow r_j$ 的逆变换就是其自身；
+- $k r_i$（$k \neq 0$）的逆变换为 $\frac{1}{k} r_i$；
+- $r_i + k r_j$ 的逆变换为 $r_i - k r_j$。
+
+</Knowledge>
+
+<Knowledge title="定义 12 矩阵的等价">
+
+若矩阵 $\boldsymbol{A}$ 经过有限次初等变换变为 $\boldsymbol{B}$，则称矩阵 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ **等价**，记为 $\boldsymbol{A} \cong \boldsymbol{B}$。
+
+矩阵之间的等价关系满足以下三条性质：
+1. **反身性**：$\boldsymbol{A} \cong \boldsymbol{A}$；
+2. **对称性**：若 $\boldsymbol{A} \cong \boldsymbol{B}$，则 $\boldsymbol{B} \cong \boldsymbol{A}$；
+3. **传递性**：若 $\boldsymbol{A} \cong \boldsymbol{B}$ 且 $\boldsymbol{B} \cong \boldsymbol{C}$，则 $\boldsymbol{A} \cong \boldsymbol{C}$。
+
+</Knowledge>
+
+<Knowledge title="定理 2 初等变换保秩定理">
+
+初等变换不改变矩阵的秩。即若 $\boldsymbol{A} \cong \boldsymbol{B}$，则 $r(\boldsymbol{A}) = r(\boldsymbol{B})$。
+
+</Knowledge>
+
+<Solution title="证明">
+
+仅证初等行变换的情形（列变换类似）：
+
+1. 将矩阵 $\boldsymbol{A}$ 的两行互换后得到矩阵 $\boldsymbol{B}$，由行列式性质知，$\boldsymbol{B}$ 的子式与 $\boldsymbol{A}$ 相对应的子式或者相等，或者只差一个符号，从而非零子式的最高阶数不变，即 $r(\boldsymbol{A}) = r(\boldsymbol{B})$。
+2. 将矩阵 $\boldsymbol{A}$ 的某一行乘某一非零数 $k$ 得到矩阵 $\boldsymbol{B}$，由行列式性质知，$\boldsymbol{B}$ 的子式或者是 $\boldsymbol{A}$ 相应子式的 $k$ 倍，或者相等。因为 $k \neq 0$，所以子式为零的性质不改变，因此 $r(\boldsymbol{A}) = r(\boldsymbol{B})$。
+3. 将矩阵 $\boldsymbol{A}$ 的第 $j$ 行的 $k$ 倍加到第 $i$ 行上得到矩阵 $\boldsymbol{B}$。设 $r(\boldsymbol{A}) = r$，为了证明 $r(\boldsymbol{B}) = r$，先证 $r(\boldsymbol{B}) \le r(\boldsymbol{A})$。
+
+若矩阵 $\boldsymbol{B}$ 没有阶数大于 $r$ 的子式，自然没有阶数大于 $r$ 的非零子式，因此 $r(\boldsymbol{B}) \le r(\boldsymbol{A})$。
+
+若矩阵 $\boldsymbol{B}$ 存在 $r+1$ 阶子式，设 $D_{r+1}$ 为 $\boldsymbol{B}$ 的任一 $r+1$ 阶子式，分三种情况讨论：
+- 若 $D_{r+1}$ 不含第 $i$ 行元素，则 $D_{r+1}$ 也是矩阵 $\boldsymbol{A}$ 的 $r+1$ 阶子式，因 $r(\boldsymbol{A}) = r$，故 $D_{r+1} = 0$；
+- 若 $D_{r+1}$ 同时包含第 $i, j$ 两行元素，则 $D_{r+1}$ 是 $\boldsymbol{A}$ 中相应的 $r+1$ 阶子式将含第 $j$ 行元素的 $k$ 倍加到第 $i$ 行上得到的，由行列式性质，$D_{r+1}$ 的值与 $\boldsymbol{A}$ 中原对应子式相等，故 $D_{r+1} = 0$；
+- 若 $D_{r+1}$ 含第 $i$ 行元素而不含第 $j$ 行元素，按拆行性质可拆为两项：
+
+$$
+D_{r+1} = D_{r+1}^{(1)} + k D_{r+1}^{(2)},
+$$
+
+其中 $D_{r+1}^{(1)}$ 是 $\boldsymbol{A}$ 的一个 $r+1$ 阶子式，故 $D_{r+1}^{(1)} = 0$；$D_{r+1}^{(2)}$ 是把第 $i$ 行元素替换为第 $j$ 行对应元素后的行列式，也是 $\boldsymbol{A}$ 的 $r+1$ 阶子式，故 $D_{r+1}^{(2)} = 0$。从而 $D_{r+1} = 0$。
+
+以上证明了矩阵 $\boldsymbol{B}$ 的所有 $r+1$ 阶子式全等于零，所以 $r(\boldsymbol{B}) \le r(\boldsymbol{A})$。
+
+同理，由于矩阵 $\boldsymbol{A}$ 可以由 $\boldsymbol{B}$ 施行逆初等变换得到（将第 $j$ 行的 $-k$ 倍加到第 $i$ 行），故也有 $r(\boldsymbol{A}) \le r(\boldsymbol{B})$。综合两方面，得 $r(\boldsymbol{A}) = r(\boldsymbol{B})$。
+
+由单次初等变换保秩，经过有限次初等变换后矩阵的秩仍不变。
+
+</Solution>
+
+## 三、用初等变换求矩阵的秩
+
+<Example title="例 24 初等行变换求矩阵的秩">
+
+设
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+2 & -3 & 8 & 2 \\
+2 & 12 & -2 & 12 \\
+1 & 3 & 1 & 4
+\end{pmatrix},
+$$
+
+求矩阵 $\boldsymbol{A}$ 的秩。
+
+</Example>
+
+<Solution title="解">
+
+对 $\boldsymbol{A}$ 施行初等行变换：
+
+$$
+\boldsymbol{A} \xrightarrow{r_1 \leftrightarrow r_3} \begin{pmatrix}
+1 & 3 & 1 & 4 \\
+2 & 12 & -2 & 12 \\
+2 & -3 & 8 & 2
+\end{pmatrix} \xrightarrow{\substack{r_2 - 2r_1 \\ r_3 - 2r_1}} \begin{pmatrix}
+1 & 3 & 1 & 4 \\
+0 & 6 & -4 & 4 \\
+0 & -9 & 6 & -6
+\end{pmatrix} \xrightarrow{r_3 + \frac{3}{2}r_2} \begin{pmatrix}
+1 & 3 & 1 & 4 \\
+0 & 6 & -4 & 4 \\
+0 & 0 & 0 & 0
+\end{pmatrix} = \boldsymbol{B}.
+$$
+
+在矩阵 $\boldsymbol{B}$ 中，所有三阶子式全为零（因为第三行全为零），且存在二阶非零子式
+
+$$
+\begin{vmatrix} 1 & 3 \\ 0 & 6 \end{vmatrix} = 6 \neq 0,
+$$
+
+所以 $r(\boldsymbol{B}) = 2$。由定理 2 知，$r(\boldsymbol{A}) = r(\boldsymbol{B}) = 2$。
+
+</Solution>
+
+<Knowledge title="行阶梯形矩阵与行最简形矩阵">
+
+上例中的矩阵 $\boldsymbol{B}$ 称为**行阶梯形矩阵**，其结构特征为：
+1. 如果存在全零行（元素全为零的行），则全零行都位于矩阵中非零行的下方；
+2. 各非零行中从左边数起的第一个非零元素（称为**主元**）的列指标 $j$ 随着行指标 $i$ 的递增而严格增大。
+
+对于阶梯形矩阵，每个台阶只有一行，**台阶数即为非零行的行数**。阶梯形矩阵的最高阶非零子式阶数恰好等于非零行数 $r$，因此：
+
+$$
+r(\text{行阶梯形矩阵}) = \text{非零行行数}.
+$$
+
+若进一步对矩阵施行初等行变换，将阶梯形矩阵的主元全部化为 $1$，且将这些主元所在列的其他元素化为 $0$，得到的矩阵称为**行最简形矩阵**。
+
+进一步如果允许初等列变换，任何矩阵最终都可以化为如下的**等价标准形**：
+
+$$
+\boldsymbol{A} \cong \begin{pmatrix}
+\boldsymbol{E}_r & \boldsymbol{O} \\
+\boldsymbol{O} & \boldsymbol{O}
+\end{pmatrix}, \tag{2.8}
+$$
+
+其中 $\boldsymbol{E}_r$ 是 $r$ 阶单位矩阵，$r = r(\boldsymbol{A})$。
+
+</Knowledge>
+
+<Knowledge title="定义 13 满秩矩阵与降秩矩阵">
+
+设 $\boldsymbol{A}$ 为 $n$ 阶方阵。若 $\boldsymbol{A} \cong \boldsymbol{E}$，则称 $\boldsymbol{A}$ 为**满秩矩阵**；否则称为**降秩矩阵**。
+
+若 $\boldsymbol{A} \cong \boldsymbol{E}$，则 $r(\boldsymbol{A}) = n$，从而 $|\boldsymbol{A}| \neq 0$，即**满秩矩阵就是可逆矩阵（非奇异矩阵）**；降秩矩阵就是不可逆矩阵（奇异矩阵）。
+
+</Knowledge>
+
+<Example title="例 25 矩阵的化简与标准形">
+
+求矩阵
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+1 & 2 & 3 & 4 \\
+-1 & -1 & -4 & -2 \\
+3 & 4 & 11 & 8
+\end{pmatrix}
+$$
+
+的秩，并将其化为行阶梯形、行最简形与等价标准形。
+
+</Example>
+
+<Solution title="解">
+
+对 $\boldsymbol{A}$ 施行初等行变换：
+
+$$
+\boldsymbol{A} \xrightarrow{\substack{r_2 + r_1 \\ r_3 - 3r_1}} \begin{pmatrix}
+1 & 2 & 3 & 4 \\
+0 & 1 & -1 & 2 \\
+0 & -2 & 2 & -4
+\end{pmatrix} \xrightarrow{r_3 + 2r_2} \begin{pmatrix}
+1 & 2 & 3 & 4 \\
+0 & 1 & -1 & 2 \\
+0 & 0 & 0 & 0
+\end{pmatrix} = \boldsymbol{B}_1.
+$$
+
+$\boldsymbol{B}_1$ 即为 $\boldsymbol{A}$ 的行阶梯形矩阵，非零行数为 $2$，由此可知 $r(\boldsymbol{A}) = 2$。
+
+继续对 $\boldsymbol{B}_1$ 施行初等行变换化简：
+
+$$
+\boldsymbol{B}_1 \xrightarrow{r_1 - 2r_2} \begin{pmatrix}
+1 & 0 & 5 & 0 \\
+0 & 1 & -1 & 2 \\
+0 & 0 & 0 & 0
+\end{pmatrix} = \boldsymbol{B}_2.
+$$
+
+$\boldsymbol{B}_2$ 为 $\boldsymbol{A}$ 的行最简形矩阵。
+
+再对 $\boldsymbol{B}_2$ 施行初等列变换：
+
+$$
+\boldsymbol{B}_2 \xrightarrow{\substack{c_3 - 5c_1 \\ c_3 + c_2 \\ c_4 - 2c_2}} \begin{pmatrix}
+1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 0
+\end{pmatrix} = \boldsymbol{B}_3.
+$$
+
+$\boldsymbol{B}_3$ 即为 $\boldsymbol{A}$ 的等价标准形 $\begin{pmatrix} \boldsymbol{E}_2 & \boldsymbol{O} \\ \boldsymbol{O} & \boldsymbol{O} \end{pmatrix}$。
+
+</Solution>
+
+## 四、线性方程组与矩阵的初等变换
+
+对于含有 $m$ 个方程的 $n$ 元线性方程组
+
+$$
+\begin{cases}
+a_{11}x_1 + a_{12}x_2 + \cdots + a_{1n}x_n = b_1, \\
+a_{21}x_1 + a_{22}x_2 + \cdots + a_{2n}x_n = b_2, \\
+\quad \vdots \\
+a_{m1}x_1 + a_{m2}x_2 + \cdots + a_{mn}x_n = b_m,
+\end{cases} \tag{2.9}
+$$
+
+用矩阵乘法可写为
+
+$$
+\boldsymbol{A}\boldsymbol{x} = \boldsymbol{b}, \tag{2.10}
+$$
+
+其中 $\boldsymbol{A} = (a_{ij})_{m \times n}$ 称为方程组的系数矩阵，$\boldsymbol{x} = (x_1, \dots, x_n)^\mathrm{T}$ 为未知量向量，$\boldsymbol{b} = (b_1, \dots, b_m)^\mathrm{T}$ 为常数项向量。当 $\boldsymbol{b} = \boldsymbol{0}$ 时，称方程组为齐次线性方程组，记作 $\boldsymbol{A}\boldsymbol{x} = \boldsymbol{0}$。
+
+解线性方程组的高斯消元法，在代数本质上就是对包含系数的增广矩阵（齐次时即系数矩阵）施行**初等行变换**。
+
+<Example title="例 26 初等行变换求解齐次线性方程组">
+
+解齐次线性方程组：
+
+$$
+\begin{cases}
+x_1 - x_2 - x_3 + x_4 = 0, & (1) \\
+x_1 - x_2 + x_3 - 3x_4 = 0, & (2) \\
+x_1 - x_2 - 2x_3 + 3x_4 = 0. & (3)
+\end{cases} \tag{2.11}
+$$
+
+</Example>
+
+<Solution title="解">
+
+对系数矩阵 $\boldsymbol{A}$ 施行初等行变换：
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+1 & -1 & -1 & 1 \\
+1 & -1 & 1 & -3 \\
+1 & -1 & -2 & 3
+\end{pmatrix} \xrightarrow{\substack{r_2 - r_1 \\ r_3 - r_1}} \begin{pmatrix}
+1 & -1 & -1 & 1 \\
+0 & 0 & 2 & -4 \\
+0 & 0 & -1 & 2
+\end{pmatrix} \xrightarrow{\substack{\frac{1}{2}r_2 \\ r_3 + r_2}} \begin{pmatrix}
+1 & -1 & -1 & 1 \\
+0 & 0 & 1 & -2 \\
+0 & 0 & 0 & 0
+\end{pmatrix} = \boldsymbol{B}_1.
+$$
+
+继续化为行最简形：
+
+$$
+\boldsymbol{B}_1 \xrightarrow{r_1 + r_2} \begin{pmatrix}
+1 & -1 & 0 & -1 \\
+0 & 0 & 1 & -2 \\
+0 & 0 & 0 & 0
+\end{pmatrix} = \boldsymbol{B}_2.
+$$
+
+$\boldsymbol{B}_2$ 对应的同解方程组为
+
+$$
+\begin{cases}
+x_1 - x_2 - x_4 = 0, \\
+x_3 - 2x_4 = 0.
+\end{cases}
+$$
+
+取 $x_2, x_4$ 为自由未知量，解得
+
+$$
+\begin{cases}
+x_1 = x_2 + x_4, \\
+x_3 = 2x_4.
+\end{cases}
+$$
+
+令 $x_2 = k_1, x_4 = k_2$（$k_1, k_2$ 为任意实数），则方程组的通解向量形式为
+
+$$
+\boldsymbol{x} = \begin{pmatrix} x_1 \\ x_2 \\ x_3 \\ x_4 \end{pmatrix} = \begin{pmatrix} k_1 + k_2 \\ k_1 \\ 2k_2 \\ k_2 \end{pmatrix} = k_1 \begin{pmatrix} 1 \\ 1 \\ 0 \\ 0 \end{pmatrix} + k_2 \begin{pmatrix} 1 \\ 0 \\ 2 \\ 1 \end{pmatrix}.
+$$
+
+</Solution>
+
+<Knowledge title="定理 3 齐次线性方程组非零解判别定理">
+
+$n$ 元齐次线性方程组 $\boldsymbol{A}\boldsymbol{x} = \boldsymbol{0}$ 有非零解的充分必要条件是系数矩阵 $\boldsymbol{A}$ 的秩
+
+$$
+r(\boldsymbol{A}) < n.
+$$
+
+</Knowledge>
+
+<Solution title="证明">
+
+**必要性**：设方程组 $\boldsymbol{A}\boldsymbol{x} = \boldsymbol{0}$ 有非零解，反证假设 $r(\boldsymbol{A}) = n$。则 $\boldsymbol{A}$ 中必有一个 $n$ 阶非零子式 $D_n \neq 0$。根据克拉默法则，这 $n$ 个方程组成的方程组只有零解，与原方程组有非零解矛盾，故必有 $r(\boldsymbol{A}) < n$。
+
+**充分性**：设 $r(\boldsymbol{A}) = r < n$，则 $\boldsymbol{A}$ 的行阶梯形矩阵只有 $r$ 个非零行，从而同解方程组中含有 $n - r > 0$ 个自由未知量。令自由未知量取不全为零的值（例如取为 $1$），即可得到方程组的一个非零解。
+
+</Solution>
+
+<Knowledge title="推论 方程个数等于未知量个数时的非零解条件">
+
+含有 $n$ 个方程的 $n$ 元齐次线性方程组 $\boldsymbol{A}\boldsymbol{x} = \boldsymbol{0}$ 有非零解的充分必要条件是
+
+$$
+|\boldsymbol{A}| = 0.
+$$
+
+</Knowledge>
+
+<ExerciseTrigger chapter={2} section="2.4" title="2.4 矩阵的秩与初等变换 课后真题与自测练习" />

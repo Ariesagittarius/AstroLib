@@ -1,0 +1,617 @@
+---
+title: '5.1 齐次线性方程组'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+在工程技术领域中，大量的问题都可归结为解线性方程组。线性方程组的解的理论和求解方法，是线性代数学的核心内容。在第一章中介绍的克拉默法则，只讨论了方程个数与变量个数相同的特殊的线性方程组。本章将建立线性方程组理论：解的存在性和解的结构，以及线性方程组的通解表示法。
+
+齐次线性方程组的一般形式为
+
+$$
+\begin{cases}
+a_{11}x_1 + a_{12}x_2 + \cdots + a_{1n}x_n = 0, \\
+a_{21}x_1 + a_{22}x_2 + \cdots + a_{2n}x_n = 0, \\
+\quad \vdots \\
+a_{m1}x_1 + a_{m2}x_2 + \cdots + a_{mn}x_n = 0.
+\end{cases} \tag{5.1}
+$$
+
+设
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+a_{21} & a_{22} & \cdots & a_{2n} \\
+\vdots & \vdots & & \vdots \\
+a_{m1} & a_{m2} & \cdots & a_{mn}
+\end{pmatrix}, \quad
+\boldsymbol{x} = \begin{pmatrix} x_1 \\ x_2 \\ \vdots \\ x_n \end{pmatrix}, \quad
+\mathbf{0} = \begin{pmatrix} 0 \\ 0 \\ \vdots \\ 0 \end{pmatrix},
+$$
+
+常把上述齐次线性方程组简写成
+
+$$
+\boldsymbol{A}\boldsymbol{x} = \mathbf{0}. \tag{5.2}
+$$
+
+称 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 中的 $\boldsymbol{A}$ 为系数矩阵，$\boldsymbol{x}$ 为 $n$ 维未知列向量，$\mathbf{0}$ 为 $m$ 维零列向量。
+
+<Knowledge title="定义 1 解向量与解空间">
+
+设 $\boldsymbol{A}$ 是 $m \times n$ 矩阵，满足 $\boldsymbol{A}\boldsymbol{\xi} = \mathbf{0}$ 的 $n$ 维列向量 $\boldsymbol{\xi} = (\xi_1, \xi_2, \dots, \xi_n)^\mathrm{T}$ 称为 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的**解向量**。
+
+也可以把解向量 $\boldsymbol{\xi}$ 简称为 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的解。$n$ 维零列向量 $\mathbf{0}$ 显然是 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的解，称为**零解**。$\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的其他解称为**非零解**。
+
+若把 $\boldsymbol{A}$ 看作由列向量组构成的矩阵，设
+
+$$
+\boldsymbol{A} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n),
+$$
+
+则方程组 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 可表示为向量组合的形式：
+
+$$
+x_1\boldsymbol{\alpha}_1 + x_2\boldsymbol{\alpha}_2 + \cdots + x_n\boldsymbol{\alpha}_n = \mathbf{0}. \tag{5.3}
+$$
+
+上面给出了齐次线性方程组的三种不同的形式，它们表示同一个线性方程组。
+
+考虑由 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的解的全体所组成的向量集合
+
+$$
+S = \{\boldsymbol{\xi} \mid \boldsymbol{A}\boldsymbol{\xi} = \mathbf{0}\}.
+$$
+
+</Knowledge>
+
+容易证明 $S$ 有以下性质：
+
+<Knowledge title="性质 1 解的加法封闭性">
+
+若 $\boldsymbol{\xi}_1, \boldsymbol{\xi}_2$ 是齐次线性方程组 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的解，则 $\boldsymbol{\xi}_1 + \boldsymbol{\xi}_2$ 也是 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的解。
+
+</Knowledge>
+
+<Solution title="证明">
+
+由于 $\boldsymbol{A}\boldsymbol{\xi}_1 = \mathbf{0}, \boldsymbol{A}\boldsymbol{\xi}_2 = \mathbf{0}$，必有
+
+$$
+\boldsymbol{A}(\boldsymbol{\xi}_1 \pm \boldsymbol{\xi}_2) = \boldsymbol{A}\boldsymbol{\xi}_1 \pm \boldsymbol{A}\boldsymbol{\xi}_2 = \mathbf{0},
+$$
+
+所以 $\boldsymbol{\xi}_1 + \boldsymbol{\xi}_2$ 是 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的解。
+
+</Solution>
+
+<Knowledge title="性质 2 解的数乘封闭性">
+
+若 $\boldsymbol{\xi}$ 是齐次线性方程组 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的解，$k$ 是任意实数，则 $k\boldsymbol{\xi}$ 也是 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的解。
+
+</Knowledge>
+
+<Solution title="证明">
+
+由于 $\boldsymbol{A}(k\boldsymbol{\xi}) = k\boldsymbol{A}\boldsymbol{\xi} = k \times \mathbf{0} = \mathbf{0}$，所以 $k\boldsymbol{\xi}$ 也是 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的解。
+
+</Solution>
+
+由性质 1、性质 2 可得：
+1. 若 $\boldsymbol{\xi}_1, \boldsymbol{\xi}_2 \in S$，则 $\boldsymbol{\xi}_1 + \boldsymbol{\xi}_2 \in S$；
+2. 若 $\boldsymbol{\xi} \in S, k \in \mathbb{R}$，则 $k\boldsymbol{\xi} \in S$。
+
+这说明集合 $S$ 对向量的加法和数乘两种运算是封闭的，且 $n$ 维零列向量 $\mathbf{0}$ 一定是 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的解，说明 $S$ 不是空集。因此 $S$ 构成一个向量空间。把 $S$ 称为 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的**解空间**。
+
+<Knowledge title="定义 2 基础解系">
+
+齐次线性方程组 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的解空间 $S$ 中的任意一个基 $\{\boldsymbol{\xi}_1, \boldsymbol{\xi}_2, \dots, \boldsymbol{\xi}_s\}$，都称为 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的**基础解系**。
+
+若 $\{\boldsymbol{\xi}_1, \boldsymbol{\xi}_2, \dots, \boldsymbol{\xi}_s\}$ 为齐次线性方程组 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的一个基础解系，则必须满足两个条件：
+1. $\boldsymbol{\xi}_1, \boldsymbol{\xi}_2, \dots, \boldsymbol{\xi}_s$ 是 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的线性无关的解向量组；
+2. 此方程组的任意一个解 $\boldsymbol{\xi}$，都可表为 $\boldsymbol{\xi}_1, \boldsymbol{\xi}_2, \dots, \boldsymbol{\xi}_s$ 的线性组合，即
+
+$$
+\boldsymbol{\xi} = k_1\boldsymbol{\xi}_1 + k_2\boldsymbol{\xi}_2 + \cdots + k_s\boldsymbol{\xi}_s,
+$$
+
+其中 $k_1, k_2, \dots, k_s$ 是任意实数。
+
+</Knowledge>
+
+## 一、求解空间 $S$ 的基和维数
+
+设 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的系数矩阵 $\boldsymbol{A}$ 的秩 $r(\boldsymbol{A}) = r$，不妨设 $\boldsymbol{A}$ 的前 $r$ 个列向量线性无关，对 $\boldsymbol{A}$ 施行初等行变换把它化为行最简形矩阵 $\boldsymbol{B}$，设
+
+$$
+\boldsymbol{B} = \begin{pmatrix}
+1 & 0 & \cdots & 0 & b_{11} & \cdots & b_{1, n-r} \\
+0 & 1 & \cdots & 0 & b_{21} & \cdots & b_{2, n-r} \\
+\vdots & \vdots & & \vdots & \vdots & & \vdots \\
+0 & 0 & \cdots & 1 & b_{r1} & \cdots & b_{r, n-r} \\
+0 & 0 & \cdots & 0 & 0 & \cdots & 0 \\
+\vdots & \vdots & & \vdots & \vdots & & \vdots \\
+0 & 0 & \cdots & 0 & 0 & \cdots & 0
+\end{pmatrix},
+$$
+
+以 $\boldsymbol{B}$ 为系数矩阵的线性方程组可化为
+
+$$
+\begin{cases}
+x_1 = -b_{11}x_{r+1} - b_{12}x_{r+2} - \cdots - b_{1, n-r}x_n, \\
+x_2 = -b_{21}x_{r+1} - b_{22}x_{r+2} - \cdots - b_{2, n-r}x_n, \\
+\quad \vdots \\
+x_r = -b_{r1}x_{r+1} - b_{r2}x_{r+2} - \cdots - b_{r, n-r}x_n.
+\end{cases} \tag{5.4}
+$$
+
+则方程组 (5.1) 与 (5.4) 同解。在 (5.4) 中，任给 $x_{r+1}, x_{r+2}, \dots, x_n$ 的一组值，则唯一确定 $x_1, x_2, \dots, x_r$ 的值，于是就得到 (5.4) 的一个解，也就是 (5.1) 的解。令 $x_{r+1}, x_{r+2}, \dots, x_n$ 取下列 $n-r$ 组数：
+
+$$
+\begin{pmatrix} x_{r+1} \\ x_{r+2} \\ \vdots \\ x_n \end{pmatrix} =
+\begin{pmatrix} 1 \\ 0 \\ \vdots \\ 0 \end{pmatrix}, \quad
+\begin{pmatrix} 0 \\ 1 \\ \vdots \\ 0 \end{pmatrix}, \quad \dots, \quad
+\begin{pmatrix} 0 \\ 0 \\ \vdots \\ 1 \end{pmatrix},
+$$
+
+由 (5.4) 依次可得
+
+$$
+\begin{pmatrix} x_1 \\ \vdots \\ x_r \end{pmatrix} =
+\begin{pmatrix} -b_{11} \\ \vdots \\ -b_{r1} \end{pmatrix}, \quad
+\begin{pmatrix} -b_{12} \\ \vdots \\ -b_{r2} \end{pmatrix}, \quad \dots, \quad
+\begin{pmatrix} -b_{1, n-r} \\ \vdots \\ -b_{r, n-r} \end{pmatrix},
+$$
+
+从而求得 (5.1) 的 $n-r$ 个解：
+
+$$
+\boldsymbol{\xi}_1 = \begin{pmatrix} -b_{11} \\ \vdots \\ -b_{r1} \\ 1 \\ 0 \\ \vdots \\ 0 \end{pmatrix}, \quad
+\boldsymbol{\xi}_2 = \begin{pmatrix} -b_{12} \\ \vdots \\ -b_{r2} \\ 0 \\ 1 \\ \vdots \\ 0 \end{pmatrix}, \quad \dots, \quad
+\boldsymbol{\xi}_{n-r} = \begin{pmatrix} -b_{1, n-r} \\ \vdots \\ -b_{r, n-r} \\ 0 \\ 0 \\ \vdots \\ 1 \end{pmatrix}.
+$$
+
+下面证明 $\boldsymbol{\xi}_1, \boldsymbol{\xi}_2, \dots, \boldsymbol{\xi}_{n-r}$ 就是解空间 $S$ 的一个基。
+
+由于 $\boldsymbol{\xi}_1, \boldsymbol{\xi}_2, \dots, \boldsymbol{\xi}_{n-r}$ 的后 $n-r$ 个分量构成的向量组线性无关，所以在每个向量前面添加 $r$ 个分量而得到的 $n-r$ 个 $n$ 维向量 $\boldsymbol{\xi}_1, \boldsymbol{\xi}_2, \dots, \boldsymbol{\xi}_{n-r}$ 也线性无关。
+
+设
+
+$$
+\boldsymbol{\xi} = \begin{pmatrix} \lambda_1 \\ \vdots \\ \lambda_r \\ \lambda_{r+1} \\ \vdots \\ \lambda_n \end{pmatrix}
+$$
+
+是方程组 (5.1) 的任一解，令
+
+$$
+\boldsymbol{\eta} = \lambda_{r+1}\boldsymbol{\xi}_1 + \lambda_{r+2}\boldsymbol{\xi}_2 + \cdots + \lambda_n\boldsymbol{\xi}_{n-r},
+$$
+
+则 $\boldsymbol{\eta}$ 是 (5.1) 的解。比较 $\boldsymbol{\eta}$ 和 $\boldsymbol{\xi}$ 知，它们的后 $n-r$ 个分量对应相等，由于它们都满足方程组 (5.4)，从而知它们的前 $r$ 个分量必对应相等，因此 $\boldsymbol{\xi} = \boldsymbol{\eta}$，即
+
+$$
+\boldsymbol{\xi} = \lambda_{r+1}\boldsymbol{\xi}_1 + \lambda_{r+2}\boldsymbol{\xi}_2 + \cdots + \lambda_n\boldsymbol{\xi}_{n-r}.
+$$
+
+这就证明了 $\boldsymbol{\xi}_1, \boldsymbol{\xi}_2, \dots, \boldsymbol{\xi}_{n-r}$ 是解空间的一个基，即基础解系。因此有
+
+$$
+\dim S = n - r.
+$$
+
+根据以上证明，得到下面的定理。
+
+<Knowledge title="定理 1 齐次线性方程组通解结构定理">
+
+设 $\boldsymbol{A}$ 是 $m \times n$ 矩阵，$r(\boldsymbol{A}) = r$，则
+1. $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的基础解系中的解向量个数为 $n - r$；
+2. $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的任意 $n - r$ 个线性无关的解向量都是它的基础解系；
+3. 设 $\boldsymbol{\xi}_1, \boldsymbol{\xi}_2, \dots, \boldsymbol{\xi}_{n-r}$ 是 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的任意一个基础解系，则 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的所有解为
+
+$$
+\boldsymbol{\xi} = k_1\boldsymbol{\xi}_1 + k_2\boldsymbol{\xi}_2 + \cdots + k_{n-r}\boldsymbol{\xi}_{n-r}, \tag{5.5}
+$$
+
+其中 $k_1, k_2, \dots, k_{n-r}$ 为任意实数。
+
+</Knowledge>
+
+称式 (5.5) 为齐次线性方程组 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的**通解**。
+
+<Knowledge title="推论 1 零解与非零解充要条件">
+
+1. 设 $\boldsymbol{A}$ 是 $m \times n$ 矩阵，则
+   - $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 只有零解 $\iff r(\boldsymbol{A}) = n$。此时，$\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 没有基础解系；
+   - $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 有非零解 $\iff r(\boldsymbol{A}) < n$。此时，$\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 有无穷多个基础解系。当 $m < n$ 时，必有 $r(\boldsymbol{A}) \leqslant \min\{m, n\} \leqslant m < n$，此时 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 必有非零解，因此必有无穷多个基础解系。
+2. 当 $\boldsymbol{A}$ 是 $n$ 阶方阵时，$\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 只有零解 $\iff |\boldsymbol{A}| \neq 0$；$\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 有非零解 $\iff |\boldsymbol{A}| = 0$。
+
+</Knowledge>
+
+<Solution title="证明">
+
+(1) $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 只有零解当且仅当 $S = \{\mathbf{0}\} \iff \dim S = n - r(\boldsymbol{A}) = 0 \iff n = r(\boldsymbol{A})$。
+
+$\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 有非零解当且仅当 $S \neq \{\mathbf{0}\} \iff \dim S = n - r(\boldsymbol{A}) > 0 \iff n > r(\boldsymbol{A})$。
+
+当 $m < n$ 时，必有 $r(\boldsymbol{A}) \leqslant \min\{m, n\} \leqslant m < n$，此时 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 必有非零解。
+
+(2) 因为 $\boldsymbol{A}$ 是 $n$ 阶方阵，所以 $r(\boldsymbol{A}) = n \iff |\boldsymbol{A}| \neq 0, r(\boldsymbol{A}) < n \iff |\boldsymbol{A}| = 0$。
+
+</Solution>
+
+<Example title="例 1 向量组线性相关性判定">
+
+当 $n > m$ 时，$n$ 个 $m$ 维向量一定线性相关。
+
+</Example>
+
+<Solution title="证">
+
+设 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n$ 是 $n$ 个 $m$ 维列向量，则 $\boldsymbol{A} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n)$ 是 $m \times n$ 矩阵。于是由 $r(\boldsymbol{A}) \leqslant m < n$ 知道，$\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 必有非零解。所以 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n$ 一定线性相关。
+
+</Solution>
+
+## 二、齐次线性方程组的求解方法与例题
+
+齐次线性方程组 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的求通解方法：先把系数矩阵 $\boldsymbol{A}$ 用初等行变换化成行最简形矩阵 $\boldsymbol{T}$，则 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 与 $\boldsymbol{T}\boldsymbol{x} = \mathbf{0}$ 是同解的，只需要求出 $\boldsymbol{T}\boldsymbol{x} = \mathbf{0}$ 的通解，它就是 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的通解。
+
+<Example title="例 2 求基础解系和通解">
+
+求线性方程组
+
+$$
+\begin{cases}
+x_1 + 2x_2 + 4x_3 - 3x_4 = 0, \\
+3x_1 + 5x_2 + 6x_3 - 4x_4 = 0, \\
+4x_1 + 5x_2 - 2x_3 + 3x_4 = 0
+\end{cases}
+$$
+
+的基础解系和通解。
+
+</Example>
+
+<Solution title="解">
+
+将系数矩阵 $\boldsymbol{A}$ 用初等行变换化为行最简形：
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+1 & 2 & 4 & -3 \\
+3 & 5 & 6 & -4 \\
+4 & 5 & -2 & 3
+\end{pmatrix} \to
+\begin{pmatrix}
+1 & 0 & -8 & 7 \\
+0 & 1 & 6 & -5 \\
+0 & 0 & 0 & 0
+\end{pmatrix} = \boldsymbol{T},
+$$
+
+得到与原方程组同解的方程组 $\boldsymbol{T}\boldsymbol{x} = \mathbf{0}$，即
+
+$$
+\begin{cases}
+x_1 - 8x_3 + 7x_4 = 0, \\
+x_2 + 6x_3 - 5x_4 = 0,
+\end{cases}
+$$
+
+亦即
+
+$$
+\begin{cases}
+x_1 = 8x_3 - 7x_4, \\
+x_2 = -6x_3 + 5x_4
+\end{cases} \quad (x_3, x_4 \text{ 为自由未知量}). \tag{5.6}
+$$
+
+令
+
+$$
+\begin{pmatrix} x_3 \\ x_4 \end{pmatrix} = \begin{pmatrix} 1 \\ 0 \end{pmatrix}, \quad \begin{pmatrix} 0 \\ 1 \end{pmatrix},
+$$
+
+代入式 (5.6) 得
+
+$$
+\begin{pmatrix} x_1 \\ x_2 \end{pmatrix} = \begin{pmatrix} 8 \\ -6 \end{pmatrix}, \quad \begin{pmatrix} -7 \\ 5 \end{pmatrix},
+$$
+
+从而得到一个基础解系为
+
+$$
+\boldsymbol{\xi}_1 = \begin{pmatrix} 8 \\ -6 \\ 1 \\ 0 \end{pmatrix}, \quad
+\boldsymbol{\xi}_2 = \begin{pmatrix} -7 \\ 5 \\ 0 \\ 1 \end{pmatrix}.
+$$
+
+因此，所求的通解为
+
+$$
+\boldsymbol{\xi} = k_1\boldsymbol{\xi}_1 + k_2\boldsymbol{\xi}_2, \quad k_1, k_2 \text{ 为任意实数}.
+$$
+
+<SideNote title="向量形式直接改写技巧">
+
+求基础解系和通解除了上述方法外，也可直接将式 (5.6) 改写为恒等式组：
+
+$$
+\begin{cases}
+x_1 = 8x_3 - 7x_4, \\
+x_2 = -6x_3 + 5x_4, \\
+x_3 = x_3, \\
+x_4 = x_4.
+\end{cases}
+$$
+
+再将它改写成向量的形式，并令 $x_3 = k_1, x_4 = k_2$，直接得到方程组的通解为
+
+$$
+\begin{pmatrix} x_1 \\ x_2 \\ x_3 \\ x_4 \end{pmatrix} =
+k_1 \begin{pmatrix} 8 \\ -6 \\ 1 \\ 0 \end{pmatrix} +
+k_2 \begin{pmatrix} -7 \\ 5 \\ 0 \\ 1 \end{pmatrix}, \quad k_1, k_2 \text{ 为任意实数}.
+$$
+
+</SideNote>
+
+</Solution>
+
+<Example title="例 3 求五元齐次线性方程组通解">
+
+求线性方程组
+
+$$
+\begin{cases}
+x_1 + x_2 + x_3 + x_4 + x_5 = 0, \\
+3x_1 + 2x_2 + x_3 + x_4 - 3x_5 = 0, \\
+x_2 + 2x_3 + 2x_4 + 6x_5 = 0, \\
+5x_1 + 4x_2 + 3x_3 + 3x_4 - x_5 = 0
+\end{cases}
+$$
+
+的通解。
+
+</Example>
+
+<Solution title="解">
+
+将系数矩阵 $\boldsymbol{A}$ 通过初等行变换化成行最简形：
+
+$$
+\boldsymbol{A} \to \begin{pmatrix}
+1 & 1 & 1 & 1 & 1 \\
+3 & 2 & 1 & 1 & -3 \\
+0 & 1 & 2 & 2 & 6 \\
+5 & 4 & 3 & 3 & -1
+\end{pmatrix} \to
+\begin{pmatrix}
+1 & 0 & -1 & -1 & -5 \\
+0 & 1 & 2 & 2 & 6 \\
+0 & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0 & 0
+\end{pmatrix},
+$$
+
+得到同解方程组为
+
+$$
+\begin{cases}
+x_1 = x_3 + x_4 + 5x_5, \\
+x_2 = -2x_3 - 2x_4 - 6x_5, \\
+x_3 = x_3, \\
+x_4 = x_4, \\
+x_5 = x_5.
+\end{cases}
+$$
+
+方程组的通解为
+
+$$
+\begin{pmatrix} x_1 \\ x_2 \\ x_3 \\ x_4 \\ x_5 \end{pmatrix} =
+k_1 \begin{pmatrix} 1 \\ -2 \\ 1 \\ 0 \\ 0 \end{pmatrix} +
+k_2 \begin{pmatrix} 1 \\ -2 \\ 0 \\ 1 \\ 0 \end{pmatrix} +
+k_3 \begin{pmatrix} 5 \\ -6 \\ 0 \\ 0 \\ 1 \end{pmatrix}, \quad k_1, k_2, k_3 \text{ 为任意实数}.
+$$
+
+</Solution>
+
+<Example title="例 4 含参数齐次线性方程组非零解讨论">
+
+求 $\lambda$，使齐次线性方程组
+
+$$
+\begin{cases}
+(\lambda + 3)x_1 + x_2 + 2x_3 = 0, \\
+\lambda x_1 + (\lambda - 1)x_2 + x_3 = 0, \\
+3(\lambda + 1)x_1 + \lambda x_2 + (\lambda + 3)x_3 = 0
+\end{cases}
+$$
+
+有非零解，并求其通解。
+
+</Example>
+
+<Solution title="解">
+
+首先计算系数行列式
+
+$$
+D = \begin{vmatrix}
+\lambda + 3 & 1 & 2 \\
+\lambda & \lambda - 1 & 1 \\
+3(\lambda + 1) & \lambda & \lambda + 3
+\end{vmatrix} = \lambda^2(\lambda - 1),
+$$
+
+当 $D = \lambda^2(\lambda - 1) = 0$，即当 $\lambda = 0, 1$ 时，方程组有非零解。
+
+将 $\lambda = 0$ 代入原方程组，得
+
+$$
+\begin{cases}
+3x_1 + x_2 + 2x_3 = 0, \\
+-x_2 + x_3 = 0, \\
+3x_1 + x_3 = 0.
+\end{cases}
+$$
+
+方程组的系数矩阵
+
+$$
+\boldsymbol{A}_1 = \begin{pmatrix}
+3 & 1 & 2 \\
+0 & -1 & 1 \\
+3 & 0 & 3
+\end{pmatrix} \to
+\begin{pmatrix}
+1 & 0 & 1 \\
+0 & 1 & -1 \\
+0 & 0 & 0
+\end{pmatrix},
+$$
+
+得同解方程组
+
+$$
+\begin{cases}
+x_1 = -x_3, \\
+x_2 = x_3, \\
+x_3 = x_3.
+\end{cases}
+$$
+
+通解为
+
+$$
+\begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix} = k \begin{pmatrix} -1 \\ 1 \\ 1 \end{pmatrix}, \quad k \text{ 为任意实数}.
+$$
+
+将 $\lambda = 1$ 代入原方程组，得
+
+$$
+\begin{cases}
+4x_1 + x_2 + 2x_3 = 0, \\
+x_1 + x_3 = 0, \\
+6x_1 + x_2 + 4x_3 = 0.
+\end{cases}
+$$
+
+方程组的系数矩阵
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+4 & 1 & 2 \\
+1 & 0 & 1 \\
+6 & 1 & 4
+\end{pmatrix} \to
+\begin{pmatrix}
+1 & 0 & 1 \\
+0 & 1 & -2 \\
+0 & 0 & 0
+\end{pmatrix},
+$$
+
+同解方程组为
+
+$$
+\begin{cases}
+x_1 = -x_3, \\
+x_2 = 2x_3, \\
+x_3 = x_3,
+\end{cases}
+$$
+
+通解为
+
+$$
+\begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix} = k \begin{pmatrix} -1 \\ 2 \\ 1 \end{pmatrix}, \quad k \text{ 为任意实数}.
+$$
+
+</Solution>
+
+<Example title="例 5 矩阵方程与非零解">
+
+设 $\boldsymbol{B}$ 是一个三阶非零方阵，已知 $\boldsymbol{B}$ 的每一个列向量都是齐次线性方程组
+
+$$
+\begin{cases}
+x_1 + 2x_2 - 2x_3 = 0, \\
+2x_1 - x_2 + \lambda x_3 = 0, \\
+3x_1 + x_2 - x_3 = 0
+\end{cases}
+$$
+
+的解，求 $\lambda$ 的值和行列式 $|\boldsymbol{B}|$。
+
+</Example>
+
+<Solution title="解">
+
+因为 $\boldsymbol{B}$ 是非零方阵，所以 $\boldsymbol{B}$ 中至少有一个非零列向量。又因为 $\boldsymbol{B}$ 的每一个列向量都是齐次线性方程组 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的解，故该齐次线性方程组必有非零解，所以它的系数行列式
+
+$$
+|\boldsymbol{A}| = \begin{vmatrix}
+1 & 2 & -2 \\
+2 & -1 & \lambda \\
+3 & 1 & -1
+\end{vmatrix} = 5(\lambda - 1) = 0,
+$$
+
+于是得 $\lambda = 1$。
+
+当 $\lambda = 1$ 时，$r(\boldsymbol{A}) = 2$，解空间 $S$ 的维数 $\dim S = 3 - 2 = 1$，即基础解系只含有一个解向量，因而 $\boldsymbol{B}$ 的三个列向量必然线性相关，得 $|\boldsymbol{B}| = 0$。
+
+</Solution>
+
+<SideNote title="同解定理与秩的关系">
+
+定理 1 不仅是齐次线性方程组求解的理论基础，也可用于向量组线性相关性及矩阵秩的讨论。由定理 1 易得下面的推论。
+
+**推论**：同解的齐次线性方程组的系数矩阵必有相同的秩。
+
+**证**：设 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 与 $\boldsymbol{B}\boldsymbol{x} = \mathbf{0}$ 同解，则它们必有相同的基础解系，其中所含的解向量个数相同，即得 $n - r(\boldsymbol{A}) = n - r(\boldsymbol{B}) \implies r(\boldsymbol{A}) = r(\boldsymbol{B})$。
+
+</SideNote>
+
+<Example title="例 6 转置乘积矩阵的秩">
+
+设 $\boldsymbol{A}$ 是 $m \times n$ 实矩阵，证明 $r(\boldsymbol{A}^\mathrm{T}\boldsymbol{A}) = r(\boldsymbol{A}) = r(\boldsymbol{A}\boldsymbol{A}^\mathrm{T})$。
+
+</Example>
+
+<Solution title="证">
+
+只要证明齐次线性方程组 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 与 $\boldsymbol{A}^\mathrm{T}\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 同解，从而 $r(\boldsymbol{A}^\mathrm{T}\boldsymbol{A}) = r(\boldsymbol{A})$。
+
+如果 $\boldsymbol{A}\boldsymbol{\xi} = \mathbf{0}$，则显然有 $\boldsymbol{A}^\mathrm{T}\boldsymbol{A}\boldsymbol{\xi} = \boldsymbol{A}^\mathrm{T}\mathbf{0} = \mathbf{0}$。
+
+反之，若 $\boldsymbol{A}^\mathrm{T}\boldsymbol{A}\boldsymbol{\xi} = \mathbf{0}$，则必有 $\boldsymbol{\xi}^\mathrm{T}\boldsymbol{A}^\mathrm{T}\boldsymbol{A}\boldsymbol{\xi} = 0$，即 $(\boldsymbol{A}\boldsymbol{\xi})^\mathrm{T}(\boldsymbol{A}\boldsymbol{\xi}) = 0$。
+
+令 $\boldsymbol{A}\boldsymbol{\xi} = (a_1, a_2, \dots, a_m)^\mathrm{T}$，$a_i$ 是实数，则有
+
+$$
+(\boldsymbol{A}\boldsymbol{\xi})^\mathrm{T}(\boldsymbol{A}\boldsymbol{\xi}) = a_1^2 + a_2^2 + \cdots + a_m^2 = 0.
+$$
+
+由于每个 $a_i$ 都是实数，所以必有 $a_1 = a_2 = \cdots = a_m = 0$，即 $\boldsymbol{A}\boldsymbol{\xi} = \mathbf{0}$。这就证明了 $\boldsymbol{\xi}$ 必是 $\boldsymbol{A}\boldsymbol{x} = \mathbf{0}$ 的解。
+
+于是有 $r(\boldsymbol{A}^\mathrm{T}\boldsymbol{A}) = r(\boldsymbol{A})$。
+
+因为两个互为转置的矩阵必同秩，所以又有 $r(\boldsymbol{A}\boldsymbol{A}^\mathrm{T}) = r(\boldsymbol{A}^\mathrm{T}) = r(\boldsymbol{A})$。
+
+</Solution>
+
+<ExerciseTrigger chapter={5} section="5.1" title="5.1 齐次线性方程组 课后真题与自测练习" />

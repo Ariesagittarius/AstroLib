@@ -1,0 +1,679 @@
+---
+title: '6.2 方阵的相似化简'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+本节将讨论：当方阵 $\boldsymbol{A}$ 满足什么条件时，能找到可逆的矩阵 $\boldsymbol{P}$，使得 $\boldsymbol{B} = \boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P}$ 为对角矩阵。能表示成 $\boldsymbol{B} = \boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P}$ 的矩阵 $\boldsymbol{B}$ 称为 $\boldsymbol{A}$ 的相似矩阵。
+
+## 一、相似矩阵
+
+<Knowledge title="定义 3 相似矩阵">
+
+设 $\boldsymbol{A}, \boldsymbol{B}$ 为 $n$ 阶方阵。如果存在某个 $n$ 阶可逆矩阵 $\boldsymbol{P}$，使得
+
+$$
+\boldsymbol{B} = \boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P},
+$$
+
+则称 $\boldsymbol{B}$ 是 $\boldsymbol{A}$ 的**相似矩阵**，或称 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ **相似**，记为 $\boldsymbol{A} \sim \boldsymbol{B}$。
+
+</Knowledge>
+
+方阵之间的“相似”关系具有以下三条性质，因此是一种等价关系：
+1. **反身性**：$\boldsymbol{A} \sim \boldsymbol{A}$。即任意一个方阵都与自己相似。这是因为等式 $\boldsymbol{A} = \boldsymbol{E}^{-1}\boldsymbol{A}\boldsymbol{E}$ 显然成立；
+2. **对称性**：若 $\boldsymbol{A} \sim \boldsymbol{B}$，则 $\boldsymbol{B} \sim \boldsymbol{A}$。事实上，如果有 $\boldsymbol{B} = \boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P}$，则显然有 $\boldsymbol{A} = \boldsymbol{P}\boldsymbol{B}\boldsymbol{P}^{-1} = \boldsymbol{Q}^{-1}\boldsymbol{B}\boldsymbol{Q}$，其中 $\boldsymbol{Q} = \boldsymbol{P}^{-1}$；
+3. **传递性**：若 $\boldsymbol{A} \sim \boldsymbol{B}, \boldsymbol{B} \sim \boldsymbol{C}$，则 $\boldsymbol{A} \sim \boldsymbol{C}$。事实上，如果有 $\boldsymbol{B} = \boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P}, \boldsymbol{C} = \boldsymbol{Q}^{-1}\boldsymbol{B}\boldsymbol{Q}$，则 $\boldsymbol{C} = \boldsymbol{Q}^{-1}\boldsymbol{B}\boldsymbol{Q} = \boldsymbol{Q}^{-1}\boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P}\boldsymbol{Q} = \boldsymbol{R}^{-1}\boldsymbol{A}\boldsymbol{R}$，其中 $\boldsymbol{R} = \boldsymbol{P}\boldsymbol{Q}$。
+
+相似矩阵还有下面的性质：
+
+<Knowledge title="性质 5 相似矩阵特征多项式与特征值相同">
+
+如果 $\boldsymbol{A} \sim \boldsymbol{B}$，则 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 有相同的特征多项式，因而有相同的特征值与行列式。
+
+</Knowledge>
+
+<Solution title="证">
+
+已知存在可逆矩阵 $\boldsymbol{P}$，使得 $\boldsymbol{B} = \boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P}$，所以
+
+$$
+\begin{aligned}
+|\lambda\boldsymbol{E} - \boldsymbol{B}| &= |\lambda\boldsymbol{E} - \boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P}| = |\boldsymbol{P}^{-1}(\lambda\boldsymbol{E} - \boldsymbol{A})\boldsymbol{P}| \\
+&= |\boldsymbol{P}^{-1}| \, |\lambda\boldsymbol{E} - \boldsymbol{A}| \, |\boldsymbol{P}| = |\lambda\boldsymbol{E} - \boldsymbol{A}|.
+\end{aligned}
+$$
+
+</Solution>
+
+<Knowledge title="性质 6 相似矩阵的多项式相似">
+
+如果 $\boldsymbol{A} \sim \boldsymbol{B}$，则 $f(\boldsymbol{A}) \sim f(\boldsymbol{B})$，其中
+
+$$
+f(x) = a_m x^m + a_{m-1}x^{m-1} + \cdots + a_1 x + a_0.
+$$
+
+</Knowledge>
+
+<Solution title="证">
+
+已知存在可逆矩阵 $\boldsymbol{P}$，使得 $\boldsymbol{B} = \boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P}$，所以
+
+$$
+\boldsymbol{B}^k = (\boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P})^k = \boldsymbol{P}^{-1}\boldsymbol{A}^k\boldsymbol{P}, \quad k = 1, 2, \dots, m.
+$$
+
+$$
+\begin{aligned}
+f(\boldsymbol{B}) &= a_m\boldsymbol{B}^m + a_{m-1}\boldsymbol{B}^{m-1} + \cdots + a_1\boldsymbol{B} + a_0\boldsymbol{E} \\
+&= a_m\boldsymbol{P}^{-1}\boldsymbol{A}^m\boldsymbol{P} + a_{m-1}\boldsymbol{P}^{-1}\boldsymbol{A}^{m-1}\boldsymbol{P} + \cdots + a_1\boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P} + a_0\boldsymbol{P}^{-1}\boldsymbol{E}\boldsymbol{P} \\
+&= \boldsymbol{P}^{-1}(a_m\boldsymbol{A}^m + a_{m-1}\boldsymbol{A}^{m-1} + \cdots + a_1\boldsymbol{A} + a_0\boldsymbol{E})\boldsymbol{P} = \boldsymbol{P}^{-1}f(\boldsymbol{A})\boldsymbol{P}.
+\end{aligned}
+$$
+
+</Solution>
+
+<Knowledge title="性质 7 相似矩阵的逆矩阵相似">
+
+如果 $\boldsymbol{A} \sim \boldsymbol{B}$，$\boldsymbol{A}$ 可逆，则 $\boldsymbol{B}$ 可逆，且 $\boldsymbol{A}^{-1} \sim \boldsymbol{B}^{-1}$。
+
+</Knowledge>
+
+<Solution title="证">
+
+已知存在可逆矩阵 $\boldsymbol{P}$，使得 $\boldsymbol{B} = \boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P}$，且 $|\boldsymbol{A}| \neq 0$。所以 $|\boldsymbol{B}| = |\boldsymbol{A}| \neq 0$，$\boldsymbol{B}$ 可逆，且 $\boldsymbol{B}^{-1} = (\boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P})^{-1} = \boldsymbol{P}^{-1}\boldsymbol{A}^{-1}\boldsymbol{P}$，即 $\boldsymbol{A}^{-1} \sim \boldsymbol{B}^{-1}$。
+
+</Solution>
+
+下面讨论当方阵 $\boldsymbol{A}$ 满足什么条件时，能找到可逆的矩阵 $\boldsymbol{P}$，使得 $\boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P}$ 为对角矩阵，此时称 $\boldsymbol{A}$ 可对角化。
+
+## 二、方阵可对角化的条件
+
+<Knowledge title="定理 1 方阵可对角化的充要条件">
+
+$n$ 阶方阵 $\boldsymbol{A}$ 相似于对角矩阵的充分必要条件是 $\boldsymbol{A}$ 有 $n$ 个线性无关的特征向量。
+
+</Knowledge>
+
+<Solution title="证明">
+
+**必要性**：如果 $\boldsymbol{A}$ 与对角矩阵 $\boldsymbol{\Lambda} = \mathrm{diag}(\lambda_1, \lambda_2, \dots, \lambda_n)$ 相似，即存在可逆矩阵 $\boldsymbol{P}$，使 $\boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P} = \boldsymbol{\Lambda}$。设 $\boldsymbol{P} = (\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_n)$，由 $\boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P} = \boldsymbol{\Lambda}$ 可得 $\boldsymbol{A}\boldsymbol{P} = \boldsymbol{P}\boldsymbol{\Lambda}$，即
+
+$$
+\boldsymbol{A}(\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_n) = (\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_n)\boldsymbol{\Lambda},
+$$
+
+$$
+(\boldsymbol{A}\boldsymbol{p}_1, \boldsymbol{A}\boldsymbol{p}_2, \dots, \boldsymbol{A}\boldsymbol{p}_n) = (\lambda_1\boldsymbol{p}_1, \lambda_2\boldsymbol{p}_2, \dots, \lambda_n\boldsymbol{p}_n).
+$$
+
+由此可得 $\boldsymbol{A}\boldsymbol{p}_k = \lambda_k\boldsymbol{p}_k$ ($k = 1, 2, \dots, n$)。这说明 $\boldsymbol{P}$ 的 $n$ 个列向量是 $\boldsymbol{A}$ 的特征向量。而 $\boldsymbol{P}$ 是可逆的，所以 $\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_n$ 线性无关，即 $\boldsymbol{A}$ 有 $n$ 个线性无关的特征向量。
+
+**充分性**：设 $\boldsymbol{A}$ 有 $n$ 个线性无关的特征向量 $\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_n$，且
+
+$$
+\boldsymbol{A}\boldsymbol{p}_j = \lambda_j\boldsymbol{p}_j, \quad j = 1, 2, \dots, n.
+$$
+
+令 $\boldsymbol{P} = (\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_n)$，则 $\boldsymbol{P}$ 是 $n$ 阶可逆矩阵，而且满足
+
+$$
+\begin{aligned}
+\boldsymbol{A}\boldsymbol{P} &= \boldsymbol{A}(\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_n) = (\lambda_1\boldsymbol{p}_1, \lambda_2\boldsymbol{p}_2, \dots, \lambda_n\boldsymbol{p}_n) \\
+&= (\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_n)\boldsymbol{\Lambda},
+\end{aligned}
+$$
+
+其中 $\boldsymbol{\Lambda} = \mathrm{diag}(\lambda_1, \lambda_2, \dots, \lambda_n)$ 为对角矩阵，即 $\boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P} = \boldsymbol{\Lambda}$ 为对角矩阵。
+
+</Solution>
+
+<SideNote title="特征向量与对角矩阵元素对应">
+
+定理充分性的证明过程告诉我们：只要找出 $\boldsymbol{A}$ 的 $n$ 个线性无关的特征向量 $\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_n$，以它们为列向量构成 $\boldsymbol{P} = (\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_n)$，则 $\boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P}$ 为对角矩阵。这个对角矩阵称为 $\boldsymbol{A}$ 的相似标准形，其对角元素恰好为 $\boldsymbol{A}$ 的 $n$ 个特征值。
+
+在求矩阵 $\boldsymbol{A}$ 的相似标准形 $\boldsymbol{\Lambda}$ 时，$\boldsymbol{\Lambda}$ 的对角元可以是按任意顺序排列的。但是 $\boldsymbol{P}$ 的各列的排列次序与 $\boldsymbol{\Lambda}$ 中各个对角元（即 $\boldsymbol{A}$ 的全体特征值）的排列次序必须互相对应，$\boldsymbol{P}$ 的第 $k$ 列所对应的特征值就是 $\boldsymbol{\Lambda}$ 的第 $k$ 个对角元素 ($k = 1, 2, \dots, n$)。
+
+</SideNote>
+
+<Knowledge title="定义 4 相似标准形">
+
+如果存在可逆矩阵 $\boldsymbol{P}$，使得 $\boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P} = \boldsymbol{\Lambda}$ 为对角矩阵，则称对角矩阵 $\boldsymbol{\Lambda}$ 为 $\boldsymbol{A}$ 的**相似标准形**。
+
+</Knowledge>
+
+定理 1 告诉我们，$n$ 阶方阵 $\boldsymbol{A}$ 相似于对角矩阵的充要条件是 $\boldsymbol{A}$ 有 $n$ 个线性无关的特征向量。那么，对于给定的 $n$ 阶方阵 $\boldsymbol{A}$，如何知道它是否有 $n$ 个线性无关的特征向量呢？先证明下面的定理。
+
+<Knowledge title="定理 2 不同特征值的特征向量线性无关">
+
+设 $\lambda_1, \lambda_2, \dots, \lambda_k$ 是 $n$ 阶方阵 $\boldsymbol{A}$ 的两两不同的特征值，$\boldsymbol{p}_i$ 是 $\boldsymbol{A}$ 的属于 $\lambda_i$ 的特征向量 ($1 \leqslant i \leqslant k$)，则 $\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_k$ 线性无关。
+
+</Knowledge>
+
+<Solution title="证明">
+
+用数学归纳法。$k=1$ 时定理显然成立。假设 $k=m$ 时定理成立。当 $k=m+1$ 时，设
+
+$$
+a_1\boldsymbol{p}_1 + a_2\boldsymbol{p}_2 + \cdots + a_{m+1}\boldsymbol{p}_{m+1} = \mathbf{0}, \tag{6.1}
+$$
+
+则
+
+$$
+\begin{gathered}
+\boldsymbol{A}(a_1\boldsymbol{p}_1 + a_2\boldsymbol{p}_2 + \cdots + a_{m+1}\boldsymbol{p}_{m+1}) = \mathbf{0}, \\
+a_1\boldsymbol{A}\boldsymbol{p}_1 + a_2\boldsymbol{A}\boldsymbol{p}_2 + \cdots + a_{m+1}\boldsymbol{A}\boldsymbol{p}_{m+1} = \mathbf{0}, \\
+a_1\lambda_1\boldsymbol{p}_1 + a_2\lambda_2\boldsymbol{p}_2 + \cdots + a_{m+1}\lambda_{m+1}\boldsymbol{p}_{m+1} = \mathbf{0}. \tag{6.2}
+\end{gathered}
+$$
+
+将式 (6.1) 等式两边乘 $\lambda_{m+1}$，再与式 (6.2) 相减得
+
+$$
+a_1(\lambda_{m+1} - \lambda_1)\boldsymbol{p}_1 + a_2(\lambda_{m+1} - \lambda_2)\boldsymbol{p}_2 + \cdots + a_m(\lambda_{m+1} - \lambda_m)\boldsymbol{p}_m = \mathbf{0}.
+$$
+
+由归纳假设可知 $\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_m$ 线性无关，所以
+
+$$
+a_1(\lambda_{m+1} - \lambda_1) = 0, \quad a_2(\lambda_{m+1} - \lambda_2) = 0, \quad \dots, \quad a_m(\lambda_{m+1} - \lambda_m) = 0.
+$$
+
+因为 $\lambda_{m+1} - \lambda_i \neq 0$ ($i = 1, 2, \dots, m$)，所以 $a_1 = a_2 = \cdots = a_m = 0$，代入式 (6.1) 得 $a_{m+1}\boldsymbol{p}_{m+1} = \mathbf{0}$。
+
+因为 $\boldsymbol{p}_{m+1} \neq \mathbf{0}$，故 $a_{m+1} = 0$。这表明 $\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_{m+1}$ 线性无关，定理得证。
+
+</Solution>
+
+结合定理 1 与定理 2，有下面的推论：
+
+<Knowledge title="推论 2 互异特征值方阵的可对角化性">
+
+如果 $n$ 阶方阵 $\boldsymbol{A}$ 有 $n$ 个两两不同的特征值，则 $\boldsymbol{A}$ 可对角化。
+
+</Knowledge>
+
+由定理 2 还可得到下面的推论：
+
+<Knowledge title="推论 3 不同特征值对应的特征向量组的联合无关性">
+
+设 $\lambda_1, \lambda_2, \dots, \lambda_m$ 是 $n$ 阶方阵 $\boldsymbol{A}$ 的两两不同的特征值，$\boldsymbol{p}_{i1}, \boldsymbol{p}_{i2}, \dots, \boldsymbol{p}_{ir_i}$ 是 $\boldsymbol{A}$ 的属于 $\lambda_i$ 的线性无关的特征向量 ($1 \leqslant i \leqslant m$)，则
+
+$$
+\boldsymbol{p}_{11}, \boldsymbol{p}_{12}, \dots, \boldsymbol{p}_{1r_1}, \boldsymbol{p}_{21}, \boldsymbol{p}_{22}, \dots, \boldsymbol{p}_{2r_2}, \dots, \boldsymbol{p}_{m1}, \boldsymbol{p}_{m2}, \dots, \boldsymbol{p}_{mr_m}
+$$
+
+（共 $r_1 + r_2 + \cdots + r_m$ 个向量）仍线性无关。
+
+</Knowledge>
+
+<Solution title="证*">
+
+设
+
+$$
+a_{11}\boldsymbol{p}_{11} + \cdots + a_{1r_1}\boldsymbol{p}_{1r_1} + a_{21}\boldsymbol{p}_{21} + \cdots + a_{2r_2}\boldsymbol{p}_{2r_2} + \cdots + a_{m1}\boldsymbol{p}_{m1} + \cdots + a_{mr_m}\boldsymbol{p}_{mr_m} = \mathbf{0},
+$$
+
+令 $\boldsymbol{p}_i = a_{i1}\boldsymbol{p}_{i1} + a_{i2}\boldsymbol{p}_{i2} + \cdots + a_{ir_i}\boldsymbol{p}_{ir_i}$ ($i = 1, 2, \dots, m$)，则
+
+$$
+\boldsymbol{p}_1 + \boldsymbol{p}_2 + \cdots + \boldsymbol{p}_m = \mathbf{0}.
+$$
+
+下面用反证法证明 $\boldsymbol{p}_1 = \boldsymbol{p}_2 = \cdots = \boldsymbol{p}_m = \mathbf{0}$。否则，若 $\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_m$ 中有非零向量，设 $\boldsymbol{p}_{k_1}, \boldsymbol{p}_{k_2}, \dots, \boldsymbol{p}_{k_t}$ ($1 \leqslant t \leqslant m$) 为所有非零向量，则 $\boldsymbol{p}_{k_1} + \boldsymbol{p}_{k_2} + \cdots + \boldsymbol{p}_{k_t} = \mathbf{0}$。由 6.1 节性质 1 可知 $\boldsymbol{p}_{k_1}, \boldsymbol{p}_{k_2}, \dots, \boldsymbol{p}_{k_t}$ 是 $\boldsymbol{A}$ 的特征向量，分别对应于两两不同的特征值 $\lambda_{k_1}, \lambda_{k_2}, \dots, \lambda_{k_t}$，根据定理 2，$\boldsymbol{p}_{k_1}, \boldsymbol{p}_{k_2}, \dots, \boldsymbol{p}_{k_t}$ 是线性无关的，这与 $\boldsymbol{p}_{k_1} + \boldsymbol{p}_{k_2} + \cdots + \boldsymbol{p}_{k_t} = \mathbf{0}$ 矛盾。因此 $\boldsymbol{p}_1 = \boldsymbol{p}_2 = \cdots = \boldsymbol{p}_m = \mathbf{0}$，即
+
+$$
+\boldsymbol{p}_i = a_{i1}\boldsymbol{p}_{i1} + a_{i2}\boldsymbol{p}_{i2} + \cdots + a_{ir_i}\boldsymbol{p}_{ir_i} = \mathbf{0}, \quad i = 1, 2, \dots, m.
+$$
+
+已知对任意 $1 \leqslant i \leqslant m$，$\boldsymbol{p}_{i1}, \boldsymbol{p}_{i2}, \dots, \boldsymbol{p}_{ir_i}$ 是线性无关的，所以
+
+$$
+a_{i1} = a_{i2} = \cdots = a_{ir_i} = 0, \quad i = 1, 2, \dots, m,
+$$
+
+推论 3 得证。
+
+</Solution>
+
+推论 3 告诉我们：将属于不同特征值的线性无关的特征向量合并在一起，可以组成个数更多的线性无关的特征向量组。那么，对应于每个特征值，最多能找出多少个线性无关的特征向量呢？下面的定理 3 给出了这个问题的答案。
+
+<Knowledge title="定理 3 几何重数不超过代数重数">
+
+设 $\lambda_0$ 是 $n$ 阶方阵 $\boldsymbol{A}$ 的重数为 $k$ 的特征值，对应于 $\lambda_0$，$\boldsymbol{A}$ 最多有 $m$ 个线性无关的特征向量，则 $m \leqslant k$。
+
+</Knowledge>
+
+<Solution title="证*">
+
+用反证法。设 $m > k$，$\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_m$ 为 $\boldsymbol{A}$ 的对应于 $\lambda_0$ 的线性无关的特征向量。因为 $\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_m$ 线性无关，继续添加向量 $\boldsymbol{p}_{m+1}, \boldsymbol{p}_{m+2}, \dots, \boldsymbol{p}_n$ 使 $\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_n$ 成为复向量空间 $\mathbb{C}^n$ 的一组基。
+
+设 $\boldsymbol{A}\boldsymbol{p}_i = b_{1i}\boldsymbol{p}_1 + b_{2i}\boldsymbol{p}_2 + \cdots + b_{ni}\boldsymbol{p}_n$ ($i = m+1, m+2, \dots, n$)，则
+
+$$
+\boldsymbol{A}(\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_n) = (\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_n) \begin{pmatrix}
+\lambda_0\boldsymbol{E}_m & \boldsymbol{B}_1 \\
+\boldsymbol{O} & \boldsymbol{B}_2
+\end{pmatrix}, \tag{6.3}
+$$
+
+其中
+
+$$
+\boldsymbol{B}_1 = \begin{pmatrix}
+b_{1, m+1} & b_{1, m+2} & \cdots & b_{1n} \\
+b_{2, m+1} & b_{2, m+2} & \cdots & b_{2n} \\
+\vdots & \vdots & & \vdots \\
+b_{m, m+1} & b_{m, m+2} & \cdots & b_{mn}
+\end{pmatrix}, \quad
+\boldsymbol{B}_2 = \begin{pmatrix}
+b_{m+1, m+1} & b_{m+1, m+2} & \cdots & b_{m+1, n} \\
+b_{m+2, m+1} & b_{m+2, m+2} & \cdots & b_{m+2, n} \\
+\vdots & \vdots & & \vdots \\
+b_{n, m+1} & b_{n, m+2} & \cdots & b_{nn}
+\end{pmatrix}.
+$$
+
+令 $\boldsymbol{P} = (\boldsymbol{p}_1, \boldsymbol{p}_2, \dots, \boldsymbol{p}_n)$，则 $\boldsymbol{P}$ 可逆，由式 (6.3) 可得
+
+$$
+\boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P} = \begin{pmatrix}
+\lambda_0\boldsymbol{E}_m & \boldsymbol{B}_1 \\
+\boldsymbol{O} & \boldsymbol{B}_2
+\end{pmatrix}.
+$$
+
+记 $\boldsymbol{B} = \begin{pmatrix} \lambda_0\boldsymbol{E}_m & \boldsymbol{B}_1 \\ \boldsymbol{O} & \boldsymbol{B}_2 \end{pmatrix}$，则 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 相似，所以 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 特征值相同。
+
+$$
+|\lambda\boldsymbol{E} - \boldsymbol{B}| = \begin{vmatrix}
+(\lambda - \lambda_0)\boldsymbol{E}_m & -\boldsymbol{B}_1 \\
+\boldsymbol{O} & \lambda\boldsymbol{E}_{n-m} - \boldsymbol{B}_2
+\end{vmatrix},
+$$
+
+将等式右端的行列式依次按第 1 列，第 2 列，$\dots$，第 $m$ 列展开可得
+
+$$
+|\lambda\boldsymbol{E} - \boldsymbol{B}| = (\lambda - \lambda_0)^m |\lambda\boldsymbol{E}_{n-m} - \boldsymbol{B}_2|.
+$$
+
+因为 $|\lambda\boldsymbol{E}_{n-m} - \boldsymbol{B}_2|$ 是关于 $\lambda$ 的 $(n-m)$ 次多项式，所以 $\lambda_0$ 是 $\boldsymbol{B}$ 的特征值，重数至少为 $m$，而 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 的特征值是相同的，因此 $\lambda_0$ 也是 $\boldsymbol{A}$ 的特征值，重数至少为 $m$，但 $m > k$，这与已知重数为 $k$ 矛盾。
+
+</Solution>
+
+定理 3 说明，对应于每个特征值，矩阵能有的线性无关的特征向量个数不会超过这个特征值的重数。由定理 1 与定理 3 可得下面的结论：
+
+<Knowledge title="定理 4 方阵可对角化的充要条件（重数与特征向量数）">
+
+方阵 $\boldsymbol{A}$ 可对角化的充分必要条件是对对应于 $\boldsymbol{A}$ 的任意特征值 $\lambda$，$\boldsymbol{A}$ 有 $k$ 个线性无关的特征向量，其中 $k$ 是 $\lambda$ 作为特征值的重数。
+
+</Knowledge>
+
+## 三、相似对角化方法与典型例题
+
+<Example title="例 6 讨论矩阵是否可以对角化">
+
+设 $\boldsymbol{A} = \begin{pmatrix} 3 & -1 & -2 \\ 2 & 0 & -2 \\ 2 & -1 & -1 \end{pmatrix}$，讨论 $\boldsymbol{A}$ 是否可以对角化。
+
+</Example>
+
+<Solution title="解">
+
+$$
+\begin{aligned}
+|\lambda\boldsymbol{E} - \boldsymbol{A}| &= \begin{vmatrix}
+\lambda - 3 & 1 & 2 \\
+-2 & \lambda & 2 \\
+-2 & 1 & \lambda + 1
+\end{vmatrix}
+\xrightarrow[c_1 + c_3]{c_1 + c_2}
+\begin{vmatrix}
+\lambda & 1 & 2 \\
+\lambda & \lambda & 2 \\
+\lambda & 1 & \lambda + 1
+\end{vmatrix} \\
+&= \lambda \begin{vmatrix}
+1 & 1 & 2 \\
+1 & \lambda & 2 \\
+1 & 1 & \lambda + 1
+\end{vmatrix} = \lambda(\lambda - 1)^2.
+\end{aligned}
+$$
+
+$\lambda_1 = \lambda_2 = 1$ 是二重特征值。
+
+考虑齐次线性方程组 $(\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，其系数矩阵为
+
+$$
+\boldsymbol{E} - \boldsymbol{A} = \begin{pmatrix}
+-2 & 1 & 2 \\
+-2 & 1 & 2 \\
+-2 & 1 & 2
+\end{pmatrix}, \quad \text{显然 } r(\boldsymbol{E} - \boldsymbol{A}) = 1,
+$$
+
+因此齐次线性方程组 $(\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$ 的基础解系中有两个向量，也就是说，对应于二重特征值 $\lambda_1 = \lambda_2 = 1$，$\boldsymbol{A}$ 有两个线性无关的特征向量，所以 $\boldsymbol{A}$ 可以对角化。
+
+<SideNote title="单特征值无需检验">
+
+对于单特征值，必有属于它的特征向量，无须对它进行讨论。
+
+</SideNote>
+
+</Solution>
+
+<Example title="例 7 讨论不可对角化的矩阵">
+
+设 $\boldsymbol{A} = \begin{pmatrix} -1 & 1 & 0 \\ -4 & 3 & 0 \\ 1 & 0 & 2 \end{pmatrix}$，讨论 $\boldsymbol{A}$ 是否可以对角化。
+
+</Example>
+
+<Solution title="解">
+
+$$
+|\lambda\boldsymbol{E} - \boldsymbol{A}| = \begin{vmatrix}
+\lambda + 1 & -1 & 0 \\
+4 & \lambda - 3 & 0 \\
+-1 & 0 & \lambda - 2
+\end{vmatrix} = (\lambda - 2)[(\lambda + 1)(\lambda - 3) + 4] = (\lambda - 2)(\lambda - 1)^2.
+$$
+
+$\lambda_1 = \lambda_2 = 1$ 是二重特征值。
+
+考虑齐次线性方程组 $(\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，其系数矩阵为
+
+$$
+\boldsymbol{E} - \boldsymbol{A} = \begin{pmatrix}
+2 & -1 & 0 \\
+4 & -2 & 0 \\
+-1 & 0 & -1
+\end{pmatrix}, \quad r(\boldsymbol{E} - \boldsymbol{A}) = 2,
+$$
+
+因此齐次线性方程组 $(\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$ 的基础解系中只有一个向量，也就是说，对应于二重特征值 $\lambda_1 = \lambda_2 = 1$，$\boldsymbol{A}$ 只有一个线性无关的特征向量，所以 $\boldsymbol{A}$ 不能对角化。
+
+</Solution>
+
+<Example title="例 8 利用对角化计算矩阵的高次幂">
+
+设 $\boldsymbol{A} = \begin{pmatrix} 1 & 0 & 0 \\ -1 & 2 & 0 \\ 1 & 1 & -1 \end{pmatrix}$，求 $\boldsymbol{A}^k$，$k$ 为正整数。
+
+</Example>
+
+<Solution title="解">
+
+$\boldsymbol{A}$ 为下三角矩阵，主对角元素就是其特征值，$\boldsymbol{A}$ 的特征值两两不同，所以 $\boldsymbol{A}$ 可以对角化。下面将 $\boldsymbol{A}$ 对角化。
+
+先求出 $\boldsymbol{A}$ 的特征值和特征向量。$\boldsymbol{A}$ 的特征方程为
+
+$$
+|\lambda\boldsymbol{E} - \boldsymbol{A}| = \begin{vmatrix}
+\lambda - 1 & 0 & 0 \\
+1 & \lambda - 2 & 0 \\
+-1 & -1 & \lambda + 1
+\end{vmatrix} = (\lambda - 1)(\lambda - 2)(\lambda + 1) = 0.
+$$
+
+属于特征值 $\lambda_1 = 1$ 的特征向量是方程组 $(\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，即
+
+$$
+\begin{pmatrix}
+0 & 0 & 0 \\
+1 & -1 & 0 \\
+-1 & -1 & 2
+\end{pmatrix}
+\begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix}
+$$
+
+的非零解向量。取特征向量 $\boldsymbol{p}_1 = (1, 1, 1)^\mathrm{T}$。
+
+属于特征值 $\lambda_2 = 2$ 的特征向量是方程组 $(2\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，即
+
+$$
+\begin{pmatrix}
+1 & 0 & 0 \\
+1 & 0 & 0 \\
+-1 & -1 & 3
+\end{pmatrix}
+\begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix}
+$$
+
+的非零解向量。取特征向量 $\boldsymbol{p}_2 = (0, 3, 1)^\mathrm{T}$。
+
+属于特征值 $\lambda_3 = -1$ 的特征向量是方程组 $(-\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，即
+
+$$
+\begin{pmatrix}
+-2 & 0 & 0 \\
+1 & -3 & 0 \\
+-1 & -1 & 0
+\end{pmatrix}
+\begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix}
+$$
+
+的非零解向量。取特征向量 $\boldsymbol{p}_3 = (0, 0, 1)^\mathrm{T}$。
+
+令
+
+$$
+\boldsymbol{P} = (\boldsymbol{p}_1, \boldsymbol{p}_2, \boldsymbol{p}_3) = \begin{pmatrix}
+1 & 0 & 0 \\
+1 & 3 & 0 \\
+1 & 1 & 1
+\end{pmatrix}, \quad
+\text{则 } \boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P} = \begin{pmatrix}
+1 & 0 & 0 \\
+0 & 2 & 0 \\
+0 & 0 & -1
+\end{pmatrix} = \boldsymbol{\Lambda}, \text{ 即 } \boldsymbol{A} = \boldsymbol{P}\boldsymbol{\Lambda}\boldsymbol{P}^{-1}.
+$$
+
+$$
+\begin{aligned}
+\boldsymbol{A}^k &= (\boldsymbol{P}\boldsymbol{\Lambda}\boldsymbol{P}^{-1})^k = \boldsymbol{P}\boldsymbol{\Lambda}^k\boldsymbol{P}^{-1} = \begin{pmatrix}
+1 & 0 & 0 \\
+1 & 3 & 0 \\
+1 & 1 & 1
+\end{pmatrix}
+\begin{pmatrix}
+1 & 0 & 0 \\
+0 & 2^k & 0 \\
+0 & 0 & (-1)^k
+\end{pmatrix}
+\begin{pmatrix}
+1 & 0 & 0 \\
+-\frac{1}{3} & \frac{1}{3} & 0 \\
+-\frac{2}{3} & -\frac{1}{3} & 1
+\end{pmatrix} \\
+&= \begin{pmatrix}
+1 & 0 & 0 \\
+1 - 2^k & 2^k & 0 \\
+1 - \frac{2^k}{3} + \frac{2(-1)^{k+1}}{3} & \frac{2^k + (-1)^{k+1}}{3} & (-1)^k
+\end{pmatrix}.
+\end{aligned}
+$$
+
+</Solution>
+
+<Example title="例 9 实对称矩阵相似对角化">
+
+设 $\boldsymbol{A} = \begin{pmatrix} 0 & -2 & -1 \\ -2 & 3 & 2 \\ -1 & 2 & 0 \end{pmatrix}$，求可逆矩阵 $\boldsymbol{P}$，使 $\boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P}$ 为对角形。
+
+</Example>
+
+<Solution title="解">
+
+$$
+\begin{aligned}
+|\lambda\boldsymbol{E} - \boldsymbol{A}| &= \begin{vmatrix}
+\lambda & 2 & 1 \\
+2 & \lambda - 3 & -2 \\
+1 & -2 & \lambda
+\end{vmatrix}
+\xrightarrow{(-2)r_3 + r_2}
+\begin{vmatrix}
+\lambda & 2 & 1 \\
+0 & \lambda + 1 & -2(\lambda + 1) \\
+1 & -2 & \lambda
+\end{vmatrix} \\
+&= (\lambda + 1) \begin{vmatrix}
+\lambda & 2 & 1 \\
+0 & 1 & -2 \\
+1 & -2 & \lambda
+\end{vmatrix} = (\lambda + 1)^2(\lambda - 5).
+\end{aligned}
+$$
+
+$\boldsymbol{A}$ 的特征值为 $\lambda_1 = 5, \lambda_2 = \lambda_3 = -1$。
+
+对应于特征值 $\lambda_1 = 5$ 的特征向量是方程组 $(5\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，即
+
+$$
+\begin{pmatrix}
+5 & 2 & 1 \\
+2 & 2 & -2 \\
+1 & -2 & 5
+\end{pmatrix}
+\begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix}
+$$
+
+的非零解向量。方程组的基础解系为 $\boldsymbol{\xi}_1 = (-1, 2, 1)^\mathrm{T}$，取 $\boldsymbol{p}_1 = \boldsymbol{\xi}_1$。
+
+对应于特征值 $\lambda_2 = \lambda_3 = -1$ 的特征向量是方程组 $(-\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，即
+
+$$
+\begin{pmatrix}
+-1 & 2 & 1 \\
+2 & -4 & -2 \\
+1 & -2 & -1
+\end{pmatrix}
+\begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix}
+$$
+
+的非零解向量。方程组的基础解系为 $\boldsymbol{\xi}_2 = (1, 0, 1)^\mathrm{T}, \boldsymbol{\xi}_3 = (1, 1, -1)^\mathrm{T}$，取 $\boldsymbol{p}_2 = \boldsymbol{\xi}_2, \boldsymbol{p}_3 = \boldsymbol{\xi}_3$。
+
+令
+
+$$
+\boldsymbol{P} = (\boldsymbol{p}_1, \boldsymbol{p}_2, \boldsymbol{p}_3) = \begin{pmatrix}
+-1 & 1 & 1 \\
+2 & 0 & 1 \\
+1 & 1 & -1
+\end{pmatrix}, \quad
+\text{则 } \boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P} = \begin{pmatrix}
+5 & 0 & 0 \\
+0 & -1 & 0 \\
+0 & 0 & -1
+\end{pmatrix}.
+$$
+
+这个例子中的矩阵 $\boldsymbol{A}$ 是实对称矩阵，这个矩阵 $\boldsymbol{A}$ 可以对角化并非偶然，实对称矩阵一定能相似于对角矩阵的，这个问题将在下一章中进行讨论。
+
+</Solution>
+
+<Example title="例 10 已知方阵特征系统求转置矩阵特征系统">
+
+已知三阶矩阵 $\boldsymbol{A}$ 的特征值与对应的特征向量分别为 $\lambda_1 = 1, \boldsymbol{p}_1 = (1, 2, 2)^\mathrm{T} ; \lambda_2 = -1, \boldsymbol{p}_2 = (0, 1, 1)^\mathrm{T} ; \lambda_3 = 2, \boldsymbol{p}_3 = (2, 1, -1)^\mathrm{T}$。求 $\boldsymbol{A}^\mathrm{T}$ 的特征值与特征向量。
+
+</Example>
+
+<Solution title="解">
+
+令
+
+$$
+\boldsymbol{P} = (\boldsymbol{p}_1, \boldsymbol{p}_2, \boldsymbol{p}_3) = \begin{pmatrix}
+1 & 0 & 2 \\
+2 & 1 & 1 \\
+2 & 1 & -1
+\end{pmatrix}, \quad
+\text{则 } \boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P} = \begin{pmatrix}
+1 & 0 & 0 \\
+0 & -1 & 0 \\
+0 & 0 & 2
+\end{pmatrix},
+$$
+
+即
+
+$$
+\boldsymbol{A} = \boldsymbol{P} \begin{pmatrix}
+1 & 0 & 0 \\
+0 & -1 & 0 \\
+0 & 0 & 2
+\end{pmatrix} \boldsymbol{P}^{-1}.
+$$
+
+两边取转置，得
+
+$$
+\boldsymbol{A}^\mathrm{T} = (\boldsymbol{P}^{-1})^\mathrm{T} \begin{pmatrix}
+1 & 0 & 0 \\
+0 & -1 & 0 \\
+0 & 0 & 2
+\end{pmatrix} \boldsymbol{P}^\mathrm{T} = (\boldsymbol{P}^\mathrm{T})^{-1} \begin{pmatrix}
+1 & 0 & 0 \\
+0 & -1 & 0 \\
+0 & 0 & 2
+\end{pmatrix} \boldsymbol{P}^\mathrm{T},
+$$
+
+即
+
+$$
+\boldsymbol{P}^\mathrm{T}\boldsymbol{A}^\mathrm{T}(\boldsymbol{P}^\mathrm{T})^{-1} = \begin{pmatrix}
+1 & 0 & 0 \\
+0 & -1 & 0 \\
+0 & 0 & 2
+\end{pmatrix}.
+$$
+
+记 $\boldsymbol{Q} = (\boldsymbol{P}^\mathrm{T})^{-1}$，则
+
+$$
+\boldsymbol{Q}^{-1}\boldsymbol{A}^\mathrm{T}\boldsymbol{Q} = \begin{pmatrix}
+1 & 0 & 0 \\
+0 & -1 & 0 \\
+0 & 0 & 2
+\end{pmatrix}.
+$$
+
+这说明 $\boldsymbol{Q} = (\boldsymbol{P}^\mathrm{T})^{-1}$ 的三个列向量就是 $\boldsymbol{A}^\mathrm{T}$ 的特征向量。经计算得
+
+$$
+\boldsymbol{Q} = (\boldsymbol{P}^\mathrm{T})^{-1} = (\boldsymbol{P}^{-1})^\mathrm{T} = \frac{1}{2} \begin{pmatrix}
+2 & -4 & 0 \\
+-2 & 5 & 1 \\
+2 & -3 & -1
+\end{pmatrix}.
+$$
+
+因此 $\boldsymbol{A}^\mathrm{T}$ 的特征值与对应的特征向量分别为：
+- $\lambda_1 = 1, \boldsymbol{\alpha}_1 = k_1(1, -1, 1)^\mathrm{T}$ ($k_1 \neq 0$)；
+- $\lambda_2 = -1, \boldsymbol{\alpha}_2 = k_2(-4, 5, -3)^\mathrm{T}$ ($k_2 \neq 0$)；
+- $\lambda_3 = 2, \boldsymbol{\alpha}_3 = k_3(0, 1, -1)^\mathrm{T}$ ($k_3 \neq 0$)。
+
+<SideNote title="转置矩阵特征向量由逆矩阵转置给出">
+
+当矩阵 $\boldsymbol{A}$ 可对角化时，可逆矩阵 $\boldsymbol{P}$ 能使 $\boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P}$ 为对角形的充分必要条件是 $\boldsymbol{P}$ 的列向量是 $\boldsymbol{A}$ 的特征向量。所以该例中并不要求求出 $\boldsymbol{A}^\mathrm{T}$，只要根据 $\boldsymbol{Q}^{-1}\boldsymbol{A}^\mathrm{T}\boldsymbol{Q} = \boldsymbol{P}^\mathrm{T}\boldsymbol{A}^\mathrm{T}(\boldsymbol{P}^\mathrm{T})^{-1}$ 为对角形，便可知 $\boldsymbol{Q} = (\boldsymbol{P}^\mathrm{T})^{-1}$ 的列向量就是 $\boldsymbol{A}^\mathrm{T}$ 的特征向量。
+
+</SideNote>
+
+</Solution>
+
+<ExerciseTrigger chapter={6} section="6.2" title="6.2 方阵的相似化简 课后真题与自测练习" />

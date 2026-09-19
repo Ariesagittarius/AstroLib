@@ -668,8 +668,8 @@ function parseAstNodes(
           function walkFigureNodes(nodes: any[]) {
             for (const c of nodes || []) {
               if (c.type === 'image') {
-                if (!figImg) {
-                  figImg = c.url;
+                if (!figImg && c.url) {
+                  figImg = String(c.url);
                   figAlt = c.alt || '';
                   imageCollector.push({ alt: figAlt, url: figImg, originalPath: figImg });
                 }

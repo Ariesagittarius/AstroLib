@@ -75,6 +75,11 @@ import {
   saveAiPanelDimensions,
   getAiAutoCollapsePreceding,
   saveAiAutoCollapsePreceding,
+  getAiCollapseToolsSummary,
+  saveAiCollapseToolsSummary,
+  getAiSideloadRefChapter,
+  saveAiSideloadRefChapter,
+  checkBuptCampusNetwork,
 } from '../ai/ai-config';
 
 import {
@@ -84,380 +89,89 @@ import {
 } from '../components/common/m3-loading-indicator';
 
 /** 运行时开关存储键 */
+
+// ============================================================================
+// 设置中心子模块引入与门面重导出 (Facade Pattern)
+// ============================================================================
+export * from './settings/performance-prefs';
+export * from './settings/typography-prefs';
+export * from './settings/theme-prefs';
+export * from './settings/pwa-service';
+
+import {
+  LITE_MODE_KEY,
+  LITE_BACKUP_KEY,
+  LITE_DISABLED_FEATURES,
+  type LiteModeBackup,
+  loadLiteMode,
+  saveLiteMode,
+  PREWARM_PAGES_KEY,
+  DEFAULT_PREWARM_PAGES,
+  loadPrewarmPref,
+  savePrewarmPref,
+  MAX_PAGE_CACHE_KEY,
+  DEFAULT_MAX_PAGE_CACHE,
+  loadMaxPageCachePref,
+  saveMaxPageCachePref,
+  SIDEBAR_HOVER_PREFETCH_KEY,
+  DEFAULT_SIDEBAR_HOVER_PREFETCH,
+  loadSidebarHoverPref,
+  saveSidebarHoverPref,
+  syncAllPrewarmButtons,
+  syncAllCacheButtons,
+  syncAllLiteMode,
+  registerApplyLiteModeHook,
+} from './settings/performance-prefs';
+
+import {
+  TYPOGRAPHY_INDENT_KEY,
+  loadParagraphIndent,
+  saveParagraphIndent,
+  applyParagraphIndent,
+  PUNCT_STYLE_KEY,
+  type PunctStyle,
+  loadPunctStyle,
+  savePunctStyle,
+  replaceBodyFullStops,
+  applyPunctStyle,
+  FONT_SIZE_KEY,
+  DEFAULT_FONT_SIZE,
+  MIN_FONT_SIZE,
+  MAX_FONT_SIZE,
+  loadFontSize,
+  formatFontSizePt,
+  formatFontSizeRem,
+  saveFontSize,
+  applyFontSize,
+  syncAllFontSizeSliders,
+  syncAllPunctChips,
+  syncAllFontButtons,
+  applyFont as applyTypographyFont,
+} from './settings/typography-prefs';
+
+import {
+  THEME_MODE_STORAGE_KEY,
+  type ThemeMode,
+  loadThemeMode,
+  saveThemeMode,
+  applyThemeMode,
+  syncAllThemeModes,
+  THEME_TRANSITION_KEY,
+  loadThemeTransition,
+  saveThemeTransition,
+  syncAllThemeChips,
+  syncAllThemeColors,
+} from './settings/theme-prefs';
+
+import {
+  getDeferredInstallPrompt,
+  setDeferredInstallPrompt,
+  syncAllPwaCard,
+} from './settings/pwa-service';
+
 const STORAGE_KEY = 'starlight-features';
 
 /** 主题切换动画偏好存储键：'instant'（即时切换，默认，无过渡）| 'animate'（柔和过渡） */
-const THEME_TRANSITION_KEY = 'starlight-theme-transition';
-
-/** 低性能模式存储键：'true' (开启) | 'false' / null (关闭，默认) */
-export const LITE_MODE_KEY = 'astrolib_lite_mode';
-
-/** 低性能模式启用前的用户偏好快照备份键（用于关闭时无损还原） */
-export const LITE_BACKUP_KEY = 'astrolib_lite_backup';
-
-/** 低性能模式下强制禁用的高开销模块列表 */
-export const LITE_DISABLED_FEATURES = [
-  'formulaActions',
-  'relationGraph',
-  'aiAsk',
-  'exercises',
-  'inspector',
-  'feedback',
-  'mermaid',
-];
-
-export interface LiteModeBackup {
-  prewarmPages: number;
-  maxPageCache: number;
-  sidebarHover: boolean;
-  toggles: Record<string, boolean>;
-  themeTransition: string;
-}
-
-/** 读取当前是否处于低性能模式 */
-export function loadLiteMode(): boolean {
-  try {
-    return typeof localStorage !== 'undefined' && localStorage.getItem(LITE_MODE_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-/** 保存低性能模式偏好并应用 */
-export function saveLiteMode(enabled: boolean): void {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(LITE_MODE_KEY, enabled ? 'true' : 'false');
-    }
-  } catch {}
-  applyLiteMode(enabled);
-}
-
-/** 章节后台空闲预加载页面数存储键：1 (前后各 1 页滑动窗口，默认) | 2 | 3 | -1 (全书拉取) | 0 (关闭) */
-export const PREWARM_PAGES_KEY = 'astrolib_prewarm_pages';
-export const DEFAULT_PREWARM_PAGES = 1;
-
-/** 读取章节后台空闲预加载范围配置（默认 1 为前后各 1 页滑动窗口） */
-export function loadPrewarmPref(): number {
-  try {
-    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(PREWARM_PAGES_KEY) : null;
-    if (raw !== null && raw !== undefined && raw !== '') {
-      const val = parseInt(raw, 10);
-      if (!isNaN(val)) return val;
-    }
-    return DEFAULT_PREWARM_PAGES;
-  } catch {
-    return DEFAULT_PREWARM_PAGES;
-  }
-}
-
-/** 保存章节后台空闲预加载范围配置 */
-export function savePrewarmPref(val: number): void {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(PREWARM_PAGES_KEY, String(val));
-    }
-    window.dispatchEvent(new CustomEvent('prewarm:config-change', { detail: { pages: val } }));
-  } catch {}
-}
-
-/** 页面内存缓存上限存储键：5 (默认 5 页，标准平衡) | 3 (极简节能) | 10 (性能优先) | 20 (超大缓存) | -1 (不限) */
-export const MAX_PAGE_CACHE_KEY = 'astrolib_max_page_cache';
-export const DEFAULT_MAX_PAGE_CACHE = 5;
-
-/** 读取页面内存缓存上限配置（默认 5 页） */
-export function loadMaxPageCachePref(): number {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      const raw = localStorage.getItem(MAX_PAGE_CACHE_KEY);
-      if (raw !== null && raw !== undefined && raw !== '') {
-        const val = parseInt(raw, 10);
-        if (!isNaN(val)) return val;
-      }
-    }
-    return DEFAULT_MAX_PAGE_CACHE;
-  } catch {
-    return DEFAULT_MAX_PAGE_CACHE;
-  }
-}
-
-/** 保存页面内存缓存上限配置并广播缓存裁剪事件 */
-export function saveMaxPageCachePref(val: number): void {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(MAX_PAGE_CACHE_KEY, String(val));
-    }
-    window.dispatchEvent(new CustomEvent('cache:config-change', { detail: { max: val } }));
-  } catch {}
-}
-
-/** 左侧栏悬停预加载存储键：'true' (开启，默认) | 'false' (关闭) */
-export const SIDEBAR_HOVER_PREFETCH_KEY = 'astrolib_sidebar_hover_prefetch';
-export const DEFAULT_SIDEBAR_HOVER_PREFETCH = true;
-
-/** 读取左侧栏悬停预加载配置（默认开启） */
-export function loadSidebarHoverPref(): boolean {
-  try {
-    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(SIDEBAR_HOVER_PREFETCH_KEY) : null;
-    if (raw === 'false') return false;
-    return true;
-  } catch {
-    return true;
-  }
-}
-
-/** 保存左侧栏悬停预加载配置并广播通知 */
-export function saveSidebarHoverPref(enabled: boolean): void {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(SIDEBAR_HOVER_PREFETCH_KEY, String(enabled));
-    }
-    window.dispatchEvent(new CustomEvent('sidebar-prefetch:config-change', { detail: { enabled } }));
-  } catch {}
-}
-
-/** 段落首行缩进存储键：'true' (开启，默认) | 'false' (关闭) */
-export const TYPOGRAPHY_INDENT_KEY = 'astrolib_typography_indent';
-
-export function loadParagraphIndent(): boolean {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      const val = localStorage.getItem(TYPOGRAPHY_INDENT_KEY);
-      if (val === 'false') return false;
-    }
-    return true;
-  } catch {
-    return true;
-  }
-}
-
-export function saveParagraphIndent(enabled: boolean): void {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(TYPOGRAPHY_INDENT_KEY, String(enabled));
-    }
-  } catch {}
-  applyParagraphIndent(enabled);
-}
-
-export function applyParagraphIndent(enabled: boolean = loadParagraphIndent()): void {
-  if (typeof document === 'undefined') return;
-  document.documentElement.dataset.paragraphIndent = enabled ? 'true' : 'false';
-}
-
-/** 标点风格存储键：'dot' (数理圆点 ．，默认) | 'circle' (标准句号 。) */
-export const PUNCT_STYLE_KEY = 'astrolib_punct_style';
-export type PunctStyle = 'dot' | 'circle';
-
-export function loadPunctStyle(): PunctStyle {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      const val = localStorage.getItem(PUNCT_STYLE_KEY);
-      if (val === 'circle') return 'circle';
-    }
-    return 'dot';
-  } catch {
-    return 'dot';
-  }
-}
-
-export function savePunctStyle(style: PunctStyle): void {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(PUNCT_STYLE_KEY, style);
-    }
-  } catch {}
-  applyPunctStyle(style);
-}
-
-let currentDomPunctStyle: PunctStyle = 'dot'; // 构建期 rehype-cjk-punctuation 输出基准为 'dot'
-
-/** 递归替换正文纯文本节点中的句末标点（避开代码块、公式与徽章） */
-export function replaceBodyFullStops(targetStyle: PunctStyle): void {
-  if (typeof document === 'undefined') return;
-  const root = document.querySelector('.sl-markdown-content');
-  if (!root) return;
-
-  const fromChar = targetStyle === 'circle' ? '．' : '。';
-  const toChar = targetStyle === 'circle' ? '。' : '．';
-
-  const walker = document.createTreeWalker(
-    root,
-    NodeFilter.SHOW_TEXT,
-    {
-      acceptNode(node) {
-        const parent = node.parentElement;
-        if (!parent) return NodeFilter.FILTER_SKIP;
-        if (parent.closest('pre, code, .katex, .katex-display, script, style, .fig-ref-badge, .block-ref-badge')) {
-          return NodeFilter.FILTER_REJECT;
-        }
-        return NodeFilter.FILTER_ACCEPT;
-      }
-    }
-  );
-
-  let current = walker.nextNode();
-  while (current) {
-    if (current.nodeValue && current.nodeValue.includes(fromChar)) {
-      current.nodeValue = current.nodeValue.replaceAll(fromChar, toChar);
-    }
-    current = walker.nextNode();
-  }
-}
-
-export function applyPunctStyle(style: PunctStyle = loadPunctStyle(), force = false): void {
-  if (typeof document === 'undefined') return;
-  document.documentElement.dataset.punctStyle = style;
-
-  // 关键性能优化：构建期输出默认即为数理圆点 'dot'。
-  // 若当前配置仍为默认 'dot' 且未强制触发，直接跳过耗时的全量 DOM TreeWalker 扫描。
-  if (!force && style === currentDomPunctStyle && style === 'dot') {
-    return;
-  }
-
-  // 若需要从 dot 变换为 circle 或发生明确偏好切换，使用 idle 调度异步执行，杜绝阻塞首屏关键帧
-  const idle = (typeof window !== 'undefined' && window.requestIdleCallback) || ((fn: Function) => setTimeout(fn, 60));
-  idle(() => {
-    replaceBodyFullStops(style);
-    currentDomPunctStyle = style;
-  }, { timeout: 800 });
-}
-
-/** 正文字号存储键：'14' ~ '22'，默认 16 (px) */
-export const FONT_SIZE_KEY = 'astrolib_font_size';
-export const DEFAULT_FONT_SIZE = 16;
-export const MIN_FONT_SIZE = 14;
-export const MAX_FONT_SIZE = 22;
-
-export function loadFontSize(): number {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      const val = parseInt(localStorage.getItem(FONT_SIZE_KEY) || '', 10);
-      if (!isNaN(val) && val >= MIN_FONT_SIZE && val <= MAX_FONT_SIZE) {
-        return val;
-      }
-    }
-    return DEFAULT_FONT_SIZE;
-  } catch {
-    return DEFAULT_FONT_SIZE;
-  }
-}
-
-/** 将字号像素值换算为 pt 磅/点字体单位（以 16px = 12pt 为基准，1px = 0.75pt） */
-export function formatFontSizePt(px: number): string {
-  const pt = px * 0.75;
-  return `${parseFloat(pt.toFixed(2))} pt`;
-}
-
-/** 兼容旧引用：保留 formatFontSizeRem 别名 */
-export function formatFontSizeRem(px: number): string {
-  return formatFontSizePt(px);
-}
-
-export function saveFontSize(val: number): void {
-  const clamped = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, Math.round(val)));
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(FONT_SIZE_KEY, String(clamped));
-    }
-  } catch {}
-  applyFontSize(clamped);
-}
-
-export function applyFontSize(val: number = loadFontSize()): void {
-  if (typeof document === 'undefined') return;
-  const pt = val * 0.75;
-  document.documentElement.style.setProperty('--academic-font-size-body', `${parseFloat(pt.toFixed(2))}pt`);
-  syncAllFontSizeSliders(val);
-}
-
-/** 同步当前所有实例的字号调节滑块及数值角标 (支持 md-chip / 元素) */
-export function syncAllFontSizeSliders(val: number = loadFontSize()): void {
-  if (typeof document === 'undefined') return;
-  const ptText = formatFontSizePt(val);
-  document.querySelectorAll<any>('[data-font-size-val]').forEach((badge) => {
-    if ('label' in badge) {
-      badge.label = ptText;
-    }
-    badge.textContent = ptText;
-    badge.setAttribute('label', ptText);
-  });
-
-  document.querySelectorAll<any>('[data-font-size-slider]').forEach((slider) => {
-    if (slider.value !== val) {
-      slider.value = val;
-    }
-    slider.valueLabel = ptText;
-  });
-}
-
-/** 亮/暗/设备外观偏好存储键：'light' | 'dark' | '' (表示 auto 跟随系统) */
-export const THEME_MODE_STORAGE_KEY = 'starlight-theme';
-export type ThemeMode = 'light' | 'dark' | 'auto';
-
-export function loadThemeMode(): ThemeMode {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      const val = localStorage.getItem(THEME_MODE_STORAGE_KEY);
-      if (val === 'light' || val === 'dark') return val;
-      if (val === 'auto') return 'auto';
-    }
-  } catch {}
-  return 'auto';
-}
-
-export function saveThemeMode(mode: ThemeMode): void {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(THEME_MODE_STORAGE_KEY, mode === 'light' || mode === 'dark' ? mode : '');
-    }
-  } catch {}
-}
-
-export function applyThemeMode(mode?: ThemeMode): void {
-  if (typeof document === 'undefined') return;
-  const currentMode = mode || loadThemeMode();
-  const root = document.documentElement;
-  const animate = localStorage.getItem(THEME_TRANSITION_KEY) === 'animate';
-  if (!animate) root.classList.add('theme-switching');
-
-  const resolved =
-    currentMode === 'auto'
-      ? window.matchMedia('(prefers-color-scheme: light)').matches
-        ? 'light'
-        : 'dark'
-      : currentMode;
-  root.dataset.theme = resolved;
-
-  if (!animate) {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => root.classList.remove('theme-switching'));
-    });
-  }
-
-  // 同步顶栏的 starlight-theme-select 图标
-  document.querySelectorAll('starlight-theme-select').forEach((el: any) => {
-    if (typeof el.syncIcon === 'function') el.syncIcon();
-    else el.classList.toggle('is-dark', resolved === 'dark');
-  });
-
-  window.dispatchEvent(new CustomEvent('starlight-theme-change', { detail: { mode: currentMode, resolved } }));
-}
-
-export function syncAllThemeModes(): void {
-  const currentMode = loadThemeMode();
-  document.querySelectorAll('.ft-panel .ft-mode-btn, starlight-feature-toggles .ft-mode-btn').forEach((btn) => {
-    const val = btn.getAttribute('data-mode-val');
-    const active = val === currentMode;
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-checked', String(active));
-    const modeIcon = btn.querySelector('.ft-mode-icon');
-    const checkIcon = btn.querySelector('.ft-mode-check-icon');
-    if (modeIcon) modeIcon.classList.toggle('hidden', active);
-    if (checkIcon) checkIcon.classList.toggle('hidden', !active);
-  });
-}
-
 type FeatureMeta = { id: string; label: string; build: boolean; runtime: boolean; devOnly: boolean };
 
 /** 最近一次从任一实例读取的构建层元数据（跨实例内容一致，供全局 apply() 使用） */
@@ -493,14 +207,7 @@ function saveToggles(): void {
   }
 }
 
-/** 读取主题切换动画偏好（默认 'instant'，即默认关闭过渡、即时切换） */
-function loadThemeTransition(): string {
-  try {
-    return localStorage.getItem(THEME_TRANSITION_KEY) || 'instant';
-  } catch {
-    return 'instant';
-  }
-}
+
 
 /** 该功能是否可运行时切换（构建层允许 && 面板标记为可切换） */
 export function isRuntimeSwitchable(id: string): boolean {
@@ -580,6 +287,63 @@ export function resetToggles(): void {
   apply();
 }
 
+let _isCampusNetworkChecked = false;
+let _isCampusNetworkAvailable = false;
+let _campusProbePromise: Promise<boolean> | null = null;
+
+/** 动态探测北邮校园网环境并更新所有面板的提供商选项展示 */
+async function probeAndSyncCampusNetwork(): Promise<void> {
+  if (_campusProbePromise) return;
+  _campusProbePromise = checkBuptCampusNetwork();
+  try {
+    _isCampusNetworkAvailable = await _campusProbePromise;
+    _isCampusNetworkChecked = true;
+  } catch {
+    _isCampusNetworkAvailable = false;
+    _isCampusNetworkChecked = true;
+  } finally {
+    _campusProbePromise = null;
+    updateCampusNetworkUI();
+  }
+}
+
+/** 更新所有实例中北邮算力平台 Chip 与校园网警告的可见性状态 */
+function updateCampusNetworkUI(): void {
+  const activeProviderId = getActiveAiProviderId();
+
+  document.querySelectorAll('.ft-panel, starlight-feature-toggles').forEach((root) => {
+    const buptChip = root.querySelector<any>('.ft-ai-provider-bupt');
+    const warningEl = root.querySelector<HTMLElement>('.ft-ai-campus-warning');
+
+    if (buptChip) {
+      if (_isCampusNetworkAvailable) {
+        // 校园网环境已连通：显示选项
+        buptChip.classList.remove('hidden');
+        buptChip.style.display = '';
+        buptChip.title = '北京邮电大学「人人有算力」校内平台 · 校园网已连通';
+      } else {
+        // 未连通校园网：
+        if (activeProviderId === 'bupt') {
+          // 当前已选中该提供商：保留显示，标明不可用
+          buptChip.classList.remove('hidden');
+          buptChip.style.display = '';
+          buptChip.title = '未检测到校园网环境 · 非校园网环境不可用';
+        } else {
+          // 未选该提供商：对外隐藏，贯彻「只在校园网环境显示」原则
+          buptChip.classList.add('hidden');
+          buptChip.style.display = 'none';
+        }
+      }
+    }
+
+    if (warningEl) {
+      const shouldShowWarning = activeProviderId === 'bupt' && _isCampusNetworkChecked && !_isCampusNetworkAvailable;
+      warningEl.classList.toggle('hidden', !shouldShowWarning);
+      warningEl.style.display = shouldShowWarning ? 'flex' : 'none';
+    }
+  });
+}
+
 /** 同步当前所有实例的 AI 模型、Key 与问答偏好配置状态 */
 export function syncAllAiSettings(): void {
   const activeProviderId = getActiveAiProviderId();
@@ -592,6 +356,12 @@ export function syncAllAiSettings(): void {
   const mode = getAiAnswerMode();
   const srcOpen = getAiSourceOpen();
   const dimensions = getAiPanelDimensions();
+
+  // 若尚未完成校园网探测，发起静默探针
+  if (!_isCampusNetworkChecked) {
+    probeAndSyncCampusNetwork();
+  }
+  updateCampusNetworkUI();
 
   document.querySelectorAll('.ft-panel, starlight-feature-toggles').forEach((root) => {
     // 1. 同步提供商 Filter Chips
@@ -699,6 +469,18 @@ export function syncAllAiSettings(): void {
       collapseToggle.checked = getAiAutoCollapsePreceding();
     }
 
+    // 同步折叠工具探索总结开关
+    const toolsSummaryToggle = root.querySelector<HTMLInputElement>('.ft-ai-collapse-tools-summary-toggle');
+    if (toolsSummaryToggle) {
+      toolsSummaryToggle.checked = getAiCollapseToolsSummary();
+    }
+
+    // 同步侧载默认引用本章开关
+    const refChapterToggle = root.querySelector<HTMLInputElement>('.ft-ai-ref-chapter-toggle');
+    if (refChapterToggle) {
+      refChapterToggle.checked = getAiSideloadRefChapter();
+    }
+
     // 同步窗口宽度预设 Chips
     root.querySelectorAll<any>('.ft-ai-win-chip-set md-filter-chip').forEach((chip) => {
       const chipVal = chip.getAttribute('data-ai-win-val');
@@ -712,34 +494,6 @@ export function syncAllAiSettings(): void {
         chip.title = `自定义尺寸 (${custW}px × ${dimensions.customHeight || dimensions.height}px)`;
       }
     });
-  });
-}
-
-/** 同步当前所有实例的后台预加载范围 Chips / 按钮状态 */
-export function syncAllPrewarmButtons(): void {
-  const current = loadPrewarmPref();
-  document.querySelectorAll<any>('.ft-panel .ft-prewarm-chip, starlight-feature-toggles .ft-prewarm-chip, .ft-panel .ft-prewarm-btn, starlight-feature-toggles .ft-prewarm-btn').forEach((chip) => {
-    const val = parseInt(chip.getAttribute('data-prewarm-val') || '-1', 10);
-    const active = val === current;
-    chip.classList.toggle('active', active);
-    chip.setAttribute('aria-selected', String(active));
-    if ('selected' in chip) {
-      chip.selected = active;
-    }
-  });
-}
-
-/** 同步当前所有实例的页面内存缓存上限 Chips / 按钮状态 */
-export function syncAllCacheButtons(): void {
-  const current = loadMaxPageCachePref();
-  document.querySelectorAll<any>('.ft-panel .ft-cache-chip, starlight-feature-toggles .ft-cache-chip, .ft-panel .ft-cache-btn, starlight-feature-toggles .ft-cache-btn').forEach((chip) => {
-    const val = parseInt(chip.getAttribute('data-cache-val') || '5', 10);
-    const active = val === current;
-    chip.classList.toggle('active', active);
-    chip.setAttribute('aria-selected', String(active));
-    if ('selected' in chip) {
-      chip.selected = active;
-    }
   });
 }
 
@@ -881,186 +635,8 @@ export function applyLiteMode(enabled: boolean = loadLiteMode()): void {
   syncAllPwaCard();
 }
 
-/** PWA 独立应用安装提示事件暂存 */
-let deferredInstallPrompt: any = null;
+registerApplyLiteModeHook(applyLiteMode);
 
-/** 供外部或事件获取当前暂存的安装提示 */
-export function getDeferredInstallPrompt(): any {
-  return deferredInstallPrompt;
-}
-
-/** 同步当前所有实例的 PWA 独立应用卡片状态 */
-export function syncAllPwaCard(): void {
-  if (typeof document === 'undefined') return;
-  const isStandalone = (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    (window.navigator as any).standalone === true ||
-    document.referrer.includes('android-app://')
-  );
-
-  document.querySelectorAll<HTMLElement>('.ft-pwa-card').forEach((card) => {
-    const badge = card.querySelector<HTMLElement>('[data-pwa-badge]');
-    const desc = card.querySelector<HTMLElement>('[data-pwa-desc]');
-    const btn = card.querySelector<HTMLButtonElement>('[data-pwa-install-btn]');
-    const btnText = btn?.querySelector<HTMLElement>('.ft-pwa-btn-text');
-
-    if (isStandalone) {
-      card.classList.add('is-installed');
-      if (badge) {
-        badge.textContent = '已运行';
-        badge.classList.add('is-installed');
-      }
-      if (desc) {
-        desc.textContent = '当前正在专用独立窗口中运行，享纯净沉浸学术阅读';
-      }
-      if (btn) {
-        btn.disabled = true;
-      }
-      if (btnText) {
-        btnText.textContent = '已安装';
-      }
-    } else if (deferredInstallPrompt) {
-      card.classList.remove('is-installed');
-      if (badge) {
-        badge.textContent = '可安装';
-        badge.classList.remove('is-installed');
-      }
-      if (desc) {
-        desc.textContent = '安装到电脑/设备桌面，支持离线阅读与断网秒开';
-      }
-      if (btn) {
-        btn.disabled = false;
-      }
-      if (btnText) {
-        btnText.textContent = '安装应用';
-      }
-    } else {
-      card.classList.remove('is-installed');
-      if (badge) {
-        badge.textContent = '应用模式';
-        badge.classList.remove('is-installed');
-      }
-      if (desc) {
-        desc.textContent = '支持添加到桌面或浏览器地址栏一键安装独立应用';
-      }
-      if (btn) {
-        btn.disabled = false;
-      }
-      if (btnText) {
-        btnText.textContent = '安装应用';
-      }
-    }
-  });
-
-  // 同步全量离线数据包状态
-  getOfflinePackStatus().then((status) => {
-    document.querySelectorAll<HTMLElement>('.ft-pwa-pack-box').forEach((box) => {
-      const badge = box.querySelector<HTMLElement>('[data-pwa-pack-badge]');
-      const desc = box.querySelector<HTMLElement>('[data-pwa-pack-desc]');
-      const downloadBtn = box.querySelector<HTMLButtonElement>('[data-pwa-download-pack-btn]');
-      const downloadBtnText = downloadBtn?.querySelector<HTMLElement>('.ft-pwa-pack-btn-text');
-      const clearBtn = box.querySelector<HTMLButtonElement>('[data-pwa-clear-pack-btn]');
-
-      if (status.hasPack && status.count > 0) {
-        if (badge) {
-          badge.textContent = `已离线 (${status.count} 篇)`;
-          badge.classList.add('is-loaded');
-        }
-        if (desc) {
-          desc.textContent = `已离线全站 ${status.count} 篇章节 (约占 ${status.approxSizeMb} MB)，断网秒开`;
-        }
-        if (downloadBtnText) {
-          downloadBtnText.textContent = '重新同步';
-        }
-        if (clearBtn) {
-          clearBtn.classList.remove('hidden');
-        }
-      } else {
-        if (badge) {
-          badge.textContent = '未下载';
-          badge.classList.remove('is-loaded');
-        }
-        if (desc) {
-          desc.textContent = '从 GitHub 一次性下载全站离线包，断网秒开，不消耗主站流量';
-        }
-        if (downloadBtnText) {
-          downloadBtnText.textContent = '下载离线包';
-        }
-        if (clearBtn) {
-          clearBtn.classList.add('hidden');
-        }
-      }
-    });
-  }).catch(() => {});
-}
-
-/** 同步当前所有实例的低性能模式开关与受控样式 */
-export function syncAllLiteMode(): void {
-  if (typeof document === 'undefined') return;
-  const isLite = loadLiteMode();
-
-  document.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-lite-mode]').forEach((cb) => {
-    cb.checked = isLite;
-  });
-  document.querySelectorAll<any>('md-switch[data-lite-mode]').forEach((sw) => {
-    sw.selected = isLite;
-  });
-
-  document.querySelectorAll<HTMLElement>('.ft-lite-mode-card').forEach((card) => {
-    card.classList.toggle('is-active', isLite);
-    const badge = card.querySelector<HTMLElement>('.ft-lite-mode-badge');
-    if (badge) {
-      badge.textContent = isLite ? '已开启 · 极速低耗' : '未开启';
-      badge.classList.toggle('is-active', isLite);
-    }
-  });
-
-  // 预加载与缓存按钮禁用态
-  document.querySelectorAll<HTMLElement>('.ft-prewarm-track, .ft-prewarm-wrapper').forEach((el) => {
-    el.classList.toggle('is-lite-locked', isLite);
-  });
-  document.querySelectorAll<HTMLButtonElement>('.ft-prewarm-btn, .ft-prewarm-chip').forEach((btn) => {
-    btn.disabled = isLite;
-  });
-
-  document.querySelectorAll<HTMLElement>('.ft-cache-track, .ft-cache-wrapper').forEach((el) => {
-    el.classList.toggle('is-lite-locked', isLite);
-  });
-  document.querySelectorAll<HTMLButtonElement>('.ft-cache-btn, .ft-cache-chip').forEach((btn) => {
-    btn.disabled = isLite;
-  });
-
-  document.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-sidebar-hover-prefetch]').forEach((cb) => {
-    cb.disabled = isLite;
-  });
-  document.querySelectorAll<any>('md-switch[data-sidebar-hover-prefetch]').forEach((sw) => {
-    sw.disabled = isLite;
-  });
-
-  // 受控功能开关
-  LITE_DISABLED_FEATURES.forEach((fid) => {
-    document.querySelectorAll<HTMLInputElement>(`input[type="checkbox"][data-feature-id="${fid}"]`).forEach((cb) => {
-      if (isLite) {
-        cb.disabled = true;
-        cb.checked = false;
-      } else {
-        cb.disabled = !isRuntimeSwitchable(fid);
-        cb.checked = toggles[fid] !== false;
-      }
-    });
-    document.querySelectorAll<any>(`md-switch[data-feature-id="${fid}"]`).forEach((sw) => {
-      if (isLite) {
-        sw.disabled = true;
-        sw.selected = false;
-      } else {
-        sw.disabled = !isRuntimeSwitchable(fid);
-        sw.selected = toggles[fid] !== false;
-      }
-    });
-  });
-}
-
-/** 同步当前所有实例的复选框/滑块状态 */
 function syncAllCheckboxes(): void {
   const isLite = loadLiteMode();
 
@@ -1129,76 +705,6 @@ function syncAllCheckboxes(): void {
     .forEach((sw) => {
       sw.selected = loadSidebarHoverPref();
     });
-}
-
-/** 同步当前所有实例的数理标点风格 Chips */
-export function syncAllPunctChips(targetStyle?: PunctStyle): void {
-  const current = targetStyle || loadPunctStyle();
-  document.querySelectorAll<any>('.ft-panel .ft-punct-chip, starlight-feature-toggles .ft-punct-chip').forEach((chip) => {
-    const val = chip.getAttribute('data-punct-val');
-    const active = val === current;
-    chip.classList.toggle('active', active);
-    chip.setAttribute('aria-selected', String(active));
-    chip.toggleAttribute('selected', active);
-    if ('selected' in chip) {
-      chip.selected = active;
-    }
-  });
-}
-
-/** 同步当前所有实例的字体高亮按钮与官方 Chip 状态 */
-export function syncAllFontButtons(targetPref?: FontPref): void {
-  const pref = targetPref || loadFontPref();
-  document.querySelectorAll<any>('.ft-panel .ft-font-btn, starlight-feature-toggles .ft-font-btn, .ft-panel .ft-font-chip, starlight-feature-toggles .ft-font-chip').forEach((el) => {
-    const setting = el.getAttribute('data-font-setting');
-    const val = el.getAttribute('data-font-val');
-    const active = setting === 'latin' ? val === pref.latin : val === pref.cjk;
-    el.classList.toggle('active', active);
-    el.setAttribute('aria-selected', String(active));
-    el.toggleAttribute('selected', active);
-    if ('selected' in el) {
-      el.selected = active;
-    }
-  });
-}
-
-/** 同步当前所有实例的 UI 风格主题高亮 Chips */
-function syncAllThemeChips(): void {
-  const theme = loadSiteTheme();
-  document.querySelectorAll('.ft-panel .ft-theme-chip, starlight-feature-toggles .ft-theme-chip').forEach((chip) => {
-    const val = chip.getAttribute('data-site-theme-val');
-    const active = val === theme;
-    chip.classList.toggle('active', active);
-    chip.setAttribute('aria-selected', String(active));
-  });
-}
-
-/** 同步当前所有实例的 M3 主题色高亮 Swatches */
-export function syncAllThemeColors(): void {
-  const currentColor = loadThemeColor();
-  document.querySelectorAll('.ft-panel .ft-preset-swatch, starlight-feature-toggles .ft-preset-swatch').forEach((swatch) => {
-    const val = swatch.getAttribute('data-m3-color');
-    const active = val === currentColor;
-    swatch.classList.toggle('active', active);
-    swatch.setAttribute('aria-selected', String(active));
-  });
-
-  // 同步原生 color input
-  document.querySelectorAll<HTMLInputElement>('.ft-color-native-input').forEach((input) => {
-    if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(currentColor)) {
-      input.value = currentColor;
-    }
-  });
-
-  // 同步自定义 Tile 状态
-  const isCustomHex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(currentColor);
-  document.querySelectorAll<HTMLElement>('.ft-custom-color-tile').forEach((tile) => {
-    tile.classList.toggle('active', isCustomHex);
-    const dropper = tile.querySelector<HTMLElement>('.ft-eyedropper-circle');
-    if (dropper) {
-      dropper.style.backgroundColor = isCustomHex ? currentColor : '';
-    }
-  });
 }
 
 /** 绑定「点击面板外收起」到 document（只注册一次，兼容多实例与 Portal） */
@@ -1512,12 +1018,13 @@ class StarlightFeatureToggles extends HTMLElement {
 
         if (isStandalone) return;
 
-        if (deferredInstallPrompt) {
+        const prompt = getDeferredInstallPrompt();
+        if (prompt) {
           try {
-            deferredInstallPrompt.prompt();
-            const choice = await deferredInstallPrompt.userChoice;
+            prompt.prompt();
+            const choice = await prompt.userChoice;
             if (choice && choice.outcome === 'accepted') {
-              deferredInstallPrompt = null;
+              setDeferredInstallPrompt(null);
               syncAllPwaCard();
             }
           } catch (err) {
@@ -2118,6 +1625,22 @@ class StarlightFeatureToggles extends HTMLElement {
       });
     }
 
+    // 绑定折叠工具探索总结开关
+    const toolsSummaryToggle = root.querySelector<HTMLInputElement>('.ft-ai-collapse-tools-summary-toggle');
+    if (toolsSummaryToggle) {
+      toolsSummaryToggle.addEventListener('change', () => {
+        saveAiCollapseToolsSummary(toolsSummaryToggle.checked);
+      });
+    }
+
+    // 绑定侧载默认引用本章开关
+    const refChapterToggle = root.querySelector<HTMLInputElement>('.ft-ai-ref-chapter-toggle');
+    if (refChapterToggle) {
+      refChapterToggle.addEventListener('change', () => {
+        saveAiSideloadRefChapter(refChapterToggle.checked);
+      });
+    }
+
     // 监听全局打开设置并聚焦指定 section 事件
     if (!(window as any).__astrolibOpenSettingsBound) {
       (window as any).__astrolibOpenSettingsBound = true;
@@ -2266,8 +1789,7 @@ export function initFeatureToggles(): void {
   document.addEventListener('astro:page-load', () => {
     apply();
     applyParagraphIndent();
-    currentDomPunctStyle = 'dot';
-    applyPunctStyle();
+    applyPunctStyle(undefined, true);
     applyFontSize();
     syncAllCheckboxes();
     syncAllThemeModes();
@@ -2331,12 +1853,12 @@ export function initFeatureToggles(): void {
   if (typeof window !== 'undefined') {
     window.addEventListener('beforeinstallprompt', (e: Event) => {
       e.preventDefault();
-      deferredInstallPrompt = e;
+      setDeferredInstallPrompt(e);
       syncAllPwaCard();
     });
 
     window.addEventListener('appinstalled', () => {
-      deferredInstallPrompt = null;
+      setDeferredInstallPrompt(null);
       syncAllPwaCard();
       console.info('[PWA] AstroLib 已成功安装为独立应用');
     });

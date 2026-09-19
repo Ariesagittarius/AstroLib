@@ -1,0 +1,341 @@
+---
+title: '1.5 行列式的展开定理'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+把高阶行列式的计算化为低阶行列式的计算（即降阶）是简化行列式计算的一种有效方法，行列式按一行（列）展开公式是这种方法的基本工具。首先引入余子式和代数余子式的概念。
+
+## 一、余子式与代数余子式
+
+<Knowledge title="定义 1.7 余子式与代数余子式">
+
+在 $n$ 阶行列式 $D_n$ 中划去元素 $a_{ij}$ 所在的第 $i$ 行和第 $j$ 列后，剩下的 $n-1$ 行和 $n-1$ 列元素按原来的相对顺序组成一个 $n-1$ 阶行列式，记为 $M_{ij}$，称 $M_{ij}$ 为元素 $a_{ij}$ 的**余子式**。
+
+令
+
+$$
+A_{ij} = (-1)^{i+j} M_{ij},
+$$
+
+称 $A_{ij}$ 为元素 $a_{ij}$ 的**代数余子式** ($i, j = 1, 2, \cdots, n$)。
+
+</Knowledge>
+
+<SideNote title="代数余子式的符号法则">
+代数余子式 $A_{ij}$ 与余子式 $M_{ij}$ 仅差一个正负号，该正负号由行标与列标之和 $i+j$ 的奇偶性决定：当 $i+j$ 为偶数时带正号，当 $i+j$ 为奇数时带负号。
+</SideNote>
+
+例如，在四阶行列式
+
+$$
+D = \begin{vmatrix}
+a_{11} & a_{12} & a_{13} & a_{14} \\
+a_{21} & a_{22} & a_{23} & a_{24} \\
+a_{31} & a_{32} & a_{33} & a_{34} \\
+a_{41} & a_{42} & a_{43} & a_{44}
+\end{vmatrix}
+$$
+
+中，元素 $a_{23}$ 的余子式和代数余子式分别为
+
+$$
+M_{23} = \begin{vmatrix}
+a_{11} & a_{12} & a_{14} \\
+a_{31} & a_{32} & a_{34} \\
+a_{41} & a_{42} & a_{44}
+\end{vmatrix}, \quad A_{23} = (-1)^{2+3} M_{23} = -M_{23}.
+$$
+
+再如，元素 $a_{31}$ 的余子式和代数余子式分别为
+
+$$
+M_{31} = \begin{vmatrix}
+a_{12} & a_{13} & a_{14} \\
+a_{22} & a_{23} & a_{24} \\
+a_{42} & a_{43} & a_{44}
+\end{vmatrix}, \quad A_{31} = (-1)^{3+1} M_{31} = M_{31}.
+$$
+
+## 二、行列式按行（列）展开定理
+
+<Knowledge title="定理 1.3 行列式展开定理">
+
+行列式 $D$ 等于它的任一行（列）的各元素与其对应的代数余子式的乘积之和，即
+
+$$
+D = a_{i1} A_{i1} + a_{i2} A_{i2} + \cdots + a_{in} A_{in} \quad (i = 1, 2, \cdots, n),
+$$
+
+或
+
+$$
+D = a_{1j} A_{1j} + a_{2j} A_{2j} + \cdots + a_{nj} A_{nj} \quad (j = 1, 2, \cdots, n).
+$$
+
+</Knowledge>
+
+<Solution title="证明">
+
+分三步证明此定理：
+
+**(1) 特殊情形 1**：考虑行列式第 1 行中除 $a_{11}$ 外其余元素全为 0：
+
+$$
+D_1 = \begin{vmatrix}
+a_{11} & 0 & \cdots & 0 \\
+a_{21} & a_{22} & \cdots & a_{2n} \\
+\vdots & \vdots & & \vdots \\
+a_{n1} & a_{n2} & \cdots & a_{nn}
+\end{vmatrix} = a_{11} M_{11} = a_{11} (-1)^{1+1} M_{11} = a_{11} A_{11}.
+$$
+
+**(2) 特殊情形 2**：设行列式第 $i$ 行除 $a_{ij}$ 外其余元素都为 0。
+
+首先把第 $i$ 行依次与相邻上一行对换，共经 $i-1$ 次相邻对换移至第 1 行；再把第 $j$ 列依次与相邻左列对换，共经 $j-1$ 次相邻对换移至第 1 列。总共做了 $(i-1) + (j-1) = i+j-2$ 次对换。根据性质 2：
+
+$$
+D_2 = (-1)^{i+j-2} a_{ij} M_{ij} = (-1)^{i+j} a_{ij} M_{ij} = a_{ij} A_{ij}.
+$$
+
+**(3) 一般情形**：对于一般的行列式 $D$，利用性质 5（单行拆项性质），把第 $i$ 行拆成 $n$ 个行列式的和，每个行列式在第 $i$ 行中仅保留一个非零元素 $a_{ik}$。利用特殊情形 2 的结论，得
+
+$$
+D = a_{i1} A_{i1} + a_{i2} A_{i2} + \cdots + a_{in} A_{in}.
+$$
+
+同理可证按列展开公式。
+
+</Solution>
+
+<Knowledge title="推论 1.5 异行代数余子式乘积和恒为零">
+
+行列式任一行（列）的元素与另一行（列）对应元素的代数余子式乘积之和等于零，即
+
+$$
+a_{i1} A_{k1} + a_{i2} A_{k2} + \cdots + a_{in} A_{kn} = 0 \quad (i \neq k),
+$$
+
+$$
+a_{1j} A_{1k} + a_{2j} A_{2k} + \cdots + a_{nj} A_{nk} = 0 \quad (j \neq k).
+$$
+
+</Knowledge>
+
+<Solution title="证明">
+
+式子 $a_{i1} A_{k1} + a_{i2} A_{k2} + \cdots + a_{in} A_{kn}$ 可以看作是一个新的行列式按第 $k$ 行展开的结果。在这个新的行列式中，第 $k$ 行的元素被换成了第 $i$ 行的元素，从而其第 $i$ 行与第 $k$ 行完全相同。由推论 1.3，具有相同行的行列式的值恒等于零，因此其展开式之和必为零。
+
+</Solution>
+
+<SideNote title="Kronecker 符号统一表示">
+综合定理 1.3 和推论 1.5，有重要正交关系式：
+$$
+\sum_{k=1}^n a_{ik} A_{jk} = D \delta_{ij} = \begin{cases} D, & i = j, \\ 0, & i \neq j. \end{cases}
+$$
+这为第 2 章引入伴随矩阵和逆矩阵提供了直接的理论基础。
+</SideNote>
+
+## 三、常用行列式计算技巧
+
+<Example title="例 13 初等变换结合降阶展开">
+
+计算四阶行列式
+
+$$
+D = \begin{vmatrix}
+3 & 1 & -1 & 2 \\
+-5 & 1 & 3 & -4 \\
+2 & 0 & 1 & -1 \\
+1 & -5 & 3 & -3
+\end{vmatrix}.
+$$
+
+</Example>
+
+<Solution title="解">
+
+观察到第 3 行已有一个 0 元素。对行列式做列变换化简，保留第 3 行的 1：
+作变换 $c_1 - 2c_3$ 以及 $c_4 + c_3$：
+
+$$
+D = \begin{vmatrix}
+3 - 2(-1) & 1 & -1 & 2 + (-1) \\
+-5 - 2(3) & 1 & 3 & -4 + 3 \\
+2 - 2(1) & 0 & 1 & -1 + 1 \\
+1 - 2(3) & -5 & 3 & -3 + 3
+\end{vmatrix} = \begin{vmatrix}
+5 & 1 & -1 & 1 \\
+-11 & 1 & 3 & -1 \\
+0 & 0 & 1 & 0 \\
+-5 & -5 & 3 & 0
+\end{vmatrix}.
+$$
+
+按第 3 行展开，降为三阶行列式：
+
+$$
+D = (-1)^{3+3} \cdot 1 \cdot \begin{vmatrix}
+5 & 1 & 1 \\
+-11 & 1 & -1 \\
+-5 & -5 & 0
+\end{vmatrix}.
+$$
+
+作变换 $r_2 + r_1$：
+
+$$
+D = \begin{vmatrix}
+5 & 1 & 1 \\
+-6 & 2 & 0 \\
+-5 & -5 & 0
+\end{vmatrix} = 1 \cdot (-1)^{1+3} \begin{vmatrix} -6 & 2 \\ -5 & -5 \end{vmatrix} = 30 - (-10) = 40.
+$$
+
+</Solution>
+
+<Example title="例 14 爪型行列式">
+
+计算 $n$ 阶爪型行列式
+
+$$
+D = \begin{vmatrix}
+x & a_1 & a_2 & \cdots & a_n \\
+a_1 & x_1 & 0 & \cdots & 0 \\
+a_2 & 0 & x_2 & \cdots & 0 \\
+\vdots & \vdots & \vdots & \ddots & \vdots \\
+a_n & 0 & 0 & \cdots & x_n
+\end{vmatrix}, \quad \text{其中 } x_i \neq 0 \ (i = 1, 2, \cdots, n).
+$$
+
+</Example>
+
+<Solution title="解">
+
+利用第 $i$ 行消去第 1 行的 $a_i$：对第 1 行作行变换 $r_1 - \frac{a_i}{x_i} r_{i+1}$ ($i = 1, 2, \cdots, n$)，可得
+
+$$
+D = \begin{vmatrix}
+x - \sum_{i=1}^n \frac{a_i^2}{x_i} & 0 & 0 & \cdots & 0 \\
+a_1 & x_1 & 0 & \cdots & 0 \\
+a_2 & 0 & x_2 & \cdots & 0 \\
+\vdots & \vdots & \vdots & \ddots & \vdots \\
+a_n & 0 & 0 & \cdots & x_n
+\end{vmatrix}.
+$$
+
+化为下三角形行列式，故其值为主对角线元素的乘积：
+
+$$
+D = \left( x - \sum_{i=1}^n \frac{a_i^2}{x_i} \right) x_1 x_2 \cdots x_n.
+$$
+
+</Solution>
+
+<Example title="例 15 范德蒙德（Vandermonde）行列式">
+
+证明 $n$ 阶范德蒙德行列式
+
+$$
+V_n = \begin{vmatrix}
+1 & 1 & \cdots & 1 \\
+x_1 & x_2 & \cdots & x_n \\
+x_1^2 & x_2^2 & \cdots & x_n^2 \\
+\vdots & \vdots & & \vdots \\
+x_1^{n-1} & x_2^{n-1} & \cdots & x_n^{n-1}
+\end{vmatrix} = \prod_{1 \le j < i \le n} (x_i - x_j).
+$$
+
+</Example>
+
+<Solution title="证明">
+
+采用数学归纳法：
+
+当 $n = 2$ 时，$V_2 = \begin{vmatrix} 1 & 1 \\ x_1 & x_2 \end{vmatrix} = x_2 - x_1$，公式显然成立。
+
+假设对于 $n - 1$ 阶范德蒙德行列式公式成立。现考虑 $n$ 阶行列式 $V_n$：
+自第 $n$ 行开始，自下而上依次减去前一行的 $x_1$ 倍，即作变换 $r_k - x_1 r_{k-1}$ ($k = n, n-1, \cdots, 2$)：
+
+$$
+V_n = \begin{vmatrix}
+1 & 1 & \cdots & 1 \\
+0 & x_2 - x_1 & \cdots & x_n - x_1 \\
+0 & x_2(x_2 - x_1) & \cdots & x_n(x_n - x_1) \\
+\vdots & \vdots & & \vdots \\
+0 & x_2^{n-2}(x_2 - x_1) & \cdots & x_n^{n-2}(x_n - x_1)
+\end{vmatrix}.
+$$
+
+按第 1 列展开，并从第 1, 2, $\cdots$, $n-1$ 列分别提出公因子 $(x_2 - x_1), (x_3 - x_1), \cdots, (x_n - x_1)$：
+
+$$
+V_n = (x_2 - x_1)(x_3 - x_1)\cdots (x_n - x_1) \begin{vmatrix}
+1 & 1 & \cdots & 1 \\
+x_2 & x_3 & \cdots & x_n \\
+\vdots & \vdots & & \vdots \\
+x_2^{n-2} & x_3^{n-2} & \cdots & x_n^{n-2}
+\end{vmatrix}.
+$$
+
+剩下的行列式正是关于 $x_2, x_3, \cdots, x_n$ 的 $n-1$ 阶范德蒙德行列式。由归纳假设：
+
+$$
+V_n = \prod_{i=2}^n (x_i - x_1) \prod_{2 \le j < i \le n} (x_i - x_j) = \prod_{1 \le j < i \le n} (x_i - x_j).
+$$
+
+定理得证。
+
+</Solution>
+
+## 四*、拉普拉斯（Laplace）定理
+
+<Knowledge title="定理 1.4 拉普拉斯（Laplace）展开定理">
+
+在 $n$ 阶行列式 $D$ 中任意选定 $k$ 行（$1 \le k \le n-1$），由这 $k$ 行元素组成的一切 $k$ 阶子式与其对应的代数余子式的乘积之和等于行列式 $D$。
+
+</Knowledge>
+
+<Example title="例 16 分块上三角行列式求值">
+
+设
+
+$$
+D = \begin{vmatrix}
+a_{11} & \cdots & a_{1k} & 0 & \cdots & 0 \\
+\vdots & & \vdots & \vdots & & \vdots \\
+a_{k1} & \cdots & a_{kk} & 0 & \cdots & 0 \\
+c_{11} & \cdots & c_{1k} & b_{11} & \cdots & b_{1r} \\
+\vdots & & \vdots & \vdots & & \vdots \\
+c_{r1} & \cdots & c_{rk} & b_{r1} & \cdots & b_{rr}
+\end{vmatrix}, \quad D_1 = \det(a_{ij})_{k \times k}, \quad D_2 = \det(b_{ij})_{r \times r}.
+$$
+
+证明 $D = D_1 D_2$。
+
+</Example>
+
+<Solution title="证明">
+
+选取 $D$ 的前 $k$ 行，由前 $k$ 行元素组成的所有 $k$ 阶子式中，除由前 $k$ 列构成的子式 $D_1$ 外，其余子式由于至少包含一列全零元素，其值均为 0。
+
+根据 Laplace 定理，取前 $k$ 行展开：
+
+$$
+D = D_1 \cdot (-1)^{(1+2+\cdots+k) + (1+2+\cdots+k)} D_2 = D_1 D_2.
+$$
+
+</Solution>
+
+<ExerciseTrigger chapter={1} section="1.5" title="1.5 行列式的展开定理 课后真题与自测练习" />

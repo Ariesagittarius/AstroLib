@@ -217,18 +217,24 @@ if (shouldCompile) {
     console.warn('⚠️ 未在系统 PATH 中找到 xelatex，跳过物理 PDF 编译');
   } else {
     console.log(`🚀 使用编译器: ${xelatexBin}`);
-    try {
-      console.log('⏳ 执行第 1 遍编译 (生成目录与排版布局)...');
-      execSync(`"${xelatexBin}" -file-line-error -interaction=nonstopmode main.tex`, {
-        cwd: targetDir,
-        stdio: 'pipe',
-      });
+    const runPass = (passNum, desc) => {
+      try {
+        console.log(`⏳ 执行第 ${passNum} 遍编译 (${desc})...`);
+        execSync(`"${xelatexBin}" -file-line-error -interaction=nonstopmode main.tex`, {
+          cwd: targetDir,
+          stdio: 'pipe',
+        });
+        return true;
+      } catch (compileErr) {
+        return false;
+      }
+    };
 
-      console.log('⏳ 执行第 2 遍编译 (解析引用与标号)...');
-      execSync(`"${xelatexBin}" -file-line-error -interaction=nonstopmode main.tex`, {
-        cwd: targetDir,
-        stdio: 'pipe',
-      });
+    try {
+      runPass(1, '生成目录与排版布局');
+      if (fs.existsSync(path.join(targetDir, 'main.aux')) || fs.existsSync(path.join(targetDir, 'main.pdf'))) {
+        runPass(2, '解析引用与标号');
+      }
 
       const pdfSrc = path.join(targetDir, 'main.pdf');
       const targetPdfName = `${exportResult.cleanTitle}.pdf`;

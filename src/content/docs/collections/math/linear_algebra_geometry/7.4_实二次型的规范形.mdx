@@ -1,0 +1,264 @@
+---
+title: '7.4 实二次型的规范形'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+如果没有特别说明，本节提到的二次型仍指实二次型。化二次型为标准形时，由于所用的可逆线性变换不同，得到的标准形也可能不同。二次型的标准形不是唯一的，本节引入二次型的规范形与惯性定理，建立二次型在合同变换下的不变量。
+
+例如 7.3 节中例 14 提到的二次型 $f = 2x_1^2 + 3x_2^2 + 3x_3^2 + 4x_2x_3$，在正交变换下可化为标准形 $f = y_1^2 + 2y_2^2 + 5y_3^2$；若用配方法，则
+
+$$
+f = 2x_1^2 + 3\left(x_2 + \frac{2}{3}x_3\right)^2 + \frac{5}{3}x_3^2
+$$
+
+令 $y_1 = x_1, y_2 = x_2 + \frac{2}{3}x_3, y_3 = x_3$，则 $f$ 化为标准形 $f = 2y_1^2 + 3y_2^2 + \frac{5}{3}y_3^2$。
+
+这就是说，二次型的标准形不是唯一的。那么二次型有没有唯一确定的形式呢？
+
+设二次型 $f = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x}$ 的标准形为
+
+$$
+f = d_1y_1^2 + \cdots + d_ky_k^2 + d_{k+1}y_{k+1}^2 + \cdots + d_ry_r^2 + d_{r+1}y_{r+1}^2 + \cdots + d_ny_n^2
+$$
+
+经过适当排列变量的次序，不妨设其中的系数 $d_1, \cdots, d_k$ 都是正数，$d_{k+1}, \cdots, d_r$ 都是负数，$d_{r+1} = \cdots = d_n = 0$。继续做可逆线性变换：
+
+$$
+\begin{aligned}
+z_i &= \sqrt{d_i}y_i, & i &= 1, \cdots, k \\
+z_j &= \sqrt{-d_j}y_j, & j &= k+1, \cdots, r \\
+z_l &= y_l, & l &= r+1, \cdots, n
+\end{aligned}
+$$
+
+可将上述标准形化为
+
+$$
+f = z_1^2 + \cdots + z_k^2 - z_{k+1}^2 - \cdots - z_r^2
+$$
+
+这种形式称为二次型的规范形。
+
+<Knowledge title="定义 12 二次型的规范形">
+
+只含平方项，且平方项系数为 $1, -1$ 或 $0$ 的二次型称为二次型的**规范形**。
+
+如果二次型 $f = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x}$ 的规范形为 $f = z_1^2 + \cdots + z_k^2 - z_{k+1}^2 - \cdots - z_r^2$，则 $f$ 在变量 $z_1, z_2, \cdots, z_n$ 下的矩阵为
+
+$$
+\widetilde{\boldsymbol{A}} = \operatorname{diag}(\underbrace{1, \cdots, 1}_{k\text{ 个}}, \underbrace{-1, \cdots, -1}_{r - k\text{ 个}}, \underbrace{0, \cdots, 0}_{n - r\text{ 个}})
+$$
+
+其中 $1$ 的个数为 $k$，$-1$ 的个数为 $r - k$，$0$ 的个数为 $n - r$。显然 $r(\widetilde{\boldsymbol{A}}) = r$。因为 $\boldsymbol{A}$ 与 $\widetilde{\boldsymbol{A}}$ 合同，所以 $r(\boldsymbol{A}) = r(\widetilde{\boldsymbol{A}}) = r$。这说明规范形中非零系数（即 $1$ 或 $-1$）的个数就是 $r(\boldsymbol{A})$，是由 $\boldsymbol{A}$ 唯一确定的。
+
+</Knowledge>
+
+下面的惯性定理将表明规范形中系数 $1$ 的个数也是由 $\boldsymbol{A}$ 唯一确定的。
+
+<Knowledge title="定理 8 惯性定理（Sylvester's Law of Inertia）">
+
+设 $n$ 元实二次型 $f = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x}$ 的秩为 $r$（即 $r(\boldsymbol{A}) = r$），若有两个可逆线性变换 $\boldsymbol{x} = \boldsymbol{C}\boldsymbol{y}$ 与 $\boldsymbol{x} = \boldsymbol{P}\boldsymbol{z}$ 分别将 $f$ 化为规范形
+
+$$
+f = y_1^2 + \cdots + y_p^2 - y_{p+1}^2 - \cdots - y_r^2 \quad \text{与} \quad f = z_1^2 + \cdots + z_q^2 - z_{q+1}^2 - \cdots - z_r^2
+$$
+
+则必有 $p = q$。
+
+</Knowledge>
+
+<Solution title="证*（反证法）">
+
+用反证法。假设 $p \neq q$，不妨设 $p > q$。
+
+因为 $\boldsymbol{x} = \boldsymbol{C}\boldsymbol{y} = \boldsymbol{P}\boldsymbol{z}$，所以 $\boldsymbol{z} = \boldsymbol{P}^{-1}\boldsymbol{C}\boldsymbol{y}$。记 $\boldsymbol{P}^{-1}\boldsymbol{C} = (b_{ij})$。
+
+由 $p > q$ 可知下面的方程组必有非零解（因为变量个数为 $n$，方程个数为 $q + n - p < n$）：
+
+$$
+\begin{cases}
+b_{11}y_1 + b_{12}y_2 + \cdots + b_{1n}y_n = 0 \\
+\quad \vdots \\
+b_{q1}y_1 + b_{q2}y_2 + \cdots + b_{qn}y_n = 0 \\
+y_{p+1} = 0 \\
+\quad \vdots \\
+y_n = 0
+\end{cases}
+$$
+
+设上述方程组的非零解为 $\boldsymbol{y}^* = (y_1^*, \cdots, y_p^*, 0, \cdots, 0)^\mathrm{T}$（注意方程组的后 $n - p$ 个方程，要求 $y_{p+1} = \cdots = y_n = 0$）。
+
+令 $\boldsymbol{z}^* = \boldsymbol{P}^{-1}\boldsymbol{C}\boldsymbol{y}^*$，即
+
+$$
+\boldsymbol{z}^* = \begin{pmatrix} b_{11} & b_{12} & \cdots & b_{1n} \\ \vdots & \vdots & & \vdots \\ b_{q1} & b_{q2} & \cdots & b_{qn} \\ b_{q+1, 1} & b_{q+1, 2} & \cdots & b_{q+1, n} \\ \vdots & \vdots & & \vdots \\ b_{n1} & b_{n2} & \cdots & b_{nn} \end{pmatrix} \begin{pmatrix} y_1^* \\ \vdots \\ y_p^* \\ 0 \\ \vdots \\ 0 \end{pmatrix}
+$$
+
+因为 $\boldsymbol{y}^* = (y_1^*, \cdots, y_p^*, 0, \cdots, 0)^\mathrm{T}$ 是上述方程组的非零解，所以 $\boldsymbol{z}^*$ 的前 $q$ 个分量为零，设 $\boldsymbol{z}^* = (0, \cdots, 0, z_{q+1}^*, \cdots, z_n^*)^\mathrm{T}$。
+
+再令 $\boldsymbol{x}^* = \boldsymbol{C}\boldsymbol{y}^* = \boldsymbol{P}\boldsymbol{z}^*$，由 $f$ 在 $\boldsymbol{x} = \boldsymbol{C}\boldsymbol{y}$ 与 $\boldsymbol{x} = \boldsymbol{P}\boldsymbol{z}$ 下的标准形可得：一方面，
+
+$$
+(\boldsymbol{x}^*)^\mathrm{T}\boldsymbol{A}\boldsymbol{x}^* = (y_1^*)^2 + (y_2^*)^2 + \cdots + (y_p^*)^2 > 0
+$$
+
+另一方面，
+
+$$
+(\boldsymbol{x}^*)^\mathrm{T}\boldsymbol{A}\boldsymbol{x}^* = -(z_{q+1}^*)^2 - (z_{q+2}^*)^2 - \cdots - (z_r^*)^2 \le 0
+$$
+
+由 $(\boldsymbol{x}^*)^\mathrm{T}\boldsymbol{A}\boldsymbol{x}^* > 0$ 与 $(\boldsymbol{x}^*)^\mathrm{T}\boldsymbol{A}\boldsymbol{x}^* \le 0$ 导出矛盾。故假设 $p > q$ 不成立。同理也不可能有 $p < q$。所以必有 $p = q$。
+
+定理得证。
+
+</Solution>
+
+<Knowledge title="定义 13 正负惯性指数与符号差">
+
+设 $n$ 元实二次型 $f = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x}$ 的秩为 $r$（即 $r(\boldsymbol{A}) = r$），$f = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x}$ 的规范形为
+
+$$
+f = z_1^2 + \cdots + z_p^2 - z_{p+1}^2 - \cdots - z_r^2
+$$
+
+称 $p$ 为二次型 $f$（或矩阵 $\boldsymbol{A}$）的**正惯性指数**，称 $r - p$ 为 $f$（或矩阵 $\boldsymbol{A}$）的**负惯性指数**，$p - (r - p) = 2p - r$ 称为 $f$（或矩阵 $\boldsymbol{A}$）的**符号差**。
+
+</Knowledge>
+
+给定二次型 $f = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x}$ 以后，$f$ 的秩 $r$ 与正惯性指数 $p$ 都是唯一确定的，因此 $f$ 的规范形也就唯一确定了（不计系数 $1, -1, 0$ 的排列次序）。换成矩阵的语言来说，对于任意一个 $n$ 阶实对称矩阵 $\boldsymbol{A}$，设 $\boldsymbol{A}$ 的秩为 $r$，正惯性指数为 $p$，则存在 $n$ 阶可逆矩阵 $\boldsymbol{P}$ 使得
+
+$$
+\boldsymbol{P}^\mathrm{T}\boldsymbol{A}\boldsymbol{P} = \widetilde{\boldsymbol{A}} = \operatorname{diag}(\underbrace{1, \cdots, 1}_{p\text{ 个}}, \underbrace{-1, \cdots, -1}_{r - p\text{ 个}}, \underbrace{0, \cdots, 0}_{n - r\text{ 个}})
+$$
+
+其中 $1, -1, 0$ 的个数分别为 $p, r - p, n - r$。在不计 $1, -1, 0$ 排列次序的意义下，$\widetilde{\boldsymbol{A}}$ 是由 $\boldsymbol{A}$ 唯一确定的，称 $\widetilde{\boldsymbol{A}}$ 为 $\boldsymbol{A}$ 的**合同规范形**。于是有下面的定理 9。
+
+<Knowledge title="定理 9 实对称矩阵合同充要条件">
+
+对称矩阵 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 合同当且仅当它们有相同的秩和相同的正惯性指数。
+
+</Knowledge>
+
+<Solution title="证明">
+
+**必要性**：设 $\boldsymbol{A}$ 的秩为 $r$，正惯性指数为 $p$，则 $\boldsymbol{A}$ 与
+
+$$
+\widetilde{\boldsymbol{A}} = \operatorname{diag}(\underbrace{1, \cdots, 1}_{p\text{ 个}}, \underbrace{-1, \cdots, -1}_{r - p\text{ 个}}, \underbrace{0, \cdots, 0}_{n - r\text{ 个}})
+$$
+
+合同，其中 $1, -1, 0$ 的个数分别为 $p, r - p, n - r$。已知 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 合同，因为矩阵的合同关系是等价关系，所以 $\boldsymbol{B}$ 也与 $\widetilde{\boldsymbol{A}}$ 合同，故 $\boldsymbol{B}$ 的秩为 $r$，正惯性指数为 $p$。
+
+**充分性**：设 $n$ 阶对称矩阵 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 有相同的秩 $r$ 和相同的正惯性指数 $p$。则 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 都与
+
+$$
+\widetilde{\boldsymbol{A}} = \operatorname{diag}(\underbrace{1, \cdots, 1}_{p\text{ 个}}, \underbrace{-1, \cdots, -1}_{r - p\text{ 个}}, \underbrace{0, \cdots, 0}_{n - r\text{ 个}})
+$$
+
+合同，其中 $1, -1, 0$ 的个数分别为 $p, r - p, n - r$。因此 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 一定合同。
+
+</Solution>
+
+<Example title="例 17 矩阵合同判断">
+
+在以下四个矩阵中，哪些是合同矩阵？哪些不是合同矩阵？
+
+$$
+\boldsymbol{A} = \begin{pmatrix} -1 & 0 & 0 \\ 0 & 3 & 0 \\ 0 & 0 & -2 \end{pmatrix}, \quad \boldsymbol{B} = \begin{pmatrix} -1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \end{pmatrix}
+$$
+
+$$
+\boldsymbol{C} = \begin{pmatrix} 1 & 0 & 0 \\ 0 & -2 & 0 \\ 0 & 0 & -3 \end{pmatrix}, \quad \boldsymbol{D} = \begin{pmatrix} 3 & 0 & 0 \\ 0 & 2 & 0 \\ 0 & 0 & -5 \end{pmatrix}
+$$
+
+</Example>
+
+<Solution title="解">
+
+这四个方阵的秩都同为 $3$。
+
+因为 $\boldsymbol{A}$ 与 $\boldsymbol{C}$ 的正惯性指数同为 $1$（负惯性指数为 $2$），所以 $\boldsymbol{A}$ 与 $\boldsymbol{C}$ 合同。
+
+$\boldsymbol{B}$ 与 $\boldsymbol{D}$ 的正惯性指数同为 $2$（负惯性指数为 $1$），所以 $\boldsymbol{B}$ 与 $\boldsymbol{D}$ 合同。
+
+但 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 的正惯性指数不同，故 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 不是合同矩阵。
+
+</Solution>
+
+<Example title="例 18 求二次型的规范形与合同规范形">
+
+设二次型 $f(x_1, x_2, x_3)$ 的矩阵为
+
+$$
+\boldsymbol{A} = \begin{pmatrix} 1 & -1 & 3 \\ -1 & 2 & -2 \\ 3 & -2 & 4 \end{pmatrix}
+$$
+
+(1) 求 $f$ 的规范形；
+
+(2) 求 $\boldsymbol{A}$ 的合同规范形。
+
+</Example>
+
+<Solution title="解">
+
+(1) 写出二次型表达式：
+
+$$
+f(x_1, x_2, x_3) = x_1^2 + 2x_2^2 + 4x_3^2 - 2x_1x_2 + 6x_1x_3 - 4x_2x_3
+$$
+
+用配方法将 $f$ 化为平方和差：
+
+$$
+\begin{aligned}
+f &= (x_1^2 - 2x_1x_2 + 6x_1x_3) + 2x_2^2 + 4x_3^2 - 4x_2x_3 \\
+&= (x_1 - x_2 + 3x_3)^2 - (x_2 - 3x_3)^2 + 2x_2^2 + 4x_3^2 - 4x_2x_3 \\
+&= (x_1 - x_2 + 3x_3)^2 + x_2^2 + 2x_2x_3 - 5x_3^2 \\
+&= (x_1 - x_2 + 3x_3)^2 + (x_2 + x_3)^2 - 6x_3^2
+\end{aligned}
+$$
+
+$f$ 的秩为 $3$，正惯性指数为 $2$，负惯性指数为 $1$。
+
+所以 $f$ 的规范形为
+
+$$
+f = z_1^2 + z_2^2 - z_3^2
+$$
+
+(2) $\boldsymbol{A}$ 的合同规范形为
+
+$$
+\widetilde{\boldsymbol{A}} = \operatorname{diag}(1, 1, -1)
+$$
+
+</Solution>
+
+<SideNote title="实对称矩阵的分类">
+
+如果按合同规范形对实对称矩阵进行分类，即将合同规范形相同的实对称矩阵看成是同一类的，而合同规范形不同的实对称矩阵看成是不同类的，则有多少种合同规范形，就有多少类实对称矩阵。
+
+因为合同规范形完全由其秩与正惯性指数确定，秩为 $r$ 的合同规范形，它的正惯性指数可以为 $0, 1, 2, \cdots, r$，所以秩为 $r$ 的合同规范形有 $r + 1$ 个 ($0 \le r \le n$)。于是 $n$ 阶实对称矩阵的合同规范形共有
+
+$$
+1 + 2 + \cdots + (n + 1) = \frac{(n + 1)(n + 2)}{2} \text{ 个}
+$$
+
+也就是说，$n$ 阶实对称矩阵共有 $\frac{(n + 1)(n + 2)}{2}$ 类。
+
+</SideNote>
+
+<ExerciseTrigger chapter={7} section="7.4" title="7.4 实二次型的规范形 课后真题与自测练习" />

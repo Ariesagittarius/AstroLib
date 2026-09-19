@@ -9,6 +9,7 @@
  * - 行级清爽排版：左标签 + 右控件，呼吸感留白，无任何嵌套多层边框卡片
  */
 import { listTypographyPresets } from '../../publishing/typography/presets/index.ts';
+import '../../styles/components/chapter-export.css';
 
 const typographyPresets = listTypographyPresets();
 
@@ -36,11 +37,14 @@ function cleanPresetName(name: string): string {
       <label class="row-label" for="chapter-export-format">导出格式</label>
       <div class="row-control">
         <md-outlined-select id="chapter-export-format" aria-label="导出格式">
-          <md-select-option value="pdf-local" selected>
-            <div slot="headline">本地 PDF</div>
+          <md-select-option value="print" selected>
+            <div slot="headline">网页打印 / 另存为 PDF</div>
           </md-select-option>
           <md-select-option value="pdf-cloud">
-            <div slot="headline">云端 PDF</div>
+            <div slot="headline">云端编译 PDF (GitHub Actions)</div>
+          </md-select-option>
+          <md-select-option value="pdf-local">
+            <div slot="headline">本地编译 PDF (XeLaTeX)</div>
           </md-select-option>
           <md-select-option value="tex">
             <div slot="headline">LaTeX 源码 (.tex)</div>
@@ -165,644 +169,58 @@ function cleanPresetName(name: string): string {
   </div>
 </md-dialog>
 
-<style>
-  /* 官方 M3 对话框外壳定制：纯净白底、极简圆角、统一平整无嵌套卡片 */
-  md-dialog#chapter-export-modal {
-    --md-dialog-container-shape: 20px;
-    --md-dialog-container-color: #ffffff;
-    max-width: 480px;
-    width: min(480px, calc(100vw - 2rem));
-    max-height: min(640px, calc(100vh - 48px));
-    z-index: var(--layer-dialog, 500);
-    margin: auto !important;
-  }
-
-  html[data-site-theme='material-you'][data-theme='light'] md-dialog#chapter-export-modal {
-    --md-dialog-container-color: #ffffff !important;
-  }
-
-  html[data-site-theme='material-you'][data-theme='dark'] md-dialog#chapter-export-modal {
-    --md-dialog-container-color: #1e1e24 !important;
-  }
-
-  /* 顶栏标题栏 */
-  .export-headline-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    gap: 1rem;
-    box-sizing: border-box;
-  }
-
-  .export-headline-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-
-  .export-headline-title {
-    font-family: var(--md-sys-typescale-title-large-font, sans-serif);
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--md-sys-color-on-surface, #1f1f1f);
-    margin: 0;
-    line-height: 1.3;
-  }
-
-  html[data-site-theme='material-you'][data-theme='dark'] .export-headline-title {
-    color: #e6e1e5;
-  }
-
-  .export-headline-subtitle {
-    font-family: var(--md-sys-typescale-body-medium-font, sans-serif);
-    font-size: 0.8125rem;
-    color: var(--md-sys-color-on-surface-variant, #444746);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  html[data-site-theme='material-you'][data-theme='dark'] .export-headline-subtitle {
-    color: #938f99;
-  }
-
-  .export-close-btn {
-    flex-shrink: 0;
-  }
-
-  /* 纯净流式表单：24px 左右内边距与 headline、actions 水平基准严格对齐 */
-  .chapter-export-dialog,
-  .export-form {
-    background: transparent !important;
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    padding: 8px 24px 16px !important;
-    margin: 0 !important;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .setting-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.25rem;
-  }
-
-  .row-label {
-    width: 76px;
-    flex-shrink: 0;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    color: var(--md-sys-color-on-surface-variant, #444746);
-  }
-
-  html[data-site-theme='material-you'][data-theme='dark'] .row-label {
-    color: #c4c6d0;
-  }
-
-  .row-control {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .row-control md-outlined-select {
-    width: 100%;
-    --md-outlined-field-container-shape: 10px;
-    --md-outlined-field-top-space: 12px;
-    --md-outlined-field-bottom-space: 12px;
-    --md-outlined-field-content-line-height: 1.5rem;
-    --md-outlined-field-content-size: 0.9375rem;
-  }
-
-  /* 云端 PAT 凭据输入组 */
-  .token-input-group {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 100%;
-  }
-
-  .token-input-group md-outlined-text-field {
-    flex: 1;
-    --md-outlined-field-container-shape: 10px;
-    --md-outlined-field-top-space: 12px;
-    --md-outlined-field-bottom-space: 12px;
-    --md-outlined-field-content-line-height: 1.5rem;
-    --md-outlined-field-content-size: 0.9375rem;
-  }
-
-  /* 进度指示条与状态 */
-  .export-progress-box {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.5rem 0 0;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .export-status-msg {
-    font-size: 0.8125rem;
-    color: var(--md-sys-color-primary, #60a5fa);
-    text-align: left;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  /* 底部按钮操作栏 */
-  .export-actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.6rem;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  /* 官方 Material Symbols 字体图标绑定 */
-  md-icon {
-    --md-icon-font: 'Material Symbols Outlined';
-    font-family: 'Material Symbols Outlined' !important;
-  }
-
-  /* 移动端视口自适应分流 */
-  @media (max-width: 480px) {
-    .setting-row {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 0.35rem;
-    }
-
-    .row-label {
-      width: auto;
-      font-size: 0.8rem;
-    }
-  }
-</style>
 
 <script>
-  import '@material/web/dialog/dialog.js';
-  import '@material/web/button/filled-button.js';
-  import '@material/web/button/outlined-button.js';
-  import '@material/web/button/filled-tonal-button.js';
-  import '@material/web/iconbutton/icon-button.js';
-  import '@material/web/icon/icon.js';
-  import '@material/web/select/outlined-select.js';
-  import '@material/web/select/select-option.js';
-  import '@material/web/textfield/outlined-text-field.js';
-  import '@material/web/progress/linear-progress.js';
+  let exportLoaded = false;
+  let exportLoading: Promise<any> | null = null;
 
-  import {
-    getStoredExportSettings,
-    saveStoredExportSettings,
-  } from '../../publishing/common/export-settings.ts';
-  import {
-    dispatchCompileWorkflow,
-    pollCompileResult,
-    getStoredCompilerConfig,
-    saveCompilerConfig,
-    generateJobId,
-  } from '../../utils/latex/latex-cloud-compiler.ts';
-  import { mountToOverlayRoot } from '../../utils/overlay/overlay-root.ts';
-
-  function setupChapterExport() {
-    const newModal = document.getElementById('chapter-export-modal');
-    if (!newModal) return;
-
-    // 清理 overlay root / body 中残留的旧 modal，防止多实例与 DOM 泄漏
-    const existingModals = document.querySelectorAll('#astro-overlay-root > #chapter-export-modal, body > #chapter-export-modal');
-    existingModals.forEach((el) => {
-      if (el !== newModal) el.remove();
-    });
-
-    // Portal 挂载至全站 overlay root
-    mountToOverlayRoot(newModal);
-    const modal = newModal as any;
-
-    function ensureDialogCentered(targetModal: HTMLElement) {
-      const target = targetModal as any;
-      if (typeof target.getOpenAnimation === 'function') {
-        target.getOpenAnimation = () => ({
-          dialog: [
-            [
-              [{ opacity: 0, transform: 'scale(0.96) translateY(-8px)' }, { opacity: 1, transform: 'scale(1) translateY(0)' }],
-              { duration: 160, easing: 'cubic-bezier(0.1, 0.9, 0.2, 1)' },
-            ],
-          ],
-          scrim: [
-            [
-              [{ opacity: 0 }, { opacity: 0.32 }],
-              { duration: 160, easing: 'linear' },
-            ],
-          ],
-        });
-        target.getCloseAnimation = () => ({
-          dialog: [
-            [
-              [{ opacity: 1, transform: 'scale(1) translateY(0)' }, { opacity: 0, transform: 'scale(0.96) translateY(-8px)' }],
-              { duration: 120, easing: 'cubic-bezier(0.4, 0, 1, 1)' },
-            ],
-          ],
-          scrim: [
-            [
-              [{ opacity: 0.32 }, { opacity: 0 }],
-              { duration: 120, easing: 'linear' },
-            ],
-          ],
+  async function activateExportModal() {
+    if (!exportLoaded) {
+      if (!exportLoading) {
+        exportLoading = import('../../publishing/client/chapter-export-controller').then((m) => {
+          exportLoaded = true;
+          return m;
         });
       }
-
-      const shadow = targetModal.shadowRoot;
-      if (!shadow) return;
-      const nativeDialog = shadow.querySelector('dialog');
-      if (nativeDialog) {
-        nativeDialog.style.margin = 'auto';
-        nativeDialog.style.inset = '0';
-      }
-      let style = shadow.querySelector('#m3-dialog-centering-style') as HTMLStyleElement | null;
-      if (!style) {
-        style = document.createElement('style');
-        style.id = 'm3-dialog-centering-style';
-        shadow.appendChild(style);
-      }
-      style.textContent = `
-        dialog {
-          margin: auto !important;
-          inset: 0 !important;
-          transform-origin: center center;
-        }
-        .scrim {
-          z-index: var(--layer-dialog, 500) !important;
-        }
-        ::backdrop {
-          background: rgba(0, 0, 0, 0.32) !important;
-        }
-        /* 锁定标题栏分割线常驻与内边距，彻底消除打开时异步计算导致的跳动 */
-        .headline md-divider {
-          display: flex !important;
-          position: absolute !important;
-          bottom: 0 !important;
-          left: 0 !important;
-          right: 0 !important;
-          width: 100% !important;
-          opacity: 1 !important;
-        }
-        slot[name=headline]::slotted(*) {
-          padding: 24px 24px 16px !important;
-        }
-      `;
-    }
-    ensureDialogCentered(newModal);
-
-    // 若当前 modal 已初始化绑定，仅同步章节标题并退出
-    if (modal.hasAttribute('data-initialized')) {
-      const h1 = document.querySelector('h1#_top') || document.querySelector('h1');
-      const title = h1 ? h1.textContent?.trim() || '当前章节' : '当前章节';
-      const nameEl = modal.querySelector('#export-chapter-name');
-      if (nameEl) nameEl.textContent = title;
-      return;
-    }
-    modal.setAttribute('data-initialized', 'true');
-
-    const chapterNameEl = modal.querySelector('#export-chapter-name');
-    const statusBox = modal.querySelector('#export-progress-container') as HTMLElement | null;
-    const statusText = modal.querySelector('#export-status-text');
-
-    const selectFormat = modal.querySelector('#chapter-export-format') as any;
-    const selectTypography = modal.querySelector('#chapter-typography') as any;
-    const selectSidenoteMode = modal.querySelector('#chapter-sidenote-mode') as any;
-    const selectFontSize = modal.querySelector('#chapter-font-size') as any;
-    const selectPaperSize = modal.querySelector('#chapter-paper-size') as any;
-
-    // 历史兼容隐藏选择项 (保持与契约测试与底层存储同步)
-    const selectCjkFont = modal.querySelector('#chapter-cjk-font') as HTMLSelectElement | null;
-    const selectMathFont = modal.querySelector('#chapter-math-font') as HTMLSelectElement | null;
-
-    const cloudTokenRow = modal.querySelector('#cloud-token-row') as HTMLElement | null;
-    const inputToken = modal.querySelector('#input-gh-token') as any;
-    const btnSaveToken = modal.querySelector('#btn-save-token') as any;
-    const btnMainExport = modal.querySelector('#btn-main-export') as any;
-
-    // 历史按钮钩子 (保证旧自动化脚本调用不报错)
-    const btnTex = modal.querySelector('#btn-export-tex') as HTMLElement | null;
-    const btnZip = modal.querySelector('#btn-export-zip') as HTMLElement | null;
-    const btnPdf = modal.querySelector('#btn-export-pdf') as HTMLElement | null;
-    const btnCloudPdf = modal.querySelector('#btn-export-cloud-pdf') as HTMLElement | null;
-
-    // 1. 初始化并加载排版偏好设置
-    const initialSettings = getStoredExportSettings();
-    if (selectTypography && initialSettings.typography) selectTypography.value = initialSettings.typography;
-    if (selectSidenoteMode && initialSettings.sidenoteMode) selectSidenoteMode.value = initialSettings.sidenoteMode;
-    if (selectCjkFont && initialSettings.cjkFont) selectCjkFont.value = initialSettings.cjkFont;
-    if (selectMathFont && initialSettings.mathFont) selectMathFont.value = initialSettings.mathFont;
-    if (selectFontSize && initialSettings.fontSize) selectFontSize.value = String(initialSettings.fontSize);
-    if (selectPaperSize && initialSettings.paperSize) selectPaperSize.value = initialSettings.paperSize;
-
-    function onSettingsChange() {
-      const typography = (selectTypography?.value || 'scholarly') as any;
-      const sidenoteMode = (selectSidenoteMode?.value || 'inline') as any;
-      const fontSize = parseFloat(selectFontSize?.value || '11') as any;
-      const paperSize = (selectPaperSize?.value || 'a4') as any;
-      saveStoredExportSettings({ typography, sidenoteMode, fontSize, paperSize });
-    }
-
-    selectTypography?.addEventListener('change', onSettingsChange);
-    selectTypography?.addEventListener('input', onSettingsChange);
-    selectSidenoteMode?.addEventListener('change', onSettingsChange);
-    selectSidenoteMode?.addEventListener('input', onSettingsChange);
-    selectFontSize?.addEventListener('change', onSettingsChange);
-    selectFontSize?.addEventListener('input', onSettingsChange);
-    selectPaperSize?.addEventListener('change', onSettingsChange);
-    selectPaperSize?.addEventListener('input', onSettingsChange);
-
-    // 2. 导出格式切换联动云端 Token 行展示
-    function updateFormatUi() {
-      const isCloud = selectFormat?.value === 'pdf-cloud';
-      if (cloudTokenRow) {
-        cloudTokenRow.style.display = isCloud ? 'flex' : 'none';
-        if (isCloud && inputToken && !inputToken.value) {
-          inputToken.focus();
-        }
+      const m = await exportLoading;
+      m.openChapterExportModal?.();
+    } else {
+      const modal = document.getElementById('chapter-export-modal') as any;
+      if (modal && typeof modal.show === 'function') {
+        modal.show();
       }
     }
-    selectFormat?.addEventListener('change', updateFormatUi);
-    selectFormat?.addEventListener('input', updateFormatUi);
-
-    // 加载已保存的 GitHub PAT 凭据
-    const cloudCfg = getStoredCompilerConfig();
-    if (inputToken && cloudCfg.token) {
-      inputToken.value = cloudCfg.token;
-    }
-
-    btnSaveToken?.addEventListener('click', () => {
-      const tokenVal = inputToken?.value?.trim() || '';
-      saveCompilerConfig({ token: tokenVal });
-      if (statusBox && statusText) {
-        statusBox.style.display = 'flex';
-        statusText.textContent = tokenVal ? '已保存凭据' : '已清除凭据';
-        setTimeout(() => {
-          if (statusBox) statusBox.style.display = 'none';
-        }, 2200);
-      }
-    });
-
-    // 3. 模态窗状态控制与键盘支持
-    function openModal() {
-      const activeModal = document.getElementById('chapter-export-modal') as any;
-      if (!activeModal) return;
-      const h1 = document.querySelector('h1#_top') || document.querySelector('h1');
-      const title = h1 ? h1.textContent?.trim() || '当前章节' : '当前章节';
-      const nameEl = activeModal.querySelector('#export-chapter-name');
-      if (nameEl) nameEl.textContent = title;
-
-      ensureDialogCentered(activeModal);
-      activeModal.classList.add('open');
-      activeModal.setAttribute('aria-hidden', 'false');
-      if (typeof activeModal.show === 'function') {
-        activeModal.show();
-      } else {
-        activeModal.open = true;
-      }
-      ensureDialogCentered(activeModal);
-      updateFormatUi();
-    }
-
-    function closeModal() {
-      const activeModal = document.getElementById('chapter-export-modal') as any;
-      if (!activeModal) return;
-      if (typeof activeModal.close === 'function') {
-        activeModal.close();
-      } else {
-        activeModal.open = false;
-        activeModal.classList.remove('open');
-        activeModal.setAttribute('aria-hidden', 'true');
-      }
-      const prog = activeModal.querySelector('#export-progress-container') as HTMLElement | null;
-      if (prog) prog.style.display = 'none';
-    }
-
-    modal.querySelectorAll('[data-close-export-modal]').forEach((btn: Element) => {
-      btn.addEventListener('click', closeModal);
-    });
-
-    modal.addEventListener('closed', () => {
-      modal.classList.remove('open');
-      modal.setAttribute('aria-hidden', 'true');
-      const prog = modal.querySelector('#export-progress-container') as HTMLElement | null;
-      if (prog) prog.style.display = 'none';
-    });
-
-    modal.addEventListener('cancel', () => {
-      modal.classList.remove('open');
-      modal.setAttribute('aria-hidden', 'true');
-    });
-
-    // 全局快捷键与触发器单例守卫绑定
-    if (!(window as any).__astrolib_chapter_export_bound) {
-      (window as any).__astrolib_chapter_export_bound = true;
-
-      document.addEventListener('keydown', (e) => {
-        const activeModal = document.getElementById('chapter-export-modal') as any;
-        if ((e.altKey && (e.key === 'x' || e.key === 'X')) || (e.ctrlKey && e.altKey && (e.key === 'x' || e.key === 'X'))) {
-          e.preventDefault();
-          openModal();
-        } else if (e.key === 'Escape' && activeModal?.open) {
-          closeModal();
-        }
-      });
-
-      document.addEventListener('click', (e) => {
-        const trigger = (e.target as HTMLElement)?.closest('[data-chapter-export-trigger]');
-        if (trigger) {
-          e.preventDefault();
-          openModal();
-        }
-      });
-    }
-
-    // 4. 通用下载触发器 (.tex / .zip / 本地 .pdf)
-    async function triggerDownload(format: 'tex' | 'zip' | 'pdf', targetBtn: any) {
-      if (targetBtn) targetBtn.disabled = true;
-      if (statusBox && statusText) {
-        statusBox.style.display = 'flex';
-        statusText.textContent =
-          format === 'pdf'
-            ? '正在调用本地 XeLaTeX 执行双遍编译...'
-            : `正在生成 ${format.toUpperCase()} 产物...`;
-      }
-
-      const currentPath = decodeURI(window.location.pathname);
-      const typography = selectTypography?.value || 'scholarly';
-      const sidenoteMode = selectSidenoteMode?.value || getStoredExportSettings().sidenoteMode || 'inline';
-      const fontSize = selectFontSize?.value || '11';
-      const paperSize = selectPaperSize?.value || 'a4';
-
-      const downloadUrl = `/__chapter_export__/export?pathname=${encodeURIComponent(currentPath)}&format=${format}&typography=${encodeURIComponent(typography)}&sidenoteMode=${encodeURIComponent(sidenoteMode)}&fontSize=${encodeURIComponent(fontSize)}&paperSize=${encodeURIComponent(paperSize)}`;
-
-      try {
-        const resp = await fetch(downloadUrl);
-        if (!resp.ok) {
-          const errData = await resp.json().catch(() => ({}));
-          throw new Error(errData.message || `导出失败 (HTTP ${resp.status})`);
-        }
-
-        const disposition = resp.headers.get('content-disposition') || '';
-        let filename = `chapter_${Date.now()}.${format}`;
-        const match = disposition.match(/filename\*=UTF-8''([^;]+)|filename="([^"]+)"/);
-        if (match) {
-          filename = decodeURIComponent(match[1] || match[2]);
-        }
-
-        const blob = await resp.blob();
-        const objectUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = objectUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(objectUrl);
-
-        if (statusBox && statusText) {
-          statusText.textContent = `${filename} 已生成并开始下载`;
-          setTimeout(() => {
-            if (statusBox) statusBox.style.display = 'none';
-          }, 3500);
-        }
-      } catch (err: any) {
-        console.error('[chapter-export] 下载异常:', err);
-        if (statusBox && statusText) {
-          statusText.textContent = `导出失败: ${err.message || '服务不可用'}`;
-        }
-      } finally {
-        if (targetBtn) targetBtn.disabled = false;
-      }
-    }
-
-    // 5. 云端 GitHub Actions 编译 PDF 流程
-    async function triggerCloudPdf(targetBtn: any) {
-      const storedCfg = getStoredCompilerConfig();
-      if (!storedCfg.token) {
-        if (cloudTokenRow) {
-          cloudTokenRow.style.display = 'flex';
-          if (inputToken) inputToken.focus();
-        }
-        if (statusBox && statusText) {
-          statusBox.style.display = 'flex';
-          statusText.textContent = '请先配置具备 actions:write 权限的 GitHub PAT 凭据';
-        }
-        return;
-      }
-
-      if (targetBtn) targetBtn.disabled = true;
-      if (statusBox && statusText) {
-        statusBox.style.display = 'flex';
-        statusText.textContent = '正在获取当前章节 LaTeX 源码...';
-      }
-
-      try {
-        const currentPath = decodeURI(window.location.pathname);
-        const typography = selectTypography?.value || 'scholarly';
-        const sidenoteMode = selectSidenoteMode?.value || getStoredExportSettings().sidenoteMode || 'inline';
-        const fontSize = selectFontSize?.value || '11';
-        const paperSize = selectPaperSize?.value || 'a4';
-
-        const texUrl = `/__chapter_export__/export?pathname=${encodeURIComponent(currentPath)}&format=tex&typography=${encodeURIComponent(typography)}&sidenoteMode=${encodeURIComponent(sidenoteMode)}&fontSize=${encodeURIComponent(fontSize)}&paperSize=${encodeURIComponent(paperSize)}`;
-
-        const texResp = await fetch(texUrl);
-        if (!texResp.ok) {
-          throw new Error('获取本章 LaTeX 源码失败');
-        }
-        const latexSource = await texResp.text();
-
-        const jobId = generateJobId();
-        const safeChapterTitle = (chapterNameEl?.textContent || 'chapter').replace(/[^\w\u4e00-\u9fa5\-]/g, '_');
-        const pdfFilename = `${safeChapterTitle}.pdf`;
-
-        if (statusText) statusText.textContent = '正在调度 GitHub Actions 云端编译工作流...';
-
-        await dispatchCompileWorkflow(
-          jobId,
-          latexSource,
-          pdfFilename,
-          storedCfg,
-          (log) => {
-            if (statusText) statusText.textContent = log;
-          }
-        );
-
-        if (statusText) statusText.textContent = 'GitHub Actions 排队与编译中...';
-
-        const pdfUrl = await pollCompileResult(
-          jobId,
-          pdfFilename,
-          storedCfg,
-          (state) => {
-            if (statusText) {
-              statusText.textContent = `[${state.progress}%] ${state.statusText} (${state.elapsedSeconds}s)`;
-            }
-          }
-        );
-
-        if (pdfUrl) {
-          if (statusText) statusText.textContent = '云端编译完成，正在下载 PDF...';
-          const a = document.createElement('a');
-          a.href = pdfUrl;
-          a.download = pdfFilename;
-          a.target = '_blank';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-
-          setTimeout(() => {
-            if (statusBox) statusBox.style.display = 'none';
-          }, 4000);
-        } else {
-          throw new Error('云端编译超时或未生成 PDF');
-        }
-      } catch (err: any) {
-        console.error('[chapter-export] 云端编译失败:', err);
-        if (statusBox && statusText) {
-          statusText.textContent = `云端编译失败: ${err.message || '未知错误'}`;
-        }
-      } finally {
-        if (targetBtn) targetBtn.disabled = false;
-      }
-    }
-
-    // 6. 统一由右下角主按钮触发导出
-    btnMainExport?.addEventListener('click', () => {
-      const fmt = selectFormat?.value || 'pdf-local';
-      if (fmt === 'pdf-cloud') {
-        triggerCloudPdf(btnMainExport);
-      } else if (fmt === 'tex') {
-        triggerDownload('tex', btnMainExport);
-      } else if (fmt === 'zip') {
-        triggerDownload('zip', btnMainExport);
-      } else {
-        triggerDownload('pdf', btnMainExport);
-      }
-    });
-
-    // 历史按钮钩子联动 (向后兼容)
-    btnTex?.addEventListener('click', () => triggerDownload('tex', btnMainExport));
-    btnZip?.addEventListener('click', () => triggerDownload('zip', btnMainExport));
-    btnPdf?.addEventListener('click', () => triggerDownload('pdf', btnMainExport));
-    btnCloudPdf?.addEventListener('click', () => triggerCloudPdf(btnMainExport));
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupChapterExport);
-  } else {
-    setupChapterExport();
-  }
-  document.addEventListener('astro:page-load', setupChapterExport);
+  // 鼠标悬停预热
+  document.addEventListener(
+    'pointerenter',
+    (e) => {
+      if (exportLoaded || exportLoading) return;
+      const target = e.target instanceof Element ? e.target : (e.target as Node | null)?.parentElement;
+      if (target?.closest?.('[data-chapter-export-trigger]')) {
+        import('../../publishing/client/chapter-export-controller');
+      }
+    },
+    { capture: true, passive: true }
+  );
+
+  document.addEventListener('click', (e) => {
+    const target = e.target instanceof Element ? e.target : (e.target as Node | null)?.parentElement;
+    if (target?.closest?.('[data-chapter-export-trigger]')) {
+      e.preventDefault();
+      activateExportModal();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.altKey && (e.key === 'x' || e.key === 'X')) || (e.ctrlKey && e.altKey && (e.key === 'x' || e.key === 'X'))) {
+      e.preventDefault();
+      activateExportModal();
+    }
+  });
+
+  window.addEventListener('chapter-export:open', () => {
+    activateExportModal();
+  });
 </script>

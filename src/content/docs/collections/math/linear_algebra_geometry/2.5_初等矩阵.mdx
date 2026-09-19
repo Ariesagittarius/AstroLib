@@ -1,0 +1,287 @@
+---
+title: '2.5 初等矩阵'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+引进初等矩阵的目的，是用矩阵乘法来精确描述矩阵的初等变换，从而将动态的几何/消元变换操作转化为静态的代数运算法则。本节将系统定义三类初等矩阵，建立初等变换与初等矩阵相乘的基本定理，揭示可逆矩阵与初等矩阵的内在构造联系，并导出计算逆矩阵极为简捷实用的“初等行变换求逆法”。
+
+## 一、初等矩阵的概念与三类基本形式
+
+<Knowledge title="定义 14 初等矩阵">
+
+由单位矩阵 $\boldsymbol{E}$ 经过一次初等变换得到的矩阵称为**初等矩阵**。
+
+对 $n$ 阶单位矩阵 $\boldsymbol{E}$ 施行三种初等变换，分别得到以下三类 $n$ 阶初等矩阵：
+
+1. **对换初等矩阵 $\boldsymbol{P}_{ij}$**：交换单位矩阵 $\boldsymbol{E}$ 的第 $i, j$ 两行（或列）（$i \neq j$）：
+
+$$
+\boldsymbol{P}_{ij} = \begin{pmatrix}
+1 & & & & & & \\
+& \ddots & & & & & \\
+& & 0 & \cdots & 1 & & \\
+& & \vdots & \ddots & \vdots & & \\
+& & 1 & \cdots & 0 & & \\
+& & & & & \ddots & \\
+& & & & & & 1
+\end{pmatrix} \begin{matrix} {} \\ {} \\ i\text{ 行} \\ {} \\ j\text{ 行} \\ {} \\ {} \end{matrix};
+$$
+
+2. **数乘初等矩阵 $\boldsymbol{D}_i(k)$**：用非零常数 $k$（$k \neq 0$）乘单位矩阵 $\boldsymbol{E}$ 的第 $i$ 行（或列）：
+
+$$
+\boldsymbol{D}_i(k) = \begin{pmatrix}
+1 & & & & \\
+& \ddots & & & \\
+& & k & & \\
+& & & \ddots & \\
+& & & & 1
+\end{pmatrix} \begin{matrix} {} \\ {} \\ i\text{ 行} \\ {} \\ {} \end{matrix};
+$$
+
+3. **倍加初等矩阵 $\boldsymbol{T}_{ij}(k)$**：将单位矩阵 $\boldsymbol{E}$ 的第 $j$ 行的 $k$ 倍加到第 $i$ 行上（或将第 $i$ 列的 $k$ 倍加到第 $j$ 列上）：
+
+$$
+\boldsymbol{T}_{ij}(k) = \begin{pmatrix}
+1 & & & & & \\
+& \ddots & & & & \\
+& & 1 & \cdots & k & \\
+& & & \ddots & \vdots & \\
+& & & & 1 & \\
+& & & & & \ddots
+\end{pmatrix} \begin{matrix} {} \\ {} \\ i\text{ 行} \\ {} \\ j\text{ 行} \\ {} \end{matrix}.
+$$
+
+以上初等矩阵中，未写出的空白处元素均为 $0$。
+
+</Knowledge>
+
+<SideNote title="初等矩阵记号来源与行列式">
+
+三类初等矩阵的记号分别取自：
+- $\boldsymbol{P}$：Permutation（置换 / 对换）；
+- $\boldsymbol{D}$：Diagonal（对角形）；
+- $\boldsymbol{T}$：Triangular（三角形）。
+
+利用行列式的性质容易算出三类初等矩阵的行列式：
+
+$$
+|\boldsymbol{P}_{ij}| = -1, \quad |\boldsymbol{D}_i(k)| = k \neq 0, \quad |\boldsymbol{T}_{ij}(k)| = 1.
+$$
+
+由此可知，三类初等矩阵的行列式均非零，因此**所有初等矩阵都是可逆矩阵**。
+
+其逆矩阵仍为同类型的初等矩阵：
+
+$$
+\boldsymbol{P}_{ij}^{-1} = \boldsymbol{P}_{ij}, \quad \boldsymbol{D}_i(k)^{-1} = \boldsymbol{D}_i\left(\frac{1}{k}\right), \quad \boldsymbol{T}_{ij}(k)^{-1} = \boldsymbol{T}_{ij}(-k).
+$$
+
+</SideNote>
+
+## 二、初等变换与初等矩阵相乘的对应定理
+
+考察初等矩阵乘一般矩阵 $\boldsymbol{A} = \begin{pmatrix} a & b \\ c & d \end{pmatrix}$ 的效果：
+
+$$
+\begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix}\begin{pmatrix} a & b \\ c & d \end{pmatrix} = \begin{pmatrix} c & d \\ a & b \end{pmatrix}, \quad \begin{pmatrix} a & b \\ c & d \end{pmatrix}\begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix} = \begin{pmatrix} b & a \\ d & c \end{pmatrix};
+$$
+
+$$
+\begin{pmatrix} k & 0 \\ 0 & 1 \end{pmatrix}\begin{pmatrix} a & b \\ c & d \end{pmatrix} = \begin{pmatrix} ka & kb \\ c & d \end{pmatrix}, \quad \begin{pmatrix} a & b \\ c & d \end{pmatrix}\begin{pmatrix} k & 0 \\ 0 & 1 \end{pmatrix} = \begin{pmatrix} ka & b \\ kc & d \end{pmatrix};
+$$
+
+$$
+\begin{pmatrix} 1 & k \\ 0 & 1 \end{pmatrix}\begin{pmatrix} a & b \\ c & d \end{pmatrix} = \begin{pmatrix} a + kc & b + kd \\ c & d \end{pmatrix}, \quad \begin{pmatrix} a & b \\ c & d \end{pmatrix}\begin{pmatrix} 1 & k \\ 0 & 1 \end{pmatrix} = \begin{pmatrix} a & ka + b \\ c & kc + d \end{pmatrix}.
+$$
+
+一般地，可以严格验证初等矩阵具有如下作用法则：
+1. $\boldsymbol{P}_{ij}$ 左（右）乘 $\boldsymbol{A}$，即互换 $\boldsymbol{A}$ 的第 $i$ 行（列）和第 $j$ 行（列）；
+2. $\boldsymbol{D}_i(k)$ 左（右）乘 $\boldsymbol{A}$，即用非零常数 $k$ 乘 $\boldsymbol{A}$ 的第 $i$ 行（列）；
+3. $\boldsymbol{T}_{ij}(k)$ 左乘 $\boldsymbol{A}$，即把 $\boldsymbol{A}$ 中第 $j$ 行的 $k$ 倍加到第 $i$ 行上去；$\boldsymbol{T}_{ij}(k)$ 右乘 $\boldsymbol{A}$，即把 $\boldsymbol{A}$ 中第 $i$ 列的 $k$ 倍加到第 $j$ 列上去。
+
+综上所述，可得如下基本定理：
+
+<Knowledge title="定理 4 初等变换与初等矩阵相乘定理">
+
+设 $\boldsymbol{A}$ 是一个 $m \times n$ 矩阵：
+1. 对 $\boldsymbol{A}$ 施行一次初等行变换，相当于在 $\boldsymbol{A}$ 的左边乘上相应的 $m$ 阶初等矩阵；
+2. 对 $\boldsymbol{A}$ 施行一次初等列变换，相当于在 $\boldsymbol{A}$ 的右边乘上相应的 $n$ 阶初等矩阵。
+
+</Knowledge>
+
+## 三、矩阵的因子分解与等价矩阵的可逆表述
+
+由定理 4 可知，对矩阵 $\boldsymbol{A}$ 施行若干次初等行、列变换将其化为等价标准形，相当于在 $\boldsymbol{A}$ 的左边和右边分别乘上有限个初等矩阵：
+
+$$
+\boldsymbol{P}_t \cdots \boldsymbol{P}_2 \boldsymbol{P}_1 \boldsymbol{A} \boldsymbol{Q}_1 \boldsymbol{Q}_2 \cdots \boldsymbol{Q}_s = \begin{pmatrix}
+\boldsymbol{E}_r & \boldsymbol{O} \\
+\boldsymbol{O} & \boldsymbol{O}
+\end{pmatrix}.
+$$
+
+令 $\boldsymbol{P} = \boldsymbol{P}_t \cdots \boldsymbol{P}_2 \boldsymbol{P}_1$，$\boldsymbol{Q} = \boldsymbol{Q}_1 \boldsymbol{Q}_2 \cdots \boldsymbol{Q}_s$。由初等矩阵的可逆性知，$\boldsymbol{P}$ 和 $\boldsymbol{Q}$ 均为可逆矩阵，上式即为
+
+$$
+\boldsymbol{P}\boldsymbol{A}\boldsymbol{Q} = \begin{pmatrix}
+\boldsymbol{E}_r & \boldsymbol{O} \\
+\boldsymbol{O} & \boldsymbol{O}
+\end{pmatrix}. \tag{2.14}
+$$
+
+<Knowledge title="定理 5 矩阵的等价标准形分解定理">
+
+设 $\boldsymbol{A}$ 为 $m \times n$ 矩阵，则存在 $m$ 阶可逆矩阵 $\boldsymbol{P}$ 和 $n$ 阶可逆矩阵 $\boldsymbol{Q}$，使得
+
+$$
+\boldsymbol{P}\boldsymbol{A}\boldsymbol{Q} = \begin{pmatrix}
+\boldsymbol{E}_r & \boldsymbol{O} \\
+\boldsymbol{O} & \boldsymbol{O}
+\end{pmatrix},
+$$
+
+其中 $r = r(\boldsymbol{A})$。
+
+</Knowledge>
+
+<Knowledge title="定理 6 可逆矩阵的初等因子分解">
+
+方阵 $\boldsymbol{A}$ 可逆的充分必要条件是：$\boldsymbol{A}$ 可表示为有限个初等矩阵的乘积。
+
+</Knowledge>
+
+<Solution title="证明">
+
+**必要性**：若 $\boldsymbol{A}$ 是一个可逆的 $n$ 阶方阵，则 $r(\boldsymbol{A}) = n$，其等价标准形必为单位矩阵 $\boldsymbol{E}$。因此存在有限个初等矩阵 $\boldsymbol{Q}_1, \boldsymbol{Q}_2, \dots, \boldsymbol{Q}_l$，使得
+
+$$
+\boldsymbol{Q}_l \cdots \boldsymbol{Q}_2 \boldsymbol{Q}_1 \boldsymbol{A} = \boldsymbol{E}.
+$$
+
+等式两边依次左乘各初等矩阵的逆矩阵，得
+
+$$
+\boldsymbol{A} = \boldsymbol{Q}_1^{-1} \boldsymbol{Q}_2^{-1} \cdots \boldsymbol{Q}_l^{-1}.
+$$
+
+因为初等矩阵的逆仍是初等矩阵，记 $\boldsymbol{P}_i = \boldsymbol{Q}_i^{-1}$，则 $\boldsymbol{P}_i$ 均为初等矩阵，且
+
+$$
+\boldsymbol{A} = \boldsymbol{P}_1 \boldsymbol{P}_2 \cdots \boldsymbol{P}_l.
+$$
+
+**充分性**：初等矩阵均为可逆矩阵，有限个可逆矩阵的乘积必可逆，故 $\boldsymbol{A}$ 可逆。
+
+</Solution>
+
+<Knowledge title="推论 矩阵等价的充要条件">
+
+$m \times n$ 矩阵 $\boldsymbol{A} \cong \boldsymbol{B}$ 的充分必要条件是：存在 $m$ 阶可逆矩阵 $\boldsymbol{P}$ 和 $n$ 阶可逆矩阵 $\boldsymbol{Q}$，使得
+
+$$
+\boldsymbol{P}\boldsymbol{A}\boldsymbol{Q} = \boldsymbol{B}.
+$$
+
+</Knowledge>
+
+## 四、初等行变换求逆矩阵方法
+
+定理 6 提供了一种极其简便、适合计算机编程实现的逆矩阵求解算法——初等行变换求逆法。
+
+若 $\boldsymbol{A}$ 为 $n$ 阶可逆矩阵，则 $\boldsymbol{A}^{-1}$ 可表示为有限个初等矩阵的乘积：$\boldsymbol{A}^{-1} = \boldsymbol{P}_m \cdots \boldsymbol{P}_2 \boldsymbol{P}_1$。由 $\boldsymbol{A}^{-1}\boldsymbol{A} = \boldsymbol{E}$，就有
+
+$$
+(\boldsymbol{P}_m \cdots \boldsymbol{P}_2 \boldsymbol{P}_1)\boldsymbol{A} = \boldsymbol{E}, \quad (\boldsymbol{P}_m \cdots \boldsymbol{P}_2 \boldsymbol{P}_1)\boldsymbol{E} = \boldsymbol{A}^{-1}. \tag{2.15}
+$$
+
+式 (2.15) 中第一式表示 $\boldsymbol{A}$ 经过有限个初等行变换化为单位矩阵 $\boldsymbol{E}$；第二式表示单位矩阵 $\boldsymbol{E}$ 经过完全相同的这一连串初等行变换化为 $\boldsymbol{A}^{-1}$。
+
+把这两个式子并列在一起，写成构造增广矩阵的形式：
+
+$$
+(\boldsymbol{P}_m \cdots \boldsymbol{P}_2 \boldsymbol{P}_1)(\boldsymbol{A} \mid \boldsymbol{E}) = (\boldsymbol{E} \mid \boldsymbol{A}^{-1}). \tag{2.16}
+$$
+
+即：**对 $n \times 2n$ 矩阵 $(\boldsymbol{A} \mid \boldsymbol{E})$ 施行初等行变换，当左半部分 $\boldsymbol{A}$ 变换为单位矩阵 $\boldsymbol{E}$ 时，右半部分的 $\boldsymbol{E}$ 就同步变换成了 $\boldsymbol{A}^{-1}$**。
+
+<Example title="例 27 用初等行变换求逆矩阵">
+
+求矩阵
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+1 & -1 & 1 \\
+2 & -4 & 1 \\
+1 & -5 & 3
+\end{pmatrix}
+$$
+
+的逆矩阵。
+
+</Example>
+
+<Solution title="解">
+
+构造分块矩阵 $(\boldsymbol{A} \mid \boldsymbol{E})$ 并对其施行初等行变换：
+
+$$
+\begin{aligned}
+(\boldsymbol{A} \mid \boldsymbol{E}) &= \begin{pmatrix}
+1 & -1 & 1 & \vdots & 1 & 0 & 0 \\
+2 & -4 & 1 & \vdots & 0 & 1 & 0 \\
+1 & -5 & 3 & \vdots & 0 & 0 & 1
+\end{pmatrix} \\
+&\xrightarrow{\substack{r_2 - 2r_1 \\ r_3 - r_1}} \begin{pmatrix}
+1 & -1 & 1 & \vdots & 1 & 0 & 0 \\
+0 & -2 & -1 & \vdots & -2 & 1 & 0 \\
+0 & -4 & 2 & \vdots & -1 & 0 & 1
+\end{pmatrix} \\
+&\xrightarrow{r_3 - 2r_2} \begin{pmatrix}
+1 & -1 & 1 & \vdots & 1 & 0 & 0 \\
+0 & -2 & -1 & \vdots & -2 & 1 & 0 \\
+0 & 0 & 4 & \vdots & 3 & -2 & 1
+\end{pmatrix} \\
+&\xrightarrow{\substack{-\frac{1}{2}r_2 \\ \frac{1}{4}r_3}} \begin{pmatrix}
+1 & -1 & 1 & \vdots & 1 & 0 & 0 \\
+0 & 1 & \frac{1}{2} & \vdots & 1 & -\frac{1}{2} & 0 \\
+0 & 0 & 1 & \vdots & \frac{3}{4} & -\frac{1}{2} & \frac{1}{4}
+\end{pmatrix} \\
+&\xrightarrow{\substack{r_2 - \frac{1}{2}r_3 \\ r_1 - r_3}} \begin{pmatrix}
+1 & -1 & 0 & \vdots & \frac{1}{4} & \frac{1}{2} & -\frac{1}{4} \\
+0 & 1 & 0 & \vdots & \frac{5}{8} & -\frac{1}{4} & -\frac{1}{8} \\
+0 & 0 & 1 & \vdots & \frac{3}{4} & -\frac{1}{2} & \frac{1}{4}
+\end{pmatrix} \\
+&\xrightarrow{r_1 + r_2} \begin{pmatrix}
+1 & 0 & 0 & \vdots & \frac{7}{8} & \frac{1}{4} & -\frac{3}{8} \\
+0 & 1 & 0 & \vdots & \frac{5}{8} & -\frac{1}{4} & -\frac{1}{8} \\
+0 & 0 & 1 & \vdots & \frac{3}{4} & -\frac{1}{2} & \frac{1}{4}
+\end{pmatrix}.
+\end{aligned}
+$$
+
+从而求得 $\boldsymbol{A}$ 的逆矩阵为
+
+$$
+\boldsymbol{A}^{-1} = \begin{pmatrix}
+\frac{7}{8} & \frac{1}{4} & -\frac{3}{8} \\
+\frac{5}{8} & -\frac{1}{4} & -\frac{1}{8} \\
+\frac{3}{4} & -\frac{1}{2} & \frac{1}{4}
+\end{pmatrix}.
+$$
+
+</Solution>
+
+<ExerciseTrigger chapter={2} section="2.5" title="2.5 初等矩阵 课后真题与自测练习" />

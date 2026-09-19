@@ -36,8 +36,8 @@ Manage the server using dedicated commands (or via `node node_modules/astro/bin/
 7. **Rule 7 — Utils Purity**:
    Do NOT add new modules with explicit business semantics to `utils/`.
    Code belonging to AI, Exercise, Editor, Publishing, Inspector, Relation Graph, or Feedback must go to its corresponding Feature / Service. `utils/` is reserved strictly for pure, stateless, reusable helpers.
-8. **Rule 8 — Scripts Boundary**:
-   `scripts/` is exclusively responsible for build, import, export, maintenance, and test automation. Business runtime logic must NOT depend on `scripts/`.
+8. **Rule 8 — Scripts Boundary & Test Architecture**:
+   `scripts/` is exclusively responsible for build, import, export, and maintenance automation. Business runtime logic must NOT depend on `scripts/`. Automated tests are strictly housed in `tests/` driven by Vitest across a 4-tier test pyramid.
 9. **Rule 9 — Runtime must not mutate source**:
    Development servers, Vite plugins, and runtime endpoints must NEVER directly mutate Source Data on disk (e.g. overwriting tracked JSONs or executing synchronous shell scripts).
 10. **Rule 10 — Small Migrations (No Big Bang Rewrite)**:
@@ -47,8 +47,9 @@ Manage the server using dedicated commands (or via `node node_modules/astro/bin/
 
 ### 2.2 Operational Constraints
 
-- **Single Sources of Truth**: `src/config/collections.config.mjs` (books/collections) and `src/config/features.config.mjs` (Feature Registry). ⚠️ `src/config/books.config.mjs` is obsolete.
-- **Routing & Clean Slugs**: Every generated link pointing to a book chapter MUST use `cleanSlug()` from `src/utils/sidebar.mjs`. Never hardcode raw filenames into URL strings.
+- **Single Sources of Truth**: `src/config/collections.config.ts` (books/collections) and `src/config/features.config.ts` (Feature Registry). ⚠️ `src/config/books.config.mjs` is obsolete.
+- **Routing & Clean Slugs**: Every generated link pointing to a book chapter MUST use `cleanSlug()` from `src/utils/sidebar.ts`. Never hardcode raw filenames into URL strings.
+- **Testing & Quality Gates**: Prior to committing changes, always run `npm run check:types` (100% strict TypeScript 0 errors) and `npm test` (Unit, Contract & Acceptance test suites). Full verification: `npm run check:all`.
 - **MDX Syntax Validation**: Run `node scripts/scan-mdx.mjs src/content/docs/collections/<collection>/<book>` before committing.
 - **Sidebar & Performance**: Left sidebar renders only current book (`SidebarOverride.astro`). KaTeX uses `output: 'html'`.
 

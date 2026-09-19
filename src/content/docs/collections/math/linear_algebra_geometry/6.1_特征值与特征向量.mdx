@@ -1,0 +1,512 @@
+---
+title: '6.1 特征值与特征向量'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+先来看 $\mathbb{R}^3$ 中的一个线性变换 $f: \boldsymbol{y} = \boldsymbol{A}\boldsymbol{x}$，其中
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+2 & 2 & -2 \\
+8 & -7 & 5 \\
+8 & -11 & 9
+\end{pmatrix}.
+$$
+
+这个线性变换 $f$ 将 $\mathbb{R}^3$ 中的向量 $\boldsymbol{x} = (x_1, x_2, x_3)^\mathrm{T}$ 变成向量 $\boldsymbol{y} = (y_1, y_2, y_3)^\mathrm{T}$，且 $\boldsymbol{y} = \boldsymbol{A}\boldsymbol{x}$。
+
+现在在 $\mathbb{R}^3$ 中另取一组基 $\boldsymbol{\alpha}_1 = (1, 2, 2)^\mathrm{T}, \boldsymbol{\alpha}_2 = (0, 1, 1)^\mathrm{T}, \boldsymbol{\alpha}_3 = (2, 1, -1)^\mathrm{T}$（也就是保持原点不动，以 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3$ 为新的坐标轴向量建立新的坐标系）。在新的基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3$ 下，原来的向量都会有新的坐标。设原来的向量 $\boldsymbol{x}, \boldsymbol{y}$ 在新基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3$ 下的坐标分别为 $\tilde{\boldsymbol{x}} = (\tilde{x}_1, \tilde{x}_2, \tilde{x}_3)^\mathrm{T}$ 和 $\tilde{\boldsymbol{y}} = (\tilde{y}_1, \tilde{y}_2, \tilde{y}_3)^\mathrm{T}$，即
+
+$$
+\boldsymbol{x} = \tilde{x}_1\boldsymbol{\alpha}_1 + \tilde{x}_2\boldsymbol{\alpha}_2 + \tilde{x}_3\boldsymbol{\alpha}_3, \quad
+\boldsymbol{y} = \tilde{y}_1\boldsymbol{\alpha}_1 + \tilde{y}_2\boldsymbol{\alpha}_2 + \tilde{y}_3\boldsymbol{\alpha}_3.
+$$
+
+那么，线性变换 $f$ 在新基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3$ 下将有怎样的表示呢？
+
+记 $\boldsymbol{P} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3) = \begin{pmatrix} 1 & 0 & 2 \\ 2 & 1 & 1 \\ 2 & 1 & -1 \end{pmatrix}$，因为 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3$ 是一组基，所以 $\boldsymbol{P}$ 可逆。由
+
+$$
+\boldsymbol{x} = \boldsymbol{P}\tilde{\boldsymbol{x}}, \quad \boldsymbol{y} = \boldsymbol{P}\tilde{\boldsymbol{y}},
+$$
+
+且 $\boldsymbol{y} = \boldsymbol{A}\boldsymbol{x}$，可得 $\boldsymbol{P}\tilde{\boldsymbol{y}} = \boldsymbol{A}\boldsymbol{P}\tilde{\boldsymbol{x}}$，即 $\tilde{\boldsymbol{y}} = \boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P}\tilde{\boldsymbol{x}} = \boldsymbol{B}\tilde{\boldsymbol{x}}$，其中
+
+$$
+\boldsymbol{B} = \boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P} = \frac{1}{2} \begin{pmatrix}
+2 & -2 & 2 \\
+-4 & 5 & -3 \\
+0 & 1 & -1
+\end{pmatrix}
+\begin{pmatrix}
+2 & 2 & -2 \\
+8 & -7 & 5 \\
+8 & -11 & 9
+\end{pmatrix}
+\begin{pmatrix}
+1 & 0 & 2 \\
+2 & 1 & 1 \\
+2 & 1 & -1
+\end{pmatrix}
+= \begin{pmatrix}
+2 & 0 & 0 \\
+0 & -2 & 0 \\
+0 & 0 & 4
+\end{pmatrix}.
+$$
+
+这就是说，在新基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3$ 下，线性变换 $f$ 将 $\mathbb{R}^3$ 中的向量 $\tilde{\boldsymbol{x}} = (\tilde{x}_1, \tilde{x}_2, \tilde{x}_3)^\mathrm{T}$ 变成向量 $\tilde{\boldsymbol{y}} = (\tilde{y}_1, \tilde{y}_2, \tilde{y}_3)^\mathrm{T}$，且 $\tilde{\boldsymbol{y}} = \boldsymbol{B}\tilde{\boldsymbol{x}}$，其中 $\boldsymbol{B}$ 是一个对角矩阵，将 $f$ 表示成 $\tilde{\boldsymbol{y}} = \boldsymbol{B}\tilde{\boldsymbol{x}}$ 显然要比原来的表示 $\boldsymbol{y} = \boldsymbol{A}\boldsymbol{x}$ 简单。
+
+一般说来，对于 $\mathbb{R}^n$ 中的线性变换 $\boldsymbol{y} = \boldsymbol{A}\boldsymbol{x}$，如果在 $\mathbb{R}^n$ 中另取一组基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n$，则在新基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n$ 下，这个线性变换可以表示成 $\tilde{\boldsymbol{y}} = \boldsymbol{B}\tilde{\boldsymbol{x}}$，其中 $\boldsymbol{B} = \boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P}$，且 $\boldsymbol{P} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n)$ 是可逆矩阵。我们希望找到合适的 $\boldsymbol{P} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n)$，使 $\boldsymbol{B} = \boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P}$ 尽量简单，最好为对角矩阵。那么能不能找到可逆矩阵 $\boldsymbol{P}$，使 $\boldsymbol{B} = \boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P}$ 为对角矩阵呢？这正是本章要讨论的问题。特征值与特征向量的相关理论是解决这个问题的核心工具。除此之外，特征值理论在矩阵的简化计算、常系数线性微分方程组的求解及与振动有关的工程技术问题中也有着广泛的应用。
+
+## 一、特征值与特征向量的定义
+
+设 $\boldsymbol{A}$ 为 $n$ 阶方阵，如果有可逆矩阵 $\boldsymbol{P} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n)$，使
+
+$$
+\boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P} = \mathrm{diag}(\lambda_1, \lambda_2, \dots, \lambda_n)
+$$
+
+为对角矩阵，则 $\boldsymbol{A}\boldsymbol{P} = \boldsymbol{P}\mathrm{diag}(\lambda_1, \lambda_2, \dots, \lambda_n)$，于是
+
+$$
+(\boldsymbol{A}\boldsymbol{\alpha}_1, \boldsymbol{A}\boldsymbol{\alpha}_2, \dots, \boldsymbol{A}\boldsymbol{\alpha}_n) = (\lambda_1\boldsymbol{\alpha}_1, \lambda_2\boldsymbol{\alpha}_2, \dots, \lambda_n\boldsymbol{\alpha}_n),
+$$
+
+即
+
+$$
+\boldsymbol{A}\boldsymbol{\alpha}_i = \lambda_i\boldsymbol{\alpha}_i, \quad i = 1, 2, \dots, n.
+$$
+
+称 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n$ 为方阵 $\boldsymbol{A}$ 的特征向量。下面引入特征值和特征向量的严格定义。
+
+<Knowledge title="定义 1 特征值与特征向量">
+
+设 $\boldsymbol{A}$ 为 $n$ 阶方阵。如果存在数 $\lambda$ 和非零向量 $\boldsymbol{\alpha}$，使得
+
+$$
+\boldsymbol{A}\boldsymbol{\alpha} = \lambda\boldsymbol{\alpha},
+$$
+
+则称 $\lambda$ 为 $\boldsymbol{A}$ 的**特征值**，称 $\boldsymbol{\alpha}$ 为 $\boldsymbol{A}$ 的属于特征值 $\lambda$ 的**特征向量**（或 $\boldsymbol{A}$ 的对应于特征值 $\lambda$ 的特征向量）。
+
+</Knowledge>
+
+将 $\boldsymbol{A}\boldsymbol{\alpha} = \lambda\boldsymbol{\alpha}$ 改写成
+
+$$
+(\lambda\boldsymbol{E} - \boldsymbol{A})\boldsymbol{\alpha} = \mathbf{0},
+$$
+
+这说明对于特征值 $\lambda$，齐次线性方程组 $(\lambda\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$ 是有非零解的，$\boldsymbol{\alpha}$ 就是齐次线性方程组 $(\lambda\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$ 的一个非零解。反之，若齐次线性方程组 $(\lambda_0\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$ 有非零解 $\boldsymbol{\alpha}_0$，则数 $\lambda_0$ 是 $\boldsymbol{A}$ 的特征值，$\boldsymbol{\alpha}_0$ 是 $\boldsymbol{A}$ 的属于特征值 $\lambda_0$ 的特征向量。
+
+这就是说 $\lambda$ 是 $\boldsymbol{A}$ 的特征值当且仅当齐次线性方程组 $(\lambda\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$ 有非零解。而齐次线性方程组 $(\lambda\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$ 有非零解的充分必要条件是 $|\lambda\boldsymbol{E} - \boldsymbol{A}| = 0$。因此数 $\lambda$ 是 $\boldsymbol{A}$ 的特征值当且仅当
+
+$$
+|\lambda\boldsymbol{E} - \boldsymbol{A}| = 0.
+$$
+
+<Knowledge title="定义 2 特征多项式与特征方程">
+
+设 $\boldsymbol{A} = (a_{ij})$ 为 $n$ 阶方阵，
+
+$$
+|\lambda\boldsymbol{E} - \boldsymbol{A}| = \begin{vmatrix}
+\lambda - a_{11} & -a_{12} & \cdots & -a_{1n} \\
+-a_{21} & \lambda - a_{22} & \cdots & -a_{2n} \\
+\vdots & \vdots & & \vdots \\
+-a_{n1} & -a_{n2} & \cdots & \lambda - a_{nn}
+\end{vmatrix}
+$$
+
+是一个关于 $\lambda$ 的 $n$ 次多项式，称为 $\boldsymbol{A}$ 的**特征多项式**。方程 $|\lambda\boldsymbol{E} - \boldsymbol{A}| = 0$ 是一个以 $\lambda$ 为未知量的一元 $n$ 次方程，称为 $\boldsymbol{A}$ 的**特征方程**。
+
+</Knowledge>
+
+显然，$\boldsymbol{A}$ 的特征值就是 $\boldsymbol{A}$ 的特征方程的根（因而将特征值也称为特征根）。$n$ 阶方阵 $\boldsymbol{A}$ 的特征方程在复数范围内有 $n$ 个根（重根按重数计），所以 $n$ 阶方阵 $\boldsymbol{A}$ 在复数范围内有 $n$ 个特征值。对于 $\boldsymbol{A}$ 的特征值 $\lambda$，$\boldsymbol{A}$ 的属于特征值 $\lambda$ 的特征向量 $\boldsymbol{\alpha}$ 就是齐次线性方程组 $(\lambda\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$ 的非零解。
+
+<Example title="例 1 二阶方阵求特征值与特征向量">
+
+设 $\boldsymbol{A} = \begin{pmatrix} 1 & 4 \\ 1 & -2 \end{pmatrix}$，求 $\boldsymbol{A}$ 的特征值与特征向量。
+
+</Example>
+
+<Solution title="解">
+
+$\boldsymbol{A}$ 的特征方程为
+
+$$
+|\lambda\boldsymbol{E} - \boldsymbol{A}| = \begin{vmatrix}
+\lambda - 1 & -4 \\
+-1 & \lambda + 2
+\end{vmatrix} = (\lambda + 3)(\lambda - 2) = 0.
+$$
+
+$\boldsymbol{A}$ 的特征值为 $\lambda_1 = -3, \lambda_2 = 2$。
+
+$\boldsymbol{A}$ 的属于 $\lambda_1 = -3$ 的特征向量是齐次线性方程组 $(-3\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，即
+
+$$
+\begin{pmatrix} -4 & -4 \\ -1 & -1 \end{pmatrix} \begin{pmatrix} x_1 \\ x_2 \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \end{pmatrix}
+$$
+
+的非零解，该方程组的基础解系为 $\boldsymbol{\xi}_1 = (1, -1)^\mathrm{T}$，所以 $\boldsymbol{A}$ 的属于 $\lambda_1 = -3$ 的全体特征向量为 $k_1\boldsymbol{\xi}_1$ ($k_1 \neq 0$)。
+
+$\boldsymbol{A}$ 的属于 $\lambda_2 = 2$ 的特征向量是齐次线性方程组 $(2\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，即
+
+$$
+\begin{pmatrix} 1 & -4 \\ -1 & 4 \end{pmatrix} \begin{pmatrix} x_1 \\ x_2 \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \end{pmatrix}
+$$
+
+的非零解，该方程组的基础解系为 $\boldsymbol{\xi}_2 = (4, 1)^\mathrm{T}$，所以 $\boldsymbol{A}$ 的属于 $\lambda_2 = 2$ 的全体特征向量为 $k_2\boldsymbol{\xi}_2$ ($k_2 \neq 0$)。
+
+</Solution>
+
+<Example title="例 2 三阶方阵重特征值求解">
+
+设 $\boldsymbol{A} = \begin{pmatrix} 7 & 4 & -1 \\ 4 & 7 & -1 \\ -4 & -4 & 4 \end{pmatrix}$，求 $\boldsymbol{A}$ 的特征值与特征向量。
+
+</Example>
+
+<Solution title="解">
+
+$\boldsymbol{A}$ 的特征方程为
+
+$$
+\begin{aligned}
+|\lambda\boldsymbol{E} - \boldsymbol{A}| &= \begin{vmatrix}
+\lambda - 7 & -4 & 1 \\
+-4 & \lambda - 7 & 1 \\
+4 & 4 & \lambda - 4
+\end{vmatrix}
+\xrightarrow{r_3 + r_2}
+\begin{vmatrix}
+\lambda - 7 & -4 & 1 \\
+-4 & \lambda - 7 & 1 \\
+0 & \lambda - 3 & \lambda - 3
+\end{vmatrix} \\
+&= (\lambda - 3) \begin{vmatrix}
+\lambda - 7 & -4 & 1 \\
+-4 & \lambda - 7 & 1 \\
+0 & 1 & 1
+\end{vmatrix} = (\lambda - 3)^2(\lambda - 12) = 0.
+\end{aligned}
+$$
+
+$\boldsymbol{A}$ 的特征值为 $\lambda_1 = \lambda_2 = 3, \lambda_3 = 12$。
+
+$\boldsymbol{A}$ 的属于 $\lambda_1 = \lambda_2 = 3$ 的特征向量是齐次线性方程组 $(3\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，即
+
+$$
+\begin{pmatrix}
+-4 & -4 & 1 \\
+-4 & -4 & 1 \\
+4 & 4 & -1
+\end{pmatrix}
+\begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix} =
+\begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix}
+$$
+
+的非零解，该方程组的基础解系为 $\boldsymbol{\xi}_1 = (1, 0, 4)^\mathrm{T}, \boldsymbol{\xi}_2 = (0, 1, 4)^\mathrm{T}$，所以 $\boldsymbol{A}$ 的属于 $\lambda_1 = \lambda_2 = 3$ 的全体特征向量为 $k_1\boldsymbol{\xi}_1 + k_2\boldsymbol{\xi}_2$（$k_1, k_2$ 不全为零）。
+
+$\boldsymbol{A}$ 的属于 $\lambda_3 = 12$ 的特征向量是齐次线性方程组 $(12\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，即
+
+$$
+\begin{pmatrix}
+5 & -4 & 1 \\
+-4 & 5 & 1 \\
+4 & 4 & 8
+\end{pmatrix}
+\begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix} =
+\begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix}
+$$
+
+的非零解，该方程组的基础解系为 $\boldsymbol{\xi}_3 = (-1, -1, 1)^\mathrm{T}$，所以 $\boldsymbol{A}$ 的属于 $\lambda_3 = 12$ 的全体特征向量为 $k_3\boldsymbol{\xi}_3$ ($k_3 \neq 0$)。
+
+</Solution>
+
+<Example title="例 3 特征向量个数少于重数的情形">
+
+设 $\boldsymbol{A} = \begin{pmatrix} 3 & -1 & 1 \\ 2 & 0 & 1 \\ 1 & -1 & 2 \end{pmatrix}$，求 $\boldsymbol{A}$ 的特征值与特征向量。
+
+</Example>
+
+<Solution title="解">
+
+$\boldsymbol{A}$ 的特征方程为
+
+$$
+\begin{aligned}
+|\lambda\boldsymbol{E} - \boldsymbol{A}| &= \begin{vmatrix}
+\lambda - 3 & 1 & -1 \\
+-2 & \lambda & -1 \\
+-1 & 1 & \lambda - 2
+\end{vmatrix}
+\xrightarrow{c_3 + c_2}
+\begin{vmatrix}
+\lambda - 3 & 1 & 0 \\
+-2 & \lambda & \lambda - 1 \\
+-1 & 1 & \lambda - 1
+\end{vmatrix} \\
+&= (\lambda - 1) \begin{vmatrix}
+\lambda - 3 & 1 & 0 \\
+-2 & \lambda & 1 \\
+-1 & 1 & 1
+\end{vmatrix} = (\lambda - 2)^2(\lambda - 1) = 0.
+\end{aligned}
+$$
+
+$\boldsymbol{A}$ 的特征值为 $\lambda_1 = \lambda_2 = 2, \lambda_3 = 1$。
+
+$\boldsymbol{A}$ 的属于 $\lambda_1 = \lambda_2 = 2$ 的特征向量是齐次线性方程组 $(2\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，即
+
+$$
+\begin{pmatrix}
+-1 & 1 & -1 \\
+-2 & 2 & -1 \\
+-1 & 1 & 0
+\end{pmatrix}
+\begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix} =
+\begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix}
+$$
+
+的非零解，该方程组的基础解系为 $\boldsymbol{\xi}_1 = (1, 1, 0)^\mathrm{T}$，所以 $\boldsymbol{A}$ 的属于 $\lambda_1 = \lambda_2 = 2$ 的全体特征向量为 $k_1\boldsymbol{\xi}_1$ ($k_1 \neq 0$)。
+
+$\boldsymbol{A}$ 的属于 $\lambda_3 = 1$ 的特征向量是齐次线性方程组 $(\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，即
+
+$$
+\begin{pmatrix}
+-2 & 1 & -1 \\
+-2 & 1 & -1 \\
+-1 & 1 & -1
+\end{pmatrix}
+\begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix} =
+\begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix}
+$$
+
+的非零解，该方程组的基础解系为 $\boldsymbol{\xi}_2 = (0, 1, 1)^\mathrm{T}$，所以 $\boldsymbol{A}$ 的属于 $\lambda_3 = 1$ 的全体特征向量为 $k_3\boldsymbol{\xi}_2$ ($k_3 \neq 0$)。
+
+</Solution>
+
+## 二、特征值与特征向量的性质
+
+特征值与特征向量具有下面的性质：
+
+<Knowledge title="性质 1 同一特征值的特征向量组合性">
+
+若 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2$ 都是 $\boldsymbol{A}$ 的属于特征值 $\lambda_0$ 的特征向量，则对任意使 $k_1\boldsymbol{\alpha}_1 + k_2\boldsymbol{\alpha}_2 \neq \mathbf{0}$ 的数 $k_1$ 和 $k_2$，$\boldsymbol{\alpha} = k_1\boldsymbol{\alpha}_1 + k_2\boldsymbol{\alpha}_2$ 仍是 $\boldsymbol{A}$ 的属于特征值 $\lambda_0$ 的特征向量。
+
+</Knowledge>
+
+<Solution title="证">
+
+已知 $\boldsymbol{A}\boldsymbol{\alpha}_1 = \lambda_0\boldsymbol{\alpha}_1, \boldsymbol{A}\boldsymbol{\alpha}_2 = \lambda_0\boldsymbol{\alpha}_2$，所以
+
+$$
+\boldsymbol{A}\boldsymbol{\alpha} = \boldsymbol{A}(k_1\boldsymbol{\alpha}_1 + k_2\boldsymbol{\alpha}_2) = k_1\boldsymbol{A}\boldsymbol{\alpha}_1 + k_2\boldsymbol{A}\boldsymbol{\alpha}_2 = \lambda_0(k_1\boldsymbol{\alpha}_1 + k_2\boldsymbol{\alpha}_2) = \lambda_0\boldsymbol{\alpha}.
+$$
+
+由此可见，$\boldsymbol{A}$ 的属于同一个特征值 $\lambda_0$ 的若干个特征向量的任意非零线性组合也是 $\boldsymbol{A}$ 的属于特征值 $\lambda_0$ 的特征向量。
+
+</Solution>
+
+<Knowledge title="性质 2 特征值与行列式及迹的关系">
+
+设 $\lambda_1, \lambda_2, \dots, \lambda_n$ 为 $n$ 阶方阵 $\boldsymbol{A} = (a_{ij})$ 的 $n$ 个特征值，则
+1. $\lambda_1\lambda_2 \cdots \lambda_n = |\boldsymbol{A}|$；
+2. $\lambda_1 + \lambda_2 + \cdots + \lambda_n = a_{11} + a_{22} + \cdots + a_{nn}$。
+
+记 $a_{11} + a_{22} + \cdots + a_{nn}$ 为 $\mathrm{tr}\boldsymbol{A}$，称为 $\boldsymbol{A}$ 的**迹**。
+
+</Knowledge>
+
+<Solution title="证">
+
+(1)
+
+$$
+|\lambda\boldsymbol{E} - \boldsymbol{A}| = \begin{vmatrix}
+\lambda - a_{11} & -a_{12} & \cdots & -a_{1n} \\
+-a_{21} & \lambda - a_{22} & \cdots & -a_{2n} \\
+\vdots & \vdots & & \vdots \\
+-a_{n1} & -a_{n2} & \cdots & \lambda - a_{nn}
+\end{vmatrix}
+$$
+
+是一个关于 $\lambda$ 的 $n$ 次多项式。
+
+观察行列式 $|\lambda\boldsymbol{E} - \boldsymbol{A}|$ 中的元素，只有主对角线上的 $n$ 个元素是 $\lambda$ 的一次多项式，其余元素都是常数。根据行列式的定义，在行列式 $|\lambda\boldsymbol{E} - \boldsymbol{A}|$ 中，除了项 $(\lambda - a_{11})(\lambda - a_{22})\cdots(\lambda - a_{nn})$ 外，其余各项最多包含 $(n-2)$ 个主对角线上的元素，因此这些项中最高只可能含有 $\lambda^{n-2}$ 项，不可能含有 $\lambda^n$ 及 $\lambda^{n-1}$ 项。也就是说
+
+$$
+|\lambda\boldsymbol{E} - \boldsymbol{A}| = (\lambda - a_{11})(\lambda - a_{22})\cdots(\lambda - a_{nn}) + \cdots,
+$$
+
+其中省略的部分最高只可能含有 $\lambda^{n-2}$ 项，不可能含有 $\lambda^n$ 及 $\lambda^{n-1}$ 项。因此行列式 $|\lambda\boldsymbol{E} - \boldsymbol{A}|$ 中 $\lambda^n$ 的系数为 1。又已知 $\lambda_1, \lambda_2, \dots, \lambda_n$ 为 $n$ 阶方阵 $\boldsymbol{A} = (a_{ij})$ 的 $n$ 个特征值，所以
+
+$$
+|\lambda\boldsymbol{E} - \boldsymbol{A}| = (\lambda - \lambda_1)(\lambda - \lambda_2)\cdots(\lambda - \lambda_n).
+$$
+
+取 $\lambda = 0$ 即得
+
+$$
+|-\boldsymbol{A}| = (-1)^n|\boldsymbol{A}| = (-1)^n \lambda_1\lambda_2\cdots\lambda_n,
+$$
+
+即 $|\boldsymbol{A}| = \lambda_1\lambda_2\cdots\lambda_n$。
+
+(2) 上面已得到
+
+$$
+\begin{aligned}
+|\lambda\boldsymbol{E} - \boldsymbol{A}| &= (\lambda - \lambda_1)(\lambda - \lambda_2)\cdots(\lambda - \lambda_n) \\
+&= (\lambda - a_{11})(\lambda - a_{22})\cdots(\lambda - a_{nn}) + \cdots,
+\end{aligned}
+$$
+
+其中省略的部分最高只可能含有 $\lambda^{n-2}$ 项，不可能含有 $\lambda^n$ 及 $\lambda^{n-1}$ 项。
+
+比较第二个等号两边的 $\lambda^{n-1}$ 项的系数，即得
+
+$$
+\lambda_1 + \lambda_2 + \cdots + \lambda_n = a_{11} + a_{22} + \cdots + a_{nn}.
+$$
+
+</Solution>
+
+<Knowledge title="推论 1 方阵可逆与特征值非零等价性">
+
+设 $\boldsymbol{A}$ 为 $n$ 阶方阵，则 $|\boldsymbol{A}| = 0$ 的充分必要条件是 $\lambda = 0$ 为 $\boldsymbol{A}$ 的特征值。
+
+</Knowledge>
+
+<Knowledge title="性质 3 转置矩阵特征多项式相同">
+
+$n$ 阶方阵 $\boldsymbol{A}$ 与它的转置矩阵 $\boldsymbol{A}^\mathrm{T}$ 有相同的特征多项式，因而有相同的特征值。
+
+</Knowledge>
+
+<Solution title="证">
+
+$$
+|\lambda\boldsymbol{E} - \boldsymbol{A}^\mathrm{T}| = |(\lambda\boldsymbol{E} - \boldsymbol{A})^\mathrm{T}| = |\lambda\boldsymbol{E} - \boldsymbol{A}|.
+$$
+
+</Solution>
+
+<SideNote title="转置矩阵特征向量一般不同">
+
+值得注意的是，$\boldsymbol{A}$ 与 $\boldsymbol{A}^\mathrm{T}$ 未必有相同的特征向量。例如，设 $\boldsymbol{A} = \begin{pmatrix} 1 & 1 \\ 0 & 1 \end{pmatrix}$，则 $\boldsymbol{A}$ 与 $\boldsymbol{A}^\mathrm{T}$ 有特征值 $\lambda = 1$，但
+
+$$
+\boldsymbol{A} \begin{pmatrix} 1 \\ 0 \end{pmatrix} = \begin{pmatrix} 1 \\ 0 \end{pmatrix}, \quad
+\boldsymbol{A}^\mathrm{T} \begin{pmatrix} 1 \\ 0 \end{pmatrix} = \begin{pmatrix} 1 \\ 1 \end{pmatrix} \neq \begin{pmatrix} 1 \\ 0 \end{pmatrix}.
+$$
+
+事实上 $\boldsymbol{A}^\mathrm{T} \begin{pmatrix} 0 \\ 1 \end{pmatrix} = \begin{pmatrix} 0 \\ 1 \end{pmatrix}$。这说明 $\boldsymbol{A}$ 与 $\boldsymbol{A}^\mathrm{T}$ 的属于同一个特征值的特征向量可能是不同的。
+
+</SideNote>
+
+<Knowledge title="性质 4 矩阵多项式与逆矩阵特征值">
+
+若 $\lambda$ 为 $\boldsymbol{A}$ 的特征值，则对任意多项式 $f(x) = a_m x^m + a_{m-1}x^{m-1} + \cdots + a_1 x + a_0$，$f(\lambda)$ 为 $f(\boldsymbol{A})$ 的特征值，其中 $f(\boldsymbol{A}) = a_m\boldsymbol{A}^m + a_{m-1}\boldsymbol{A}^{m-1} + \cdots + a_1\boldsymbol{A} + a_0\boldsymbol{E}$ 为与 $f(x)$ 对应的 $\boldsymbol{A}$ 的矩阵多项式；当 $\boldsymbol{A}$ 可逆时，$\frac{1}{\lambda}$ 是 $\boldsymbol{A}^{-1}$ 的特征值。
+
+</Knowledge>
+
+<Solution title="证">
+
+设 $\boldsymbol{\alpha}$ 是 $\boldsymbol{A}$ 的属于特征值 $\lambda$ 的特征向量，即 $\boldsymbol{A}\boldsymbol{\alpha} = \lambda\boldsymbol{\alpha}$ ($\boldsymbol{\alpha} \neq \mathbf{0}$)。先用数学归纳法证明：对任意正整数 $k$，都有 $\boldsymbol{A}^k\boldsymbol{\alpha} = \lambda^k\boldsymbol{\alpha}$。
+
+当 $k=1$ 时，显然有 $\boldsymbol{A}\boldsymbol{\alpha} = \lambda\boldsymbol{\alpha}$。假设 $\boldsymbol{A}^k\boldsymbol{\alpha} = \lambda^k\boldsymbol{\alpha}$ 成立，则有
+
+$$
+\boldsymbol{A}^{k+1}\boldsymbol{\alpha} = \boldsymbol{A}(\boldsymbol{A}^k\boldsymbol{\alpha}) = \boldsymbol{A}(\lambda^k\boldsymbol{\alpha}) = \lambda^k\boldsymbol{A}\boldsymbol{\alpha} = \lambda^{k+1}\boldsymbol{\alpha}.
+$$
+
+因此，对于任何正整数 $k$，都有 $\boldsymbol{A}^k\boldsymbol{\alpha} = \lambda^k\boldsymbol{\alpha}$。于是
+
+$$
+\begin{aligned}
+f(\boldsymbol{A})\boldsymbol{\alpha} &= (a_m\boldsymbol{A}^m + a_{m-1}\boldsymbol{A}^{m-1} + \cdots + a_1\boldsymbol{A} + a_0\boldsymbol{E})\boldsymbol{\alpha} \\
+&= a_m(\boldsymbol{A}^m\boldsymbol{\alpha}) + a_{m-1}(\boldsymbol{A}^{m-1}\boldsymbol{\alpha}) + \cdots + a_1(\boldsymbol{A}\boldsymbol{\alpha}) + a_0(\boldsymbol{E}\boldsymbol{\alpha}) \\
+&= a_m(\lambda^m\boldsymbol{\alpha}) + a_{m-1}(\lambda^{m-1}\boldsymbol{\alpha}) + \cdots + a_1(\lambda\boldsymbol{\alpha}) + a_0\boldsymbol{\alpha} \\
+&= (a_m\lambda^m + a_{m-1}\lambda^{m-1} + \cdots + a_1\lambda + a_0)\boldsymbol{\alpha} = f(\lambda)\boldsymbol{\alpha}.
+\end{aligned}
+$$
+
+这说明 $f(\lambda)$ 为 $f(\boldsymbol{A})$ 的特征值。
+
+当 $\boldsymbol{A}$ 可逆时，由推论 1 可知 $\lambda \neq 0$。因为 $\boldsymbol{A}\boldsymbol{\alpha} = \lambda\boldsymbol{\alpha}$，等式两边同时左乘 $\boldsymbol{A}^{-1}$，得 $\boldsymbol{\alpha} = \lambda\boldsymbol{A}^{-1}\boldsymbol{\alpha}$，即
+
+$$
+\boldsymbol{A}^{-1}\boldsymbol{\alpha} = \frac{1}{\lambda}\boldsymbol{\alpha},
+$$
+
+也就是说，$\frac{1}{\lambda}$ 是 $\boldsymbol{A}^{-1}$ 的特征值。
+
+从证明中发现，$\boldsymbol{A}$ 与 $f(\boldsymbol{A})$ 及 $\boldsymbol{A}^{-1}$（在可逆的前提下）有相同的特征向量 $\boldsymbol{\alpha}$。
+
+</Solution>
+
+<Example title="例 4 矩阵多项式特征值求行列式">
+
+已知三阶矩阵 $\boldsymbol{A}$ 满足 $|\boldsymbol{A} - \boldsymbol{E}| = 0, |\boldsymbol{A} + \boldsymbol{E}| = 0, |\boldsymbol{A} - 2\boldsymbol{E}| = 0$。$\boldsymbol{B} = \boldsymbol{A}^3 - 3\boldsymbol{A}^2 + \boldsymbol{A}^*$，其中 $\boldsymbol{A}^*$ 是 $\boldsymbol{A}$ 的伴随矩阵。求 $|\boldsymbol{B}|$。
+
+</Example>
+
+<Solution title="解">
+
+由 $|\boldsymbol{E} - \boldsymbol{A}| = -|\boldsymbol{A} - \boldsymbol{E}| = 0, |-\boldsymbol{E} - \boldsymbol{A}| = -|\boldsymbol{A} + \boldsymbol{E}| = 0, |2\boldsymbol{E} - \boldsymbol{A}| = -|\boldsymbol{A} - 2\boldsymbol{E}| = 0$，可知 $\boldsymbol{A}$ 的三个特征值分别为：$\lambda_1 = 1, \lambda_2 = -1, \lambda_3 = 2$。
+
+于是 $|\boldsymbol{A}| = \lambda_1\lambda_2\lambda_3 = -2 \neq 0$，$\boldsymbol{A}$ 可逆。
+
+由 $\boldsymbol{A}\boldsymbol{A}^* = |\boldsymbol{A}|\boldsymbol{E}$ 可得 $\boldsymbol{A}^* = |\boldsymbol{A}|\boldsymbol{A}^{-1} = -2\boldsymbol{A}^{-1}$。根据性质 4，可知 $\boldsymbol{B} = \boldsymbol{A}^3 - 3\boldsymbol{A}^2 - 2\boldsymbol{A}^{-1}$ 的三个特征值分别为
+
+$$
+\begin{aligned}
+\mu_1 &= \lambda_1^3 - 3\lambda_1^2 - \frac{2}{\lambda_1} = -4, \\
+\mu_2 &= \lambda_2^3 - 3\lambda_2^2 - \frac{2}{\lambda_2} = -2, \\
+\mu_3 &= \lambda_3^3 - 3\lambda_3^2 - \frac{2}{\lambda_3} = -5.
+\end{aligned}
+$$
+
+于是
+
+$$
+|\boldsymbol{B}| = \mu_1\mu_2\mu_3 = -40.
+$$
+
+</Solution>
+
+<Example title="例 5 对合矩阵特征值">
+
+设 $n$ 阶方阵 $\boldsymbol{A}$ 满足 $\boldsymbol{A}^2 = \boldsymbol{E}$（称 $\boldsymbol{A}$ 为对合矩阵）。求证：$\boldsymbol{A}$ 的特征值只能为 $1$ 或 $-1$。
+
+</Example>
+
+<Solution title="证">
+
+设 $\lambda$ 为 $\boldsymbol{A}$ 的特征值，$\boldsymbol{\alpha}$ 是 $\boldsymbol{A}$ 的属于特征值 $\lambda$ 的特征向量，即 $\boldsymbol{A}\boldsymbol{\alpha} = \lambda\boldsymbol{\alpha}$ ($\boldsymbol{\alpha} \neq \mathbf{0}$)。则
+
+$$
+\boldsymbol{A}^2\boldsymbol{\alpha} = \lambda^2\boldsymbol{\alpha} = \boldsymbol{E}\boldsymbol{\alpha} = \boldsymbol{\alpha}.
+$$
+
+于是 $(\lambda^2 - 1)\boldsymbol{\alpha} = \mathbf{0}$，而 $\boldsymbol{\alpha} \neq \mathbf{0}$，所以 $\lambda^2 = 1$，$\lambda = \pm 1$。
+
+</Solution>
+
+<ExerciseTrigger chapter={6} section="6.1" title="6.1 特征值与特征向量 课后真题与自测练习" />

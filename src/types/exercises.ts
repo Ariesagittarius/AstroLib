@@ -50,7 +50,9 @@ export interface SlimQuestionItem {
   answer: string;
   answer_html: string;
   hints_html?: string;
+  hints_raw?: string;
   steps_html?: string;
+  steps_raw?: string;
   search: string;
 }
 

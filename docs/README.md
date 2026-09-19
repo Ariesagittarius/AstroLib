@@ -26,6 +26,7 @@
 - [**doc3: 环境配置与常见问题**](./advanced/03-local-env-setup-troubleshooting.md)：Windows 脚本策略、sharp 镜像源、Git 换行符与 Node 内存配额排坑。
 - [**doc4: MDX 编辑模式与模块检查**](./advanced/04-developer-mode-and-inspection.md)：基于 Vite 的浏览器双向源码回写与全书模块结构健康度检查。
 - [**doc5: Git 提交规范与代码同步**](./advanced/05-academic-git-and-dual-push.md)：学术级 Commit Specification 约束与双轨自动脱敏推送流水线。
+- [**doc6: 自动化测试套件与类型守卫架构**](./自动化测试套件与类型守卫架构交接文档.md)：现代四层测试金字塔（Unit / Contract / Acceptance / System）、TypeScript 严格类型覆盖（0 错误门禁）与 CI/CD 自动化流水线。
 
 ---
 
@@ -33,6 +34,7 @@
 
 | 文档名称 | 核心主题与说明 | 关联代码模块 |
 | :--- | :--- | :--- |
+| [自动化测试套件与类型守卫架构交接文档.md](./自动化测试套件与类型守卫架构交接文档.md) | **自动化测试套件与类型守卫**：四层测试金字塔（Vitest 20套测试/72用例全部绿灯）、TypeScript 严格类型覆盖（100% 0 errors）、彻底清理 14 个历史碎片脚本与 GitHub Actions CI 质量门禁。 | `tests/`<br>`.github/workflows/ci.yml`<br>`src/types/` |
 | [Material-You主题改造交接文档.md](./Material-You主题改造交接文档.md) | **UI/UX 核心设计规范**：优先官方 `@material/web` 组件、Filter Chips、Outlined Text Field、无边框 Filled Tonal 卡片与学术排版准则。 | `src/themes/material-you/`<br>`src/components/FeatureToggles.astro` |
 | [AI问答Material-You重构与设置收敛交接文档.md](./AI问答Material-You重构与设置收敛交接文档.md) | **AI 问答交互架构**：Harness 调用树收敛、公式原生排版、三向自由缩放、设置项收拢与 M3 胶囊输入。 | `src/ai/client/chat-controller.ts`<br>`src/ai/ai-config.ts` |
 | [侧载系统架构与扩展交接文档.md](./侧载系统架构与扩展交接文档.md) | **Sideload Dock 侧载底座**：大纲、习题、AI 统一宿主、SideloadManager 单例状态机与多视口自适应联动。 | `src/components/sideload/`<br>`src/components/PageSidebarOverride.astro` |
@@ -43,6 +45,8 @@
 | [模块查重与巡检工具.md](./模块查重与巡检工具.md) | **全书模块巡检与查重**：模块集中索引、同章查重与异常拆分定位。 | `src/utils/module-inspector/` |
 | [大邮数学集题库结构化与分章习题交接文档.md](./大邮数学集题库结构化与分章习题交接文档.md) | **真题题库抽取与分章习题**：173 套试卷结构化解析、LaTeX 公式平衡与分章自测页集成。 | `scripts/lib/math_archive/`<br>`src/data/exercises/` |
 | [Gemma4原书扫描全视觉推倒重建与全书构建流水线交接文档.md](./Gemma4原书扫描全视觉推倒重建与全书构建流水线交接文档.md) | **原书全视觉推倒重建流水线**：以原书 PDF 物理扫描页为 Ground Truth，采用 `gemma-4-26b-a4b-it` 进行流式端到端视觉重构与验证体系。 | `scripts/vision_reconstruct/`<br>`src/content/docs/collections/math/` |
+| [线性代数与几何原书视觉数字化重构与导入交接文档.md](./线性代数与几何原书视觉数字化重构与导入交接文档.md) | **《线性代数与几何（第2版）》视觉重构与导入交接**：北京邮电大学精品教材全书 239 页物理映射、已完成章节（前言、第1章全章、第2章前2节、第3章全章、第4章全章）、未竟小节断点与出版级规范。 | `src/content/docs/collections/math/linear_algebra_geometry/`<br>`scripts/vision_reconstruct/` |
+| [线性代数与几何题库结构化与分章习题交接文档.md](./线性代数与几何题库结构化与分章习题交接文档.md) | **《线性代数与几何（第2版）》课后习题与参考答案题库交接**：全书 9 章 253 道课后习题与书末参考答案的物理页码映射矩阵、标准 JSON 题库 Schema 规范、全站题库注册与分步实施 SOP。 | `src/data/exercises/`<br>`src/config/exercise-banks.config.ts` |
 
 ---
 

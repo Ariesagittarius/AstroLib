@@ -1,0 +1,489 @@
+---
+title: '2.3 逆矩阵'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+在数的运算中，若 $ab = ba = 1$，那么 $b$ 就是 $a$ 的倒数（逆元），即 $b = a^{-1}$。在矩阵代数中，单位矩阵 $\boldsymbol{E}$ 在乘法中扮演着数 $1$ 的角色。本节将类比数的逆元，引入矩阵的逆矩阵概念，探讨方阵可逆的充要条件、公式求法、核心运算法则及其在线性方程组与矩阵方程求解中的应用。
+
+## 一、逆矩阵的概念
+
+<Knowledge title="定义 8 逆矩阵与奇异/非奇异矩阵">
+
+设 $\boldsymbol{A}$ 是一个 $n$ 阶方阵，若存在一个 $n$ 阶方阵 $\boldsymbol{B}$，使得
+
+$$
+\boldsymbol{A}\boldsymbol{B} = \boldsymbol{B}\boldsymbol{A} = \boldsymbol{E}
+$$
+
+（其中 $\boldsymbol{E}$ 是 $n$ 阶单位矩阵），则称 $\boldsymbol{A}$ 为**可逆矩阵**（或**非奇异矩阵**），也可简称为可逆方阵或可逆阵，并称 $\boldsymbol{B}$ 为 $\boldsymbol{A}$ 的**逆矩阵**。若这样的 $\boldsymbol{B}$ 不存在，则称 $\boldsymbol{A}$ 为**不可逆矩阵**（或**奇异矩阵**）。
+
+</Knowledge>
+
+<SideNote title="逆矩阵的唯一性与互逆性">
+
+若矩阵 $\boldsymbol{A}$ 可逆，则 $\boldsymbol{A}$ 的逆矩阵是唯一的。
+
+这是因为若 $\boldsymbol{B}, \boldsymbol{C}$ 均为 $\boldsymbol{A}$ 的逆矩阵，由定义可知 $\boldsymbol{A}\boldsymbol{B} = \boldsymbol{B}\boldsymbol{A} = \boldsymbol{E}$ 且 $\boldsymbol{A}\boldsymbol{C} = \boldsymbol{C}\boldsymbol{A} = \boldsymbol{E}$，从而
+
+$$
+\boldsymbol{B} = \boldsymbol{B}\boldsymbol{E} = \boldsymbol{B}(\boldsymbol{A}\boldsymbol{C}) = (\boldsymbol{B}\boldsymbol{A})\boldsymbol{C} = \boldsymbol{E}\boldsymbol{C} = \boldsymbol{C}.
+$$
+
+由于可逆矩阵 $\boldsymbol{A}$ 的逆矩阵是唯一的，记 $\boldsymbol{A}$ 的逆矩阵为 $\boldsymbol{A}^{-1}$。于是
+
+$$
+\boldsymbol{A}\boldsymbol{A}^{-1} = \boldsymbol{A}^{-1}\boldsymbol{A} = \boldsymbol{E}.
+$$
+
+当 $\boldsymbol{B}$ 为 $\boldsymbol{A}$ 的逆矩阵时，$\boldsymbol{B}$ 也为可逆矩阵，且 $\boldsymbol{A}$ 也为 $\boldsymbol{B}$ 的逆矩阵，即 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 互为逆矩阵。
+
+</SideNote>
+
+## 二、方阵可逆的充要条件与伴随矩阵
+
+为了给出判定方阵是否可逆的准则以及计算逆矩阵的公式，首先引入伴随矩阵的概念。
+
+<Knowledge title="定义 9 伴随矩阵">
+
+设 $\boldsymbol{A} = (a_{ij})_{n \times n}$，$A_{ij}$ 为 $\boldsymbol{A}$ 的元素 $a_{ij}$ 的代数余子式（$i, j = 1, 2, \dots, n$），则矩阵
+
+$$
+\boldsymbol{A}^* = \begin{pmatrix}
+A_{11} & A_{21} & \cdots & A_{n1} \\
+A_{12} & A_{22} & \cdots & A_{n2} \\
+\vdots & \vdots & \ddots & \vdots \\
+A_{1n} & A_{2n} & \cdots & A_{nn}
+\end{pmatrix}
+$$
+
+称为矩阵 $\boldsymbol{A}$ 的**伴随矩阵**，记作 $\boldsymbol{A}^*$。
+
+</Knowledge>
+
+<SideNote title="伴随矩阵的构造位置注意">
+
+由伴随矩阵的定义可以看出，在构造 $\boldsymbol{A}$ 的伴随矩阵时，$A_{ij}$ 必须放在 $\boldsymbol{A}^*$ 中的第 $j$ 行、第 $i$ 列的交叉位置上。也就是，$\boldsymbol{A}$ 的第 $i$ 行元素对应的代数余子式，作为 $\boldsymbol{A}^*$ 的第 $i$ 列元素。
+
+</SideNote>
+
+<Knowledge title="定理 1 方阵可逆的充要条件">
+
+$n$ 阶方阵 $\boldsymbol{A}$ 为可逆矩阵 $\iff |\boldsymbol{A}| \neq 0$。当 $\boldsymbol{A}$ 可逆时，有公式：
+
+$$
+\boldsymbol{A}^{-1} = \frac{1}{|\boldsymbol{A}|} \boldsymbol{A}^*.
+$$
+
+</Knowledge>
+
+<Solution title="证明">
+
+**必要性**：设 $\boldsymbol{A}$ 是 $n$ 阶可逆矩阵，则存在 $n$ 阶方阵 $\boldsymbol{B}$ 使得 $\boldsymbol{A}\boldsymbol{B} = \boldsymbol{E}$。由方阵乘积的行列式性质，可得
+
+$$
+|\boldsymbol{A}| \cdot |\boldsymbol{B}| = |\boldsymbol{E}| = 1,
+$$
+
+于是必有 $|\boldsymbol{A}| \neq 0$。
+
+**充分性**：设 $\boldsymbol{A} = (a_{ij})$ 为 $n$ 阶方阵且 $|\boldsymbol{A}| \neq 0$。根据行列式的按行展开及代数余子式性质：
+
+$$
+a_{i1}A_{j1} + a_{i2}A_{j2} + \cdots + a_{in}A_{jn} = \begin{cases}
+|\boldsymbol{A}|, & i = j, \\
+0, & i \neq j,
+\end{cases}
+$$
+
+所以
+
+$$
+\boldsymbol{A}\boldsymbol{A}^* = \begin{pmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+a_{21} & a_{22} & \cdots & a_{2n} \\
+\vdots & \vdots & \ddots & \vdots \\
+a_{n1} & a_{n2} & \cdots & a_{nn}
+\end{pmatrix} \begin{pmatrix}
+A_{11} & A_{21} & \cdots & A_{n1} \\
+A_{12} & A_{22} & \cdots & A_{n2} \\
+\vdots & \vdots & \ddots & \vdots \\
+A_{1n} & A_{2n} & \cdots & A_{nn}
+\end{pmatrix} = \begin{pmatrix}
+|\boldsymbol{A}| & 0 & \cdots & 0 \\
+0 & |\boldsymbol{A}| & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & |\boldsymbol{A}|
+\end{pmatrix} = |\boldsymbol{A}|\boldsymbol{E}.
+$$
+
+由于 $|\boldsymbol{A}| \neq 0$，两边同除以 $|\boldsymbol{A}|$ 得
+
+$$
+\boldsymbol{A}\left( \frac{1}{|\boldsymbol{A}|}\boldsymbol{A}^* \right) = \boldsymbol{E}.
+$$
+
+同理可得
+
+$$
+\left( \frac{1}{|\boldsymbol{A}|}\boldsymbol{A}^* \right)\boldsymbol{A} = \boldsymbol{E}.
+$$
+
+由矩阵可逆的定义可知，$\boldsymbol{A}$ 是可逆矩阵，且
+
+$$
+\boldsymbol{A}^{-1} = \frac{1}{|\boldsymbol{A}|}\boldsymbol{A}^*.
+$$
+
+</Solution>
+
+<Knowledge title="推论 单侧乘积为单位阵即互逆">
+
+设 $\boldsymbol{A}, \boldsymbol{B}$ 均为 $n$ 阶方阵，并且满足 $\boldsymbol{A}\boldsymbol{B} = \boldsymbol{E}$，则 $\boldsymbol{A}, \boldsymbol{B}$ 都可逆，且 $\boldsymbol{A}^{-1} = \boldsymbol{B}, \boldsymbol{B}^{-1} = \boldsymbol{A}$。
+
+</Knowledge>
+
+<Solution title="证明">
+
+由 $\boldsymbol{A}\boldsymbol{B} = \boldsymbol{E}$，可得 $|\boldsymbol{A}\boldsymbol{B}| = |\boldsymbol{A}| \cdot |\boldsymbol{B}| = 1$，因此 $|\boldsymbol{A}| \neq 0$ 且 $|\boldsymbol{B}| \neq 0$，故由定理 1 知 $\boldsymbol{A}$ 可逆，$\boldsymbol{B}$ 也可逆。
+
+在 $\boldsymbol{A}\boldsymbol{B} = \boldsymbol{E}$ 两边左乘 $\boldsymbol{A}^{-1}$，得 $\boldsymbol{B} = \boldsymbol{A}^{-1}$。
+
+在 $\boldsymbol{A}\boldsymbol{B} = \boldsymbol{E}$ 两边右乘 $\boldsymbol{B}^{-1}$，得 $\boldsymbol{A} = \boldsymbol{B}^{-1}$。
+
+</Solution>
+
+<SideNote title="关于单侧验证的实用意义">
+
+这个推论表明，以后在验证一个方阵是另一个方阵的逆矩阵时，只需要证明等式 $\boldsymbol{A}\boldsymbol{B} = \boldsymbol{E}$ 或 $\boldsymbol{B}\boldsymbol{A} = \boldsymbol{E}$ 成立即可，而不需要按定义同时验证两个等式。
+
+</SideNote>
+
+<Example title="例 17 二阶方阵求逆">
+
+设 $\boldsymbol{A} = \begin{pmatrix} a & b \\ c & d \end{pmatrix}$，且 $ad - bc \neq 0$，求 $\boldsymbol{A}$ 的逆矩阵。
+
+</Example>
+
+<Solution title="解">
+
+因为 $|\boldsymbol{A}| = ad - bc \neq 0$，于是 $\boldsymbol{A}$ 可逆，其各元素的代数余子式为：
+
+$$
+A_{11} = d, \quad A_{12} = -c, \quad A_{21} = -b, \quad A_{22} = a.
+$$
+
+故伴随矩阵为
+
+$$
+\boldsymbol{A}^* = \begin{pmatrix} d & -b \\ -c & a \end{pmatrix}.
+$$
+
+于是得
+
+$$
+\boldsymbol{A}^{-1} = \frac{1}{|\boldsymbol{A}|}\boldsymbol{A}^* = \frac{1}{ad - bc}\begin{pmatrix} d & -b \\ -c & a \end{pmatrix}.
+$$
+
+</Solution>
+
+<Example title="例 18 三阶方阵伴随矩阵法求逆">
+
+求矩阵 $\boldsymbol{A} = \begin{pmatrix} 1 & 0 & 1 \\ 2 & 1 & 0 \\ -3 & 2 & -5 \end{pmatrix}$ 的逆矩阵。
+
+</Example>
+
+<Solution title="解">
+
+因为
+
+$$
+|\boldsymbol{A}| = \begin{vmatrix} 1 & 0 & 1 \\ 2 & 1 & 0 \\ -3 & 2 & -5 \end{vmatrix} = 2 \neq 0,
+$$
+
+所以 $\boldsymbol{A}$ 可逆。计算各个代数余子式：
+
+$$
+\begin{aligned}
+A_{11} &= (-1)^{1+1}\begin{vmatrix} 1 & 0 \\ 2 & -5 \end{vmatrix} = -5, & A_{12} &= (-1)^{1+2}\begin{vmatrix} 2 & 0 \\ -3 & -5 \end{vmatrix} = 10, & A_{13} &= (-1)^{1+3}\begin{vmatrix} 2 & 1 \\ -3 & 2 \end{vmatrix} = 7, \\
+A_{21} &= (-1)^{2+1}\begin{vmatrix} 0 & 1 \\ 2 & -5 \end{vmatrix} = 2, & A_{22} &= (-1)^{2+2}\begin{vmatrix} 1 & 1 \\ -3 & -5 \end{vmatrix} = -2, & A_{23} &= (-1)^{2+3}\begin{vmatrix} 1 & 0 \\ -3 & 2 \end{vmatrix} = -2, \\
+A_{31} &= (-1)^{3+1}\begin{vmatrix} 0 & 1 \\ 1 & 0 \end{vmatrix} = -1, & A_{32} &= (-1)^{3+2}\begin{vmatrix} 1 & 1 \\ 2 & 0 \end{vmatrix} = 2, & A_{33} &= (-1)^{3+3}\begin{vmatrix} 1 & 0 \\ 2 & 1 \end{vmatrix} = 1.
+\end{aligned}
+$$
+
+所以
+
+$$
+\boldsymbol{A}^{-1} = \frac{1}{|\boldsymbol{A}|}\boldsymbol{A}^* = \frac{1}{2}\begin{pmatrix} -5 & 2 & -1 \\ 10 & -2 & 2 \\ 7 & -2 & 1 \end{pmatrix} = \begin{pmatrix} -\frac{5}{2} & 1 & -\frac{1}{2} \\ 5 & -1 & 1 \\ \frac{7}{2} & -1 & \frac{1}{2} \end{pmatrix}.
+$$
+
+</Solution>
+
+<Example title="例 19 矩阵多项式求逆">
+
+已知 $n$ 阶矩阵 $\boldsymbol{A}$ 满足 $\boldsymbol{A}^2 - 2\boldsymbol{A} - 4\boldsymbol{E} = \boldsymbol{O}$，试证 $\boldsymbol{A} + \boldsymbol{E}$ 是可逆矩阵，并求 $(\boldsymbol{A} + \boldsymbol{E})^{-1}$。
+
+</Example>
+
+<Solution title="解">
+
+由 $\boldsymbol{A}^2 - 2\boldsymbol{A} - 4\boldsymbol{E} = \boldsymbol{O}$，得
+
+$$
+\boldsymbol{A}^2 + \boldsymbol{A} - 3\boldsymbol{A} - 3\boldsymbol{E} = \boldsymbol{E},
+$$
+
+即
+
+$$
+(\boldsymbol{A} + \boldsymbol{E})\boldsymbol{A} - 3(\boldsymbol{A} + \boldsymbol{E}) = \boldsymbol{E},
+$$
+
+$$
+(\boldsymbol{A} + \boldsymbol{E})(\boldsymbol{A} - 3\boldsymbol{E}) = \boldsymbol{E}.
+$$
+
+由定理 1 的推论知 $\boldsymbol{A} + \boldsymbol{E}$ 可逆，且
+
+$$
+(\boldsymbol{A} + \boldsymbol{E})^{-1} = \boldsymbol{A} - 3\boldsymbol{E}.
+$$
+
+</Solution>
+
+## 三、可逆矩阵的性质
+
+<Knowledge title="可逆矩阵的基本运算性质">
+
+设 $\boldsymbol{A}, \boldsymbol{B}$ 为同阶的可逆方阵，常数 $k \neq 0$，则：
+
+1. $\boldsymbol{A}^{-1}$ 为可逆矩阵，且 $(\boldsymbol{A}^{-1})^{-1} = \boldsymbol{A}$；
+2. $k\boldsymbol{A}$ 为可逆矩阵，且 $(k\boldsymbol{A})^{-1} = \frac{1}{k}\boldsymbol{A}^{-1}$；
+3. $|\boldsymbol{A}^{-1}| = \frac{1}{|\boldsymbol{A}|} = |\boldsymbol{A}|^{-1}$；
+4. $\boldsymbol{A}^\mathrm{T}$ 为可逆矩阵，且 $(\boldsymbol{A}^\mathrm{T})^{-1} = (\boldsymbol{A}^{-1})^\mathrm{T}$；
+5. $\boldsymbol{A}\boldsymbol{B}$ 为可逆矩阵，且 $(\boldsymbol{A}\boldsymbol{B})^{-1} = \boldsymbol{B}^{-1}\boldsymbol{A}^{-1}$；
+6. 可逆矩阵可以从矩阵等式的同侧消去，即当 $\boldsymbol{P}$ 为可逆矩阵时，有
+
+$$
+\boldsymbol{P}\boldsymbol{A} = \boldsymbol{P}\boldsymbol{B} \iff \boldsymbol{A} = \boldsymbol{B}, \quad \boldsymbol{A}\boldsymbol{P} = \boldsymbol{B}\boldsymbol{P} \iff \boldsymbol{A} = \boldsymbol{B}.
+$$
+
+</Knowledge>
+
+<Solution title="证明 (4) 和 (5)">
+
+对于 (4)：由于 $\boldsymbol{A}^\mathrm{T}(\boldsymbol{A}^{-1})^\mathrm{T} = (\boldsymbol{A}^{-1}\boldsymbol{A})^\mathrm{T} = \boldsymbol{E}^\mathrm{T} = \boldsymbol{E}$，所以 $(\boldsymbol{A}^\mathrm{T})^{-1} = (\boldsymbol{A}^{-1})^\mathrm{T}$。
+
+对于 (5)：因为 $(\boldsymbol{A}\boldsymbol{B})(\boldsymbol{B}^{-1}\boldsymbol{A}^{-1}) = \boldsymbol{A}(\boldsymbol{B}\boldsymbol{B}^{-1})\boldsymbol{A}^{-1} = \boldsymbol{A}(\boldsymbol{E})\boldsymbol{A}^{-1} = (\boldsymbol{A}\boldsymbol{E})\boldsymbol{A}^{-1} = \boldsymbol{A}\boldsymbol{A}^{-1} = \boldsymbol{E}$，由定理 1 的推论知，$(\boldsymbol{A}\boldsymbol{B})^{-1} = \boldsymbol{B}^{-1}\boldsymbol{A}^{-1}$。
+
+性质 (5) 可推广至有限个可逆矩阵的情形：设 $\boldsymbol{A}_1, \boldsymbol{A}_2, \dots, \boldsymbol{A}_m$ 是 $m$ 个同阶的可逆矩阵，则 $\boldsymbol{A}_1\boldsymbol{A}_2\cdots\boldsymbol{A}_m$ 也可逆，且
+
+$$
+(\boldsymbol{A}_1\boldsymbol{A}_2\cdots\boldsymbol{A}_m)^{-1} = \boldsymbol{A}_m^{-1}\cdots\boldsymbol{A}_2^{-1}\boldsymbol{A}_1^{-1}.
+$$
+
+</Solution>
+
+<SideNote title="可逆矩阵的整数次幂">
+
+若 $\boldsymbol{A}$ 是 $n$ 阶可逆矩阵，可定义
+
+$$
+\boldsymbol{A}^0 = \boldsymbol{E}, \quad \boldsymbol{A}^{-k} = (\boldsymbol{A}^{-1})^k,
+$$
+
+其中 $k$ 是任意正整数。这样，可逆矩阵的幂运算可扩充到全体整数，即当 $\boldsymbol{A}$ 可逆时，对任意的整数 $k, l$，均有
+
+$$
+\boldsymbol{A}^k\boldsymbol{A}^l = \boldsymbol{A}^{k+l}, \quad (\boldsymbol{A}^k)^l = \boldsymbol{A}^{kl}.
+$$
+
+</SideNote>
+
+<Example title="例 20 利用相似关系计算方阵的高次幂">
+
+设 $\boldsymbol{P} = \begin{pmatrix} 1 & 2 \\ 3 & 7 \end{pmatrix}$，$\boldsymbol{\Lambda} = \begin{pmatrix} 2 & 0 \\ 0 & 3 \end{pmatrix}$，$\boldsymbol{A}$ 满足 $\boldsymbol{A}\boldsymbol{P} = \boldsymbol{P}\boldsymbol{\Lambda}$。求 $\boldsymbol{A}^n$，其中 $n$ 为正整数且 $n \ge 2$。
+
+</Example>
+
+<Solution title="解">
+
+因为
+
+$$
+|\boldsymbol{P}| = \begin{vmatrix} 1 & 2 \\ 3 & 7 \end{vmatrix} = 1, \quad \boldsymbol{P}^* = \begin{pmatrix} 7 & -2 \\ -3 & 1 \end{pmatrix},
+$$
+
+得 $\boldsymbol{P}^{-1} = \frac{1}{|\boldsymbol{P}|}\boldsymbol{P}^* = \begin{pmatrix} 7 & -2 \\ -3 & 1 \end{pmatrix}$。
+
+由 $\boldsymbol{A}\boldsymbol{P} = \boldsymbol{P}\boldsymbol{\Lambda}$，得 $\boldsymbol{A} = \boldsymbol{P}\boldsymbol{\Lambda}\boldsymbol{P}^{-1}$，于是
+
+$$
+\begin{aligned}
+\boldsymbol{A}^n &= (\boldsymbol{P}\boldsymbol{\Lambda}\boldsymbol{P}^{-1})^n = (\boldsymbol{P}\boldsymbol{\Lambda}\boldsymbol{P}^{-1})(\boldsymbol{P}\boldsymbol{\Lambda}\boldsymbol{P}^{-1})\cdots(\boldsymbol{P}\boldsymbol{\Lambda}\boldsymbol{P}^{-1}) \\
+&= \boldsymbol{P}\boldsymbol{\Lambda}(\boldsymbol{P}^{-1}\boldsymbol{P})\boldsymbol{\Lambda}(\boldsymbol{P}^{-1}\boldsymbol{P})\boldsymbol{\Lambda}\cdots\boldsymbol{\Lambda}(\boldsymbol{P}^{-1}\boldsymbol{P})\boldsymbol{\Lambda}\boldsymbol{P}^{-1} \\
+&= \boldsymbol{P}\boldsymbol{\Lambda}^n\boldsymbol{P}^{-1} \\
+&= \begin{pmatrix} 1 & 2 \\ 3 & 7 \end{pmatrix} \begin{pmatrix} 2^n & 0 \\ 0 & 3^n \end{pmatrix} \begin{pmatrix} 7 & -2 \\ -3 & 1 \end{pmatrix} \\
+&= \begin{pmatrix} 7 \cdot 2^n - 2 \cdot 3^{n+1} & -2^{n+1} + 2 \cdot 3^n \\ 21 \cdot 2^n - 7 \cdot 3^{n+1} & -3 \cdot 2^{n+1} + 7 \cdot 3^n \end{pmatrix}.
+\end{aligned}
+$$
+
+</Solution>
+
+## 四、矩阵逆在求解线性方程组与矩阵方程中的应用
+
+对于包含 $n$ 个方程的 $n$ 元线性方程组
+
+$$
+\begin{cases}
+a_{11}x_1 + a_{12}x_2 + \cdots + a_{1n}x_n = b_1, \\
+a_{21}x_1 + a_{22}x_2 + \cdots + a_{2n}x_n = b_2, \\
+\quad \vdots \\
+a_{n1}x_1 + a_{n2}x_2 + \cdots + a_{nn}x_n = b_n.
+\end{cases} \tag{2.7}
+$$
+
+若记
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+a_{21} & a_{22} & \cdots & a_{2n} \\
+\vdots & \vdots & \ddots & \vdots \\
+a_{n1} & a_{n2} & \cdots & a_{nn}
+\end{pmatrix}, \quad \boldsymbol{x} = \begin{pmatrix} x_1 \\ x_2 \\ \vdots \\ x_n \end{pmatrix}, \quad \boldsymbol{b} = \begin{pmatrix} b_1 \\ b_2 \\ \vdots \\ b_n \end{pmatrix},
+$$
+
+则 $n$ 元线性方程组 (2.7) 可以用矩阵方程简洁表示为
+
+$$
+\boldsymbol{A}\boldsymbol{x} = \boldsymbol{b}.
+$$
+
+若系数矩阵 $\boldsymbol{A}$ 可逆，上式两边同左乘 $\boldsymbol{A}^{-1}$，得方程组的唯一解为
+
+$$
+\boldsymbol{x} = \boldsymbol{A}^{-1}\boldsymbol{b}.
+$$
+
+这与用克拉默法则求得的解是完全相同的，因为
+
+$$
+\boldsymbol{x} = \boldsymbol{A}^{-1}\boldsymbol{b} = \frac{\boldsymbol{A}^*}{|\boldsymbol{A}|}\boldsymbol{b} = \frac{1}{|\boldsymbol{A}|} \begin{pmatrix}
+A_{11} & A_{21} & \cdots & A_{n1} \\
+A_{12} & A_{22} & \cdots & A_{n2} \\
+\vdots & \vdots & \ddots & \vdots \\
+A_{1n} & A_{2n} & \cdots & A_{nn}
+\end{pmatrix} \begin{pmatrix} b_1 \\ b_2 \\ \vdots \\ b_n \end{pmatrix} = \frac{1}{|\boldsymbol{A}|} \begin{pmatrix} \sum_{k=1}^n A_{k1}b_k \\ \sum_{k=1}^n A_{k2}b_k \\ \vdots \\ \sum_{k=1}^n A_{kn}b_k \end{pmatrix} = \begin{pmatrix} \frac{D_1}{D} \\ \frac{D_2}{D} \\ \vdots \\ \frac{D_n}{D} \end{pmatrix},
+$$
+
+其中 $D = |\boldsymbol{A}|, D_i = \sum_{k=1}^n A_{ki}b_k$（$i = 1, 2, \dots, n$）。
+
+<Example title="例 21 用逆矩阵求解线性方程组">
+
+用逆矩阵求解线性方程组：
+
+$$
+\begin{cases}
+x_1 - x_2 - x_3 = 2, \\
+2x_1 - x_2 - 3x_3 = 1, \\
+3x_1 + 2x_2 - 5x_3 = 0.
+\end{cases}
+$$
+
+</Example>
+
+<Solution title="解">
+
+设
+
+$$
+\boldsymbol{A} = \begin{pmatrix} 1 & -1 & -1 \\ 2 & -1 & -3 \\ 3 & 2 & -5 \end{pmatrix}, \quad \boldsymbol{x} = \begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix}, \quad \boldsymbol{b} = \begin{pmatrix} 2 \\ 1 \\ 0 \end{pmatrix},
+$$
+
+则原方程组可表示为 $\boldsymbol{A}\boldsymbol{x} = \boldsymbol{b}$。计算系数矩阵的行列式：
+
+$$
+|\boldsymbol{A}| = \begin{vmatrix} 1 & -1 & -1 \\ 2 & -1 & -3 \\ 3 & 2 & -5 \end{vmatrix} = 3 \neq 0,
+$$
+
+所以 $\boldsymbol{A}$ 可逆，经计算其伴随矩阵求得逆矩阵为
+
+$$
+\boldsymbol{A}^{-1} = \begin{pmatrix} \frac{11}{3} & -\frac{7}{3} & \frac{2}{3} \\ \frac{1}{3} & -\frac{2}{3} & \frac{1}{3} \\ \frac{7}{3} & -\frac{5}{3} & \frac{1}{3} \end{pmatrix}.
+$$
+
+从而方程组的解为
+
+$$
+\begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix} = \boldsymbol{A}^{-1}\boldsymbol{b} = \begin{pmatrix} \frac{11}{3} & -\frac{7}{3} & \frac{2}{3} \\ \frac{1}{3} & -\frac{2}{3} & \frac{1}{3} \\ \frac{7}{3} & -\frac{5}{3} & \frac{1}{3} \end{pmatrix} \begin{pmatrix} 2 \\ 1 \\ 0 \end{pmatrix} = \begin{pmatrix} 5 \\ 0 \\ 3 \end{pmatrix}.
+$$
+
+即 $x_1 = 5, x_2 = 0, x_3 = 3$。
+
+</Solution>
+
+<Knowledge title="矩阵方程的初等代数解法">
+
+若 $\boldsymbol{A}$ 是一个 $n$ 阶可逆矩阵，$\boldsymbol{B}$ 是任一 $n \times k$ 矩阵，对于矩阵方程
+
+$$
+\boldsymbol{A}\boldsymbol{X} = \boldsymbol{B}
+$$
+
+两边同左乘以 $\boldsymbol{A}^{-1}$，得唯一解
+
+$$
+\boldsymbol{X} = \boldsymbol{A}^{-1}\boldsymbol{B}.
+$$
+
+同理，若 $\boldsymbol{A}$ 为可逆矩阵，对于方程 $\boldsymbol{X}\boldsymbol{A} = \boldsymbol{B}$，两边同右乘以 $\boldsymbol{A}^{-1}$，得唯一解 $\boldsymbol{X} = \boldsymbol{B}\boldsymbol{A}^{-1}$。
+
+</Knowledge>
+
+<Example title="例 22 解矩阵方程">
+
+设 $\boldsymbol{A} = \begin{pmatrix} 3 & 0 & 1 \\ 1 & 1 & 0 \\ 0 & 1 & 4 \end{pmatrix}$，若矩阵 $\boldsymbol{X}$ 满足关系式 $\boldsymbol{A}\boldsymbol{X} = 2\boldsymbol{X} + \boldsymbol{A}$，求 $\boldsymbol{X}$。
+
+</Example>
+
+<Solution title="解">
+
+由 $\boldsymbol{A}\boldsymbol{X} = 2\boldsymbol{X} + \boldsymbol{A}$，移项整理得
+
+$$
+(\boldsymbol{A} - 2\boldsymbol{E})\boldsymbol{X} = \boldsymbol{A}.
+$$
+
+计算系数矩阵 $\boldsymbol{A} - 2\boldsymbol{E}$ 的行列式：
+
+$$
+|\boldsymbol{A} - 2\boldsymbol{E}| = \begin{vmatrix} 1 & 0 & 1 \\ 1 & -1 & 0 \\ 0 & 1 & 2 \end{vmatrix} = -1 \neq 0,
+$$
+
+故 $\boldsymbol{A} - 2\boldsymbol{E}$ 可逆，求其逆矩阵：
+
+$$
+(\boldsymbol{A} - 2\boldsymbol{E})^{-1} = \begin{pmatrix} 2 & -1 & -1 \\ 2 & -2 & -1 \\ -1 & 1 & 1 \end{pmatrix}.
+$$
+
+从而有
+
+$$
+\boldsymbol{X} = (\boldsymbol{A} - 2\boldsymbol{E})^{-1}\boldsymbol{A} = \begin{pmatrix} 2 & -1 & -1 \\ 2 & -2 & -1 \\ -1 & 1 & 1 \end{pmatrix} \begin{pmatrix} 3 & 0 & 1 \\ 1 & 1 & 0 \\ 0 & 1 & 4 \end{pmatrix} = \begin{pmatrix} 5 & -2 & -2 \\ 4 & -3 & -2 \\ -2 & 2 & 3 \end{pmatrix}.
+$$
+
+</Solution>
+
+<ExerciseTrigger chapter={2} section="2.3" title="2.3 逆矩阵 课后真题与自测练习" />

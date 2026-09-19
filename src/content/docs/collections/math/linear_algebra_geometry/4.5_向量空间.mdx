@@ -1,0 +1,352 @@
+---
+title: '4.5 向量空间'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+本节把向量的概念进一步抽象，引入一般向量空间及子空间的概念，讨论生成子空间、向量空间的基、维数以及向量在基下的坐标表示。
+
+## 一、$n$ 维向量空间的概念
+
+<Knowledge title="定义 9 向量空间">
+
+设 $V$ 是 $n$ 维向量构成的非空集合，且满足：
+1. 若 $\boldsymbol{\alpha}, \boldsymbol{\beta} \in V$，则 $\boldsymbol{\alpha} + \boldsymbol{\beta} \in V$；
+2. 若 $\forall \boldsymbol{\alpha} \in V$，及 $\forall k \in \mathbf{R}$，都有 $k\boldsymbol{\alpha} \in V$，
+
+则称集合 $V$ 是一个**向量空间**。
+
+定义中的条件 1 称为 $V$ 对向量的加法运算**封闭**，条件 2 称为 $V$ 对向量的数乘运算**封闭**。
+
+</Knowledge>
+
+上述两个条件可以合并成以下条件：
+对任意向量 $\boldsymbol{\alpha}, \boldsymbol{\beta} \in V$ 和任意常数 $k, l \in \mathbf{R}$，都有 $k\boldsymbol{\alpha} + l\boldsymbol{\beta} \in V$。
+
+<Example title="例 16 全体 n 维行向量集合构成的向量空间">
+
+$n$ 维行向量的全体所构成的集合
+
+$$
+\mathbf{R}^n = \{\boldsymbol{\alpha} = (a_1, a_2, \dots, a_n) \mid a_i \in \mathbf{R}, i = 1, 2, \dots, n\}
+$$
+
+构成一个向量空间，因为任意两个 $n$ 维行向量之和仍然是 $n$ 维行向量，数 $k$ 乘 $n$ 维行向量也仍然是 $n$ 维行向量，它们都属于 $\mathbf{R}^n$。即 $\mathbf{R}^n$ 对向量的加法和数与向量的乘法都封闭。
+
+全体 $n$ 维列向量的集合也构成向量空间，仍记为 $\mathbf{R}^n$。
+
+</Example>
+
+$\mathbf{R}^n$ 关于向量加法和数乘满足封闭性。可是，关于向量加法和数乘封闭的向量集合未必是 $\mathbf{R}^n$ 本身。在 $\mathbf{R}^n$ 中存在无穷多个真子集合，它们关于向量加法和数乘也都是封闭的。
+
+例如向量集 $\{\mathbf{0}\}$ 关于向量的加法和数乘运算是封闭的。
+
+再如，不难验证在三维向量空间 $\mathbf{R}^3 = \{(a, b, c) \mid a, b, c \in \mathbf{R}\}$ 中，任意一条过原点的直线 $L$ 关于向量加法和数乘是封闭的。事实上，始点在坐标原点，终点在 $L$ 上的所有向量的线性组合一定仍然在 $L$ 上。同理可证：任意一个过原点的平面关于向量加法和数乘也是封闭的，它们都是 $\mathbf{R}^3$ 的真子集。
+
+现在，引入向量空间的子空间的定义。
+
+<Knowledge title="定义 10 子空间与零空间">
+
+设 $V_1$ 和 $V_2$ 都是向量空间，且 $V_1 \subseteq V_2$，则称 $V_1$ 是 $V_2$ 的**子空间**。
+
+任何一个由 $n$ 维向量所组成的向量空间 $V$ 都满足 $V \subseteq \mathbf{R}^n$，于是 $V$ 是 $\mathbf{R}^n$ 的一个子空间。为了叙述方便，常把 $\mathbf{R}^n$ 中的子空间简称为向量空间。它未必是 $\mathbf{R}^n$ 本身。
+
+特别地，$V = \{\mathbf{0}\}$ 是向量空间，称为**零空间**。
+
+</Knowledge>
+
+由向量空间的非空性和两个封闭性易见，在任意一个向量空间 $V$ 中一定包含零向量。事实上，由 $V$ 不是空集知道，可以任取 $\boldsymbol{\alpha} \in V$，则 $-\boldsymbol{\alpha} = (-1)\boldsymbol{\alpha} \in V$，于是由封闭性知 $\boldsymbol{\alpha} + (-\boldsymbol{\alpha}) = \mathbf{0} \in V$。我们可以把零向量称为向量空间的“原点”。
+
+<Example title="例 17 判别子集是否构成向量空间">
+
+证明 $\mathbf{R}^n$ 中的以下子集 $V_1, V_2$ 都是向量空间，但 $V_3$ 不是向量空间：
+
+$$
+\begin{aligned}
+V_1 &= \{\boldsymbol{\alpha} = (0, a_2, \dots, a_n) \mid \forall a_i \in \mathbf{R}\}; \\
+V_2 &= \{\boldsymbol{\alpha} = (a_1, 0, a_3, 0, a_5, \dots, a_n) \mid \forall a_i \in \mathbf{R}\}; \\
+V_3 &= \{\boldsymbol{\alpha} = (1, a_2, \dots, a_n) \mid \forall a_i \in \mathbf{R}\}.
+\end{aligned}
+$$
+
+</Example>
+
+<Solution title="证明">
+
+事实上，由于 $V_1$ 中的向量的特征是它的第一个分量为 0，要判别一个 $n$ 维向量是否属于 $V_1$，只需判别它的第一个分量是否为 0 即可。
+
+在 $V_1$ 中任取两个向量 $\boldsymbol{\alpha} = (0, x_2, \dots, x_n), \boldsymbol{\beta} = (0, y_2, \dots, y_n)$，则对任意的数 $k$ 都有
+
+$$
+\boldsymbol{\alpha} + \boldsymbol{\beta} = (0, x_2 + y_2, \dots, x_n + y_n) \in V_1, \quad k\boldsymbol{\alpha} = (0, kx_2, \dots, kx_n) \in V_1.
+$$
+
+根据向量空间的定义知 $V_1$ 是向量空间。
+
+类似可以验证 $V_2$ 也是向量空间。
+
+因为 $V_3$ 中任意两个向量之和的第一个分量是 2，即 $V_3$ 对加法不封闭，因此 $V_3$ 不是向量空间（也可以由 $\mathbf{0} \notin V_3$ 直接判断 $V_3$ 不是向量空间）。
+
+</Solution>
+
+## 二、生成空间
+
+为了对生成空间有个感性认识，先考察下面的例子。
+
+<Example title="例 18 两个向量生成的向量空间">
+
+设 $\boldsymbol{\alpha}, \boldsymbol{\beta}$ 是两个已知的 $n$ 维向量，集合
+
+$$
+V = \{\boldsymbol{x} = \lambda\boldsymbol{\alpha} + \mu\boldsymbol{\beta} \mid \lambda, \mu \in \mathbf{R}\}
+$$
+
+是一个向量空间。因为若 $\boldsymbol{x}_1 = \lambda_1\boldsymbol{\alpha} + \mu_1\boldsymbol{\beta}, \boldsymbol{x}_2 = \lambda_2\boldsymbol{\alpha} + \mu_2\boldsymbol{\beta} \in V$，则有
+
+$$
+\boldsymbol{x}_1 + \boldsymbol{x}_2 = (\lambda_1 + \lambda_2)\boldsymbol{\alpha} + (\mu_1 + \mu_2)\boldsymbol{\beta} \in V \quad (\lambda_1 + \lambda_2, \mu_1 + \mu_2 \in \mathbf{R}),
+$$
+
+$$
+k\boldsymbol{x}_1 = (k\lambda_1)\boldsymbol{\alpha} + (k\mu_1)\boldsymbol{\beta} \in V \quad (k\lambda_1, k\mu_1 \in \mathbf{R}).
+$$
+
+这个向量空间称为由向量 $\boldsymbol{\alpha}, \boldsymbol{\beta}$ 生成的向量空间。
+
+</Example>
+
+一般地，任意取定向量组 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_m \in \mathbf{R}^n$，则可证明由它们的线性组合全体所组成的向量集合
+
+$$
+V = \{\boldsymbol{\alpha} = k_1\boldsymbol{\alpha}_1 + k_2\boldsymbol{\alpha}_2 + \dots + k_m\boldsymbol{\alpha}_m \mid \forall k_j \in \mathbf{R}, j = 1, 2, \dots, m\}
+$$
+
+是 $\mathbf{R}^n$ 中的一个向量空间，记为 $V = L(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_m)$，并称它为由 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_m$ **生成的向量空间**（或**张成的子空间**）。
+
+## 三、向量空间的基与维数及向量的坐标
+
+<Knowledge title="定义 11 向量空间的基与维数">
+
+设 $V$ 是 $\mathbf{R}^n$ 的一个子空间，若 $V$ 中的向量组 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r$ 满足：
+1. $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r$ 线性无关；
+2. $V$ 中的任意一个向量 $\boldsymbol{\alpha}$ 都可由向量组 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r$ 线性表出，即存在常数 $k_1, k_2, \dots, k_r \in \mathbf{R}$ 使得
+
+$$
+\boldsymbol{\alpha} = k_1\boldsymbol{\alpha}_1 + k_2\boldsymbol{\alpha}_2 + \dots + k_r\boldsymbol{\alpha}_r,
+$$
+
+则称向量组 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r$ 为向量空间 $V$ 的一个**基**，其中每个 $\boldsymbol{\alpha}_i \; (i = 1, 2, \dots, r)$ 都称为**基向量**。
+
+基中所含向量的个数 $r$ 称为 $V$ 的**维数**，记为 $\dim V = r$，并称 $V$ 为 $r$ 维向量空间。
+
+零空间的维数规定为 0。
+
+</Knowledge>
+
+由基的定义可知，向量空间 $V$ 的一个基，实际上就是向量集合 $V$ 中的一个极大线性无关组，$V$ 的维数就是极大无关组中所含向量的个数，也即 $V$ 的秩。
+
+<Example title="例 19 空间 Rn 的基判别">
+
+$\mathbf{R}^n$ 中任意 $n$ 个线性无关的向量都是 $\mathbf{R}^n$ 的一个基。
+
+</Example>
+
+<Solution title="证明">
+
+设 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n$ 是 $\mathbf{R}^n$ 中 $n$ 个线性无关的向量。对任意的 $\boldsymbol{\alpha} \in \mathbf{R}^n$，$n+1$ 个向量 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n, \boldsymbol{\alpha}$ 线性相关，根据定理 2，$\boldsymbol{\alpha}$ 可由 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n$ 线性表出。由定义 11 知，$\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n$ 是 $\mathbf{R}^n$ 的一个基。
+
+</Solution>
+
+由向量空间的维数的定义可知，$\mathbf{R}^3$ 中过原点的直线是一维子空间，过原点的平面是二维子空间。
+
+<Example title="例 20 证明向量组构成 R4 的基">
+
+证明
+
+$$
+\boldsymbol{\alpha}_1 = (1, 1, 1, 1)^\mathrm{T}, \quad \boldsymbol{\alpha}_2 = (1, 3, 1, 0)^\mathrm{T}, \quad \boldsymbol{\alpha}_3 = (1, 0, 1, 0)^\mathrm{T}, \quad \boldsymbol{\alpha}_4 = (1, 0, 0, 1)^\mathrm{T}
+$$
+
+是 $\mathbf{R}^4$ 的一个基。
+
+</Example>
+
+<Solution title="证明">
+
+根据例 19 的结论，只要证明 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\alpha}_4$ 线性无关即可。
+
+把 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\alpha}_4$ 排成矩阵 $\boldsymbol{A} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\alpha}_4)$，则
+
+$$
+|\boldsymbol{A}| = \begin{vmatrix}
+1 & 1 & 1 & 1 \\
+1 & 3 & 0 & 0 \\
+1 & 1 & 1 & 0 \\
+1 & 0 & 0 & 1
+\end{vmatrix} = -3 \neq 0,
+$$
+
+由定理 6 的推论 1 知 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\alpha}_4$ 线性无关，故 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\alpha}_4$ 是 $\mathbf{R}^4$ 的一个基。
+
+</Solution>
+
+如果 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r$ 是向量空间 $V$ 的一个基，那么，根据向量组的极大无关组的定义可知，每一个 $\boldsymbol{\alpha} \in V$ 一定可以唯一地表成 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r$ 的线性组合，于是必有
+
+$$
+V = L(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r) = \left\{ \sum_{i=1}^r k_i\boldsymbol{\alpha}_i \;\middle|\; \forall k_i \in \mathbf{R} \right\}.
+$$
+
+这就是说，任意一个向量空间都是由它的任意一个基（即极大无关组）生成的。
+
+<Example title="例 21 求生成子空间的维数与一组基">
+
+在 $\mathbf{R}^4$ 中，求由向量组
+
+$$
+\boldsymbol{\alpha}_1 = (2, 1, -1, -2)^\mathrm{T}, \quad \boldsymbol{\alpha}_2 = (1, 0, -3, 2)^\mathrm{T}, \quad \boldsymbol{\alpha}_3 = (2, 2, 1, -1)^\mathrm{T}, \quad \boldsymbol{\alpha}_4 = (3, 3, 3, -5)^\mathrm{T}
+$$
+
+生成的线性子空间的维数和一组基。
+
+</Example>
+
+<Solution title="解">
+
+由 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\alpha}_4$ 生成的子空间的维数即为该向量组的秩，其基即为该向量组的一个极大无关组。把 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\alpha}_4$ 排成矩阵 $\boldsymbol{A} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\alpha}_4)$，则
+
+$$
+\begin{aligned}
+\boldsymbol{A} = \begin{pmatrix}
+2 & 1 & 2 & 3 \\
+1 & 0 & 2 & 3 \\
+-1 & -3 & 1 & 3 \\
+-2 & 2 & -1 & -5
+\end{pmatrix}
+&\xrightarrow{r_1 \leftrightarrow r_2}
+\begin{pmatrix}
+1 & 0 & 2 & 3 \\
+2 & 1 & 2 & 3 \\
+-1 & -3 & 1 & 3 \\
+-2 & 2 & -1 & -5
+\end{pmatrix} \\
+&\xrightarrow[r_3 + r_1, r_4 + 2r_1]{r_2 - 2r_1}
+\begin{pmatrix}
+1 & 0 & 2 & 3 \\
+0 & 1 & -2 & -3 \\
+0 & -3 & 3 & 6 \\
+0 & 2 & 3 & 1
+\end{pmatrix}
+\xrightarrow[r_4 - 2r_2]{r_3 + 3r_2}
+\begin{pmatrix}
+1 & 0 & 2 & 3 \\
+0 & 1 & -2 & -3 \\
+0 & 0 & -3 & -3 \\
+0 & 0 & 7 & 7
+\end{pmatrix} \\
+&\xrightarrow[-\frac{1}{3}r_3, \frac{1}{7}r_4]{}
+\begin{pmatrix}
+1 & 0 & 2 & 3 \\
+0 & 1 & -2 & -3 \\
+0 & 0 & 1 & 1 \\
+0 & 0 & 1 & 1
+\end{pmatrix}
+\xrightarrow{r_4 - r_3}
+\begin{pmatrix}
+1 & 0 & 2 & 3 \\
+0 & 1 & -2 & -3 \\
+0 & 0 & 1 & 1 \\
+0 & 0 & 0 & 0
+\end{pmatrix}.
+\end{aligned}
+$$
+
+从而，由 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\alpha}_4$ 生成的子空间的维数为 3，$\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3$ 为其一个基。
+
+</Solution>
+
+<Knowledge title="定义 12 向量在基下的坐标">
+
+设 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n$ 是 $n$ 维向量空间的一个基，向量空间 $V$ 中的任意一个向量 $\boldsymbol{\alpha}$ 都可以唯一地表示为
+
+$$
+\boldsymbol{\alpha} = x_1\boldsymbol{\alpha}_1 + x_2\boldsymbol{\alpha}_2 + \dots + x_n\boldsymbol{\alpha}_n,
+$$
+
+$\boldsymbol{\alpha}_i \; (i = 1, 2, \dots, n)$ 的系数构成的有序数组 $x_1, x_2, \dots, x_n$ 称为向量 $\boldsymbol{\alpha}$ 在基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n$ 下的**坐标**，记作 $(x_1, x_2, \dots, x_n)^\mathrm{T}$。
+
+</Knowledge>
+
+同一个向量在不同的基下有不同的坐标向量。求坐标向量的方法就是求表出系数，也就是解线性方程组。
+
+<Example title="例 22 求向量在给定基下的坐标">
+
+证明 $\boldsymbol{\alpha}_1 = (1, 1, 2)^\mathrm{T}, \boldsymbol{\alpha}_2 = (1, -2, 0)^\mathrm{T}, \boldsymbol{\alpha}_3 = (2, 0, 5)^\mathrm{T}$ 构成 $\mathbf{R}^3$ 的基，并求出 $\boldsymbol{\beta} = (1, -1, 3)^\mathrm{T}$ 在此基下的坐标。
+
+</Example>
+
+<Solution title="解">
+
+将 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\beta}$ 排成矩阵 $\boldsymbol{A} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\beta})$，对 $\boldsymbol{A}$ 施行初等行变换把它化成行最简形。若 $\boldsymbol{A}$ 的行最简形中前 3 列构成单位矩阵，则 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3$ 是 $\mathbf{R}^3$ 的一个基，且第 4 列即为 $\boldsymbol{\beta}$ 在基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3$ 下的坐标。
+
+$$
+\begin{aligned}
+\boldsymbol{A} = \begin{pmatrix}
+1 & 1 & 2 & 1 \\
+1 & -2 & 0 & -1 \\
+2 & 0 & 5 & 3
+\end{pmatrix}
+&\xrightarrow[r_3 - 2r_1]{r_2 - r_1}
+\begin{pmatrix}
+1 & 1 & 2 & 1 \\
+0 & -3 & -2 & -2 \\
+0 & -2 & 1 & 1
+\end{pmatrix} \\
+&\xrightarrow{r_2 - r_3}
+\begin{pmatrix}
+1 & 1 & 2 & 1 \\
+0 & -1 & -3 & -3 \\
+0 & -2 & 1 & 1
+\end{pmatrix}
+\xrightarrow{(-1)r_2}
+\begin{pmatrix}
+1 & 1 & 2 & 1 \\
+0 & 1 & 3 & 3 \\
+0 & -2 & 1 & 1
+\end{pmatrix} \\
+&\xrightarrow[r_3 + 2r_2]{r_1 - r_2}
+\begin{pmatrix}
+1 & 0 & -1 & -2 \\
+0 & 1 & 3 & 3 \\
+0 & 0 & 7 & 7
+\end{pmatrix}
+\xrightarrow{\frac{1}{7}r_3}
+\begin{pmatrix}
+1 & 0 & -1 & -2 \\
+0 & 1 & 3 & 3 \\
+0 & 0 & 1 & 1
+\end{pmatrix} \\
+&\xrightarrow[r_2 - 3r_3]{r_1 + r_3}
+\begin{pmatrix}
+1 & 0 & 0 & -1 \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 1 & 1
+\end{pmatrix}.
+\end{aligned}
+$$
+
+从而 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3$ 是 $\mathbf{R}^3$ 的一个基，且 $\boldsymbol{\beta} = -\boldsymbol{\alpha}_1 + \boldsymbol{\alpha}_3$，即 $\boldsymbol{\beta}$ 在基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3$ 下的坐标是 $(-1, 0, 1)^\mathrm{T}$。
+
+</Solution>
+
+<ExerciseTrigger chapter={4} section="4.5" title="4.5 向量空间 课后真题与自测练习" />

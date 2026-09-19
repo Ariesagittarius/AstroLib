@@ -35,6 +35,21 @@ function sendJson(res, status, data) {
   res.end(body);
 }
 
+function parseJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', (chunk) => (body += chunk));
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (e) {
+        reject(e);
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
 /**
  * 探测本地可用的 XeLaTeX 编译器绝对路径
  */
@@ -263,6 +278,85 @@ async function handle(req, res) {
       return true;
     } catch (err) {
       console.error('[chapter-export-plugin] 导出失败:', err);
+      sendJson(res, 500, {
+        ok: false,
+        message: String(err?.message || err),
+      });
+      return true;
+    }
+  }
+
+  // 3. 原生 LaTeX 源码本地 XeLaTeX 编译直出 PDF 端点 (供习题导出与通用导出复用)
+  if (url.pathname === '/__chapter_export__/compile-latex' && req.method === 'POST') {
+    const xelatexBin = findXelatexBin();
+    if (!xelatexBin) {
+      sendJson(res, 400, {
+        ok: false,
+        message: '未检测到本地 XeLaTeX 编译器 (TeX Live / MacTeX / MiKTeX)。请安装本地 LaTeX 环境或使用云端编译。',
+      });
+      return true;
+    }
+
+    try {
+      const body = await parseJsonBody(req);
+      const { latex, filename = 'document.pdf' } = body;
+      if (!latex || typeof latex !== 'string') {
+        sendJson(res, 400, { ok: false, message: '缺少 latex 源码字段' });
+        return true;
+      }
+
+      const tempOutDir = path.join(ROOT, '.tmp', 'dev-latex-compile', `${Date.now()}`);
+      fs.mkdirSync(tempOutDir, { recursive: true });
+
+      const mainTexPath = path.join(tempOutDir, 'main.tex');
+      fs.writeFileSync(mainTexPath, latex, 'utf8');
+
+      // 执行 XeLaTeX 双遍编译解决交叉引用与页码（解耦执行，防止第 1 遍非致命退出码阻断第 2 遍）
+      const runXeLaTeXPass = (pass) => {
+        try {
+          execSync(`"${xelatexBin}" -file-line-error -interaction=nonstopmode main.tex`, {
+            cwd: tempOutDir,
+            stdio: 'pipe',
+            timeout: 90000,
+          });
+          return true;
+        } catch (compileErr) {
+          return false;
+        }
+      };
+
+      runXeLaTeXPass(1);
+      // 只要产生了 main.aux 或 main.pdf，继续执行第 2 遍编译以准确解析交叉引用与总页数
+      if (fs.existsSync(path.join(tempOutDir, 'main.aux')) || fs.existsSync(path.join(tempOutDir, 'main.pdf'))) {
+        runXeLaTeXPass(2);
+      }
+
+      const pdfFile = path.join(tempOutDir, 'main.pdf');
+      if (!fs.existsSync(pdfFile)) {
+        const logFile = path.join(tempOutDir, 'main.log');
+        const logContent = fs.existsSync(logFile) ? fs.readFileSync(logFile, 'utf8') : '';
+        sendJson(res, 500, {
+          ok: false,
+          message: '本地 XeLaTeX 编译失败，未生成 PDF 目标产物',
+          logSnippet: logContent.split('\n').slice(-35).join('\n'),
+        });
+        return true;
+      }
+
+      const pdfBuffer = fs.readFileSync(pdfFile);
+      const safeName = encodeURIComponent(filename.endsWith('.pdf') ? filename : `${filename}.pdf`);
+      res.writeHead(200, {
+        'content-type': 'application/pdf',
+        'content-disposition': `attachment; filename="${safeName}"; filename*=UTF-8''${safeName}`,
+        'content-length': pdfBuffer.length,
+        'cache-control': 'no-cache, no-store, must-revalidate',
+        pragma: 'no-cache',
+        expires: '0',
+      });
+      res.end(pdfBuffer);
+      return true;
+    } catch (err) {
+      console.error('[chapter-export-plugin] 编译原生 LaTeX 异常:', err);
       sendJson(res, 500, {
         ok: false,
         message: String(err?.message || err),

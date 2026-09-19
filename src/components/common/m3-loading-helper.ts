@@ -88,7 +88,7 @@ export async function ensureM3ProgressComponents(): Promise<void> {
   await Promise.all([
     import('@material/web/progress/circular-progress.js'),
     import('@material/web/progress/linear-progress.js'),
-    import('./m3-loading-indicator.js'),
+    import('./m3-loading-indicator'),
   ]);
   customElementsLoaded = true;
 }

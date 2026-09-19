@@ -12,20 +12,7 @@ import type {
   ChapterSectionSummary,
 } from '../../types/exercises';
 
-import { generateLatexDocument, type LatexExportConfig, DEFAULT_LATEX_CONFIG } from '../../publishing/latex/latex-generator';
-import { getStoredExportSettings, saveStoredExportSettings } from '../../publishing/common/export-settings.ts';
-import {
-  generateJobId,
-  getStoredCompilerConfig,
-  saveCompilerConfig,
-  dispatchCompileWorkflow,
-  pollCompileResult,
-  checkReleaseDirectly,
-  printPdfDirectly,
-  downloadPdfFile,
-  type CompileJobState,
-  type CloudCompileConfig,
-} from '../../utils/latex/latex-cloud-compiler';
+import { ExerciseExportPipeline } from './exercise-export-pipeline';
 import {
   getEffectiveAiClientConfig,
   saveAiApiKey,
@@ -113,74 +100,19 @@ class ExerciseCenterController {
   private feedbackModal: HTMLElement | null = null;
   private sourceEditorModal: HTMLElement | null = null;
   private aiUploadModal: HTMLElement | null = null;
-  private latexModal: HTMLElement | null = null;
-  private openLatexBtn: HTMLElement | null = null;
-  private latexCodeTextarea: HTMLTextAreaElement | null = null;
-  private latexFilenameBadge: HTMLElement | null = null;
-  private latexOverleafBtn: HTMLElement | null = null;
-  private latexCopyBtn: HTMLElement | null = null;
-  private latexPreviewCopyBtn: HTMLElement | null = null;
-  private latexDownloadBtn: HTMLElement | null = null;
-  private currentLatexConfig: LatexExportConfig = { ...DEFAULT_LATEX_CONFIG };
-  private currentGeneratedLatexCode: string = '';
-
-  // 云端 XeLaTeX 编译与免服务器打印字段
-  private latexSettingsOpenBtn: HTMLElement | null = null;
-  private latexSettingsModal: HTMLElement | null = null;
-  private latexSettingsCloseBtn: HTMLElement | null = null;
-  private latexSettingsCancelBtn: HTMLElement | null = null;
-  private ghTokenInput: HTMLInputElement | null = null;
-  private ghRepoInput: HTMLInputElement | null = null;
-  private ghTransportModeSelect: HTMLSelectElement | null = null;
-  private ghSaveConfigBtn: HTMLElement | null = null;
-
-  private moreExportBtn: HTMLElement | null = null;
-  private moreExportMenu: HTMLElement | null = null;
-  private moreExportWrapper: HTMLElement | null = null;
-
-  private tabCloudBtn: HTMLElement | null = null;
-  private tabSourceBtn: HTMLElement | null = null;
-  private latexCloudPanel: HTMLElement | null = null;
-  private latexSourcePanel: HTMLElement | null = null;
-
-  private pipelineStatusPill: HTMLElement | null = null;
-  private pipelineStatusDesc: HTMLElement | null = null;
-  private pipelineTimer: HTMLElement | null = null;
-  private pipelineJobId: HTMLElement | null = null;
-
-  private pipelineEmptyCard: HTMLElement | null = null;
-  private pipelineLoadingCard: HTMLElement | null = null;
-  private pipelinePreviewFrame: HTMLElement | null = null;
-  private latexPdfIframe: HTMLIFrameElement | null = null;
-  private loadingTitle: HTMLElement | null = null;
-  private loadingSub: HTMLElement | null = null;
-  private pipelineProgressBar: HTMLElement | null = null;
-
-  private latexLogDrawer: HTMLDetailsElement | null = null;
-  private latexLogPre: HTMLElement | null = null;
-
-  private latexModalMeta: HTMLElement | null = null;
-  private templateHint: HTMLElement | null = null;
-  private pipelineTimeoutCard: HTMLElement | null = null;
-  private pipelineTimeoutDesc: HTMLElement | null = null;
-  private continueWaitBtn: HTMLButtonElement | null = null;
-  private checkResultNowBtn: HTMLButtonElement | null = null;
-  private latexPrintBtn: HTMLButtonElement | null = null;
-  private latexCancelCompileBtn: HTMLButtonElement | null = null;
-  private latexConfigView: HTMLElement | null = null;
-  private latexResultView: HTMLElement | null = null;
-  private latexStartCompileBtn: HTMLButtonElement | null = null;
-  private latexBackConfigBtn: HTMLButtonElement | null = null;
-  private latexDownloadPdfBtn: HTMLButtonElement | null = null;
-  private latexDownloadPdfText: HTMLElement | null = null;
-
-  private currentCompiledPdfUrl: string | null = null;
-  private currentCompileJobId: string | null = null;
-  private isCompiling: boolean = false;
-  private compileTimerInterval: any = null;
-  private compileStartTime: number = 0;
-  private compileAbortController: AbortController | null = null;
-  private latexDebounceTimer: any = null;
+  private exportPipeline = new ExerciseExportPipeline({
+    getCurrentMode: () => this.currentMode,
+    getCurrentChapter: () => this.currentChapter,
+    getCurrentPaperId: () => this.currentPaperId,
+    getChapterData: (ch) => this.chapterCache.get(ch),
+    getPaperData: (pId) => this.paperCache.get(pId),
+    getSearchQuery: () => this.searchQuery,
+    getFilteredQuestions: () =>
+      this.currentFilteredQuestions.length > 0
+        ? this.currentFilteredQuestions
+        : this.chapterCache.get(this.currentChapter)?.questions || [],
+    showToast: (msg) => this.showToast(msg),
+  });
 
   private toolbarEl: HTMLElement | null = null;
   private toolbarToggleBtn: HTMLButtonElement | null = null;
@@ -204,6 +136,7 @@ class ExerciseCenterController {
   private currentType = 'all';
   private searchQuery = '';
   private displayedLimit = PAGE_SIZE;
+  private currentBook = 'engineering_analysis';
 
   private currentFilteredQuestions: SlimQuestionItem[] = [];
   private chapterCache = new Map<number, ChapterData>();
@@ -275,64 +208,7 @@ class ExerciseCenterController {
       this.feedbackModal = this.root.querySelector('#ex-feedback-modal');
       this.sourceEditorModal = this.root.querySelector('#ex-source-editor-modal');
       this.aiUploadModal = this.root.querySelector('#ex-ai-upload-modal');
-      this.latexModal = this.root.querySelector('#ex-latex-modal');
-      this.openLatexBtn = this.root.querySelector('#ex-open-latex-btn');
-      this.latexCodeTextarea = this.root.querySelector('#ex-latex-code-textarea');
-      this.latexFilenameBadge = this.root.querySelector('#ex-latex-filename-badge');
-      this.latexOverleafBtn = this.root.querySelector('#ex-latex-overleaf-btn');
-      this.latexCopyBtn = this.root.querySelector('#ex-latex-copy-btn');
-      this.latexPreviewCopyBtn = this.root.querySelector('#ex-latex-preview-copy-btn');
-      this.latexDownloadBtn = this.root.querySelector('#ex-latex-download-btn');
-
-      // 云端编译与二级设置弹窗 DOM 查询
-      this.latexSettingsOpenBtn = this.root.querySelector('#ex-latex-open-settings-btn');
-      this.latexSettingsModal = this.root.querySelector('#ex-latex-settings-modal');
-      this.latexSettingsCloseBtn = this.root.querySelector('#ex-close-settings-modal-btn');
-      this.latexSettingsCancelBtn = this.root.querySelector('#ex-cancel-settings-btn');
-      this.ghTokenInput = this.root.querySelector('#ex-gh-token-input');
-      this.ghRepoInput = this.root.querySelector('#ex-gh-repo-input');
-      this.ghTransportModeSelect = this.root.querySelector('#ex-gh-transport-mode-select');
-      this.ghSaveConfigBtn = this.root.querySelector('#ex-gh-save-config-btn');
-
-      this.moreExportBtn = this.root.querySelector('#ex-more-export-btn');
-      this.moreExportMenu = this.root.querySelector('#ex-more-export-menu');
-      this.moreExportWrapper = this.root.querySelector('#ex-more-export-wrapper');
-
-      this.tabCloudBtn = this.root.querySelector('#ex-tab-cloud-btn');
-      this.tabSourceBtn = this.root.querySelector('#ex-tab-source-btn');
-      this.latexCloudPanel = this.root.querySelector('#ex-latex-cloud-panel');
-      this.latexSourcePanel = this.root.querySelector('#ex-latex-source-panel');
-
-      this.pipelineStatusPill = this.root.querySelector('#ex-pipeline-status-pill');
-      this.pipelineStatusDesc = this.root.querySelector('#ex-pipeline-status-desc');
-      this.pipelineTimer = this.root.querySelector('#ex-pipeline-timer');
-      this.pipelineJobId = this.root.querySelector('#ex-pipeline-job-id');
-
-      this.pipelineEmptyCard = this.root.querySelector('#ex-pipeline-empty-card');
-      this.pipelineLoadingCard = this.root.querySelector('#ex-pipeline-loading-card');
-      this.pipelinePreviewFrame = this.root.querySelector('#ex-pipeline-preview-frame');
-      this.latexPdfIframe = this.root.querySelector('#ex-latex-pdf-iframe');
-      this.loadingTitle = this.root.querySelector('#ex-loading-title');
-      this.loadingSub = this.root.querySelector('#ex-loading-sub');
-      this.pipelineProgressBar = this.root.querySelector('#ex-pipeline-progress-bar');
-
-      this.latexLogDrawer = this.root.querySelector('#ex-pipeline-log-drawer');
-      this.latexLogPre = this.root.querySelector('#ex-latex-log-pre');
-
-      this.latexModalMeta = this.root.querySelector('#ex-latex-modal-meta');
-      this.templateHint = this.root.querySelector('#ex-template-hint');
-      this.pipelineTimeoutCard = this.root.querySelector('#ex-pipeline-timeout-card');
-      this.pipelineTimeoutDesc = this.root.querySelector('#ex-pipeline-timeout-desc');
-      this.continueWaitBtn = this.root.querySelector('#ex-continue-wait-btn');
-      this.checkResultNowBtn = this.root.querySelector('#ex-check-result-now-btn');
-      this.latexPrintBtn = this.root.querySelector('#ex-latex-print-btn');
-      this.latexCancelCompileBtn = this.root.querySelector('#ex-latex-cancel-compile-btn');
-      this.latexConfigView = this.root.querySelector('#ex-latex-config-view');
-      this.latexResultView = this.root.querySelector('#ex-latex-result-view');
-      this.latexStartCompileBtn = this.root.querySelector('#ex-latex-start-compile-btn');
-      this.latexBackConfigBtn = this.root.querySelector('#ex-latex-back-config-btn');
-      this.latexDownloadPdfBtn = this.root.querySelector('#ex-latex-download-pdf-btn');
-      this.latexDownloadPdfText = this.root.querySelector('#ex-latex-download-pdf-text');
+      this.exportPipeline.initElements(this.root);
 
       this.totalStatEl = this.root.querySelector('.ex-stat-total');
       this.doneStatEl = this.root.querySelector('.ex-stat-done');
@@ -381,16 +257,7 @@ class ExerciseCenterController {
       if (this.isOpen) {
         this.close();
       }
-      this.releaseLatexPdfViewer();
-      if (this.compileTimerInterval) {
-        clearInterval(this.compileTimerInterval);
-        this.compileTimerInterval = null;
-      }
-      if (this.latexDebounceTimer) {
-        clearTimeout(this.latexDebounceTimer);
-        this.latexDebounceTimer = null;
-      }
-      this.compileAbortController?.abort();
+      this.exportPipeline.destroy();
       this.chapterCache.clear();
       this.paperCache.clear();
       this.allQuestionsCache = [];
@@ -404,9 +271,9 @@ class ExerciseCenterController {
       window.addEventListener('exercises:open', (e: any) => {
         const detail = e.detail || {};
         if (detail.mode === 'paper') {
-          this.openPaper(detail.paperId || 1, detail.targetQid);
+          this.openPaper(detail.paperId || 1, detail.targetQid, detail.book);
         } else {
-          this.open(detail.chapter || 1, detail.section || 'all');
+          this.open(detail.chapter || 1, detail.section || 'all', detail.book);
         }
       });
 
@@ -445,8 +312,7 @@ class ExerciseCenterController {
       (this.feedbackModal && !this.feedbackModal.classList.contains('hidden')) ||
       (this.sourceEditorModal && !this.sourceEditorModal.classList.contains('hidden')) ||
       (this.aiUploadModal && !this.aiUploadModal.classList.contains('hidden')) ||
-      (this.latexModal && !this.latexModal.classList.contains('hidden')) ||
-      false
+      this.exportPipeline.isModalOpen()
     );
   }
 
@@ -454,23 +320,15 @@ class ExerciseCenterController {
     this.feedbackModal?.classList.add('hidden');
     this.sourceEditorModal?.classList.add('hidden');
     this.aiUploadModal?.classList.add('hidden');
-    this.closeLatexModal();
+    this.exportPipeline.closeLatexModal();
   }
 
-  private closeLatexModal() {
-    this.latexModal?.classList.add('hidden');
-    this.releaseLatexPdfViewer();
+  public openLatexModal() {
+    this.exportPipeline.openLatexModal();
   }
 
-  /**
-   * 彻底释放 PDFium / Chrome 内部 PDF 渲染引擎与位图表面
-   * 将 iframe 导航至 about:blank，中断跨页面历史记录与 BFCache 对大位图的驻留
-   */
-  private releaseLatexPdfViewer() {
-    if (this.latexPdfIframe) {
-      this.latexPdfIframe.src = 'about:blank';
-    }
-    this.currentCompiledPdfUrl = null;
+  public closeLatexModal() {
+    this.exportPipeline.closeLatexModal();
   }
 
   private detectCurrentChapter(): number {
@@ -765,9 +623,17 @@ class ExerciseCenterController {
     `;
   }
 
-  public open(chapter = 1, section = 'all') {
+  public open(chapter = 1, section = 'all', book?: string) {
     if (!this.root) this.root = document.getElementById('exercise-modal-root');
     if (!this.root) return;
+
+    if (book && book !== this.currentBook) {
+      this.currentBook = book;
+      this.chapterCache.clear();
+      this.paperCache.clear();
+      this.paperListSummary = [];
+      this.allQuestionsCache = [];
+    }
 
     if (this.root.parentElement !== document.body) {
       document.body.appendChild(this.root);
@@ -798,9 +664,17 @@ class ExerciseCenterController {
     this.switchMode('practice');
   }
 
-  public openPaper(paperId = 1, targetQid?: string) {
+  public openPaper(paperId = 1, targetQid?: string, book?: string) {
     if (!this.root) this.root = document.getElementById('exercise-modal-root');
     if (!this.root) return;
+
+    if (book && book !== this.currentBook) {
+      this.currentBook = book;
+      this.chapterCache.clear();
+      this.paperCache.clear();
+      this.paperListSummary = [];
+      this.allQuestionsCache = [];
+    }
 
     if (this.root.parentElement !== document.body) {
       document.body.appendChild(this.root);
@@ -942,7 +816,7 @@ class ExerciseCenterController {
     this.renderLoading(`正在加载第 ${chId} 章题库与公式...`);
 
     try {
-      const resp = await fetch(`/data/exercises/engineering_analysis/ch${chId}.json`);
+      const resp = await fetch(`/data/exercises/${this.currentBook}/ch${chId}.json`);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data: ChapterData = await resp.json();
       this.chapterCache.set(chId, data);
@@ -960,7 +834,7 @@ class ExerciseCenterController {
     if (this.paperListSummary.length > 0) return;
 
     try {
-      const resp = await fetch('/data/exercises/engineering_analysis/papers.json');
+      const resp = await fetch(`/data/exercises/${this.currentBook}/papers.json`);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
       this.paperListSummary = data.papers || [];
@@ -1007,7 +881,7 @@ class ExerciseCenterController {
     this.renderLoading(`正在加载真题试卷内容与大纲...`);
 
     try {
-      const resp = await fetch(`/data/exercises/engineering_analysis/papers/p${paperId}.json`);
+      const resp = await fetch(`/data/exercises/${this.currentBook}/papers/p${paperId}.json`);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data: SinglePaperData = await resp.json();
       this.paperCache.set(paperId, data);
@@ -1026,10 +900,12 @@ class ExerciseCenterController {
     this.isLoading = true;
     this.renderLoading('正在构建全书题目全局检索索引...');
 
-    const loadPromises = [1, 2, 3, 4, 5, 6, 7].map(async (ch) => {
+    const maxCh = this.currentBook === 'linear_algebra_geometry' ? 9 : 7;
+    const chList = Array.from({ length: maxCh }, (_, i) => i + 1);
+    const loadPromises = chList.map(async (ch) => {
       if (this.chapterCache.has(ch)) return this.chapterCache.get(ch)!.questions;
       try {
-        const resp = await fetch(`/data/exercises/engineering_analysis/ch${ch}.json`);
+        const resp = await fetch(`/data/exercises/${this.currentBook}/ch${ch}.json`);
         if (resp.ok) {
           const data: ChapterData = await resp.json();
           this.chapterCache.set(ch, data);
@@ -2103,7 +1979,7 @@ $$
     const card = this.bodyContainer?.querySelector(`#q-card-${qid}`);
     const input = card?.querySelector('.ex-ai-key-input') as HTMLInputElement;
     if (input && input.value.trim()) {
-      saveAiApiKey(getActiveAiModel().id, input.value.trim(), true);
+      saveAiApiKey(getActiveAiModel().id, input.value.trim());
       card?.querySelector(`#ai-key-config-${qid}`)?.classList.add('hidden');
       this.showToast('API Key 保存成功');
       this.handleAskAi(qid);
@@ -2152,219 +2028,7 @@ $$
       aiUploadSubmitBtn.addEventListener('click', () => this.submitAiSolutionUpload());
     }
 
-    // --- LaTeX Export Modal Events ---
-    if (this.openLatexBtn) {
-      this.openLatexBtn.addEventListener('click', () => this.openLatexModal());
-    }
-
-    this.root.querySelectorAll('[data-action="close-latex-modal"]').forEach((btn) => {
-      btn.addEventListener('click', () => this.closeLatexModal());
-    });
-
-    // 模板版式分段控制器切换 (handout / exam)
-    this.root.querySelectorAll('.ex-segmented-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        this.root?.querySelectorAll('.ex-segmented-btn').forEach((b) => {
-          b.classList.remove('active');
-          b.setAttribute('aria-selected', 'false');
-        });
-        btn.classList.add('active');
-        btn.setAttribute('aria-selected', 'true');
-        const t = (btn.getAttribute('data-template') || 'handout') as any;
-        this.currentLatexConfig.template = t;
-        if (this.templateHint) {
-          this.templateHint.textContent =
-            t === 'handout'
-              ? '大学数学教材体例 · 经典双线页眉 · 纯正学术出版排版'
-              : '标准自测测试卷头 · 紧凑排版 · 纯净无干扰题面';
-        }
-        this.scheduleRefreshLatexPreview();
-      });
-    });
-
-    // 页面与字体规格
-    const paperSelect = this.root.querySelector('#ex-latex-paper-size') as HTMLSelectElement;
-    if (paperSelect) {
-      paperSelect.addEventListener('change', (e) => {
-        this.currentLatexConfig.paperSize = (e.target as HTMLSelectElement).value as any;
-        this.scheduleRefreshLatexPreview();
-      });
-    }
-
-    const typographySelect = this.root.querySelector('#ex-latex-typography') as HTMLSelectElement;
-    if (typographySelect) {
-      typographySelect.addEventListener('change', (e) => {
-        const typo = (e.target as HTMLSelectElement).value as any;
-        this.currentLatexConfig.typography = typo;
-        saveStoredExportSettings({ typography: typo });
-        this.scheduleRefreshLatexPreview();
-      });
-    }
-
-    const fontSelect = this.root.querySelector('#ex-latex-font-family') as HTMLSelectElement;
-    if (fontSelect) {
-      fontSelect.addEventListener('change', (e) => {
-        this.currentLatexConfig.fontFamily = (e.target as HTMLSelectElement).value as any;
-        this.scheduleRefreshLatexPreview();
-      });
-    }
-
-    const mathFontSelect = this.root.querySelector('#ex-latex-math-font') as HTMLSelectElement;
-    if (mathFontSelect) {
-      mathFontSelect.addEventListener('change', (e) => {
-        this.currentLatexConfig.mathFont = (e.target as HTMLSelectElement).value as any;
-        this.scheduleRefreshLatexPreview();
-      });
-    }
-
-    const sizeSelect = this.root.querySelector('#ex-latex-font-size') as HTMLSelectElement;
-    if (sizeSelect) {
-      sizeSelect.addEventListener('change', (e) => {
-        this.currentLatexConfig.fontSize = (parseFloat((e.target as HTMLSelectElement).value) || 11) as any;
-        this.scheduleRefreshLatexPreview();
-      });
-    }
-
-    const pageNumberingSelect = this.root.querySelector('#ex-latex-page-numbering') as HTMLSelectElement;
-    if (pageNumberingSelect) {
-      pageNumberingSelect.addEventListener('change', (e) => {
-        this.currentLatexConfig.pageNumbering = (e.target as HTMLSelectElement).value as any;
-        this.scheduleRefreshLatexPreview();
-      });
-    }
-
-    // 作答留白单选
-    this.root.querySelectorAll('input[name="ex-latex-writing-space"]').forEach((radio) => {
-      radio.addEventListener('change', (e) => {
-        this.currentLatexConfig.writingSpace = (e.target as HTMLInputElement).value as any;
-        this.scheduleRefreshLatexPreview();
-      });
-    });
-
-    // 参考答案附录单选
-    this.root.querySelectorAll('input[name="ex-latex-answer-mode"]').forEach((radio) => {
-      radio.addEventListener('change', (e) => {
-        this.currentLatexConfig.answerPlacement = (e.target as HTMLInputElement).value as any;
-        this.scheduleRefreshLatexPreview();
-      });
-    });
-
-    // Overleaf、复制与下载按钮（在更多导出下拉菜单中）
-    if (this.latexOverleafBtn) {
-      this.latexOverleafBtn.addEventListener('click', () => {
-        this.closeMoreExportMenu();
-        this.openInOverleaf();
-      });
-    }
-    if (this.latexCopyBtn) {
-      this.latexCopyBtn.addEventListener('click', () => {
-        this.closeMoreExportMenu();
-        this.copyLatexCode();
-      });
-    }
-    if (this.latexPreviewCopyBtn) {
-      this.latexPreviewCopyBtn.addEventListener('click', () => this.copyLatexCode());
-    }
-    if (this.latexDownloadBtn) {
-      this.latexDownloadBtn.addEventListener('click', () => {
-        this.closeMoreExportMenu();
-        this.downloadLatexFile();
-      });
-    }
-
-    // 更多导出方式二级下拉菜单切换与外部点击关闭
-    if (this.moreExportBtn && this.moreExportMenu) {
-      this.moreExportBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const isHidden = this.moreExportMenu?.classList.contains('hidden');
-        if (isHidden) {
-          this.openMoreExportMenu();
-        } else {
-          this.closeMoreExportMenu();
-        }
-      });
-      document.addEventListener('click', (e) => {
-        if (!this.moreExportWrapper?.contains(e.target as Node)) {
-          this.closeMoreExportMenu();
-        }
-      });
-    }
-
-    // 云端编译配置独立二级弹窗开关与保存
-    if (this.latexSettingsOpenBtn) {
-      this.latexSettingsOpenBtn.addEventListener('click', () => this.openSettingsModal());
-    }
-    if (this.latexSettingsCloseBtn) {
-      this.latexSettingsCloseBtn.addEventListener('click', () => this.closeSettingsModal());
-    }
-    if (this.latexSettingsCancelBtn) {
-      this.latexSettingsCancelBtn.addEventListener('click', () => this.closeSettingsModal());
-    }
-    if (this.latexSettingsModal) {
-      this.latexSettingsModal.addEventListener('click', (e) => {
-        if (e.target === this.latexSettingsModal) this.closeSettingsModal();
-      });
-    }
-    if (this.ghSaveConfigBtn) {
-      this.ghSaveConfigBtn.addEventListener('click', () => this.saveCompilerSettings());
-    }
-
-    // 阶段 1 主 CTA 按钮: 开始生成 PDF
-    if (this.latexStartCompileBtn) {
-      this.latexStartCompileBtn.addEventListener('click', () => {
-        const config = getStoredCompilerConfig();
-        if (!config.token) {
-          this.openSettingsModal();
-          this.showToast('请先配置具备 actions:write 权限的 GitHub Token');
-          return;
-        }
-        this.switchLatexStage('result');
-        this.startCloudCompilation();
-      });
-    }
-
-    // 阶段 2 返回修改配置按钮
-    if (this.latexBackConfigBtn) {
-      this.latexBackConfigBtn.addEventListener('click', () => {
-        this.switchLatexStage('config');
-      });
-    }
-
-    // 阶段 2 主 CTA: 下载 PDF 文件
-    if (this.latexDownloadPdfBtn) {
-      this.latexDownloadPdfBtn.addEventListener('click', () => {
-        if (this.currentCompiledPdfUrl) {
-          this.downloadCompiledPdf();
-        } else if (this.pipelineTimeoutCard && !this.pipelineTimeoutCard.classList.contains('hidden')) {
-          this.continueWaitingCompilation();
-        } else {
-          this.showToast('尚未生成可下载的 PDF');
-        }
-      });
-    }
-
-    // 次要打印按钮
-    if (this.latexPrintBtn) {
-      this.latexPrintBtn.addEventListener('click', () => {
-        if (this.currentCompiledPdfUrl) {
-          printPdfDirectly(this.currentCompiledPdfUrl);
-          this.showToast('正在调起系统打印面板...');
-        }
-      });
-    }
-
-    // 取消编译按钮
-    if (this.latexCancelCompileBtn) {
-      this.latexCancelCompileBtn.addEventListener('click', () => this.cancelCloudCompilation());
-    }
-
-    // 耗时较长挂起状态下的辅助操作
-    if (this.continueWaitBtn) {
-      this.continueWaitBtn.addEventListener('click', () => this.continueWaitingCompilation());
-    }
-    if (this.checkResultNowBtn) {
-      this.checkResultNowBtn.addEventListener('click', () => this.checkCompilationResultDirectly());
-    }
+    // LaTeX 导出模态框交互与云端编译事件由 this.exportPipeline 统一驱动管理
   }
 
   private openFeedbackModal(qid: string) {
@@ -2585,626 +2249,10 @@ $$
     }
   }
 
-  private openLatexModal() {
-    if (!this.latexModal) return;
-
-    // 根据当前视图设定标题与科目（严谨学术体例）
-    let title = '工科数学分析';
-    let subtitle = '章节真题精选与自测练习';
-    let courseName = '工科数学分析';
-
-    if (this.currentMode === 'practice') {
-      const chapterData = this.chapterCache.get(this.currentChapter);
-      const chTitle = chapterData?.chapter_title || `第 ${this.currentChapter} 章`;
-      title = `工科数学分析 · ${chTitle}`;
-      subtitle = '章节课后真题精选与自测演练';
-      courseName = '工科数学分析';
-    } else if (this.currentMode === 'paper') {
-      const paperData = this.paperCache.get(this.currentPaperId);
-      title = paperData?.clean_title || paperData?.raw_title || `课程试卷 #${this.currentPaperId}`;
-      courseName = paperData?.course_name || '高等数学';
-      subtitle = paperData?.academic_year ? `${paperData.academic_year} 学年模拟自测试卷` : '期中期末标准测试卷';
-    } else {
-      title = this.searchQuery ? `数理精选习题（"${this.searchQuery}"）` : '数理真题精选集';
-      subtitle = '题库智能检索与专题训练';
-      courseName = '高等数学';
-    }
-
-    this.currentLatexConfig.title = title;
-    this.currentLatexConfig.subtitle = subtitle;
-    this.currentLatexConfig.courseName = courseName;
-
-    // 获取当前选定题量并更新 Header 提示
-    const questions =
-      this.currentFilteredQuestions.length > 0
-        ? this.currentFilteredQuestions
-        : this.chapterCache.get(this.currentChapter)?.questions || [];
-
-    if (this.latexModalMeta) {
-      this.latexModalMeta.textContent = `${title} · 共 ${questions.length} 道习题`;
-    }
-
-    // 初始化编译配置项到输入框
-    const cfg = getStoredCompilerConfig();
-    if (this.ghTokenInput) this.ghTokenInput.value = cfg.token;
-    if (this.ghRepoInput) this.ghRepoInput.value = `${cfg.owner}/${cfg.repo}`;
-    if (this.ghTransportModeSelect) this.ghTransportModeSelect.value = cfg.transportMode || 'auto';
-
-    // 同步排版预设与本地存储 (包含历史配置静默迁移)
-    const storedExport = getStoredExportSettings();
-    if (storedExport.typography) {
-      this.currentLatexConfig.typography = storedExport.typography;
-    }
-    const typoSelect = this.latexModal.querySelector('#ex-latex-typography') as HTMLSelectElement | null;
-    if (typoSelect && this.currentLatexConfig.typography) {
-      typoSelect.value = this.currentLatexConfig.typography;
-    }
-
-    // 默认展示排版配置视图（若已有生成结果则直达预览）
-    if (this.currentCompiledPdfUrl || this.isCompiling) {
-      this.switchLatexStage('result');
-    } else {
-      this.switchLatexStage('config');
-    }
-
-    this.refreshLatexPreview();
-    if (!this.currentCompiledPdfUrl) {
-      this.setLatexExportState('idle');
-    } else {
-      this.setLatexExportState('ready');
-    }
-    this.latexModal.classList.remove('hidden');
-  }
-
-  private openSettingsModal() {
-    const cfg = getStoredCompilerConfig();
-    if (this.ghTokenInput) this.ghTokenInput.value = cfg.token;
-    if (this.ghRepoInput) this.ghRepoInput.value = `${cfg.owner}/${cfg.repo}`;
-    if (this.ghTransportModeSelect) this.ghTransportModeSelect.value = cfg.transportMode || 'auto';
-    this.latexSettingsModal?.classList.remove('hidden');
-    this.ghTokenInput?.focus();
-  }
-
-  private closeSettingsModal() {
-    this.latexSettingsModal?.classList.add('hidden');
-  }
-
-  private openMoreExportMenu() {
-    this.moreExportMenu?.classList.remove('hidden');
-    this.moreExportWrapper?.classList.add('open');
-    this.moreExportBtn?.setAttribute('aria-expanded', 'true');
-  }
-
-  private closeMoreExportMenu() {
-    this.moreExportMenu?.classList.add('hidden');
-    this.moreExportWrapper?.classList.remove('open');
-    this.moreExportBtn?.setAttribute('aria-expanded', 'false');
-  }
-
-  private saveCompilerSettings() {
-    const token = this.ghTokenInput?.value.trim() || '';
-    const repoStr = this.ghRepoInput?.value.trim() || 'Ariesagittarius/AstroLib';
-    const [owner, repo] = repoStr.split('/');
-    const transportMode = (this.ghTransportModeSelect?.value as any) || 'auto';
-
-    saveCompilerConfig({
-      token,
-      owner: owner || 'Ariesagittarius',
-      repo: repo || 'AstroLib',
-      transportMode,
-    });
-
-    this.closeSettingsModal();
-    this.showToast('✓ 已保存 GitHub Actions 编译凭证与传输模式配置');
-  }
-
-  private switchLatexStage(stage: 'config' | 'result') {
-    if (stage === 'config') {
-      this.latexConfigView?.classList.remove('hidden');
-      this.latexResultView?.classList.add('hidden');
-      this.releaseLatexPdfViewer();
-    } else {
-      this.latexConfigView?.classList.add('hidden');
-      this.latexResultView?.classList.remove('hidden');
-    }
-  }
-
-  private getPdfExportFilename(): string {
-    const texName = this.getLatexExportFilename();
-    return texName.replace(/\.tex$/i, '.pdf');
-  }
-
-  private handleCloudCompileOrPrint() {
-    if (this.currentCompiledPdfUrl) {
-      printPdfDirectly(this.currentCompiledPdfUrl);
-      this.showToast('正在调起浏览器原生打印面板...');
-    } else {
-      this.startCloudCompilation();
-    }
-  }
-
-  private downloadCompiledPdf() {
-    if (!this.currentCompiledPdfUrl) return;
-    downloadPdfFile(this.currentCompiledPdfUrl, this.getPdfExportFilename());
-    this.showToast(`已开始下载：${this.getPdfExportFilename()}`);
-  }
-
-  private setLatexExportState(
-    state: 'idle' | 'compiling' | 'ready' | 'timeout' | 'failed',
-    message?: string
-  ) {
-    if (!this.latexModal) return;
-
-    if (state === 'idle') {
-      this.isCompiling = false;
-      this.releaseLatexPdfViewer();
-      if (this.compileTimerInterval) clearInterval(this.compileTimerInterval);
-
-      this.pipelineLoadingCard?.classList.add('hidden');
-      this.pipelineTimeoutCard?.classList.add('hidden');
-      this.pipelinePreviewFrame?.classList.add('hidden');
-      this.latexPrintBtn?.classList.add('hidden');
-      this.latexCancelCompileBtn?.classList.add('hidden');
-      this.pipelineTimer?.classList.add('hidden');
-      this.pipelineJobId?.classList.add('hidden');
-
-      if (this.pipelineStatusPill) {
-        this.pipelineStatusPill.className = 'ex-status-pill idle';
-        this.pipelineStatusPill.textContent = '就绪';
-      }
-      if (this.pipelineStatusDesc) {
-        this.pipelineStatusDesc.textContent = message || '就绪中，点击「开始生成 PDF」发起云端 XeLaTeX 编译排版';
-      }
-      if (this.latexStartCompileBtn) {
-        this.latexStartCompileBtn.disabled = false;
-      }
-      if (this.latexDownloadPdfBtn) {
-        this.latexDownloadPdfBtn.disabled = true;
-      }
-      if (this.latexDownloadPdfText) {
-        this.latexDownloadPdfText.textContent = '下载 PDF';
-      }
-    } else if (state === 'compiling') {
-      this.isCompiling = true;
-      this.releaseLatexPdfViewer();
-      this.switchLatexStage('result');
-      this.pipelineLoadingCard?.classList.remove('hidden');
-      this.pipelineTimeoutCard?.classList.add('hidden');
-      this.pipelinePreviewFrame?.classList.add('hidden');
-      this.latexPrintBtn?.classList.add('hidden');
-      this.latexCancelCompileBtn?.classList.remove('hidden');
-      this.pipelineTimer?.classList.remove('hidden');
-      this.pipelineJobId?.classList.remove('hidden');
-
-      if (this.pipelineStatusPill) {
-        this.pipelineStatusPill.className = 'ex-status-pill compiling';
-        this.pipelineStatusPill.textContent = '正在排版';
-      }
-      if (this.pipelineStatusDesc) {
-        this.pipelineStatusDesc.textContent = message || '正在调度云端算力节点并排版生成 PDF...';
-      }
-      if (this.latexStartCompileBtn) {
-        this.latexStartCompileBtn.disabled = true;
-      }
-      if (this.latexDownloadPdfBtn) {
-        this.latexDownloadPdfBtn.disabled = true;
-      }
-      if (this.latexDownloadPdfText) {
-        this.latexDownloadPdfText.textContent = '正在排版...';
-      }
-    } else if (state === 'ready') {
-      this.isCompiling = false;
-      this.switchLatexStage('result');
-      if (this.compileTimerInterval) clearInterval(this.compileTimerInterval);
-
-      this.pipelineLoadingCard?.classList.add('hidden');
-      this.pipelineTimeoutCard?.classList.add('hidden');
-      this.pipelinePreviewFrame?.classList.remove('hidden');
-      this.latexPrintBtn?.classList.remove('hidden');
-      this.latexCancelCompileBtn?.classList.add('hidden');
-
-      if (this.pipelineStatusPill) {
-        this.pipelineStatusPill.className = 'ex-status-pill ready';
-        this.pipelineStatusPill.textContent = '✓ 已生成';
-      }
-      if (this.pipelineStatusDesc) {
-        this.pipelineStatusDesc.textContent = message || '✓ 编译成功！高清矢量 PDF 已就绪，可直接预览或下载';
-      }
-      if (this.latexStartCompileBtn) {
-        this.latexStartCompileBtn.disabled = false;
-      }
-      if (this.latexDownloadPdfBtn) {
-        this.latexDownloadPdfBtn.disabled = false;
-      }
-      if (this.latexDownloadPdfText) {
-        this.latexDownloadPdfText.textContent = '下载 PDF';
-      }
-    } else if (state === 'timeout') {
-      this.isCompiling = false;
-      this.releaseLatexPdfViewer();
-      this.switchLatexStage('result');
-      if (this.compileTimerInterval) clearInterval(this.compileTimerInterval);
-
-      this.pipelineLoadingCard?.classList.add('hidden');
-      this.pipelineTimeoutCard?.classList.remove('hidden');
-      this.pipelinePreviewFrame?.classList.add('hidden');
-      this.latexPrintBtn?.classList.add('hidden');
-      this.latexCancelCompileBtn?.classList.add('hidden');
-
-      if (this.pipelineStatusPill) {
-        this.pipelineStatusPill.className = 'ex-status-pill queued';
-        this.pipelineStatusPill.textContent = '排队/编译中';
-      }
-      if (this.pipelineStatusDesc) {
-        this.pipelineStatusDesc.textContent = message || '云端编译耗时较长（GitHub 节点排队中）。任务仍在云端继续运行';
-      }
-      if (this.pipelineTimeoutDesc && message) {
-        this.pipelineTimeoutDesc.textContent = message;
-      }
-      if (this.latexStartCompileBtn) {
-        this.latexStartCompileBtn.disabled = false;
-      }
-      if (this.latexDownloadPdfBtn) {
-        this.latexDownloadPdfBtn.disabled = true;
-      }
-      if (this.latexDownloadPdfText) {
-        this.latexDownloadPdfText.textContent = '继续等待编译';
-      }
-    } else if (state === 'failed') {
-      this.isCompiling = false;
-      this.releaseLatexPdfViewer();
-      this.switchLatexStage('result');
-      if (this.compileTimerInterval) clearInterval(this.compileTimerInterval);
-
-      this.pipelineLoadingCard?.classList.add('hidden');
-      this.pipelineTimeoutCard?.classList.add('hidden');
-      this.pipelinePreviewFrame?.classList.add('hidden');
-      this.latexPrintBtn?.classList.add('hidden');
-      this.latexCancelCompileBtn?.classList.add('hidden');
-
-      if (this.pipelineStatusPill) {
-        this.pipelineStatusPill.className = 'ex-status-pill failed';
-        this.pipelineStatusPill.textContent = '编译失败';
-      }
-      if (this.pipelineStatusDesc) {
-        this.pipelineStatusDesc.textContent = message || '编译未完成，请展开下方诊断日志查看原因';
-      }
-      if (this.latexStartCompileBtn) {
-        this.latexStartCompileBtn.disabled = false;
-      }
-      if (this.latexDownloadPdfBtn) {
-        this.latexDownloadPdfBtn.disabled = true;
-      }
-      if (this.latexDownloadPdfText) {
-        this.latexDownloadPdfText.textContent = '重新生成 PDF';
-      }
-      if (this.latexLogDrawer) {
-        this.latexLogDrawer.open = true;
-      }
-    }
-  }
-
-  private async startCloudCompilation() {
-    if (this.isCompiling) return;
-
-    const config = getStoredCompilerConfig();
-    if (!config.token) {
-      this.openSettingsModal();
-      this.showToast('请先配置具备 actions:write 权限的 GitHub Token');
-      return;
-    }
-
-    if (this.latexDebounceTimer) {
-      clearTimeout(this.latexDebounceTimer);
-      this.latexDebounceTimer = null;
-      this.refreshLatexPreview();
-    } else if (!this.currentGeneratedLatexCode) {
-      this.refreshLatexPreview();
-    }
-
-    const jobId = generateJobId();
-    this.currentCompileJobId = jobId;
-    this.currentCompiledPdfUrl = null;
-    this.compileAbortController = new AbortController();
-    this.compileStartTime = Date.now();
-
-    // 确保切换到编译交付与 PDF 预览阶段
-    this.switchLatexStage('result');
-    this.setLatexExportState('compiling', '正在向 GitHub Actions 算力池调度编译任务...');
-
-    if (this.pipelineJobId) {
-      this.pipelineJobId.textContent = jobId;
-    }
-    if (this.pipelineTimer) {
-      this.pipelineTimer.textContent = '00:00';
-    }
-
-    if (this.compileTimerInterval) clearInterval(this.compileTimerInterval);
-    this.compileTimerInterval = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - this.compileStartTime) / 1000);
-      const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
-      const s = String(elapsed % 60).padStart(2, '0');
-      if (this.pipelineTimer) this.pipelineTimer.textContent = `${m}:${s}`;
-    }, 1000);
-
-    if (this.latexLogPre) {
-      this.latexLogPre.textContent = `[${new Date().toLocaleTimeString()}] 准备派发任务 ${jobId} 至 ${config.owner}/${config.repo}...\n`;
-    }
-
-    try {
-      if (this.latexLogPre) {
-        this.latexLogPre.textContent += `[${new Date().toLocaleTimeString()}] 正在调度 GitHub workflow_dispatch (${config.workflowFile})...\n`;
-      }
-
-      const dispatchRes = await dispatchCompileWorkflow(
-        jobId,
-        this.currentGeneratedLatexCode,
-        this.getPdfExportFilename(),
-        config,
-        (msg) => {
-          if (this.latexLogPre) {
-            this.latexLogPre.textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`;
-          }
-        }
-      );
-
-      if (this.latexLogPre) {
-        const modeLabel = dispatchRes.modeUsed === 'blob' ? 'Git Blob' : 'Gzip';
-        this.latexLogPre.textContent += `[${new Date().toLocaleTimeString()}] 任务已调度 (${modeLabel})，等待 Runner 执行...\n`;
-      }
-
-      const pdfUrl = await pollCompileResult(
-        jobId,
-        this.getPdfExportFilename(),
-        config,
-        (state) => {
-          if (this.pipelineStatusDesc) this.pipelineStatusDesc.textContent = state.statusText;
-          if (this.pipelineProgressBar) this.pipelineProgressBar.style.width = `${state.progress}%`;
-          if (this.loadingTitle) this.loadingTitle.textContent = state.statusText;
-        },
-        this.compileAbortController.signal
-      );
-
-      this.currentCompiledPdfUrl = pdfUrl;
-      if (this.latexPdfIframe) {
-        try {
-          this.latexPdfIframe.contentWindow?.location.replace(pdfUrl);
-        } catch {
-          this.latexPdfIframe.src = pdfUrl;
-        }
-      }
-      const totalElapsed = Math.floor((Date.now() - this.compileStartTime) / 1000);
-      this.setLatexExportState('ready', `✓ 编译成功！文档已生成 (总耗时 ${totalElapsed}s)`);
-
-      if (this.latexLogPre) {
-        this.latexLogPre.textContent += `[${new Date().toLocaleTimeString()}] 编译成功！获取 Release PDF 直链: ${pdfUrl}\n`;
-      }
-
-      this.showToast('✓ XeLaTeX 编译完成！可直接下载或打印');
-    } catch (err: any) {
-      if (err.message?.includes('超时') || err.message?.includes('耗时较长')) {
-        this.setLatexExportState('timeout', err.message);
-        if (this.latexLogPre) {
-          this.latexLogPre.textContent += `\n[${new Date().toLocaleTimeString()}] 提示: ${err.message}\n`;
-        }
-      } else if (err.name === 'AbortError' || this.compileAbortController?.signal.aborted) {
-        this.setLatexExportState('idle', '用户已取消本次排版编译');
-      } else {
-        this.setLatexExportState('failed', err.message || '排版编译未完成，请展开诊断日志查看原因');
-        if (this.latexLogPre) {
-          this.latexLogPre.textContent += `\n[${new Date().toLocaleTimeString()}] 错误: ${err.message || err}\n`;
-        }
-        this.showToast(`编译未完成: ${err.message || '请检查日志'}`);
-      }
-    }
-  }
-
-  private async continueWaitingCompilation() {
-    if (!this.currentCompileJobId) {
-      this.startCloudCompilation();
-      return;
-    }
-
-    const config = getStoredCompilerConfig();
-    const elapsed = Math.floor((Date.now() - this.compileStartTime) / 1000);
-
-    this.setLatexExportState('compiling', `继续等待云端排版结果 (已耗时 ${elapsed}s)...`);
-    this.compileAbortController = new AbortController();
-
-    if (this.compileTimerInterval) clearInterval(this.compileTimerInterval);
-    this.compileTimerInterval = setInterval(() => {
-      const nowElapsed = Math.floor((Date.now() - this.compileStartTime) / 1000);
-      const m = String(Math.floor(nowElapsed / 60)).padStart(2, '0');
-      const s = String(nowElapsed % 60).padStart(2, '0');
-      if (this.pipelineTimer) this.pipelineTimer.textContent = `${m}:${s}`;
-    }, 1000);
-
-    try {
-      const pdfUrl = await pollCompileResult(
-        this.currentCompileJobId,
-        this.getPdfExportFilename(),
-        config,
-        (state) => {
-          if (this.pipelineStatusDesc) this.pipelineStatusDesc.textContent = state.statusText;
-          if (this.pipelineProgressBar) this.pipelineProgressBar.style.width = `${state.progress}%`;
-          if (this.loadingTitle) this.loadingTitle.textContent = state.statusText;
-        },
-        this.compileAbortController.signal,
-        elapsed
-      );
-
-      this.currentCompiledPdfUrl = pdfUrl;
-      if (this.latexPdfIframe) {
-        try {
-          this.latexPdfIframe.contentWindow?.location.replace(pdfUrl);
-        } catch {
-          this.latexPdfIframe.src = pdfUrl;
-        }
-      }
-      const totalElapsed = Math.floor((Date.now() - this.compileStartTime) / 1000);
-      this.setLatexExportState('ready', `✓ 编译成功！已获取 PDF (总耗时 ${totalElapsed}s)`);
-      this.showToast('✓ XeLaTeX 编译完成！已生成高清矢量 PDF');
-    } catch (err: any) {
-      if (err.message?.includes('超时') || err.message?.includes('耗时较长')) {
-        this.setLatexExportState('timeout', err.message);
-      } else if (err.name === 'AbortError' || this.compileAbortController?.signal.aborted) {
-        this.setLatexExportState('idle', '已取消编译轮询');
-      } else {
-        this.setLatexExportState('failed', err.message);
-      }
-    }
-  }
-
-  private async checkCompilationResultDirectly() {
-    if (!this.currentCompileJobId) return;
-    const config = getStoredCompilerConfig();
-    this.showToast('正在向 GitHub Release 查询资产...');
-    const pdfUrl = await checkReleaseDirectly(this.currentCompileJobId, config);
-    if (pdfUrl) {
-      this.currentCompiledPdfUrl = pdfUrl;
-      if (this.latexPdfIframe) {
-        try {
-          this.latexPdfIframe.contentWindow?.location.replace(pdfUrl);
-        } catch {
-          this.latexPdfIframe.src = pdfUrl;
-        }
-      }
-      const totalElapsed = Math.floor((Date.now() - this.compileStartTime) / 1000);
-      this.setLatexExportState('ready', `✓ 检测到云端已生成 PDF！(耗时 ${totalElapsed}s)`);
-      this.showToast('✓ 成功获取已编译好的 PDF！');
-    } else {
-      this.showToast('云端还在处理中，尚未生成 PDF Release 资产，请稍候点击「继续等待」');
-    }
-  }
-
-  private cancelCloudCompilation() {
-    this.compileAbortController?.abort();
-    this.setLatexExportState('idle', '已取消本次排版编译');
-    this.showToast('已取消编译');
-  }
-
-  /**
-   * 防抖触发 LaTeX 源码生成与排版预览，防止连续切换配置时造成大量字符串分配与 CPU 停顿
-   */
-  private scheduleRefreshLatexPreview(immediate = false) {
-    if (immediate) {
-      if (this.latexDebounceTimer) {
-        clearTimeout(this.latexDebounceTimer);
-        this.latexDebounceTimer = null;
-      }
-      this.refreshLatexPreview();
-      return;
-    }
-    if (this.latexDebounceTimer) {
-      clearTimeout(this.latexDebounceTimer);
-    }
-    this.latexDebounceTimer = setTimeout(() => {
-      this.latexDebounceTimer = null;
-      this.refreshLatexPreview();
-    }, 250);
-  }
-
-  private refreshLatexPreview() {
-    if (!this.latexModal) return;
-
-    // 获取当前要导出的题目集合
-    const questions =
-      this.currentFilteredQuestions.length > 0
-        ? this.currentFilteredQuestions
-        : this.chapterCache.get(this.currentChapter)?.questions || [];
-
-    // 生成 LaTeX 源码
-    this.currentGeneratedLatexCode = generateLatexDocument(questions, this.currentLatexConfig);
-
-    // 更新右侧代码显示
-    if (this.latexCodeTextarea) {
-      this.latexCodeTextarea.value = this.currentGeneratedLatexCode;
-    }
-
-    // 更新统计徽章
-    const qCountEl = this.latexModal.querySelector('#ex-latex-stat-qcount');
-    const linesEl = this.latexModal.querySelector('#ex-latex-stat-lines');
-
-    const linesCount = this.currentGeneratedLatexCode.split('\n').length;
-
-    if (qCountEl) qCountEl.textContent = `题目：${questions.length} 题`;
-    if (linesEl) linesEl.textContent = `${linesCount} 行代码`;
-
-    // 更新建议下载文件名
-    const defaultFilename = this.getLatexExportFilename();
-    if (this.latexFilenameBadge) {
-      this.latexFilenameBadge.textContent = defaultFilename;
-    }
-  }
-
-  private getLatexExportFilename(): string {
-    const sanitizeName = (str: string) => str.replace(/[^\w\u4e00-\u9fa5\-]/g, '_').replace(/_+/g, '_');
-    if (this.currentMode === 'practice') {
-      const chData = this.chapterCache.get(this.currentChapter);
-      const chName = sanitizeName(chData?.chapter_title || `ch${this.currentChapter}`);
-      return `astrolib_${chName}_exercises.tex`;
-    } else if (this.currentMode === 'paper') {
-      const paperData = this.paperCache.get(this.currentPaperId);
-      const pName = sanitizeName(paperData?.clean_title || `paper_${this.currentPaperId}`);
-      return `astrolib_${pName}.tex`;
-    } else {
-      const queryName = this.searchQuery ? sanitizeName(this.searchQuery) : 'search_results';
-      return `astrolib_${queryName}_exercises.tex`;
-    }
-  }
-
-  private copyLatexCode() {
-    if (!this.currentGeneratedLatexCode) return;
-    navigator.clipboard
-      .writeText(this.currentGeneratedLatexCode)
-      .then(() => {
-        this.showToast('LaTeX 源码已成功复制至剪贴板！');
-      })
-      .catch(() => {
-        this.showToast('复制失败，请手动选中文本框复制');
-      });
-  }
-
-  private openInOverleaf() {
-    if (!this.currentGeneratedLatexCode) return;
-    const filename = this.getLatexExportFilename();
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = 'https://www.overleaf.com/docs';
-    form.target = '_blank';
-
-    const snipInput = document.createElement('input');
-    snipInput.type = 'hidden';
-    snipInput.name = 'snip';
-    snipInput.value = this.currentGeneratedLatexCode;
-
-    const nameInput = document.createElement('input');
-    nameInput.type = 'hidden';
-    nameInput.name = 'snip_name';
-    nameInput.value = filename;
-
-    form.appendChild(snipInput);
-    form.appendChild(nameInput);
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
-    this.showToast('正在打开 Overleaf 云端排版平台...');
-  }
-
-  private downloadLatexFile() {
-    if (!this.currentGeneratedLatexCode) return;
-    const filename = this.getLatexExportFilename();
-    const blob = new Blob([this.currentGeneratedLatexCode], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    this.showToast(`已开始下载：${filename}`);
-  }
+  // =========================================================================
+  // LaTeX / Typst 导出与云端/本地编译流水线已解耦至 ExerciseExportPipeline
+  // (参见 src/components/exercises/exercise-export-pipeline.ts)
+  // =========================================================================
 
   private showToast(msg: string) {
     if (!this.toastBox) return;

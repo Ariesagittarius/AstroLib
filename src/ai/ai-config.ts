@@ -13,17 +13,19 @@
 
 import { extractErrorMessageAndStatus, parseAiError } from './error-handler.ts';
 
+export type AiProviderId = 'gemini' | 'deepseek' | 'bupt' | 'custom';
+
 export interface AiModelDef {
   id: string;
   label: string;
-  provider: 'gemini' | 'deepseek' | 'custom';
+  provider: AiProviderId;
   endpoint?: string;
   desc?: string;
   isCustom?: boolean;
 }
 
 export interface AiProviderDef {
-  id: 'gemini' | 'deepseek' | 'custom';
+  id: AiProviderId;
   label: string;
   defaultEndpoint: string;
   keyPlaceholder: string;
@@ -33,7 +35,7 @@ export interface AiProviderDef {
 }
 
 export interface EffectiveAiConfig {
-  provider: 'gemini' | 'deepseek' | 'custom';
+  provider: AiProviderId;
   providerLabel: string;
   model: string;
   label: string;
@@ -46,10 +48,16 @@ export interface EffectiveAiConfig {
   sourceOpen?: 'new' | 'same';
   panelDimensions?: { width: number; height: number; preset: string; customWidth?: number; customHeight?: number };
   autoCollapsePreceding?: boolean;
+  sideloadRefChapter?: boolean;
+  extendedThinking?: boolean;
+  collapseToolsSummary?: boolean;
 }
 
 export const GEMINI_OFFICIAL_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
 export const GEMINI_DEV_PROXY_ENDPOINT = '/api/proxy/gemini/v1beta/openai/chat/completions';
+
+export const BUPT_OFFICIAL_ENDPOINT = 'https://myai.bupt.edu.cn/llm-gw/v1/chat/completions';
+export const BUPT_DEV_PROXY_ENDPOINT = '/api/proxy/bupt/chat/completions';
 
 /**
  * 获取 Google Gemini 的有效默认端点：
@@ -63,6 +71,47 @@ export function getGeminiDefaultEndpoint(): string {
   return GEMINI_OFFICIAL_ENDPOINT;
 }
 
+/**
+ * 获取北京邮电大学「人人有算力」AI 资源服务平台的有效默认端点：
+ * 在 Vite 本地开发态下默认使用本地 Node.js 进程直连端点 (10.3.19.2)，彻底屏蔽本地科学上网客户端分流干扰；
+ * 生产静态构建下使用官方直连端点。
+ */
+export function getBuptDefaultEndpoint(): string {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+    return BUPT_DEV_PROXY_ENDPOINT;
+  }
+  return BUPT_OFFICIAL_ENDPOINT;
+}
+
+/**
+ * 探测北京邮电大学校园网 AI 网关连通性
+ * 快速静默探针（超时 2.5s）：
+ * - 本地开发模式下通过 /api/proxy/bupt/health 探测
+ * - 生产/浏览器模式下向 BUPT 官方端点发起 OPTIONS 预检探测
+ */
+export async function checkBuptCampusNetwork(): Promise<boolean> {
+  try {
+    const isDev = typeof import.meta !== 'undefined' && Boolean(import.meta.env?.DEV);
+    const probeUrl = isDev ? '/api/proxy/bupt/health' : BUPT_OFFICIAL_ENDPOINT;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2500);
+    const res = await fetch(probeUrl, {
+      method: isDev ? 'GET' : 'OPTIONS',
+      signal: controller.signal,
+      mode: 'cors',
+    });
+    clearTimeout(timer);
+    if (isDev) {
+      if (!res.ok) return false;
+      const data = await res.json().catch(() => null);
+      return Boolean(data?.ok && data?.isCampus);
+    }
+    return res.ok || res.status === 200 || res.status === 204 || res.status === 401;
+  } catch {
+    return false;
+  }
+}
+
 export const DEFAULT_AI_PROVIDERS: AiProviderDef[] = [
   {
     id: 'gemini',
@@ -72,6 +121,12 @@ export const DEFAULT_AI_PROVIDERS: AiProviderDef[] = [
     defaultModelId: 'gemini-3.8-flash',
     desc: 'Google 官方前沿学术与长上下文模型，提供免费调用额度',
     models: [
+      {
+        id: 'auto',
+        label: '自动 (Auto)',
+        provider: 'gemini',
+        desc: '根据需求动态选择模型，兼顾响应与推理',
+      },
       {
         id: 'gemini-3.8-flash',
         label: 'Gemini 3.8 Flash',
@@ -101,6 +156,12 @@ export const DEFAULT_AI_PROVIDERS: AiProviderDef[] = [
         label: 'Gemini 3.5 Flash Lite',
         provider: 'gemini',
         desc: '超轻量高并发低延迟模型，免费调用额度充裕',
+      },
+      {
+        id: 'gemini-3.1-pro',
+        label: 'Gemini 3.1 Pro',
+        provider: 'gemini',
+        desc: '高级推理 · 深度数学推理与复杂推导模型',
       },
       {
         id: 'gemini-3-flash',
@@ -145,6 +206,22 @@ export const DEFAULT_AI_PROVIDERS: AiProviderDef[] = [
     ],
   },
   {
+    id: 'bupt',
+    label: '北京邮电大学 (仅校园网)',
+    defaultEndpoint: getBuptDefaultEndpoint(),
+    keyPlaceholder: 'sk-bupt-... 或 sk-...',
+    defaultModelId: 'deepseek-v4-flash',
+    desc: '北京邮电大学「人人有算力」校内模型服务（⚠️ 仅在校园网内或通过校园 VPN 可用）',
+    models: [
+      {
+        id: 'deepseek-v4-flash',
+        label: 'DeepSeek V4 Flash (校内)',
+        provider: 'bupt',
+        desc: '推荐 · 校内自部署理科高性价比推理模型，Token 消耗极低',
+      },
+    ],
+  },
+  {
     id: 'custom',
     label: '自定义',
     defaultEndpoint: '',
@@ -179,6 +256,9 @@ const STORAGE_KEYS = {
   CUSTOM_WIDTH: 'astrolib_ai_custom_width',
   CUSTOM_HEIGHT: 'astrolib_ai_custom_height',
   AUTO_COLLAPSE_TOOLS: 'astrolib_ai_auto_collapse_tools',
+  COLLAPSE_TOOLS_SUMMARY: 'astrolib_ai_collapse_tools_summary',
+  SIDELOAD_REF_CHAPTER: 'astrolib_ai_sideload_ref_chapter',
+  EXTENDED_THINKING: 'astrolib_ai_extended_thinking',
 } as const;
 
 export const AI_CONFIG_CHANGE_EVENT = 'astrolib:ai-config-change';
@@ -309,6 +389,12 @@ export function getAllAiProviders(): AiProviderDef[] {
         defaultEndpoint: getGeminiDefaultEndpoint(),
       };
     }
+    if (p.id === 'bupt') {
+      return {
+        ...p,
+        defaultEndpoint: getBuptDefaultEndpoint(),
+      };
+    }
     return p;
   });
 }
@@ -325,9 +411,9 @@ export function getAiProvider(providerId?: string): AiProviderDef {
 /**
  * 获取当前选中的提供商 ID
  */
-export function getActiveAiProviderId(): 'gemini' | 'deepseek' | 'custom' {
+export function getActiveAiProviderId(): AiProviderId {
   const saved = safeGetItem(STORAGE_KEYS.ACTIVE_PROVIDER) as any;
-  if (saved === 'gemini' || saved === 'deepseek' || saved === 'custom') {
+  if (saved === 'gemini' || saved === 'deepseek' || saved === 'bupt' || saved === 'custom') {
     return saved;
   }
   // 检查当前模型属于哪个提供商
@@ -344,7 +430,7 @@ export function getActiveAiProviderId(): 'gemini' | 'deepseek' | 'custom' {
 /**
  * 保存当前选中的提供商
  */
-export function saveAiActiveProvider(providerId: 'gemini' | 'deepseek' | 'custom'): void {
+export function saveAiActiveProvider(providerId: AiProviderId): void {
   safeSetItem(STORAGE_KEYS.ACTIVE_PROVIDER, providerId);
   const provider = getAiProvider(providerId);
 
@@ -378,8 +464,9 @@ export function getAllAiModels(): AiModelDef[] {
 
   for (const p of providers) {
     for (const m of p.models) {
-      if (m && m.id && !seen.has(m.id)) {
-        seen.add(m.id);
+      const key = `${p.id}:${m.id}`;
+      if (m && m.id && !seen.has(key)) {
+        seen.add(key);
         results.push(m);
       }
     }
@@ -395,19 +482,22 @@ export function getActiveAiModelId(): string {
   if (saved) return saved;
 
   const provider = getAiProvider();
-  return provider.defaultModelId || DEFAULT_ACTIVE_MODEL_ID;
+  return provider.defaultModelId || provider.models[0]?.id || DEFAULT_ACTIVE_MODEL_ID;
 }
 
 /**
  * 获取当前选中的模型完整定义对象
  */
 export function getActiveAiModel(): AiModelDef {
-  const all = getAllAiModels();
+  const provider = getAiProvider();
   const currentId = getActiveAiModelId();
+  const foundInProvider = provider.models.find((m) => m.id === currentId);
+  if (foundInProvider) return foundInProvider;
+
+  const all = getAllAiModels();
   const found = all.find((m) => m.id === currentId);
   if (found) return found;
 
-  const provider = getAiProvider();
   return provider.models[0] || all[0];
 }
 
@@ -417,9 +507,13 @@ export function getActiveAiModel(): AiModelDef {
 export function saveAiActiveModel(modelId: string): void {
   safeSetItem(STORAGE_KEYS.ACTIVE_MODEL, modelId);
 
-  // 自动识别所属提供商并记住
-  const all = getAllAiModels();
-  const found = all.find((m) => m.id === modelId);
+  // 优先在当前提供商内查找并记住所属提供商
+  const activeProvider = getAiProvider();
+  let found = activeProvider.models.find((m) => m.id === modelId);
+  if (!found) {
+    const all = getAllAiModels();
+    found = all.find((m) => m.id === modelId);
+  }
   if (found) {
     safeSetItem(STORAGE_KEYS.ACTIVE_PROVIDER, found.provider);
     safeSetItem(STORAGE_KEYS.PROVIDER_MODEL_PREFIX + found.provider, modelId);
@@ -466,6 +560,11 @@ export function getProviderEndpoint(providerId?: string): string {
     if (targetProvider === 'gemini' && typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
       if (cleanOverride === GEMINI_OFFICIAL_ENDPOINT) {
         return GEMINI_DEV_PROXY_ENDPOINT;
+      }
+    }
+    if (targetProvider === 'bupt' && typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+      if (cleanOverride === BUPT_OFFICIAL_ENDPOINT || cleanOverride.includes('myai.bupt.edu.cn')) {
+        return BUPT_DEV_PROXY_ENDPOINT;
       }
     }
     return cleanOverride;
@@ -677,6 +776,108 @@ export function saveAiAutoCollapsePreceding(enabled: boolean): void {
 }
 
 /**
+ * 获取侧载模式下是否默认自动引用当前阅读章节内容（默认 true）
+ */
+export function getAiSideloadRefChapter(): boolean {
+  const val = safeGetItem(STORAGE_KEYS.SIDELOAD_REF_CHAPTER);
+  if (val === null) return true;
+  return val === 'true';
+}
+
+/**
+ * 保存侧载模式下是否默认自动引用当前阅读章节内容
+ */
+export function saveAiSideloadRefChapter(enabled: boolean): void {
+  safeSetItem(STORAGE_KEYS.SIDELOAD_REF_CHAPTER, enabled ? 'true' : 'false');
+  dispatchAiConfigChange();
+}
+
+/**
+ * 获取是否开启扩展思考 (Extended Thinking)
+ */
+export function getAiExtendedThinking(): boolean {
+  const val = safeGetItem(STORAGE_KEYS.EXTENDED_THINKING);
+  if (val === null) return false;
+  return val === 'true';
+}
+
+/**
+ * 保存是否开启扩展思考
+ */
+export function saveAiExtendedThinking(enabled: boolean): void {
+  safeSetItem(STORAGE_KEYS.EXTENDED_THINKING, enabled ? 'true' : 'false');
+  dispatchAiConfigChange();
+}
+
+/**
+ * 获取是否在探索完成后自动折叠工具调用为单行总结（默认 true）
+ */
+export function getAiCollapseToolsSummary(): boolean {
+  const val = safeGetItem(STORAGE_KEYS.COLLAPSE_TOOLS_SUMMARY);
+  if (val === null) return true;
+  return val === 'true';
+}
+
+/**
+ * 保存是否在探索完成后自动折叠工具调用为单行总结
+ */
+export function saveAiCollapseToolsSummary(enabled: boolean): void {
+  safeSetItem(STORAGE_KEYS.COLLAPSE_TOOLS_SUMMARY, enabled ? 'true' : 'false');
+  dispatchAiConfigChange();
+}
+
+/**
+ * Antigravity 风格工具探索多步调用单行摘要格式化器
+ */
+export function formatExplorationSummary(tools: any[]): string {
+  if (!tools || !tools.length) return '';
+  let searchCount = 0;
+  let readCount = 0;
+  let outlineCount = 0;
+  let otherCount = 0;
+
+  for (const t of tools) {
+    const name = t?.name || '';
+    if (name === 'book_retrieve' || name === 'book_slice_search') {
+      searchCount++;
+    } else if (name === 'book_read_section' || name === 'book_chunk') {
+      readCount++;
+    } else if (name === 'book_chapter_outline' || name === 'book_toc' || name === 'list_books') {
+      outlineCount++;
+    } else {
+      otherCount++;
+    }
+  }
+
+  const parts: string[] = [];
+  if (searchCount > 0) parts.push(`${searchCount} 次检索`);
+  if (readCount > 0) parts.push(`${readCount} 段阅读`);
+  if (outlineCount > 0) parts.push(`${outlineCount} 次大纲`);
+  if (otherCount > 0) parts.push(`${otherCount} 次操作`);
+
+  const details = parts.length ? ` (${parts.join('，')})` : '';
+  return `已完成 ${tools.length} 步工具探索${details}`;
+}
+
+/**
+ * 获取用于胶囊按钮展示的模型精简短别名 (完全对标 Chrome Gemini)
+ */
+export function getShortModelLabel(modelId?: string): string {
+  const id = modelId || getActiveAiModelId();
+  if (id === 'auto') return '自动';
+  if (id.includes('3.5-flash-lite')) return '3.5 Flash-Lite';
+  if (id.includes('3.8-flash')) return '3.8 Flash';
+  if (id.includes('3.7-flash')) return '3.7 Flash';
+  if (id.includes('3.6-flash')) return '3.6 Flash';
+  if (id.includes('3.5-flash')) return '3.5 Flash';
+  if (id.includes('3.1-pro') || id.includes('pro')) return '3.1 Pro';
+  if (id.includes('deepseek')) return 'DeepSeek';
+  if (id.includes('bupt')) return '校内推理';
+  const model = getActiveAiModel();
+  return model?.label?.split(' ')[0] || '模型';
+}
+
+/**
  * 获取当前直接可用于流式请求的完整有效配置对象
  */
 export function getEffectiveAiClientConfig(): EffectiveAiConfig {
@@ -689,7 +890,7 @@ export function getEffectiveAiClientConfig(): EffectiveAiConfig {
   return {
     provider: provider.id,
     providerLabel: provider.label,
-    model: modelDef.id,
+    model: modelDef.id === 'auto' ? 'gemini-3.8-flash' : modelDef.id,
     label: modelDef.label,
     endpoint,
     apiKey,
@@ -700,6 +901,9 @@ export function getEffectiveAiClientConfig(): EffectiveAiConfig {
     sourceOpen: getAiSourceOpen(),
     panelDimensions: getAiPanelDimensions(),
     autoCollapsePreceding: getAiAutoCollapsePreceding(),
+    sideloadRefChapter: getAiSideloadRefChapter(),
+    extendedThinking: getAiExtendedThinking(),
+    collapseToolsSummary: getAiCollapseToolsSummary(),
   };
 }
 
@@ -727,6 +931,11 @@ export async function testAiConnection(
   if (targetProviderId === 'gemini' && typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
     if (endpoint === GEMINI_OFFICIAL_ENDPOINT) {
       endpoint = GEMINI_DEV_PROXY_ENDPOINT;
+    }
+  }
+  if (targetProviderId === 'bupt' && typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+    if (endpoint === BUPT_OFFICIAL_ENDPOINT || endpoint.includes('myai.bupt.edu.cn')) {
+      endpoint = BUPT_DEV_PROXY_ENDPOINT;
     }
   }
 

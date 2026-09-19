@@ -1,0 +1,533 @@
+---
+title: '4.4 向量组的秩'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+本节引入向量组等价、极大线性无关组及向量组的秩的概念，探讨向量组的秩与矩阵的秩之间的内在对应关系，并介绍利用矩阵初等行变换求向量组的秩和极大线性无关组的实用方法。
+
+## 一、向量组等价的概念
+
+<Knowledge title="定义 6 向量组的等价">
+
+设有两向量组
+
+$$
+R = \{\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r\}, \quad S = \{\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_s\},
+$$
+
+若向量组 $R$ 中的每个向量 $\boldsymbol{\alpha}_i$ 都可以由向量组 $S$ 中的向量 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_s$ 线性表出，则称**向量组 $R$ 可以由向量组 $S$ 线性表出**。又若向量组 $S$ 也可以由向量组 $R$ 线性表出，则称这两个向量组**等价**。
+
+</Knowledge>
+
+设向量组 $R$ 可由向量组 $S$ 线性表示为
+
+$$
+\begin{cases}
+\boldsymbol{\alpha}_1 = k_{11}\boldsymbol{\beta}_1 + k_{21}\boldsymbol{\beta}_2 + \dots + k_{s1}\boldsymbol{\beta}_s, \\
+\boldsymbol{\alpha}_2 = k_{12}\boldsymbol{\beta}_1 + k_{22}\boldsymbol{\beta}_2 + \dots + k_{s2}\boldsymbol{\beta}_s, \\
+\quad \vdots \\
+\boldsymbol{\alpha}_r = k_{1r}\boldsymbol{\beta}_1 + k_{2r}\boldsymbol{\beta}_2 + \dots + k_{sr}\boldsymbol{\beta}_s.
+\end{cases} \tag{4.4}
+$$
+
+用矩阵乘法的形式可表示为
+
+$$
+\boldsymbol{\alpha}_i = (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_s) \begin{pmatrix} k_{1i} \\ k_{2i} \\ \vdots \\ k_{si} \end{pmatrix} \quad (i = 1, 2, \dots, r),
+$$
+
+于是式 (4.4) 又可表示为
+
+$$
+(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r) = (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_s) \begin{pmatrix}
+k_{11} & k_{12} & \dots & k_{1r} \\
+k_{21} & k_{22} & \dots & k_{2r} \\
+\vdots & \vdots & & \vdots \\
+k_{s1} & k_{s2} & \dots & k_{sr}
+\end{pmatrix} \tag{4.5}
+$$
+
+设矩阵 $\boldsymbol{A} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r), \boldsymbol{B} = (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_s), \boldsymbol{K} = (k_{ij})_{s \times r}$，则可把式 (4.5) 写成矩阵的形式：
+
+$$
+\boldsymbol{A} = \boldsymbol{B}\boldsymbol{K}. \tag{4.6}
+$$
+
+可见向量组 $R$ 由向量组 $S$ 线性表示可简记为式 (4.6) 所示的矩阵乘法；反之若有式 (4.6) 的矩阵形式，则可把矩阵 $\boldsymbol{A}$ 的列向量看作矩阵 $\boldsymbol{B}$ 的列向量的线性表示。
+
+容易证明向量组之间的线性表出关系具有传递性，即若有三个向量组 $R, S, T$，如果 $R$ 可由 $S$ 线性表出，$S$ 可由 $T$ 线性表出，则 $R$ 必可由 $T$ 线性表出。
+
+向量组之间的等价关系具有下列基本性质：设 $R, S, T$ 为三个同维向量组，则有：
+1. **反身性**：$R$ 必与 $R$ 自身等价；
+2. **对称性**：若 $R$ 与 $S$ 等价，则 $S$ 必与 $R$ 等价；
+3. **传递性**：若 $R$ 与 $S$ 等价，$S$ 与 $T$ 等价，则 $R$ 必与 $T$ 等价。
+
+在数学中，把具有上述三个性质的关系称为**等价关系**。
+
+## 二、极大线性无关组与向量组的秩
+
+考察下面的例子：
+
+<Example title="例 10 极大线性无关组的直观观察">
+
+设向量组
+
+$$
+\boldsymbol{\alpha}_1 = \begin{pmatrix} 1 \\ 0 \\ 0 \end{pmatrix}, \quad \boldsymbol{\alpha}_2 = \begin{pmatrix} 0 \\ 1 \\ 0 \end{pmatrix}, \quad \boldsymbol{\alpha}_3 = \begin{pmatrix} 1 \\ 2 \\ 0 \end{pmatrix}.
+$$
+
+显然有 $\boldsymbol{\alpha}_1 + 2\boldsymbol{\alpha}_2 - \boldsymbol{\alpha}_3 = \mathbf{0}$。记
+
+$$
+R = \{\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2\}, \quad S = \{\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_3\}, \quad T = \{\boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3\}.
+$$
+
+易知部分组 $R, S, T$ 都是线性无关的向量组，且 $\boldsymbol{\alpha}_3$ 可由 $R$ 线性表出，$\boldsymbol{\alpha}_2$ 可由 $S$ 线性表出，$\boldsymbol{\alpha}_1$ 可由 $T$ 线性表出。具有这种特性的部分组 $R, S, T$ 都称为向量组 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3$ 的极大线性无关组。
+
+</Example>
+
+<Knowledge title="定义 7 极大线性无关组与向量组的秩">
+
+设 $T$ 是由若干个（有限或无限多个）向量组成的向量组。若存在 $T$ 的一个部分组 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r$ 满足以下条件：
+1. $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r$ 线性无关；
+2. 对于任意一个向量 $\boldsymbol{\beta} \in T$，向量组 $\boldsymbol{\beta}, \boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r$ 都线性相关，
+
+则称 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r$ 为 $T$ 的一个**极大线性无关向量组**，简称为**极大无关组**。极大线性无关组所含向量的个数 $r$ 称为向量组 $T$ 的**秩**。
+
+只含零向量的向量组没有极大线性无关组，规定它的秩为 0。
+
+</Knowledge>
+
+<Knowledge title="定理 7 向量组与极大无关组的等价性">
+
+向量组 $T$ 与它的任意一个极大无关组等价，因而 $T$ 的任意两个极大无关组等价。
+
+</Knowledge>
+
+<Solution title="证明">
+
+设 $S$ 为 $T$ 的一个极大无关组。因为 $S$ 为 $T$ 的一个子集，所以对于任意一个 $\boldsymbol{\alpha} \in S$，$\boldsymbol{\alpha}$ 也是 $T$ 中的向量，且有 $\boldsymbol{\alpha} = 1 \times \boldsymbol{\alpha}$，这说明 $S$ 可用 $T$ 线性表出。
+
+反之，由极大无关组的定义知，$T$ 可用 $S$ 线性表出。因而 $S$ 与 $T$ 等价。
+
+由向量组等价的对称性和传递性，即可证得向量组 $T$ 的任意两个极大无关组都等价：设 $S_1$ 和 $S_2$ 同为 $T$ 的极大无关组，则由 $S_1$ 与 $T$ 等价，$T$ 与 $S_2$ 等价可知 $S_1$ 与 $S_2$ 等价。
+
+</Solution>
+
+由上面的例 10 可以看出，一个向量组的极大无关组可能不止一个。
+
+<Example title="例 11 全体 n 维向量集合的极大无关组">
+
+由全体 $n$ 维向量所组成的集合记为 $\mathbf{R}^n$，求 $\mathbf{R}^n$ 的一个极大线性无关组，并证明 $\mathbf{R}^n$ 中的任意 $n+1$ 个向量一定线性相关。
+
+</Example>
+
+<Solution title="解">
+
+由 4.2 节的例 5 知，$n$ 维单位坐标向量组
+
+$$
+\boldsymbol{\varepsilon}_1 = (1, 0, \dots, 0)^\mathrm{T}, \quad \boldsymbol{\varepsilon}_2 = (0, 1, \dots, 0)^\mathrm{T}, \quad \dots, \quad \boldsymbol{\varepsilon}_n = (0, 0, \dots, 1)^\mathrm{T}
+$$
+
+是线性无关的，且任一 $n$ 维向量 $\boldsymbol{\alpha} = (a_1, a_2, \dots, a_n)^\mathrm{T}$ 都可用 $\boldsymbol{\varepsilon}_1, \boldsymbol{\varepsilon}_2, \dots, \boldsymbol{\varepsilon}_n$ 线性表出，即
+
+$$
+\boldsymbol{\alpha} = a_1\boldsymbol{\varepsilon}_1 + a_2\boldsymbol{\varepsilon}_2 + \dots + a_n\boldsymbol{\varepsilon}_n.
+$$
+
+从而 $\boldsymbol{\varepsilon}_1, \boldsymbol{\varepsilon}_2, \dots, \boldsymbol{\varepsilon}_n$ 是 $\mathbf{R}^n$ 的一个极大线性无关组。
+
+设 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n, \boldsymbol{\alpha}_{n+1}$ 是 $\mathbf{R}^n$ 中的任意 $n+1$ 个向量。由于向量的个数大于向量维数，由 4.3 节推论 2 知，$\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n, \boldsymbol{\alpha}_{n+1}$ 一定线性相关。
+
+</Solution>
+
+例 11 表明，$\mathbf{R}^n$ 中的任意 $n$ 个线性无关向量都构成 $\mathbf{R}^n$ 中的极大无关组，从而任意一个 $\boldsymbol{\beta} \in \mathbf{R}^n$ 都可以唯一地表为它们的线性组合。
+
+<Knowledge title="定理 8 向量组线性表出与秩的不等式">
+
+设向量组 $R$ 的秩为 $r$，向量组 $S$ 的秩为 $s$，若向量组 $R$ 可由向量组 $S$ 线性表出，则必有 $r \le s$。
+
+</Knowledge>
+
+<Solution title="证明">
+
+设向量组 $R$ 的一个极大无关组为 $R_0 = \{\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r\}$；设向量组 $S$ 的一个极大无关组为 $S_0 = \{\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_s\}$。
+
+因向量组 $R_0$ 可由向量组 $R$ 线性表出，向量组 $R$ 可由向量组 $S$ 线性表出，向量组 $S$ 可由向量组 $S_0$ 线性表出，故向量组 $R_0$ 可由向量组 $S_0$ 线性表出。即存在矩阵 $\boldsymbol{K} = (k_{ij})_{s \times r}$，使得
+
+$$
+(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r) = (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_s)\boldsymbol{K}.
+$$
+
+假设 $r > s$，则 $r(\boldsymbol{K}) \le s < r$，即方程组 $\boldsymbol{K}\boldsymbol{x} = \mathbf{0}$ 有非零解，设它的一组非零解为 $x_1 = \lambda_1, x_2 = \lambda_2, \dots, x_r = \lambda_r$，则
+
+$$
+\begin{aligned}
+\lambda_1\boldsymbol{\alpha}_1 + \lambda_2\boldsymbol{\alpha}_2 + \dots + \lambda_r\boldsymbol{\alpha}_r &= (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r)\begin{pmatrix} \lambda_1 \\ \lambda_2 \\ \vdots \\ \lambda_r \end{pmatrix} \\
+&= (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_s)\boldsymbol{K}\begin{pmatrix} \lambda_1 \\ \lambda_2 \\ \vdots \\ \lambda_r \end{pmatrix} = (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_s)\mathbf{0} = \mathbf{0}.
+\end{aligned}
+$$
+
+这与 $R_0 = \{\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r\}$ 线性无关矛盾，从而必有 $r \le s$。
+
+</Solution>
+
+<Knowledge title="推论 1 等价向量组必有相同的秩">
+
+等价的向量组必有相同的秩。
+
+</Knowledge>
+
+<Solution title="证明">
+
+设向量组 $S$ 的秩为 $s$，向量组 $T$ 的秩为 $t$。当 $S$ 与 $T$ 等价时，它们可互相线性表出。于是根据定理 8 有 $s \le t$ 和 $t \le s$，立得 $s = t$。
+
+</Solution>
+
+<Knowledge title="推论 2 等价线性无关组向量个数相等">
+
+任意两个线性无关的等价向量组所含向量的个数相等。
+
+</Knowledge>
+
+<Solution title="证明">
+
+设 $R$ 和 $S$ 是两个等价的线性无关组，其中向量个数分别为 $r$ 和 $s$，则向量组 $R$ 的秩为 $r$，向量组 $S$ 的秩为 $s$，由推论 1 知，必有 $r = s$。
+
+</Solution>
+
+<SideNote title="关于等价与秩的说明">
+等价的向量组一定有相同的秩。但是，反之不然，秩相同的两个向量组未必等价，因为它们之间未必有线性表出关系。
+</SideNote>
+
+## 三、向量组的秩及极大无关组的求法
+
+下面讨论向量组的秩与矩阵的秩之间的关系，并给出求向量组的秩及其极大线性无关组的方法。
+
+设 $\boldsymbol{A}$ 是一个 $m \times n$ 矩阵：
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+a_{11} & a_{12} & \dots & a_{1n} \\
+a_{21} & a_{22} & \dots & a_{2n} \\
+\vdots & \vdots & & \vdots \\
+a_{m1} & a_{m2} & \dots & a_{mn}
+\end{pmatrix}.
+$$
+
+将矩阵 $\boldsymbol{A}$ 分别按行分块和按列分块，得
+
+$$
+\boldsymbol{A} = \begin{pmatrix} \boldsymbol{\alpha}_1 \\ \boldsymbol{\alpha}_2 \\ \vdots \\ \boldsymbol{\alpha}_m \end{pmatrix}, \quad \text{其中 } \boldsymbol{\alpha}_i = (a_{i1}, a_{i2}, \dots, a_{in}) \quad (i = 1, 2, \dots, m),
+$$
+
+$$
+\boldsymbol{A} = (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_n), \quad \text{其中 } \boldsymbol{\beta}_j = \begin{pmatrix} a_{1j} \\ a_{2j} \\ \vdots \\ a_{mj} \end{pmatrix} \quad (j = 1, 2, \dots, n).
+$$
+
+于是 $m \times n$ 矩阵 $\boldsymbol{A}$ 对应两个向量组（分别为 $n$ 维行向量组和 $m$ 维列向量组）：
+
+$$
+M = \{\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_m\}, \quad N = \{\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_n\}.
+$$
+
+称 $M$ 为 $\boldsymbol{A}$ 的**行向量组**，称 $N$ 为 $\boldsymbol{A}$ 的**列向量组**。
+
+<Knowledge title="定义 8 行秩与列秩">
+
+矩阵 $\boldsymbol{A}$ 的行向量组 $M$ 的秩称为 $\boldsymbol{A}$ 的**行秩**；列向量组 $N$ 的秩称为 $\boldsymbol{A}$ 的**列秩**。
+
+</Knowledge>
+
+矩阵的秩与它的行秩和列秩的关系有如下的定理：
+
+<Knowledge title="定理 9 矩阵的秩等于行秩与列秩">
+
+矩阵的秩等于它的列秩，也等于它的行秩。
+
+</Knowledge>
+
+<Solution title="证明">
+
+设 $\boldsymbol{A}$ 为 $m \times n$ 矩阵。当 $r(\boldsymbol{A}) = 0$ 时，即 $\boldsymbol{A} = \boldsymbol{O}$，定理显然成立。
+
+设 $r(\boldsymbol{A}) = r > 0$。把 $\boldsymbol{A}$ 看作 $n$ 个列向量构成的矩阵，令 $\boldsymbol{A} = (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_n)$。由矩阵秩的定义，存在一个 $r$ 阶子式 $D_r \neq 0$，由定理 6 知 $D_r$ 所在的前 $r$ 列线性无关。又由于 $\boldsymbol{A}$ 中所有 $r+1$ 阶子式均为零，知 $\boldsymbol{A}$ 中任意 $r+1$ 个列向量都线性相关。
+
+不妨设 $D_r$ 所在的列就是 $\boldsymbol{A}$ 的前 $r$ 列 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_r$。对于 $\boldsymbol{A}$ 的任一列向量 $\boldsymbol{\beta}_k$，当 $1 \le k \le r$ 时，$\boldsymbol{\beta}_k$ 可以由 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_r$ 线性表出；当 $r < k \le n$ 时，由于 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_r$ 线性无关，而 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_r, \boldsymbol{\beta}_k$ 线性相关，由定理 2 知，$\boldsymbol{\beta}_k$ 可由 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_r$ 线性表出。因此 $D_r$ 所在的 $r$ 列就是 $\boldsymbol{A}$ 的列向量组的一个极大线性无关组。所以 $\boldsymbol{A}$ 的列秩等于 $r$。
+
+由于 $r(\boldsymbol{A}) = r(\boldsymbol{A}^\mathrm{T})$，又由上面的证明知，$\boldsymbol{A}^\mathrm{T}$ 的秩等于 $\boldsymbol{A}^\mathrm{T}$ 的列秩，而 $\boldsymbol{A}^\mathrm{T}$ 的列秩就是 $\boldsymbol{A}$ 的行秩，所以 $\boldsymbol{A}$ 的行秩等于 $r$。
+
+</Solution>
+
+一般地，将一个向量组 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_m$ 的秩记作 $\mathrm{rank}(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_m)$。
+
+<Knowledge title="定理 10 初等行变换保持列向量组的线性组合关系">
+
+矩阵 $\boldsymbol{A}$ 经过初等行变换化为矩阵 $\boldsymbol{B}$，则 $\boldsymbol{A}$ 的列向量组的任一部分组与 $\boldsymbol{B}$ 的列向量组的对应的部分组有相同的线性组合关系。
+
+</Knowledge>
+
+<Solution title="证明">
+
+对 $m \times n$ 矩阵 $\boldsymbol{A}$ 做初等行变换化为矩阵 $\boldsymbol{B}$，相当于用一个可逆矩阵 $\boldsymbol{P}$ 左乘 $\boldsymbol{A}$，即 $\boldsymbol{P}\boldsymbol{A} = \boldsymbol{B}$。对 $\boldsymbol{A}$ 和 $\boldsymbol{B}$ 做列分块：
+
+$$
+\boldsymbol{A} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n), \quad \boldsymbol{B} = (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_n),
+$$
+
+则有
+
+$$
+\boldsymbol{P}\boldsymbol{A} = (\boldsymbol{P}\boldsymbol{\alpha}_1, \boldsymbol{P}\boldsymbol{\alpha}_2, \dots, \boldsymbol{P}\boldsymbol{\alpha}_n) = (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_n),
+$$
+
+即
+
+$$
+\boldsymbol{\beta}_i = \boldsymbol{P}\boldsymbol{\alpha}_i \quad (i = 1, 2, \dots, n).
+$$
+
+设 $\boldsymbol{A}$ 的任一部分组 $\boldsymbol{\alpha}_{i_1}, \boldsymbol{\alpha}_{i_2}, \dots, \boldsymbol{\alpha}_{i_k}$ 的线性组合为
+
+$$
+x_1\boldsymbol{\alpha}_{i_1} + x_2\boldsymbol{\alpha}_{i_2} + \dots + x_k\boldsymbol{\alpha}_{i_k} = \mathbf{0},
+$$
+
+那么有
+
+$$
+\begin{aligned}
+x_1\boldsymbol{\beta}_{i_1} + x_2\boldsymbol{\beta}_{i_2} + \dots + x_k\boldsymbol{\beta}_{i_k} &= x_1\boldsymbol{P}\boldsymbol{\alpha}_{i_1} + x_2\boldsymbol{P}\boldsymbol{\alpha}_{i_2} + \dots + x_k\boldsymbol{P}\boldsymbol{\alpha}_{i_k} \\
+&= \boldsymbol{P}(x_1\boldsymbol{\alpha}_{i_1} + x_2\boldsymbol{\alpha}_{i_2} + \dots + x_k\boldsymbol{\alpha}_{i_k}) = \boldsymbol{P}\cdot\mathbf{0} = \mathbf{0}.
+\end{aligned}
+$$
+
+这就证明了 $\boldsymbol{B}$ 的列向量组 $\boldsymbol{\beta}_{i_1}, \boldsymbol{\beta}_{i_2}, \dots, \boldsymbol{\beta}_{i_k}$ 与 $\boldsymbol{A}$ 的对应的列向量组 $\boldsymbol{\alpha}_{i_1}, \boldsymbol{\alpha}_{i_2}, \dots, \boldsymbol{\alpha}_{i_k}$ 有相同的线性组合关系。
+
+</Solution>
+
+<Example title="例 12 初等行变换求列向量组的秩与极大无关组">
+
+求向量组
+
+$$
+\boldsymbol{\alpha}_1 = (1, 4, 1, 0, 2)^\mathrm{T}, \quad \boldsymbol{\alpha}_2 = (2, 5, -1, -3, 2)^\mathrm{T}, \quad \boldsymbol{\alpha}_3 = (-1, 2, 5, 6, 2)^\mathrm{T}, \quad \boldsymbol{\alpha}_4 = (0, 2, 2, -1, 0)^\mathrm{T}
+$$
+
+的秩及其一个极大无关组，并把不属于极大无关组的向量用该极大无关组线性表出。
+
+</Example>
+
+<Solution title="解">
+
+把向量组按列排成矩阵 $\boldsymbol{A}$，并用初等行变换把 $\boldsymbol{A}$ 化成行最简形 $\boldsymbol{B}$：
+
+$$
+\begin{aligned}
+\boldsymbol{A} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\alpha}_4) &= \begin{pmatrix}
+1 & 2 & -1 & 0 \\
+4 & 5 & 2 & 2 \\
+1 & -1 & 5 & 2 \\
+0 & -3 & 6 & -1 \\
+2 & 2 & 2 & 0
+\end{pmatrix}
+\to \begin{pmatrix}
+1 & 2 & -1 & 0 \\
+0 & -3 & 6 & 2 \\
+0 & -3 & 6 & 2 \\
+0 & -3 & 6 & -1 \\
+0 & -2 & 4 & 0
+\end{pmatrix} \\
+&\to \begin{pmatrix}
+1 & 2 & -1 & 0 \\
+0 & -1 & 2 & 0 \\
+0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0
+\end{pmatrix} = \boldsymbol{B}_1
+\to \begin{pmatrix}
+1 & 0 & 3 & 0 \\
+0 & 1 & -2 & 0 \\
+0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0
+\end{pmatrix} = \boldsymbol{B} = (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \boldsymbol{\beta}_3, \boldsymbol{\beta}_4).
+\end{aligned}
+$$
+
+其中 $\boldsymbol{B}_1$ 为 $\boldsymbol{A}$ 的行阶梯形矩阵，由 $\boldsymbol{B}_1$ 即可知 $\boldsymbol{A}$ 的秩为 3。
+
+$\boldsymbol{A}$ 的行最简形 $\boldsymbol{B}$ 的第 1, 2, 4 列 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \boldsymbol{\beta}_4$ 线性无关，由于 $\boldsymbol{A}$ 的列向量组与 $\boldsymbol{B}$ 的对应的列向量组有相同的线性组合关系，故与其对应的矩阵 $\boldsymbol{A}$ 的 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_4$ 线性无关，即 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_4$ 是 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\alpha}_4$ 的一个极大线性无关组。
+
+由矩阵 $\boldsymbol{B}$ 易得 $\boldsymbol{\beta}_3 = 3\boldsymbol{\beta}_1 - 2\boldsymbol{\beta}_2$，所以有
+
+$$
+\boldsymbol{\alpha}_3 = 3\boldsymbol{\alpha}_1 - 2\boldsymbol{\alpha}_2.
+$$
+
+</Solution>
+
+<SideNote title="行向量组的极大无关组求法">
+在求向量组的极大线性无关组时，如果所给的是行向量组，那么也要按列排成矩阵再做初等行变换（即对行向量组的转置矩阵施行初等行变换）。
+</SideNote>
+
+<Example title="例 13 求行向量组的极大线性无关组">
+
+求向量组 $\boldsymbol{\alpha}_1 = (2, 1, 4, 3), \boldsymbol{\alpha}_2 = (-1, 1, -6, 6), \boldsymbol{\alpha}_3 = (-1, -2, 2, -9), \boldsymbol{\alpha}_4 = (1, 1, -2, 7), \boldsymbol{\alpha}_5 = (2, 4, 4, 9)$ 的一个极大无关组。
+
+</Example>
+
+<Solution title="解">
+
+把向量组按列排成矩阵 $\boldsymbol{A}$，用初等行变换化为行阶梯形矩阵 $\boldsymbol{B}$：
+
+$$
+\begin{aligned}
+\boldsymbol{A} = (\boldsymbol{\alpha}_1^\mathrm{T}, \boldsymbol{\alpha}_2^\mathrm{T}, \boldsymbol{\alpha}_3^\mathrm{T}, \boldsymbol{\alpha}_4^\mathrm{T}, \boldsymbol{\alpha}_5^\mathrm{T}) &= \begin{pmatrix}
+2 & -1 & -1 & 1 & 2 \\
+1 & 1 & -2 & 1 & 4 \\
+4 & -6 & 2 & -2 & 4 \\
+3 & 6 & -9 & 7 & 9
+\end{pmatrix} \\
+&\xrightarrow{r_1 \leftrightarrow r_2, \frac{1}{2}r_3}
+\begin{pmatrix}
+1 & 1 & -2 & 1 & 4 \\
+2 & -1 & -1 & 1 & 2 \\
+2 & -3 & 1 & -1 & 2 \\
+3 & 6 & -9 & 7 & 9
+\end{pmatrix}
+\xrightarrow[r_3 - 2r_1, r_4 - 3r_1]{r_2 \leftrightarrow r_3}
+\begin{pmatrix}
+1 & 1 & -2 & 1 & 4 \\
+0 & 2 & -2 & 2 & 0 \\
+0 & -5 & 5 & -3 & -6 \\
+0 & 3 & -3 & 4 & -3
+\end{pmatrix} \\
+&\xrightarrow[\frac{1}{2}r_2]{r_3 + 5r_2, r_4 - 3r_2}
+\begin{pmatrix}
+1 & 1 & -2 & 1 & 4 \\
+0 & 1 & -1 & 1 & 0 \\
+0 & 0 & 0 & 2 & -6 \\
+0 & 0 & 0 & 1 & -3
+\end{pmatrix}
+\xrightarrow[\frac{1}{2}r_3]{r_4 - r_3}
+\begin{pmatrix}
+1 & 1 & -2 & 1 & 4 \\
+0 & 1 & -1 & 1 & 0 \\
+0 & 0 & 0 & 1 & -3 \\
+0 & 0 & 0 & 0 & 0
+\end{pmatrix} = \boldsymbol{B}.
+\end{aligned}
+$$
+
+由于 $\boldsymbol{B}$ 的 1, 2, 4 列线性无关，故 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_4$ 是 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\alpha}_4, \boldsymbol{\alpha}_5$ 的一个极大无关组。
+
+由于没有要求将其余的向量用所求的极大无关组线性表出，所以不必将 $\boldsymbol{A}$ 化为行最简形矩阵。
+
+</Solution>
+
+<Example title="例 14 矩阵乘积与秩的不等式证明">
+
+用矩阵的秩与向量组的秩的关系证明：
+
+$$
+r(\boldsymbol{A}\boldsymbol{B}) \le \min\{r(\boldsymbol{A}), r(\boldsymbol{B})\}.
+$$
+
+</Example>
+
+<Solution title="证明">
+
+设 $\boldsymbol{A}, \boldsymbol{B}$ 分别为 $m \times n$ 矩阵和 $n \times k$ 矩阵，$\boldsymbol{A}\boldsymbol{B} = \boldsymbol{C}$，则 $\boldsymbol{C}$ 是 $m \times k$ 矩阵。先证明 $r(\boldsymbol{A}\boldsymbol{B}) \le r(\boldsymbol{A})$。
+
+将 $\boldsymbol{A}$ 和 $\boldsymbol{C}$ 看成是列向量构成的矩阵，设
+
+$$
+\boldsymbol{A} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n), \quad \boldsymbol{C} = (\boldsymbol{\gamma}_1, \boldsymbol{\gamma}_2, \dots, \boldsymbol{\gamma}_k),
+$$
+
+则
+
+$$
+(\boldsymbol{\gamma}_1, \boldsymbol{\gamma}_2, \dots, \boldsymbol{\gamma}_k) = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n) \begin{pmatrix}
+b_{11} & b_{12} & \dots & b_{1k} \\
+b_{21} & b_{22} & \dots & b_{2k} \\
+\vdots & \vdots & & \vdots \\
+b_{n1} & b_{n2} & \dots & b_{nk}
+\end{pmatrix}.
+$$
+
+即 $\boldsymbol{C}$ 的列向量组可由 $\boldsymbol{A}$ 的列向量组线性表出。由定理 8 得
+
+$$
+\mathrm{rank}(\boldsymbol{\gamma}_1, \boldsymbol{\gamma}_2, \dots, \boldsymbol{\gamma}_k) \le \mathrm{rank}(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_n),
+$$
+
+即 $r(\boldsymbol{A}\boldsymbol{B}) \le r(\boldsymbol{A})$。
+
+因 $\boldsymbol{C}^\mathrm{T} = \boldsymbol{B}^\mathrm{T}\boldsymbol{A}^\mathrm{T}$，由上面的证明知 $r(\boldsymbol{C}^\mathrm{T}) \le r(\boldsymbol{B}^\mathrm{T})$，所以 $r(\boldsymbol{A}\boldsymbol{B}) \le r(\boldsymbol{B})$。故
+
+$$
+r(\boldsymbol{A}\boldsymbol{B}) \le \min\{r(\boldsymbol{A}), r(\boldsymbol{B})\}.
+$$
+
+</Solution>
+
+类似地可证明两矩阵和的秩的不等式：
+
+$$
+r(\boldsymbol{A} + \boldsymbol{B}) \le r(\boldsymbol{A}) + r(\boldsymbol{B}).
+$$
+
+<Example title="例 15 秩相等的线性表出推导等价性证明">
+
+设向量组 $R$ 能由向量组 $S$ 线性表出，且它们的秩相等，证明向量组 $R$ 与向量组 $S$ 等价。
+
+</Example>
+
+<Solution title="证明">
+
+只要证明向量组 $S$ 能由向量组 $R$ 线性表出。
+
+设两个向量组的秩都是 $r$，并设向量组 $R$ 和向量组 $S$ 的极大无关组分别为
+
+$$
+R_0 = \{\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r\}, \quad S_0 = \{\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_r\}.
+$$
+
+因向量组 $R$ 能由 $S$ 线性表出，故 $R_0$ 能由 $S_0$ 线性表出，即有 $r$ 阶方阵 $\boldsymbol{K}_r$，使
+
+$$
+(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r) = (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_r)\boldsymbol{K}_r.
+$$
+
+因 $R_0$ 线性无关，故 $\mathrm{rank}(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r) = r$，由例 14 得
+
+$$
+r(\boldsymbol{K}_r) \ge \mathrm{rank}(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r) = r,
+$$
+
+但 $r(\boldsymbol{K}_r) \le r$，因此 $r(\boldsymbol{K}_r) = r$，于是矩阵 $\boldsymbol{K}_r$ 可逆，并有
+
+$$
+(\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_r) = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \dots, \boldsymbol{\alpha}_r)\boldsymbol{K}_r^{-1},
+$$
+
+即向量组 $S_0$ 能由 $R_0$ 线性表出，从而向量组 $S$ 能由向量组 $R$ 线性表出。所以向量组 $R$ 与向量组 $S$ 等价。
+
+</Solution>
+
+<ExerciseTrigger chapter={4} section="4.4" title="4.4 向量组的秩 课后真题与自测练习" />

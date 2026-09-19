@@ -1,0 +1,447 @@
+---
+import { listTypographyPresets } from '../../../publishing/typography/index.ts';
+import type { TypographyPreset } from '../../../publishing/typography/types.ts';
+
+interface Props {
+  typographyPresets?: TypographyPreset[];
+}
+
+const { typographyPresets = listTypographyPresets() } = Astro.props;
+---
+
+  <div id="ex-latex-modal" class="ex-submodal-overlay hidden" role="dialog" aria-modal="true" aria-label="导出学术 LaTeX 练习文档与试卷">
+    <div class="ex-submodal-box ex-typst-modal-box">
+      <!-- 模态窗顶栏: 学术标题与关闭入口 -->
+      <div class="ex-submodal-header">
+        <div class="ex-submodal-title">
+          <md-icon class="ex-submodal-icon">description</md-icon>
+          <div class="ex-submodal-title-wrap">
+            <span class="ex-submodal-title-text">导出学术 LaTeX / PDF</span>
+            <span class="ex-submodal-title-sub" id="ex-latex-modal-meta">当前选定题量加载中...</span>
+          </div>
+        </div>
+        <div class="ex-header-actions">
+          <md-icon-button type="button" class="ex-submodal-close" data-action="close-latex-modal" aria-label="关闭" title="关闭 (Esc)">
+            <md-icon>close</md-icon>
+          </md-icon-button>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- 阶段 1：排版参数配置视图 (Configuration View)                      -->
+      <!-- ================================================================= -->
+      <div id="ex-latex-config-view" class="ex-latex-view-container">
+        <div class="ex-submodal-body ex-typst-body-split">
+          <!-- 左侧：排版参数设置 (Material You 官方紧凑 Chip 与学术表单，杜绝多层冗余卡片) -->
+          <div class="ex-typst-config-pane">
+            <!-- 1. 排版版式选择 (M3 Filter Chips) -->
+            <div class="ex-typst-section">
+              <div class="ex-typst-sec-header">
+                <span class="ex-typst-sec-title">排版版式</span>
+              </div>
+              <md-chip-set class="ex-m3-chip-set" id="ex-chip-set-template">
+                <md-filter-chip
+                  class="ex-m3-filter-chip"
+                  label="学术讲义练习本"
+                  data-template="handout"
+                  selected
+                  has-selected-icon
+                ></md-filter-chip>
+                <md-filter-chip
+                  class="ex-m3-filter-chip"
+                  label="课程自测试卷"
+                  data-template="exam"
+                ></md-filter-chip>
+              </md-chip-set>
+              <div class="ex-template-hint" id="ex-template-hint">大学数学教材体例 · 经典双线页眉 · 纯正学术出版排版</div>
+            </div>
+
+            <!-- 2. 卷头与元数据控制 (M3 Filter Chips) -->
+            <div class="ex-typst-section">
+              <div class="ex-typst-sec-header">
+                <span class="ex-typst-sec-title">卷头与元数据</span>
+              </div>
+              <md-chip-set class="ex-m3-chip-set" id="ex-chip-set-header">
+                <md-filter-chip
+                  class="ex-m3-filter-chip"
+                  label="标准学术卷头"
+                  data-header-mode="standard"
+                  selected
+                  has-selected-icon
+                ></md-filter-chip>
+                <md-filter-chip
+                  class="ex-m3-filter-chip"
+                  label="紧凑单行卷头"
+                  data-header-mode="compact"
+                ></md-filter-chip>
+                <md-filter-chip
+                  class="ex-m3-filter-chip"
+                  label="无卷头纯题面"
+                  data-header-mode="none"
+                ></md-filter-chip>
+              </md-chip-set>
+
+              <!-- 卷头元数据细节开关与编辑 -->
+              <div class="ex-header-meta-details" id="ex-header-meta-details">
+                <div class="ex-control-group">
+                  <label for="ex-latex-title-input">文档主标题</label>
+                  <input type="text" id="ex-latex-title-input" class="ex-input" placeholder="例如：工科数学分析 · 第 1 章 极限与连续" />
+                </div>
+
+                <div class="ex-control-group" id="ex-header-subtitle-group">
+                  <div class="ex-meta-toggle-row">
+                    <label class="ex-checkbox-label">
+                      <input type="checkbox" id="ex-latex-show-subtitle-check" checked /> 包含副标题 / 考试说明
+                    </label>
+                  </div>
+                  <input type="text" id="ex-latex-subtitle-input" class="ex-input" placeholder="例如：《大邮数学集》期中与期末真题自测" />
+                </div>
+
+                <div class="ex-meta-options-row">
+                  <label class="ex-checkbox-label" title="在卷头标注遵循知识共享 CC BY-NC-SA 4.0 许可协议">
+                    <input type="checkbox" id="ex-latex-show-license-check" checked /> 标注 CC BY-NC-SA 4.0 协议
+                  </label>
+                  <label class="ex-checkbox-label">
+                    <input type="checkbox" id="ex-latex-show-date-check" checked /> 包含生成日期
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. 页面规格与学术字体 -->
+            <div class="ex-typst-section">
+              <div class="ex-typst-sec-header">
+                <span class="ex-typst-sec-title">页面与字体</span>
+              </div>
+              <div class="ex-typst-controls-grid">
+                <div class="ex-control-group">
+                  <label for="ex-latex-paper-size">纸张尺寸</label>
+                  <select id="ex-latex-paper-size" class="ex-select">
+                    <option value="a4" selected>A4 (210 × 297 mm · 标准印刷)</option>
+                    <option value="b5">B5 (176 × 250 mm · 教材尺寸)</option>
+                  </select>
+                </div>
+
+                <div class="ex-control-group full-width">
+                  <label for="ex-latex-typography">出版风格 (Typography Preset)</label>
+                  <select id="ex-latex-typography" class="ex-select" aria-label="学术出版风格与排版预设">
+                    {typographyPresets.map((preset) => (
+                      <option value={preset.id} selected={preset.id === 'scholarly'}>
+                        {preset.name} · {preset.targetAudience || preset.description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <!-- 兼容历史契约与自动化测试的隐藏桥梁 (Legacy Compatibility Bridge) -->
+                <div style="display: none;" data-legacy-bridge aria-hidden="true">
+                  <input type="radio" name="ex-latex-header-mode" value="standard" checked />
+                  <input type="radio" name="ex-latex-header-mode" value="compact" />
+                  <input type="radio" name="ex-latex-header-mode" value="none" />
+                  <input type="radio" name="ex-latex-writing-space" value="comfortable" checked />
+                  <input type="radio" name="ex-latex-writing-space" value="compact" />
+                  <input type="radio" name="ex-latex-writing-space" value="none" />
+                  <input type="radio" name="ex-latex-answer-mode" value="appendix" checked />
+                  <input type="radio" name="ex-latex-answer-mode" value="inline" />
+                  <input type="radio" name="ex-latex-answer-mode" value="none" />
+                  <select id="ex-latex-font-family">
+                    <option value="serif" selected>serif</option>
+                    <option value="sans">sans</option>
+                  </select>
+                  <select id="ex-latex-math-font">
+                    <option value="typst" selected>typst</option>
+                    <option value="modern">modern</option>
+                    <option value="pagella">pagella</option>
+                    <option value="times">times</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. 作答书写留白空间 (M3 Filter Chips - 对齐【快速设置】极简单行排布) -->
+            <div class="ex-typst-section">
+              <div class="ex-typst-sec-header">
+                <span class="ex-typst-sec-title">作答书写留白</span>
+              </div>
+              <md-chip-set class="ex-m3-chip-set" id="ex-chip-set-writing-space">
+                <md-filter-chip
+                  class="ex-m3-filter-chip"
+                  label="充裕留白"
+                  data-writing-space="comfortable"
+                  selected
+                  has-selected-icon
+                ></md-filter-chip>
+                <md-filter-chip
+                  class="ex-m3-filter-chip"
+                  label="紧凑排版"
+                  data-writing-space="compact"
+                ></md-filter-chip>
+                <md-filter-chip
+                  class="ex-m3-filter-chip"
+                  label="无留白"
+                  data-writing-space="none"
+                ></md-filter-chip>
+              </md-chip-set>
+            </div>
+
+            <!-- 5. 参考答案与题解附录 (M3 Filter Chips - 对齐【快速设置】极简单行排布) -->
+            <div class="ex-typst-section">
+              <div class="ex-typst-sec-header">
+                <span class="ex-typst-sec-title">参考答案附录</span>
+              </div>
+              <md-chip-set class="ex-m3-chip-set" id="ex-chip-set-answer-mode">
+                <md-filter-chip
+                  class="ex-m3-filter-chip"
+                  label="独立文末附录"
+                  data-answer-mode="appendix"
+                  selected
+                  has-selected-icon
+                ></md-filter-chip>
+                <md-filter-chip
+                  class="ex-m3-filter-chip"
+                  label="随题附解"
+                  data-answer-mode="inline"
+                ></md-filter-chip>
+                <md-filter-chip
+                  class="ex-m3-filter-chip"
+                  label="不输出答案"
+                  data-answer-mode="none"
+                ></md-filter-chip>
+              </md-chip-set>
+            </div>
+
+            <!-- 6. 高级排版选项 (默认收拢，保持界面干净) -->
+            <details class="ex-advanced-details" id="ex-advanced-details">
+              <summary class="ex-advanced-summary">
+                <span class="ex-advanced-title">高级排版设置</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ex-advanced-arrow">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </summary>
+              <div class="ex-advanced-content">
+                <div class="ex-typst-controls-grid">
+                  <div class="ex-control-group">
+                    <label for="ex-latex-font-size">正文字号</label>
+                    <select id="ex-latex-font-size" class="ex-select">
+                      <option value="10">10 pt (紧凑排版)</option>
+                      <option value="11" selected>11 pt (标准五号 · 推荐)</option>
+                      <option value="12">12 pt (易读大字号)</option>
+                    </select>
+                  </div>
+                  <div class="ex-control-group">
+                    <label for="ex-latex-page-numbering">页码展示格式</label>
+                    <select id="ex-latex-page-numbering" class="ex-select">
+                      <option value="simple" selected>纯净页码 (第 1 页)</option>
+                      <option value="total">总页数比 (第 1 页 / 共 12 页)</option>
+                      <option value="none">无页码 (用于单张自测试卷)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </details>
+          </div>
+
+          <!-- 右侧：文档交付与学术导出指引 (弱化源码与开发者细节，建立清晰使用路径) -->
+          <div class="ex-typst-preview-pane ex-latex-delivery-pane">
+            <div class="ex-delivery-content">
+              <!-- 方式 1：自动化云端生成 PDF (首位置顶 · 免安装首选推荐) -->
+              <div class="ex-delivery-card ex-delivery-card-primary">
+                <div class="ex-delivery-card-body">
+                  <div class="ex-delivery-card-header-row">
+                    <div>
+                      <div class="ex-delivery-badge">免安装推荐</div>
+                      <div class="ex-delivery-card-title">自动化云端生成 PDF</div>
+                    </div>
+                    <md-text-button type="button" class="ex-card-cfg-btn" id="ex-latex-open-settings-btn" title="配置 GitHub Actions 编译凭据">
+                      <md-icon slot="icon">settings</md-icon>
+                      <span>编译凭据</span>
+                    </md-text-button>
+                  </div>
+                  <p class="ex-delivery-card-desc">
+                    通过云端 GitHub Actions 容器沙箱自动编译排版，免安装任何本地 TeX 环境，并直接在当前窗口中预览与下载矢量 PDF。首次使用需配置授权凭据。
+                  </p>
+                </div>
+                <div class="ex-delivery-card-action">
+                  <md-filled-button type="button" id="ex-latex-start-compile-btn" title="发起云端 XeLaTeX 编译生成 PDF">
+                    <md-icon slot="icon">play_arrow</md-icon>
+                    <span>开始生成 PDF →</span>
+                  </md-filled-button>
+                </div>
+              </div>
+
+              <!-- 方式 2：本地排版与本地编译 (新增集成【导出本章节】本地 XeLaTeX 编译能力) -->
+              <div class="ex-delivery-card">
+                <div class="ex-delivery-card-body">
+                  <div class="ex-delivery-card-title">本地排版与 TeX 源码</div>
+                  <p class="ex-delivery-card-desc">
+                    检测本地 TeX Live、MacTeX 或 MiKTeX 编译器一键离线双遍编译直出 PDF，或获取符合 CTAN 规范的完整 LaTeX 宏包源码。
+                  </p>
+                </div>
+                <div class="ex-delivery-card-action ex-delivery-actions-row">
+                  <md-filled-tonal-button type="button" id="ex-latex-local-compile-btn" title="调用本地 XeLaTeX 引擎离线编译并下载 PDF">
+                    <md-icon slot="icon">build</md-icon>
+                    <span>本地编译 PDF</span>
+                  </md-filled-tonal-button>
+                  <md-outlined-button type="button" id="ex-latex-download-btn" title="下载 .tex 源码文档">
+                    <md-icon slot="icon">download</md-icon>
+                    <span>下载 .tex 源码</span>
+                  </md-outlined-button>
+                  <md-outlined-button type="button" id="ex-latex-copy-btn" title="复制完整 LaTeX 代码至剪贴板">
+                    <md-icon slot="icon">content_copy</md-icon>
+                    <span>复制代码</span>
+                  </md-outlined-button>
+                </div>
+              </div>
+
+              <!-- 方式 3：Overleaf 云端在线排版 (撤下至第三位，注明长文档超时升级限制) -->
+              <div class="ex-delivery-card ex-delivery-card-overleaf">
+                <div class="ex-delivery-card-body">
+                  <div class="ex-delivery-card-title">Overleaf 云端在线排版</div>
+                  <div class="ex-overleaf-warning-note">
+                    <md-icon class="ex-warning-icon">info</md-icon>
+                    <span>提示：Overleaf 免费版对长文档、大量数学公式与宏包存在严格的单次编译时长限制，超时将终止输出（长文档需升级付费会员才可编译）；推荐优先使用上方的 GitHub 云端编译或本地编译。</span>
+                  </div>
+                  <p class="ex-delivery-card-desc">
+                    在浏览器新标签页中一键打开标准 TeX 源文档，由 Overleaf 在线编辑或排版。
+                  </p>
+                </div>
+                <div class="ex-delivery-card-action">
+                  <md-outlined-button type="button" id="ex-latex-overleaf-btn" title="在 Overleaf 在线打开排版">
+                    <md-icon slot="icon">open_in_new</md-icon>
+                    <span>在 Overleaf 中排版 ↗</span>
+                  </md-outlined-button>
+                </div>
+              </div>
+
+              <!-- 按需折叠：LaTeX 源码核对 -->
+              <details class="ex-latex-code-drawer" id="ex-latex-code-drawer">
+                <summary class="ex-latex-code-summary">
+                  <div class="ex-drawer-summary-title">
+                    <md-icon class="ex-drawer-icon">code</md-icon>
+                    <span>查看完整 LaTeX 源码</span>
+                  </div>
+                  <div class="ex-drawer-summary-meta">
+                    <span id="ex-latex-stat-lines" class="ex-code-stat-text">0 行代码</span>
+                    <md-icon class="ex-drawer-arrow">expand_more</md-icon>
+                  </div>
+                </summary>
+                <div class="ex-latex-code-body">
+                  <div class="ex-latex-code-toolbar">
+                    <span id="ex-latex-filename-badge" class="ex-code-filename-text">output.tex</span>
+                    <button type="button" class="ex-code-copy-link" id="ex-latex-preview-copy-btn">复制代码</button>
+                  </div>
+                  <textarea id="ex-latex-code-textarea" class="ex-code-editor ex-typst-code-view" readonly spellcheck="false" autocomplete="off"></textarea>
+                  <div class="ex-latex-ctan-hint">
+                    遵循 CTAN homework 宏包规范，支持通过 <code>xelatex</code> 引擎离线编译。
+                  </div>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+
+        <!-- 配置阶段底部操作栏 (极简学术体例，消灭拥挤错位) -->
+        <div class="ex-submodal-footer ex-typst-footer">
+          <div class="ex-typst-footer-left">
+            <span class="ex-footer-spec-text">CTAN 标准 homework 排版体例 · 适配 A4 / B5 印刷规格</span>
+          </div>
+          <div class="ex-typst-footer-right">
+            <md-outlined-button type="button" data-action="close-latex-modal">
+              <span>关闭窗口</span>
+            </md-outlined-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- 阶段 2：编译交付与 PDF 结果预览视图 (Compilation & Delivery View)  -->
+      <!-- ================================================================= -->
+      <div id="ex-latex-result-view" class="ex-latex-view-container hidden">
+        <!-- 交付顶栏导航 -->
+        <div class="ex-result-header">
+          <md-outlined-button type="button" id="ex-latex-back-config-btn" title="返回修改排版参数">
+            <md-icon slot="icon">arrow_back</md-icon>
+            <span>返回修改配置</span>
+          </md-outlined-button>
+          <div class="ex-result-status-wrap">
+            <span class="ex-status-pill idle" id="ex-pipeline-status-pill">就绪</span>
+            <span class="ex-status-desc" id="ex-pipeline-status-desc">准备编译</span>
+            <span class="ex-timer-badge hidden" id="ex-pipeline-timer">00:00</span>
+            <span class="ex-job-badge hidden" id="ex-pipeline-job-id">job-id</span>
+          </div>
+        </div>
+
+        <!-- 交付主视窗 (PDF 预览为绝对主内容) -->
+        <div class="ex-result-body">
+          <div class="ex-pipeline-viewer" id="ex-pipeline-viewer">
+            <!-- 编译等待动效卡片 -->
+            <div class="ex-pipeline-loading hidden" id="ex-pipeline-loading-card">
+              <md-circular-progress indeterminate class="m3-loading-circular-core" style="--md-circular-progress-size: 38px; width: 38px; height: 38px; margin-bottom: 0.75rem;"></md-circular-progress>
+              <div class="ex-pipeline-loading-title" id="ex-loading-title">正在排版生成 PDF...</div>
+              <div class="ex-pipeline-loading-sub" id="ex-loading-sub">GitHub Actions 正在载入 TeX Live 2024 环境并编译宏包</div>
+              <div class="ex-pipeline-progress-track">
+                <div class="ex-pipeline-progress-bar" id="ex-pipeline-progress-bar"></div>
+              </div>
+            </div>
+
+            <!-- 耗时较长挂起卡片 -->
+            <div class="ex-pipeline-timeout hidden" id="ex-pipeline-timeout-card">
+              <div class="ex-pipeline-timeout-icon">
+                <md-icon class="ex-pipeline-timeout-mdicon">hourglass_empty</md-icon>
+              </div>
+              <div class="ex-pipeline-timeout-title">云端编译仍在进行中</div>
+              <div class="ex-pipeline-timeout-desc" id="ex-pipeline-timeout-desc">
+                GitHub Actions 节点正在排队或编译。任务在云端持续执行中，您可以继续等待或直接检查结果。
+              </div>
+              <div class="ex-pipeline-timeout-actions">
+                <md-filled-button type="button" id="ex-continue-wait-btn">继续等待编译 (2分钟)</md-filled-button>
+                <md-outlined-button type="button" id="ex-check-result-now-btn">检查编译结果</md-outlined-button>
+              </div>
+            </div>
+
+            <!-- 编译成功：高清全屏 PDF 预览视窗 -->
+            <div class="ex-pipeline-preview-frame hidden" id="ex-pipeline-preview-frame">
+              <iframe id="ex-latex-pdf-iframe" class="ex-pdf-iframe" title="PDF 打印预览" loading="lazy"></iframe>
+            </div>
+          </div>
+
+          <!-- 折叠诊断日志 (排查编译问题时可展开查看) -->
+          <details class="ex-pipeline-log-drawer" id="ex-pipeline-log-drawer">
+            <summary class="ex-log-summary">
+              <md-icon class="ex-log-icon">terminal</md-icon>
+              <span>查看 XeLaTeX 编译诊断日志</span>
+            </summary>
+            <pre class="ex-log-terminal" id="ex-latex-log-pre">等待编译启动...</pre>
+          </details>
+        </div>
+
+        <!-- 交付阶段底部操作栏 -->
+        <div class="ex-submodal-footer ex-typst-footer">
+          <div class="ex-typst-footer-left">
+            <span class="ex-typst-filename-badge" id="ex-latex-pdf-filename-badge">output.pdf</span>
+            <span class="ex-pipeline-engine-badge">XeLaTeX 2024</span>
+          </div>
+          <div class="ex-typst-footer-right">
+            <!-- 编译中取消 -->
+            <md-outlined-button type="button" class="hidden" id="ex-latex-cancel-compile-btn" title="取消当前排版">
+              <span>取消编译</span>
+            </md-outlined-button>
+
+            <!-- 编译就绪次级打印 -->
+            <md-outlined-button type="button" class="hidden" id="ex-latex-print-btn" title="调起系统打印面板">
+              <md-icon slot="icon">print</md-icon>
+              <span>调起打印</span>
+            </md-outlined-button>
+
+            <!-- 编译就绪主 CTA: 下载 PDF -->
+            <md-filled-button type="button" id="ex-latex-download-pdf-btn" title="下载高清矢量 PDF 文件">
+              <md-icon slot="icon">download</md-icon>
+              <span id="ex-latex-download-pdf-text">下载 PDF</span>
+            </md-filled-button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 编译池与凭证配置独立二级弹窗 (修复 z-index 与不透明背景) -->

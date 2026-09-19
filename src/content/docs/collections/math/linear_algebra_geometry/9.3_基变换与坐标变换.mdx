@@ -1,0 +1,322 @@
+---
+title: '9.3 基变换与坐标变换'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+在 $n$ 维线性空间中，同一元素在不同基下的坐标是不同的。那么，同一元素在不同基下的坐标之间有怎样的关系呢？
+
+## 一、基变换公式与过渡矩阵
+
+设 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 与 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_n$ 是 $n$ 维线性空间 $V$ 的两组基。很明显，$\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_n$ 可由 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 线性表示。设
+
+$$
+\begin{cases}
+\boldsymbol{\beta}_1 = p_{11}\boldsymbol{\alpha}_1 + p_{21}\boldsymbol{\alpha}_2 + \cdots + p_{n1}\boldsymbol{\alpha}_n, \\
+\boldsymbol{\beta}_2 = p_{12}\boldsymbol{\alpha}_1 + p_{22}\boldsymbol{\alpha}_2 + \cdots + p_{n2}\boldsymbol{\alpha}_n, \\
+\quad \vdots \\
+\boldsymbol{\beta}_n = p_{1n}\boldsymbol{\alpha}_1 + p_{2n}\boldsymbol{\alpha}_2 + \cdots + p_{nn}\boldsymbol{\alpha}_n,
+\end{cases} \tag{9.1}
+$$
+
+为方便起见，将式 (9.1) 形式地表示为矩阵相乘的形式：
+
+$$
+(\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_n) = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n)
+\begin{pmatrix}
+p_{11} & p_{12} & \cdots & p_{1n} \\
+p_{21} & p_{22} & \cdots & p_{2n} \\
+\vdots & \vdots & & \vdots \\
+p_{n1} & p_{n2} & \cdots & p_{nn}
+\end{pmatrix}. \tag{9.2}
+$$
+
+<Knowledge title="定义 9.1 基变换与过渡矩阵">
+
+式 (9.1) 或式 (9.2) 称为**基变换公式**。矩阵 $\boldsymbol{P} = (p_{ij})$ 称为从基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 到基 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_n$ 的**过渡矩阵**。
+
+过渡矩阵 $\boldsymbol{P}$ 的第 $j$ 列，就是基向量 $\boldsymbol{\beta}_j$ 在原基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 下的坐标。
+
+</Knowledge>
+
+<Knowledge title="定理 2 过渡矩阵的可逆性">
+
+设 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 与 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_n$ 是 $n$ 维线性空间 $V$ 的两组基，$\boldsymbol{P}$ 是从基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 到基 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_n$ 的过渡矩阵，则 $\boldsymbol{P}$ 是可逆矩阵。
+
+</Knowledge>
+
+<Block title="证明">
+
+用反证法。已知 $(\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_n) = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n)\boldsymbol{P}$。设 $\boldsymbol{P} = (p_{ij})$。
+
+若 $\boldsymbol{P}$ 不可逆，则 $|\boldsymbol{P}| = 0$，于是齐次线性方程组 $\boldsymbol{P}\boldsymbol{x} = \boldsymbol{0}$ 有非零解 $\boldsymbol{x}^* = (x_1^*, x_2^*, \cdots, x_n^*)^\mathrm{T}$。因此
+
+$$
+x_1^* \boldsymbol{\beta}_1 + x_2^* \boldsymbol{\beta}_2 + \cdots + x_n^* \boldsymbol{\beta}_n = (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_n)\boldsymbol{x}^*
+$$
+
+$$
+= [(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n)\boldsymbol{P}]\boldsymbol{x}^* = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n)(\boldsymbol{P}\boldsymbol{x}^*) = \boldsymbol{0}
+$$
+
+（$\boldsymbol{0}$ 表示零元素）。这表明 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_n$ 线性相关，与 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_n$ 是基矛盾。所以 $\boldsymbol{P}$ 是可逆的。
+
+</Block>
+
+<SideNote title="形式矩阵记号与运算律">
+此处将 $(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n)$ 与 $(\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_n)$ 形式地看成 $1 \times n$ 的行矩阵，目的是形式地利用矩阵乘法的结合律来简便运算。
+</SideNote>
+
+## 二、坐标变换公式
+
+下面的定理给出了 $n$ 维线性空间中同一元素在不同基下的坐标之间的关系。
+
+<Knowledge title="定理 3 坐标变换公式">
+
+设 $n$ 维线性空间 $V$ 中元素 $\boldsymbol{\alpha}$ 在基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 与基 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_n$ 下的坐标分别为 $\boldsymbol{x} = (x_1, x_2, \cdots, x_n)^\mathrm{T}$ 与 $\boldsymbol{y} = (y_1, y_2, \cdots, y_n)^\mathrm{T}$。
+
+如果从基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 到基 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_n$ 的过渡矩阵为 $\boldsymbol{P}$，则
+
+$$
+\boldsymbol{x} = \boldsymbol{P}\boldsymbol{y} \quad \text{或} \quad \boldsymbol{y} = \boldsymbol{P}^{-1}\boldsymbol{x},
+$$
+
+称 $\boldsymbol{x} = \boldsymbol{P}\boldsymbol{y}$ 或 $\boldsymbol{y} = \boldsymbol{P}^{-1}\boldsymbol{x}$ 为**坐标变换公式**。
+
+</Knowledge>
+
+<Block title="证明">
+
+已知 $\boldsymbol{\alpha} = (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_n)\boldsymbol{y} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n)\boldsymbol{x}$，且
+
+$$
+(\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_n) = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n)\boldsymbol{P}.
+$$
+
+于是
+
+$$
+\boldsymbol{\alpha} = (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \cdots, \boldsymbol{\beta}_n)\boldsymbol{y} = [(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n)\boldsymbol{P}]\boldsymbol{y} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n)(\boldsymbol{P}\boldsymbol{y}) = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n)\boldsymbol{x}.
+$$
+
+因为 $\boldsymbol{\alpha}$ 在基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 下的坐标是唯一的，所以
+
+$$
+\boldsymbol{x} = \boldsymbol{P}\boldsymbol{y}.
+$$
+
+由于 $\boldsymbol{P}$ 可逆，两端左乘 $\boldsymbol{P}^{-1}$ 即得 $\boldsymbol{y} = \boldsymbol{P}^{-1}\boldsymbol{x}$。
+
+</Block>
+
+## 三、典型例题
+
+<Example title="例 10 求对称矩阵空间的过渡矩阵">
+
+设 $V$ 为全体二阶实对称矩阵。对于矩阵的加法与数乘运算，$V$ 是一个三维线性空间。在 $V$ 中取两组基：
+
+$$
+\boldsymbol{\alpha}_1 = \begin{pmatrix} 1 & 0 \\ 0 & 0 \end{pmatrix}, \; \boldsymbol{\alpha}_2 = \begin{pmatrix} 0 & 0 \\ 0 & 1 \end{pmatrix}, \; \boldsymbol{\alpha}_3 = \begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix}
+$$
+
+与
+
+$$
+\boldsymbol{\beta}_1 = \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix}, \; \boldsymbol{\beta}_2 = \begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix}, \; \boldsymbol{\beta}_3 = \begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix}.
+$$
+
+求从基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3$ 到基 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \boldsymbol{\beta}_3$ 的过渡矩阵 $\boldsymbol{P}$。
+
+</Example>
+
+<Solution title="解">
+
+由各基矩阵直接展开：
+
+$$
+\boldsymbol{\beta}_1 = \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix} = \boldsymbol{\alpha}_1 + \boldsymbol{\alpha}_2,
+$$
+
+$$
+\boldsymbol{\beta}_2 = \begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix} = \boldsymbol{\alpha}_1 - \boldsymbol{\alpha}_2,
+$$
+
+$$
+\boldsymbol{\beta}_3 = \begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix} = \boldsymbol{\alpha}_1 + \boldsymbol{\alpha}_2 + \boldsymbol{\alpha}_3.
+$$
+
+即
+
+$$
+(\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \boldsymbol{\beta}_3) = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3)
+\begin{pmatrix}
+1 & 1 & 1 \\
+1 & -1 & 1 \\
+0 & 0 & 1
+\end{pmatrix}.
+$$
+
+所求过渡矩阵为
+
+$$
+\boldsymbol{P} =
+\begin{pmatrix}
+1 & 1 & 1 \\
+1 & -1 & 1 \\
+0 & 0 & 1
+\end{pmatrix}.
+$$
+
+</Solution>
+
+<Example title="例 11 过渡矩阵与不同基下的坐标计算">
+
+在 $\mathbf{R}^3$ 中取两组基：
+
+$$
+\boldsymbol{\alpha}_1 = (0, 1, 1)^\mathrm{T}, \; \boldsymbol{\alpha}_2 = (1, 0, 1)^\mathrm{T}, \; \boldsymbol{\alpha}_3 = (1, 1, 0)^\mathrm{T}
+$$
+
+与
+
+$$
+\boldsymbol{\beta}_1 = (-1, 1, 1)^\mathrm{T}, \; \boldsymbol{\beta}_2 = (1, -1, 1)^\mathrm{T}, \; \boldsymbol{\beta}_3 = (1, 1, -1)^\mathrm{T}.
+$$
+
+求从基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3$ 到基 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \boldsymbol{\beta}_3$ 的过渡矩阵 $\boldsymbol{P}$，并分别求 $\boldsymbol{\varepsilon}_1 = (1, 0, 0)^\mathrm{T}$ 在基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3$ 与基 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \boldsymbol{\beta}_3$ 下的坐标。
+
+</Example>
+
+<Solution title="解">
+
+设 $(\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \boldsymbol{\beta}_3) = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3)\boldsymbol{P}$，即
+
+$$
+\begin{pmatrix}
+-1 & 1 & 1 \\
+1 & -1 & 1 \\
+1 & 1 & -1
+\end{pmatrix} =
+\begin{pmatrix}
+0 & 1 & 1 \\
+1 & 0 & 1 \\
+1 & 1 & 0
+\end{pmatrix} \boldsymbol{P}.
+$$
+
+则
+
+$$
+\boldsymbol{P} =
+\begin{pmatrix}
+0 & 1 & 1 \\
+1 & 0 & 1 \\
+1 & 1 & 0
+\end{pmatrix}^{-1}
+\begin{pmatrix}
+-1 & 1 & 1 \\
+1 & -1 & 1 \\
+1 & 1 & -1
+\end{pmatrix}
+$$
+
+$$
+= \frac{1}{2}
+\begin{pmatrix}
+-1 & 1 & 1 \\
+1 & -1 & 1 \\
+1 & 1 & -1
+\end{pmatrix}
+\begin{pmatrix}
+-1 & 1 & 1 \\
+1 & -1 & 1 \\
+1 & 1 & -1
+\end{pmatrix} =
+\frac{1}{2}
+\begin{pmatrix}
+3 & -1 & -1 \\
+-1 & 3 & -1 \\
+-1 & -1 & 3
+\end{pmatrix}.
+$$
+
+设 $\boldsymbol{\varepsilon}_1 = (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \boldsymbol{\beta}_3)\boldsymbol{y} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3)\boldsymbol{x}$，则
+
+$$
+\boldsymbol{x} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3)^{-1}\boldsymbol{\varepsilon}_1 =
+\begin{pmatrix}
+0 & 1 & 1 \\
+1 & 0 & 1 \\
+1 & 1 & 0
+\end{pmatrix}^{-1}
+\begin{pmatrix}
+1 \\
+0 \\
+0
+\end{pmatrix} =
+\frac{1}{2}
+\begin{pmatrix}
+-1 & 1 & 1 \\
+1 & -1 & 1 \\
+1 & 1 & -1
+\end{pmatrix}
+\begin{pmatrix}
+1 \\
+0 \\
+0
+\end{pmatrix} =
+\frac{1}{2}
+\begin{pmatrix}
+-1 \\
+1 \\
+1
+\end{pmatrix};
+$$
+
+$$
+\boldsymbol{y} = (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \boldsymbol{\beta}_3)^{-1}\boldsymbol{\varepsilon}_1 =
+\begin{pmatrix}
+-1 & 1 & 1 \\
+1 & -1 & 1 \\
+1 & 1 & -1
+\end{pmatrix}^{-1}
+\begin{pmatrix}
+1 \\
+0 \\
+0
+\end{pmatrix} =
+\frac{1}{2}
+\begin{pmatrix}
+0 & 1 & 1 \\
+1 & 0 & 1 \\
+1 & 1 & 0
+\end{pmatrix}
+\begin{pmatrix}
+1 \\
+0 \\
+0
+\end{pmatrix} =
+\frac{1}{2}
+\begin{pmatrix}
+0 \\
+1 \\
+1
+\end{pmatrix}.
+$$
+
+故 $\boldsymbol{\varepsilon}_1$ 在基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3$ 下的坐标为 $\boldsymbol{x} = \frac{1}{2}(-1, 1, 1)^\mathrm{T}$；在基 $\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \boldsymbol{\beta}_3$ 下的坐标为 $\boldsymbol{y} = \frac{1}{2}(0, 1, 1)^\mathrm{T}$。
+
+</Solution>
+
+<ExerciseTrigger chapter={9} section="9.3" title="9.3 基变换与坐标变换 课后真题与自测练习" />

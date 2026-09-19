@@ -1,0 +1,350 @@
+/**
+ * ============================================================================
+ * 特性模块（Feature Modules）注册表 —— 全站功能的唯一声明源
+ * ============================================================================
+ */
+
+import type {
+  FeatureCategory,
+  FeatureConfig,
+  FeatureDefInput,
+  FeatureManifest,
+  FeatureRegistry,
+} from '../types/features.ts';
+
+/** 是否 dev 模式（astro dev）：决定 devOnly 功能的真正启用 */
+export const IS_DEV = typeof process !== 'undefined' && Boolean(process.argv?.includes('dev'));
+
+const CATS = new Set<FeatureCategory>(['reader', 'extra', 'dev']);
+const REFS = new Set(['interactive', 'static']);
+
+export function defineFeature<T extends FeatureConfig = FeatureConfig>(def: FeatureDefInput<T>): FeatureManifest<T> {
+  const d = def || ({} as FeatureDefInput<T>);
+  if (!d.id || typeof d.id !== 'string') throw new Error('[features] 缺少 string 类型的 id');
+  if (!CATS.has(d.cat)) throw new Error(`[features] ${d.id} 的 cat 非法：${d.cat}（允许 reader/extra/dev）`);
+  if (typeof d.enabled !== 'boolean') throw new Error(`[features] ${d.id} 缺少 boolean 类型的 enabled`);
+  if (typeof d.devOnly !== 'boolean') throw new Error(`[features] ${d.id} 缺少 boolean 类型的 devOnly`);
+  if (typeof d.ui !== 'boolean') throw new Error(`[features] ${d.id} 缺少 boolean 类型的 ui`);
+  if (d.config?.refs && !REFS.has(d.config.refs)) {
+    throw new Error(`[features] ${d.id} 的 refs 非法：${d.config.refs}（允许 interactive/static）`);
+  }
+  return {
+    id: d.id,
+    cat: d.cat,
+    label: d.label || d.id,
+    desc: d.desc || '',
+    enabled: d.enabled,
+    devOnly: d.devOnly,
+    ui: d.ui,
+    ...(d.requires ? { requires: d.requires } : {}),
+    ...(d.config ? { config: d.config } : {}),
+  };
+}
+
+const featureDefs: Record<string, FeatureManifest<any>> = {
+  katex: defineFeature({
+    id: 'katex',
+    cat: 'reader',
+    label: 'KaTeX 公式',
+    desc: '公式排版与源码回填（data-latex）',
+    enabled: true,
+    devOnly: false,
+    ui: false,
+  }),
+
+  mathPromote: defineFeature({
+    id: 'mathPromote',
+    cat: 'reader',
+    label: '数学变量智能提升',
+    desc: '构建期智能提升正文孤立单字母数学变量与简式为 KaTeX 公式',
+    enabled: true,
+    devOnly: false,
+    ui: false,
+    requires: ['katex'],
+  }),
+
+  cjkPunctuation: defineFeature({
+    id: 'cjkPunctuation',
+    cat: 'reader',
+    label: '学术标点与间距',
+    desc: '构建期智能规范化正文标点并补齐学术专著句间呼吸间距',
+    enabled: true,
+    devOnly: false,
+    ui: false,
+  }),
+
+  formulaActions: defineFeature({
+    id: 'formulaActions',
+    cat: 'reader',
+    label: '公式操作与导出',
+    desc: '正文公式快捷复制 LaTeX 源码与一键导出高清 SVG/PNG 图片',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+    requires: ['katex'],
+  }),
+
+  theme: defineFeature({
+    id: 'theme',
+    cat: 'reader',
+    label: '主题切换',
+    desc: '亮/暗模式切换与 Material You 动态主题调配',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+  }),
+
+  fonts: defineFeature({
+    id: 'fonts',
+    cat: 'reader',
+    label: '字体系统',
+    desc: '读者可选字体档位 + 自托管思源 webfont',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+    requires: ['theme'],
+  }),
+
+  crossRef: defineFeature({
+    id: 'crossRef',
+    cat: 'reader',
+    label: '引用联动',
+    desc: '正文引用徽章（interactive 联动 | static 纯静态 chip）',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+    config: { refs: 'interactive' },
+  }),
+
+  prewarm: defineFeature({
+    id: 'prewarm',
+    cat: 'reader',
+    label: '章节后台预加载',
+    desc: '页面加载后空闲期预先加载相邻章节以实现瞬间换页（默认 1 为前后各 1 页）',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+    config: {
+      defaultPages: 1,
+      sidebarHover: true,
+    },
+  }),
+
+  imageBlur: defineFeature({
+    id: 'imageBlur',
+    cat: 'reader',
+    label: '图像模糊占位',
+    desc: '正文图片构建期生成 LQIP 高斯模糊占位并平滑渐变加载',
+    enabled: false,
+    devOnly: false,
+    ui: false,
+  }),
+
+  relationGraph: defineFeature({
+    id: 'relationGraph',
+    cat: 'extra',
+    label: '章节关系图谱',
+    desc: '全书章节内联引用拓扑图与知识导图（ECharts 可视化）',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+  }),
+
+  mermaid: defineFeature({
+    id: 'mermaid',
+    cat: 'extra',
+    label: 'Mermaid 图表',
+    desc: 'MDX 代码块及 `<Mermaid>` 组件渲染 Sequence/Flowchart 流程图',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+  }),
+
+  epub: defineFeature({
+    id: 'epub',
+    cat: 'extra',
+    label: 'EPUB 下载',
+    desc: '全书离线 EPUB 下载（支持本地生成与 GitHub Releases 托管）',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+    config: {
+      releaseBaseUrl: 'https://github.com/Ariesagittarius/AstroLib/releases/latest/download',
+    },
+  }),
+
+  chapterExport: defineFeature({
+    id: 'chapterExport',
+    cat: 'extra',
+    label: '章节 LaTeX / PDF 导出',
+    desc: '导出当前章节为大学教材级 LaTeX 源码、离线可编译 ZIP 包或本地/云端编译 PDF',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+  }),
+
+  loadingIndicator: defineFeature({
+    id: 'loadingIndicator',
+    cat: 'reader',
+    label: 'M3 加载动画风格',
+    desc: '在 M3 灵动形变指示器与官方原生圆环 (@material/web) 之间自由切换',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+  }),
+
+  editor: defineFeature({
+    id: 'editor',
+    cat: 'dev',
+    label: '在线精修工具',
+    desc: 'dev 下点渲染页改 MDX 并写回（dev-only）',
+    enabled: true,
+    devOnly: true,
+    ui: false,
+  }),
+
+  inspector: defineFeature({
+    id: 'inspector',
+    cat: 'extra',
+    label: '模块索引与速查',
+    desc: '全书卡片模块索引速查、分类筛选与跨章检索定位（同章冲突与结构审查仅开发期可见）',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+  }),
+
+  aiAsk: defineFeature({
+    id: 'aiAsk',
+    cat: 'extra',
+    label: 'AI 智能问答',
+    desc: '基于当前书籍知识库的检索式提问（RAG，构建期索引 + 客户端 BYOK 生成）',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+    config: {
+      provider: 'openai',
+      retrieval: 'keyword',
+      topK: 8,
+      maxContextChars: 6000,
+      maxAnswerTokens: 4096,
+      defaultProvider: 'gemini',
+      defaultModel: 'gemini-3.8-flash',
+      endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+      models: [
+        { id: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
+        { id: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
+        { id: 'gemini-3.6-flash', label: 'Gemini 3.6 Flash', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
+        { id: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
+        { id: 'gemini-3.5-flash-lite', label: 'Gemini 3.5 Flash Lite', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
+        { id: 'gemini-3-flash', label: 'Gemini 3 Flash', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
+        { id: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash Lite', provider: 'gemini', endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' },
+        { id: 'deepseek-flash', label: 'DeepSeek V4.1 Flash', provider: 'deepseek', endpoint: 'https://api.deepseek.com/v1/chat/completions' },
+        { id: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash', provider: 'deepseek', endpoint: 'https://api.deepseek.com/v1/chat/completions' },
+        { id: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro', provider: 'deepseek', endpoint: 'https://api.deepseek.com/v1/chat/completions' },
+      ],
+    },
+  }),
+
+  feedback: defineFeature({
+    id: 'feedback',
+    cat: 'reader',
+    label: '读者勘误反馈',
+    desc: '读者按 Alt+F 或点击按钮选段提交结构化 GitHub 勘误 Issue',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+    config: {
+      githubRepo: 'Ariesagittarius/AstroLib',
+      issueLabels: ['errata', 'community-feedback'],
+      shortcutKey: 'Alt+f',
+      botEndpoint: 'https://astrolib-feedback-bot.2477252192.workers.dev',
+    },
+  }),
+
+  analytics: defineFeature({
+    id: 'analytics',
+    cat: 'extra',
+    label: '用户体验与访问分析',
+    desc: '全站访客洞察、热力图、录屏回放与高价值交互统计（基于 Microsoft Clarity）',
+    enabled: true,
+    devOnly: false,
+    ui: false,
+    config: {
+      provider: 'clarity',
+      clarityProjectId: 'y9on8roaw3',
+      productionOnly: true,
+      filterBots: true,
+      excludePaths: ['/dev/', '/print'],
+      trackHighValueEvents: true,
+    },
+  }),
+
+  exercises: defineFeature({
+    id: 'exercises',
+    cat: 'reader',
+    label: '章节习题与真题自测',
+    desc: '章节课后习题与《大邮数学集》（CC协议）历年真题独立交互做题、整卷试卷刷题、AI 社区题解共享与纠错系统',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+    config: {
+      defaultMode: 'practice',
+      communitySolutions: true,
+      cloudDb: {
+        apiBaseUrl: '/api/exercise',
+        supabaseUrl: '',
+        supabaseAnonKey: '',
+      },
+      devSourceEditor: true,
+    },
+  }),
+
+  seo: defineFeature({
+    id: 'seo',
+    cat: 'extra',
+    label: 'SEO 与搜索引擎优化',
+    desc: '自动化 Canonical、Sitemap、智能标题与摘要合成、Schema.org 结构化数据及 Bing IndexNow 支持',
+    enabled: true,
+    devOnly: false,
+    ui: false,
+    config: {
+      siteUrl: (typeof process !== 'undefined' && process.env?.SITE_URL) || 'https://astrolib.cloud',
+      siteTitle: 'AstroLib',
+      defaultDescription: 'AstroLib 是面向高校师生与自学者的大学理工科教材与学术数字化阅读系统，提供高清数学排版、推导过程、离线 EPUB 与课后真题练习。',
+      googleSiteVerification: (typeof process !== 'undefined' && process.env?.GOOGLE_SITE_VERIFICATION) || '',
+      bingSiteVerification: (typeof process !== 'undefined' && process.env?.BING_SITE_VERIFICATION) || '',
+      indexNowKey: (typeof process !== 'undefined' && process.env?.INDEXNOW_KEY) || 'f774bb6a2e78400d9863cad353421e5c',
+    },
+  }),
+
+  pwa: defineFeature({
+    id: 'pwa',
+    cat: 'extra',
+    label: '独立应用与离线 (PWA)',
+    desc: '支持在电脑与手机上安装为专用独立窗口应用，并提供离线阅读缓存',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+    config: {
+      releaseBaseUrl: 'https://github.com/Ariesagittarius/AstroLib/releases/latest/download',
+      packFileName: 'astrolib-offline-pack.json',
+      mirrors: [
+        'https://github.com/Ariesagittarius/AstroLib/releases/latest/download/astrolib-offline-pack.json',
+        'https://fastly.jsdelivr.net/gh/Ariesagittarius/AstroLib-Assets@main/offline-packs/astrolib-offline-pack.json',
+      ],
+    },
+  }),
+};
+
+export const features: FeatureRegistry = featureDefs;
+export const FEATURE_IDS: string[] = Object.keys(features);
+
+export function isEffective(id: string): boolean {
+  const f = features[id];
+  if (!f) return false;
+  return f.enabled && (!f.devOnly || IS_DEV);
+}
+
+export function crossRefRefs(): 'interactive' | 'static' {
+  return features.crossRef?.config?.refs ?? 'interactive';
+}

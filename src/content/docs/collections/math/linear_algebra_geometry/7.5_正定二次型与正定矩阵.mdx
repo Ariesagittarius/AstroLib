@@ -1,0 +1,370 @@
+---
+title: '7.5 正定二次型与正定矩阵'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+二次型在工程计算、物理极值问题、优化理论与多元函数极值判别中有广泛的应用。在这些应用中，有一类特别重要的二次型——正定二次型。本节系统讨论正定二次型与正定矩阵的概念、等价判别准则（包括特征值判别法、标准形判别法、Sylvester 顺序主子式判别法），并简要介绍半正定与负定二次型。
+
+## 一、正定二次型与正定矩阵
+
+<Knowledge title="定义 14 正定二次型与正定矩阵">
+
+设实二次型 $f(x_1, x_2, \cdots, x_n) = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x}$。如果对任意 $\boldsymbol{x} \neq \mathbf{0}$，都有
+
+$$
+\boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x} > 0
+$$
+
+则称 $f$ 为**正定二次型**，称 $\boldsymbol{A}$ 为**正定矩阵**。
+
+</Knowledge>
+
+<Example title="例 19 正定矩阵的主对角元均为正数">
+
+设 $n$ 阶矩阵 $\boldsymbol{A} = (a_{ij})$ 为正定矩阵，求证：$a_{ii} > 0$ ($i = 1, 2, \cdots, n$)。
+
+</Example>
+
+<Solution title="证">
+
+因为 $f = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x}$ 是正定二次型，所以对任意 $1 \le i \le n$，取 $\boldsymbol{x} = \boldsymbol{\varepsilon}_i$ 为第 $i$ 个分量为 $1$、其余分量为 $0$ 的列向量，则 $\boldsymbol{x} \neq \mathbf{0}$，从而
+
+$$
+\boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x} = a_{ii} > 0
+$$
+
+</Solution>
+
+下面给出判别二次型是否正定的充分必要条件。
+
+<Knowledge title="定理 10 正定二次型的充要条件（标准形判别）">
+
+实二次型 $f(x_1, x_2, \cdots, x_n) = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x}$ 是正定二次型的充分必要条件为 $f$ 的标准形中 $n$ 个系数全为正数（即 $f$ 的正惯性指数为 $n$）。
+
+</Knowledge>
+
+<Solution title="证明">
+
+设在可逆线性变换 $\boldsymbol{x} = \boldsymbol{C}\boldsymbol{y}$ 下，$f$ 化为标准形：
+
+$$
+f = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x} = \boldsymbol{y}^\mathrm{T}(\boldsymbol{C}^\mathrm{T}\boldsymbol{A}\boldsymbol{C})\boldsymbol{y} = k_1y_1^2 + k_2y_2^2 + \cdots + k_ny_n^2
+$$
+
+**充分性**：如果 $k_i > 0$ ($i = 1, 2, \cdots, n$)，那么对于任意的 $\boldsymbol{x} \neq \mathbf{0}$，由于 $\boldsymbol{C}$ 可逆，有 $\boldsymbol{y} = \boldsymbol{C}^{-1}\boldsymbol{x} \neq \mathbf{0}$，于是
+
+$$
+\boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x} = k_1y_1^2 + k_2y_2^2 + \cdots + k_ny_n^2 > 0
+$$
+
+这说明 $f$ 是正定的。
+
+**必要性**：对于任意取定的 $1 \le i \le n$，取 $\boldsymbol{y} = (y_1, y_2, \cdots, y_n)^\mathrm{T} = \boldsymbol{\varepsilon}_i$，即 $y_i = 1$，其他 $y_k$ ($k \neq i$) 都取零值。令 $\boldsymbol{x} = \boldsymbol{C}\boldsymbol{y}$，则 $\boldsymbol{x} \neq \mathbf{0}$。因为 $f$ 正定，所以
+
+$$
+\boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x} = k_i > 0
+$$
+
+</Solution>
+
+在正交变换下，二次型 $f(x_1, x_2, \cdots, x_n) = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x}$ 的标准形中 $n$ 个系数是 $\boldsymbol{A}$ 的全体特征值，所以有推论 1。
+
+<Knowledge title="推论 1 特征值判别法">
+
+$n$ 阶实对称矩阵 $\boldsymbol{A}$ 正定的充分必要条件是 $\boldsymbol{A}$ 的 $n$ 个特征值全为正数。
+
+</Knowledge>
+
+再由规范形的定义可得推论 2。
+
+<Knowledge title="推论 2 合同规范形判别法">
+
+$n$ 阶实对称矩阵 $\boldsymbol{A}$ 正定的充分必要条件是 $\boldsymbol{A}$ 的合同规范形为 $n$ 阶单位矩阵 $\boldsymbol{E}$（即 $\boldsymbol{A}$ 与 $\boldsymbol{E}$ 合同）。
+
+</Knowledge>
+
+<Example title="例 20 配方法判定二次型正定性">
+
+判别二次型 $f(x_1, x_2, x_3) = x_1^2 + 2x_2^2 + x_3^2 + 2x_1x_2 + 4x_2x_3$ 是否正定。
+
+</Example>
+
+<Solution title="解">
+
+用配方法将 $f$ 化为
+
+$$
+f = (x_1 + x_2)^2 + (x_2 + 2x_3)^2 - 3x_3^2
+$$
+
+$f$ 的标准形中有 $2$ 个系数为正，还有 $1$ 个系数为负（即正惯性指数为 $2 \neq 3$），所以 $f$ 不是正定二次型。
+
+</Solution>
+
+接下来再给出一个判别正定矩阵的常用充分必要条件。
+
+<Knowledge title="定义 15 主子式与顺序主子式">
+
+设 $\boldsymbol{A} = (a_{ij})$ 是 $n$ 阶方阵。任取 $1 \le i_1 < i_2 < \cdots < i_k \le n$，由 $\boldsymbol{A}$ 的第 $i_1, i_2, \cdots, i_k$ 行与第 $i_1, i_2, \cdots, i_k$ 列交叉处的元素所构成的 $k$ 阶行列式
+
+$$
+\begin{vmatrix}
+a_{i_1 i_1} & a_{i_1 i_2} & \cdots & a_{i_1 i_k} \\
+a_{i_2 i_1} & a_{i_2 i_2} & \cdots & a_{i_2 i_k} \\
+\vdots & \vdots & & \vdots \\
+a_{i_k i_1} & a_{i_k i_2} & \cdots & a_{i_k i_k}
+\end{vmatrix}
+$$
+
+称为 $\boldsymbol{A}$ 的一个 **$k$ 阶主子式**。
+
+特别地，当 $i_1 = 1, i_2 = 2, \cdots, i_k = k$ 时，这个 $k$ 阶主子式称为 $\boldsymbol{A}$ 的 **$k$ 阶顺序主子式**。
+
+</Knowledge>
+
+例如，设
+
+$$
+\boldsymbol{A} = \begin{pmatrix} 1 & -1 & 2 & 3 \\ 2 & 1 & -1 & 5 \\ -1 & 3 & 0 & 0 \\ 3 & 4 & 1 & 2 \end{pmatrix}
+$$
+
+$\boldsymbol{A}$ 的三阶主子式有 $4$ 个，如由第 $2, 3, 4$ 行列构成的三阶主子式为
+
+$$
+\begin{vmatrix} 1 & -1 & 5 \\ 3 & 0 & 0 \\ 4 & 1 & 2 \end{vmatrix} = 21
+$$
+
+$\boldsymbol{A}$ 的三阶顺序主子式只有 $1$ 个，为
+
+$$
+\begin{vmatrix} 1 & -1 & 2 \\ 2 & 1 & -1 \\ -1 & 3 & 0 \end{vmatrix} = 16
+$$
+
+$\boldsymbol{A}$ 的二阶主子式有 $6$ 个，但二阶顺序主子式只有 $1$ 个，为
+
+$$
+\begin{vmatrix} 1 & -1 \\ 2 & 1 \end{vmatrix} = 3
+$$
+
+<Knowledge title="定理 11 赫尔维茨定理（Sylvester 准则）">
+
+$n$ 阶实对称矩阵 $\boldsymbol{A} = (a_{ij})$ 是正定矩阵 $\iff$ $\boldsymbol{A}$ 的 $n$ 个顺序主子式都为正数，即
+
+$$
+a_{11} > 0, \quad \begin{vmatrix} a_{11} & a_{12} \\ a_{21} & a_{22} \end{vmatrix} > 0, \quad \cdots, \quad |\boldsymbol{A}| > 0
+$$
+
+</Knowledge>
+
+<Solution title="证*（Sylvester 定理证明）">
+
+**必要性**：已知 $\boldsymbol{A}$ 正定，即二次型 $f = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x}$ 正定。
+
+对任意 $1 \le k \le n$，记
+
+$$
+\boldsymbol{A}_k = \begin{pmatrix} a_{11} & a_{12} & \cdots & a_{1k} \\ a_{21} & a_{22} & \cdots & a_{2k} \\ \vdots & \vdots & & \vdots \\ a_{k1} & a_{k2} & \cdots & a_{kk} \end{pmatrix}
+$$
+
+将 $\boldsymbol{A}$ 分块表示为 $\boldsymbol{A} = \begin{pmatrix} \boldsymbol{A}_k & \boldsymbol{B} \\ \boldsymbol{B}^\mathrm{T} & \boldsymbol{C} \end{pmatrix}$，下面证 $|\boldsymbol{A}_k| > 0$。
+
+对任意 $k$ 维非零向量 $\boldsymbol{v}_k = (x_1, x_2, \cdots, x_k)^\mathrm{T} \neq \mathbf{0}$，取 $n$ 维向量 $\boldsymbol{x}^* = (x_1, \cdots, x_k, 0, \cdots, 0)^\mathrm{T}$，则 $\boldsymbol{x}^* \neq \mathbf{0}$。因为 $f = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x}$ 正定，所以
+
+$$
+(\boldsymbol{x}^*)^\mathrm{T}\boldsymbol{A}\boldsymbol{x}^* = (\boldsymbol{v}_k^\mathrm{T}, \mathbf{0})\begin{pmatrix} \boldsymbol{A}_k & \boldsymbol{B} \\ \boldsymbol{B}^\mathrm{T} & \boldsymbol{C} \end{pmatrix}\begin{pmatrix} \boldsymbol{v}_k \\ \mathbf{0} \end{pmatrix} = \boldsymbol{v}_k^\mathrm{T}\boldsymbol{A}_k\boldsymbol{v}_k > 0
+$$
+
+这说明 $k$ 元二次型 $\boldsymbol{v}_k^\mathrm{T}\boldsymbol{A}_k\boldsymbol{v}_k$ 也是正定的，所以 $\boldsymbol{A}_k$ 的特征值全大于零，于是 $|\boldsymbol{A}_k| > 0$。
+
+**充分性**：用数学归纳法。
+
+当 $n = 1$ 时，$\boldsymbol{A} = (a_{11})$ 为一阶矩阵，已知 $a_{11} > 0$。因为
+
+$$
+\left(\frac{1}{\sqrt{a_{11}}}\right)\boldsymbol{A}\left(\frac{1}{\sqrt{a_{11}}}\right) = (1)
+$$
+
+即 $\boldsymbol{A}$ 与一阶单位矩阵合同，所以 $\boldsymbol{A}$ 是正定的。
+
+假设当 $n = k - 1$ ($k \ge 2$) 时，定理中的充分性成立。
+
+当 $n = k$ 时，$\boldsymbol{A} = (a_{ij})$ 为 $k$ 阶矩阵，将 $\boldsymbol{A}$ 分块表示为
+
+$$
+\boldsymbol{A} = \begin{pmatrix} \boldsymbol{A}_{k-1} & \boldsymbol{\alpha} \\ \boldsymbol{\alpha}^\mathrm{T} & a_{kk} \end{pmatrix}
+$$
+
+因为 $\boldsymbol{A}$ 的 $k$ 个顺序主子式全大于零，由归纳假设可知 $\boldsymbol{A}_{k-1}$ 是正定的，所以 $\boldsymbol{A}_{k-1}$ 与 $k - 1$ 阶单位矩阵 $\boldsymbol{E}_{k-1}$ 合同，即存在 $k - 1$ 阶可逆矩阵 $\boldsymbol{C}_{k-1}$，使得
+
+$$
+\boldsymbol{C}_{k-1}^\mathrm{T}\boldsymbol{A}_{k-1}\boldsymbol{C}_{k-1} = \boldsymbol{E}_{k-1}
+$$
+
+已知 $|\boldsymbol{A}_{k-1}| > 0$，所以 $\boldsymbol{A}_{k-1}$ 可逆。
+
+令
+
+$$
+\boldsymbol{P} = \begin{pmatrix} \boldsymbol{E}_{k-1} & -\boldsymbol{A}_{k-1}^{-1}\boldsymbol{\alpha} \\ \mathbf{0} & 1 \end{pmatrix} \quad (\text{其中 } \mathbf{0} \text{ 表示零矩阵})
+$$
+
+则
+
+$$
+\begin{aligned}
+\boldsymbol{P}^\mathrm{T}\boldsymbol{A}\boldsymbol{P} &= \begin{pmatrix} \boldsymbol{E}_{k-1} & \mathbf{0} \\ -\boldsymbol{\alpha}^\mathrm{T}\boldsymbol{A}_{k-1}^{-1} & 1 \end{pmatrix}\begin{pmatrix} \boldsymbol{A}_{k-1} & \boldsymbol{\alpha} \\ \boldsymbol{\alpha}^\mathrm{T} & a_{kk} \end{pmatrix}\begin{pmatrix} \boldsymbol{E}_{k-1} & -\boldsymbol{A}_{k-1}^{-1}\boldsymbol{\alpha} \\ \mathbf{0} & 1 \end{pmatrix} \\
+&= \begin{pmatrix} \boldsymbol{A}_{k-1} & \mathbf{0} \\ \mathbf{0} & a_{kk} - \boldsymbol{\alpha}^\mathrm{T}\boldsymbol{A}_{k-1}^{-1}\boldsymbol{\alpha} \end{pmatrix}
+\end{aligned}
+$$
+
+注意因为 $\boldsymbol{A}_{k-1}$ 是对称矩阵，所以 $(\boldsymbol{A}_{k-1}^{-1})^\mathrm{T} = (\boldsymbol{A}_{k-1}^\mathrm{T})^{-1} = \boldsymbol{A}_{k-1}^{-1}$。
+
+又因 $|\boldsymbol{P}| = 1$，故
+
+$$
+|\boldsymbol{A}| = |\boldsymbol{P}^\mathrm{T}\boldsymbol{A}\boldsymbol{P}| = |\boldsymbol{A}_{k-1}|(a_{kk} - \boldsymbol{\alpha}^\mathrm{T}\boldsymbol{A}_{k-1}^{-1}\boldsymbol{\alpha})
+$$
+
+已知 $|\boldsymbol{A}| > 0, |\boldsymbol{A}_{k-1}| > 0$，所以 $a_{kk} - \boldsymbol{\alpha}^\mathrm{T}\boldsymbol{A}_{k-1}^{-1}\boldsymbol{\alpha} > 0$。
+
+记 $a = a_{kk} - \boldsymbol{\alpha}^\mathrm{T}\boldsymbol{A}_{k-1}^{-1}\boldsymbol{\alpha} > 0$，再令
+
+$$
+\boldsymbol{C} = \begin{pmatrix} \boldsymbol{C}_{k-1} & \mathbf{0} \\ \mathbf{0} & \frac{1}{\sqrt{a}} \end{pmatrix}
+$$
+
+则
+
+$$
+\begin{aligned}
+\boldsymbol{C}^\mathrm{T}\boldsymbol{P}^\mathrm{T}\boldsymbol{A}\boldsymbol{P}\boldsymbol{C} &= \begin{pmatrix} \boldsymbol{C}_{k-1}^\mathrm{T} & \mathbf{0} \\ \mathbf{0} & \frac{1}{\sqrt{a}} \end{pmatrix}\begin{pmatrix} \boldsymbol{A}_{k-1} & \mathbf{0} \\ \mathbf{0} & a \end{pmatrix}\begin{pmatrix} \boldsymbol{C}_{k-1} & \mathbf{0} \\ \mathbf{0} & \frac{1}{\sqrt{a}} \end{pmatrix} \\
+&= \begin{pmatrix} \boldsymbol{C}_{k-1}^\mathrm{T}\boldsymbol{A}_{k-1}\boldsymbol{C}_{k-1} & \mathbf{0} \\ \mathbf{0} & 1 \end{pmatrix} = \boldsymbol{E}_k
+\end{aligned}
+$$
+
+这说明 $\boldsymbol{A}$ 与 $k$ 阶单位矩阵 $\boldsymbol{E}_k$ 合同，所以 $\boldsymbol{A}$ 是正定的。定理得证。
+
+</Solution>
+
+<Example title="例 21 顺序主子式判定二次型正定性">
+
+判别二次型 $f(x_1, x_2, x_3) = 3x_1^2 + 4x_2^2 + 5x_3^2 + 4x_1x_2 - 4x_2x_3$ 是否正定。
+
+</Example>
+
+<Solution title="解">
+
+写出二次型的矩阵形式 $f = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x}$，其中
+
+$$
+\boldsymbol{x} = \begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix}, \quad \boldsymbol{A} = \begin{pmatrix} 3 & 2 & 0 \\ 2 & 4 & -2 \\ 0 & -2 & 5 \end{pmatrix}
+$$
+
+计算 $\boldsymbol{A}$ 的三个顺序主子式：
+
+$$
+D_1 = 3 > 0, \quad D_2 = \begin{vmatrix} 3 & 2 \\ 2 & 4 \end{vmatrix} = 8 > 0, \quad D_3 = |\boldsymbol{A}| = 3(20 - 4) - 2(10) = 48 - 20 = 28 > 0
+$$
+
+由定理 11 可知，$\boldsymbol{A}$ 为正定矩阵，$f$ 为正定二次型。
+
+</Solution>
+
+<Example title="例 22 待定参数使二次型正定的取值范围">
+
+求 $k$ 为何值时，以下三元二次型为正定二次型：
+
+(1) $f(x_1, x_2, x_3) = (k + 1)x_1^2 + (k - 1)x_2^2 + (k - 2)x_3^2$；
+
+(2) $f(x, y, z) = 5x^2 + 4xy + y^2 - 2xz + kz^2 - 2yz$。
+
+</Example>
+
+<Solution title="解">
+
+(1) $f$ 为标准形，$f$ 是正定二次型当且仅当它的所有系数都是正数，即
+
+$$
+\begin{cases} k + 1 > 0 \\ k - 1 > 0 \\ k - 2 > 0 \end{cases} \iff k > 2
+$$
+
+(2) $f$ 对应的对称矩阵为
+
+$$
+\boldsymbol{A} = \begin{pmatrix} 5 & 2 & -1 \\ 2 & 1 & -1 \\ -1 & -1 & k \end{pmatrix}
+$$
+
+计算顺序主子式：
+
+$$
+D_1 = 5 > 0, \quad D_2 = \begin{vmatrix} 5 & 2 \\ 2 & 1 \end{vmatrix} = 1 > 0, \quad D_3 = \begin{vmatrix} 5 & 2 & -1 \\ 2 & 1 & -1 \\ -1 & -1 & k \end{vmatrix} = k - 2
+$$
+
+由定理 11 可知，它是正定二次型当且仅当 $D_3 > 0$，即 $k > 2$。
+
+</Solution>
+
+## 二*、其他有定二次型
+
+对于非正定的二次型，还可分为半正定、负定、半负定及不定等几种类型。下面分别给出定义与判别条件。
+
+<Knowledge title="定义 16 其他有定二次型与不定二次型">
+
+设 $f(x_1, x_2, \cdots, x_n) = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x}$ 是实二次型。
+
+1. **半正定**：如果对任意 $\boldsymbol{x} \neq \mathbf{0}$，都有 $f(x_1, x_2, \cdots, x_n) = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x} \ge 0$，则称 $f$ 为**半正定二次型**，称 $\boldsymbol{A}$ 为**半正定矩阵**。
+2. **负定**：如果对任意 $\boldsymbol{x} \neq \mathbf{0}$，都有 $f(x_1, x_2, \cdots, x_n) = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x} < 0$，则称 $f$ 为**负定二次型**，称 $\boldsymbol{A}$ 为**负定矩阵**。
+3. **半负定**：如果对任意 $\boldsymbol{x} \neq \mathbf{0}$，都有 $f(x_1, x_2, \cdots, x_n) = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x} \le 0$，则称 $f$ 为**半负定二次型**，称 $\boldsymbol{A}$ 为**半负定矩阵**。
+4. **不定**：既非正定、半正定，又非负定、半负定的二次型（矩阵）称为**不定二次型**（**不定矩阵**）。
+
+</Knowledge>
+
+类似于定理 10，有下面的定理 12。
+
+<Knowledge title="定理 12 半正定二次型的标准形判别">
+
+实二次型 $f(x_1, x_2, \cdots, x_n) = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x}$ 是半正定二次型的充分必要条件是它的标准形中 $n$ 个系数全为非负数。
+
+</Knowledge>
+
+定理 12 的证明与定理 10 的证明完全类似，在此不再赘述。
+
+关于矩阵半正定的判别，没有类似于定理 11 的关于顺序主子式的性质。这一点不难理解：
+
+<SideNote title="反例警示：顺序主子式不能判定半正定">
+
+例如 $\boldsymbol{A} = \begin{pmatrix} 1 & 0 & 0 \\ 0 & 0 & 0 \\ 0 & 0 & -1 \end{pmatrix}$，$\boldsymbol{A}$ 的三个顺序主子式为 $D_1 = 1 \ge 0, D_2 = 0 \ge 0, D_3 = 0 \ge 0$，都非负，但二次型 $f(x_1, x_2, x_3) = \boldsymbol{x}^\mathrm{T}\boldsymbol{A}\boldsymbol{x} = x_1^2 - x_3^2$ 却不是半正定的（当取 $\boldsymbol{x} = (0, 0, 1)^\mathrm{T}$ 时 $f = -1 < 0$）。
+
+</SideNote>
+
+但我们有下面的定理：
+
+<Knowledge title="定理 13 半正定矩阵的主子式充要条件">
+
+实对称矩阵 $\boldsymbol{A}$ 半正定的充分必要条件是 $\boldsymbol{A}$ 的**所有主子式**均非负。
+
+</Knowledge>
+
+定理必要性的证明与本章定理 11 中必要性的证明类似，但定理充分性的证明超出了本课程的要求，在此略去。
+
+<SideNote title="负定与半负定的判别转化">
+
+由定义可知，实对称矩阵 $\boldsymbol{A}$ 负定（半负定）当且仅当 $-\boldsymbol{A}$ 正定（半正定）。因此关于矩阵负定与半负定的判别就不必另做单独讨论了。
+
+例如，$\boldsymbol{A}$ 为负定矩阵 $\iff$ 奇数阶顺序主子式全为负，偶数阶顺序主子式全为正，即 $(-1)^k D_k > 0$ ($k = 1, 2, \cdots, n$)。
+
+</SideNote>
+
+<ExerciseTrigger chapter={7} section="7.5" title="7.5 正定二次型与正定矩阵 课后真题与自测练习" />

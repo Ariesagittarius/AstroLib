@@ -348,7 +348,8 @@ ${latinCode}
 ${cjkBodyCode}
 ${cjkHeadingCode}
 ${kaiCode}
-% 重新定义 \\kaishu 宏指向统一楷体字族
+% 声明并统一定义 \\kaishu 宏指向统一楷体字族（使用 providecommand 防御性预置，兼容原生未加载 ctex 环境）
+\\providecommand{\\kaishu}{}
 \\renewcommand{\\kaishu}{\\CJKfamily{zhkai}}
 
 % --- 2.5 标宋/高字重思源宋体专用字族 (\\biaosong) ---

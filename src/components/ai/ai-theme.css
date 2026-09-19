@@ -142,18 +142,21 @@ ai-ask .ask-panel {
 
 ai-ask .ask-panel.ask-open {
   display: flex;
-  animation: ai-panel-in 0.22s cubic-bezier(0.2, 0, 0, 1);
+}
+
+ai-ask:not(.is-docked) .ask-panel.ask-open:not(.docking-in):not(.dock-settled) {
+  animation: ai-panel-in 0.24s cubic-bezier(0.05, 0.7, 0.1, 1.0);
 }
 
 @keyframes ai-panel-in {
-  from { opacity: 0; transform: scale(0.97) translateY(8px); }
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 /* 缩放拖拽手柄 (优化 Hitbox 与悬停反馈视效) */
 ai-ask .ask-resize-handle {
   position: absolute;
-  z-index: 30;
+  z-index: var(--layer-local-nested, 10);
   user-select: none;
   touch-action: none;
 }
@@ -413,6 +416,21 @@ ai-ask .ask-msg-user .ask-msg-text {
   word-break: break-word;
 }
 
+ai-ask .ask-msg-user .ask-user-ref-badge {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  font-size: 0.685rem;
+  color: var(--ai-text-3);
+  margin-bottom: 3px;
+  padding: 0 4px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* 用户气泡内 Markdown 与公式优雅排版 */
 ai-ask .ask-msg-user .ask-msg-text p {
   margin: 0;
@@ -459,6 +477,53 @@ ai-ask .ask-msg-user .ask-msg-text a {
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+ai-ask .ask-msg-user .ask-msg-text blockquote {
+  margin: 0.45rem 0;
+  padding: 0.4rem 0.75rem;
+  border-left: 3px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 0 6px 6px 0;
+  color: inherit;
+}
+ai-ask .ask-msg-user .ask-msg-text blockquote p {
+  margin: 0;
+  color: inherit;
+}
+ai-ask .ask-msg-user .ask-table-wrap {
+  margin: 0.45rem 0;
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+}
+ai-ask .ask-msg-user .ask-table {
+  display: table !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  table-layout: auto;
+  border-collapse: collapse;
+  margin: 0;
+}
+ai-ask .ask-msg-user .ask-table thead,
+ai-ask .ask-msg-user .ask-table thead tr {
+  display: table-row;
+  background: rgba(255, 255, 255, 0.15);
+  width: 100%;
+}
+ai-ask .ask-msg-user .ask-table th {
+  display: table-cell;
+  background: rgba(255, 255, 255, 0.15);
+  color: inherit;
+  border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+ai-ask .ask-msg-user .ask-table td {
+  display: table-cell;
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+  color: inherit;
+}
+ai-ask .ask-msg-user .ask-table tbody tr:hover,
+ai-ask .ask-msg-user .ask-table tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.18);
 }
 
 /* AI 助教回答 (优雅学术纸面质感，不再逼仄) */
@@ -607,6 +672,100 @@ ai-ask .ask-ai-reply blockquote {
   color: var(--ai-text-2);
 }
 
+ai-ask .ask-ai-reply blockquote p {
+  margin: 0.35rem 0;
+  color: inherit;
+  line-height: 1.65;
+}
+
+ai-ask .ask-ai-reply blockquote p:first-child {
+  margin-top: 0;
+}
+
+ai-ask .ask-ai-reply blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* 表格排版 (Material You M3 规范，支持横向自适应滑动与学术线条) */
+ai-ask .ask-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0.85rem 0;
+  border-radius: 8px;
+  border: 1px solid var(--ai-border);
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  background: var(--ai-bg);
+}
+
+ai-ask .ask-table {
+  display: table !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  table-layout: auto;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  text-align: left;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+ai-ask .ask-table thead {
+  display: table-header-group;
+  background: var(--ai-bg-inline);
+  width: 100%;
+}
+
+ai-ask .ask-table thead tr {
+  display: table-row;
+  background: var(--ai-bg-inline);
+  width: 100%;
+}
+
+ai-ask .ask-table tbody {
+  display: table-row-group;
+  width: 100%;
+}
+
+ai-ask .ask-table tbody tr {
+  display: table-row;
+  width: 100%;
+  transition: background-color 0.15s ease;
+}
+
+ai-ask .ask-table th {
+  display: table-cell;
+  background: var(--ai-bg-inline);
+  color: var(--ai-text);
+  font-weight: 600;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--ai-border);
+  white-space: nowrap;
+}
+
+ai-ask .ask-table td {
+  display: table-cell;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--ai-border);
+  color: var(--ai-text-2);
+  vertical-align: top;
+}
+
+ai-ask .ask-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+ai-ask .ask-table tbody tr:hover,
+ai-ask .ask-table tbody tr:hover td {
+  background: var(--ai-brand-soft);
+}
+
+ai-ask .ask-table .katex {
+  font-size: 0.95em;
+}
+
 /* 数学公式舒适居中与横向滚动 */
 ai-ask .ask-ai-reply p.md-math {
   margin: 0.85rem 0;
@@ -648,6 +807,72 @@ ai-ask .ask-caret {
   animation: ai-caret-blink 0.8s infinite;
 }
 @keyframes ai-caret-blink { 50% { opacity: 0; } }
+
+/* ========================================================================
+   Antigravity 风格工具探索多步聚合折叠卡片 (.ask-tools-group)
+   ======================================================================== */
+ai-ask .ask-tools-group {
+  margin: 0.35rem 0 0.5rem 0;
+  border: none;
+  background: transparent;
+  font-size: 0.8125rem;
+}
+
+ai-ask .ask-tools-group > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  color: var(--ai-text-3);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+ai-ask .ask-tools-group > summary::-webkit-details-marker {
+  display: none;
+}
+
+ai-ask .ask-tools-group > summary:hover {
+  background: var(--ai-bg-soft);
+  color: var(--ai-text);
+}
+
+ai-ask .ask-tools-group-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+ai-ask .ask-tools-group-chevron {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  transition: transform 0.18s ease, color 0.15s ease;
+  color: var(--ai-text-3);
+}
+
+ai-ask .ask-tools-group[open] > summary .ask-tools-group-chevron {
+  transform: rotate(90deg);
+  color: var(--ai-brand);
+}
+
+ai-ask .ask-tools-group-items {
+  margin-top: 4px;
+  margin-bottom: 4px;
+  padding-left: 8px;
+  border-left: 2px solid var(--ai-border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 
 /* ========================================================================
    工具调用链 (Harness 风格，紧凑折叠单行树)
@@ -940,12 +1165,13 @@ ai-ask .ask-source-snip {
 }
 
 /* ========================================================================
-   底部胶囊输入栏 (M3 Capsule Input)
+   Chrome Gemini 风格一体化三层复合输入卡片 (Composite Input Card)
    ======================================================================== */
 ai-ask .ask-input-bar {
+  position: relative;
   padding: 0.65rem 0.95rem 0.45rem;
-  background: var(--ai-bg);
-  border-top: 1px solid var(--ai-border);
+  background: var(--sl-color-bg-sidebar, var(--ai-bg));
+  border-top: 1px solid var(--sl-color-hairline, var(--ai-border));
   flex-shrink: 0;
   box-sizing: border-box;
   display: flex;
@@ -953,26 +1179,193 @@ ai-ask .ask-input-bar {
   gap: 4px;
 }
 
-ai-ask .ask-input-box {
+/* 一体化圆角复合输入卡片 (Surface Container High) */
+ai-ask .ask-gemini-input-card {
+  position: relative;
   display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  padding: 5px 8px 5px 14px;
-  background: var(--ai-bg-soft);
-  border: 1px solid var(--ai-border);
-  border-radius: 24px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px 8px;
+  background: var(--sl-color-bg, #f0f4f9);
+  border: 1px solid var(--sl-color-hairline, var(--ai-border));
+  border-radius: 20px;
   box-sizing: border-box;
   transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
 }
 
-ai-ask .ask-input-box:focus-within {
+[data-theme='dark'] ai-ask .ask-gemini-input-card {
+  background: #1e1f20;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+ai-ask .ask-gemini-input-card:focus-within {
   border-color: var(--ai-brand-strong);
-  background: var(--ai-bg);
   box-shadow: 0 0 0 2px var(--ai-brand-soft);
+}
+
+/* 1. 顶层：上下文引用行 (Context Row) */
+ai-ask .ask-context-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 4px 6px;
+  border-bottom: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.06));
+  animation: askContextSlideIn 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+[data-theme='dark'] ai-ask .ask-context-row {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+@keyframes askContextSlideIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+ai-ask .ask-context-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+ai-ask .ask-context-icon {
+  flex-shrink: 0;
+  color: var(--ai-brand-strong);
+}
+
+ai-ask .ask-context-text {
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--ai-brand-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+ai-ask .ask-context-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+ai-ask .ask-context-expand-btn,
+ai-ask .ask-context-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ai-text-3);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+ai-ask .ask-context-expand-btn:hover,
+ai-ask .ask-context-remove-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--ai-text);
+}
+
+[data-theme='dark'] ai-ask .ask-context-expand-btn:hover,
+[data-theme='dark'] ai-ask .ask-context-remove-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--ai-text);
+}
+
+ai-ask .ask-context-expand-icon {
+  transition: transform 0.2s ease;
+}
+
+ai-ask .ask-context-expand-btn.is-expanded .ask-context-expand-icon {
+  transform: rotate(180deg);
+}
+
+/* 多章节展开明细列表抽屉 */
+ai-ask .ask-context-dropdown {
+  margin: 2px 0 4px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 10px;
+  max-height: 120px;
+  overflow-y: auto;
+  animation: askContextSlideIn 0.18s ease;
+}
+
+[data-theme='dark'] ai-ask .ask-context-dropdown {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+ai-ask .ask-context-items-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+ai-ask .ask-context-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 3px 6px;
+  font-size: 0.74rem;
+  color: var(--ai-text);
+  border-radius: 6px;
+  background: var(--sl-color-bg, #ffffff);
+}
+
+[data-theme='dark'] ai-ask .ask-context-item {
+  background: #2b2c2f;
+}
+
+ai-ask .ask-context-item-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+ai-ask .ask-context-item-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ai-text-3);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+ai-ask .ask-context-item-remove:hover {
+  color: var(--ai-text);
+}
+
+/* 2. 中层：多行自适应垂直居中文本输入区 (Textarea Row: 彻底消除文字偏下) */
+ai-ask .ask-textarea-row {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  width: 100%;
 }
 
 ai-ask .ask-input {
   flex: 1;
+  width: 100%;
   resize: none;
   border: none;
   outline: none;
@@ -998,6 +1391,94 @@ ai-ask .ask-input::-webkit-scrollbar-thumb {
   border-radius: 9999px;
 }
 
+/* 3. 底层：快捷操作工具栏 (Actions Row) */
+ai-ask .ask-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+  padding-top: 2px;
+}
+
+ai-ask .ask-actions-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+ai-ask .ask-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 左侧添加章节按钮 (+ 按钮) */
+ai-ask .ask-action-btn.ask-add-chapter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.12));
+  background: transparent;
+  color: var(--ai-text-2);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  padding: 0;
+}
+
+[data-theme='dark'] ai-ask .ask-action-btn.ask-add-chapter-btn {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+ai-ask .ask-action-btn.ask-add-chapter-btn:hover {
+  background: var(--ai-brand-soft);
+  color: var(--ai-brand-strong);
+  border-color: var(--ai-brand-strong);
+}
+
+/* 模型快捷切换胶囊按钮 */
+ai-ask .ask-model-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  border: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.12));
+  background: var(--sl-color-bg, #ffffff);
+  color: var(--ai-text);
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+[data-theme='dark'] ai-ask .ask-model-pill-btn {
+  background: #2b2c2f;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+ai-ask .ask-model-pill-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: var(--ai-brand-strong);
+}
+
+[data-theme='dark'] ai-ask .ask-model-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+ai-ask .ask-model-pill-arrow {
+  color: var(--ai-text-3);
+  transition: transform 0.18s ease;
+}
+
+ai-ask .ask-model-pill-btn[aria-expanded='true'] .ask-model-pill-arrow {
+  transform: rotate(180deg);
+}
+
+/* 发送 / 终止生成主操作按钮 */
 ai-ask .ask-send-btn {
   flex-shrink: 0;
   width: 32px;
@@ -1026,13 +1507,354 @@ ai-ask .ask-send-btn:not(:disabled):active {
   transform: scale(0.95);
 }
 
+/* 底部快捷键提示 */
 ai-ask .ask-hint {
   font-size: 0.7rem;
   color: var(--ai-text-3);
   padding: 0 4px;
-  text-align: right;
+  text-align: center;
+  margin: 0 auto;
+  width: 100%;
   background: transparent;
   line-height: 1.2;
+}
+
+/* ========================================================================
+   Popover 1: 章节多选选择器浮层 (@ 触发或点击 + 唤出)
+   ======================================================================== */
+ai-ask .ask-chapter-picker-popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 10px;
+  right: 10px;
+  max-height: 300px;
+  background: var(--sl-color-bg, #ffffff);
+  border: 1px solid var(--sl-color-hairline, var(--ai-border));
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  z-index: var(--layer-popover, 50);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: askPopoverIn 0.2s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+
+[data-theme='dark'] ai-ask .ask-chapter-picker-popover {
+  background: #252628;
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+@keyframes askPopoverIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+ai-ask .ask-chapter-picker-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.08));
+}
+
+[data-theme='dark'] ai-ask .ask-chapter-picker-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+ai-ask .ask-chapter-search-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+
+[data-theme='dark'] ai-ask .ask-chapter-search-box {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+ai-ask .ask-chapter-search-icon {
+  color: var(--ai-text-3);
+  flex-shrink: 0;
+}
+
+ai-ask .ask-chapter-search-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--ai-text);
+  font-size: 0.8rem;
+  padding: 0;
+}
+
+ai-ask .ask-popover-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ai-text-3);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+ai-ask .ask-popover-close-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--ai-text);
+}
+
+[data-theme='dark'] ai-ask .ask-popover-close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+ai-ask .ask-chapter-picker-body {
+  flex: 1 1 auto;
+  min-height: 80px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 4px 0;
+  overscroll-behavior: contain;
+}
+
+ai-ask .ask-chapter-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+ai-ask .ask-chapter-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.14s ease;
+  user-select: none;
+}
+
+ai-ask .ask-chapter-picker-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='dark'] ai-ask .ask-chapter-picker-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+ai-ask .ask-chapter-picker-checkbox {
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--ai-brand-strong);
+}
+
+ai-ask .ask-chapter-picker-label {
+  flex: 1;
+  font-size: 0.78rem;
+  color: var(--ai-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+ai-ask .ask-chapter-picker-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  border-top: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.08));
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme='dark'] ai-ask .ask-chapter-picker-footer {
+  border-top-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+ai-ask .ask-chapter-picker-count {
+  font-size: 0.74rem;
+  color: var(--ai-text-3);
+}
+
+ai-ask .ask-chapter-picker-done-btn {
+  padding: 3px 12px;
+  border: none;
+  border-radius: 9999px;
+  background: var(--ai-brand-strong);
+  color: var(--ai-on-brand);
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+ai-ask .ask-chapter-picker-done-btn:hover {
+  transform: scale(1.04);
+}
+
+/* ========================================================================
+   Popover 2: 快捷模型切换 Popover 菜单 (完全对标 Chrome Gemini 官方截图)
+   ======================================================================== */
+ai-ask .ask-model-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 10px;
+  width: 270px;
+  max-width: calc(100vw - 32px);
+  background: var(--sl-color-bg, #ffffff);
+  border: 1px solid var(--sl-color-hairline, var(--ai-border));
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  z-index: var(--layer-popover, 50);
+  padding: 6px 0;
+  overflow: hidden;
+  animation: askPopoverIn 0.2s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+
+[data-theme='dark'] ai-ask .ask-model-menu {
+  background: #252628;
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+ai-ask .ask-model-menu-list {
+  display: flex;
+  flex-direction: column;
+}
+
+ai-ask .ask-model-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.14s ease;
+}
+
+ai-ask .ask-model-menu-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='dark'] ai-ask .ask-model-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+ai-ask .ask-model-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+ai-ask .ask-model-item-headline {
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--ai-text);
+  line-height: 1.3;
+}
+
+ai-ask .ask-model-item-support {
+  font-size: 0.72rem;
+  color: var(--ai-text-3);
+  line-height: 1.2;
+}
+
+ai-ask .ask-model-check-icon {
+  color: var(--ai-brand-strong);
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+ai-ask .ask-model-menu-item.is-active .ask-model-check-icon {
+  opacity: 1;
+}
+
+ai-ask .ask-model-menu-divider {
+  height: 1px;
+  margin: 6px 0;
+  background: var(--sl-color-hairline, rgba(0, 0, 0, 0.08));
+}
+
+[data-theme='dark'] ai-ask .ask-model-menu-divider {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* 扩展思考行 */
+ai-ask .ask-model-menu-switch-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+}
+
+/* M3 紧凑 Switch 开关 */
+ai-ask .ask-m3-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+ai-ask .ask-m3-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+ai-ask .ask-m3-switch-track {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  transition: 0.24s cubic-bezier(0.2, 0, 0, 1);
+  border-radius: 9999px;
+}
+
+[data-theme='dark'] ai-ask .ask-m3-switch-track {
+  background-color: rgba(255, 255, 255, 0.24);
+}
+
+ai-ask .ask-m3-switch-thumb {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #ffffff;
+  transition: 0.24s cubic-bezier(0.2, 0, 0, 1);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+ai-ask .ask-m3-switch input:checked + .ask-m3-switch-track {
+  background-color: var(--ai-brand-strong);
+}
+
+ai-ask .ask-m3-switch input:checked + .ask-m3-switch-track .ask-m3-switch-thumb {
+  transform: translateX(18px);
+}
+
+/* 菜单注脚 */
+ai-ask .ask-model-menu-footer {
+  padding: 6px 14px 2px;
+  font-size: 0.68rem;
+  color: var(--ai-text-3);
+  text-align: center;
+  line-height: 1.35;
 }
 
 ai-ask .ask-status {
@@ -1054,7 +1876,7 @@ ai-ask .ask-history {
   position: absolute;
   inset: 54px 0 0 0;
   background: var(--ai-bg);
-  z-index: 25;
+  z-index: var(--layer-local-elevated, 5);
   display: none;
   flex-direction: column;
   animation: ai-history-in 0.2s cubic-bezier(0.2, 0, 0, 1);
@@ -1377,5 +2199,257 @@ ai-ask .ask-abort-banner {
   background: rgba(0, 0, 0, 0.04);
   color: var(--ai-text-3);
   font-size: 0.75rem;
+}
+
+/* ==========================================================================
+   AI 智能问答 · 侧载停靠 (Sideload Docked Mode) 与 Google M3 规范
+   ========================================================================== */
+
+/* 1. 侧载宿主容器 */
+.ai-sidebar-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* 2. 停靠状态下的 ai-ask 根元素 (脱离 fixed 定位，充满右侧栏宿主) */
+ai-ask.is-docked {
+  position: static !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  z-index: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+/* 3. 停靠状态下隐藏悬浮 FAB 按钮 (多重高权重匹配) */
+ai-ask.is-docked .ask-fab,
+html[data-sideload-active='ai'] ai-ask .ask-fab,
+body.ai-sidebar-active ai-ask .ask-fab,
+ai-ask .ask-fab[hidden] {
+  display: none !important;
+}
+
+/* 4. 停靠状态下的 ask-panel (自适应填充侧载宿主，彻底溶于侧载无尖角) */
+ai-ask.is-docked .ask-panel,
+.ai-sidebar-panel ai-ask .ask-panel,
+html[data-sideload-active='ai'] ai-ask .ask-panel,
+body.ai-sidebar-active ai-ask .ask-panel {
+  position: relative !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  display: flex !important;
+  z-index: auto !important;
+  flex: 1 1 auto !important;
+}
+
+/* 5. 停靠状态下隐藏浮窗拖拽缩放手柄 */
+ai-ask.is-docked .ask-resize-handle {
+  display: none !important;
+}
+
+/* 6. 停靠状态下顶栏边距与背景 (紧凑无缝排列) */
+ai-ask.is-docked .ask-head {
+  padding: 0.5rem 0.65rem !important;
+  border-bottom: 1px solid var(--sl-color-hairline, var(--ai-border)) !important;
+  background: var(--sl-color-bg-sidebar, var(--ai-bg)) !important;
+  gap: 0.35rem !important;
+}
+
+ai-ask.is-docked .ask-brand {
+  gap: 0.35rem !important;
+  flex-shrink: 0 !important;
+}
+
+/* 停靠状态下隐藏标题文字组，杜绝在窄侧栏中竖向挤压折行 */
+ai-ask.is-docked .ask-title-group,
+html[data-sideload-active='ai'] .ask-title-group,
+body.ai-sidebar-active .ask-title-group {
+  display: none !important;
+}
+
+ai-ask.is-docked .ask-head-actions {
+  gap: 0.15rem !important;
+  margin-left: auto !important;
+}
+
+ai-ask.is-docked .ask-icon-btn {
+  width: 1.85rem !important;
+  height: 1.85rem !important;
+}
+
+ai-ask.is-docked .ask-brand-icon {
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+}
+
+/* 7. 侧载返回大纲快捷按钮 */
+.ai-sideload-back-btn {
+  display: none !important;
+  margin-right: 0.15rem !important;
+}
+
+ai-ask.is-docked .ai-sideload-back-btn {
+  display: inline-flex !important;
+}
+
+/* 8. 侧载模式下隐藏右侧 dock/分享按钮（职能由左侧 ← 按钮统一承担） */
+ai-ask.is-docked .ask-dock-btn,
+html[data-sideload-active='ai'] .ask-dock-btn,
+body.ai-sidebar-active .ask-dock-btn {
+  display: none !important;
+}
+
+/* 9. 侧载模式下隐藏关闭按钮 (X) */
+ai-ask.is-docked .ask-close,
+html[data-sideload-active='ai'] .ask-close,
+body.ai-sidebar-active .ask-close {
+  display: none !important;
+}
+
+/* 9. 侧载状态下的历史列表覆盖 */
+ai-ask.is-docked .ask-history {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: var(--layer-popover, 20) !important;
+}
+
+/* 10. 侧载模式下的内部三段式流式布局与独立滚动约束 (防止正文与侧栏相互穿透) */
+ai-ask.is-docked .ask-head {
+  flex-shrink: 0 !important;
+}
+
+ai-ask.is-docked .ask-thread {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+ai-ask.is-docked .ask-input-bar {
+  flex-shrink: 0 !important;
+  margin-top: auto !important;
+}
+
+/* ========================================================================
+   10. Material Design 3 动效体系 (M3 Motion Scheme) · 浮窗 ↔ 侧载过渡
+   ======================================================================== */
+
+/* 浮窗移入侧载时的淡出位移动画 (Accelerate) */
+@keyframes ai-floating-dock-out {
+  from {
+    opacity: 1;
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translate3d(24px, 0, 0);
+  }
+}
+
+/* 侧载恢复为浮窗时的展开入场动画 (Decelerate) */
+@keyframes ai-floating-dock-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translate3d(16px, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
+/* 侧载面板就绪时的减速入场动画 (Decelerate) */
+@keyframes ai-dock-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(18px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* 侧载面板退回时的加速淡出动画 (Accelerate) */
+@keyframes ai-dock-exit {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(-14px, 0, 0);
+  }
+}
+
+/* 悬浮 FAB 按钮进入动效 */
+@keyframes ai-fab-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 浮窗离开态 */
+ai-ask:not(.is-docked) .ask-panel.docking-out {
+  animation: ai-floating-dock-out 0.14s cubic-bezier(0.3, 0.0, 0.8, 0.15) forwards !important;
+  pointer-events: none !important;
+}
+
+/* 浮窗复原态 (从侧载平滑浮回) */
+ai-ask:not(.is-docked) .ask-panel.docking-in {
+  animation: ai-floating-dock-in 0.24s cubic-bezier(0.05, 0.7, 0.1, 1.0) forwards !important;
+}
+
+/* 浮窗复原就绪态 (入场动效结束，保持静止，严禁触发底层二次跳跃动效) */
+ai-ask:not(.is-docked) .ask-panel.dock-settled {
+  animation: none !important;
+}
+
+/* 侧载主动停靠进场 (仅在从浮窗主动停靠时播放一次，切章节等平滑恢复状态严禁触发) */
+ai-ask.is-docked.docking-in .ask-panel {
+  animation: ai-dock-enter 0.26s cubic-bezier(0.05, 0.7, 0.1, 1.0) forwards !important;
+}
+
+/* 侧载退出态 */
+ai-ask.is-docked.docking-out .ask-panel {
+  animation: ai-dock-exit 0.12s cubic-bezier(0.3, 0.0, 0.8, 0.15) forwards !important;
+  pointer-events: none !important;
+}
+
+/* 悬浮球淡入恢复 (仅在主动从侧载退回浮窗时播放一次微缩放动效，切章节与常规渲染时保持静止) */
+ai-ask:not(.is-docked) .ask-fab.fab-restoring:not([hidden]) {
+  animation: ai-fab-scale-in 0.22s cubic-bezier(0.05, 0.7, 0.1, 1.0) both;
 }
 

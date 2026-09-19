@@ -7,8 +7,10 @@
 // 文案与 VitePress 官方默认一致（VPDocFooter.vue：theme.docFooter?.prev || 'Previous page'）。
 // 注意：Starlight 自带 en 翻译是 "Previous"/"Next"，故这里显式写官方文案；
 // 若将来做中文 locale，可改为 "上一页"/"下一页"。
+import { filterScopedPagination, cleanDisplayTitle } from '../utils/pagination-scope';
+
 const { dir, pagination } = Astro.locals.starlightRoute;
-const { prev, next } = pagination;
+const { prev, next } = filterScopedPagination(Astro.url.pathname, pagination.prev, pagination.next);
 ---
 
 {
@@ -19,7 +21,7 @@ const { prev, next } = pagination;
           <div class="pager">
             <a class="pager-link prev" href={prev.href} rel="prev">
               <span class="desc">← 上一节</span>
-              <span class="title">{prev.label}</span>
+              <span class="title">{cleanDisplayTitle(prev.label)}</span>
             </a>
           </div>
         )
@@ -29,7 +31,7 @@ const { prev, next } = pagination;
           <div class="pager">
             <a class="pager-link next" href={next.href} rel="next">
               <span class="desc">下一节 →</span>
-              <span class="title">{next.label}</span>
+              <span class="title">{cleanDisplayTitle(next.label)}</span>
             </a>
           </div>
         )

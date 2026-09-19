@@ -23,6 +23,10 @@ const SRC_TEXTBOOK_DATA = path.join(ROOT, 'src', 'data', 'exercises', 'engineeri
 const OUT_DIR = path.join(ROOT, 'public', 'data', 'exercises', 'engineering_analysis');
 const PAPERS_OUT_DIR = path.join(OUT_DIR, 'papers');
 
+const SRC_LAG_TEXTBOOK_DATA = path.join(ROOT, 'src', 'data', 'exercises', 'linear_algebra_geometry_textbook_exercises.json');
+const OUT_LAG_DIR = path.join(ROOT, 'public', 'data', 'exercises', 'linear_algebra_geometry');
+const PAPERS_LAG_OUT_DIR = path.join(OUT_LAG_DIR, 'papers');
+
 /** HTML 实体安全转义 */
 function escapeHtml(s) {
   return String(s || '')
@@ -71,6 +75,8 @@ const KATEX_BUILD_OPTIONS = {
     '\\overparen': '\\stackrel{\\frown}{#1}',
     '\\wideparen': '\\stackrel{\\frown}{#1}',
     '\\iiiint': '\\int\\!\\!\\int\\!\\!\\int\\!\\!\\int',
+    '\\iddots': '{\\mathinner{\\mkern1mu\\raisebox{1pt}{.}\\mkern2mu\\raisebox{4pt}{.}\\mkern2mu\\raisebox{7pt}{.}\\mkern1mu}}',
+    '\\adots': '{\\mathinner{\\mkern1mu\\raisebox{1pt}{.}\\mkern2mu\\raisebox{4pt}{.}\\mkern2mu\\raisebox{7pt}{.}\\mkern1mu}}',
   },
 };
 
@@ -152,7 +158,7 @@ function extractPaperQuestionNum(qid, orderInPaper) {
   return orderInPaper || 1;
 }
 
-function main() {
+function buildEngineeringAnalysisExercises() {
   if (features.exercises && features.exercises.enabled === false) {
     console.log('[exercise-data] 已跳过：习题与自测模块关闭（features.config.mjs 中 exercises.enabled=false）。');
     return;
@@ -257,8 +263,10 @@ function main() {
       }));
       const answerRaw = sanitizeMathLatex(q.solution?.answer || '');
       const answerHtml = renderMathText(answerRaw);
-      const hintsHtml = q.solution?.hints ? renderMathText(q.solution.hints) : '';
-      const stepsHtml = q.solution?.steps ? renderMathText(q.solution.steps) : '';
+      const hintsRaw = q.solution?.hints ? sanitizeMathLatex(q.solution.hints) : '';
+      const stepsRaw = q.solution?.steps ? sanitizeMathLatex(q.solution.steps) : '';
+      const hintsHtml = hintsRaw ? renderMathText(hintsRaw) : '';
+      const stepsHtml = stepsRaw ? renderMathText(stepsRaw) : '';
 
       // 规范化出处标签
       const sourceStr = isTb
@@ -314,7 +322,9 @@ function main() {
 
       if (options.length > 0) slimItem.options = options;
       if (hintsHtml) slimItem.hints_html = hintsHtml;
+      if (hintsRaw) slimItem.hints_raw = hintsRaw;
       if (stepsHtml) slimItem.steps_html = stepsHtml;
+      if (stepsRaw) slimItem.steps_raw = stepsRaw;
       // 避免题干与小问双重重复：教材习题的 stem_html 已完整包含所有小问，不再额外注入冗余 sub_questions
       if (!isTb && q.content?.sub_questions && q.content.sub_questions.length > 0) {
         slimItem.sub_questions = q.content.sub_questions.map(sub => ({
@@ -482,6 +492,292 @@ function main() {
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
   console.log(`\n[exercise-data] 题库构建完成：7 个章节、${papersSummaryList.length} 套试卷（7套教材分章习题卷 + 85套历年真题卷）、共 ${totalQuestionsCount} 道题目（教材:${tbQuestionsCount}, 真题:${examQuestionsCount}）已编译静态 HTML -> ${path.relative(ROOT, OUT_DIR)}/ (耗时: ${elapsed}s)`);
+}
+
+function buildLinearAlgebraGeometryExercises() {
+  if (features.exercises && features.exercises.enabled === false) {
+    return;
+  }
+
+  if (!fs.existsSync(SRC_LAG_TEXTBOOK_DATA)) {
+    console.log('[exercise-data] 提示：《线性代数与几何》习题库源文件暂未生成，跳过编译。');
+    return;
+  }
+
+  const startTime = Date.now();
+  console.log('\n[exercise-data] 开始编译《线性代数与几何》题库（教材课后习题）...');
+  fs.mkdirSync(OUT_LAG_DIR, { recursive: true });
+  fs.mkdirSync(PAPERS_LAG_OUT_DIR, { recursive: true });
+
+  const rawData = JSON.parse(fs.readFileSync(SRC_LAG_TEXTBOOK_DATA, 'utf-8'));
+  const chapters = rawData.chapters || {};
+
+  const metaData = {
+    book: 'linear_algebra_geometry',
+    title: '线性代数与几何（第2版）',
+    total_questions: 0,
+    total_papers: 0,
+    total_exam_questions: 0,
+    total_textbook_questions: 0,
+    chapters: {},
+    papers: {}
+  };
+
+  let totalQuestionsCount = 0;
+  const papersMap = new Map();
+
+  for (let chId = 1; chId <= 9; chId++) {
+    const chKey = String(chId);
+    const qList = chapters[chKey] || [];
+    const slimQuestions = [];
+    const sectionCounts = {};
+    const sectionSlugs = {};
+    const sectionTitles = {};
+    const typeCounts = { choice: 0, blank: 0, calc: 0, proof: 0 };
+    const sourceCounts = { '教材课后习题': qList.length };
+    let chapterTitle = `第${chId}章`;
+
+    for (const q of qList) {
+      totalQuestionsCount++;
+      const qType = q.meta?.type || 'calc';
+      typeCounts[qType] = (typeCounts[qType] || 0) + 1;
+
+      const category = q.source?.category || '教材课后习题';
+      const mapping = q.mapping?.linear_algebra_geometry || {};
+      if (mapping.chapter_title) {
+        chapterTitle = mapping.chapter_title;
+      }
+      const sec = mapping.section || '综合';
+      const secSlug = mapping.section_slug || sec;
+      const secTitle = mapping.section_title || '';
+      const kps = mapping.knowledge_points || [];
+
+      sectionCounts[sec] = (sectionCounts[sec] || 0) + 1;
+      sectionSlugs[sec] = secSlug;
+      if (secTitle) sectionTitles[sec] = secTitle;
+
+      const paperId = q.source?.paper_id ?? (2000 + chId);
+      const rawTitle = q.source?.raw_title || `《线性代数与几何》第${chId}章 课后习题`;
+      const cleanTitle = cleanPaperTitle(rawTitle) || rawTitle;
+      const orderInPaper = q.meta?.order_in_paper || 1;
+      const paperQNum = q.meta?.paper_q_num || extractPaperQuestionNum(q.id, orderInPaper);
+      const sectionType = q.meta?.section_type || '课后习题';
+      const score = q.meta?.score ?? 5;
+      const group = q.meta?.group || '';
+
+      const stemRawClean = sanitizeMathLatex(q.content?.stem || '');
+      const stemHtml = renderMathText(stemRawClean);
+      const options = (q.content?.options || []).map((opt) => ({
+        key: opt.key,
+        text_html: renderMathText(opt.text),
+        text_raw: sanitizeMathLatex(opt.text || '')
+      }));
+      const answerRaw = sanitizeMathLatex(q.solution?.answer || '');
+      const answerHtml = renderMathText(answerRaw);
+      const hintsRaw = q.solution?.hints ? sanitizeMathLatex(q.solution.hints) : '';
+      const stepsRaw = q.solution?.steps ? sanitizeMathLatex(q.solution.steps) : '';
+      const hintsHtml = hintsRaw ? renderMathText(hintsRaw) : '';
+      const stepsHtml = stepsRaw ? renderMathText(stepsRaw) : '';
+
+      const sourceStr = q.source?.source_desc || `${cleanTitle} · 第 ${paperQNum} 题`;
+
+      const searchRaw = [
+        q.id,
+        'textbook',
+        stemRawClean,
+        ...((q.content?.options || []).map(o => `${o.key} ${o.text}`)),
+        answerRaw,
+        kps.join(' '),
+        sourceStr,
+        cleanTitle,
+        category,
+        sec,
+        secSlug,
+        secTitle,
+        sectionType
+      ].join(' ').toLowerCase();
+
+      const slimItem = {
+        id: q.id,
+        source_type: 'textbook',
+        group,
+        type: qType,
+        score,
+        sec,
+        sec_slug: secSlug,
+        sec_title: secTitle,
+        chapter: chId,
+        chapter_title: chapterTitle,
+        paper_id: paperId,
+        paper_title: cleanTitle,
+        paper_raw_title: rawTitle,
+        paper_q_num: paperQNum,
+        order_in_paper: orderInPaper,
+        section_type: sectionType,
+        academic_year: q.source?.academic_year || '教材配套',
+        paper_category: category,
+        paper_type: q.source?.paper_type || '教材原题',
+        source: sourceStr,
+        kps,
+        stem_html: stemHtml,
+        stem_raw: q.content?.stem || '',
+        answer: answerRaw,
+        answer_html: answerHtml,
+        search: searchRaw
+      };
+
+      if (options.length > 0) slimItem.options = options;
+      if (hintsHtml) slimItem.hints_html = hintsHtml;
+      if (hintsRaw) slimItem.hints_raw = hintsRaw;
+      if (stepsHtml) slimItem.steps_html = stepsHtml;
+      if (stepsRaw) slimItem.steps_raw = stepsRaw;
+
+      slimQuestions.push(slimItem);
+
+      if (!papersMap.has(paperId)) {
+        papersMap.set(paperId, {
+          paper_id: paperId,
+          raw_title: rawTitle,
+          clean_title: cleanTitle,
+          category: category,
+          course_name: q.source?.course_name || '线性代数与几何',
+          academic_year: q.source?.academic_year || '教材配套',
+          term: q.source?.term || 1,
+          exam_type: 'textbook',
+          paper_type: '教材原题',
+          page_start: q.source?.page_start,
+          page_end: q.source?.page_end,
+          total_questions: 0,
+          total_score: 0,
+          sections_order: [],
+          questions: []
+        });
+      }
+
+      const paperObj = papersMap.get(paperId);
+      paperObj.total_questions++;
+      paperObj.total_score += score;
+      if (sectionType && !paperObj.sections_order.includes(sectionType)) {
+        paperObj.sections_order.push(sectionType);
+      }
+      paperObj.questions.push(slimItem);
+    }
+
+    const sections = Object.keys(sectionCounts)
+      .sort((a, b) => {
+        const na = parseFloat(a) || 999;
+        const nb = parseFloat(b) || 999;
+        return na - nb;
+      })
+      .map((secKey) => ({
+        section: secKey,
+        section_title: sectionTitles[secKey] || `第 ${secKey} 节`,
+        section_slug: sectionSlugs[secKey] || secKey,
+        count: sectionCounts[secKey]
+      }));
+
+    const chapterPayload = {
+      chapter: chId,
+      chapter_title: chapterTitle,
+      total: slimQuestions.length,
+      sections,
+      type_counts: typeCounts,
+      source_counts: sourceCounts,
+      questions: slimQuestions
+    };
+
+    const outFile = path.join(OUT_LAG_DIR, `ch${chId}.json`);
+    fs.writeFileSync(outFile, JSON.stringify(chapterPayload), 'utf-8');
+
+    metaData.chapters[String(chId)] = {
+      chapter: chId,
+      chapter_title: chapterTitle,
+      total: slimQuestions.length,
+      sections,
+      type_counts: typeCounts,
+      source_counts: sourceCounts
+    };
+
+    const outSizeKb = (fs.statSync(outFile).size / 1024).toFixed(1);
+    console.log(`  [build-lag] 第 ${chId} 章: ${chapterTitle} (${slimQuestions.length} 题) -> ch${chId}.json [${outSizeKb} KB]`);
+  }
+
+  const papersSummaryList = [];
+
+  for (const [paperId, paperObj] of papersMap.entries()) {
+    paperObj.questions.sort((a, b) => {
+      if (a.paper_q_num !== b.paper_q_num) {
+        return a.paper_q_num - b.paper_q_num;
+      }
+      return (a.order_in_paper || 0) - (b.order_in_paper || 0);
+    });
+
+    const paperTypeCounts = { choice: 0, blank: 0, calc: 0, proof: 0 };
+    paperObj.questions.forEach((q) => {
+      paperTypeCounts[q.type] = (paperTypeCounts[q.type] || 0) + 1;
+    });
+
+    const singlePaperPayload = {
+      paper_id: paperObj.paper_id,
+      clean_title: paperObj.clean_title,
+      raw_title: paperObj.raw_title,
+      category: paperObj.category,
+      course_name: paperObj.course_name,
+      academic_year: paperObj.academic_year,
+      term: paperObj.term,
+      exam_type: paperObj.exam_type,
+      paper_type: paperObj.paper_type,
+      total_questions: paperObj.total_questions,
+      total_score: paperObj.total_score,
+      type_counts: paperTypeCounts,
+      sections_order: paperObj.sections_order,
+      questions: paperObj.questions
+    };
+
+    const singlePaperFile = path.join(PAPERS_LAG_OUT_DIR, `p${paperId}.json`);
+    fs.writeFileSync(singlePaperFile, JSON.stringify(singlePaperPayload), 'utf-8');
+
+    const summaryItem = {
+      paper_id: paperObj.paper_id,
+      clean_title: paperObj.clean_title,
+      category: paperObj.category,
+      course_name: paperObj.course_name,
+      academic_year: paperObj.academic_year,
+      term: paperObj.term,
+      exam_type: paperObj.exam_type,
+      total_questions: paperObj.total_questions,
+      total_score: paperObj.total_score,
+      type_counts: paperTypeCounts,
+      sections_count: paperObj.sections_order.length
+    };
+
+    papersSummaryList.push(summaryItem);
+  }
+
+  papersSummaryList.sort((a, b) => a.paper_id - b.paper_id);
+
+  const papersIndexFile = path.join(OUT_LAG_DIR, 'papers.json');
+  fs.writeFileSync(papersIndexFile, JSON.stringify({
+    total: papersSummaryList.length,
+    papers: papersSummaryList
+  }, null, 2), 'utf-8');
+
+  metaData.total_questions = totalQuestionsCount;
+  metaData.total_papers = papersSummaryList.length;
+  metaData.total_exam_questions = 0;
+  metaData.total_textbook_questions = totalQuestionsCount;
+  metaData.total_exam_papers = 0;
+  metaData.total_textbook_papers = papersSummaryList.length;
+  const metaFile = path.join(OUT_LAG_DIR, 'meta.json');
+  fs.writeFileSync(metaFile, JSON.stringify(metaData, null, 2), 'utf-8');
+
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+  console.log(`\n[exercise-data] 《线性代数与几何》题库构建完成：9 个章节、${papersSummaryList.length} 套习题卷、共 ${totalQuestionsCount} 道题目已编译静态 HTML -> ${path.relative(ROOT, OUT_LAG_DIR)}/ (耗时: ${elapsed}s)`);
+}
+
+function main() {
+  buildEngineeringAnalysisExercises();
+  buildLinearAlgebraGeometryExercises();
 }
 
 main();

@@ -198,9 +198,15 @@ export function parseAiError(
   // 本地中继反代错误
   else if (lowerMsg.includes('[本地中继反代]') || lowerMsg.includes('upstream_proxy_error')) {
     category = 'network';
-    title = '本地中继连接失败';
-    message = '本地 Vite 开发服务器中继进程在转发请求至 Google API 时遇到网络阻断或超时。';
-    advice = '建议：检查代理软件（如 Clash/V2Ray）是否正常运行并开启 TUN 虚拟网卡模式，确保本地 Node.js 具备境外访问能力。';
+    if (context?.providerId === 'bupt' || lowerMsg.includes('北京邮电大学')) {
+      title = '北邮校内网关中继失败';
+      message = '本地开发服务器中继进程未能连通北京邮电大学「人人有算力」校内网关。该服务仅限校园网物理网络或北邮 VPN 环境下可用。';
+      advice = '建议：\n1. 检查本机是否已连接北邮校园网 Wi-Fi 或有线网络；\n2. 若在校外，请先启动并登录北邮官方 VPN；\n3. 检查代理客户端是否误拦截了 10.0.0.0/8 校内网段。';
+    } else {
+      title = '本地中继连接失败';
+      message = '本地 Vite 开发服务器中继进程在转发请求至模型提供商时遇到网络阻断或超时。';
+      advice = '建议：检查代理软件（如 Clash/V2Ray）是否正常运行并开启 TUN 虚拟网卡模式，确保本地 Node.js 具备境外访问能力。';
+    }
   }
   // 网络连接阻断
   else if (
@@ -211,9 +217,15 @@ export function parseAiError(
     lowerMsg.includes('cors')
   ) {
     category = 'network';
-    title = '网络连接受阻';
-    message = '浏览器无法直连当前模型服务商的 API 端点。可能因网络连通波动，或该境外端点在当前网络环境下需要配置网络代理。';
-    advice = '建议：检查当前网络连通性；若使用 Gemini 等境外端点，请确保本地代理环境正常，或在快速设置中配置反代端点。';
+    if (context?.providerId === 'bupt') {
+      title = '无法连接北邮校内网关 (仅限校园网)';
+      message = '浏览器无法直连北京邮电大学「人人有算力」API 网关。该服务仅对北京邮电大学校园网内或通过校园 VPN 接入的设备开放。';
+      advice = '建议：\n1. 确认当前设备处于北邮校园网内（如 BUPT-portal / 实验室有线网）；\n2. 若在校外，请连接北邮 VPN 后刷新重试；\n3. 若本机开启了科学上网全局代理，请在代理软件中为 bupt.edu.cn 添加直连分流规则。';
+    } else {
+      title = '网络连接受阻';
+      message = '浏览器无法直连当前模型服务商的 API 端点。可能因网络连通波动，或该境外端点在当前网络环境下需要配置网络代理。';
+      advice = '建议：检查当前网络连通性；若使用 Gemini 等境外端点，请确保本地代理环境正常，或在快速设置中配置反代端点。';
+    }
   } else if (statusCode > 0) {
     title = `HTTP ${statusCode} 错误`;
     advice = '建议展开下方“详细错误日志”排查服务商返回的具体原因。';

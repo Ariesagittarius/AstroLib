@@ -177,27 +177,27 @@ if (url) {
 </style>
 
 <script>
-  function setupCopyButtons() {
-    document.querySelectorAll('.js-copy-resource-url:not([data-bound])').forEach((btn) => {
-      btn.setAttribute('data-bound', 'true');
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const url = btn.getAttribute('data-url');
-        if (!url) return;
-        navigator.clipboard.writeText(url).then(() => {
-          btn.classList.add('is-copied');
-          setTimeout(() => {
-            btn.classList.remove('is-copied');
-          }, 1500);
-        }).catch(() => {});
-      });
-    });
+  declare global {
+    interface Window {
+      __astrolibCopyResourceBound?: boolean;
+    }
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupCopyButtons);
-  } else {
-    setupCopyButtons();
+  if (typeof document !== 'undefined' && !window.__astrolibCopyResourceBound) {
+    window.__astrolibCopyResourceBound = true;
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement | null;
+      const btn = target?.closest<HTMLButtonElement>('.js-copy-resource-url');
+      if (!btn) return;
+      e.stopPropagation();
+      const url = btn.getAttribute('data-url');
+      if (!url) return;
+      navigator.clipboard.writeText(url).then(() => {
+        btn.classList.add('is-copied');
+        setTimeout(() => {
+          btn.classList.remove('is-copied');
+        }, 1500);
+      }).catch(() => {});
+    });
   }
-  document.addEventListener('astro:page-load', setupCopyButtons);
 </script>

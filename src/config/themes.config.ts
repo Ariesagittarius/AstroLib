@@ -1,0 +1,55 @@
+/**
+ * ============================================================================
+ * 站点 UI 风格主题（Site Style Themes）注册表 —— 风格主题的唯一声明源
+ * ============================================================================
+ *
+ * 区别于「亮/暗模式（Color Theme）」，本注册表管理的是整体 UI 风格预设（如 VitePress 风格、
+ * Starlight 经典风格等）。
+ *
+ * 后续新增风格主题只需：
+ *   1. 在本文件的 siteThemes 数组中追加定义 (id, label, desc, icon)；
+ *   2. 编写对应的 CSS 覆盖样式（如 src/styles/<id>-theme.css），并按 html[data-site-theme='<id>'] 作用域限定；
+ *   3. 控件与系统会自动呈现新增的风格选项。
+ * ============================================================================
+ */
+
+export interface SiteTheme {
+  id: string;
+  label: string;
+  desc: string;
+  icon: string;
+  disabled?: boolean;
+}
+
+export const siteThemes: SiteTheme[] = [
+  {
+    id: 'material-you',
+    label: 'Material You',
+    desc: 'Google Material 3 现代学术设计语言',
+    icon: 'material-you',
+  },
+  {
+    id: 'vitepress',
+    label: 'VitePress 风格',
+    desc: 'VuePress / VitePress 现代极简文档风格（已封存）',
+    icon: 'vitepress',
+    disabled: true,
+  },
+  {
+    id: 'starlight',
+    label: 'Starlight 经典',
+    desc: 'Astro Starlight 原生经典文档风格（已封存）',
+    icon: 'starlight',
+    disabled: true,
+  },
+];
+
+/** 默认风格主题 */
+export const DEFAULT_SITE_THEME = 'material-you';
+
+/**
+ * 校验给定的 themeId 是否合法且可用
+ */
+export function isValidSiteTheme(id: string): boolean {
+  return siteThemes.some((t) => t.id === id && !t.disabled);
+}

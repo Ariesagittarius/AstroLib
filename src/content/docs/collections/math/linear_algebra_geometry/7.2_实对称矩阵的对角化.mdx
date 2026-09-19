@@ -1,0 +1,420 @@
+---
+title: '7.2 实对称矩阵的对角化'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+作为下一节的知识基础，本节讨论实对称矩阵的对角化问题。
+
+## 一、实对称矩阵的性质
+
+先给出共轭向量的定义。
+
+<Knowledge title="定义 8 共轭向量">
+
+设 $\boldsymbol{x} = (x_1, x_2, \cdots, x_n)^\mathrm{T}$ 为复向量，称 $\bar{\boldsymbol{x}} = (\bar{x}_1, \bar{x}_2, \cdots, \bar{x}_n)^\mathrm{T}$ 为 $\boldsymbol{x}$ 的共轭向量，其中 $\bar{x}_i$ 表示 $x_i$ 的共轭复数 ($i = 1, 2, \cdots, n$)。
+
+</Knowledge>
+
+下面的三个定理给出了实对称矩阵的性质。
+
+<Knowledge title="定理 4 实对称矩阵的特征值为实数">
+
+设 $\boldsymbol{A}$ 为实对称矩阵，则 $\boldsymbol{A}$ 的特征值都是实数。
+
+</Knowledge>
+
+<Solution title="证明">
+
+设 $\lambda$ 为 $\boldsymbol{A}$ 的特征值，对应于 $\lambda$ 的特征向量为 $\boldsymbol{\alpha}$。
+
+在 $\boldsymbol{A}\boldsymbol{\alpha} = \lambda\boldsymbol{\alpha}$ 两边取共轭，得 $\overline{\boldsymbol{A}\boldsymbol{\alpha}} = \overline{\lambda\boldsymbol{\alpha}}$，即 $\bar{\boldsymbol{A}}\bar{\boldsymbol{\alpha}} = \bar{\lambda}\bar{\boldsymbol{\alpha}}$。因为 $\boldsymbol{A}$ 是实矩阵，所以 $\boldsymbol{A}\bar{\boldsymbol{\alpha}} = \bar{\lambda}\bar{\boldsymbol{\alpha}}$。
+
+在 $\boldsymbol{A}\bar{\boldsymbol{\alpha}} = \bar{\lambda}\bar{\boldsymbol{\alpha}}$ 两边取转置，得 $\bar{\boldsymbol{\alpha}}^\mathrm{T} \boldsymbol{A}^\mathrm{T} = \bar{\lambda}\bar{\boldsymbol{\alpha}}^\mathrm{T}$。又因为 $\boldsymbol{A}$ 是对称矩阵（$\boldsymbol{A}^\mathrm{T} = \boldsymbol{A}$），所以
+
+$$
+\bar{\boldsymbol{\alpha}}^\mathrm{T} \boldsymbol{A} = \bar{\lambda}\bar{\boldsymbol{\alpha}}^\mathrm{T}
+$$
+
+在等式 $\boldsymbol{A}\boldsymbol{\alpha} = \lambda\boldsymbol{\alpha}$ 两端左乘 $\bar{\boldsymbol{\alpha}}^\mathrm{T}$，得 $\bar{\boldsymbol{\alpha}}^\mathrm{T}\boldsymbol{A}\boldsymbol{\alpha} = \lambda\bar{\boldsymbol{\alpha}}^\mathrm{T}\boldsymbol{\alpha}$；在等式 $\bar{\boldsymbol{\alpha}}^\mathrm{T}\boldsymbol{A} = \bar{\lambda}\bar{\boldsymbol{\alpha}}^\mathrm{T}$ 两端右乘 $\boldsymbol{\alpha}$，得 $\bar{\boldsymbol{\alpha}}^\mathrm{T}\boldsymbol{A}\boldsymbol{\alpha} = \bar{\lambda}\bar{\boldsymbol{\alpha}}^\mathrm{T}\boldsymbol{\alpha}$。
+
+因此有
+
+$$
+\bar{\boldsymbol{\alpha}}^\mathrm{T}\boldsymbol{A}\boldsymbol{\alpha} = \lambda\bar{\boldsymbol{\alpha}}^\mathrm{T}\boldsymbol{\alpha} = \bar{\lambda}\bar{\boldsymbol{\alpha}}^\mathrm{T}\boldsymbol{\alpha}
+$$
+
+即 $(\lambda - \bar{\lambda})\bar{\boldsymbol{\alpha}}^\mathrm{T}\boldsymbol{\alpha} = 0$。
+
+因为 $\boldsymbol{\alpha}$ 是特征向量，故 $\boldsymbol{\alpha} \neq \mathbf{0}$，从而 $\bar{\boldsymbol{\alpha}}^\mathrm{T}\boldsymbol{\alpha} = \sum_{i=1}^n |x_i|^2 > 0$，所以 $\bar{\lambda} = \lambda$，即 $\lambda$ 为实数。
+
+</Solution>
+
+<SideNote title="说明">
+
+对于实对称矩阵 $\boldsymbol{A}$，因为其特征值是实数，所以在求解齐次线性方程组 $(\lambda\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$ 时，系数矩阵为实矩阵，故对应的特征向量可取为实向量。
+
+</SideNote>
+
+<Knowledge title="定理 5 不同特征值的特征向量正交">
+
+设 $\boldsymbol{A}$ 为实对称矩阵，则 $\boldsymbol{A}$ 的对应于不同特征值的特征向量是正交的。
+
+</Knowledge>
+
+<Solution title="证明">
+
+设 $\lambda_1, \lambda_2$ 是 $\boldsymbol{A}$ 的特征值且 $\lambda_1 \neq \lambda_2$，$\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2$ 分别为 $\boldsymbol{A}$ 对应于 $\lambda_1, \lambda_2$ 的特征向量。
+
+在 $\boldsymbol{A}\boldsymbol{\alpha}_1 = \lambda_1\boldsymbol{\alpha}_1$ 两边取转置，得 $\boldsymbol{\alpha}_1^\mathrm{T}\boldsymbol{A}^\mathrm{T} = \lambda_1\boldsymbol{\alpha}_1^\mathrm{T}$。因为 $\boldsymbol{A}$ 是对称矩阵，所以 $\boldsymbol{\alpha}_1^\mathrm{T}\boldsymbol{A} = \lambda_1\boldsymbol{\alpha}_1^\mathrm{T}$。
+
+在该式两端右乘 $\boldsymbol{\alpha}_2$，得
+
+$$
+\boldsymbol{\alpha}_1^\mathrm{T}\boldsymbol{A}\boldsymbol{\alpha}_2 = \lambda_1\boldsymbol{\alpha}_1^\mathrm{T}\boldsymbol{\alpha}_2
+$$
+
+又在 $\boldsymbol{A}\boldsymbol{\alpha}_2 = \lambda_2\boldsymbol{\alpha}_2$ 两端左乘 $\boldsymbol{\alpha}_1^\mathrm{T}$，得
+
+$$
+\boldsymbol{\alpha}_1^\mathrm{T}\boldsymbol{A}\boldsymbol{\alpha}_2 = \lambda_2\boldsymbol{\alpha}_1^\mathrm{T}\boldsymbol{\alpha}_2
+$$
+
+因此有
+
+$$
+\lambda_1\boldsymbol{\alpha}_1^\mathrm{T}\boldsymbol{\alpha}_2 = \lambda_2\boldsymbol{\alpha}_1^\mathrm{T}\boldsymbol{\alpha}_2
+$$
+
+即
+
+$$
+(\lambda_1 - \lambda_2)\boldsymbol{\alpha}_1^\mathrm{T}\boldsymbol{\alpha}_2 = 0
+$$
+
+因为 $\lambda_1 \neq \lambda_2$，所以 $\boldsymbol{\alpha}_1^\mathrm{T}\boldsymbol{\alpha}_2 = 0$，即 $\boldsymbol{\alpha}_1$ 与 $\boldsymbol{\alpha}_2$ 正交。
+
+</Solution>
+
+<Knowledge title="定理 6 实对称矩阵正交相似对角化">
+
+设 $\boldsymbol{A}$ 为 $n$ 阶实对称矩阵，则存在 $n$ 阶正交矩阵 $\boldsymbol{Q}$，使得
+
+$$
+\boldsymbol{Q}^{-1}\boldsymbol{A}\boldsymbol{Q} = \boldsymbol{Q}^\mathrm{T}\boldsymbol{A}\boldsymbol{Q} = \operatorname{diag}(\lambda_1, \lambda_2, \cdots, \lambda_n)
+$$
+
+其中 $\lambda_1, \lambda_2, \cdots, \lambda_n$ 是 $\boldsymbol{A}$ 的 $n$ 个特征值。
+
+</Knowledge>
+
+<SideNote title="正交相似">
+
+若存在正交矩阵 $\boldsymbol{P}$，使得 $\boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P} = \boldsymbol{B}$，则称矩阵 $\boldsymbol{A}$ 正交相似于矩阵 $\boldsymbol{B}$。定理 6 说明，$n$ 阶实对称方阵 $\boldsymbol{A}$ 必定正交相似于对角矩阵。
+
+</SideNote>
+
+<Solution title="证*（数学归纳法）">
+
+用数学归纳法证明。
+
+当 $n = 1$ 时，定理显然成立。
+
+假设 $n = k - 1$ ($k \ge 2$) 时定理成立。
+
+当 $n = k$ 时：设 $\lambda_1$ 是 $\boldsymbol{A}$ 的特征值，$\boldsymbol{\alpha}_1$ 为 $\boldsymbol{A}$ 的对应于 $\lambda_1$ 的单位特征向量。将 $\boldsymbol{\alpha}_1$ 扩充为 $\mathbf{R}^k$ 的一组标准正交基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_k$。
+
+设 $\boldsymbol{A}\boldsymbol{\alpha}_i = b_{1i}\boldsymbol{\alpha}_1 + b_{2i}\boldsymbol{\alpha}_2 + \cdots + b_{ki}\boldsymbol{\alpha}_k$ ($i = 2, \cdots, k$)，即
+
+$$
+\boldsymbol{A}(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_k) = (\boldsymbol{A}\boldsymbol{\alpha}_1, \boldsymbol{A}\boldsymbol{\alpha}_2, \cdots, \boldsymbol{A}\boldsymbol{\alpha}_k) = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_k) \begin{pmatrix} \lambda_1 & b_{12} & b_{13} & \cdots & b_{1k} \\ 0 & b_{22} & b_{23} & \cdots & b_{2k} \\ 0 & b_{32} & b_{33} & \cdots & b_{3k} \\ \vdots & \vdots & \vdots & & \vdots \\ 0 & b_{k2} & b_{k3} & \cdots & b_{kk} \end{pmatrix} \tag{7.1}
+$$
+
+令 $\boldsymbol{Q}_1 = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_k)$，因为 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_k$ 是 $\mathbf{R}^k$ 的标准正交基，所以 $\boldsymbol{Q}_1$ 为 $k$ 阶正交矩阵。
+
+将式 (7.1) 右端的矩阵用分块矩阵表示，式 (7.1) 可表示为
+
+$$
+\boldsymbol{A}\boldsymbol{Q}_1 = \boldsymbol{Q}_1 \begin{pmatrix} \lambda_1 & \boldsymbol{\beta} \\ \mathbf{0} & \boldsymbol{B} \end{pmatrix}
+$$
+
+即
+
+$$
+\boldsymbol{Q}_1^{-1}\boldsymbol{A}\boldsymbol{Q}_1 = \boldsymbol{Q}_1^\mathrm{T}\boldsymbol{A}\boldsymbol{Q}_1 = \begin{pmatrix} \lambda_1 & \boldsymbol{\beta} \\ \mathbf{0} & \boldsymbol{B} \end{pmatrix}
+$$
+
+两边取转置，得
+
+$$
+\boldsymbol{Q}_1^\mathrm{T}\boldsymbol{A}^\mathrm{T}\boldsymbol{Q}_1 = \begin{pmatrix} \lambda_1 & \mathbf{0} \\ \boldsymbol{\beta}^\mathrm{T} & \boldsymbol{B}^\mathrm{T} \end{pmatrix}
+$$
+
+因为 $\boldsymbol{A}$ 是对称矩阵，所以 $\boldsymbol{Q}_1^\mathrm{T}\boldsymbol{A}\boldsymbol{Q}_1 = \boldsymbol{Q}_1^\mathrm{T}\boldsymbol{A}^\mathrm{T}\boldsymbol{Q}_1$，即
+
+$$
+\begin{pmatrix} \lambda_1 & \boldsymbol{\beta} \\ \mathbf{0} & \boldsymbol{B} \end{pmatrix} = \begin{pmatrix} \lambda_1 & \mathbf{0} \\ \boldsymbol{\beta}^\mathrm{T} & \boldsymbol{B}^\mathrm{T} \end{pmatrix}
+$$
+
+即 $\boldsymbol{\beta} = \mathbf{0}$，$\boldsymbol{B}$ 为 $k - 1$ 阶实对称矩阵，于是有
+
+$$
+\boldsymbol{Q}_1^{-1}\boldsymbol{A}\boldsymbol{Q}_1 = \boldsymbol{Q}_1^\mathrm{T}\boldsymbol{A}\boldsymbol{Q}_1 = \begin{pmatrix} \lambda_1 & \mathbf{0} \\ \mathbf{0} & \boldsymbol{B} \end{pmatrix}
+$$
+
+由归纳假设，存在 $k - 1$ 阶正交矩阵 $\boldsymbol{T}$，使 $\boldsymbol{T}^{-1}\boldsymbol{B}\boldsymbol{T} = \operatorname{diag}(\lambda_2, \lambda_3, \cdots, \lambda_k)$。
+
+令 $\boldsymbol{Q}_2 = \begin{pmatrix} 1 & \mathbf{0} \\ \mathbf{0} & \boldsymbol{T} \end{pmatrix}$，则 $\boldsymbol{Q}_2$ 为 $k$ 阶正交矩阵。再令 $\boldsymbol{Q} = \boldsymbol{Q}_1\boldsymbol{Q}_2$，则 $\boldsymbol{Q}$ 也为 $k$ 阶正交矩阵，且
+
+$$
+\begin{aligned}
+\boldsymbol{Q}^{-1}\boldsymbol{A}\boldsymbol{Q} &= (\boldsymbol{Q}_1\boldsymbol{Q}_2)^{-1}\boldsymbol{A}(\boldsymbol{Q}_1\boldsymbol{Q}_2) = \boldsymbol{Q}_2^{-1}(\boldsymbol{Q}_1^{-1}\boldsymbol{A}\boldsymbol{Q}_1)\boldsymbol{Q}_2 \\
+&= \begin{pmatrix} 1 & \mathbf{0} \\ \mathbf{0} & \boldsymbol{T}^{-1} \end{pmatrix} \begin{pmatrix} \lambda_1 & \mathbf{0} \\ \mathbf{0} & \boldsymbol{B} \end{pmatrix} \begin{pmatrix} 1 & \mathbf{0} \\ \mathbf{0} & \boldsymbol{T} \end{pmatrix} = \begin{pmatrix} \lambda_1 & \mathbf{0} \\ \mathbf{0} & \boldsymbol{T}^{-1}\boldsymbol{B}\boldsymbol{T} \end{pmatrix} \\
+&= \operatorname{diag}(\lambda_1, \lambda_2, \cdots, \lambda_k)
+\end{aligned}
+$$
+
+因为相似矩阵的特征值相同，所以 $\lambda_1, \lambda_2, \cdots, \lambda_k$ 是 $\boldsymbol{A}$ 的 $k$ 个特征值。
+
+</Solution>
+
+定理 6 说明了实对称矩阵一定正交相似于对角矩阵。由矩阵可对角化的充分必要条件（第 6 章定理 4）可知，若 $\lambda$ 为实对称矩阵 $\boldsymbol{A}$ 的 $k$ 重特征值，则 $\boldsymbol{A}$ 对应于 $\lambda$ 必有 $k$ 个线性无关的特征向量，即齐次线性方程组 $(\lambda\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$ 的基础解系含有 $k$ 个向量。下面介绍定理 6 中的正交矩阵 $\boldsymbol{Q}$ 的求法。
+
+## 二、实对称矩阵的对角化方法
+
+设 $\boldsymbol{A}$ 为 $n$ 阶实对称矩阵，可按以下步骤求出 $n$ 阶正交矩阵 $\boldsymbol{Q}$，使得 $\boldsymbol{Q}^{-1}\boldsymbol{A}\boldsymbol{Q}$ 为对角矩阵 $\boldsymbol{\Lambda}$：
+
+1. **求特征值**：求特征方程 $|\lambda\boldsymbol{E} - \boldsymbol{A}| = 0$ 的全部根，即 $\boldsymbol{A}$ 的全部特征值。设 $\boldsymbol{A}$ 的全体两两不同的特征值为 $\lambda_1, \lambda_2, \cdots, \lambda_m$，$\lambda_i$ 的重数为 $r_i$ ($i = 1, 2, \cdots, m$)，其中 $r_1 + r_2 + \cdots + r_m = n$。
+2. **求特征向量并标准正交化**：对每个 $\lambda_i$ ($i = 1, 2, \cdots, m$)，求解齐次线性方程组 $(\lambda_i\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$。设基础解系为 $\boldsymbol{\xi}_{i1}, \boldsymbol{\xi}_{i2}, \cdots, \boldsymbol{\xi}_{ir_i}$（因为 $\lambda_i$ 的重数为 $r_i$，所以基础解系中含有 $r_i$ 个向量）。将基础解系 $\boldsymbol{\xi}_{i1}, \boldsymbol{\xi}_{i2}, \cdots, \boldsymbol{\xi}_{ir_i}$ 标准正交化，得到 $\boldsymbol{A}$ 的对应于 $\lambda_i$ 的 $r_i$ 个两两正交的单位特征向量 $\boldsymbol{p}_{i1}, \boldsymbol{p}_{i2}, \cdots, \boldsymbol{p}_{ir_i}$。
+3. **构造正交矩阵**：将上面求出的全体两两正交的单位特征向量作为列向量构成正交矩阵 $\boldsymbol{Q} = (\boldsymbol{p}_{11}, \cdots, \boldsymbol{p}_{mr_m})$，则 $\boldsymbol{Q}^{-1}\boldsymbol{A}\boldsymbol{Q} = \boldsymbol{\Lambda}$ 为对角矩阵。
+
+<SideNote title="说明">
+
+在不计对角元素顺序的意义下对角矩阵 $\boldsymbol{\Lambda}$ 是唯一的，但正交矩阵 $\boldsymbol{Q}$ 是不唯一的。请注意 $\boldsymbol{Q}$ 的第 $i$ 列所对应的特征值一定是对角矩阵 $\boldsymbol{\Lambda}$ 的第 $i$ 个对角元素 ($i = 1, 2, \cdots, n$)。
+
+</SideNote>
+
+<Example title="例 8 实对称矩阵正交对角化（重特征值）">
+
+设
+
+$$
+\boldsymbol{A} = \begin{pmatrix} 0 & -2 & -1 \\ -2 & 3 & 2 \\ -1 & 2 & 0 \end{pmatrix}
+$$
+
+求正交矩阵 $\boldsymbol{Q}$，使得 $\boldsymbol{Q}^{-1}\boldsymbol{A}\boldsymbol{Q}$ 为对角矩阵 $\boldsymbol{\Lambda}$。
+
+</Example>
+
+<Solution title="解">
+
+计算特征多项式：
+
+$$
+\begin{aligned}
+|\lambda\boldsymbol{E} - \boldsymbol{A}| &= \begin{vmatrix} \lambda & 2 & 1 \\ 2 & \lambda - 3 & -2 \\ 1 & -2 & \lambda \end{vmatrix} \xlongequal{2r_1 + r_2} \begin{vmatrix} \lambda & 2 & 1 \\ 2(\lambda + 1) & \lambda + 1 & 0 \\ 1 & -2 & \lambda \end{vmatrix} \\
+&= (\lambda + 1)\begin{vmatrix} \lambda & 2 & 1 \\ 2 & 1 & 0 \\ 1 & -2 & \lambda \end{vmatrix} \\
+&= (\lambda + 1)^2(\lambda - 5)
+\end{aligned}
+$$
+
+$\boldsymbol{A}$ 的相异特征值为 $\lambda_1 = -1$（$2$ 重），$\lambda_2 = 5$。
+
+对应于 $\lambda_1 = -1$，求解齐次线性方程组 $(-\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，即
+
+$$
+\begin{pmatrix} -1 & 2 & 1 \\ 2 & -4 & -2 \\ 1 & -2 & -1 \end{pmatrix}\begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix}
+$$
+
+由初等行变换可知方程等价于 $-x_1 + 2x_2 + x_3 = 0$，得基础解系为
+
+$$
+\boldsymbol{\xi}_1 = \begin{pmatrix} 1 \\ 0 \\ 1 \end{pmatrix}, \quad \boldsymbol{\xi}_2 = \begin{pmatrix} 2 \\ 1 \\ 0 \end{pmatrix}
+$$
+
+再将 $\boldsymbol{\xi}_1, \boldsymbol{\xi}_2$ 标准正交化：
+
+令 $\boldsymbol{\beta}_1 = \boldsymbol{\xi}_1 = (1, 0, 1)^\mathrm{T}$，
+
+$$
+\boldsymbol{\beta}_2 = \boldsymbol{\xi}_2 - \frac{(\boldsymbol{\xi}_2 \cdot \boldsymbol{\beta}_1)}{(\boldsymbol{\beta}_1 \cdot \boldsymbol{\beta}_1)}\boldsymbol{\beta}_1 = \begin{pmatrix} 2 \\ 1 \\ 0 \end{pmatrix} - \frac{2}{2}\begin{pmatrix} 1 \\ 0 \\ 1 \end{pmatrix} = \begin{pmatrix} 1 \\ 1 \\ -1 \end{pmatrix}
+$$
+
+单位化得
+
+$$
+\boldsymbol{p}_1 = \frac{\boldsymbol{\beta}_1}{\|\boldsymbol{\beta}_1\|} = \frac{1}{\sqrt{2}}\begin{pmatrix} 1 \\ 0 \\ 1 \end{pmatrix}, \quad \boldsymbol{p}_2 = \frac{\boldsymbol{\beta}_2}{\|\boldsymbol{\beta}_2\|} = \frac{1}{\sqrt{3}}\begin{pmatrix} 1 \\ 1 \\ -1 \end{pmatrix}
+$$
+
+对应于 $\lambda_2 = 5$，求解齐次线性方程组 $(5\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，即
+
+$$
+\begin{pmatrix} 5 & 2 & 1 \\ 2 & 2 & -2 \\ 1 & -2 & 5 \end{pmatrix}\begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix}
+$$
+
+得基础解系为 $\boldsymbol{\xi}_3 = (-1, 2, 1)^\mathrm{T}$。单位化得
+
+$$
+\boldsymbol{p}_3 = \frac{\boldsymbol{\xi}_3}{\|\boldsymbol{\xi}_3\|} = \frac{1}{\sqrt{6}}\begin{pmatrix} -1 \\ 2 \\ 1 \end{pmatrix}
+$$
+
+令
+
+$$
+\boldsymbol{Q} = (\boldsymbol{p}_1, \boldsymbol{p}_2, \boldsymbol{p}_3) = \begin{pmatrix} \frac{1}{\sqrt{2}} & \frac{1}{\sqrt{3}} & -\frac{1}{\sqrt{6}} \\ 0 & \frac{1}{\sqrt{3}} & \frac{2}{\sqrt{6}} \\ \frac{1}{\sqrt{2}} & -\frac{1}{\sqrt{3}} & \frac{1}{\sqrt{6}} \end{pmatrix}
+$$
+
+则 $\boldsymbol{Q}$ 为正交矩阵，且
+
+$$
+\boldsymbol{Q}^{-1}\boldsymbol{A}\boldsymbol{Q} = \begin{pmatrix} -1 & 0 & 0 \\ 0 & -1 & 0 \\ 0 & 0 & 5 \end{pmatrix} = \boldsymbol{\Lambda}
+$$
+
+</Solution>
+
+<Example title="例 9 实对称矩阵正交对角化（单特征值）">
+
+设
+
+$$
+\boldsymbol{A} = \begin{pmatrix} 1 & 0 & 2 \\ 0 & 1 & 2 \\ 2 & 2 & -1 \end{pmatrix}
+$$
+
+求正交矩阵 $\boldsymbol{Q}$，使得 $\boldsymbol{Q}^{-1}\boldsymbol{A}\boldsymbol{Q}$ 为对角矩阵 $\boldsymbol{\Lambda}$。
+
+</Example>
+
+<Solution title="解">
+
+计算特征多项式：
+
+$$
+\begin{aligned}
+|\lambda\boldsymbol{E} - \boldsymbol{A}| &= \begin{vmatrix} \lambda - 1 & 0 & -2 \\ 0 & \lambda - 1 & -2 \\ -2 & -2 & \lambda + 1 \end{vmatrix} \xlongequal[\substack{r_3 + r_1 \\ r_3 + r_2}]{} \begin{vmatrix} \lambda - 1 & 0 & -2 \\ 0 & \lambda - 1 & -2 \\ \lambda - 3 & \lambda - 3 & \lambda - 3 \end{vmatrix} \\
+&= (\lambda - 3)\begin{vmatrix} \lambda - 1 & 0 & -2 \\ 0 & \lambda - 1 & -2 \\ 1 & 1 & 1 \end{vmatrix} \\
+&= (\lambda - 3)(\lambda + 3)(\lambda - 1)
+\end{aligned}
+$$
+
+$\boldsymbol{A}$ 的特征值为 $\lambda_1 = 3, \lambda_2 = -3, \lambda_3 = 1$。
+
+对应于 $\lambda_1 = 3$，求解齐次线性方程组 $(3\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，即
+
+$$
+\begin{pmatrix} 2 & 0 & -2 \\ 0 & 2 & -2 \\ -2 & -2 & 4 \end{pmatrix}\begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix}
+$$
+
+得基础解系为 $\boldsymbol{\xi}_1 = (1, 1, 1)^\mathrm{T}$，单位化取
+
+$$
+\boldsymbol{p}_1 = \frac{\boldsymbol{\xi}_1}{\|\boldsymbol{\xi}_1\|} = \frac{1}{\sqrt{3}}\begin{pmatrix} 1 \\ 1 \\ 1 \end{pmatrix}
+$$
+
+对应于 $\lambda_2 = -3$，求解齐次线性方程组 $(-3\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，即
+
+$$
+\begin{pmatrix} -4 & 0 & -2 \\ 0 & -4 & -2 \\ -2 & -2 & -2 \end{pmatrix}\begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix}
+$$
+
+得基础解系为 $\boldsymbol{\xi}_2 = (-1, -1, 2)^\mathrm{T}$，单位化取
+
+$$
+\boldsymbol{p}_2 = \frac{\boldsymbol{\xi}_2}{\|\boldsymbol{\xi}_2\|} = \frac{1}{\sqrt{6}}\begin{pmatrix} -1 \\ -1 \\ 2 \end{pmatrix}
+$$
+
+对应于 $\lambda_3 = 1$，求解齐次线性方程组 $(\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$，即
+
+$$
+\begin{pmatrix} 0 & 0 & -2 \\ 0 & 0 & -2 \\ -2 & -2 & 2 \end{pmatrix}\begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix} = \begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix}
+$$
+
+得基础解系为 $\boldsymbol{\xi}_3 = (1, -1, 0)^\mathrm{T}$，单位化取
+
+$$
+\boldsymbol{p}_3 = \frac{\boldsymbol{\xi}_3}{\|\boldsymbol{\xi}_3\|} = \frac{1}{\sqrt{2}}\begin{pmatrix} 1 \\ -1 \\ 0 \end{pmatrix}
+$$
+
+令
+
+$$
+\boldsymbol{Q} = (\boldsymbol{p}_1, \boldsymbol{p}_2, \boldsymbol{p}_3) = \begin{pmatrix} \frac{1}{\sqrt{3}} & -\frac{1}{\sqrt{6}} & \frac{1}{\sqrt{2}} \\ \frac{1}{\sqrt{3}} & -\frac{1}{\sqrt{6}} & -\frac{1}{\sqrt{2}} \\ \frac{1}{\sqrt{3}} & \frac{2}{\sqrt{6}} & 0 \end{pmatrix}
+$$
+
+则 $\boldsymbol{Q}$ 为正交矩阵，且
+
+$$
+\boldsymbol{Q}^{-1}\boldsymbol{A}\boldsymbol{Q} = \begin{pmatrix} 3 & 0 & 0 \\ 0 & -3 & 0 \\ 0 & 0 & 1 \end{pmatrix} = \boldsymbol{\Lambda}
+$$
+
+</Solution>
+
+<SideNote title="说明">
+
+因为 $\boldsymbol{A}$ 的三个特征值两两不同，所以由定理 5 可知，对应的特征向量已经两两正交，因此无需进行 Schmidt 正交化，只需将它们单位化即可。
+
+</SideNote>
+
+<Example title="例 10 由特征值与特征向量反求实对称矩阵">
+
+设三阶实对称矩阵 $\boldsymbol{A}$ 的特征值为 $\lambda_1 = -1, \lambda_2 = \lambda_3 = 1$。已知 $\boldsymbol{A}$ 的属于 $\lambda_1 = -1$ 的特征向量为 $\boldsymbol{p}_1 = (0, 1, 1)^\mathrm{T}$。求出 $\boldsymbol{A}$ 的属于特征值 $\lambda_2 = \lambda_3 = 1$ 的特征向量，并求出对称矩阵 $\boldsymbol{A}$。
+
+</Example>
+
+<Solution title="解">
+
+因为属于实对称矩阵的不同特征值的特征向量必互相正交，所以，属于 $\lambda_2 = \lambda_3 = 1$ 的特征向量 $\boldsymbol{x} = (x_1, x_2, x_3)^\mathrm{T}$ 必定与 $\boldsymbol{p}_1$ 正交，即它们一定满足
+
+$$
+\boldsymbol{p}_1^\mathrm{T}\boldsymbol{x} = 0 \cdot x_1 + 1 \cdot x_2 + 1 \cdot x_3 = 0 \implies x_2 + x_3 = 0
+$$
+
+而 $x_1$ 可以取任何值。
+
+属于 $\lambda_2 = \lambda_3 = 1$ 的特征向量就是方程组 $(\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$ 的非零解向量。上面的分析说明方程组 $(\boldsymbol{E} - \boldsymbol{A})\boldsymbol{x} = \mathbf{0}$ 的解空间包含于方程 $x_2 + x_3 = 0$ 的解空间。易见，这两个解空间的维数都是 $2$，所以这两个解空间是相等的，也就是说，方程 $x_2 + x_3 = 0$ 的非零解向量也是 $\boldsymbol{A}$ 的属于 $\lambda_2 = \lambda_3 = 1$ 的特征向量。
+
+所以可取方程 $x_2 + x_3 = 0$ 的线性无关的解
+
+$$
+\boldsymbol{p}_2 = \begin{pmatrix} 1 \\ 0 \\ 0 \end{pmatrix}, \quad \boldsymbol{p}_3 = \begin{pmatrix} 0 \\ 1 \\ -1 \end{pmatrix}
+$$
+
+作为 $\boldsymbol{A}$ 的属于 $\lambda_2 = \lambda_3 = 1$ 的特征向量。
+
+令
+
+$$
+\boldsymbol{P} = (\boldsymbol{p}_1, \boldsymbol{p}_2, \boldsymbol{p}_3) = \begin{pmatrix} 0 & 1 & 0 \\ 1 & 0 & 1 \\ 1 & 0 & -1 \end{pmatrix}
+$$
+
+则
+
+$$
+\boldsymbol{P}^{-1}\boldsymbol{A}\boldsymbol{P} = \begin{pmatrix} -1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \end{pmatrix}
+$$
+
+求出可逆矩阵 $\boldsymbol{P}$ 的逆矩阵：
+
+$$
+\boldsymbol{P}^{-1} = \frac{1}{2}\begin{pmatrix} 0 & 1 & 1 \\ 2 & 0 & 0 \\ 0 & 1 & -1 \end{pmatrix}
+$$
+
+于是
+
+$$
+\boldsymbol{A} = \boldsymbol{P}\begin{pmatrix} -1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1 \end{pmatrix}\boldsymbol{P}^{-1} = \frac{1}{2}\begin{pmatrix} 0 & 1 & 0 \\ -1 & 0 & 1 \\ -1 & 0 & -1 \end{pmatrix}\begin{pmatrix} 0 & 1 & 1 \\ 2 & 0 & 0 \\ 0 & 1 & -1 \end{pmatrix} = \begin{pmatrix} 1 & 0 & 0 \\ 0 & 0 & -1 \\ 0 & -1 & 0 \end{pmatrix}
+$$
+
+</Solution>
+
+<ExerciseTrigger chapter={7} section="7.2" title="7.2 实对称矩阵的对角化 课后真题与自测练习" />

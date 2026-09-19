@@ -1,7 +1,7 @@
 import { defineRouteMiddleware } from "@astrojs/starlight/route-data";
 
 export const onRequest = defineRouteMiddleware((context) => {
-  const { starlightRoute } = context.locals;
+  const { starlightRoute } = context.locals as any;
 
   // 强行检查当前页面是否有大纲 (toc) 数据
   // 如果没有（例如纯组件分块页面），则手动注入一个虚拟的 Overview 项

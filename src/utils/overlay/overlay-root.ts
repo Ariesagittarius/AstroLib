@@ -35,6 +35,15 @@ export function getOverlayRoot(): HTMLElement {
  */
 export function mountToOverlayRoot(el: HTMLElement | null): void {
   if (!el || typeof document === 'undefined') return;
+  // 保护性守卫：若元素已被停靠至右侧栏侧载底座中，或标记为 is-docked，严禁将其从宿主中强行拔出
+  if (
+    el.classList.contains('is-docked') ||
+    el.closest('#ai-sidebar-panel') ||
+    el.closest('.sideload-panel-view') ||
+    (el.tagName.toLowerCase() === 'ai-ask' && (el as any)._isDocked)
+  ) {
+    return;
+  }
   const root = getOverlayRoot();
   if (root && el.parentElement !== root) {
     root.appendChild(el);

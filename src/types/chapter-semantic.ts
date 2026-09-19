@@ -40,7 +40,8 @@ export type SemanticBlockKind =
   | 'quote'            // 引用 Blockquote
   | 'code'             // 代码块 Code
   | 'digital_resource' // 规范学术数字资源 (Digital Resource)
-  | 'qrcode';          // 兼容历史命名 (微课视频/二维码)
+  | 'qrcode'           // 兼容历史命名 (微课视频/二维码)
+  | 'footnote';        // 正文解释性补充批注
 
 export type SemanticResourceCategory =
   | 'digital_resource' // 外部学习资源 / 延伸材料 (配套数字资源)
@@ -62,6 +63,7 @@ export interface SemanticTableData {
   headers: string[];
   aligns?: Array<'left' | 'center' | 'right' | null>;
   rows: string[][];
+  caption?: string;
 }
 
 export interface SemanticFigureData {

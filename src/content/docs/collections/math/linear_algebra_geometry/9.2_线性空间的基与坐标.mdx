@@ -1,0 +1,169 @@
+---
+title: '9.2 线性空间的基与坐标'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+第 4 章介绍了有关 $n$ 维向量的一些重要概念，如线性组合、线性相关与线性无关及向量组的秩等。这些概念与相关的性质只涉及 $n$ 维向量的加法与数乘这两种运算，因此对于一般线性空间中的元素（可以不是 $n$ 维向量）也同样适用。以后将在一般线性空间中直接引用这些概念与性质。
+
+为确切起见，我们重述一下线性相关与线性无关的概念：对实线性空间 $V$ 中的元素 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_m$，如果存在 $m$ 个不全为零的实数 $\lambda_1, \lambda_2, \cdots, \lambda_m$，使得
+
+$$
+\lambda_1 \boldsymbol{\alpha}_1 + \lambda_2 \boldsymbol{\alpha}_2 + \cdots + \lambda_m \boldsymbol{\alpha}_m = \boldsymbol{0},
+$$
+
+则称 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_m$ **线性相关**，否则称 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_m$ **线性无关**。
+
+下面来定义线性空间的基以及线性空间中的元素（也称为向量）在基下的坐标。
+
+## 一、线性空间的基与维数
+
+<Knowledge title="定义 3 线性空间的基与维数">
+
+设 $V$ 为线性空间。如果 $V$ 中存在元素 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 满足：
+
+(1) $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 线性无关；
+
+(2) $V$ 中任意元素 $\boldsymbol{\alpha}$ 都可由 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 线性表示，即存在实数 $x_1, x_2, \cdots, x_n$，使得
+
+$$
+\boldsymbol{\alpha} = x_1 \boldsymbol{\alpha}_1 + x_2 \boldsymbol{\alpha}_2 + \cdots + x_n \boldsymbol{\alpha}_n,
+$$
+
+则称 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 为线性空间 $V$ 的一组**基**。$n$ 称为线性空间 $V$ 的**维数**，记为 $\dim V = n$。维数为 $n$ 的线性空间称为 **$n$ 维线性空间**。
+
+</Knowledge>
+
+<Example title="例 9 矩阵空间的基与维数">
+
+设 $V$ 为全体二阶实矩阵。对于矩阵的加法与数乘运算，$V$ 构成一个线性空间。记 $\boldsymbol{E}_{ij}$ 为第 $i$ 行第 $j$ 列元素为 $1$，其余元素为零的二阶矩阵。验证 $\boldsymbol{E}_{11}, \boldsymbol{E}_{12}, \boldsymbol{E}_{21}, \boldsymbol{E}_{22}$ 是 $V$ 的一组基，并求 $\dim V$。
+
+</Example>
+
+<Solution title="解">
+
+(1) 设有实数 $\lambda_1, \lambda_2, \lambda_3, \lambda_4$ 使得
+
+$$
+\lambda_1 \boldsymbol{E}_{11} + \lambda_2 \boldsymbol{E}_{12} + \lambda_3 \boldsymbol{E}_{21} + \lambda_4 \boldsymbol{E}_{22} = \boldsymbol{O},
+$$
+
+即
+
+$$
+\begin{pmatrix}
+\lambda_1 & \lambda_2 \\
+\lambda_3 & \lambda_4
+\end{pmatrix} =
+\begin{pmatrix}
+0 & 0 \\
+0 & 0
+\end{pmatrix},
+$$
+
+则 $\lambda_1 = \lambda_2 = \lambda_3 = \lambda_4 = 0$。这说明 $\boldsymbol{E}_{11}, \boldsymbol{E}_{12}, \boldsymbol{E}_{21}, \boldsymbol{E}_{22}$ 线性无关。
+
+(2) 任取 $\boldsymbol{A} = (a_{ij}) \in V$，显然有
+
+$$
+\boldsymbol{A} = a_{11}\boldsymbol{E}_{11} + a_{12}\boldsymbol{E}_{12} + a_{21}\boldsymbol{E}_{21} + a_{22}\boldsymbol{E}_{22},
+$$
+
+即 $\boldsymbol{A}$ 可以由 $\boldsymbol{E}_{11}, \boldsymbol{E}_{12}, \boldsymbol{E}_{21}, \boldsymbol{E}_{22}$ 线性表示。
+
+由 (1)(2) 可知 $\boldsymbol{E}_{11}, \boldsymbol{E}_{12}, \boldsymbol{E}_{21}, \boldsymbol{E}_{22}$ 为 $V$ 的一组基，且 $\dim V = 4$。
+
+</Solution>
+
+## 二、向量在基下的坐标
+
+若 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 为 $n$ 维线性空间 $V$ 的一组基，则对任意 $\boldsymbol{\alpha} \in V$，有唯一的一组有序实数 $(x_1, x_2, \cdots, x_n)$，使
+
+$$
+\boldsymbol{\alpha} = x_1 \boldsymbol{\alpha}_1 + x_2 \boldsymbol{\alpha}_2 + \cdots + x_n \boldsymbol{\alpha}_n.
+$$
+
+反之，任给一组有序实数 $(x_1, x_2, \cdots, x_n)$，有唯一的元素 $\boldsymbol{\alpha} \in V$，使
+
+$$
+\boldsymbol{\alpha} = x_1 \boldsymbol{\alpha}_1 + x_2 \boldsymbol{\alpha}_2 + \cdots + x_n \boldsymbol{\alpha}_n.
+$$
+
+这样，$V$ 中的元素 $\boldsymbol{\alpha} = x_1 \boldsymbol{\alpha}_1 + x_2 \boldsymbol{\alpha}_2 + \cdots + x_n \boldsymbol{\alpha}_n$ 与有序实数组 $(x_1, x_2, \cdots, x_n)$ 之间存在一一对应的关系，可以用有序实数组 $(x_1, x_2, \cdots, x_n)$ 来表示 $\boldsymbol{\alpha}$。
+
+<Knowledge title="定义 4 坐标的定义与形式化记号">
+
+设 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 是 $n$ 维线性空间 $V$ 的一组基。对于 $V$ 中的任意元素 $\boldsymbol{\alpha}$，存在唯一的有序实数组 $(x_1, x_2, \cdots, x_n)$，使
+
+$$
+\boldsymbol{\alpha} = x_1 \boldsymbol{\alpha}_1 + x_2 \boldsymbol{\alpha}_2 + \cdots + x_n \boldsymbol{\alpha}_n.
+$$
+
+将此式形式地表示为矩阵乘积形式：
+
+$$
+\boldsymbol{\alpha} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n)\boldsymbol{x}, \quad \text{其中 } \boldsymbol{x} = (x_1, x_2, \cdots, x_n)^\mathrm{T},
+$$
+
+称列向量 $\boldsymbol{x}$ 为元素 $\boldsymbol{\alpha}$ 在基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 下的**坐标**。
+
+</Knowledge>
+
+<SideNote title="基的有序性对坐标的影响">
+例如在例 9 中，元素 $\boldsymbol{A} = \begin{pmatrix} 1 & -1 \\ 2 & 3 \end{pmatrix}$ 在基 $\boldsymbol{E}_{11}, \boldsymbol{E}_{12}, \boldsymbol{E}_{21}, \boldsymbol{E}_{22}$ 下的坐标为 $(1, -1, 2, 3)^\mathrm{T}$。
+
+值得注意的是基是有序的，当基的排序变化时，元素的坐标也会变化。如该元素 $\boldsymbol{A}$ 在基 $\boldsymbol{E}_{11}, \boldsymbol{E}_{21}, \boldsymbol{E}_{12}, \boldsymbol{E}_{22}$ 下的坐标则变为 $(1, 2, -1, 3)^\mathrm{T}$。
+</SideNote>
+
+## 三、线性空间与 $\mathbf{R}^n$ 的同构本质
+
+在 $n$ 维线性空间 $V$ 中取一组基 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 以后，相当于在 $V$ 中以 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_n$ 为“坐标轴”建立了“坐标系”。$V$ 中的任意元素 $\boldsymbol{\alpha} = x_1 \boldsymbol{\alpha}_1 + x_2 \boldsymbol{\alpha}_2 + \cdots + x_n \boldsymbol{\alpha}_n$ 与其坐标（即 $\mathbf{R}^n$ 中的向量）$\boldsymbol{x} = (x_1, x_2, \cdots, x_n)^\mathrm{T}$ 之间有了对应关系。将这一一一对应的关系表示为
+
+$$
+\boldsymbol{\alpha} \longleftrightarrow \boldsymbol{x} = (x_1, x_2, \cdots, x_n)^\mathrm{T}.
+$$
+
+设 $\boldsymbol{\alpha} \longleftrightarrow \boldsymbol{x} = (x_1, x_2, \cdots, x_n)^\mathrm{T}, \boldsymbol{\beta} \longleftrightarrow \boldsymbol{y} = (y_1, y_2, \cdots, y_n)^\mathrm{T}$，即
+
+$$
+\boldsymbol{\alpha} = x_1 \boldsymbol{\alpha}_1 + x_2 \boldsymbol{\alpha}_2 + \cdots + x_n \boldsymbol{\alpha}_n, \quad \boldsymbol{\beta} = y_1 \boldsymbol{\alpha}_1 + y_2 \boldsymbol{\alpha}_2 + \cdots + y_n \boldsymbol{\alpha}_n.
+$$
+
+则
+
+$$
+\boldsymbol{\alpha} + \boldsymbol{\beta} = (x_1 + y_1)\boldsymbol{\alpha}_1 + (x_2 + y_2)\boldsymbol{\alpha}_2 + \cdots + (x_n + y_n)\boldsymbol{\alpha}_n,
+$$
+
+且对任意实数 $\lambda$，
+
+$$
+\lambda\boldsymbol{\alpha} = \lambda x_1 \boldsymbol{\alpha}_1 + \lambda x_2 \boldsymbol{\alpha}_2 + \cdots + \lambda x_n \boldsymbol{\alpha}_n.
+$$
+
+即
+
+$$
+\boldsymbol{\alpha} + \boldsymbol{\beta} \longleftrightarrow \boldsymbol{x} + \boldsymbol{y} = (x_1 + y_1, x_2 + y_2, \cdots, x_n + y_n)^\mathrm{T};
+$$
+
+$$
+\lambda\boldsymbol{\alpha} \longleftrightarrow \lambda\boldsymbol{x} = (\lambda x_1, \lambda x_2, \cdots, \lambda x_n)^\mathrm{T}.
+$$
+
+这说明这一对应不仅将 $V$ 中的元素 $\boldsymbol{\alpha} = x_1 \boldsymbol{\alpha}_1 + \cdots + x_n \boldsymbol{\alpha}_n$ 对应成 $\mathbf{R}^n$ 中的向量 $\boldsymbol{x} = (x_1, \cdots, x_n)^\mathrm{T}$，而且将 $V$ 中抽象的加法 $\boldsymbol{\alpha} + \boldsymbol{\beta}$ 与数乘 $\lambda\boldsymbol{\alpha}$ 对应成 $\mathbf{R}^n$ 中具体的向量加法 $\boldsymbol{x} + \boldsymbol{y}$ 与数乘 $\lambda\boldsymbol{x}$。
+
+如果将 $V$ 中的 $\boldsymbol{\alpha}$ 看成 $\mathbf{R}^n$ 中的 $\boldsymbol{x}$，则从结构上看，$V$ 与 $\mathbf{R}^n$ 是完全相同的，也就是说，所有 $n$ 维线性空间的结构与 $\mathbf{R}^n$ 都是相同的。$\mathbf{R}^n$ 可以作为任意一个 $n$ 维线性空间的“模型”。凡是 $\mathbf{R}^n$ 中只涉及向量加法与数乘运算的性质，对一般 $n$ 维线性空间都是适用的。
+
+<ExerciseTrigger chapter={9} section="9.2" title="9.2 线性空间的基与坐标 课后真题与自测练习" />

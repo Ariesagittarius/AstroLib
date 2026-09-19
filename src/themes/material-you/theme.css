@@ -2462,7 +2462,7 @@ html[data-site-theme='material-you'] .ex-info-svg {
 /* 6.1.1 M3 Rich Tooltip for Open Source Licenses */
 .ex-rich-tooltip-layer {
   position: fixed !important;
-  z-index: 10000 !important;
+  z-index: var(--layer-popover, 300) !important;
   pointer-events: none !important;
   opacity: 0 !important;
   transform: translateY(4px) scale(0.96) !important;
@@ -2579,6 +2579,10 @@ html[data-site-theme='material-you'] .ex-info-svg {
     border-left: 1px solid var(--sl-color-hairline) !important;
   }
 
+  html[data-site-theme='material-you'][data-sideload-active='ai'] .right-sidebar-container {
+    padding: 0 !important;
+  }
+
   html[data-site-theme='material-you'] .right-sidebar {
     position: static !important;
     height: 100% !important;
@@ -2640,6 +2644,12 @@ html[data-sideload-active]:not([data-sideload-active='toc']):not([data-sideload-
 
 html[data-sideload-active='exercises'] .sideload-panel-view[data-panel-id='exercises'],
 .custom-page-sidebar.has-exercise-active .sideload-panel-view[data-panel-id='exercises'] {
+  display: flex !important;
+}
+
+html[data-sideload-active='ai'] .sideload-panel-view[data-panel-id='ai'],
+.custom-page-sidebar.has-ai-active .sideload-panel-view[data-panel-id='ai'],
+body.ai-sidebar-active .sideload-panel-view[data-panel-id='ai'] {
   display: flex !important;
 }
 
@@ -3426,7 +3436,7 @@ html[data-site-theme='material-you'][data-theme='dark'] .ex-card-ai-body {
 /* 6.1.3 M3 Rich Tooltip for AI Derivation Reading */
 .ex-ai-rich-tooltip {
   position: fixed !important;
-  z-index: 10050 !important;
+  z-index: var(--layer-dialog, 500) !important;
   display: flex !important;
   flex-direction: column !important;
   width: min(560px, calc(100vw - 360px)) !important;
@@ -4918,8 +4928,8 @@ html[data-site-theme='material-you'] ai-ask .ask-fab svg {
   color: var(--md-sys-color-on-primary-container) !important;
 }
 
-/* AI Assistant Panel (M3 12px Clean Surface Dialog) */
-html[data-site-theme='material-you'] ai-ask .ask-panel {
+/* AI Assistant Panel (M3 12px Clean Surface Dialog for Floating Mode) */
+html[data-site-theme='material-you'] ai-ask:not(.is-docked) .ask-panel {
   background-color: var(--md-sys-color-surface, #ffffff) !important;
   border: 1px solid var(--md-sys-color-outline-variant) !important;
   border-radius: 12px !important;
@@ -4927,10 +4937,31 @@ html[data-site-theme='material-you'] ai-ask .ask-panel {
   overflow: hidden !important;
 }
 
-html[data-site-theme='material-you'] ai-ask .ask-head {
+/* 停靠于侧载底座时完全溶于侧栏，彻底消除圆角与边框产生的死角/小尖尖 */
+html[data-site-theme='material-you'] ai-ask.is-docked,
+html[data-site-theme='material-you'] ai-ask.is-docked .ask-panel,
+html[data-site-theme='material-you'][data-sideload-active='ai'] ai-ask,
+html[data-site-theme='material-you'][data-sideload-active='ai'] ai-ask .ask-panel,
+html[data-site-theme='material-you'] .ai-sidebar-panel ai-ask .ask-panel {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+}
+
+html[data-site-theme='material-you'] ai-ask:not(.is-docked) .ask-head {
   background-color: var(--md-sys-color-surface, #ffffff) !important;
   border-bottom: 1px solid var(--md-sys-color-outline-variant) !important;
   padding: 0.75rem 1.15rem !important;
+}
+
+html[data-site-theme='material-you'] ai-ask.is-docked .ask-head,
+html[data-site-theme='material-you'][data-sideload-active='ai'] ai-ask .ask-head,
+html[data-site-theme='material-you'] .ai-sidebar-panel ai-ask .ask-head {
+  border-radius: 0 !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
 }
 
 html[data-site-theme='material-you'] ai-ask .ask-title {
@@ -6264,7 +6295,7 @@ html[data-site-theme='material-you'][data-theme='dark'] .ex-license-dialog {
   gap: 0.85rem;
   position: absolute;
   inset: 0;
-  z-index: 20;
+  z-index: var(--layer-local-nested, 10);
   background: color-mix(in srgb, var(--md-sys-color-surface, var(--sl-color-bg, #ffffff)) 88%, transparent);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
@@ -6276,7 +6307,7 @@ html[data-site-theme='material-you'][data-theme='dark'] .ex-license-dialog {
 .m3-loading-overlay-host {
   position: absolute;
   inset: 0;
-  z-index: 20;
+  z-index: var(--layer-local-nested, 10);
   pointer-events: auto;
   border-radius: inherit;
 }

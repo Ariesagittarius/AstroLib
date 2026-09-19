@@ -1,0 +1,424 @@
+---
+title: '1.4 行列式的性质'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+因为 $n$ 阶行列式是 $n!$ 项求和，而且每一项都是 $n$ 个数的乘积，当 $n$ 稍大一些时，计算量就非常大，很难直接用定义去求行列式的值。利用行列式性质可有效解决行列式的求值问题。于是我们必须研究行列式的性质，并利用行列式的性质来简化行列式的计算。
+
+将行列式 $D$ 的第 $i$ 行作为第 $i$ 列，第 $i$ 列作为第 $i$ 行 ($i = 1, 2, \cdots, n$) 得到的行列式称为 $D$ 的**转置行列式**，记为 $D^T$ 或 $D'$。即如果
+
+$$
+D = \begin{vmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+a_{21} & a_{22} & \cdots & a_{2n} \\
+\vdots & \vdots & & \vdots \\
+a_{n1} & a_{n2} & \cdots & a_{nn}
+\end{vmatrix}, \quad \text{则} \quad D^T = \begin{vmatrix}
+a_{11} & a_{21} & \cdots & a_{n1} \\
+a_{12} & a_{22} & \cdots & a_{n2} \\
+\vdots & \vdots & & \vdots \\
+a_{1n} & a_{2n} & \cdots & a_{nn}
+\end{vmatrix}.
+$$
+
+## 一、行列式的六大核心性质
+
+<Knowledge title="性质 1 转置不变性">
+
+行列式与它的转置行列式相等，即
+
+$$
+D^T = D.
+$$
+
+</Knowledge>
+
+<SideNote title="行列对称原理">
+性质 1 说明行列式的行和列具有同等的地位，凡是对行成立的性质，对列也一样成立，反之亦然。因此下面所讨论的行列式的性质，只对行的情形加以证明。
+</SideNote>
+
+<Knowledge title="性质 2 换行变号性">
+
+互换行列式的任意两行（列），行列式的值改变符号，即
+
+$$
+\begin{vmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+\vdots & \vdots & & \vdots \\
+a_{i1} & a_{i2} & \cdots & a_{in} \\
+\vdots & \vdots & & \vdots \\
+a_{k1} & a_{k2} & \cdots & a_{kn} \\
+\vdots & \vdots & & \vdots \\
+a_{n1} & a_{n2} & \cdots & a_{nn}
+\end{vmatrix} = - \begin{vmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+\vdots & \vdots & & \vdots \\
+a_{k1} & a_{k2} & \cdots & a_{kn} \\
+\vdots & \vdots & & \vdots \\
+a_{i1} & a_{i2} & \cdots & a_{in} \\
+\vdots & \vdots & & \vdots \\
+a_{n1} & a_{n2} & \cdots & a_{nn}
+\end{vmatrix}. \tag{1.11}
+$$
+
+</Knowledge>
+
+<Solution title="证明">
+
+设式 (1.11) 中左边的行列式为 $D_1$，右边的式子为 $D_2$。且设 $D_2$ 的元素为 $b_{ij}$，则
+
+$$
+b_{ij} = a_{kj}, \quad b_{kj} = a_{ij} \quad (j = 1, 2, \cdots, n),
+$$
+
+$$
+b_{tj} = a_{tj} \quad (t \neq i, k; j = 1, 2, \cdots, n).
+$$
+
+按 $n$ 阶行列式的定义，互换两行相当于在对应乘积项中做了一次对换，由于对换改变排列的奇偶性，因此展开式中所有项均改变符号，故 $D_2 = -D_1$。
+
+</Solution>
+
+<Knowledge title="推论 1.3 两行相同则行列式为零">
+
+如果行列式中有两行（列）完全相同，则此行列式的值等于零。
+
+</Knowledge>
+
+<Solution title="证明">
+
+互换行列式 $D$ 中的这两个相同行，其结果仍是 $D$，但由性质 2 可知其结果为 $-D$。因此 $D = -D$，得 $2D = 0$，所以 $D = 0$。
+
+</Solution>
+
+<Knowledge title="性质 3 数乘提公因子性">
+
+行列式的某一行（列）中所有元素的公因子可以提到行列式符号的外面：
+
+$$
+\begin{vmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+\vdots & \vdots & & \vdots \\
+k a_{i1} & k a_{i2} & \cdots & k a_{in} \\
+\vdots & \vdots & & \vdots \\
+a_{n1} & a_{n2} & \cdots & a_{nn}
+\end{vmatrix} = k \begin{vmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+\vdots & \vdots & & \vdots \\
+a_{i1} & a_{i2} & \cdots & a_{in} \\
+\vdots & \vdots & & \vdots \\
+a_{n1} & a_{n2} & \cdots & a_{nn}
+\end{vmatrix}.
+$$
+
+</Knowledge>
+
+<Knowledge title="推论 1.4 全零行推论">
+
+如果行列式中某一行（列）的元素全为零，则此行列式的值等于零。
+
+</Knowledge>
+
+<Knowledge title="性质 4 两行成比例则行列式为零">
+
+如果行列式中某两行（列）的对应元素成比例，则此行列式的值等于零。
+
+</Knowledge>
+
+<Solution title="证明">
+
+设第 $j$ 行元素是第 $i$ 行元素的 $k$ 倍，由性质 3 将比例系数 $k$ 提出，剩下的行列式有两行对应元素完全相同，由推论 1.3 可知该行列式为 0，从而 $D = k \times 0 = 0$。
+
+</Solution>
+
+<Example title="例 7 成比例行列式求值">
+
+计算行列式
+
+$$
+D = \begin{vmatrix}
+1 & -2 & 5 \\
+2 & 5 & 6 \\
+-2 & 4 & -10
+\end{vmatrix}.
+$$
+
+</Example>
+
+<Solution title="解">
+
+因为第 3 行元素与第 1 行对应元素成比例（第 3 行是第 1 行的 $-2$ 倍），根据性质 4，直接得出 $D = 0$。
+
+</Solution>
+
+<Example title="例 8 求解行列式方程的所有根">
+
+求出 $x$ 的四次方程
+
+$$
+f(x) = \begin{vmatrix}
+1 & 1 & 2 & 3 \\
+1 & 2-x^2 & 2 & 3 \\
+2 & 3 & 1 & 5 \\
+2 & 3 & 1 & 9-x^2
+\end{vmatrix} = 0
+$$
+
+的所有实根。
+
+</Example>
+
+<Solution title="解">
+
+根据行列式的定义，在其展开式中必有一项包含对角线元素乘积：
+
+$$
+1 \times (2 - x^2) \times 1 \times (9 - x^2) = x^4 - 11x^2 + 18.
+$$
+
+而且在整个行列式中，$x$ 的最高次数是 4，所以 $f(x) = 0$ 是四次方程，它最多有四个实数根。
+
+将 $x = 1$ 代入行列式，第 2 行变为 $[1, 1, 2, 3]$，与第 1 行完全相同，因此 $f(1) = 0$；由于含有的是 $x^2$，将 $x = -1$ 代入同样使得第 1、2 行相同，故 $f(-1) = 0$。
+
+将 $x = 2$ 代入行列式，第 4 行变为 $[2, 3, 1, 5]$，与第 3 行完全相同，因此 $f(2) = 0$；同理 $f(-2) = 0$。
+
+因此，$x = \pm 1$ 和 $x = \pm 2$ 就是所求方程的全部四个根。
+
+</Solution>
+
+<Knowledge title="性质 5 单行拆项可加性">
+
+行列式可以按行（列）拆开：
+
+$$
+\begin{vmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+\vdots & \vdots & & \vdots \\
+a_{i1} + b_{i1} & a_{i2} + b_{i2} & \cdots & a_{in} + b_{in} \\
+\vdots & \vdots & & \vdots \\
+a_{n1} & a_{n2} & \cdots & a_{nn}
+\end{vmatrix} = \begin{vmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+\vdots & \vdots & & \vdots \\
+a_{i1} & a_{i2} & \cdots & a_{in} \\
+\vdots & \vdots & & \vdots \\
+a_{n1} & a_{n2} & \cdots & a_{nn}
+\end{vmatrix} + \begin{vmatrix}
+a_{11} & a_{12} & \cdots & a_{1n} \\
+\vdots & \vdots & & \vdots \\
+b_{i1} & b_{i2} & \cdots & b_{in} \\
+\vdots & \vdots & & \vdots \\
+a_{n1} & a_{n2} & \cdots & a_{nn}
+\end{vmatrix}.
+$$
+
+</Knowledge>
+
+<Knowledge title="性质 6 初等行变换保值性">
+
+把行列式 $D$ 的某一行（列）的所有元素都乘以同一个数以后加到另一行（列）的对应元素上去，所得的行列式的值仍为 $D$。
+
+</Knowledge>
+
+<Solution title="证明">
+
+将变换后的行列式按所改动的行用性质 5 拆开为两项：第一项即为原行列式 $D$；第二项中改动行的元素提取倍数 $k$ 后与原有行完全相同，由性质 4 其值恒为 0。因此两项之和仍为 $D + 0 = D$。
+
+</Solution>
+
+## 二、初等变换记号与高阶化简技巧
+
+为了叙述方便，引入以下初等变换记号：
+1. 对换行列式的 $i, j$ 两行（或列），记作 $r_i \leftrightarrow r_j$（或 $c_i \leftrightarrow c_j$）；
+2. 把行列式的第 $i$ 行（或列）提出公因子 $k$，记作 $r_i \div k$（或 $c_i \div k$）；
+3. 把行列式的第 $j$ 行（或列）的 $k$ 倍加到第 $i$ 行（或列）上，记作 $r_i + k r_j$（或 $c_i + k c_j$）。
+
+<Example title="例 9 利用性质 5 与性质 6 计算行列式">
+
+计算行列式
+
+$$
+D = \begin{vmatrix}
+1 & 2 & 6 \\
+3 & -2 & 1 \\
+301 & -204 & 106
+\end{vmatrix}.
+$$
+
+</Example>
+
+<Solution title="解">
+
+将第 3 行拆开：
+
+$$
+D = \begin{vmatrix}
+1 & 2 & 6 \\
+3 & -2 & 1 \\
+300 + 1 & -200 + 4 & 100 + 6
+\end{vmatrix}
+$$
+
+$$
+= \begin{vmatrix}
+1 & 2 & 6 \\
+3 & -2 & 1 \\
+300 & -200 & 100
+\end{vmatrix} + \begin{vmatrix}
+1 & 2 & 6 \\
+3 & -2 & 1 \\
+1 & 4 & 6
+\end{vmatrix}.
+$$
+
+前一个行列式的第 3 行是第 2 行的 100 倍，故其值为 0；后一个行列式对第 3 行作行变换 $r_3 - r_1$，得
+
+$$
+D = 0 + \begin{vmatrix}
+1 & 2 & 6 \\
+3 & -2 & 1 \\
+0 & 2 & 0
+\end{vmatrix} = 2 \times (-1)^{3+2} \begin{vmatrix} 1 & 6 \\ 3 & 1 \end{vmatrix} = -2 \times (1 - 18) = 34.
+$$
+
+</Solution>
+
+<Example title="例 10 判定行列式等于零的充要条件">
+
+证明
+
+$$
+D = \begin{vmatrix}
+1 & 1 & 0 & 0 \\
+1 & k & 1 & 0 \\
+0 & 0 & k & 2 \\
+0 & 0 & 2 & k
+\end{vmatrix} = 0
+$$
+
+的充分必要条件是 $k = 1$ 或 $k = \pm 2$。
+
+</Example>
+
+<Solution title="证明">
+
+对行列式作初等变换 $r_2 - r_1$：
+
+$$
+D \xlongequal{r_2 - r_1} \begin{vmatrix}
+1 & 1 & 0 & 0 \\
+0 & k-1 & 1 & 0 \\
+0 & 0 & k & 2 \\
+0 & 0 & 2 & k
+\end{vmatrix}.
+$$
+
+由于这是一个分块对角矩阵形式，直接计算或继续化简可得：
+
+$$
+D = 1 \cdot (k-1) \cdot \begin{vmatrix} k & 2 \\ 2 & k \end{vmatrix} = (k-1)(k^2 - 4).
+$$
+
+因此 $D = 0 \iff (k-1)(k^2 - 4) = 0 \iff k = 1$ 或 $k = \pm 2$。
+
+</Solution>
+
+<Example title="例 11 行和相等的 n 阶行列式计算">
+
+计算 $n$ 阶行列式
+
+$$
+D = \begin{vmatrix}
+a & b & b & \cdots & b \\
+b & a & b & \cdots & b \\
+b & b & a & \cdots & b \\
+\vdots & \vdots & \vdots & & \vdots \\
+b & b & b & \cdots & a
+\end{vmatrix}.
+$$
+
+</Example>
+
+<Solution title="解">
+
+这个 $n$ 阶行列式的特点是：每一行的元素之和都等于常数 $a + (n-1)b$。因此，把第 2 列、第 3 列、$\cdots$、第 $n$ 列分别加到第 1 列上，就可以使第 1 列含有公因子 $a + (n-1)b$。把该公因子提出后，第 1 列元素全为 1：
+
+$$
+D = \begin{vmatrix}
+a + (n-1)b & b & b & \cdots & b \\
+a + (n-1)b & a & b & \cdots & b \\
+a + (n-1)b & b & a & \cdots & b \\
+\vdots & \vdots & \vdots & & \vdots \\
+a + (n-1)b & b & b & \cdots & a
+\end{vmatrix} = [a + (n-1)b] \begin{vmatrix}
+1 & b & b & \cdots & b \\
+1 & a & b & \cdots & b \\
+1 & b & a & \cdots & b \\
+\vdots & \vdots & \vdots & & \vdots \\
+1 & b & b & \cdots & a
+\end{vmatrix}.
+$$
+
+再从第 2 行到第 $n$ 行分别减去第 1 行（$r_i - r_1, i = 2, 3, \cdots, n$），化为上三角形行列式：
+
+$$
+D = [a + (n-1)b] \begin{vmatrix}
+1 & b & b & \cdots & b \\
+0 & a-b & 0 & \cdots & 0 \\
+0 & 0 & a-b & \cdots & 0 \\
+\vdots & \vdots & \vdots & \ddots & \vdots \\
+0 & 0 & 0 & \cdots & a-b
+\end{vmatrix} = [a + (n-1)b](a-b)^{n-1}.
+$$
+
+当 $n=1$ 时，上式公式同样成立。
+
+</Solution>
+
+<Example title="例 12 差值型行列式化简">
+
+计算行列式
+
+$$
+D = \begin{vmatrix}
+a_1 - b_1 & a_1 - b_2 & a_1 - b_3 \\
+a_2 - b_1 & a_2 - b_2 & a_2 - b_3 \\
+a_3 - b_1 & a_3 - b_2 & a_3 - b_3
+\end{vmatrix}.
+$$
+
+</Example>
+
+<Solution title="解">
+
+将行列式的后两行都减去第 1 行（$r_2 - r_1, r_3 - r_1$），得
+
+$$
+D = \begin{vmatrix}
+a_1 - b_1 & a_1 - b_2 & a_1 - b_3 \\
+a_2 - a_1 & a_2 - a_1 & a_2 - a_1 \\
+a_3 - a_1 & a_3 - a_1 & a_3 - a_1
+\end{vmatrix} = (a_2 - a_1)(a_3 - a_1) \begin{vmatrix}
+a_1 - b_1 & a_1 - b_2 & a_1 - b_3 \\
+1 & 1 & 1 \\
+1 & 1 & 1
+\end{vmatrix} = 0.
+$$
+
+因为所得行列式有两行对应元素完全相同，由推论 1.3 其值必为 0。
+
+</Solution>
+
+<ExerciseTrigger chapter={1} section="1.4" title="1.4 行列式的性质 课后真题与自测练习" />

@@ -59,6 +59,12 @@ class SideloadManager {
       widthTier: 'wide',
       allowDrawer: true,
     });
+    this.register({
+      id: 'ai',
+      title: '智能问答',
+      widthTier: 'wide',
+      allowDrawer: true,
+    });
   }
 
   /**
@@ -193,6 +199,14 @@ class SideloadManager {
     } else {
       body.classList.remove('exercise-sidebar-active');
       document.querySelector('.custom-page-sidebar')?.classList.remove('has-exercise-active');
+    }
+
+    if (state.activePanelId === 'ai') {
+      body.classList.add('ai-sidebar-active');
+      document.querySelector('.custom-page-sidebar')?.classList.add('has-ai-active');
+    } else {
+      body.classList.remove('ai-sidebar-active');
+      document.querySelector('.custom-page-sidebar')?.classList.remove('has-ai-active');
     }
 
     // 2. 注入核心 CSS 变量（驱动宽度平滑过渡）

@@ -1,0 +1,863 @@
+  /* ===== 模块索引速查抽屉 · 学术排版视觉系统（Scholarly Index） ===== */
+  :root {
+    --insp-brand: var(--sl-color-accent, #1e3a8a);
+    --insp-brand-hover: var(--sl-color-accent-high, #1e40af);
+    --insp-brand-soft: var(--sl-color-accent-low, rgba(30, 58, 138, 0.06));
+    --insp-bg: var(--sl-color-bg, #ffffff);
+    --insp-bg-soft: var(--sl-color-gray-6, #f8f9fa);
+    --insp-bg-mute: var(--sl-color-gray-5, #e8eaed);
+    --insp-text-1: var(--sl-color-white, #1a1a1a);
+    --insp-text-2: var(--sl-color-gray-2, #555960);
+    --insp-text-3: var(--sl-color-gray-3, #888c94);
+    --insp-border: var(--sl-color-hairline, #e8eaed);
+    --insp-font-mono: var(--sl-font-mono, ui-monospace, 'Menlo', 'Monaco', monospace);
+  }
+
+  html[data-theme='dark'] {
+    --insp-brand: var(--sl-color-accent, #93b4ff);
+    --insp-brand-hover: var(--sl-color-accent-high, #b8ceff);
+    --insp-brand-soft: var(--sl-color-accent-low, rgba(147, 180, 255, 0.1));
+    --insp-bg: var(--sl-color-bg, #17171a);
+    --insp-bg-soft: var(--sl-color-bg-inline-code, #202126);
+    --insp-bg-mute: var(--sl-color-hairline, #28282c);
+    --insp-text-1: var(--sl-color-white, #dfdfd6);
+    --insp-text-2: var(--sl-color-gray-2, #98989f);
+    --insp-text-3: var(--sl-color-gray-3, #6e6e76);
+    --insp-border: var(--sl-color-hairline, #28282c);
+  }
+
+  /* 宿主容器（Portal 提升至 overlay root，边缘抽屉层级） */
+  .insp-root {
+    position: fixed;
+    inset: 0;
+    z-index: var(--layer-drawer);
+    pointer-events: none;
+    font-family: var(--sl-font, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', sans-serif);
+  }
+  .insp-root * {
+    box-sizing: border-box;
+  }
+
+  /* 遮罩背景：轻度暗化，彻底移除 blur 模糊，让读者感知原书页依然在背后 */
+  .insp-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.16);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    z-index: var(--layer-local-surface);
+  }
+  html[data-theme='dark'] .insp-backdrop {
+    background: rgba(0, 0, 0, 0.36);
+  }
+  .insp-open .insp-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* 抽屉面板：学术索引侧栏宽度（约 410px），轻量 1px 细线边框与极微弱投影 */
+  .insp-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    height: 100vh;
+    height: 100dvh;
+    width: min(92vw, 410px);
+    background: var(--insp-bg);
+    color: var(--insp-text-1);
+    border-left: 1px solid var(--insp-border);
+    box-shadow: -2px 0 16px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    z-index: var(--layer-local-elevated);
+  }
+  html[data-theme='dark'] .insp-panel {
+    box-shadow: -2px 0 20px rgba(0, 0, 0, 0.35);
+  }
+  .insp-open .insp-panel {
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  /* 头部区域：书名为主体，模块索引为定性说明 */
+  .insp-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 13px 16px 11px;
+    border-bottom: 1px solid var(--insp-border);
+    background: var(--insp-bg);
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .insp-header-left {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+  }
+  .insp-header-title-box {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .insp-header-kicker-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .insp-header-kicker {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--insp-text-3);
+    letter-spacing: 0.04em;
+    line-height: 1.3;
+  }
+  .insp-header-dev-tag {
+    font-size: 9px;
+    font-family: var(--insp-font-mono);
+    color: var(--insp-text-3);
+    border: 1px solid var(--insp-border);
+    padding: 0 3px;
+    border-radius: 2px;
+    line-height: 1.2;
+    opacity: 0.7;
+  }
+  .insp-header-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    margin: 2px 0 3px;
+    line-height: 1.25;
+    color: var(--insp-text-1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.01em;
+  }
+  .insp-book-select-wrap {
+    display: flex;
+    align-items: center;
+    margin-top: 1px;
+  }
+  .insp-book-select {
+    font-size: 11px;
+    color: var(--insp-text-2);
+    background: var(--insp-bg-soft);
+    border: 1px solid var(--insp-border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    cursor: pointer;
+    max-width: 100%;
+    transition: border-color 0.15s;
+  }
+  .insp-book-select:focus {
+    outline: none;
+    border-color: var(--insp-brand);
+  }
+  .insp-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .insp-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    border: none;
+    background: transparent;
+    color: var(--insp-text-3);
+    cursor: pointer;
+    transition: background-color 0.12s, color 0.12s;
+  }
+  .insp-icon-btn:hover {
+    background: var(--insp-bg-soft);
+    color: var(--insp-text-1);
+  }
+  .insp-icon-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+  .insp-refresh-btn.spinning svg {
+    animation: insp-spin 0.75s linear infinite;
+  }
+  @keyframes insp-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* 工具栏：检索输入框与章节选择 */
+  .insp-toolbar {
+    padding: 8px 16px;
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid var(--insp-border);
+    background: var(--insp-bg);
+    flex-shrink: 0;
+  }
+  .insp-search-box {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+  .insp-search-icon {
+    position: absolute;
+    left: 8px;
+    width: 13px;
+    height: 13px;
+    color: var(--insp-text-3);
+    pointer-events: none;
+  }
+  .insp-search-input {
+    width: 100%;
+    height: 30px;
+    padding: 0 26px 0 28px;
+    font-size: 11.5px;
+    border: 1px solid var(--insp-border);
+    border-radius: 4px;
+    background: var(--insp-bg-soft);
+    color: var(--insp-text-1);
+    transition: border-color 0.15s, background-color 0.15s;
+  }
+  .insp-search-input:focus {
+    outline: none;
+    border-color: var(--insp-brand);
+    background: var(--insp-bg);
+  }
+  .insp-search-clear {
+    position: absolute;
+    right: 5px;
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: transparent;
+    color: var(--insp-text-3);
+    cursor: pointer;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    opacity: 0;
+    transform: scale(0.7);
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+  .insp-search-clear.visible {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+  .insp-search-clear svg {
+    width: 11px;
+    height: 11px;
+  }
+  .insp-search-clear:hover {
+    color: var(--insp-text-1);
+  }
+  .insp-chapter-filter-box {
+    width: 120px;
+    flex-shrink: 0;
+  }
+  .insp-chapter-select {
+    width: 100%;
+    height: 30px;
+    font-size: 11px;
+    padding: 0 5px;
+    border: 1px solid var(--insp-border);
+    border-radius: 4px;
+    background: var(--insp-bg-soft);
+    color: var(--insp-text-2);
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .insp-chapter-select:focus {
+    outline: none;
+    border-color: var(--insp-brand);
+  }
+
+  /* 一级分类 Tabs：极简学术下划线式，数字伴随于文字后，无胶囊药丸 */
+  .insp-tabs {
+    display: flex;
+    padding: 0 16px;
+    gap: 12px;
+    border-bottom: 1px solid var(--insp-border);
+    background: var(--insp-bg);
+    flex-shrink: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .insp-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .insp-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 7px 0 6px;
+    font-size: 11.5px;
+    font-weight: 500;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--insp-text-2);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.12s, border-color 0.12s;
+  }
+  .insp-tab:hover {
+    color: var(--insp-text-1);
+  }
+  .insp-tab.active {
+    color: var(--insp-text-1);
+    border-bottom-color: var(--insp-brand);
+    font-weight: 600;
+  }
+  .insp-tab-count {
+    font-size: 10.5px;
+    font-family: var(--insp-font-mono);
+    color: var(--insp-text-3);
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-weight: normal;
+  }
+  .insp-tab.active .insp-tab-count {
+    color: var(--insp-brand);
+    font-weight: 600;
+  }
+  .insp-tab-count.danger {
+    color: #dc2626 !important;
+  }
+
+  /* 二级分类 Filter：单行轻量横向滚动，去除厚重胶囊边框 */
+  .insp-kind-chips-wrap {
+    padding: 6px 16px;
+    border-bottom: 1px solid var(--insp-border);
+    flex-shrink: 0;
+    background: var(--insp-bg);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .insp-kind-chips-wrap::-webkit-scrollbar {
+    display: none;
+  }
+  .insp-kind-chips {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+  .insp-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: none;
+    background: transparent;
+    color: var(--insp-text-2);
+    cursor: pointer;
+    transition: color 0.12s, background-color 0.12s;
+  }
+  .insp-chip:hover {
+    color: var(--insp-text-1);
+    background: var(--insp-bg-soft);
+  }
+  .insp-chip.active {
+    background: var(--insp-brand-soft);
+    color: var(--insp-brand);
+    font-weight: 600;
+  }
+  .insp-chip.insp-chip-empty {
+    opacity: 0.35;
+  }
+  .insp-chip-count {
+    font-size: 9.5px;
+    font-family: var(--insp-font-mono);
+    color: var(--insp-text-3);
+    opacity: 0.85;
+  }
+
+  /* 主体列表容器：纯白/深色纸底，0 间距连续学术索引流 */
+  .insp-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    background: var(--insp-bg);
+  }
+  .insp-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .insp-items-count-hint {
+    font-size: 10.5px;
+    color: var(--insp-text-3);
+    padding: 6px 16px;
+    border-bottom: 1px solid var(--insp-border);
+    background: var(--insp-bg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .insp-count-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+  }
+  .insp-count-highlight {
+    color: var(--insp-text-1);
+  }
+  .insp-status-badge {
+    font-size: 10.5px;
+    color: var(--insp-text-2);
+    background: transparent;
+    border: none;
+    padding: 0;
+  }
+  .insp-count-book-tag {
+    display: none;
+  }
+
+  /* 学术索引列表条目：消除卡片形态，采用 1px 细线分隔，hover 仅极淡底色 */
+  .insp-item-row {
+    background: var(--insp-bg);
+    border: none;
+    border-bottom: 1px solid var(--insp-border);
+    border-left: 2px solid transparent;
+    padding: 11px 16px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    cursor: pointer;
+    transition: background-color 0.12s ease, border-left-color 0.12s ease;
+    content-visibility: auto;
+    contain-intrinsic-size: 0 85px;
+  }
+  .insp-item-row:hover {
+    background: var(--insp-bg-soft);
+  }
+
+  /* 当前定位激活状态：极细品牌色左竖线 + 极淡雅背景，无大面积蓝色 */
+  .insp-item-row.is-located {
+    background: var(--insp-brand-soft);
+    border-left-color: var(--insp-brand);
+  }
+
+  /* 搜索关键词高亮 */
+  .insp-search-match {
+    background: var(--insp-brand-soft);
+    color: var(--insp-brand);
+    border-radius: 2px;
+    padding: 0 1.5px;
+    font-weight: 600;
+  }
+
+  /* 条目头部排版与幽灵操作栏 */
+  .insp-item-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .insp-item-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    flex: 1;
+  }
+  .insp-item-kicker {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--insp-text-2);
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+  }
+  .insp-item-row.is-located .insp-item-kicker {
+    color: var(--insp-brand);
+  }
+  .insp-item-title {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--insp-text-1);
+    line-height: 1.35;
+    margin: 0;
+    word-break: break-word;
+  }
+
+  /* 幽灵文字操作按钮组（非强色块） */
+  .insp-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+  .insp-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 10.5px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    border: none;
+    background: transparent;
+    color: var(--insp-text-3);
+    cursor: pointer;
+    transition: color 0.12s, background-color 0.12s;
+  }
+  .insp-action-btn:hover {
+    color: var(--insp-text-1);
+    background: var(--insp-bg-soft);
+  }
+  .insp-btn-svg {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+  }
+  .insp-jump-btn, .insp-action-jump {
+    color: var(--insp-text-2) !important;
+    background: transparent !important;
+    border: none !important;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 6px;
+  }
+  .insp-jump-btn:hover, .insp-action-jump:hover {
+    color: var(--insp-brand) !important;
+    background: var(--insp-brand-soft) !important;
+  }
+  .insp-item-row.is-located .insp-jump-btn,
+  .insp-item-row.is-located .insp-action-jump {
+    color: var(--insp-brand) !important;
+    font-weight: 600;
+  }
+
+  /* 正文摘录：纯净段落文本，去除灰色底框与粗竖线 */
+  .insp-item-snippet {
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--insp-text-2);
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    border-left: none;
+    margin: 2px 0 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 50px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  /* 元信息：安静的一行式章节与文件坐标 */
+  .insp-item-meta {
+    display: flex;
+    align-items: center;
+    font-size: 10.5px;
+    color: var(--insp-text-3);
+    gap: 4px;
+    margin-top: 2px;
+  }
+  .insp-meta-chapter {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 65%;
+  }
+  .insp-meta-dot {
+    opacity: 0.5;
+  }
+  .insp-meta-line {
+    font-family: var(--insp-font-mono);
+    white-space: nowrap;
+  }
+
+  /* 审查原因提示（克制警示色，无彩色胶囊） */
+  .insp-item-reasons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 1px;
+  }
+  .insp-reason-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.05);
+    padding: 0 4px;
+    border-radius: 2px;
+  }
+  .insp-reason-svg {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+  }
+
+  /* 重复/聚合分组标头 */
+  .insp-dup-group {
+    border-bottom: 1px solid var(--insp-border);
+  }
+  .insp-dup-group-head {
+    padding: 7px 16px;
+    background: var(--insp-bg-soft);
+    border-bottom: 1px solid var(--insp-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 11px;
+  }
+  .insp-dup-group-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .insp-dup-head-svg {
+    width: 12px;
+    height: 12px;
+    color: #dc2626;
+    flex-shrink: 0;
+  }
+  .insp-dup-title-text {
+    font-weight: 600;
+    color: var(--insp-text-1);
+  }
+  .insp-dup-count-chip {
+    font-size: 10px;
+    font-family: var(--insp-font-mono);
+    color: #dc2626;
+  }
+  .insp-dup-chapters-chip {
+    font-size: 10px;
+    color: var(--insp-text-3);
+  }
+  .insp-dup-chapter {
+    font-size: 10.5px;
+    color: var(--insp-text-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .insp-dup-group-body {
+    display: flex;
+    flex-direction: column;
+  }
+  .insp-dup-group-body .insp-item-row {
+    padding-left: 20px;
+  }
+
+  /* 滚动分块加载哨兵 */
+  .insp-sentinel {
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10.5px;
+    color: var(--insp-text-3);
+    opacity: 0.6;
+    margin: 2px 0;
+  }
+
+  /* 空状态 */
+  .insp-empty-state {
+    padding: 44px 16px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .insp-empty-svg {
+    width: 28px;
+    height: 28px;
+    color: var(--insp-text-3);
+    margin-bottom: 2px;
+    opacity: 0.7;
+  }
+  .insp-empty-title {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--insp-text-1);
+  }
+  .insp-empty-desc {
+    font-size: 11px;
+    color: var(--insp-text-3);
+  }
+
+  /* 底部状态 */
+  .insp-footer {
+    padding: 7px 16px;
+    background: var(--insp-bg);
+    border-top: 1px solid var(--insp-border);
+    font-size: 10.5px;
+    color: var(--insp-text-3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .insp-footer-tip kbd {
+    padding: 1px 3px;
+    font-size: 9.5px;
+    font-family: var(--insp-font-mono);
+    background: var(--insp-bg-soft);
+    border: 1px solid var(--insp-border);
+    border-radius: 2px;
+  }
+  .insp-footer-tag {
+    font-size: 9.5px;
+    font-family: var(--insp-font-mono);
+    opacity: 0.5;
+    letter-spacing: 0.04em;
+  }
+
+  /* Toast 浮层提示 */
+  .insp-toast {
+    position: absolute;
+    bottom: 34px;
+    left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: rgba(0, 0, 0, 0.88);
+    color: #ffffff;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s, transform 0.18s;
+    z-index: 10;
+    white-space: nowrap;
+  }
+  html[data-theme='dark'] .insp-toast {
+    background: rgba(255, 255, 255, 0.92);
+    color: #1b1b1f;
+    font-weight: 500;
+  }
+  .insp-toast-show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ===== 模块跳转波纹脉冲高亮动画（左侧正文内） ===== */
+  @keyframes dsh-inspector-pulse-glow {
+    0% {
+      outline: 2px solid var(--insp-brand);
+      outline-offset: 4px;
+      box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.3);
+    }
+    50% {
+      outline: 2px solid var(--insp-brand);
+      outline-offset: 4px;
+      box-shadow: 0 0 0 7px rgba(30, 58, 138, 0.1);
+    }
+    100% {
+      outline: 1px solid transparent;
+      outline-offset: 2px;
+      box-shadow: none;
+    }
+  }
+  .dsh-inspector-pulse {
+    animation: dsh-inspector-pulse-glow 2s ease-out !important;
+  }
+
+  /* ===== 移动端与不同视口响应式适配 ===== */
+  @media (max-width: 48rem) {
+    .insp-panel {
+      width: 100vw;
+      max-width: 100vw;
+      border-left: none;
+    }
+    .insp-header {
+      padding: 10px 14px;
+    }
+    .insp-header-title {
+      font-size: 13px;
+    }
+    .insp-book-select {
+      max-width: 180px;
+      font-size: 11px;
+    }
+    .insp-toolbar {
+      padding: 8px 14px;
+    }
+    .insp-tabs {
+      padding: 0 14px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .insp-tabs::-webkit-scrollbar {
+      display: none;
+    }
+    .insp-kind-chips-wrap {
+      padding: 6px 14px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .insp-body {
+      padding: 0;
+    }
+    .insp-item-row {
+      padding: 10px 14px;
+    }
+    .insp-footer {
+      padding: 7px 14px calc(7px + env(safe-area-inset-bottom, 0px));
+    }
+    .insp-tip-desktop {
+      display: none;
+    }
+    .insp-tip-mobile {
+      display: inline;
+    }
+  }
+
+  @media (min-width: 48.001rem) {
+    .insp-tip-desktop {
+      display: inline;
+    }
+    .insp-tip-mobile {
+      display: none;
+    }
+  }
+
+  /* 极窄屏视口 (< 36rem / 576px) */
+  @media (max-width: 36rem) {
+    .insp-toolbar {
+      flex-direction: column;
+      gap: 6px;
+    }
+    .insp-chapter-filter-box {
+      width: 100%;
+    }
+    .insp-book-select {
+      max-width: 135px;
+    }
+    .insp-item-top {
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .insp-item-actions {
+      margin-left: auto;
+    }
+  }

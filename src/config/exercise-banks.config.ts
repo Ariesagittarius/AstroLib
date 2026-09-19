@@ -64,6 +64,13 @@ export const EXERCISE_BANKS: ExerciseBank[] = [
     applicableBooks: ['engineering_analysis'],
     description: '《工科数学分析基础（第三版）》教材配套分节课后练习题与推导解析。',
   },
+  {
+    id: 'lag_textbook_exercises',
+    title: '《线性代数与几何》课后习题',
+    sourceType: 'textbook',
+    applicableBooks: ['linear_algebra_geometry'],
+    description: '《线性代数与几何（第2版）》（北京邮电大学出版社）全书 9 章配套课后习题与参考答案。',
+  },
 ];
 
 /**

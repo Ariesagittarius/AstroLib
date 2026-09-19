@@ -1,6 +1,7 @@
 ---
 import { renderTitleHtml } from '../utils/render-title.mjs';
 import { srcAttrs } from '../utils/src-attrs.mjs';
+import { features } from '../config/features.config.mjs';
 
 interface Props {
   title?: string;
@@ -8,6 +9,7 @@ interface Props {
   side?: 'right' | 'left';
   inline?: boolean;
   class?: string;
+  ai?: boolean;
   [key: string]: any;
 }
 
@@ -17,7 +19,7 @@ const {
   side = 'right',
   inline = false,
   class: className = '',
-  ...restProps
+  ai,
 } = Astro.props;
 
 const displayTitle = title !== undefined ? title : '注';
@@ -37,6 +39,9 @@ if (!type && title) {
     noteKind = 'geom';
   }
 }
+
+// AI 徽标开关：遵循系统级 features.aiAsk.enabled 且默认在 think 类型中启用，支持 Props.ai 显式覆盖
+const isAiEnabled = Boolean(features.aiAsk?.enabled) && (ai !== undefined ? Boolean(ai) : (noteKind === 'think'));
 ---
 
 <div
@@ -55,34 +60,50 @@ if (!type && title) {
   {...srcAttrs(Astro.props)}
 >
   <div class="sidenote-header">
-    <span class="sidenote-icon" aria-hidden="true">
-      {noteKind === 'think' && (
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-          <path d="M12 2C7.58 2 4 5.58 4 10c0 2.5 1.15 4.73 2.96 6.22.37.31.59.78.59 1.28V19c0 .55.45 1 1 1h7c.55 0 1-.45 1-1v-1.5c0-.5.22-.97.59-1.28C18.85 14.73 20 12.5 20 10c0-4.42-3.58-8-8-8zm-2 19h4v1h-4v-1zm2-17c3.31 0 6 2.69 6 6 0 1.88-.86 3.55-2.22 4.67-.65.54-1.03 1.34-1.03 2.18V18H9.25v-1.15c0-.84-.38-1.64-1.03-2.18C6.86 13.55 6 11.88 6 10c0-3.31 2.69-6 6-6z"/>
+    <div class="sidenote-header-left">
+      <span class="sidenote-icon" aria-hidden="true">
+        {noteKind === 'think' && (
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M12 2C7.58 2 4 5.58 4 10c0 2.5 1.15 4.73 2.96 6.22.37.31.59.78.59 1.28V19c0 .55.45 1 1 1h7c.55 0 1-.45 1-1v-1.5c0-.5.22-.97.59-1.28C18.85 14.73 20 12.5 20 10c0-4.42-3.58-8-8-8zm-2 19h4v1h-4v-1zm2-17c3.31 0 6 2.69 6 6 0 1.88-.86 3.55-2.22 4.67-.65.54-1.03 1.34-1.03 2.18V18H9.25v-1.15c0-.84-.38-1.64-1.03-2.18C6.86 13.55 6 11.88 6 10c0-3.31 2.69-6 6-6z"/>
+          </svg>
+        )}
+        {noteKind === 'caution' && (
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+        )}
+        {noteKind === 'analysis' && (
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+          </svg>
+        )}
+        {noteKind === 'geom' && (
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z"/>
+          </svg>
+        )}
+        {noteKind === 'note' && (
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+          </svg>
+        )}
+      </span>
+      <span class="sidenote-title" set:html={renderTitleHtml(displayTitle)}></span>
+    </div>
+    {isAiEnabled && (
+      <button
+        type="button"
+        class="sidenote-ai-btn"
+        title="使用 AI 解析与解答思考题"
+        aria-label="使用 AI 解答本思考题"
+        data-action="ask-ai"
+      >
+        <svg class="sidenote-ai-icon" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
+          <path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/>
         </svg>
-      )}
-      {noteKind === 'caution' && (
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-        </svg>
-      )}
-      {noteKind === 'analysis' && (
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-          <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
-        </svg>
-      )}
-      {noteKind === 'geom' && (
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z"/>
-        </svg>
-      )}
-      {noteKind === 'note' && (
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-          <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-        </svg>
-      )}
-    </span>
-    <span class="sidenote-title" set:html={renderTitleHtml(displayTitle)}></span>
+        <span class="sidenote-ai-text">AI 解答</span>
+      </button>
+    )}
   </div>
   <div class="sidenote-content">
     <slot />
@@ -138,12 +159,85 @@ if (!type && title) {
   .sidenote-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.4rem;
     font-size: 0.82rem;
     font-weight: 650;
     font-family: var(--font-heading, var(--academic-font-heading, sans-serif));
     letter-spacing: 0.02em;
     margin-bottom: 0.35rem;
+  }
+
+  .sidenote-header-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+
+  /* Material 3 规范微交互按钮：AI 解答徽标 (Assist Chip 风格) */
+  .sidenote-ai-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    height: 1.35rem;
+    padding: 0 0.45rem;
+    border-radius: 9999px; /* M3 Pill shape */
+    border: 1px solid var(--sl-color-accent-subtle, rgba(56, 189, 248, 0.28));
+    background-color: var(--sl-color-accent-low, rgba(56, 189, 248, 0.06));
+    color: var(--sl-color-accent, #38bdf8);
+    font-size: 0.72rem;
+    font-weight: 550;
+    line-height: 1;
+    font-family: var(--font-ui, var(--academic-font-body, system-ui, sans-serif));
+    cursor: pointer;
+    user-select: none;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+    flex-shrink: 0;
+  }
+
+  .sidenote-ai-btn:hover {
+    background-color: var(--sl-color-accent-high, rgba(56, 189, 248, 0.16));
+    border-color: var(--sl-color-accent, #38bdf8);
+    transform: translateY(-0.5px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .sidenote-ai-btn:active {
+    transform: translateY(0) scale(0.96);
+    background-color: var(--sl-color-accent-high, rgba(56, 189, 248, 0.24));
+  }
+
+  .sidenote-ai-btn:focus-visible {
+    outline: 2px solid var(--sl-color-accent, #38bdf8);
+    outline-offset: 1px;
+  }
+
+  .sidenote-ai-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .sidenote-ai-btn:hover .sidenote-ai-icon {
+    transform: scale(1.15) rotate(8deg);
+  }
+
+  .sidenote-ai-btn.is-loading {
+    border-color: var(--sl-color-accent, #38bdf8);
+    background-color: var(--sl-color-accent, #38bdf8);
+    color: var(--sl-color-black, #0f172a);
+    pointer-events: none;
+  }
+
+  .sidenote-ai-btn.is-loading .sidenote-ai-icon {
+    animation: sidenote-ai-spin 1s linear infinite;
+  }
+
+  @keyframes sidenote-ai-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 
   .sidenote-icon {
@@ -217,3 +311,88 @@ if (!type && title) {
     color: var(--sl-color-gray-3, #94a3b8);
   }
 </style>
+
+<script>
+  // 提取携带完整 LaTeX 语法的学术题目文本（保留公式原貌）
+  function extractLatexAwareText(root: HTMLElement): string {
+    const clone = root.cloneNode(true) as HTMLElement;
+
+    // 1. 块级公式：恢复为 $$...$$
+    clone.querySelectorAll<HTMLElement>('.katex-display[data-latex], [data-latex].katex-display').forEach((el) => {
+      const latex = el.getAttribute('data-latex') || '';
+      el.textContent = `\n$$${latex}$$\n`;
+    });
+
+    // 2. 行内公式：恢复为 $...$（跳过已被块级公式覆盖的子节点）
+    clone.querySelectorAll<HTMLElement>('.katex[data-latex]').forEach((el) => {
+      if (el.closest('.katex-display')) return;
+      const latex = el.getAttribute('data-latex') || '';
+      el.textContent = `$${latex}$`;
+    });
+
+    // 3. 移除多余的按钮与样式/脚本等非正文元素
+    clone.querySelectorAll('button, script, style, .sidenote-ai-btn').forEach((el) => el.remove());
+
+    const rawText = clone.innerText || clone.textContent || '';
+    return rawText
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  function initSideNoteAi() {
+    if ((window as any).__astrolibSideNoteAiBound) return;
+    (window as any).__astrolibSideNoteAiBound = true;
+
+    document.addEventListener('click', (e) => {
+      if (typeof localStorage !== 'undefined' && localStorage.getItem('astrolib_lite_mode') === 'true') return;
+
+      const btn = (e.target as HTMLElement)?.closest<HTMLElement>('.sidenote-ai-btn');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const sidenote = btn.closest<HTMLElement>('.astrolib-sidenote');
+      if (!sidenote) return;
+
+      const contentEl = sidenote.querySelector<HTMLElement>('.sidenote-content');
+      if (!contentEl) return;
+
+      const problemText = extractLatexAwareText(contentEl);
+      if (!problemText) return;
+
+      const bookTitle = document.querySelector('ai-ask')?.getAttribute('data-book-title') || document.title.split(/[-_|]/)[0]?.trim() || '教材';
+      const chapterHeading = document.querySelector('h1')?.innerText?.trim() || '';
+      const title = sidenote.getAttribute('data-title') || '想一想';
+
+      const prompt = [
+        `请针对《${bookTitle}》${chapterHeading ? `「${chapterHeading}」` : ''}中的思考题【${title}】进行深入剖析与详细解答。`,
+        `要求：推导步骤严密、概念清晰，揭示题目的核心数学思想与思考切入点。`,
+        ``,
+        `【思考题内容】：`,
+        problemText,
+      ].join('\n');
+
+      btn.classList.add('is-loading');
+      setTimeout(() => btn.classList.remove('is-loading'), 1200);
+
+      window.dispatchEvent(
+        new CustomEvent('aiask:query', {
+          detail: {
+            prompt,
+            autoSubmit: true,
+          },
+        })
+      );
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSideNoteAi);
+  } else {
+    initSideNoteAi();
+  }
+  document.addEventListener('astro:page-load', initSideNoteAi);
+</script>
+

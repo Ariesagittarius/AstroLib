@@ -11,9 +11,9 @@ let _aiCoreModules: any = null;
 async function getAiCoreModules() {
   if (!_aiCoreModules) {
     const [retrieverMod, llmMod, toolsMod] = await Promise.all([
-      import('../retriever'),
-      import('../llm'),
-      import('../tools-client'),
+      import('../retriever.mjs'),
+      import('../llm.mjs'),
+      import('../tools-client.mjs'),
     ]);
     _aiCoreModules = {
       createRetriever: retrieverMod.createRetriever,
@@ -32,26 +32,42 @@ import {
   getAllAiModels,
   getActiveAiModelId,
   getAiProvider,
-  getActiveAiProviderId,
   getAiApiKey,
   getAiEndpoint,
   getAiParams,
   getAiAnswerMode,
   getAiSourceOpen,
   getAiPanelDimensions,
-  saveAiPanelDimensions,
   getAiAutoCollapsePreceding,
-  saveAiAutoCollapsePreceding,
+  getAiCollapseToolsSummary,
+  saveAiCollapseToolsSummary,
+  formatExplorationSummary,
+  getAiSideloadRefChapter,
+  saveAiActiveModel,
+  getAiExtendedThinking,
+  saveAiExtendedThinking,
+  getShortModelLabel,
   onAiConfigChange,
 } from '../ai-config';
+
+export interface ReferencedChapter {
+  title: string;
+  url: string;
+  text?: string;
+  isCurrent?: boolean;
+}
 import { parseAiError, renderErrorCardHtml } from '../error-handler';
 import { createM3LoadingHtml } from '../../components/common/m3-loading-helper';
+import { initChatResizer } from './chat-resizer';
+import {
+  ThreadStore,
+  MAX_THREADS,
+  MAX_MSGS,
+} from './thread-store';
+import { mdToHtml, safeLink } from './chat-markdown';
+import { sideloadManager } from '../../components/sideload/sideload-manager';
 
-const HISTORY_MAX = 12;
-const THREADS_PREFIX = 'dsh-aiask-threads-';
-const ACTIVE_PREFIX = 'dsh-aiask-active-';
-const MAX_THREADS = 30;
-const MAX_MSGS = 60;
+const DOCKED_STORAGE_KEY = 'astrolib_ai_docked';
 
 function decorateFootnotes(html: string, decorate = true): string {
   if (!decorate || !html) return html || '';
@@ -106,6 +122,8 @@ function toolSummary(name: string, out: any = {}): string {
   return cleanSingleLine(summary);
 }
 
+export { formatExplorationSummary };
+
 function capSnippet(s: string, n = 110): string {
   const t = (s || '').replace(/\s+/g, ' ').trim();
   if (t.length <= n) return t;
@@ -147,243 +165,13 @@ function esc(s: string): string {
   return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function safeLink(url: string): string {
-  let u = (url || '').replace(/["'<>]/g, '').trim();
-  if (!u) return '';
-  u = u.replace(/&amp;/g, '&');
-  if (/^javascript:/i.test(u) || /^data:/i.test(u) || /^vbscript:/i.test(u)) return '';
-
-  // 剔除可能被误捕获的尾部标点（如右括号、句号、分号等）
-  u = u.replace(/[),.，。；;!?！？、]+$/, '').trim();
-  if (!u) return '';
-
-  const origin = typeof location !== 'undefined' ? location.origin : '';
-  const mCol = u.match(/(?:https?:)?\/\/[^\/]*collections\/(.+)$/i) || u.match(/^\/?collections\/(.+)$/i);
-  let pathAndHash = '';
-
-  if (mCol) {
-    pathAndHash = '/collections/' + mCol[1];
-  } else if (/^https?:\/\//i.test(u)) {
-    try {
-      const parsed = new URL(u);
-      if (origin && parsed.origin === origin) {
-        pathAndHash = parsed.pathname + parsed.search + parsed.hash;
-      } else {
-        try { u = decodeURI(u); } catch {}
-        return encodeURI(u);
-      }
-    } catch {
-      try { u = decodeURI(u); } catch {}
-      return encodeURI(u);
-    }
-  } else {
-    const cleanU = u.replace(/^(\.\/)+/, '').replace(/^\/+/, '');
-    const loc = typeof location !== 'undefined' ? location.pathname : '';
-    const m = loc.match(/^(\/collections\/[^/]+\/[^/]+\/)/);
-    const bookRoot = m ? m[1] : '/';
-    pathAndHash = (bookRoot + cleanU).replace(/\/+/g, '/');
-  }
-
-  try { pathAndHash = decodeURI(pathAndHash); } catch {}
-
-  const hashIdx = pathAndHash.indexOf('#');
-  let pathPart = pathAndHash;
-  let hashPart = '';
-  if (hashIdx >= 0) {
-    pathPart = pathAndHash.slice(0, hashIdx);
-    hashPart = pathAndHash.slice(hashIdx + 1);
-  }
-
-  const encodedPath = pathPart.split('/').map((seg) => encodeURIComponent(seg)).join('/');
-  const encodedHash = hashPart ? '#' + encodeURIComponent(hashPart) : '';
-
-  return (origin || '') + encodedPath + encodedHash;
-}
-
-function makeAiBadgeLink(href: string, text: string, target: string, rel: string): string {
-  const icon = `<span class="block-icon"><svg class="badge-svg" viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden="true"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg></span>`;
-  const arrow = `<span class="block-arrow"><svg class="badge-svg badge-arrow-svg" viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17l9.2-9.2M17 17V8H8"></path></svg></span>`;
-  return `<a href="${href}" class="block-ref-badge interactive-badge ai-link-badge" target="${target}" ${rel}>${icon}<span class="block-text">${text}</span>${arrow}</a>`;
-}
-
-function renderInline(s: string, openNew = true): string {
-  const target = openNew ? '_blank' : '_self';
-  const rel = openNew ? 'rel="noopener"' : '';
-  const placeholders: string[] = [];
-
-  // 1. Markdown 链接 [text](url "title") 或 [text]( <url> )
-  // 兼容括号内首尾空白、换行、尖括号包围及可选引号 title
-  s = s.replace(/\[([^\]\n]+)\]\(\s*<?([^)\s>]+)>?(?:\s+["'][^"']*["'])?\s*\)/g, (_m, text, url) => {
-    const href = safeLink(url);
-    if (!href) return esc(`[${text}](${url})`);
-    let innerText = text;
-    innerText = innerText.replace(/`([^`]+)`/g, '<code>$1</code>');
-    innerText = innerText.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    innerText = innerText.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
-    innerText = innerText.replace(/~~([^~]+)~~/g, '<del>$1</del>');
-    const tag = makeAiBadgeLink(href, innerText, target, rel);
-    placeholders.push(tag);
-    return `___LINK_PLACEHOLDER_${placeholders.length - 1}___`;
-  });
-
-  // 2. 裸路径/各类畸形 collections 链接（含 https://collections/...、//collections/...、/collections/...）
-  s = s.replace(/(^|[^\w"'/=])((?:https?:)?\/\/[^\s<>"']*collections\/[^\s<>"']+|\/?collections\/[^\s<>"']+)/gi, (fullMatch, prefix, rawUrl) => {
-    let cleanUrl = rawUrl.replace(/[),.，。；;!?！？、]+$/, '');
-    const trailing = rawUrl.slice(cleanUrl.length);
-    const href = safeLink(cleanUrl);
-    if (!href) return fullMatch;
-    const tag = makeAiBadgeLink(href, cleanUrl, target, rel);
-    placeholders.push(tag);
-    return `${prefix}___LINK_PLACEHOLDER_${placeholders.length - 1}___${trailing}`;
-  });
-
-  // 3. 行内基础 Markdown 格式
-  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
-  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  s = s.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
-  s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
-
-  // 4. 还原所有链接占位符
-  s = s.replace(/___LINK_PLACEHOLDER_(\d+)___/g, (_m, idx) => placeholders[Number(idx)]);
-
-  return s;
-}
-
-function mdToHtml(md: string, openNew = true): string {
-  const src = esc(md || '');
-  const lines = src.split(/\r?\n/);
-  const out: string[] = [];
-  let i = 0;
-  const inline = (t: string) => renderInline(t, openNew);
-  const BLOCK_START = /^(#{1,6})\s|^\s*>\s|^\s*[-*+]\s|^\s*\d+[.)]\s|^\s*\$\$\s*$|^\s*\$\$.*|^\s*(?:```+|~~~+)/;
-
-  while (i < lines.length) {
-    const line = lines[i];
-
-    const fence = line.match(/^\s*(```+|~~~+)\s*([\w-]*)?\s*$/);
-    if (fence) {
-      const marker = fence[1][0];
-      const buf: string[] = [];
-      i++;
-      while (i < lines.length && !new RegExp(`^\\s*${marker}{3,}\\s*$`).test(lines[i])) { buf.push(lines[i]); i++; }
-      if (i < lines.length) i++;
-      out.push(`<pre><code>${buf.join('\n')}</code></pre>`);
-      continue;
-    }
-    // $$ 数学块（支持单行与多行，含流式截断未闭合 $$ 的自动兜底闭合）
-    if (/^\s*\$\$/.test(line)) {
-      const buf = [line.trim()];
-      if (/^\s*\$\$.*\$\$\s*$/.test(line) && line.trim().length > 4) {
-        out.push(`<p class="md-math">${buf[0]}</p>`);
-        i++;
-        continue;
-      }
-      i++;
-      while (i < lines.length && !/\$\$\s*$/.test(lines[i])) {
-        buf.push(lines[i]);
-        i++;
-      }
-      if (i < lines.length) {
-        buf.push(lines[i].trim());
-        i++;
-      } else {
-        if (!buf[buf.length - 1].endsWith('$$')) {
-          buf[buf.length - 1] += ' $$';
-        }
-      }
-      out.push(`<p class="md-math">${buf.join('\n')}</p>`);
-      continue;
-    }
-    const h = line.match(/^(#{1,6})\s+(.*)$/);
-    if (h) { out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`); i++; continue; }
-    if (/^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(line)) { out.push('<hr/>'); i++; continue; }
-    if (/^\s*>\s?/.test(line)) {
-      const buf: string[] = [];
-      while (i < lines.length && /^\s*>\s?/.test(lines[i])) { buf.push(lines[i].replace(/^\s*>\s?/, '')); i++; }
-      out.push(`<blockquote>${buf.map(inline).join('<br/>')}</blockquote>`);
-      continue;
-    }
-    const ulMatch = line.match(/^\s*[-*+]\s+(.*)$/);
-    if (ulMatch) {
-      const items: string[][] = [[ulMatch[1]]];
-      i++;
-      while (i < lines.length) {
-        const cur = lines[i];
-        const nextItemMatch = cur.match(/^\s*[-*+]\s+(.*)$/);
-        if (nextItemMatch) {
-          items.push([nextItemMatch[1]]);
-          i++;
-          continue;
-        }
-        if (/^\s*$/.test(cur)) {
-          let k = i + 1;
-          while (k < lines.length && /^\s*$/.test(lines[k])) k++;
-          if (k < lines.length && /^\s*[-*+]\s+/.test(lines[k])) {
-            i = k;
-            continue;
-          }
-          break;
-        }
-        if (/^(#{1,6})\s|^\s*>\s|^\s*\d+[.)]\s|^\s*(?:```+|~~~+)|^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(cur)) {
-          break;
-        }
-        items[items.length - 1].push(cur.trim());
-        i++;
-      }
-      out.push(`<ul>${items.map((itemLines) => `<li>${itemLines.map(inline).join('<br/>')}</li>`).join('')}</ul>`);
-      continue;
-    }
-
-    const olMatch = line.match(/^\s*(\d+)[.)]\s+(.*)$/);
-    if (olMatch) {
-      const startNum = parseInt(olMatch[1], 10) || 1;
-      const items: string[][] = [[olMatch[2]]];
-      i++;
-      while (i < lines.length) {
-        const cur = lines[i];
-        const nextItemMatch = cur.match(/^\s*\d+[.)]\s+(.*)$/);
-        if (nextItemMatch) {
-          items.push([nextItemMatch[1]]);
-          i++;
-          continue;
-        }
-        if (/^\s*$/.test(cur)) {
-          let k = i + 1;
-          while (k < lines.length && /^\s*$/.test(lines[k])) k++;
-          if (k < lines.length && /^\s*\d+[.)]\s+/.test(lines[k])) {
-            i = k;
-            continue;
-          }
-          break;
-        }
-        if (/^(#{1,6})\s|^\s*>\s|^\s*[-*+]\s|^\s*(?:```+|~~~+)|^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(cur)) {
-          break;
-        }
-        items[items.length - 1].push(cur.trim());
-        i++;
-      }
-      const startAttr = startNum !== 1 ? ` start="${startNum}"` : '';
-      out.push(`<ol${startAttr}>${items.map((itemLines) => `<li>${itemLines.map(inline).join('<br/>')}</li>`).join('')}</ol>`);
-      continue;
-    }
-    if (!/^\s*$/.test(line)) {
-      const buf = [line];
-      i++;
-      while (i < lines.length && !/^\s*$/.test(lines[i]) && !BLOCK_START.test(lines[i])) { buf.push(lines[i]); i++; }
-      out.push(`<p>${buf.map(inline).join('<br/>')}</p>`);
-      continue;
-    }
-    i++;
-  }
-  return out.join('\n');
-}
-
 export class AIAskElement extends HTMLElement {
   _indexCache = new Map<string, any>();
   _inited = false;
   _abort: AbortController | null = null;
   _busy = false;
   _streaming = false;
+  _threadStore: ThreadStore = new ThreadStore('');
   _threads: any[] | null = null;
   _activeThread: any = null;
   _config: any = {};
@@ -412,8 +200,47 @@ export class AIAskElement extends HTMLElement {
   _historyEmpty!: HTMLElement;
   _historyNew!: HTMLElement;
   _historyClose!: HTMLElement;
+  _isDocked = false;
+  _dockBtn!: HTMLElement;
+  _dockIcon!: HTMLElement;
+  _undockIcon!: HTMLElement;
+  _sideloadBackBtn!: HTMLElement;
+  _contextContainer!: HTMLElement;
+  _contextRow!: HTMLElement;
+  _contextText!: HTMLElement;
+  _contextExpandBtn!: HTMLButtonElement;
+  _contextRemoveBtn!: HTMLButtonElement;
+  _contextDropdown!: HTMLElement;
+  _contextItemsList!: HTMLElement;
+  _addChapterBtn!: HTMLButtonElement;
+  _chapterPickerPopover!: HTMLElement;
+  _chapterSearchInput!: HTMLInputElement;
+  _chapterPickerClose!: HTMLButtonElement;
+  _chapterPickerList!: HTMLElement;
+  _chapterPickerCount!: HTMLElement;
+  _chapterPickerDone!: HTMLButtonElement;
+  _modelPillBtn!: HTMLButtonElement;
+  _modelPillName!: HTMLElement;
+  _modelMenu!: HTMLElement;
+  _thinkingSwitch!: HTMLInputElement;
+  _collapseToolsSwitch!: HTMLInputElement;
+  _modelExtraItem!: HTMLElement;
+  _modelExtraHeadline!: HTMLElement;
+  _modelExtraSupport!: HTMLElement;
+  _referencedChapters: ReferencedChapter[] = [];
+  _bookChaptersCache: Array<{ title: string; url: string }> | null = null;
+  _chapterTextCache: Map<string, Promise<string>> = new Map();
+  _chapterChip!: HTMLElement;
+  _chapterChipText!: HTMLElement;
+  _chapterChipClose!: HTMLElement;
+  _refCurrentChapter = false;
+  _unsubSideload: (() => void) | null = null;
+  _originalParent: HTMLElement | null = null;
+  _originalNextSibling: Node | null = null;
+  _onKeyDownAltD!: (e: KeyboardEvent) => void;
   _onRoute!: () => void;
   _onDocClick!: (e: MouseEvent) => void;
+  _onKeyDownEsc!: (e: KeyboardEvent) => void;
   _onExternalQuery!: (e: CustomEvent) => void;
   _unsubAi: (() => void) | null = null;
   _katexConfig = {
@@ -429,22 +256,78 @@ export class AIAskElement extends HTMLElement {
   }
 
   connectedCallback() {
+    // 单例守卫：确保全站仅存在一个活跃的 ai-ask 根实例（防止 SPA 切页在 main-pane 产生重复实例）
+    const allInstances = document.querySelectorAll('ai-ask');
+    if (allInstances.length > 1) {
+      for (const inst of allInstances) {
+        if (inst !== this && (inst as any)._inited) {
+          this.remove();
+          return;
+        }
+      }
+    }
     if (this._inited) return;
     this._inited = true;
     this._initDom();
     this._onRoute = () => this._route();
     this._onDocClick = (e: MouseEvent) => {
-      if (this._historyBtn && this._historyBtn.contains(e.target as Node)) return;
-      if (this._history && this._history.classList.contains('open') && !this._history.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (this._historyBtn && this._historyBtn.contains(target)) return;
+      if (this._history && this._history.classList.contains('open') && !this._history.contains(target)) {
         this._history.classList.remove('open');
         this._historyBtn && this._historyBtn.classList.remove('ask-settings-open');
       }
+      // 点击外部关闭模型菜单
+      if (this._modelMenu && this._modelMenu.style.display !== 'none') {
+        if (!this._modelMenu.contains(target) && (!this._modelPillBtn || !this._modelPillBtn.contains(target))) {
+          this._closeModelMenu();
+        }
+      }
+      // 点击外部关闭章节选择器
+      if (this._chapterPickerPopover && this._chapterPickerPopover.style.display !== 'none') {
+        if (!this._chapterPickerPopover.contains(target) && (!this._addChapterBtn || !this._addChapterBtn.contains(target))) {
+          this._closeChapterPicker();
+        }
+      }
+    };
+    this._onKeyDownEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (this._chapterPickerPopover && this._chapterPickerPopover.style.display !== 'none') {
+          e.stopPropagation();
+          this._closeChapterPicker();
+          return;
+        }
+        if (this._modelMenu && this._modelMenu.style.display !== 'none') {
+          e.stopPropagation();
+          this._closeModelMenu();
+          return;
+        }
+      }
     };
     this._onExternalQuery = (e: CustomEvent) => {
+      (e as any).__handled = true;
       const { prompt, autoSubmit = true } = (e && e.detail) || {};
       if (!prompt) return;
       this._openWithQuestion(prompt, autoSubmit);
     };
+
+    this._onKeyDownAltD = (e: KeyboardEvent) => {
+      if (e.altKey && (e.key === 'd' || e.key === 'D')) {
+        if (this._isDocked || (this._panel && this._panel.classList.contains('ask-open'))) {
+          e.preventDefault();
+          this.toggleDock();
+        }
+      }
+    };
+    window.addEventListener('keydown', this._onKeyDownAltD);
+    window.addEventListener('keydown', this._onKeyDownEsc);
+
+    // 订阅侧载管理器状态变更：若非 AI 面板激活（如 Esc 或切回大纲），自动将 DOM 归位并关闭浮窗
+    this._unsubSideload = sideloadManager.subscribe((state) => {
+      if (state.activePanelId !== 'ai' && this._isDocked) {
+        this._undockInternal(false);
+      }
+    });
 
     this._unsubAi = onAiConfigChange(() => {
       const dims = getAiPanelDimensions();
@@ -453,12 +336,24 @@ export class AIAskElement extends HTMLElement {
         this._panel.style.setProperty('--ask-panel-height', `${dims.height}px`);
       }
       this._applySrcOpenToExisting();
+      this._updateModelPill();
+      if (this._collapseToolsSwitch) {
+        this._collapseToolsSwitch.checked = getAiCollapseToolsSummary();
+      }
       if (getAiAutoCollapsePreceding()) {
         this._collapsePreceding(true);
+      }
+      if (this._isDocked) {
+        if (getAiSideloadRefChapter() && !this._refCurrentChapter) {
+          this._enableChapterReference();
+        } else if (!getAiSideloadRefChapter() && this._refCurrentChapter) {
+          this._disableChapterReference();
+        }
       }
     });
 
     window.addEventListener('astro:page-load', this._onRoute);
+    window.addEventListener('astrolib:spa-navigated', this._onRoute);
     window.addEventListener('aiask:query', this._onExternalQuery as EventListener);
     document.addEventListener('click', this._onDocClick);
     this._route();
@@ -466,14 +361,32 @@ export class AIAskElement extends HTMLElement {
 
   disconnectedCallback() {
     window.removeEventListener('astro:page-load', this._onRoute);
+    window.removeEventListener('astrolib:spa-navigated', this._onRoute);
     window.removeEventListener('aiask:query', this._onExternalQuery as EventListener);
     document.removeEventListener('click', this._onDocClick);
+    if (this._onKeyDownAltD) window.removeEventListener('keydown', this._onKeyDownAltD);
+    if (this._onKeyDownEsc) window.removeEventListener('keydown', this._onKeyDownEsc);
+    if (this._unsubSideload) {
+      this._unsubSideload();
+      this._unsubSideload = null;
+    }
     if (this._unsubAi) this._unsubAi();
     if (this._abort) this._abort.abort();
   }
 
   _openWithQuestion(prompt: string, autoSubmit = true) {
-    this._openPanel();
+    if (this._isDocked) {
+      const mountEl = document.getElementById('ai-sidebar-panel');
+      if (mountEl && this.parentElement !== mountEl) {
+        mountEl.appendChild(this);
+      }
+      if (this._panel) {
+        this._panel.classList.add('ask-open');
+      }
+      sideloadManager.open('ai');
+    } else {
+      this._openPanel();
+    }
     this._startNewThread();
     if (this._input) {
       this._input.value = prompt;
@@ -482,6 +395,10 @@ export class AIAskElement extends HTMLElement {
         setTimeout(() => this._ask(), 80);
       }
     }
+    requestAnimationFrame(() => {
+      this._scrollThread();
+      this._input && this._input.focus({ preventScroll: true });
+    });
   }
 
   _initDom() {
@@ -494,6 +411,104 @@ export class AIAskElement extends HTMLElement {
     this._close = this.querySelector('.ask-close') as HTMLElement;
     this._settingsBtn = this.querySelector('.ask-settings-btn') as HTMLElement;
     this._collapseBtn = this.querySelector('.ask-collapse-tools-btn') as HTMLElement;
+    this._dockBtn = this.querySelector('.ask-dock-btn') as HTMLElement;
+    this._dockIcon = this.querySelector('.icon-dock-to-sidebar') as HTMLElement;
+    this._undockIcon = this.querySelector('.icon-undock-from-sidebar') as HTMLElement;
+    this._sideloadBackBtn = this.querySelector('.ai-sideload-back-btn') as HTMLElement;
+    this._contextRow = (this.querySelector('#ask-context-row') || this.querySelector('#ask-context-container')) as HTMLElement;
+    this._contextContainer = this._contextRow;
+    this._contextText = (this.querySelector('#ask-context-text') || this.querySelector('#ask-chapter-chip-text')) as HTMLElement;
+    this._chapterChipText = this._contextText;
+    this._contextExpandBtn = this.querySelector('#ask-context-expand-btn') as HTMLButtonElement;
+    this._contextRemoveBtn = (this.querySelector('#ask-context-remove-btn') || this.querySelector('#ask-chapter-chip-close')) as HTMLButtonElement;
+    this._chapterChipClose = this._contextRemoveBtn;
+    this._contextDropdown = this.querySelector('#ask-context-dropdown') as HTMLElement;
+    this._contextItemsList = this.querySelector('#ask-context-items-list') as HTMLElement;
+
+    if (this._contextRemoveBtn) {
+      this._contextRemoveBtn.addEventListener('click', (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this._disableChapterReference();
+      });
+    }
+
+    if (this._contextExpandBtn) {
+      this._contextExpandBtn.addEventListener('click', (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this._toggleContextDropdown();
+      });
+    }
+
+    // 章节多选选择器 Popover 元素与交互
+    this._addChapterBtn = this.querySelector('#ask-add-chapter-btn') as HTMLButtonElement;
+    this._chapterPickerPopover = this.querySelector('#ask-chapter-picker-popover') as HTMLElement;
+    this._chapterSearchInput = this.querySelector('#ask-chapter-search-input') as HTMLInputElement;
+    this._chapterPickerClose = this.querySelector('#ask-chapter-picker-close') as HTMLButtonElement;
+    this._chapterPickerList = this.querySelector('#ask-chapter-picker-list') as HTMLElement;
+    this._chapterPickerCount = this.querySelector('#ask-chapter-picker-count') as HTMLElement;
+    this._chapterPickerDone = this.querySelector('#ask-chapter-picker-done') as HTMLButtonElement;
+
+    if (this._addChapterBtn) {
+      this._addChapterBtn.addEventListener('click', (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (this._chapterPickerPopover && this._chapterPickerPopover.style.display !== 'none') {
+          this._closeChapterPicker();
+        } else {
+          this._openChapterPicker();
+        }
+      });
+    }
+
+    if (this._chapterPickerClose) {
+      this._chapterPickerClose.addEventListener('click', (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this._closeChapterPicker();
+      });
+    }
+
+    if (this._chapterPickerDone) {
+      this._chapterPickerDone.addEventListener('click', (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this._closeChapterPicker();
+      });
+    }
+
+    if (this._chapterSearchInput) {
+      this._chapterSearchInput.addEventListener('input', () => {
+        this._filterChapterPicker(this._chapterSearchInput.value.trim());
+      });
+    }
+
+    // 模型快捷切换 Popover 菜单与药丸按钮
+    this._modelPillBtn = this.querySelector('#ask-model-pill-btn') as HTMLButtonElement;
+    this._modelPillName = this.querySelector('#ask-model-pill-name') as HTMLElement;
+    this._modelMenu = this.querySelector('#ask-model-menu') as HTMLElement;
+    this._thinkingSwitch = this.querySelector('#ask-thinking-switch') as HTMLInputElement;
+    this._collapseToolsSwitch = this.querySelector('#ask-collapse-tools-switch') as HTMLInputElement;
+    this._modelExtraItem = this.querySelector('#ask-model-extra-item') as HTMLElement;
+    this._modelExtraHeadline = this.querySelector('#ask-model-extra-headline') as HTMLElement;
+    this._modelExtraSupport = this.querySelector('#ask-model-extra-support') as HTMLElement;
+
+    if (this._modelPillBtn) {
+      this._modelPillBtn.addEventListener('click', (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (this._modelMenu && this._modelMenu.style.display !== 'none') {
+          this._closeModelMenu();
+        } else {
+          this._openModelMenu();
+        }
+      });
+    }
+
+    this._initModelMenu();
+    this._updateModelPill();
+
     this._newBtn = this.querySelector('.ask-new-btn') as HTMLElement;
     this._submit = (this.querySelector('.ask-send-btn') || this.querySelector('.ask-send')) as HTMLButtonElement;
     this._sendIcon = this.querySelector('.ask-send-icon') as HTMLElement;
@@ -651,6 +666,18 @@ export class AIAskElement extends HTMLElement {
     if (this._newBtn) {
       this._newBtn.addEventListener('click', () => this._startNewThread());
     }
+    if (this._dockBtn) {
+      this._dockBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleDock();
+      });
+    }
+    if (this._sideloadBackBtn) {
+      this._sideloadBackBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.undockFromSidebar(true);
+      });
+    }
 
     this._setBookTitle(this._bookTitle);
 
@@ -671,7 +698,13 @@ export class AIAskElement extends HTMLElement {
     }
 
     if (this._input) {
-      this._input.addEventListener('input', () => this._grow());
+      this._input.addEventListener('input', () => {
+        this._grow();
+        const val = this._input.value;
+        if (val.endsWith('@') || /(?:^|\s)@$/.test(val)) {
+          this._openChapterPicker();
+        }
+      });
       this._input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
@@ -716,69 +749,7 @@ export class AIAskElement extends HTMLElement {
 
   _initResizeHandles() {
     if (!this._panel) return;
-    const handles = this._panel.querySelectorAll<HTMLElement>('.ask-resize-handle');
-    if (!handles.length) return;
-
-    handles.forEach((handle) => {
-      handle.addEventListener('pointerdown', (e: PointerEvent) => {
-        if (e.button !== 0) return;
-        e.preventDefault();
-        e.stopPropagation();
-
-        const type = handle.dataset.handle ||
-          (handle.classList.contains('ask-resize-w') ? 'w' :
-           handle.classList.contains('ask-resize-n') ? 'n' : 'nw');
-
-        try {
-          handle.setPointerCapture(e.pointerId);
-        } catch {}
-
-        const startX = e.clientX;
-        const startY = e.clientY;
-        const rect = this._panel.getBoundingClientRect();
-        const startWidth = rect.width;
-        const startHeight = rect.height;
-
-        this._panel.classList.add('ask-resizing');
-        if (type === 'w') this._panel.classList.add('is-resizing-w');
-        else if (type === 'n') this._panel.classList.add('is-resizing-n');
-        else this._panel.classList.add('is-resizing-nw');
-        document.body.style.userSelect = 'none';
-
-        const onPointerMove = (moveEv: PointerEvent) => {
-          if (type === 'w' || type === 'nw') {
-            const deltaX = startX - moveEv.clientX;
-            const newW = Math.max(380, Math.min(1000, Math.min(window.innerWidth - 24, Math.round(startWidth + deltaX))));
-            this._panel.style.setProperty('--ask-panel-width', `${newW}px`);
-          }
-          if (type === 'n' || type === 'nw') {
-            const deltaY = startY - moveEv.clientY;
-            const newH = Math.max(420, Math.min(960, Math.min(window.innerHeight - 80, Math.round(startHeight + deltaY))));
-            this._panel.style.setProperty('--ask-panel-height', `${newH}px`);
-          }
-        };
-
-        const onPointerUp = (upEv: PointerEvent) => {
-          try {
-            handle.releasePointerCapture(upEv.pointerId);
-          } catch {}
-          this._panel.classList.remove('ask-resizing', 'is-resizing-w', 'is-resizing-n', 'is-resizing-nw');
-          document.body.style.userSelect = '';
-          window.removeEventListener('pointermove', onPointerMove);
-          window.removeEventListener('pointerup', onPointerUp);
-          window.removeEventListener('pointercancel', onPointerUp);
-
-          const curRect = this._panel.getBoundingClientRect();
-          const curW = Math.round(curRect.width);
-          const curH = Math.round(curRect.height);
-          saveAiPanelDimensions({ width: curW, height: curH, preset: 'custom' });
-        };
-
-        window.addEventListener('pointermove', onPointerMove);
-        window.addEventListener('pointerup', onPointerUp);
-        window.addEventListener('pointercancel', onPointerUp);
-      });
-    });
+    initChatResizer(this._panel);
   }
 
   _setBookTitle(t: string) {
@@ -786,14 +757,619 @@ export class AIAskElement extends HTMLElement {
     if (this._bookEl) this._bookEl.textContent = this._bookTitle;
   }
 
+  _getCurrentChapterInfo(): { title: string; url: string; text: string } {
+    const h1 = document.querySelector('.main-pane h1, main h1, #starlight-content-title');
+    let title = h1?.textContent?.trim() || '';
+    if (!title) {
+      title = document.title.split(' - ')[0]?.trim() || '本章节';
+    }
+    const url = typeof window !== 'undefined' ? window.location.pathname : '';
+
+    let text = '';
+    const article = document.querySelector('.main-pane article, .main-pane main, main');
+    if (article) {
+      const clone = article.cloneNode(true) as HTMLElement;
+      clone.querySelectorAll('script, style, .print\\:hidden, button, .ex-card-actions, md-icon').forEach((el) => el.remove());
+      text = (clone.innerText || clone.textContent || '').replace(/\s+/g, ' ').trim();
+    }
+    return { title, url, text };
+  }
+
+  _enableChapterReference() {
+    this._refCurrentChapter = true;
+    const cur = this._getCurrentChapterInfo();
+    if (cur.title && !this._referencedChapters.some((c) => c.url === cur.url)) {
+      this._referencedChapters.push({ ...cur, isCurrent: true });
+    }
+    this._updateContextRow();
+  }
+
+  _disableChapterReference() {
+    this._refCurrentChapter = false;
+    this._referencedChapters = [];
+    this._updateContextRow();
+  }
+
+  _removeReferencedChapter(url: string) {
+    this._referencedChapters = this._referencedChapters.filter((c) => c.url !== url);
+    const curUrl = typeof window !== 'undefined' ? window.location.pathname : '';
+    if (url === curUrl) {
+      this._refCurrentChapter = false;
+    }
+    this._updateContextRow();
+    this._updateChapterPickerCount();
+    if (this._chapterPickerList) {
+      const items = this._chapterPickerList.querySelectorAll<HTMLElement>('.ask-chapter-picker-item');
+      items.forEach((item) => {
+        if (item.getAttribute('data-url') === url) {
+          const cb = item.querySelector<HTMLInputElement>('.ask-chapter-picker-checkbox');
+          if (cb) cb.checked = false;
+        }
+      });
+    }
+  }
+
+  _toggleContextDropdown() {
+    if (!this._contextDropdown) return;
+    const isOpen = this._contextDropdown.style.display !== 'none';
+    this._contextDropdown.style.display = isOpen ? 'none' : 'block';
+    if (this._contextExpandBtn) {
+      this._contextExpandBtn.classList.toggle('is-expanded', !isOpen);
+      this._contextExpandBtn.setAttribute('aria-expanded', String(!isOpen));
+    }
+  }
+
+  _updateContextRow() {
+    if (!this._contextRow) return;
+
+    if (this._referencedChapters.length === 0) {
+      this._contextRow.style.display = 'none';
+      if (this._contextDropdown) this._contextDropdown.style.display = 'none';
+      if (this._contextExpandBtn) {
+        this._contextExpandBtn.classList.remove('is-expanded');
+        this._contextExpandBtn.setAttribute('aria-expanded', 'false');
+      }
+      return;
+    }
+
+    this._contextRow.style.display = 'flex';
+
+    if (this._referencedChapters.length === 1) {
+      const ch = this._referencedChapters[0];
+      if (this._contextText) {
+        this._contextText.textContent = `正在引用“${ch.title}”`;
+        this._contextText.title = `正在引用章节：${ch.title}`;
+      }
+      if (this._contextExpandBtn) this._contextExpandBtn.style.display = 'none';
+      if (this._contextDropdown) this._contextDropdown.style.display = 'none';
+    } else {
+      if (this._contextText) {
+        this._contextText.textContent = `正在引用 ${this._referencedChapters.length} 个章节`;
+        this._contextText.title = `正在引用：${this._referencedChapters.map((c) => c.title).join('、')}`;
+      }
+      if (this._contextExpandBtn) this._contextExpandBtn.style.display = 'inline-flex';
+      this._renderContextDropdownList();
+    }
+  }
+
+  _renderContextDropdownList() {
+    if (!this._contextItemsList) return;
+    this._contextItemsList.innerHTML = '';
+    this._referencedChapters.forEach((ch) => {
+      const li = document.createElement('li');
+      li.className = 'ask-context-item';
+
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'ask-context-item-title';
+      titleSpan.textContent = ch.title;
+      titleSpan.title = ch.title;
+
+      const rmBtn = document.createElement('button');
+      rmBtn.type = 'button';
+      rmBtn.className = 'ask-context-item-remove';
+      rmBtn.title = `取消引用《${ch.title}》`;
+      rmBtn.setAttribute('aria-label', `取消引用《${ch.title}》`);
+      rmBtn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+      rmBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this._removeReferencedChapter(ch.url);
+      });
+
+      li.appendChild(titleSpan);
+      li.appendChild(rmBtn);
+      this._contextItemsList.appendChild(li);
+    });
+  }
+
+  _updateChapterContextChip() {
+    this._updateContextRow();
+  }
+
+  _extractBookChapters(): Array<{ title: string; url: string }> {
+    if (this._bookChaptersCache && this._bookChaptersCache.length > 0) {
+      return this._bookChaptersCache;
+    }
+
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+    const match = currentPath.match(/\/collections\/([^/]+)\/([^/]+)/);
+    const bookPrefix = match ? `/collections/${match[1]}/${match[2]}/` : '';
+
+    const links = document.querySelectorAll<HTMLAnchorElement>(
+      '#starlight__sidebar a[href], nav.sidebar a[href], aside.sidebar a[href], .custom-sidebar-sublist a[href]'
+    );
+
+    const chapters: Array<{ title: string; url: string }> = [];
+    const seen = new Set<string>();
+
+    links.forEach((a) => {
+      const href = a.getAttribute('href') || '';
+      if (!href) return;
+      if (bookPrefix && !href.includes(bookPrefix)) return;
+      const cleanUrl = href.split('#')[0].split('?')[0];
+      if (seen.has(cleanUrl)) return;
+      seen.add(cleanUrl);
+      const text = (a.textContent || '').trim().replace(/\s+/g, ' ');
+      if (text && !text.includes('EPUB') && !text.includes('真题') && !text.includes('习题')) {
+        chapters.push({ title: text, url: cleanUrl });
+      }
+    });
+
+    if (chapters.length === 0) {
+      const cur = this._getCurrentChapterInfo();
+      if (cur.title && cur.url) {
+        chapters.push({ title: cur.title, url: cur.url });
+      }
+    }
+
+    this._bookChaptersCache = chapters;
+    return chapters;
+  }
+
+  _openChapterPicker() {
+    this._closeModelMenu();
+    if (!this._chapterPickerPopover) return;
+    this._chapterPickerPopover.style.display = 'flex';
+    this._renderChapterPickerList();
+    if (this._chapterSearchInput) {
+      this._chapterSearchInput.value = '';
+      this._chapterSearchInput.focus();
+    }
+  }
+
+  _closeChapterPicker() {
+    if (!this._chapterPickerPopover) return;
+    this._chapterPickerPopover.style.display = 'none';
+    if (this._input) {
+      this._input.value = this._input.value.replace(/@\s*$/, '');
+      this._grow();
+      this._input.focus();
+    }
+  }
+
+  _renderChapterPickerList() {
+    if (!this._chapterPickerList) return;
+    const chapters = this._extractBookChapters();
+    this._chapterPickerList.innerHTML = '';
+
+    chapters.forEach((ch) => {
+      const isChecked = this._referencedChapters.some((c) => c.url === ch.url);
+
+      const li = document.createElement('li');
+      li.className = 'ask-chapter-picker-item';
+      li.setAttribute('data-url', ch.url);
+
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'ask-chapter-picker-checkbox';
+      cb.checked = isChecked;
+
+      const span = document.createElement('span');
+      span.className = 'ask-chapter-picker-label';
+      span.textContent = ch.title;
+      span.title = ch.title;
+
+      const toggleCheck = () => {
+        cb.checked = !cb.checked;
+        if (cb.checked) {
+          if (!this._referencedChapters.some((c) => c.url === ch.url)) {
+            const item: ReferencedChapter = { title: ch.title, url: ch.url };
+            const cur = typeof window !== 'undefined' ? window.location.pathname : '';
+            if (ch.url === cur) {
+              item.isCurrent = true;
+              item.text = this._getCurrentChapterInfo().text;
+              this._refCurrentChapter = true;
+            } else {
+              this._prefetchChapterText(ch.url).then((t) => { item.text = t; });
+            }
+            this._referencedChapters.push(item);
+          }
+        } else {
+          this._removeReferencedChapter(ch.url);
+        }
+        this._updateChapterPickerCount();
+        this._updateContextRow();
+      };
+
+      cb.addEventListener('change', (e) => {
+        e.stopPropagation();
+        if (cb.checked) {
+          if (!this._referencedChapters.some((c) => c.url === ch.url)) {
+            const item: ReferencedChapter = { title: ch.title, url: ch.url };
+            const cur = typeof window !== 'undefined' ? window.location.pathname : '';
+            if (ch.url === cur) {
+              item.isCurrent = true;
+              item.text = this._getCurrentChapterInfo().text;
+              this._refCurrentChapter = true;
+            } else {
+              this._prefetchChapterText(ch.url).then((t) => { item.text = t; });
+            }
+            this._referencedChapters.push(item);
+          }
+        } else {
+          this._removeReferencedChapter(ch.url);
+        }
+        this._updateChapterPickerCount();
+        this._updateContextRow();
+      });
+
+      li.addEventListener('click', (e) => {
+        if (e.target !== cb) {
+          toggleCheck();
+        }
+      });
+
+      li.appendChild(cb);
+      li.appendChild(span);
+      this._chapterPickerList.appendChild(li);
+    });
+
+    this._updateChapterPickerCount();
+  }
+
+  _filterChapterPicker(kw: string) {
+    if (!this._chapterPickerList) return;
+    const items = this._chapterPickerList.querySelectorAll<HTMLElement>('.ask-chapter-picker-item');
+    const lower = kw.toLowerCase();
+    items.forEach((item) => {
+      const text = item.textContent?.toLowerCase() || '';
+      item.style.display = text.includes(lower) ? '' : 'none';
+    });
+  }
+
+  _updateChapterPickerCount() {
+    if (this._chapterPickerCount) {
+      this._chapterPickerCount.textContent = `已选 ${this._referencedChapters.length} 章`;
+    }
+  }
+
+  async _prefetchChapterText(url: string): Promise<string> {
+    if (this._chapterTextCache.has(url)) {
+      return this._chapterTextCache.get(url)!;
+    }
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+    if (url === currentPath) {
+      const cur = this._getCurrentChapterInfo();
+      const p = Promise.resolve(cur.text);
+      this._chapterTextCache.set(url, p);
+      return p;
+    }
+    const promise = (async () => {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return '';
+        const html = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const article = doc.querySelector('.main-pane article, .main-pane main, main');
+        if (article) {
+          article.querySelectorAll('script, style, .print\\:hidden, button, .ex-card-actions, md-icon').forEach((el) => el.remove());
+          return (article.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 4000);
+        }
+      } catch {
+        // ignore
+      }
+      return '';
+    })();
+    this._chapterTextCache.set(url, promise);
+    return promise;
+  }
+
+  _initModelMenu() {
+    if (!this._modelMenu) return;
+
+    this._modelMenu.querySelectorAll<HTMLButtonElement>('.ask-model-menu-item').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const modelId = btn.getAttribute('data-model-id');
+        if (modelId) {
+          saveAiActiveModel(modelId);
+          this._updateModelPill();
+          this._closeModelMenu();
+        }
+      });
+    });
+
+    if (this._thinkingSwitch) {
+      this._thinkingSwitch.checked = getAiExtendedThinking();
+      this._thinkingSwitch.addEventListener('change', () => {
+        saveAiExtendedThinking(this._thinkingSwitch.checked);
+      });
+    }
+
+    if (this._collapseToolsSwitch) {
+      this._collapseToolsSwitch.checked = getAiCollapseToolsSummary();
+      this._collapseToolsSwitch.addEventListener('change', () => {
+        saveAiCollapseToolsSummary(this._collapseToolsSwitch.checked);
+      });
+    }
+  }
+
+  _openModelMenu() {
+    this._closeChapterPicker();
+    if (!this._modelMenu) return;
+    this._modelMenu.style.display = 'block';
+    if (this._modelPillBtn) {
+      this._modelPillBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    const activeId = getActiveAiModelId();
+
+    let matchedPreset = false;
+    this._modelMenu.querySelectorAll<HTMLButtonElement>('.ask-model-menu-item:not(.ask-model-extra-item)').forEach((btn) => {
+      const mid = btn.getAttribute('data-model-id');
+      const isActive = mid === activeId;
+      btn.classList.toggle('is-active', isActive);
+      if (isActive) matchedPreset = true;
+    });
+
+    if (this._modelExtraItem) {
+      if (!matchedPreset && activeId) {
+        this._modelExtraItem.style.display = 'flex';
+        this._modelExtraItem.classList.add('is-active');
+        this._modelExtraItem.setAttribute('data-model-id', activeId);
+        if (this._modelExtraHeadline) this._modelExtraHeadline.textContent = getShortModelLabel(activeId);
+        if (this._modelExtraSupport) this._modelExtraSupport.textContent = '当前激活模型';
+      } else {
+        this._modelExtraItem.style.display = 'none';
+        this._modelExtraItem.classList.remove('is-active');
+      }
+    }
+
+    if (this._thinkingSwitch) {
+      this._thinkingSwitch.checked = getAiExtendedThinking();
+    }
+
+    if (this._collapseToolsSwitch) {
+      this._collapseToolsSwitch.checked = getAiCollapseToolsSummary();
+    }
+  }
+
+  _closeModelMenu() {
+    if (!this._modelMenu) return;
+    this._modelMenu.style.display = 'none';
+    if (this._modelPillBtn) {
+      this._modelPillBtn.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  _updateModelPill() {
+    if (this._modelPillName) {
+      this._modelPillName.textContent = getShortModelLabel();
+    }
+  }
+
+  toggleDock() {
+    if (this._isDocked) {
+      this.undockFromSidebar(true);
+    } else {
+      this.dockToSidebar();
+    }
+  }
+
+  dockToSidebar(immediate = false) {
+    if (typeof window === 'undefined') return;
+    const mountEl = document.getElementById('ai-sidebar-panel');
+    if (!mountEl) {
+      console.warn('[AIAsk] 未找到右侧栏挂载点 #ai-sidebar-panel');
+      return;
+    }
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const performDock = () => {
+      if (!this._originalParent || this._originalParent === mountEl || this._originalParent.id === 'ai-sidebar-panel') {
+        const overlayRoot = document.getElementById('astro-overlay-root') || document.getElementById('astrolib-overlay-root') || document.body;
+        this._originalParent = this.parentElement && this.parentElement !== mountEl ? (this.parentElement as HTMLElement) : overlayRoot;
+        this._originalNextSibling = this.nextSibling;
+      }
+
+      this._isDocked = true;
+      try { localStorage.setItem(DOCKED_STORAGE_KEY, 'true'); } catch {}
+
+      // 移动整个 ai-ask 元素至右侧栏侧载面板
+      mountEl.appendChild(this);
+      mountEl.setAttribute('aria-hidden', 'false');
+      this.classList.add('is-docked');
+      if (!immediate) {
+        this.classList.add('docking-in');
+      } else {
+        this.classList.remove('docking-in');
+      }
+      if (this._panel) {
+        this._panel.classList.remove('docking-out', 'dock-settled');
+        this._panel.classList.add('is-docked');
+        this._panel.classList.add('ask-open');
+      }
+
+      // 更新按钮状态
+      if (this._dockBtn) {
+        this._dockBtn.title = '从侧边栏返回浮窗 (Alt+D)';
+        this._dockBtn.setAttribute('aria-label', '从侧边栏返回浮窗');
+      }
+      if (this._dockIcon) this._dockIcon.style.display = 'none';
+      if (this._undockIcon) this._undockIcon.style.display = '';
+      if (this._sideloadBackBtn) this._sideloadBackBtn.style.display = 'inline-flex';
+
+      // 隐藏 FAB 悬浮球 (同时设置 inline style !important 与 hidden 属性)
+      if (this._fab) {
+        this._fab.style.setProperty('display', 'none', 'important');
+        this._fab.setAttribute('hidden', '');
+      }
+
+      // 驱动侧载状态机
+      sideloadManager.open('ai');
+
+      // 若开启了“侧载默认引用本章”，自动激活引用 Chip
+      if (getAiSideloadRefChapter()) {
+        this._enableChapterReference();
+      } else {
+        this._disableChapterReference();
+      }
+
+      // 清除动画 class
+      if (!immediate) {
+        setTimeout(() => {
+          this.classList.remove('docking-in');
+        }, 280);
+      } else {
+        this.classList.remove('docking-in');
+      }
+
+      // 维持滚动与焦点
+      requestAnimationFrame(() => {
+        this._scrollThread();
+        this._input && this._input.focus({ preventScroll: true });
+      });
+    };
+
+    // 若当前浮窗处于展开可见状态且未开启减弱动效，先播放离开淡出动效
+    if (!immediate && !prefersReducedMotion && this._panel && this._panel.classList.contains('ask-open')) {
+      this._panel.classList.add('docking-out');
+      setTimeout(performDock, 130);
+    } else {
+      performDock();
+    }
+  }
+
+  undockFromSidebar(keepOpen = true) {
+    if (typeof window === 'undefined') return;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const performUndock = () => {
+      // 1. 先恢复侧载默认视图（大纲），使 data-sideload-active 与 --sl-sideload-width 立即同步就绪
+      sideloadManager.switchToDefault();
+      // 2. 执行浮窗 DOM 挂载回退与状态恢复
+      this._undockInternal(keepOpen);
+    };
+
+    if (!prefersReducedMotion && this._panel && this._isDocked) {
+      this.classList.add('docking-out');
+      setTimeout(performUndock, 110);
+    } else {
+      performUndock();
+    }
+  }
+
+  _undockInternal(keepOpen = true) {
+    if (!this._isDocked) return;
+    this._isDocked = false;
+    this._disableChapterReference();
+    try { localStorage.setItem(DOCKED_STORAGE_KEY, 'false'); } catch {}
+
+    this.classList.remove('is-docked', 'docking-out');
+    if (this._panel) {
+      this._panel.classList.remove('is-docked', 'docking-out');
+    }
+
+    const mountEl = document.getElementById('ai-sidebar-panel');
+    if (mountEl) {
+      mountEl.setAttribute('aria-hidden', 'true');
+    }
+
+    // 将整个 ai-ask 移回原始容器 (如 #astro-overlay-root)
+    let targetParent = this._originalParent;
+    if (!targetParent || (mountEl && targetParent === mountEl) || targetParent.id === 'ai-sidebar-panel' || !document.body.contains(targetParent)) {
+      targetParent = document.getElementById('astro-overlay-root') || document.getElementById('astrolib-overlay-root') || document.body;
+    }
+    if (this._originalNextSibling && this._originalNextSibling.parentElement === targetParent) {
+      targetParent.insertBefore(this, this._originalNextSibling);
+    } else {
+      targetParent.appendChild(this);
+    }
+
+    // 恢复 FAB 悬浮球显现 (仅主动退出侧载时播放微缩放恢复动效)
+    if (this._fab) {
+      this._fab.style.removeProperty('display');
+      this._fab.removeAttribute('hidden');
+      this._fab.classList.add('fab-restoring');
+      setTimeout(() => {
+        this._fab && this._fab.classList.remove('fab-restoring');
+      }, 240);
+    }
+
+    // 更新按钮状态
+    if (this._dockBtn) {
+      this._dockBtn.title = '前往侧边栏 (Alt+D)';
+      this._dockBtn.setAttribute('aria-label', '前往侧边栏');
+    }
+    if (this._dockIcon) this._dockIcon.style.display = '';
+    if (this._undockIcon) this._undockIcon.style.display = 'none';
+    if (this._sideloadBackBtn) this._sideloadBackBtn.style.display = 'none';
+
+    if (keepOpen) {
+      this._panel.classList.remove('dock-settled');
+      this._panel.classList.add('ask-open', 'docking-in');
+
+      let settled = false;
+      const settleDock = () => {
+        if (settled) return;
+        settled = true;
+        if (this._panel) {
+          this._panel.removeEventListener('animationend', settleDock);
+          this._panel.classList.remove('docking-in');
+          this._panel.classList.add('dock-settled');
+        }
+      };
+
+      this._panel.addEventListener('animationend', settleDock, { once: true });
+      // 兜底定时器：在 250ms 入场动效结束后强制切换为静止就绪态，彻底防止二次动画触发
+      setTimeout(settleDock, 260);
+
+      requestAnimationFrame(() => {
+        this._input && this._input.focus({ preventScroll: true });
+      });
+    } else {
+      this._panel.classList.remove('ask-open', 'dock-settled', 'docking-in');
+      this._history && this._history.classList.remove('open');
+      this._historyBtn && this._historyBtn.classList.remove('ask-settings-open');
+    }
+    requestAnimationFrame(() => this._scrollThread());
+  }
+
   _openPanel() {
+    if (this._isDocked) {
+      sideloadManager.open('ai');
+      requestAnimationFrame(() => {
+        this._input && this._input.focus({ preventScroll: true });
+      });
+      return;
+    }
+    this._panel.classList.remove('dock-settled', 'docking-in');
     this._panel.classList.add('ask-open');
     requestAnimationFrame(() => {
       this._input && this._input.focus({ preventScroll: true });
     });
+    requestAnimationFrame(() => this._scrollThread());
   }
   _closePanel() {
-    this._panel.classList.remove('ask-open');
+    if (this._isDocked) {
+      sideloadManager.switchToDefault();
+      this._undockInternal(false);
+      return;
+    }
+    this._panel.classList.remove('ask-open', 'dock-settled', 'docking-in');
     this._history && this._history.classList.remove('open');
     this._historyBtn && this._historyBtn.classList.remove('ask-settings-open');
   }
@@ -824,6 +1400,29 @@ export class AIAskElement extends HTMLElement {
     const cached = this._indexCache.get(this._bookKey());
     if (cached && cached.meta && cached.meta.title) this._setBookTitle(cached.meta.title);
     else this._setBookTitle(this.getAttribute('data-book-title') || m[2]);
+
+    // 路由切换时，重置章节缓存；若处于侧载且引用激活，更新当前章节引用
+    this._bookChaptersCache = null;
+    if (this._isDocked && this._refCurrentChapter) {
+      const cur = this._getCurrentChapterInfo();
+      const idx = this._referencedChapters.findIndex((c) => c.isCurrent);
+      if (idx !== -1) {
+        this._referencedChapters[idx] = { ...cur, isCurrent: true };
+      } else {
+        this._referencedChapters.unshift({ ...cur, isCurrent: true });
+      }
+      this._updateContextRow();
+    }
+
+    // 探测并平滑恢复侧载停靠态
+    if (typeof localStorage !== 'undefined' && localStorage.getItem(DOCKED_STORAGE_KEY) === 'true') {
+      const mountEl = document.getElementById('ai-sidebar-panel');
+      if (mountEl) {
+        requestAnimationFrame(() => {
+          this.dockToSidebar(true);
+        });
+      }
+    }
   }
 
   _resetThread() {
@@ -845,37 +1444,28 @@ export class AIAskElement extends HTMLElement {
 
   _bookKey() { return `${this._col}-${this._book}`; }
 
-  _threadsKey() { return THREADS_PREFIX + this._bookKey(); }
-  _activeKey() { return ACTIVE_PREFIX + this._bookKey(); }
+  _threadsKey() { return this._threadStore.getThreadsKey(); }
+  _activeKey() { return this._threadStore.getActiveKey(); }
 
   _loadThreads(): any[] {
-    try {
-      const a = JSON.parse(localStorage.getItem(this._threadsKey()) || '[]');
-      return Array.isArray(a) ? a : [];
-    } catch { return []; }
+    return this._threadStore.loadThreads();
   }
   _saveThreads(threads: any[]) {
-    try { localStorage.setItem(this._threadsKey(), JSON.stringify(threads.slice(-MAX_THREADS))); } catch {}
+    this._threadStore.saveThreads(threads);
   }
   _saveActiveThreadId(id: string) {
-    try { localStorage.setItem(this._activeKey(), id); } catch {}
+    this._threadStore.saveActiveThreadId(id);
   }
   _newThread() {
-    return { id: `th-${Date.now()}`, title: '新会话', createdAt: Date.now(), updatedAt: Date.now(), messages: [] };
+    return this._threadStore.newThread();
   }
 
   _restoreBookThread() {
-    this._threads = this._loadThreads();
-    let activeId = '';
-    try { activeId = localStorage.getItem(this._activeKey()) || ''; } catch {}
-    const t = this._threads.find((x) => x.id === activeId);
-    if (t && t.messages && t.messages.length) {
-      this._activeThread = t;
-      this._renderThread(t);
-    } else {
-      this._activeThread = null;
-      this._renderThread(null);
-    }
+    this._threadStore.setBookKey(this._bookKey());
+    const { threads, activeThread } = this._threadStore.restoreBookThread();
+    this._threads = threads;
+    this._activeThread = activeThread;
+    this._renderThread(activeThread);
   }
 
   _ensureActiveThread() {
@@ -898,7 +1488,7 @@ export class AIAskElement extends HTMLElement {
     }
     this._hideEmpty();
     for (const m of msgs) {
-      const body: any = { text: m.text };
+      const body: any = { text: m.text, chapterTitle: m.chapterTitle };
       this._addMessage(m.role, body);
       if (m.role === 'assistant') {
         const segs = (m.segments && m.segments.length)
@@ -908,16 +1498,28 @@ export class AIAskElement extends HTMLElement {
               ...(m.tools || []).map((t: any) => ({ kind: 'tool', name: t.name, args: t.args, summary: t.summary, resultText: t.resultText })),
             ];
         const decorate = !!(m.sources && m.sources.length);
+        let currentToolGroup: any[] = [];
+        const flushToolGroup = () => {
+          if (!currentToolGroup.length) return;
+          const shouldOpen = !getAiCollapseToolsSummary();
+          body.blocksEl.insertAdjacentHTML('beforeend', this._toolsGroupHtml(currentToolGroup, shouldOpen));
+          currentToolGroup = [];
+        };
+
         for (const seg of segs) {
-          if (seg.kind === 'reply') {
-            if (!seg.text || !seg.text.trim()) continue;
-            this._appendMdBlock(body.blocksEl, seg.text, decorate);
-          } else if (seg.kind === 'tool') {
-            body.blocksEl.insertAdjacentHTML('beforeend', this._toolBlocksHtml([seg], false));
-          } else if (seg.kind === 'error') {
-            body.blocksEl.insertAdjacentHTML('beforeend', seg.html || (seg.errorInfo ? renderErrorCardHtml(seg.errorInfo) : ''));
+          if (seg.kind === 'tool') {
+            currentToolGroup.push(seg);
+          } else {
+            flushToolGroup();
+            if (seg.kind === 'reply') {
+              if (!seg.text || !seg.text.trim()) continue;
+              this._appendMdBlock(body.blocksEl, seg.text, decorate);
+            } else if (seg.kind === 'error') {
+              body.blocksEl.insertAdjacentHTML('beforeend', seg.html || (seg.errorInfo ? renderErrorCardHtml(seg.errorInfo) : ''));
+            }
           }
         }
+        flushToolGroup();
         if (m.sources && m.sources.length) this._renderSources(body.sourcesEl, m.sources.map((s: any) => ({ chunk: s })));
       }
     }
@@ -959,9 +1561,9 @@ export class AIAskElement extends HTMLElement {
     this._ask();
   }
 
-  _appendToThread(q: string, text: string, sources: any[], tools: any[], segments: any[]) {
+  _appendToThread(q: string, text: string, sources: any[], tools: any[], segments: any[], chapterTitle?: string) {
     const t = this._ensureActiveThread();
-    t.messages.push({ role: 'user', text: q });
+    t.messages.push({ role: 'user', text: q, chapterTitle });
     if (text) t.messages.push({ role: 'assistant', text, sources, tools, segments: segments || undefined });
     if (!t.title || t.title === '新会话') t.title = (q || '').slice(0, 20) || '新会话';
     t.updatedAt = Date.now();
@@ -981,13 +1583,7 @@ export class AIAskElement extends HTMLElement {
   }
 
   _historyFromThread(t: any): any[] {
-    if (!t || !Array.isArray(t.messages)) return [];
-    const out: any[] = [];
-    for (const m of t.messages) {
-      if (m.role === 'user' && m.text) out.push({ role: 'user', content: m.text });
-      else if (m.role === 'assistant' && m.text) out.push({ role: 'assistant', content: m.text });
-    }
-    return out.slice(-HISTORY_MAX);
+    return this._threadStore.historyFromThread(t);
   }
 
   _fallbackSummary(toolLog: any[]): string {
@@ -1001,17 +1597,7 @@ export class AIAskElement extends HTMLElement {
   }
 
   _relTime(ts: number): string {
-    if (!ts) return '';
-    const d = Date.now() - ts;
-    const m = Math.floor(d / 60000);
-    if (m < 1) return '刚刚';
-    if (m < 60) return `${m} 分钟前`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `${h} 小时前`;
-    const day = Math.floor(h / 24);
-    if (day < 7) return `${day} 天前`;
-    const dt = new Date(ts);
-    return `${dt.getMonth() + 1}/${dt.getDate()}`;
+    return ThreadStore.formatRelativeTime(ts);
   }
 
   _renderHistoryList() {
@@ -1179,6 +1765,15 @@ export class AIAskElement extends HTMLElement {
     const msg = document.createElement('div');
     msg.className = 'ask-msg ' + (role === 'user' ? 'ask-msg-user' : 'ask-msg-ai');
     if (role === 'user') {
+      if (body.chapterTitle) {
+        const badge = document.createElement('div');
+        badge.className = 'ask-user-ref-badge';
+        const label = body.chapterTitle.includes('章节:')
+          ? `引用 ${body.chapterTitle}`
+          : `引用: 《${body.chapterTitle}》`;
+        badge.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg> ${label}`;
+        msg.appendChild(badge);
+      }
       const t = document.createElement('div');
       t.className = 'ask-msg-text ai-md';
       t.innerHTML = mdToHtml(body.text, this._sourceOpenNew());
@@ -1335,7 +1930,7 @@ export class AIAskElement extends HTMLElement {
 
     if (aiMsgs.length === 1) {
       if (forceCollapse === undefined) {
-        const tools = aiMsgs[0].querySelectorAll<HTMLDetailsElement>('details.ask-tool, details.ask-think');
+        const tools = aiMsgs[0].querySelectorAll<HTMLDetailsElement>('details.ask-tool, details.ask-think, details.ask-tools-group');
         for (const t of Array.from(tools)) {
           if (shouldCollapse) t.removeAttribute('open');
           else t.setAttribute('open', '');
@@ -1344,7 +1939,7 @@ export class AIAskElement extends HTMLElement {
     } else {
       const preceding = aiMsgs.slice(0, -1);
       for (const msg of preceding) {
-        const tools = msg.querySelectorAll<HTMLDetailsElement>('details.ask-tool, details.ask-think');
+        const tools = msg.querySelectorAll<HTMLDetailsElement>('details.ask-tool, details.ask-think, details.ask-tools-group');
         for (const t of Array.from(tools)) {
           if (shouldCollapse) {
             t.removeAttribute('open');
@@ -1354,7 +1949,7 @@ export class AIAskElement extends HTMLElement {
         }
       }
       if (!shouldCollapse && forceCollapse === undefined) {
-        const lastTools = aiMsgs[aiMsgs.length - 1].querySelectorAll<HTMLDetailsElement>('details.ask-tool, details.ask-think');
+        const lastTools = aiMsgs[aiMsgs.length - 1].querySelectorAll<HTMLDetailsElement>('details.ask-tool, details.ask-think, details.ask-tools-group');
         for (const t of Array.from(lastTools)) {
           t.setAttribute('open', '');
         }
@@ -1435,13 +2030,61 @@ export class AIAskElement extends HTMLElement {
     return `<div class="ask-tool-block">${items}</div>`;
   }
 
+  _toolsGroupHtml(tools: any[], isOpen = false): string {
+    if (!tools || !tools.length) return '';
+    const summaryText = formatExplorationSummary(tools);
+    const toolItemsHtml = this._toolBlocksHtml(tools, false);
+    return `
+      <details class="ask-tools-group" ${isOpen ? 'open' : ''}>
+        <summary class="ask-tools-group-summary" title="点击展开/收起工具调用详情">
+          <span class="ask-tools-group-title">${esc(summaryText)}</span>
+          <svg class="ask-tools-group-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </summary>
+        <div class="ask-tools-group-items">
+          ${toolItemsHtml}
+        </div>
+      </details>
+    `;
+  }
+
   async _ask() {
     if (!this._input) return;
     const q = this._input.value.trim();
     if (!q || this._busy) return;
 
+    // 收集引用的章节列表
+    const chapterRefs: ReferencedChapter[] = this._referencedChapters.slice();
+    if (this._isDocked && this._refCurrentChapter) {
+      const cur = this._getCurrentChapterInfo();
+      if (!chapterRefs.some((c) => c.url === cur.url)) {
+        chapterRefs.unshift({ ...cur, isCurrent: true });
+      }
+    }
+
+    // 确保引用的所有章节文本在发送前已完成拉取 (最多等待 1.2s)
+    await Promise.all(
+      chapterRefs.map(async (c) => {
+        if (!c.text) {
+          c.text = await Promise.race([
+            this._prefetchChapterText(c.url),
+            new Promise<string>((resolve) => setTimeout(() => resolve(''), 1200)),
+          ]);
+        }
+      })
+    );
+
+    const chapterRefTitles = chapterRefs.map((c) => c.title).filter(Boolean);
+    const chapterRefDisplay =
+      chapterRefTitles.length === 1
+        ? chapterRefTitles[0]
+        : chapterRefTitles.length > 1
+        ? `${chapterRefTitles.length} 个章节: ${chapterRefTitles.join('、')}`
+        : undefined;
+
     this._hideEmpty();
-    this._addMessage('user', { text: q });
+    this._addMessage('user', { text: q, chapterTitle: chapterRefDisplay });
     this._input.value = '';
     this._grow();
     this._busy = true;
@@ -1495,7 +2138,14 @@ export class AIAskElement extends HTMLElement {
       const apiKey = this._currentKey();
       const modelDef = this._selectedModel();
       if (apiKey && modelDef && modelDef.endpoint) {
-        const res = await this._generateAnswer(blocksEl, { mode, idx, hits, question: q });
+        const res = await this._generateAnswer(blocksEl, {
+          mode,
+          idx,
+          hits,
+          question: q,
+          chapterRef: chapterRefs[0] || null,
+          chapterRefs,
+        });
         const text = res.text || '';
         const sources = discussion ? [] : hits.map((h: any) => ({
           type: h.chunk.type, title: h.chunk.title, url: h.chunk.url, text: h.chunk.text,
@@ -1504,7 +2154,7 @@ export class AIAskElement extends HTMLElement {
           name: t.name, args: t.args, summary: t.summary, resultText: t.resultText,
         }));
         if (!discussion && hits.length) this._renderSources(sourcesEl, hits);
-        this._appendToThread(q, text, sources, tools, res.segments);
+        this._appendToThread(q, text, sources, tools, res.segments, chapterRefDisplay);
         status.textContent = '完成。';
       } else {
         const placeholder = blocksEl.querySelector('.ask-msg-thinking-placeholder');
@@ -1547,7 +2197,7 @@ export class AIAskElement extends HTMLElement {
     const params = this._params();
     const apiKey = this._currentKey();
     const modelDef = this._selectedModel();
-    const { mode = 'retrieve', idx = null, hits = [], question } = opts || {};
+    const { mode = 'retrieve', idx = null, hits = [], question, chapterRef = null, chapterRefs = null } = opts || {};
     const discussion = mode === 'discussion';
     const ai = await getAiCoreModules();
     const toolDefs = ai.buildToolDefs();
@@ -1559,6 +2209,9 @@ export class AIAskElement extends HTMLElement {
       history: this._historyFromThread(this._activeThread),
       toolsDesc: ai.toolsDesc(),
       discussion,
+      chapterRef,
+      chapterRefs: chapterRefs || (chapterRef ? [chapterRef] : null),
+      extendedThinking: getAiExtendedThinking(),
     });
     const toolCtx = { index: discussion ? null : idx, bookList: (cfg.bookList || []), col: this._col, book: this._book };
     const endpoint = modelDef.endpoint;
@@ -1601,6 +2254,23 @@ export class AIAskElement extends HTMLElement {
 
     const maxTurns = 8;
     let usedTools = false;
+    let currentToolsGroupEl: HTMLElement | null = null;
+    let currentGroupTools: any[] = [];
+
+    const finishCurrentExplorationGroup = () => {
+      if (!currentToolsGroupEl || !currentGroupTools.length) return;
+      const titleEl = currentToolsGroupEl.querySelector('.ask-tools-group-title');
+      if (titleEl) {
+        titleEl.textContent = formatExplorationSummary(currentGroupTools);
+      }
+      if (getAiCollapseToolsSummary()) {
+        currentToolsGroupEl.removeAttribute('open');
+        this._collapseTools(currentToolsGroupEl);
+      }
+      currentToolsGroupEl = null;
+      currentGroupTools = [];
+    };
+
     try {
       this._streaming = true;
       this._updateSendState();
@@ -1615,6 +2285,7 @@ export class AIAskElement extends HTMLElement {
             const placeholder = blocksEl.querySelector('.ask-msg-thinking-placeholder');
             if (placeholder) placeholder.remove();
             if (usedTools) {
+              finishCurrentExplorationGroup();
               this._collapseTools(blocksEl);
             }
             curText += d;
@@ -1646,6 +2317,23 @@ export class AIAskElement extends HTMLElement {
             const placeholder = blocksEl.querySelector('.ask-msg-thinking-placeholder');
             if (placeholder) placeholder.remove();
 
+            if (!currentToolsGroupEl) {
+              const groupEl = document.createElement('details');
+              groupEl.className = 'ask-tools-group';
+              groupEl.setAttribute('open', '');
+              groupEl.innerHTML = `
+                <summary class="ask-tools-group-summary" title="点击展开/收起工具调用详情">
+                  <span class="ask-tools-group-title">正在执行工具探索...</span>
+                  <svg class="ask-tools-group-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </summary>
+                <div class="ask-tools-group-items"></div>
+              `;
+              blocksEl.appendChild(groupEl);
+              currentToolsGroupEl = groupEl;
+            }
+
             const inFlight = document.createElement('div');
             inFlight.className = 'ask-tool-in-flight';
             inFlight.innerHTML = createM3LoadingHtml({
@@ -1654,7 +2342,8 @@ export class AIAskElement extends HTMLElement {
               layout: 'inline',
               label: `正在检索章节知识库 [${tc.name}]...`,
             });
-            blocksEl.appendChild(inFlight);
+            const itemsEl = currentToolsGroupEl.querySelector<HTMLElement>('.ask-tools-group-items') || blocksEl;
+            itemsEl.appendChild(inFlight);
             this._scrollThread();
 
             let out: any, summary: string;
@@ -1671,7 +2360,14 @@ export class AIAskElement extends HTMLElement {
             const t = { name: tc.name, args: tc.arguments || {}, summary, resultRaw: out, resultText: capJsonText(out) };
             toolLog.push(t);
             segments.push({ kind: 'tool', name: t.name, args: t.args, summary: t.summary, resultText: t.resultText });
-            blocksEl.insertAdjacentHTML('beforeend', this._toolBlocksHtml([t], true));
+            currentGroupTools.push(t);
+            itemsEl.insertAdjacentHTML('beforeend', this._toolBlocksHtml([t], true));
+
+            const titleEl = currentToolsGroupEl.querySelector('.ask-tools-group-title');
+            if (titleEl) {
+              titleEl.textContent = `正在执行工具探索 (${currentGroupTools.length} 步)...`;
+            }
+
             messages.push({ role: 'tool', tool_call_id: tc.id, name: tc.name, content: JSON.stringify(out) });
           }
           continue;
@@ -1701,6 +2397,7 @@ export class AIAskElement extends HTMLElement {
         d.innerHTML = errorCardHtml;
       }
     } finally {
+      finishCurrentExplorationGroup();
       this._collapseTools(blocksEl);
       if (getAiAutoCollapsePreceding()) {
         this._collapsePreceding(true);

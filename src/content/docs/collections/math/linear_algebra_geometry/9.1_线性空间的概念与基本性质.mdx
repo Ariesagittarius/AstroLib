@@ -1,0 +1,262 @@
+---
+title: '9.1 线性空间的概念与基本性质'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+线性代数的研究对象就是线性空间及其线性变换。通过在线性空间中取基，可以将线性空间与线性变换的问题转化为向量与矩阵的相关问题。这些问题已在前面的章节中进行了讨论。本章将介绍线性空间与线性变换的基本概念与性质。
+
+## 一、线性空间的概念
+
+线性空间是向量空间 $\mathbf{R}^n$ 的推广。许多的集合与 $\mathbf{R}^n$ 有着共同的性质。虽然这些集合的元素不是 $n$ 维向量，但这些集合的元素之间也可以进行类似于 $\mathbf{R}^n$ 中向量加法与数乘的两种运算，并且这两种运算同样满足 $\mathbf{R}^n$ 中向量加法与数乘所满足的规律。撇开元素的具体意义，将这些集合与 $\mathbf{R}^n$ 的“共性”抽象出来，就形成了线性空间的概念。
+
+<Knowledge title="定义 1 线性空间（向量空间）">
+
+设 $V$ 是非空集合，$\mathbf{R}$ 为全体实数。如果对于任意的 $\boldsymbol{\alpha}, \boldsymbol{\beta} \in V$，总有唯一的 $\boldsymbol{\gamma} \in V$ 与之对应，称 $\boldsymbol{\gamma}$ 为 $\boldsymbol{\alpha}$ 与 $\boldsymbol{\beta}$ 的**和**，记作 $\boldsymbol{\gamma} = \boldsymbol{\alpha} + \boldsymbol{\beta}$（这种运算称为**加法**）；且对于任意的 $\boldsymbol{\alpha} \in V$ 及任意的 $\lambda \in \mathbf{R}$，有唯一的 $\boldsymbol{\delta} \in V$ 与之对应，称 $\boldsymbol{\delta}$ 为 $\lambda$ 与 $\boldsymbol{\alpha}$ 的**数量乘积**，记作 $\boldsymbol{\delta} = \lambda\boldsymbol{\alpha}$（这种运算称为**数量乘积**，简称**数乘**）。
+
+同时上述加法与数乘运算满足如下 8 条运算规律：
+
+(1) 对任意 $\boldsymbol{\alpha}, \boldsymbol{\beta} \in V, \boldsymbol{\alpha} + \boldsymbol{\beta} = \boldsymbol{\beta} + \boldsymbol{\alpha}$；
+
+(2) 对任意 $\boldsymbol{\alpha}, \boldsymbol{\beta}, \boldsymbol{\gamma} \in V, (\boldsymbol{\alpha} + \boldsymbol{\beta}) + \boldsymbol{\gamma} = \boldsymbol{\alpha} + (\boldsymbol{\beta} + \boldsymbol{\gamma})$；
+
+(3) 存在元素 $\boldsymbol{0} \in V$，使得对任意 $\boldsymbol{\alpha} \in V, \boldsymbol{\alpha} + \boldsymbol{0} = \boldsymbol{\alpha}$（称 $\boldsymbol{0}$ 为 $V$ 的**零元素**）；
+
+(4) 对任意 $\boldsymbol{\alpha} \in V$，存在元素 $\boldsymbol{\beta} \in V$，使得 $\boldsymbol{\alpha} + \boldsymbol{\beta} = \boldsymbol{0}$（称 $\boldsymbol{\beta}$ 为 $\boldsymbol{\alpha}$ 的**负元素**）；
+
+(5) 对任意 $\boldsymbol{\alpha} \in V, 1\boldsymbol{\alpha} = \boldsymbol{\alpha}$；
+
+(6) 对任意 $\boldsymbol{\alpha} \in V$ 及任意 $\lambda, \mu \in \mathbf{R}, \lambda(\mu\boldsymbol{\alpha}) = (\lambda\mu)\boldsymbol{\alpha}$；
+
+(7) 对任意 $\boldsymbol{\alpha} \in V$ 及任意 $\lambda, \mu \in \mathbf{R}, (\lambda + \mu)\boldsymbol{\alpha} = \lambda\boldsymbol{\alpha} + \mu\boldsymbol{\alpha}$；
+
+(8) 对任意 $\boldsymbol{\alpha}, \boldsymbol{\beta} \in V$ 及任意 $\lambda \in \mathbf{R}, \lambda(\boldsymbol{\alpha} + \boldsymbol{\beta}) = \lambda\boldsymbol{\alpha} + \lambda\boldsymbol{\beta}$，
+
+则称 $V$ 为**实线性空间**（或**实向量空间**），$V$ 中的元素也称为（实）**向量**。
+
+</Knowledge>
+
+<SideNote title="关于复线性空间与数域">
+当定义 1 中的全体实数集 $\mathbf{R}$ 换成全体复数集 $\mathbf{C}$ 时，相应地将 $V$ 称为复线性空间。本课程只讨论实线性空间。如果没有特别说明，本章提到的线性空间均指实线性空间。
+
+更一般地，设 $F$ 为某个非空数集，如果 $F$ 对于数的加、减、乘、除四则运算封闭（即对任意 $F$ 中的数 $a, b$，有 $a+b, a-b, ab$ 仍属于 $F$，且当 $a \neq 0$ 时，$\frac{b}{a}$ 也在 $F$ 中），则称 $F$ 为一个**数域**。当定义 1 中的实数集 $\mathbf{R}$ 换成数域 $F$ 时，称 $V$ 为数域 $F$ 上的线性空间。
+</SideNote>
+
+<Example title="例 1 ~ 3 典型线性空间">
+
+(1) 对于向量的加法与数乘运算，$\mathbf{R}^n$ 是一个线性空间。
+
+(2) 设 $V = \mathbf{R}^{m \times n}$ 为全体 $m \times n$ 实矩阵。对于矩阵的加法与数乘运算，$V$ 是一个线性空间。
+
+(3) 设 $n$ 为正整数，$\mathbf{R}[x]_n$ 为全体次数小于 $n$ 的实系数多项式的集合，即
+
+$$
+\mathbf{R}[x]_n = \{a_0 + a_1 x + \cdots + a_{n-1}x^{n-1} \mid a_i \in \mathbf{R}, i = 0, 1, \cdots, n-1\}.
+$$
+
+对于多项式的加法及数与多项式的乘法，$\mathbf{R}[x]_n$ 是一个线性空间。
+
+</Example>
+
+<Example title="例 4 抽象运算下的线性空间验证">
+
+设 $\mathbf{R}^+$ 为全体正实数。在 $\mathbf{R}^+$ 中定义加法 $\oplus$ 与数乘 $\cdot$ 运算为：对任意 $a, b \in \mathbf{R}^+, a \oplus b = ab$；对任意 $a \in \mathbf{R}^+$ 及任意 $\lambda \in \mathbf{R}, \lambda \cdot a = a^\lambda$。验证 $\mathbf{R}^+$ 对于加法运算 $\oplus$ 与数乘运算 $\cdot$ 构成线性空间。
+
+</Example>
+
+<Solution title="解">
+
+对任意 $a, b \in \mathbf{R}^+, a \oplus b = ab \in \mathbf{R}^+$；对任意 $a \in \mathbf{R}^+$ 及任意 $\lambda \in \mathbf{R}, \lambda \cdot a = a^\lambda \in \mathbf{R}^+$。因此加法 $\oplus$ 与数乘 $\cdot$ 是 $\mathbf{R}^+$ 中的运算（即 $\mathbf{R}^+$ 对于加法 $\oplus$ 与数乘 $\cdot$ 运算封闭）。
+
+下面逐条验证加法 $\oplus$ 与数乘 $\cdot$ 运算满足定义 1 中的 8 条规律：
+
+(1) 对任意 $a, b \in \mathbf{R}^+, a \oplus b = ab = ba = b \oplus a$；
+
+(2) 对任意 $a, b, c \in \mathbf{R}^+, (a \oplus b) \oplus c = (ab)c = a(bc) = a \oplus (b \oplus c)$；
+
+(3) $\mathbf{R}^+$ 中存在零元素 $1$，使得对任意 $a \in \mathbf{R}^+, a \oplus 1 = a \cdot 1 = a$；
+
+(4) 对任意 $a \in \mathbf{R}^+$，存在元素 $\frac{1}{a} \in \mathbf{R}^+$，使得 $a \oplus \frac{1}{a} = a \cdot \frac{1}{a} = 1$，即 $a$ 的负元素为 $\frac{1}{a}$；
+
+(5) 对任意 $a \in \mathbf{R}^+, 1 \cdot a = a^1 = a$；
+
+(6) 对任意 $a \in \mathbf{R}^+$ 及任意 $\lambda, \mu \in \mathbf{R}$，有 $\lambda \cdot (\mu \cdot a) = \lambda \cdot a^\mu = (a^\mu)^\lambda = a^{\lambda\mu} = (\lambda\mu) \cdot a$；
+
+(7) 对任意 $a \in \mathbf{R}^+$ 及任意 $\lambda, \mu \in \mathbf{R}$，有 $(\lambda + \mu) \cdot a = a^{\lambda+\mu} = a^\lambda a^\mu = (\lambda \cdot a) \oplus (\mu \cdot a)$；
+
+(8) 对任意 $a, b \in \mathbf{R}^+$ 及任意 $\lambda \in \mathbf{R}, \lambda \cdot (a \oplus b) = \lambda \cdot (ab) = (ab)^\lambda = a^\lambda b^\lambda = (\lambda \cdot a) \oplus (\lambda \cdot b)$。
+
+总之，$\mathbf{R}^+$ 对于所定义的加法运算 $\oplus$ 与数乘运算 $\cdot$ 构成线性空间。
+
+</Solution>
+
+<Example title="例 5 ~ 6 非线性空间的反例">
+
+(1) 设 $n$ 为正整数，$V$ 为全体 $n$ 次实系数多项式，即
+
+$$
+V = \{a_0 + a_1 x + \cdots + a_n x^n \mid a_i \in \mathbf{R}, i = 0, 1, \cdots, n, a_n \neq 0\}.
+$$
+
+对于多项式的加法及数与多项式的乘法，$V$ 不是线性空间。
+
+这是因为对于 $0 \in \mathbf{R}$ 与 $x^n \in V, 0 x^n = 0 \notin V$。这说明数与多项式的乘法不是 $V$ 中的运算（即 $V$ 对数乘运算不封闭）。同时容易验证 $V$ 对多项式的加法运算也不封闭（例如 $x^n + (-x^n + 1) = 1 \notin V$）。
+
+(2) 设 $V$ 为全体 $n$ 阶实矩阵。定义加法 $\oplus$ 为：对任意 $\boldsymbol{A}, \boldsymbol{B} \in V, \boldsymbol{A} \oplus \boldsymbol{B} = \boldsymbol{A}\boldsymbol{B}$。
+
+虽然 $V$ 对于如此定义的加法及矩阵的数乘运算都封闭，但因为矩阵乘法一般不满足交换律（即 $\boldsymbol{A}\boldsymbol{B} \neq \boldsymbol{B}\boldsymbol{A}$），加法不满足规律 (1)，所以对于这样定义的加法及矩阵的数乘运算，$V$ 不是线性空间。
+
+</Example>
+
+## 二、线性空间的基本性质
+
+线性空间具有以下基本性质：
+
+<Knowledge title="性质 1 零元素的唯一性">
+
+设 $V$ 为线性空间，则 $V$ 中的零元素是唯一的。
+
+</Knowledge>
+
+<Block title="证明">
+
+设 $\boldsymbol{0}_1, \boldsymbol{0}_2$ 是 $V$ 的零元素，由零元素定义：
+
+$$
+\boldsymbol{0}_1 + \boldsymbol{0}_2 = \boldsymbol{0}_1, \quad \boldsymbol{0}_2 + \boldsymbol{0}_1 = \boldsymbol{0}_2.
+$$
+
+再由加法交换律 $\boldsymbol{0}_1 + \boldsymbol{0}_2 = \boldsymbol{0}_2 + \boldsymbol{0}_1$，即得 $\boldsymbol{0}_1 = \boldsymbol{0}_2$。
+
+</Block>
+
+<Knowledge title="性质 2 负元素的唯一性">
+
+设 $V$ 为线性空间，则对任意 $\boldsymbol{\alpha} \in V$，$\boldsymbol{\alpha}$ 的负元素是唯一的（记作 $-\boldsymbol{\alpha}$）。
+
+</Knowledge>
+
+<Block title="证明">
+
+设 $\boldsymbol{\beta}, \boldsymbol{\gamma}$ 是 $\boldsymbol{\alpha}$ 的负元素，即 $\boldsymbol{\alpha} + \boldsymbol{\beta} = \boldsymbol{0}, \boldsymbol{\alpha} + \boldsymbol{\gamma} = \boldsymbol{0}$。于是
+
+$$
+\boldsymbol{\beta} = \boldsymbol{\beta} + \boldsymbol{0} = \boldsymbol{\beta} + (\boldsymbol{\alpha} + \boldsymbol{\gamma}) = (\boldsymbol{\beta} + \boldsymbol{\alpha}) + \boldsymbol{\gamma} = \boldsymbol{0} + \boldsymbol{\gamma} = \boldsymbol{\gamma}.
+$$
+
+</Block>
+
+<Knowledge title="性质 3 零乘与负一乘性质">
+
+对任意 $\boldsymbol{\alpha} \in V$ 与 $\lambda \in \mathbf{R}$：
+
+(1) $0\boldsymbol{\alpha} = \boldsymbol{0}$；
+
+(2) $(-1)\boldsymbol{\alpha} = -\boldsymbol{\alpha}$；
+
+(3) $\lambda\boldsymbol{0} = \boldsymbol{0}$。
+
+</Knowledge>
+
+<Block title="证明">
+
+(1) 因为 $\boldsymbol{\alpha} = 1\boldsymbol{\alpha} = (1 + 0)\boldsymbol{\alpha} = \boldsymbol{\alpha} + 0\boldsymbol{\alpha}$，两端加上 $-\boldsymbol{\alpha}$，即得 $0\boldsymbol{\alpha} = \boldsymbol{0}$；
+
+(2) 因为 $\boldsymbol{0} = 0\boldsymbol{\alpha} = (1 - 1)\boldsymbol{\alpha} = \boldsymbol{\alpha} + (-1)\boldsymbol{\alpha}$，由负元素唯一性知 $(-1)\boldsymbol{\alpha} = -\boldsymbol{\alpha}$；
+
+(3) 因为 $\lambda\boldsymbol{0} = \lambda(\boldsymbol{0} + \boldsymbol{0}) = \lambda\boldsymbol{0} + \lambda\boldsymbol{0}$，两端加上 $-\lambda\boldsymbol{0}$，即得 $\lambda\boldsymbol{0} = \boldsymbol{0}$。
+
+</Block>
+
+<Knowledge title="性质 4 数乘为零的充要因子">
+
+如果 $\lambda\boldsymbol{\alpha} = \boldsymbol{0}$，则 $\lambda = 0$ 或 $\boldsymbol{\alpha} = \boldsymbol{0}$。
+
+</Knowledge>
+
+<Block title="证明">
+
+若 $\lambda \neq 0$，则在 $\lambda\boldsymbol{\alpha} = \boldsymbol{0}$ 两端乘以 $\frac{1}{\lambda}$，得
+
+$$
+\boldsymbol{\alpha} = 1\boldsymbol{\alpha} = \left(\frac{1}{\lambda}\lambda\right)\boldsymbol{\alpha} = \frac{1}{\lambda}(\lambda\boldsymbol{\alpha}) = \frac{1}{\lambda}\boldsymbol{0} = \boldsymbol{0}.
+$$
+
+</Block>
+
+## 三、子空间
+
+<Knowledge title="定义 2 子空间与平凡子空间">
+
+设 $V$ 是线性空间，$W$ 是 $V$ 的非空子集。如果 $W$ 对于 $V$ 中的加法与数乘这两种运算也构成线性空间，则称 $W$ 为 $V$ 的**子空间**。
+
+对线性空间 $V$ 而言，$V$ 是自身的子空间，由零元素构成的子集 $\{\boldsymbol{0}\}$ 也是 $V$ 的子空间，称为**零空间**。这两个子空间称为 $V$ 的**平凡子空间**。
+
+</Knowledge>
+
+<Knowledge title="定理 1 子空间的充要判别准则">
+
+设 $W$ 是线性空间 $V$ 的非空子集。则 $W$ 是 $V$ 的子空间的充分必要条件是 $W$ 对于 $V$ 中的加法及数乘运算封闭。即对任意的 $\boldsymbol{\alpha}, \boldsymbol{\beta} \in W$ 及 $\lambda \in \mathbf{R}$，有
+
+$$
+\boldsymbol{\alpha} + \boldsymbol{\beta} \in W \quad \text{且} \quad \lambda\boldsymbol{\alpha} \in W.
+$$
+
+</Knowledge>
+
+<Block title="证明">
+
+**必要性**：因为 $W$ 是 $V$ 的子空间，由线性空间的定义即得封闭性。
+
+**充分性**：此时 $V$ 中的加法及数乘运算也是 $W$ 中的运算。因为 $V$ 是线性空间，所以这两种运算显然满足定义 1 中的 8 条规律中的 (1)(2)(5)(6)(7)(8)。
+
+任取 $\boldsymbol{\alpha} \in W$，由数乘封闭性知 $-\boldsymbol{\alpha} = (-1)\boldsymbol{\alpha} \in W$，故规律 (4) 成立。
+
+又对任意 $\boldsymbol{\alpha} \in W$，因为 $-\boldsymbol{\alpha} \in W$，由加法封闭性知 $\boldsymbol{\alpha} + (-\boldsymbol{\alpha}) = \boldsymbol{0} \in W$，即规律 (3) 也满足。
+
+总之，$W$ 对于 $V$ 中的加法与数乘运算也构成线性空间，因此 $W$ 是 $V$ 的子空间。
+
+</Block>
+
+<Example title="例 7 矩阵子空间判别">
+
+设 $V$ 是全体 $n$ 阶实矩阵。$W_1$ 是全体主对角线上元素为零的 $n$ 阶实矩阵，$W_2$ 是全体主对角线上元素为 $1$ 的 $n$ 阶实矩阵。对于矩阵的加法与数乘运算，$V$ 构成一个线性空间。判断 $W_1$ 与 $W_2$ 是否为 $V$ 的子空间。
+
+</Example>
+
+<Solution title="解">
+
+$W_1, W_2$ 均是 $V$ 的非空子集。
+
+对于 $W_1$，设 $\boldsymbol{A}, \boldsymbol{B} \in W_1, \lambda \in \mathbf{R}$，则 $\boldsymbol{A}, \boldsymbol{B}$ 主对角线元素均为 $0$。显然 $\boldsymbol{A} + \boldsymbol{B}$ 与 $\lambda\boldsymbol{A}$ 的主对角线元素也恒为 $0$，故 $\boldsymbol{A} + \boldsymbol{B} \in W_1$ 且 $\lambda\boldsymbol{A} \in W_1$。因此 $W_1$ 对于加法与数乘封闭，是 $V$ 的子空间。
+
+对于 $W_2$，取零矩阵 $\boldsymbol{O}$，其主对角线元素为 $0 \neq 1$，故 $\boldsymbol{O} \notin W_2$；且若 $\boldsymbol{A}, \boldsymbol{B} \in W_2$，$\boldsymbol{A} + \boldsymbol{B}$ 的主对角线元素为 $1 + 1 = 2 \neq 1$，即 $\boldsymbol{A} + \boldsymbol{B} \notin W_2$。$W_2$ 对于加法与数乘都不封闭，故 $W_2$ 不是 $V$ 的子空间。
+
+</Solution>
+
+<Example title="例 8 生成子空间">
+
+设 $V$ 是线性空间，$\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_m \in V$。设 $L(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_m)$ 为由 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_m$ 的全体线性组合构成的集合，即
+
+$$
+L(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_m) = \{\lambda_1 \boldsymbol{\alpha}_1 + \lambda_2 \boldsymbol{\alpha}_2 + \cdots + \lambda_m \boldsymbol{\alpha}_m \mid \lambda_i \in \mathbf{R}, i = 1, 2, \cdots, m\}.
+$$
+
+容易验证 $L(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_m)$ 是 $V$ 的非空子集且对 $V$ 中的加法与数乘运算都是封闭的，所以 $L(\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_m)$ 是 $V$ 的子空间，称为由 $\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \cdots, \boldsymbol{\alpha}_m$ **生成的子空间**。
+
+例如，若 $V = \mathbf{R}^3, \boldsymbol{\varepsilon}_1 = (1, 0, 0)^\mathrm{T}, \boldsymbol{\varepsilon}_2 = (0, 1, 0)^\mathrm{T}$，则 $L(\boldsymbol{\varepsilon}_1, \boldsymbol{\varepsilon}_2)$ 就是 $xOy$ 坐标平面。
+
+</Example>
+
+<ExerciseTrigger chapter={9} section="9.1" title="9.1 线性空间的概念与基本性质 课后真题与自测练习" />

@@ -1,0 +1,513 @@
+---
+title: '2.6 矩阵的分块法'
+---
+import ExerciseTrigger from '@/components/exercises/ExerciseTrigger.astro';
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import SideNote from '@/components/SideNote.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+分块矩阵理论是矩阵代数中的重要组成部分。在理论研究与工程计算中，常会遇到阶数很高的矩阵，为了简化书写与运算、突出矩阵内部结构，通常采用分块的方法——即用一些贯穿于矩阵的纵横虚线将矩阵分割为若干个小矩阵（称为**子块**或**子矩阵**），以子块为元素构成的形式上的矩阵称为**分块矩阵**。本节系统阐述分块矩阵的加法、数乘、转置与乘法，重点讨论准对角矩阵求逆、准三角矩阵性质以及分块初等变换技巧。
+
+分块矩阵的一般形式可记为：
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+\boldsymbol{A}_{11} & \boldsymbol{A}_{12} & \cdots & \boldsymbol{A}_{1s} \\
+\boldsymbol{A}_{21} & \boldsymbol{A}_{22} & \cdots & \boldsymbol{A}_{2s} \\
+\vdots & \vdots & \ddots & \vdots \\
+\boldsymbol{A}_{r1} & \boldsymbol{A}_{r2} & \cdots & \boldsymbol{A}_{rs}
+\end{pmatrix} = (\boldsymbol{A}_{ij})_{r \times s}.
+$$
+
+其中，每一行小块称为一个**块行**，每一列小块称为一个**块列**。
+
+<SideNote title="两种常见特殊分块方法">
+
+对于任意 $m \times n$ 矩阵 $\boldsymbol{A} = (a_{ij})$，最常用的两种特殊分块是：
+
+1. **行向量表示法（按行分块）**：
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+\boldsymbol{\alpha}_1 \\
+\boldsymbol{\alpha}_2 \\
+\vdots \\
+\boldsymbol{\alpha}_m
+\end{pmatrix}, \quad \text{其中 } \boldsymbol{\alpha}_i = (a_{i1}, a_{i2}, \dots, a_{in}) \ (i = 1, 2, \dots, m);
+$$
+
+2. **列向量表示法（按列分块）**：
+
+$$
+\boldsymbol{A} = (\boldsymbol{\beta}_1, \boldsymbol{\beta}_2, \dots, \boldsymbol{\beta}_n), \quad \text{其中 } \boldsymbol{\beta}_j = \begin{pmatrix} a_{1j} \\ a_{2j} \\ \vdots \\ a_{mj} \end{pmatrix} \ (j = 1, 2, \dots, n).
+$$
+
+分块矩阵的所有运算法则是普通矩阵运算在子块层面的自然扩展，其形式规则与普通数的运算保持一致。
+
+</SideNote>
+
+## 一、分块矩阵的加法与数乘
+
+设 $m \times n$ 矩阵 $\boldsymbol{A}$ 与 $\boldsymbol{B}$ 具有完全相同的分块方式：
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+\boldsymbol{A}_{11} & \cdots & \boldsymbol{A}_{1s} \\
+\vdots & \ddots & \vdots \\
+\boldsymbol{A}_{r1} & \cdots & \boldsymbol{A}_{rs}
+\end{pmatrix}, \quad \boldsymbol{B} = \begin{pmatrix}
+\boldsymbol{B}_{11} & \cdots & \boldsymbol{B}_{1s} \\
+\vdots & \ddots & \vdots \\
+\boldsymbol{B}_{r1} & \cdots & \boldsymbol{B}_{rs}
+\end{pmatrix},
+$$
+
+其中各对应子块 $\boldsymbol{A}_{ij}$ 与 $\boldsymbol{B}_{ij}$ 的行数、列数均相同（$1 \le i \le r, 1 \le j \le s$），则
+
+$$
+\boldsymbol{A} + \boldsymbol{B} = \begin{pmatrix}
+\boldsymbol{A}_{11} + \boldsymbol{B}_{11} & \cdots & \boldsymbol{A}_{1s} + \boldsymbol{B}_{1s} \\
+\vdots & \ddots & \vdots \\
+\boldsymbol{A}_{r1} + \boldsymbol{B}_{r1} & \cdots & \boldsymbol{A}_{rs} + \boldsymbol{B}_{rs}
+\end{pmatrix}.
+$$
+
+数 $k$ 与分块矩阵 $\boldsymbol{A}$ 的乘积为
+
+$$
+k\boldsymbol{A} = \begin{pmatrix}
+k\boldsymbol{A}_{11} & \cdots & k\boldsymbol{A}_{1s} \\
+\vdots & \ddots & \vdots \\
+k\boldsymbol{A}_{r1} & \cdots & k\boldsymbol{A}_{rs}
+\end{pmatrix}.
+$$
+
+<Example title="例 28 列向量分块矩阵加法与行列式计算">
+
+设 $\boldsymbol{A} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\beta})$，$\boldsymbol{B} = (\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\gamma})$ 都是四阶方阵的列向量分块矩阵。已知 $|\boldsymbol{A}| = 1$ 和 $|\boldsymbol{B}| = -2$，求行列式 $|\boldsymbol{A} + \boldsymbol{B}|$ 的值。
+
+</Example>
+
+<Solution title="解">
+
+根据分块矩阵加法定义：
+
+$$
+\boldsymbol{A} + \boldsymbol{B} = (2\boldsymbol{\alpha}_1, 2\boldsymbol{\alpha}_2, 2\boldsymbol{\alpha}_3, \boldsymbol{\beta} + \boldsymbol{\gamma}).
+$$
+
+利用行列式性质，提出各列公因数：
+
+$$
+|\boldsymbol{A} + \boldsymbol{B}| = 2^3 \cdot |\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\beta} + \boldsymbol{\gamma}|.
+$$
+
+再按最后一列的拆行拆项性质展开：
+
+$$
+\begin{aligned}
+|\boldsymbol{A} + \boldsymbol{B}| &= 8 \left( |\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\beta}| + |\boldsymbol{\alpha}_1, \boldsymbol{\alpha}_2, \boldsymbol{\alpha}_3, \boldsymbol{\gamma}| \right) \\
+&= 8 (|\boldsymbol{A}| + |\boldsymbol{B}|) = 8 (1 - 2) = -8.
+\end{aligned}
+$$
+
+</Solution>
+
+## 二、分块矩阵的转置
+
+<Knowledge title="分块矩阵转置规则：“内外一起转”">
+
+设分块矩阵 $\boldsymbol{A} = (\boldsymbol{A}_{ij})_{r \times s}$，则其转置矩阵为
+
+$$
+\boldsymbol{A}^\mathrm{T} = \begin{pmatrix}
+\boldsymbol{A}_{11}^\mathrm{T} & \boldsymbol{A}_{21}^\mathrm{T} & \cdots & \boldsymbol{A}_{r1}^\mathrm{T} \\
+\boldsymbol{A}_{12}^\mathrm{T} & \boldsymbol{A}_{22}^\mathrm{T} & \cdots & \boldsymbol{A}_{r2}^\mathrm{T} \\
+\vdots & \vdots & \ddots & \vdots \\
+\boldsymbol{A}_{1s}^\mathrm{T} & \boldsymbol{A}_{2s}^\mathrm{T} & \cdots & \boldsymbol{A}_{rs}^\mathrm{T}
+\end{pmatrix}.
+$$
+
+即：不仅将各子块视为元素作行列互换（**外层转置**），而且每个子块自身也必须进行转置（**内层转置**）。
+
+</Knowledge>
+
+<Example title="例 29 分块矩阵转置">
+
+设
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+1 & 2 & \vdots & 3 & 4 & 5 \\
+6 & 7 & \vdots & 8 & 9 & 10 \\
+\cdots & \cdots & \vdots & \cdots & \cdots & \cdots \\
+10 & 9 & \vdots & 8 & 7 & 6 \\
+5 & 4 & \vdots & 3 & 2 & 1
+\end{pmatrix} = \begin{pmatrix}
+\boldsymbol{A}_{11} & \boldsymbol{A}_{12} \\
+\boldsymbol{A}_{21} & \boldsymbol{A}_{22}
+\end{pmatrix},
+$$
+
+则
+
+$$
+\boldsymbol{A}^\mathrm{T} = \begin{pmatrix}
+\boldsymbol{A}_{11}^\mathrm{T} & \boldsymbol{A}_{21}^\mathrm{T} \\
+\boldsymbol{A}_{12}^\mathrm{T} & \boldsymbol{A}_{22}^\mathrm{T}
+\end{pmatrix} = \begin{pmatrix}
+1 & 6 & \vdots & 10 & 5 \\
+2 & 7 & \vdots & 9 & 4 \\
+\cdots & \cdots & \vdots & \cdots & \cdots \\
+3 & 8 & \vdots & 8 & 3 \\
+4 & 9 & \vdots & 7 & 2 \\
+5 & 10 & \vdots & 6 & 1
+\end{pmatrix}.
+$$
+
+</Example>
+
+## 三、分块矩阵的乘法
+
+<Knowledge title="分块矩阵乘法法则与相容条件">
+
+设矩阵 $\boldsymbol{A} = (a_{ij})_{m \times p}$，$\boldsymbol{B} = (b_{ij})_{p \times n}$。计算乘积 $\boldsymbol{A}\boldsymbol{B}$ 时，**必须使左边矩阵 $\boldsymbol{A}$ 的列分块方式与右边矩阵 $\boldsymbol{B}$ 的行分块方式完全一致**：
+
+设 $\boldsymbol{A}$ 的列划分为 $l_1, l_2, \dots, l_s$ 列，$\boldsymbol{B}$ 的行对应划分为 $l_1, l_2, \dots, l_s$ 行，则乘积
+
+$$
+\boldsymbol{A}\boldsymbol{B} = \boldsymbol{C} = (\boldsymbol{C}_{ij})_{r \times t},
+$$
+
+其中子块计算满足类矩阵乘法公式：
+
+$$
+\boldsymbol{C}_{ij} = \sum_{k=1}^s \boldsymbol{A}_{ik}\boldsymbol{B}_{kj} = \boldsymbol{A}_{i1}\boldsymbol{B}_{1j} + \boldsymbol{A}_{i2}\boldsymbol{B}_{2j} + \cdots + \boldsymbol{A}_{is}\boldsymbol{B}_{sj}.
+$$
+
+</Knowledge>
+
+<Example title="例 30 分块矩阵乘法计算">
+
+对于矩阵
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+1 & 0 & 2 & 1 \\
+0 & 1 & 3 & 4 \\
+0 & 0 & -1 & 0 \\
+0 & 0 & 0 & -1
+\end{pmatrix}, \quad \boldsymbol{B} = \begin{pmatrix}
+1 & 2 & 0 & 0 \\
+3 & 0 & 0 & 0 \\
+4 & 5 & 1 & 0 \\
+0 & 2 & 0 & 1
+\end{pmatrix},
+$$
+
+用分块矩阵计算 $\boldsymbol{A}\boldsymbol{B}$。
+
+</Example>
+
+<Solution title="解">
+
+将矩阵 $\boldsymbol{A}, \boldsymbol{B}$ 均采用 $2 \times 2$ 分块：
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+\boldsymbol{E} & \boldsymbol{C} \\
+\boldsymbol{O} & -\boldsymbol{E}
+\end{pmatrix}, \quad \boldsymbol{B} = \begin{pmatrix}
+\boldsymbol{D} & \boldsymbol{O} \\
+\boldsymbol{F} & \boldsymbol{E}
+\end{pmatrix},
+$$
+
+其中
+
+$$
+\boldsymbol{C} = \begin{pmatrix} 2 & 1 \\ 3 & 4 \end{pmatrix}, \quad \boldsymbol{D} = \begin{pmatrix} 1 & 2 \\ 3 & 0 \end{pmatrix}, \quad \boldsymbol{E} = \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix}, \quad \boldsymbol{F} = \begin{pmatrix} 4 & 5 \\ 0 & 2 \end{pmatrix}.
+$$
+
+于是
+
+$$
+\boldsymbol{A}\boldsymbol{B} = \begin{pmatrix} \boldsymbol{E} & \boldsymbol{C} \\ \boldsymbol{O} & -\boldsymbol{E} \end{pmatrix} \begin{pmatrix} \boldsymbol{D} & \boldsymbol{O} \\ \boldsymbol{F} & \boldsymbol{E} \end{pmatrix} = \begin{pmatrix} \boldsymbol{E}\boldsymbol{D} + \boldsymbol{C}\boldsymbol{F} & \boldsymbol{C}\boldsymbol{E} \\ -\boldsymbol{E}\boldsymbol{F} & -\boldsymbol{E} \end{pmatrix} = \begin{pmatrix} \boldsymbol{D} + \boldsymbol{C}\boldsymbol{F} & \boldsymbol{C} \\ -\boldsymbol{F} & -\boldsymbol{E} \end{pmatrix}.
+$$
+
+由于
+
+$$
+\boldsymbol{D} + \boldsymbol{C}\boldsymbol{F} = \begin{pmatrix} 1 & 2 \\ 3 & 0 \end{pmatrix} + \begin{pmatrix} 2 & 1 \\ 3 & 4 \end{pmatrix}\begin{pmatrix} 4 & 5 \\ 0 & 2 \end{pmatrix} = \begin{pmatrix} 1 & 2 \\ 3 & 0 \end{pmatrix} + \begin{pmatrix} 8 & 12 \\ 12 & 23 \end{pmatrix} = \begin{pmatrix} 9 & 14 \\ 15 & 23 \end{pmatrix},
+$$
+
+故
+
+$$
+\boldsymbol{A}\boldsymbol{B} = \begin{pmatrix}
+9 & 14 & 2 & 1 \\
+15 & 23 & 3 & 4 \\
+-4 & -5 & -1 & 0 \\
+0 & -2 & 0 & -1
+\end{pmatrix}.
+$$
+
+</Solution>
+
+## 四、对角分块矩阵与准三角分块矩阵
+
+<Knowledge title="对角分块矩阵（准对角矩阵）及其逆">
+
+形如
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+\boldsymbol{A}_1 & & & \\
+& \boldsymbol{A}_2 & & \\
+& & \ddots & \\
+& & & \boldsymbol{A}_r
+\end{pmatrix} = \mathrm{diag}(\boldsymbol{A}_1, \boldsymbol{A}_2, \dots, \boldsymbol{A}_r)
+$$
+
+的分块矩阵称为**准对角矩阵**（或分块对角矩阵），其中各对角子块 $\boldsymbol{A}_1, \boldsymbol{A}_2, \dots, \boldsymbol{A}_r$ 均为方阵（阶数可以不同）。
+
+1. **乘积**：两个分块方式相同的准对角矩阵的乘积仍为准对角矩阵：
+
+$$
+\mathrm{diag}(\boldsymbol{A}_1, \dots, \boldsymbol{A}_r) \mathrm{diag}(\boldsymbol{B}_1, \dots, \boldsymbol{B}_r) = \mathrm{diag}(\boldsymbol{A}_1\boldsymbol{B}_1, \dots, \boldsymbol{A}_r\boldsymbol{B}_r);
+$$
+
+2. **逆矩阵**：准对角矩阵可逆当且仅当每一个子块 $\boldsymbol{A}_i$ 均可逆，且其逆矩阵为各子块逆矩阵构成的准对角矩阵：
+
+$$
+\boldsymbol{A}^{-1} = \begin{pmatrix}
+\boldsymbol{A}_1^{-1} & & & \\
+& \boldsymbol{A}_2^{-1} & & \\
+& & \ddots & \\
+& & & \boldsymbol{A}_r^{-1}
+\end{pmatrix};
+$$
+
+3. **行列式**：准对角矩阵及准上（下）三角矩阵的行列式等于主对角线上各个子块行列式的乘积：
+
+$$
+|\boldsymbol{A}| = \prod_{i=1}^r |\boldsymbol{A}_i|.
+$$
+
+</Knowledge>
+
+<Example title="例 31 准对角矩阵求逆">
+
+求矩阵
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+1 & -1 & & & \\
+1 & -3 & & & \\
+& & 2 & 1 & \\
+& & 3 & 2 & \\
+& & & & 4
+\end{pmatrix}
+$$
+
+的逆矩阵。
+
+</Example>
+
+<Solution title="解">
+
+将 $\boldsymbol{A}$ 分块为准对角矩阵：
+
+$$
+\boldsymbol{A} = \begin{pmatrix}
+\boldsymbol{A}_1 & & \\
+& \boldsymbol{A}_2 & \\
+& & \boldsymbol{A}_3
+\end{pmatrix},
+$$
+
+其中
+
+$$
+\boldsymbol{A}_1 = \begin{pmatrix} 1 & -1 \\ 1 & -3 \end{pmatrix}, \quad \boldsymbol{A}_2 = \begin{pmatrix} 2 & 1 \\ 3 & 2 \end{pmatrix}, \quad \boldsymbol{A}_3 = (4).
+$$
+
+分别求各个对角子块的逆矩阵：
+
+$$
+\boldsymbol{A}_1^{-1} = \begin{pmatrix} \frac{3}{2} & -\frac{1}{2} \\ \frac{1}{2} & -\frac{1}{2} \end{pmatrix}, \quad \boldsymbol{A}_2^{-1} = \begin{pmatrix} 2 & -1 \\ -3 & 2 \end{pmatrix}, \quad \boldsymbol{A}_3^{-1} = \left(\frac{1}{4}\right).
+$$
+
+所以
+
+$$
+\boldsymbol{A}^{-1} = \begin{pmatrix}
+\frac{3}{2} & -\frac{1}{2} & & & \\
+\frac{1}{2} & -\frac{1}{2} & & & \\
+& & 2 & -1 & \\
+& & -3 & 2 & \\
+& & & & \frac{1}{4}
+\end{pmatrix}.
+$$
+
+</Solution>
+
+<Example title="例 32 准下三角分块矩阵求逆">
+
+设 $\boldsymbol{A} = \begin{pmatrix} \boldsymbol{A}_1 & \boldsymbol{O} \\ \boldsymbol{A}_3 & \boldsymbol{A}_4 \end{pmatrix}$ 为 $n$ 阶方阵，$\boldsymbol{A}_1$ 为 $r$ 阶可逆子块，$\boldsymbol{A}_4$ 为 $n - r$ 阶可逆子块，求 $\boldsymbol{A}^{-1}$。
+
+</Example>
+
+<Solution title="解">
+
+由于 $|\boldsymbol{A}| = |\boldsymbol{A}_1| \cdot |\boldsymbol{A}_4| \neq 0$，$\boldsymbol{A}$ 必可逆。设 $\boldsymbol{A}$ 的逆矩阵为同样划分的分块矩阵
+
+$$
+\boldsymbol{X} = \begin{pmatrix} \boldsymbol{X}_1 & \boldsymbol{X}_2 \\ \boldsymbol{X}_3 & \boldsymbol{X}_4 \end{pmatrix}.
+$$
+
+由 $\boldsymbol{A}\boldsymbol{X} = \boldsymbol{E}$，有
+
+$$
+\begin{pmatrix} \boldsymbol{A}_1 & \boldsymbol{O} \\ \boldsymbol{A}_3 & \boldsymbol{A}_4 \end{pmatrix} \begin{pmatrix} \boldsymbol{X}_1 & \boldsymbol{X}_2 \\ \boldsymbol{X}_3 & \boldsymbol{X}_4 \end{pmatrix} = \begin{pmatrix} \boldsymbol{A}_1\boldsymbol{X}_1 & \boldsymbol{A}_1\boldsymbol{X}_2 \\ \boldsymbol{A}_3\boldsymbol{X}_1 + \boldsymbol{A}_4\boldsymbol{X}_3 & \boldsymbol{A}_3\boldsymbol{X}_2 + \boldsymbol{A}_4\boldsymbol{X}_4 \end{pmatrix} = \begin{pmatrix} \boldsymbol{E}_r & \boldsymbol{O} \\ \boldsymbol{O} & \boldsymbol{E}_{n-r} \end{pmatrix}.
+$$
+
+比较两边对应的子块，得方程组：
+
+$$
+\begin{cases}
+\boldsymbol{A}_1\boldsymbol{X}_1 = \boldsymbol{E}_r, \\
+\boldsymbol{A}_1\boldsymbol{X}_2 = \boldsymbol{O}, \\
+\boldsymbol{A}_3\boldsymbol{X}_1 + \boldsymbol{A}_4\boldsymbol{X}_3 = \boldsymbol{O}, \\
+\boldsymbol{A}_3\boldsymbol{X}_2 + \boldsymbol{A}_4\boldsymbol{X}_4 = \boldsymbol{E}_{n-r}.
+\end{cases}
+$$
+
+解得：
+
+$$
+\boldsymbol{X}_1 = \boldsymbol{A}_1^{-1}, \quad \boldsymbol{X}_2 = \boldsymbol{O}, \quad \boldsymbol{X}_4 = \boldsymbol{A}_4^{-1}, \quad \boldsymbol{X}_3 = -\boldsymbol{A}_4^{-1}\boldsymbol{A}_3\boldsymbol{A}_1^{-1}.
+$$
+
+所以
+
+$$
+\boldsymbol{A}^{-1} = \begin{pmatrix}
+\boldsymbol{A}_1^{-1} & \boldsymbol{O} \\
+-\boldsymbol{A}_4^{-1}\boldsymbol{A}_3\boldsymbol{A}_1^{-1} & \boldsymbol{A}_4^{-1}
+\end{pmatrix}.
+$$
+
+</Solution>
+
+## 五、分块矩阵的初等变换及其应用
+
+以常用的 $2 \times 2$ 分块矩阵为例，可以相应定义三类分块初等矩阵：
+1. **分块对换初等矩阵**：$\begin{pmatrix} \boldsymbol{O} & \boldsymbol{E}_s \\ \boldsymbol{E}_r & \boldsymbol{O} \end{pmatrix}$；
+2. **分块倍乘初等矩阵**：$\begin{pmatrix} k\boldsymbol{E}_r & \boldsymbol{O} \\ \boldsymbol{O} & \boldsymbol{E}_s \end{pmatrix}$；
+3. **分块倍加初等矩阵**：$\begin{pmatrix} \boldsymbol{E}_r & \boldsymbol{O} \\ \boldsymbol{C}_1 & \boldsymbol{E}_s \end{pmatrix}$ 或 $\begin{pmatrix} \boldsymbol{E}_r & \boldsymbol{C}_2 \\ \boldsymbol{O} & \boldsymbol{E}_s \end{pmatrix}$。
+
+将这些分块初等矩阵左乘或右乘分块矩阵，等价于对该矩阵施行对应的分块初等变换。
+
+例如，设 $\boldsymbol{A}$ 为可逆矩阵，利用分块倍加变换可以消去分块矩阵中的非对角块：
+
+$$
+\begin{pmatrix} \boldsymbol{E} & \boldsymbol{O} \\ -\boldsymbol{C}\boldsymbol{A}^{-1} & \boldsymbol{E} \end{pmatrix} \begin{pmatrix} \boldsymbol{A} & \boldsymbol{B} \\ \boldsymbol{C} & \boldsymbol{D} \end{pmatrix} = \begin{pmatrix} \boldsymbol{A} & \boldsymbol{B} \\ \boldsymbol{O} & \boldsymbol{D} - \boldsymbol{C}\boldsymbol{A}^{-1}\boldsymbol{B} \end{pmatrix}.
+$$
+
+<Example title="例 33 分块矩阵的行列式降阶">
+
+设 $\boldsymbol{A}, \boldsymbol{B}, \boldsymbol{C}, \boldsymbol{D}$ 为 $n$ 阶方阵，$\boldsymbol{A}$ 为可逆矩阵，且 $\boldsymbol{A}\boldsymbol{C} = \boldsymbol{C}\boldsymbol{A}$。证明：
+
+$$
+\begin{vmatrix} \boldsymbol{A} & \boldsymbol{B} \\ \boldsymbol{C} & \boldsymbol{D} \end{vmatrix} = |\boldsymbol{A}\boldsymbol{D} - \boldsymbol{C}\boldsymbol{B}|.
+$$
+
+</Example>
+
+<Solution title="证明">
+
+用倍加分块初等矩阵把 $\boldsymbol{C}$ 消为零矩阵：
+
+$$
+\begin{pmatrix} \boldsymbol{E}_n & \boldsymbol{O} \\ -\boldsymbol{C}\boldsymbol{A}^{-1} & \boldsymbol{E}_n \end{pmatrix} \begin{pmatrix} \boldsymbol{A} & \boldsymbol{B} \\ \boldsymbol{C} & \boldsymbol{D} \end{pmatrix} = \begin{pmatrix} \boldsymbol{A} & \boldsymbol{B} \\ \boldsymbol{O} & \boldsymbol{D} - \boldsymbol{C}\boldsymbol{A}^{-1}\boldsymbol{B} \end{pmatrix}.
+$$
+
+对两边的分块矩阵取行列式，并利用分块初等矩阵行列式等于 $1$：
+
+$$
+\begin{vmatrix} \boldsymbol{A} & \boldsymbol{B} \\ \boldsymbol{C} & \boldsymbol{D} \end{vmatrix} = \begin{vmatrix} \boldsymbol{A} & \boldsymbol{B} \\ \boldsymbol{O} & \boldsymbol{D} - \boldsymbol{C}\boldsymbol{A}^{-1}\boldsymbol{B} \end{vmatrix} = |\boldsymbol{A}| \cdot |\boldsymbol{D} - \boldsymbol{C}\boldsymbol{A}^{-1}\boldsymbol{B}| = |\boldsymbol{A}\boldsymbol{D} - \boldsymbol{A}\boldsymbol{C}\boldsymbol{A}^{-1}\boldsymbol{B}|.
+$$
+
+因为 $\boldsymbol{A}\boldsymbol{C} = \boldsymbol{C}\boldsymbol{A}$，故 $\boldsymbol{A}\boldsymbol{C}\boldsymbol{A}^{-1} = \boldsymbol{C}\boldsymbol{A}\boldsymbol{A}^{-1} = \boldsymbol{C}$，从而
+
+$$
+\begin{vmatrix} \boldsymbol{A} & \boldsymbol{B} \\ \boldsymbol{C} & \boldsymbol{D} \end{vmatrix} = |\boldsymbol{A}\boldsymbol{D} - \boldsymbol{C}\boldsymbol{B}|.
+$$
+
+</Solution>
+
+<Example title="例 34 广义特征行列式的对称恒等式">
+
+已知 $\boldsymbol{A}, \boldsymbol{B}$ 均为 $n$ 阶方阵，证明：
+
+$$
+|\boldsymbol{E} - \boldsymbol{A}\boldsymbol{B}| = |\boldsymbol{E} - \boldsymbol{B}\boldsymbol{A}|.
+$$
+
+</Example>
+
+<Solution title="证明">
+
+**方法一（若 $\boldsymbol{A}$ 或 $\boldsymbol{B}$ 可逆）**：不妨设 $\boldsymbol{A}$ 可逆，则
+
+$$
+|\boldsymbol{E} - \boldsymbol{A}\boldsymbol{B}| = |\boldsymbol{A}(\boldsymbol{E} - \boldsymbol{B}\boldsymbol{A})\boldsymbol{A}^{-1}| = |\boldsymbol{A}| \cdot |\boldsymbol{E} - \boldsymbol{B}\boldsymbol{A}| \cdot |\boldsymbol{A}|^{-1} = |\boldsymbol{E} - \boldsymbol{B}\boldsymbol{A}|.
+$$
+
+**方法二（一般情形：构造分块矩阵消元）**：构造 $2n$ 阶分块矩阵
+
+$$
+\boldsymbol{M} = \begin{pmatrix} \boldsymbol{E}_n & \boldsymbol{A} \\ \boldsymbol{B} & \boldsymbol{E}_n \end{pmatrix}.
+$$
+
+用倍加分块初等矩阵消去 $\boldsymbol{B}$：
+
+$$
+\begin{pmatrix} \boldsymbol{E}_n & \boldsymbol{O} \\ -\boldsymbol{B} & \boldsymbol{E}_n \end{pmatrix} \begin{pmatrix} \boldsymbol{E}_n & \boldsymbol{A} \\ \boldsymbol{B} & \boldsymbol{E}_n \end{pmatrix} = \begin{pmatrix} \boldsymbol{E}_n & \boldsymbol{A} \\ \boldsymbol{O} & \boldsymbol{E}_n - \boldsymbol{B}\boldsymbol{A} \end{pmatrix}.
+$$
+
+类似地，用倍加分块初等矩阵消去 $\boldsymbol{A}$：
+
+$$
+\begin{pmatrix} \boldsymbol{E}_n & \boldsymbol{A} \\ \boldsymbol{B} & \boldsymbol{E}_n \end{pmatrix} \begin{pmatrix} \boldsymbol{E}_n & -\boldsymbol{A} \\ \boldsymbol{O} & \boldsymbol{E}_n \end{pmatrix} = \begin{pmatrix} \boldsymbol{E}_n & \boldsymbol{O} \\ \boldsymbol{B} & \boldsymbol{E}_n - \boldsymbol{A}\boldsymbol{B} \end{pmatrix}.
+$$
+
+对上面两式两边分别取行列式，得
+
+$$
+|\boldsymbol{M}| = |\boldsymbol{E}_n| \cdot |\boldsymbol{E}_n - \boldsymbol{B}\boldsymbol{A}| = |\boldsymbol{E}_n - \boldsymbol{B}\boldsymbol{A}|,
+$$
+
+$$
+|\boldsymbol{M}| = |\boldsymbol{E}_n| \cdot |\boldsymbol{E}_n - \boldsymbol{A}\boldsymbol{B}| = |\boldsymbol{E}_n - \boldsymbol{A}\boldsymbol{B}|.
+$$
+
+故必有
+
+$$
+|\boldsymbol{E} - \boldsymbol{A}\boldsymbol{B}| = |\boldsymbol{E} - \boldsymbol{B}\boldsymbol{A}|.
+$$
+
+</Solution>
+
+<ExerciseTrigger chapter={2} section="2.6" title="2.6 矩阵的分块法 课后真题与自测练习" />
