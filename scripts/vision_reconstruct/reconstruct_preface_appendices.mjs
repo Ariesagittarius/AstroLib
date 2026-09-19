@@ -169,7 +169,6 @@ import Method from '@/components/Method.astro';
 export function cleanBatchText(rawText) {
   let cleaned = rawText.trim();
 
-  // Strip thinking outline preamble if present
   cleaned = cleaned.replace(/^---[\s\S]*?\*\*思考大纲\*\*[\s\S]*?---\s*/i, '');
   cleaned = cleaned.replace(/^---[\s\S]*?#\s*教材扫描图内容描述[\s\S]*?---\s*/i, '');
   cleaned = cleaned.replace(/^---[\s\S]*?###\s*思考过程[\s\S]*?---\s*/i, '');
@@ -180,7 +179,6 @@ export function cleanBatchText(rawText) {
     cleaned = cleaned.replace(/\r?\n```\s*$/, '');
   }
 
-  // Strip trailing exercises
   cleaned = cleaned.replace(/##\s*习题\s*[\d\.]+[\s\S]*$/, '');
   cleaned = cleaned.replace(/###\s*习题\s*[\d\.]+[\s\S]*$/, '');
   cleaned = cleaned.replace(/<Knowledge[^>]*title=["'][^"']*习题[\s\S]*$/, '');
@@ -192,7 +190,6 @@ export function cleanBatchText(rawText) {
 export function postProcessMdx(content) {
   let text = content;
 
-  // Auto-convert single-dollar inline math with \tag{...} to display math blocks $$
   text = text.replace(/(?<!\$)\$(?!\$)([^$\r\n]*?\\tag\{[^{}]+\}[^$\r\n]*?)\$(?!\$)/g, (match, formula) => {
     return `\n\n$$\n${formula.trim()}\n$$\n\n`;
   });
@@ -201,11 +198,9 @@ export function postProcessMdx(content) {
     return `\n\n$$\n${formula.trim()}\n$$\n\n`;
   });
 
-  // Ensure display math blocks have pure empty lines before and after
   text = text.replace(/([^\r\n])\s*\n\$\$/g, (match, p1) => `${p1}\n\n$$`);
   text = text.replace(/\$\$\s*\n([^\r\n])/g, (match, p1) => `$$\n\n${p1}`);
 
-  // Replace circled numbers in \tag with ASCII numbers
   text = text.replace(/\\tag\{①\}/g, '\\tag{1}');
   text = text.replace(/\\tag\{②\}/g, '\\tag{2}');
   text = text.replace(/\\tag\{③\}/g, '\\tag{3}');
@@ -213,20 +208,15 @@ export function postProcessMdx(content) {
   text = text.replace(/\\tag\{⑤\}/g, '\\tag{5}');
   text = text.replace(/\\end\{aligned\}\s*\\end\{aligned\}/g, '\\end{aligned}');
 
-  // Ensure card tags have newlines
   text = text.replace(/(<(?:Knowledge|Solution|Example|SideNote|Block|Analysis)(?:\s+(?:"[^"]*"|'[^']*'|[^>'"])*)?>)([^\r\n])/g, '$1\n\n$2');
   text = text.replace(/([^\r\n])(<\/(?:Knowledge|Solution|Example|SideNote|Block|Analysis)>)/g, '$1\n\n$2');
 
-  // Strip heading #1
   text = text.replace(/^#[^#\r\n]+\r?\n+/gm, '');
 
-  // Normalize image links
   text = text.replace(/!\[(.*?)\]\(images\//g, '![$1](./images/');
 
-  // Balance JSX tags
   text = balanceJsxCards(text);
 
-  // Shrink excess blank lines
   text = text.replace(/\n{4,}/g, '\n\n\n');
 
   return text.trim();

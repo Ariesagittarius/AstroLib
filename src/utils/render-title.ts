@@ -1,7 +1,3 @@
-/**
- * src/utils/render-title.ts
- * 构建期渲染卡片标题中的数学公式
- */
 import katex from 'katex';
 
 function escapeHtml(s: string): string {

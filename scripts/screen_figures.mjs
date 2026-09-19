@@ -1,45 +1,14 @@
 #!/usr/bin/env node
-/**
- * scripts/screen_figures.mjs
- * -----------------------------------------------------------------------------
- * 图像与图注智能初筛审计系统 (Zero False Negatives Heuristic Screener)
- *
- * 核心设计原则：
- * 1. 宁错勿漏（High Recall / Zero False Negatives）：
- *    全面捕获所有疑似分离、孤立、跨卡片、断句破损、多子图等异常图像区块。
- * 2. 结构化特征分析：
- *    - 图像与图注直接配对（clean_direct_pair）
- *    - 图像与图注远距错位（separated_pair）
- *    - 孤立图注腰斩正文（orphan_caption）
- *    - 未绑定图注图像（unbound_image）
- *    - 跨卡片边界分离（cross_card_split）
- *    - 多子图混排聚类（subfigure_cluster）
- * 3. 产物与交付：
- *    - 输出终端大盘统计与按书籍/章节详细诊断
- *    - 生成 task/figure_audit_report.json，供 Gemini AI 纠偏流水线作为输入
- *
- * 命令行参数：
- *   --file <path>   扫描单文件
- *   --book <slug>   指定书扫描 (如 engineering_analysis, university_physics)
- *   --all           全量扫描 (默认)
- *   --json          导出 JSON 审计报告至 task/figure_audit_report.json
- *   --verbose       输出每个异常区块的源码上下文详情
- * =============================================================================
- */
 
 import fs from 'node:fs';
 import path from 'node:path';
 
-// 命令行参数解析
 const args = process.argv.slice(2);
 const singleFileArg = args.find((_, i, arr) => arr[i - 1] === '--file');
 const bookSlugArg = args.find((_, i, arr) => arr[i - 1] === '--book');
 const isJsonOutput = args.includes('--json');
 const isVerbose = args.includes('--verbose');
 
-/**
- * 递归收集 MDX 文件
- */
 function getMdxFiles(targetPath) {
   if (!fs.existsSync(targetPath)) return [];
   const stat = fs.statSync(targetPath);
@@ -60,17 +29,11 @@ function getMdxFiles(targetPath) {
   return files;
 }
 
-/**
- * 判断一行是否为图片标记
- */
 function isImageLine(line) {
   const trimmed = line.trim();
   return /!\[.*?\]\((images\/[^)]+)\)/.test(trimmed) || /<img\b[^>]*src=["'](images\/[^"']+)["']/.test(trimmed);
 }
 
-/**
- * 提取行中的所有图片路径
- */
 function extractImagePaths(text) {
   const images = [];
   const mdRegex = /!\[.*?\]\((images\/[^)]+)\)/g;
@@ -85,70 +48,55 @@ function extractImagePaths(text) {
   return images;
 }
 
-/**
- * 判断一行是否为图注候选行
- */
 function isCaptionCandidate(line) {
   const trimmed = line.trim();
-  // 已包含在 <figcaption> 标签内
+
   if (/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/.test(trimmed)) {
     return true;
   }
-  // 排除单纯正文叙述句（以“如图”、“由图”、“在图”、“根据图”、“设图”开头且长度较长）
+
   if (/^(?:如图|由图|在图|根据图|设图|从图|按图)/.test(trimmed)) {
     return false;
   }
-  // 图注特征：以“图 X.Y”、“Figure X.Y”、“附图 X”开头，通常简短（<= 75 字符）
+
   if (/^(?:图|Figure|附图)\s*[\d\.\-－]+/.test(trimmed)) {
     if (trimmed.length > 75) return false;
-    // 排除以句号/问号结尾的普通正文长问句（如“图 1.1 中的阴影部分表示什么？”）
+
     if (/[。？！?!]$/.test(trimmed) && trimmed.length > 35) return false;
     return true;
   }
-  // 带子图标记的图注：(a) 满射 (b) 单射 图1.4 或 ($a$) 满射
+
   if (/^\(?\$?[a-zA-Z0-9]\$?\)?[ \t\S]*(?:图|Figure)\s*[\d\.\-－]+/.test(trimmed)) {
     return trimmed.length <= 75;
   }
   return false;
 }
 
-/**
- * 判断是否为子图描述行（如 (a) 满射 或 ($a$) 速度图）
- */
 function isSubfigureLabel(line) {
   const trimmed = line.trim();
   return /^\(?\$?[a-dA-D1-4]\$?\)?[ \t\u3000]/.test(trimmed) && trimmed.length < 50;
 }
 
-/**
- * 判断图注前后断句是否破损（被突兀插入）
- */
 function isSentenceBroken(prevLine, nextLine) {
   if (!prevLine || !nextLine) return false;
   const p = prevLine.trim();
   const n = nextLine.trim();
 
-  // 上一行以未完结标点或连词结尾
   const prevHanging = /([，,、:：有且为是与和及或]|当|若|使|设|在|由|得到|记作|可得|恒有|此时)$/.test(p);
-  // 上一行含有未闭合的单美元符号
+
   const dollarCount = (p.match(/\$/g) || []).length;
   const unclosedDollar = dollarCount % 2 !== 0;
 
-  // 下一行以公式、小写字母或谓语继续
   const nextStartsSentence = /^(则|即|故|恒有|由此|其中|式中|\$\$|\$|[a-z0-9\(\[\{])/.test(n);
 
   return prevHanging || unclosedDollar || (nextStartsSentence && !/^[#<]/.test(n));
 }
 
-/**
- * 分析单篇 MDX 文件中的图像与图注结构
- */
 export function analyzeMdxFile(filePath) {
   const content = fs.readFileSync(filePath, 'utf8');
   const lines = content.split(/\r?\n/);
   const relPath = path.relative(process.cwd(), filePath).replace(/\\/g, '/');
 
-  // 1. 扫描所有图片与图注出现位置
   const imageOccurrences = [];
   const captionOccurrences = [];
 
@@ -175,12 +123,10 @@ export function analyzeMdxFile(filePath) {
     }
   }
 
-  // 2. 双向关联与异常判定
   const anomalies = [];
   const pairedImageIndices = new Set();
   const pairedCaptionIndices = new Set();
 
-  // 检查已封装在 <figure> 内部的完美配对
   for (let i = 0; i < lines.length; i++) {
     if (lines[i].includes('<figure')) {
       let figEnd = i;
@@ -200,7 +146,6 @@ export function analyzeMdxFile(filePath) {
     }
   }
 
-  // 分析每个图片
   for (let imgIdx = 0; imgIdx < imageOccurrences.length; imgIdx++) {
     if (pairedImageIndices.has(imgIdx)) continue;
     const img = imageOccurrences[imgIdx];
@@ -284,7 +229,6 @@ export function analyzeMdxFile(filePath) {
     }
   }
 
-  // 检查未绑定的孤立图注（Orphan Caption）
   for (let capIdx = 0; capIdx < captionOccurrences.length; capIdx++) {
     if (pairedCaptionIndices.has(capIdx)) continue;
     const cap = captionOccurrences[capIdx];
@@ -319,9 +263,6 @@ export function analyzeMdxFile(filePath) {
   };
 }
 
-/**
- * 主执行流程
- */
 async function main() {
   console.log('===============================================================');
   console.log('🔍 图像与图注智能初筛审计系统 (Zero False Negatives Heuristic)');

@@ -5,7 +5,7 @@ const ROOT_DIR = process.cwd();
 const imagesDir = path.join(ROOT_DIR, 'src/content/docs/collections/math/engineering_analysis_rebuild/images');
 
 const MAPPINGS = {
-  // a4 下册立体与曲面
+
   'surface_1_z_xy.png': '2dfdc572f14a557e22bec1750c755f4b36b97c39c0bf9f44f584fad6ed050a3d.jpg',
   'surface_2_z_x2_y2.png': 'fd6b384d9fb7555116e20583eab8aeb14b313c073cf977181116b0d46ebcf2db.jpg',
   'surface_3_z_x2_y3.png': 'eff0e618935118b310f89e8f6d5c017f43a3aca8e0e3054b18afcba01ca5b81d.jpg',
@@ -24,7 +24,6 @@ const MAPPINGS = {
   'solid_16_truncated_cone.png': '49398ea0626af92c4ed6d64ac8b16272cb207cacb0ef59d41bef3a9e7bb17f3c.jpg',
   'solid_17_cone_plane_bound.png': '2e92a864a8af887ab6d4a15a81db0be09bc55ed4e97ec774875b2415fe4908f1.jpg',
 
-  // a1 常见解析曲线
   'curve-18-folium.png': '28c211ff7c76de069e37311fe33be0fd45b21a9c91c3c7acf48e36f0afa670e4.jpg',
   'curve-19-parabola-general.png': '9b8112c9feb56a94757e2289d131049ecaeb98e61cc2ef086ffc09f55545f230.jpg',
   'curve-20-archimedean-spiral.png': 'b522b025d3df2ab01626184603e5f1cb89274ee87640cb9868450e0034475c0c.jpg',
@@ -35,7 +34,6 @@ const MAPPINGS = {
   'curve-25-rose-3-cos.png': '02d334189aaa7e5aaad779352b916396556b445b890ca2c02fe37fc2781df93e.jpg',
   'curve-26-rose-3-sin.png': '707f09e8e37179ed3fb5e319feacecb33551bd918390c039667fafb212ee677c.jpg',
 
-  // a3 复数
   'complex_plane.png': '0f9f954e17dd926bc93a0c28e6bbe12160a9bc2a1b7ec15b93aefd6f3ef99093.jpg'
 };
 

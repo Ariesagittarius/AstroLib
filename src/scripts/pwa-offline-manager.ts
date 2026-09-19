@@ -1,14 +1,5 @@
-﻿/**
- * pwa-offline-manager.ts —— AstroLib PWA 离线全量数据包管理引擎
- * ============================================================================
- * 负责从 GitHub Releases（或高速镜像 CDN）下载预打包的离线数据包，
- * 并在客户端纯本地批量灌入 Cache Storage (PACK_CACHE)，实现 0 主站流量消耗的全量断网秒开。
- * ============================================================================
- */
-
 export const PACK_CACHE_NAME = 'astrolib-pwa-v1-pack';
 
-// 默认 GitHub Release 下载端点与加速镜像
 export const GITHUB_RELEASE_BASE = 'https://github.com/Ariesagittarius/AstroLib/releases/latest/download';
 export const DEFAULT_PACK_NAME = 'astrolib-all.json';
 
@@ -20,9 +11,6 @@ export interface OfflinePackStatus {
 
 export type ProgressCallback = (percent: number, stageText: string) => void;
 
-/**
- * 查询当前本地已安装的离线数据包状态
- */
 export async function getOfflinePackStatus(): Promise<OfflinePackStatus> {
   if (typeof window === 'undefined' || !('caches' in window)) {
     return { hasPack: false, count: 0, approxSizeMb: '0' };
@@ -42,7 +30,6 @@ export async function getOfflinePackStatus(): Promise<OfflinePackStatus> {
       return { hasPack: false, count: 0, approxSizeMb: '0' };
     }
 
-    // 粗略估算占用空间 (每篇平均约 350KB 原始 HTML)
     const approxSizeMb = ((count * 350) / 1024).toFixed(1);
     return {
       hasPack: true,
@@ -55,9 +42,6 @@ export async function getOfflinePackStatus(): Promise<OfflinePackStatus> {
   }
 }
 
-/**
- * 从 GitHub 下载离线包并批量灌入 Cache Storage
- */
 export async function downloadAndInstallOfflinePack(
   packUrl?: string,
   onProgress?: ProgressCallback
@@ -70,7 +54,7 @@ export async function downloadAndInstallOfflinePack(
   if (onProgress) onProgress(5, '正在连接 GitHub 镜像节点...');
 
   try {
-    // 1. 发起请求
+
     const response = await fetch(targetUrl);
     if (!response.ok) {
       throw new Error(`从 GitHub 获取离线包失败 (HTTP ${response.status})`);
@@ -80,7 +64,6 @@ export async function downloadAndInstallOfflinePack(
     let receivedBytes = 0;
     let chunks: Uint8Array[] = [];
 
-    // 2. 带进度的流式读取
     if (response.body && contentLength > 0) {
       const reader = response.body.getReader();
       while (true) {
@@ -95,7 +78,7 @@ export async function downloadAndInstallOfflinePack(
         }
       }
     } else {
-      // 无法获取总长度时直接等待 text
+
       if (onProgress) onProgress(40, '正在从 GitHub 接收数据流...');
       const blob = await response.blob();
       const arrayBuf = await blob.arrayBuffer();
@@ -104,7 +87,6 @@ export async function downloadAndInstallOfflinePack(
 
     if (onProgress) onProgress(70, '正在解析全站离线数据...');
 
-    // 3. 组合并解码 JSON
     let combined = new Uint8Array(receivedBytes || chunks.reduce((acc, c) => acc + c.length, 0));
     let offset = 0;
     for (const chunk of chunks) {
@@ -125,7 +107,6 @@ export async function downloadAndInstallOfflinePack(
 
     if (onProgress) onProgress(75, `准备写入本地缓存 (共 ${total} 篇)...`);
 
-    // 4. 批量写入 PACK_CACHE
     const cache = await caches.open(PACK_CACHE_NAME);
     let written = 0;
 
@@ -137,7 +118,6 @@ export async function downloadAndInstallOfflinePack(
         },
       });
 
-      // 同时缓存带与不带末尾斜杠的形式，确保匹配 100% 成功
       await cache.put(urlPath, resp.clone());
       const cleanPath = urlPath.endsWith('/') ? urlPath.slice(0, -1) : urlPath + '/';
       await cache.put(cleanPath, resp);
@@ -151,7 +131,6 @@ export async function downloadAndInstallOfflinePack(
 
     if (onProgress) onProgress(100, `全量离线包导入成功！共 ${total} 篇`);
 
-    // 触发全局广播通知
     window.dispatchEvent(new CustomEvent('astrolib:pwa-pack-updated', { detail: { count: total } }));
 
     return { success: true, total };
@@ -161,9 +140,6 @@ export async function downloadAndInstallOfflinePack(
   }
 }
 
-/**
- * 一键清空本地离线数据包，释放磁盘空间
- */
 export async function clearOfflinePack(): Promise<boolean> {
   if (typeof window === 'undefined' || !('caches' in window)) return false;
 

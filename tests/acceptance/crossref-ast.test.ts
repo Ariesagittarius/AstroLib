@@ -40,7 +40,6 @@ describe('Cross-Reference AST Plugin Acceptance Suite', () => {
     expect(code).toBeDefined();
     expect(code.length).toBeGreaterThan(1000);
 
-    // 检查交叉引用关键属性与标记
     expect(code).toContain('data-xref-built');
     expect(code).toContain('block-ref-badge');
 

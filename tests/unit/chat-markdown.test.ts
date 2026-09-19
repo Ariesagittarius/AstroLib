@@ -20,7 +20,7 @@ describe('AI Chat Markdown Parser Suite (Unit Tests)', () => {
       expect(html).toContain('<blockquote>');
       expect(html).toContain('$f$ 在子区间上为常数 $\\iff f\'$ 在该子区间上恒为 0。');
       expect(html).toContain('</blockquote>');
-      // 绝不能泄漏未经解析的原生 > 或 &gt;
+
       expect(html).not.toMatch(/<p>&gt;\s*/);
     });
 
@@ -57,7 +57,7 @@ describe('AI Chat Markdown Parser Suite (Unit Tests)', () => {
       expect(isTableDelimiterRow('---|---|---')).toBe(true);
       expect(isTableDelimiterRow('| - | - |')).toBe(true);
 
-      expect(isTableDelimiterRow('---')).toBe(false); // 普通分割线不应被误判为表格
+      expect(isTableDelimiterRow('---')).toBe(false);
       expect(isTableDelimiterRow('| 姓名 | 年龄 |')).toBe(false);
       expect(isTableDelimiterRow('')).toBe(false);
     });
@@ -166,4 +166,3 @@ describe('AI Chat Markdown Parser Suite (Unit Tests)', () => {
     });
   });
 });
-

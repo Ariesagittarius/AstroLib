@@ -167,7 +167,7 @@ class ExerciseCenterController {
     if (typeof document === 'undefined') return;
 
     const setup = () => {
-      // 路由换页安全清理：若存在多个 root 节点，移除多余的旧节点
+
       const allRoots = document.querySelectorAll('#exercise-modal-root');
       if (allRoots.length > 1) {
         allRoots.forEach((node, idx) => {
@@ -219,7 +219,7 @@ class ExerciseCenterController {
       try {
         const savedCollapsed = localStorage.getItem('astro_exercise_filter_collapsed');
         const isMobileScreen = typeof window !== 'undefined' && window.innerWidth <= 640;
-        // 规范第九条：移动端优先进入「沉浸做题态」，筛选默认收起；桌面端遵从用户记忆
+
         const shouldCollapse = savedCollapsed !== null ? savedCollapsed === '1' : isMobileScreen;
         if (shouldCollapse) {
           this.setFilterCollapsed(true);
@@ -252,7 +252,6 @@ class ExerciseCenterController {
 
     document.addEventListener('astro:page-load', setup);
 
-    // 监听页面卸载，释放全屏题库、PDF 渲染引擎与长周期缓存
     document.addEventListener('astrolib:page-unload', () => {
       if (this.isOpen) {
         this.close();
@@ -727,9 +726,6 @@ class ExerciseCenterController {
     }
   }
 
-  /**
-   * LRU 缓存淘汰策略：保持最多保活 max 个章节 JSON，防止内存无上限膨胀
-   */
   private trimChapterCache(max = 2) {
     while (this.chapterCache.size > max) {
       const oldestKey = this.chapterCache.keys().next().value;
@@ -741,9 +737,6 @@ class ExerciseCenterController {
     }
   }
 
-  /**
-   * LRU 缓存淘汰策略：保持最多保活 max 套试卷 JSON
-   */
   private trimPaperCache(max = 2) {
     while (this.paperCache.size > max) {
       const oldestKey = this.paperCache.keys().next().value;
@@ -1749,7 +1742,6 @@ ${q.answer ? `参考结果：${q.answer}` : ''}`;
     let accumulatedReasoning = '';
     this.activeSolutionVersions.set(qid, 'local');
 
-    // 初始化流式批处理节流调度器（100ms 窗口）
     const scheduler = new StreamThrottleScheduler(() => {
       this.aiSolutions.set(qid, accumulatedMd);
       if (contentEl) {
@@ -2028,7 +2020,6 @@ $$
       aiUploadSubmitBtn.addEventListener('click', () => this.submitAiSolutionUpload());
     }
 
-    // LaTeX 导出模态框交互与云端编译事件由 this.exportPipeline 统一驱动管理
   }
 
   private openFeedbackModal(qid: string) {
@@ -2169,7 +2160,6 @@ $$
       this.sourceEditorModal.classList.add('hidden');
       this.showToast(res.message || '源码修改已成功保存并完成热重载！');
 
-      // 清理缓存以保证下次加载最新编译产物
       this.chapterCache.delete(this.activeEditorQuestion.chapter);
       this.paperCache.delete(this.activeEditorQuestion.paper_id);
       this.allQuestionsCache = [];
@@ -2178,7 +2168,6 @@ $$
       if (parsedData.solution?.answer) this.activeEditorQuestion.answer = parsedData.solution.answer;
       if (parsedData.meta?.type) this.activeEditorQuestion.type = parsedData.meta.type;
 
-      // 重新拉取当前章节
       if (this.currentMode === 'practice') {
         this.loadChapter(this.currentChapter);
       } else if (this.currentMode === 'paper') {
@@ -2248,11 +2237,6 @@ $$
       this.showToast('上传失败，请重试');
     }
   }
-
-  // =========================================================================
-  // LaTeX / Typst 导出与云端/本地编译流水线已解耦至 ExerciseExportPipeline
-  // (参见 src/components/exercises/exercise-export-pipeline.ts)
-  // =========================================================================
 
   private showToast(msg: string) {
     if (!this.toastBox) return;

@@ -1,4 +1,3 @@
-// scripts/vision_reconstruct/build_ch02.cjs
 const fs = require('fs');
 const path = require('path');
 const katex = require('katex');
@@ -11,7 +10,6 @@ const ch02Questions = [...part1, ...part2, ...part3];
 
 console.log(`Loaded ${ch02Questions.length} questions from 3 parts.`);
 
-// KaTeX 校验
 let errCount = 0;
 function testMath(str, qid, field) {
   if (!str) return;

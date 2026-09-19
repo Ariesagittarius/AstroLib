@@ -1,13 +1,3 @@
-/**
- * scripts/vision_reconstruct/merge_lag_exercises.cjs
- *
- * 合并《线性代数与几何（第2版）》全部 9 个章节的课后习题并执行严苛校验：
- * 1. 校验章节完整性（ch01 ~ ch09 必须全部就绪）
- * 2. 校验题量与真值矩阵完全吻合（总计 253 题）
- * 3. 校验全部数学公式 KaTeX 零报错
- * 4. 生成统一单一可信源 src/data/exercises/linear_algebra_geometry_textbook_exercises.json
- */
-
 const fs = require('fs');
 const path = require('path');
 const katex = require('katex');

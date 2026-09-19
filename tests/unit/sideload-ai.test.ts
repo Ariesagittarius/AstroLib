@@ -87,14 +87,11 @@ describe('SideloadManager AI 面板与侧载状态流转', () => {
     try {
       const { getAiSideloadRefChapter, saveAiSideloadRefChapter } = await import('../../src/ai/ai-config');
 
-      // 默认应为 true
       expect(getAiSideloadRefChapter()).toBe(true);
 
-      // 修改为 false 并验证
       saveAiSideloadRefChapter(false);
       expect(getAiSideloadRefChapter()).toBe(false);
 
-      // 恢复为 true
       saveAiSideloadRefChapter(true);
       expect(getAiSideloadRefChapter()).toBe(true);
     } finally {
@@ -170,14 +167,11 @@ describe('SideloadManager AI 面板与侧载状态流转', () => {
     try {
       const { getAiExtendedThinking, saveAiExtendedThinking } = await import('../../src/ai/ai-config');
 
-      // 默认应为 false
       expect(getAiExtendedThinking()).toBe(false);
 
-      // 保存为 true
       saveAiExtendedThinking(true);
       expect(getAiExtendedThinking()).toBe(true);
 
-      // 恢复为 false
       saveAiExtendedThinking(false);
       expect(getAiExtendedThinking()).toBe(false);
     } finally {
@@ -201,11 +195,10 @@ describe('SideloadManager AI 面板与侧载状态流转', () => {
     const cssPath = path.resolve('src/components/ai/ai-theme.css');
     const cssContent = fs.readFileSync(cssPath, 'utf-8');
 
-    // 验证常规打开动效已排除 docking-in 与 dock-settled
     expect(cssContent).toMatch(/ask-panel\.ask-open:not\(\.docking-in\):not\(\.dock-settled\)/);
-    // 验证 dock-settled 具有明确的 animation: none !important 抑制规则
+
     expect(cssContent).toMatch(/\.ask-panel\.dock-settled\s*\{[\s\S]*?animation:\s*none\s*!important;/);
-    // 验证 docking-in 入场动效存在
+
     expect(cssContent).toMatch(/\.ask-panel\.docking-in\s*\{[\s\S]*?animation:\s*ai-floating-dock-in/);
   });
 
@@ -213,21 +206,18 @@ describe('SideloadManager AI 面板与侧载状态流转', () => {
     const fs = await import('node:fs');
     const path = await import('node:path');
 
-    // 1. 正文微动效必须纯净无 translateY 跳动
     const vpCss = fs.readFileSync(path.resolve('src/styles/vitepress-theme.css'), 'utf-8');
     const vpMatch = vpCss.match(/@keyframes vp-content-enter\s*\{([\s\S]*?)\}/);
     expect(vpMatch).toBeTruthy();
     expect(vpMatch![1]).not.toContain('translateY');
     expect(vpMatch![1]).not.toContain('translate3d');
 
-    // 2. 右侧栏大纲入场动效必须无 translateY 跳动
     const exCss = fs.readFileSync(path.resolve('src/styles/components/exercise-m3.css'), 'utf-8');
     const m3Match = exCss.match(/@keyframes m3-sideload-view-in\s*\{([\s\S]*?)\}/);
     expect(m3Match).toBeTruthy();
     expect(m3Match![1]).not.toContain('translateY');
     expect(m3Match![1]).not.toContain('translate3d');
 
-    // 3. AI 侧载动画严禁在通用 .active 时自动播放
     const aiCss = fs.readFileSync(path.resolve('src/components/ai/ai-theme.css'), 'utf-8');
     expect(aiCss).not.toMatch(/\.sideload-panel-view\[data-panel-id=['"]ai['"]\]\.active[^{]*?ai-dock-enter/);
   });

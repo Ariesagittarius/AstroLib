@@ -48,7 +48,6 @@ const allBooks = getAllBooks().map(book => ({
   readUrl: `/collections/${book.collectionSlug}/${book.slug}/${cleanSlug(book.entryPoint)}/`,
 }));
 
-// 按学科分类组织教材
 const collectionsWithBooks = collections.map(col => ({
   ...col,
   books: col.books.map(book => ({
@@ -57,7 +56,6 @@ const collectionsWithBooks = collections.map(col => ({
   })),
 }));
 
-// 快捷学科分类 Chips (Google Play 交互范式：初始均未选中)
 const disciplineChips = [
   { id: 'math', label: '数学', query: 'math', type: 'collection' },
   { id: 'physics', label: '物理', query: 'science', type: 'collection' },
@@ -78,7 +76,6 @@ const disciplineChips = [
     <meta name="keywords" content={pageKeywords} />
     <link rel="canonical" href={`${siteUrl}/`} />
 
-    <!-- Open Graph -->
     <meta property="og:title" content={siteTitle} />
     <meta property="og:description" content={pageDescription} />
     <meta property="og:url" content={`${siteUrl}/`} />
@@ -86,13 +83,11 @@ const disciplineChips = [
     <meta property="og:image" content={`${siteUrl}/astrolib-logo.png`} />
     <meta property="og:locale" content="zh_CN" />
 
-    <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={siteTitle} />
     <meta name="twitter:description" content={pageDescription} />
     <meta name="twitter:image" content={`${siteUrl}/astrolib-logo.png`} />
 
-    <!-- 站长工具验证（配置时注入） -->
     {features.seo?.config?.googleSiteVerification && (
       <meta name="google-site-verification" content={features.seo.config.googleSiteVerification} />
     )}
@@ -100,10 +95,7 @@ const disciplineChips = [
       <meta name="msvalidate.01" content={features.seo.config.bingSiteVerification} />
     )}
 
-    <!-- Schema.org 结构化数据 (JSON-LD) -->
-    <script type="application/ld+json" set:html={JSON.stringify(homeSchema)} />
-
-    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <script type="application/ld+json" set:html={JSON.stringify(homeSchema)} /><link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -111,7 +103,6 @@ const disciplineChips = [
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
-    <!-- 首屏免闪烁即时初始化脚本 (Anti-Flicker Script) -->
     <script is:inline>
       (function () {
         try {
@@ -154,16 +145,15 @@ const disciplineChips = [
           }
         } catch (e) {}
       })();
-    </script>
+</script>
 
   </head>
   <body>
-    <!-- Top Navigation Bar (Chrome Top App Bar) -->
+
     <VpNav currentPath="/" />
 
-    <!-- Hero Section -->
     <section class="m3-hero-wrapper">
-      <!-- Watermark Background -->
+
       <div class="math-watermark-plane" aria-hidden="true">
         <svg class="math-watermark-svg" viewBox="0 0 1200 600" fill="none" xmlns="http://www.w3.org/2000/svg">
           <g stroke="currentColor" stroke-width="0.75" stroke-dasharray="3 6">
@@ -212,7 +202,6 @@ const disciplineChips = [
             </div>
           </div>
 
-          <!-- Google Omnibox Search Input -->
           <div class="m3-hero-search">
             <form action="/library/" method="GET" class="m3-search-form" id="search-form" role="search">
               <svg class="m3-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -238,7 +227,6 @@ const disciplineChips = [
             </form>
           </div>
 
-          <!-- Discipline Filter Chips (Google Play Archetype: 仅在点击时展示) -->
           <div class="m3-chip-set" id="discipline-chip-set" role="toolbar" aria-label="学科分类筛选">
             {disciplineChips.map((chip) => (
               <button
@@ -261,7 +249,6 @@ const disciplineChips = [
       </div>
     </section>
 
-    <!-- Recent Reading (M3 Filled Tonal Card - Client-side populated) -->
     <section id="recent-reading-section" class="recent-reading-wrapper" style="display: none;">
       <div class="m3-container">
         <div class="recent-reading-card">
@@ -281,10 +268,9 @@ const disciplineChips = [
       </div>
     </section>
 
-    <!-- Main Content: Book Results (按需呈现：默认隐藏，仅在 Chip 选中或搜索时展示) -->
     <main class="m3-container">
       <section class="book-results-section" id="book-results-section" style="display: none;">
-        <!-- Book Cards Stack (Material You Filled Tonal Cards) -->
+
         <div class="m3-book-list" id="book-list">
           {collectionsWithBooks.map(col =>
             col.books.map(book => (
@@ -296,14 +282,13 @@ const disciplineChips = [
                 data-search-text={`${book.title} ${book.author} ${book.publisher} ${book.edition || ''} ${book.isbn || ''} ${book.description} ${col.title}`.toLowerCase()}
               >
                 <md-ripple></md-ripple>
-                <!-- Left: Cover Thumbnail -->
+
                 <div class="m3-book-cover-col">
                   <div class="m3-book-cover-wrap">
                     <img src={book.cover} alt={book.title} class="m3-book-cover-img" loading="lazy" />
                   </div>
                 </div>
 
-                <!-- Right: Title, Citation Meta Chips & Abstract (无标签、无开始阅读字样，整卡可点) -->
                 <div class="m3-book-main-col">
                   <h3 class="m3-book-title">{book.title}</h3>
 
@@ -328,7 +313,6 @@ const disciplineChips = [
           )}
         </div>
 
-        <!-- Empty Match State -->
         <div id="catalogue-empty" class="catalogue-empty" style="display: none;">
           <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="11" cy="11" r="8"></circle>
@@ -346,7 +330,6 @@ const disciplineChips = [
       </section>
     </main>
 
-    <!-- Footer (无分割线、纯净单行) -->
     <footer class="site-footer">
       <div class="m3-container">
         <div class="footer-inner">
@@ -365,12 +348,9 @@ const disciplineChips = [
       </div>
     </footer>
 
-    <!-- 全局视窗挂载容器 (Overlay Root for Modals / Settings) -->
     <div id="astro-overlay-root"></div>
 
-    <!-- 客户端交互脚本与 Material You 运行时组件 -->
-    <script>
-      import '@material/web/chips/chip-set.js';
+    <script>import '@material/web/chips/chip-set.js';
       import '@material/web/chips/assist-chip.js';
       import '@material/web/ripple/ripple.js';
       import { initHomepageClient } from '../scripts/pages/index-client';
@@ -383,10 +363,8 @@ const disciplineChips = [
           m.initColorEngine?.();
         })
         .catch(() => {});
-    </script>
+</script>
 
     <Analytics />
   </body>
 </html>
-
-

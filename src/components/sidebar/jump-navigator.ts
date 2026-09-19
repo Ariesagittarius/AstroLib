@@ -1,12 +1,3 @@
-/**
- * 全站跨页/页内跳转历史栈管理器与 VitePress 风格浮动返回胶囊组件 (Jump Navigator)
- *
- * 核心设计原则：
- * 1. 设计减法（Less is More）：仅在左下角（移动端底部居中）保留唯一的极简半透明返回胶囊，拒绝界面堆砌。
- * 2. 瞬时秒切到位（Zero-latency Instant Return）：返回时消除慢速滚动动画，直接瞬时恢复目标位置与视线脉冲，实现无缝衔接。
- * 3. 内存与性能把控（Strict Memory & Performance Bound）：仅存储轻量元数据，栈容量上限为 8，无 DOM 引用泄漏。
- */
-
 export interface JumpRecord {
   sourceUrl: string;
   sourceScrollY: number;
@@ -41,7 +32,7 @@ function loadStack(): JumpRecord[] {
       }
     }
   } catch (err) {
-    // 忽略解析异常
+
   }
   memoryStack = [];
   return memoryStack;
@@ -51,13 +42,10 @@ function saveStack() {
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(memoryStack));
   } catch (err) {
-    // 忽略存储异常
+
   }
 }
 
-/**
- * 获取当前页面的简明章节标题
- */
 export function getCurrentPageTitle(): string {
   const h1 = document.querySelector('h1');
   if (h1 && h1.textContent) {
@@ -67,9 +55,6 @@ export function getCurrentPageTitle(): string {
   return title || '原章节';
 }
 
-/**
- * 记录一次跳转行为
- */
 export function recordJump(params?: {
   badgeEl?: HTMLElement | null;
   sourceText?: string;
@@ -98,14 +83,13 @@ export function recordJump(params?: {
     timestamp: Date.now(),
   };
 
-  // 避免连续重复压入完全相同的同点记录
   const top = memoryStack[memoryStack.length - 1];
   if (
     top &&
     top.sourceUrl === record.sourceUrl &&
     Math.abs(top.sourceScrollY - record.sourceScrollY) < 30
   ) {
-    // 覆盖更新时间戳
+
     top.timestamp = record.timestamp;
   } else {
     memoryStack.push(record);
@@ -115,15 +99,12 @@ export function recordJump(params?: {
   }
 
   saveStack();
-  // 延迟渲染以确保跳转发生后胶囊平滑浮现
+
   setTimeout(() => {
     renderJumpWidget();
   }, 100);
 }
 
-/**
- * 返回跳转前的阅读位置（瞬时秒切到位，无漫长滚动过渡）
- */
 export function returnToPrevious(): void {
   loadStack();
   if (memoryStack.length === 0) {
@@ -145,17 +126,16 @@ export function returnToPrevious(): void {
   }
 
   if (targetPath === currentPath) {
-    // 同页瞬时秒切回原阅读位置：零动画延迟，马上到位
+
     window.scrollTo(0, Math.max(0, record.sourceScrollY));
 
-    // 视线接引瞬发脉冲高亮
     if (record.sourceBadgeId) {
       highlightBadge(record.sourceBadgeId, record.sourceText);
     }
 
     renderJumpWidget();
   } else {
-    // 跨页回跳：存储待恢复状态并通过 SPA 极速导航瞬时切页
+
     try {
       sessionStorage.setItem(
         PENDING_RESTORE_KEY,
@@ -179,9 +159,6 @@ export function returnToPrevious(): void {
   }
 }
 
-/**
- * 高亮原触发徽章或段落（视线接引）
- */
 function highlightBadge(badgeId?: string, fallbackText?: string): void {
   let targetEl: HTMLElement | null = null;
   if (badgeId) {
@@ -194,7 +171,7 @@ function highlightBadge(badgeId?: string, fallbackText?: string): void {
 
   if (targetEl) {
     targetEl.classList.remove('source-jump-pulse');
-    void targetEl.offsetWidth; // 强制重绘
+    void targetEl.offsetWidth;
     targetEl.classList.add('source-jump-pulse');
     setTimeout(() => {
       targetEl?.classList.remove('source-jump-pulse');
@@ -202,9 +179,6 @@ function highlightBadge(badgeId?: string, fallbackText?: string): void {
   }
 }
 
-/**
- * 关闭/放弃当前返回提示
- */
 export function dismissJumpWidget(): void {
   if (widgetElement) {
     widgetElement.classList.remove('is-active');
@@ -215,7 +189,7 @@ export function dismissJumpWidget(): void {
       }
     }, 200);
   }
-  // 弹出当前栈顶
+
   loadStack();
   if (memoryStack.length > 0) {
     memoryStack.pop();
@@ -226,18 +200,12 @@ export function dismissJumpWidget(): void {
   }
 }
 
-/**
- * 清空全部跳转历史
- */
 export function clearJumpHistory(): void {
   memoryStack = [];
   saveStack();
   dismissJumpWidget();
 }
 
-/**
- * 渲染/更新 VitePress 风格左下角浮动返回胶囊组件
- */
 export function renderJumpWidget(): void {
   loadStack();
 
@@ -255,7 +223,6 @@ export function renderJumpWidget(): void {
   const topRecord = memoryStack[memoryStack.length - 1];
   if (!topRecord) return;
 
-  // 截短标题，保持胶囊紧凑精致
   let displayTitle = topRecord.sourceTitle || '原阅读位置';
   if (displayTitle.length > 18) {
     displayTitle = displayTitle.slice(0, 16) + '...';
@@ -272,7 +239,6 @@ export function renderJumpWidget(): void {
     ? `<span class="vp-jump-count" title="历史跳转层级">${memoryStack.length}</span>`
     : '';
 
-  // 严禁 Emoji，统一采用精细绘制的矢量 SVG 图标
   widgetElement.innerHTML = `
     <button type="button" class="vp-jump-action-btn" title="返回 ${topRecord.sourceTitle} (Alt+B)" aria-label="返回原阅读位置">
       <svg class="vp-jump-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -304,15 +270,11 @@ export function renderJumpWidget(): void {
     dismissJumpWidget();
   });
 
-  // 触发平滑滑入
   requestAnimationFrame(() => {
     widgetElement?.classList.add('is-active');
   });
 }
 
-/**
- * 检查并执行跨页回跳后的精确瞬时定位与视线高亮恢复
- */
 export function checkPendingJumpRestore(): void {
   try {
     const raw = sessionStorage.getItem(PENDING_RESTORE_KEY);
@@ -322,10 +284,8 @@ export function checkPendingJumpRestore(): void {
     const pending = JSON.parse(raw);
     if (!pending || typeof pending.scrollY !== 'number') return;
 
-    // 检查时间是否在 30 秒内（防陈旧失效）
     if (Date.now() - (pending.time || 0) > 30000) return;
 
-    // 瞬时秒切到位：零动画延迟
     const restore = () => {
       window.scrollTo(0, Math.max(0, pending.scrollY));
       if (pending.badgeId || pending.text) {
@@ -339,13 +299,10 @@ export function checkPendingJumpRestore(): void {
       window.addEventListener('load', restore, { once: true });
     }
   } catch (err) {
-    // 忽略异常
+
   }
 }
 
-/**
- * 初始化全局快捷键与监听器
- */
 export function initJumpNavigator(): void {
   checkPendingJumpRestore();
   renderJumpWidget();
@@ -353,7 +310,6 @@ export function initJumpNavigator(): void {
   if (!listenersInitialized) {
     listenersInitialized = true;
 
-    // 快捷键支持：Alt + B 回跳，Esc 关闭
     window.addEventListener('keydown', (e) => {
       if (e.defaultPrevented) return;
       const target = e.target as HTMLElement;
@@ -372,13 +328,12 @@ export function initJumpNavigator(): void {
       }
     });
 
-    // 监听左侧侧边栏主动换章点击：主动浏览新章节时自动清空陈旧跳转栈
     document.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
       if (!target) return;
       const sidebarLink = target.closest('nav.sidebar a, .sidebar-pane a');
       if (sidebarLink && !sidebarLink.closest('#vp-jump-back-widget')) {
-        // 用户主动开启全新章节阅读，清空栈
+
         setTimeout(() => {
           clearJumpHistory();
         }, 100);

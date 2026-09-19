@@ -1,4 +1,4 @@
-﻿import fs from 'node:fs';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { collections } from '../src/config/collections.config.mjs';
@@ -94,7 +94,6 @@ async function main() {
     }
   }
 
-  // 写入全站总包
   console.log(`\n📦 正在合成全站汇总离线包 (astrolib-all.json)...`);
   const allPackData = {
     version: '1.0.0',
@@ -107,7 +106,6 @@ async function main() {
   fs.writeFileSync(path.join(OUT_DIR_DIST, 'astrolib-all.json'), allJson, 'utf8');
   console.log(`  ✔ 全站总包已生成: astrolib-all.json (共 ${totalArticles} 篇, ${allSizeMb} MB)`);
 
-  // 写入清单文件
   manifest.totalArticles = totalArticles;
   manifest.allPackFileName = 'astrolib-all.json';
   manifest.allSizeMb = allSizeMb;

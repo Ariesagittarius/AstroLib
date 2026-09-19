@@ -1,9 +1,4 @@
-/**
- * src/publishing/client/chapter-export-controller.ts
- * 章节学术多格式导出（LaTeX / Typst / PDF / ZIP）客户端控制器
- */
-
-  import '@material/web/dialog/dialog.js';
+import '@material/web/dialog/dialog.js';
   import '@material/web/button/filled-button.js';
   import '@material/web/button/outlined-button.js';
   import '@material/web/button/filled-tonal-button.js';
@@ -33,13 +28,11 @@
     const newModal = document.getElementById('chapter-export-modal');
     if (!newModal) return;
 
-    // 清理 overlay root / body 中残留的旧 modal，防止多实例与 DOM 泄漏
     const existingModals = document.querySelectorAll('#astro-overlay-root > #chapter-export-modal, body > #chapter-export-modal');
     existingModals.forEach((el) => {
       if (el !== newModal) el.remove();
     });
 
-    // Portal 挂载至全站 overlay root
     mountToOverlayRoot(newModal);
     const modal = newModal as any;
 
@@ -118,7 +111,6 @@
     }
     ensureDialogCentered(newModal);
 
-    // 若当前 modal 已初始化绑定，仅同步章节标题并退出
     if (modal.hasAttribute('data-initialized')) {
       const h1 = document.querySelector('h1#_top') || document.querySelector('h1');
       const title = h1 ? h1.textContent?.trim() || '当前章节' : '当前章节';
@@ -138,7 +130,6 @@
     const selectFontSize = modal.querySelector('#chapter-font-size') as any;
     const selectPaperSize = modal.querySelector('#chapter-paper-size') as any;
 
-    // 历史兼容隐藏选择项 (保持与契约测试与底层存储同步)
     const selectCjkFont = modal.querySelector('#chapter-cjk-font') as HTMLSelectElement | null;
     const selectMathFont = modal.querySelector('#chapter-math-font') as HTMLSelectElement | null;
 
@@ -147,13 +138,11 @@
     const btnSaveToken = modal.querySelector('#btn-save-token') as any;
     const btnMainExport = modal.querySelector('#btn-main-export') as any;
 
-    // 历史按钮钩子 (保证旧自动化脚本调用不报错)
     const btnTex = modal.querySelector('#btn-export-tex') as HTMLElement | null;
     const btnZip = modal.querySelector('#btn-export-zip') as HTMLElement | null;
     const btnPdf = modal.querySelector('#btn-export-pdf') as HTMLElement | null;
     const btnCloudPdf = modal.querySelector('#btn-export-cloud-pdf') as HTMLElement | null;
 
-    // 1. 初始化并加载排版偏好设置
     const initialSettings = getStoredExportSettings();
     if (selectTypography && initialSettings.typography) selectTypography.value = initialSettings.typography;
     if (selectSidenoteMode && initialSettings.sidenoteMode) selectSidenoteMode.value = initialSettings.sidenoteMode;
@@ -179,10 +168,8 @@
     selectPaperSize?.addEventListener('change', onSettingsChange);
     selectPaperSize?.addEventListener('input', onSettingsChange);
 
-    // 2. 导出格式切换联动云端 Token 行展示
     const isLocalDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
-    // 2. 导出格式切换联动云端 Token 行与环境自洽提示展示
     function updateFormatUi() {
       const currentFormat = selectFormat?.value || 'print';
       const isCloud = currentFormat === 'pdf-cloud';
@@ -193,7 +180,6 @@
         }
       }
 
-      // 环境自洽提示：在云端生产环境选中需要本地开发服务的格式时，展示轻量提示
       if (!isLocalDev && (currentFormat === 'pdf-local' || currentFormat === 'tex' || currentFormat === 'zip')) {
         if (statusBox && statusText) {
           statusBox.style.display = 'flex';
@@ -206,7 +192,6 @@
     selectFormat?.addEventListener('change', updateFormatUi);
     selectFormat?.addEventListener('input', updateFormatUi);
 
-    // 加载已保存的 GitHub PAT 凭据
     const cloudCfg = getStoredCompilerConfig();
     if (inputToken && cloudCfg.token) {
       inputToken.value = cloudCfg.token;
@@ -224,7 +209,6 @@
       }
     });
 
-    // 3. 模态窗状态控制与键盘支持
     function openModal() {
       currentOpenModal = openModal;
       const activeModal = document.getElementById('chapter-export-modal') as any;
@@ -234,7 +218,6 @@
       const nameEl = activeModal.querySelector('#export-chapter-name');
       if (nameEl) nameEl.textContent = title;
 
-      // 生产环境自洽：默认将格式对齐到跨环境全通用的“网页打印 / 另存为 PDF”
       if (!isLocalDev && selectFormat && (selectFormat.value === 'pdf-local' || selectFormat.value === 'zip')) {
         selectFormat.value = 'print';
       }
@@ -281,7 +264,6 @@
       modal.setAttribute('aria-hidden', 'true');
     });
 
-    // 全局快捷键与触发器单例守卫绑定
     if (!(window as any).__astrolib_chapter_export_bound) {
       (window as any).__astrolib_chapter_export_bound = true;
 
@@ -304,11 +286,9 @@
       });
     }
 
-    // 4. 通用下载触发器 (.tex / .zip / 本地 .pdf)
     async function triggerDownload(format: 'tex' | 'zip' | 'pdf', targetBtn: any) {
       if (targetBtn) targetBtn.disabled = true;
 
-      // 4.1 生产环境自洽守卫：线上静态站点无本地编译器与 Node 守护，绝不发起必定 404 的 dev 请求
       if (!isLocalDev) {
         if (statusBox && statusText) {
           statusBox.style.display = 'flex';
@@ -321,7 +301,6 @@
         return;
       }
 
-      // 4.2 本地开发环境：调用本地 dev-server 动态编译与导出
       if (statusBox && statusText) {
         statusBox.style.display = 'flex';
         statusText.textContent =
@@ -378,7 +357,6 @@
       }
     }
 
-    // 5. 云端 GitHub Actions 编译 PDF 流程
     async function triggerCloudPdf(targetBtn: any) {
       const storedCfg = getStoredCompilerConfig();
       if (!storedCfg.token) {
@@ -480,7 +458,6 @@
       }
     }
 
-    // 6. 统一由右下角主按钮触发导出
     btnMainExport?.addEventListener('click', () => {
       const fmt = selectFormat?.value || 'print';
       if (fmt === 'print') {
@@ -499,7 +476,6 @@
       }
     });
 
-    // 历史按钮钩子联动 (向后兼容)
     btnTex?.addEventListener('click', () => triggerDownload('tex', btnMainExport));
     btnZip?.addEventListener('click', () => triggerDownload('zip', btnMainExport));
     btnPdf?.addEventListener('click', () => triggerDownload('pdf', btnMainExport));

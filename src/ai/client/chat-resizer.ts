@@ -1,8 +1,3 @@
-/**
- * src/ai/client/chat-resizer.ts
- * AI 问答抽屉多向拖拽缩放手势交互管理器
- */
-
 import { saveAiPanelDimensions } from '../ai-config';
 
 export function initChatResizer(

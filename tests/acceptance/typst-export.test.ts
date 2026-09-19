@@ -119,7 +119,7 @@ describe('Typst Export Acceptance Suite', () => {
       const pdfBytes = compiler.pdf({ mainFileContent: examTypst });
       expect(pdfBytes).toBeDefined();
       expect(pdfBytes.length).toBeGreaterThan(1000);
-      // PDF 魔法头 %PDF-
+
       const header = Buffer.from(pdfBytes.slice(0, 5)).toString('ascii');
       expect(header).toContain('%PDF-');
     });

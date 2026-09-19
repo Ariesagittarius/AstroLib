@@ -182,4 +182,3 @@
 - **Environment Defensive**：依赖外部物理编译器的系统测试在环境未就绪时自动通过 `it.skip()` 优雅跳过，保证在纯 Node.js 的 GitHub Actions CI 容器中 100% 绿灯通过。
 
 > 📘 **深入了解**：完整架构设计与测试编写 SOP 请参阅 [docs/自动化测试套件与类型守卫架构交接文档.md](../自动化测试套件与类型守卫架构交接文档.md) 及 [tests/TESTING.md](../../tests/TESTING.md)。
-

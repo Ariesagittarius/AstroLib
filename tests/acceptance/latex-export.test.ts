@@ -60,7 +60,6 @@ describe('LaTeX Export Acceptance Suite', () => {
           kps: q.mapping?.engineering_analysis?.knowledge_points || [],
         }));
 
-        // 验证 handout 模板 (附录答案)
         const docHandout = generateLatexDocument(sample as any, {
           template: 'handout',
           title: `工科数学分析 · 第 ${ch} 章 练习册`,
@@ -71,7 +70,6 @@ describe('LaTeX Export Acceptance Suite', () => {
         const errorsHandout = validateLatexSyntax(docHandout);
         expect(errorsHandout, `第 ${ch} 章 Handout 语法违规`).toEqual([]);
 
-        // 验证 exam 模板 (纯题自测)
         const docExam = generateLatexDocument(sample as any, {
           template: 'exam',
           title: `工科数学分析 · 第 ${ch} 章 课程自测试卷`,

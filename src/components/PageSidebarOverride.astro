@@ -1,16 +1,12 @@
 ---
-// 自定义右侧侧边栏组件 - 替代 Starlight 的 PageSidebar.astro
-// 模块化架构：逻辑解耦至 src/components/sidebar/ 与 src/core/indexing/cross-ref-indexer.mjs
 import { collections } from '../config/collections.config.mjs';
 import { features, crossRefRefs } from '../config/features.config.mjs';
 import '../styles/components/page-sidebar.css';
 
-// 引用联动模式：'interactive'（默认，可点击/跨页联动）| 'static'（统一静态 chip）。
 const refsMode = crossRefRefs() === 'static' ? 'static' : 'interactive';
 
 const pathname = Astro.url.pathname;
 
-// 1. 深度遍历两级结构，感知当前路由所属的图书及其 TOC 规则
 let currentBook = null;
 let currentCol = null;
 for (const col of collections) {
@@ -22,7 +18,6 @@ for (const col of collections) {
   }
 }
 
-// 2. 备用安全降级方案
 if (!currentBook) {
   currentCol = collections[0];
   currentBook = collections[0].books[0];
@@ -31,10 +26,9 @@ const bookConfigJson = JSON.stringify(currentBook);
 ---
 
 <aside class="astrolib-sideload-dock custom-page-sidebar" id="astrolib-sideload-dock" data-book-key={`${currentCol?.slug || 'math'}/${currentBook?.slug || 'linear_algebra_geometry'}`} data-refs-mode={refsMode} data-book-config={bookConfigJson}>
-  <!-- VitePress outline-marker：跟随滚动高亮项的 2px 品牌色指示条（JS 更新 top） -->
+
   <div class="outline-marker" aria-hidden="true"></div>
 
-  <!-- 面板 1: 本章大纲 (默认常驻) -->
   <section class="sideload-panel-view" data-panel-id="toc" aria-hidden="false">
     <div class="toc-container">
       <div class="toc-header-block">
@@ -49,12 +43,11 @@ const bookConfigJson = JSON.stringify(currentBook);
     </div>
   </section>
 
-  <!-- 面板 2: 课后习题专属右侧抽屉面板 -->
   <section class="sideload-panel-view" data-panel-id="exercises" aria-hidden="true">
     <div class="exercise-sidebar-panel" id="exercise-sidebar-panel" aria-hidden="true">
       <div class="ex-sidebar-header">
         <div class="ex-sidebar-title-group">
-          <!-- 返回本章大纲快捷按钮 -->
+
           <button
             type="button"
             class="sideload-back-btn"
@@ -89,23 +82,20 @@ const bookConfigJson = JSON.stringify(currentBook);
         </div>
       </div>
       <div class="ex-sidebar-content" id="ex-sidebar-content">
-        <!-- 动态渲染轻量题目卡片 -->
+
       </div>
     </div>
   </section>
 
-  <!-- 面板 3: AI 书内智能问答专属侧载面板 -->
   <section class="sideload-panel-view" data-panel-id="ai" aria-hidden="true">
     <div class="ai-sidebar-panel" id="ai-sidebar-panel" aria-hidden="true">
-      <!-- 侧载激活时由 chat-controller 将聊天主面板挂载于此 -->
+
     </div>
   </section>
 </aside>
 
-<!-- 全局侧载抽屉遮罩 (在 Tablet/Mobile 抽屉模式下激活) -->
 <div class="astrolib-sideload-scrim" id="astrolib-sideload-scrim" aria-hidden="true"></div>
 
-<!-- 移动端本地导航 VPLocalNav（VitePress 移植：顶部 sticky 条 + 大纲 popup 下拉面板） -->
 <div class="vp-local-nav" data-vp-local-nav>
   <div class="vp-local-nav-container">
     <button class="vp-local-nav-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="vp-local-nav-panel" aria-label="本章大纲" title="本章大纲">
@@ -159,9 +149,7 @@ const bookConfigJson = JSON.stringify(currentBook);
   </div>
 </div>
 
-
-<script>
-  import '@material/web/icon/icon.js';
+<script>import '@material/web/icon/icon.js';
   import { initPageSidebar } from './sidebar/toc-generator';
   import { setupVPLocalNav } from './sidebar/local-nav';
   import { initMermaid, setupMermaidThemeListener } from './sidebar/mermaid-loader';
@@ -187,7 +175,6 @@ const bookConfigJson = JSON.stringify(currentBook);
     initExerciseSidebarTriggerDelegation();
     probeActiveExerciseSession();
 
-    // 绑定侧载抽屉遮罩点击关闭
     const scrim = document.getElementById('astrolib-sideload-scrim');
     if (scrim) {
       scrim.onclick = () => sideloadManager.switchToDefault();

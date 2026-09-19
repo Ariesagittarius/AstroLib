@@ -1,8 +1,3 @@
-/**
- * src/scripts/settings/theme-prefs.ts
- * 主题与外观首选项控制器：浅深色模式、M3 主题色彩、站点主题与过渡动画
- */
-
 import { loadSiteTheme } from '../site-themes';
 import { loadThemeColor } from '../../themes/material-you/color-engine';
 
@@ -50,7 +45,6 @@ export function applyThemeMode(mode?: ThemeMode): void {
     });
   }
 
-  // 同步顶栏的 starlight-theme-select 图标
   document.querySelectorAll('starlight-theme-select').forEach((el: any) => {
     if (typeof el.syncIcon === 'function') el.syncIcon();
     else el.classList.toggle('is-dark', resolved === 'dark');
@@ -89,7 +83,6 @@ export function saveThemeTransition(val: string): void {
   } catch {}
 }
 
-/** 同步当前所有实例的 UI 风格主题高亮 Chips */
 export function syncAllThemeChips(): void {
   const theme = loadSiteTheme();
   document.querySelectorAll('.ft-panel .ft-theme-chip, starlight-feature-toggles .ft-theme-chip').forEach((chip) => {
@@ -100,7 +93,6 @@ export function syncAllThemeChips(): void {
   });
 }
 
-/** 同步当前所有实例的 M3 主题色高亮 Swatches */
 export function syncAllThemeColors(): void {
   const currentColor = loadThemeColor();
   document.querySelectorAll('.ft-panel .ft-preset-swatch, starlight-feature-toggles .ft-preset-swatch').forEach((swatch) => {
@@ -110,14 +102,12 @@ export function syncAllThemeColors(): void {
     swatch.setAttribute('aria-selected', String(active));
   });
 
-  // 同步原生 color input
   document.querySelectorAll<HTMLInputElement>('.ft-color-native-input').forEach((input) => {
     if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(currentColor)) {
       input.value = currentColor;
     }
   });
 
-  // 同步自定义 Tile 状态
   const isCustomHex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(currentColor);
   document.querySelectorAll<HTMLElement>('.ft-custom-color-tile').forEach((tile) => {
     tile.classList.toggle('active', isCustomHex);

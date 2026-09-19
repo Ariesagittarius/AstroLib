@@ -1,17 +1,4 @@
 ---
-/**
- * NoticeFramework.astro
- * ============================================================================
- * 正文卡片外【提示框架】主容器（Notice Framework Host）
- * 
- * 架构规范：
- * 1. 挂载于 .main-pane 顶层、<main>（正文卡片）正上方；
- * 2. 宽度与正文卡片严格对齐 (max-width: 62rem; margin: 0 auto)；
- * 3. 服务端驱动：当前页面无提示时返回 null，零 DOM 占用；
- * 4. 数据结构驱动：自动按 variant 分发给 WikiNotice 或 ChromeNotice。
- * ============================================================================
- */
-
 import { collections } from '@/config/collections.config.mjs';
 import { resolveNotices, NOTICE_PRESETS, ROUTE_NOTICES } from '@/config/notices.config.mjs';
 import WikiNotice from './WikiNotice.astro';
@@ -34,7 +21,6 @@ for (const col of collections) {
   }
 }
 
-// 1. 匹配路由/范围规则提示 (ROUTE_NOTICES)
 const matchedRouteNotices = (ROUTE_NOTICES || [])
   .filter(rule => {
     if (typeof rule.pattern === 'string') {
@@ -47,13 +33,10 @@ const matchedRouteNotices = (ROUTE_NOTICES || [])
   })
   .flatMap(rule => rule.notices || []);
 
-// 2. 识别是否为开发文档页面（/dev 系列技术文档）
 const isDevDoc = pathname.includes('/dev') || entryId.startsWith('dev') || entrySlug.startsWith('dev');
 
-// 3. 提取当前章节 frontmatter 中的 notices (若有)
 const frontmatterNotices = entry?.data?.notices || [];
 
-// 4. 多层级优先级解析：Route -> Collection -> Book -> Frontmatter
 const notices = resolveNotices(
   matchedRouteNotices,
   currentCol?.notices,
@@ -74,8 +57,7 @@ const notices = resolveNotices(
   </div>
 )}
 
-<style>
-  .astrolib-notice-framework {
+<style>.astrolib-notice-framework {
     max-width: 62rem;
     width: 100%;
     margin: 0 auto 0.85rem auto;
@@ -98,9 +80,7 @@ const notices = resolveNotices(
   }
 </style>
 
-<script is:inline>
-  // 提示框架交互控制器（折叠/展开与会话级关闭记忆）
-  (function initNoticeInteractions() {
+<script is:inline>(function initNoticeInteractions() {
     function setupNotices(root) {
       if (!root) return;
       const framework = root.querySelector('.astrolib-notice-framework');
@@ -110,13 +90,11 @@ const notices = resolveNotices(
         const id = card.dataset.noticeId;
         if (!id) return;
 
-        // 检查会话级关闭状态
         if (sessionStorage.getItem('astrolib_dismissed_notice_' + id) === '1') {
           card.style.display = 'none';
           return;
         }
 
-        // 绑定折叠展开按钮
         const toggleBtn = card.querySelector('.toggle-expand-btn');
         const expandPanel = card.querySelector('.wiki-expand-panel');
         if (toggleBtn && expandPanel && !toggleBtn.dataset.bound) {
@@ -134,7 +112,6 @@ const notices = resolveNotices(
           });
         }
 
-        // 绑定关闭按钮
         const dismissBtn = card.querySelector('.dismiss-btn');
         if (dismissBtn && !dismissBtn.dataset.bound) {
           dismissBtn.dataset.bound = 'true';
@@ -158,7 +135,6 @@ const notices = resolveNotices(
       setupNotices(document);
     }
 
-    // 兼容 SPA 路由换页生命周期
     document.addEventListener('astro:page-load', () => setupNotices(document));
   })();
 </script>

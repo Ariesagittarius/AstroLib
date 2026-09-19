@@ -1,9 +1,3 @@
-/**
- * src/publishing/latex/renderers/chapter-renderer.ts
- * 章节级别学术教材 / 讲义 LaTeX 生成引擎 (Chapter LaTeX Renderer)
- * 接受 ChapterDocument 语义数据模型，输出符合学术出版标准的 LaTeX 源码
- */
-
 import type {
   ChapterDocument,
   SemanticBlock,
@@ -32,11 +26,6 @@ export const DEFAULT_CHAPTER_LATEX_CONFIG: ChapterLatexConfig & { embedStyle?: b
   embedStyle: false,
 };
 
-/**
- * 渲染单个表格节点为 booktabs 标准学术三线表
- * @param tableData 表格数据模型
- * @param inBox 是否处于 tcolorbox (定理/定义/例题等) 容器内部。内部严禁使用浮动体 \begin{table}
- */
 export function renderLatexTable(tableData: SemanticTableData, inBox = false): string {
   if (!tableData) return '';
   const headers = tableData.headers || [];
@@ -74,7 +63,7 @@ export function renderLatexTable(tableData: SemanticTableData, inBox = false): s
   lines.push('    \\bottomrule');
 
   const tabularCode = `\\begin{tabular}{${colAligns.join(' ')}}\n${lines.join('\n')}\n  \\end{tabular}`;
-  // 使用 adjustbox 约束宽度不超过版心，杜绝超宽表格撑破右边距
+
   const wrappedTabular = `\\begin{adjustbox}{max width=\\linewidth}\n  ${tabularCode}\n  \\end{adjustbox}`;
 
   let captionCode = '';
@@ -83,7 +72,7 @@ export function renderLatexTable(tableData: SemanticTableData, inBox = false): s
   }
 
   if (inBox) {
-    // 处于 tcolorbox (定理/例题/定义等) 容器内部时，使用居中非浮动环境，杜绝 "Not in outer par mode"
+
     let code = `\\begin{center}\n  \\small\n`;
     if (captionCode) {
       code += `  {\\small\\kaishu ${captionCode}}\\par\\vspace{0.4em}\n`;
@@ -92,7 +81,6 @@ export function renderLatexTable(tableData: SemanticTableData, inBox = false): s
     return code;
   }
 
-  // 处于正文顶层时，使用标准的浮动体 table 环境与三线表
   let code = `\\begin{table}[htbp]\n  \\centering\n  \\small\n`;
   if (captionCode) {
     code += `  \\caption{${captionCode}}\n`;
@@ -101,9 +89,6 @@ export function renderLatexTable(tableData: SemanticTableData, inBox = false): s
   return code;
 }
 
-/**
- * 渲染单个列表节点
- */
 export function renderLatexList(listData: SemanticListData, config: ChapterLatexConfig, inBox = false): string {
   if (!listData || !listData.items) return '';
   const env = listData.ordered ? 'enumerate' : 'itemize';
@@ -118,9 +103,6 @@ export function renderLatexList(listData: SemanticListData, config: ChapterLatex
   return code;
 }
 
-/**
- * 渲染插图与图题节点 (遵循 ImageSizingPolicy 约束，基于 adjustbox 防止大图/竖图撑爆版面)
- */
 export function renderLatexFigure(
   figureData: SemanticFigureData,
   policy: ImageSizingPolicy = DEFAULT_IMAGE_POLICY
@@ -147,9 +129,6 @@ export function renderLatexFigure(
   return code;
 }
 
-/**
- * 递归渲染语义块列表 (SemanticBlock[]) 为纯正 LaTeX 语法
- */
 export function renderSemanticBlocks(
   blocks: SemanticBlock[],
   config: ChapterLatexConfig,
@@ -187,7 +166,7 @@ export function renderSemanticBlocks(
       case 'math': {
         if (block.content) {
           const trimmed = cleanMathFormula(block.content.trim());
-          // 修复 amsmath 限制：若包含 \tag{...} 则必须使用 equation 环境，严禁使用 \[ ... \]
+
           if (trimmed.includes('\\tag{') || trimmed.includes('\\tag*{')) {
             code += `\\begin{equation}\n${trimmed}\n\\end{equation}\n\n`;
           } else {
@@ -228,7 +207,6 @@ export function renderSemanticBlocks(
         break;
       }
 
-      // 核心定理族 (kaobook 标准可选标题环境)
       case 'definition':
       case 'theorem':
       case 'lemma':
@@ -243,7 +221,7 @@ export function renderSemanticBlocks(
       case 'method':
       case 'exercise': {
         let rawTitle = block.title ? formatLatexContent(stripTheoremPrefix(block.title)).trim() : '';
-        // 剥离外层多余括号，防止与 amsthm 自身的附加括号叠加产生 ((...))
+
         rawTitle = rawTitle.replace(/^[\(（](.*)[\)）]$/, '$1').trim();
         const titleArg = rawTitle ? `[${rawTitle}]` : '';
         const labelArg = block.label || (block.number ? `${block.kind}:${block.number.replace(/\./g, '-')}` : '');
@@ -388,9 +366,6 @@ export function renderSemanticBlocks(
   return code;
 }
 
-/**
- * 核心导出函数：将 ChapterDocument 语义领域模型渲染为完整可编译的 LaTeX 源码
- */
 export function renderChapterLatexDocument(
   chapter: ChapterDocument,
   userConfig: Partial<ChapterLatexConfig & { embedStyle?: boolean }> = {}
@@ -399,14 +374,12 @@ export function renderChapterLatexDocument(
   const paperOption = config.paperSize === 'b5' ? 'b5paper' : 'a4paper';
   const fontPt = (config.fontSize === 10.5 || !config.fontSize) ? '11pt' : `${config.fontSize}pt`;
 
-  // 章节层级元数据权威注入 (来自 Core / Catalog 层的 ChapterCanonicalMetadata)
   const meta = chapter.metadata;
   const bookTitle = meta?.bookTitle || chapter.bookTitle || '';
   const cleanTitle = stripLeadingNumber(chapter.title) || chapter.title || '章节内容';
   const fullTitle = meta?.fullTitle || chapter.title || config.title || cleanTitle;
   const authorName = meta?.bookAuthor || chapter.author || config.author || bookTitle || 'AstroLib';
 
-  // 解析章序号 (例如 "2.2 求导的基本法则" -> 章序号 2)
   let chapNum: number | null = meta?.chapterNumber != null ? meta.chapterNumber : null;
   if (chapNum == null) {
     const m = (chapter.title || '').match(/^(\d+)/);
@@ -807,7 +780,6 @@ ${counterCode}
 
 `;
 
-  // 过滤开头与章标题重复的首个 H1 节点
   const chapterCleanNorm = cleanTitle.replace(/^[第\d\.\s一二三四五六七八九十]+[章节篇讲]\s*/, '').trim();
   const blocksToRender = (chapter.blocks || []).filter((b, idx) => {
     if (idx <= 1 && b.kind === 'heading' && b.level === 1) {
@@ -819,7 +791,6 @@ ${counterCode}
     return true;
   });
 
-  // 渲染正文语义块
   code += renderSemanticBlocks(blocksToRender, config);
 
   code += `\\end{document}\n`;
