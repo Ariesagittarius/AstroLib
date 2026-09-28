@@ -1,0 +1,304 @@
+---
+title: '10.5 Quantum circuits'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 10.5 Quantum circuits
+
+Let’s make this more precise.
+
+Lemma Suppose s independent samples are drawn uniformly from
+
+0, M
+
+k , 2M
+
+k , . . . , (k −1)M
+
+k .
+
+Then with probability at least 1 −k/2^&#123;s&#125;, the greatest common divisor of these samples is M/k.
+
+Proof. The only way this can fail is if all the samples are multiples of j · M/k, where j is some integer greater than 1. So, fix any integer j ≥2. The chance that a particular sample is a multiple of jM/k is at most 1/j ≤1/2; and thus the chance that all the samples are multiples of jM/k is at most 1/2^&#123;s&#125;.
+
+So far we have been thinking about a particular number j; the probability that this bad event will happen for some j ≤k is at most equal to the sum of these probabilities over the different values of j, which is no more than k/2^&#123;s&#125;.
+
+We can make the failure probability as small as we like by taking s to be an appropriate multiple of log M.
+
+So quantum computers can carry out a Fourier transform exponentially faster than classical computers. But what do these computers actually look like? What is a quantum circuit made up of, and exactly how does it compute Fourier transforms so quickly?
+
+### 10.5.1 Elementary quantum gates
+
+An elementary quantum operation is analogous to an elementary gate like the_&#123; &#125;AND or_&#123; &#125;NOT gate in a classical circuit. It operates upon either a single qubit or two qubits. One of the most important examples is the Hadamard gate, denoted by H, which operates on a single qubit. On input
+
+0
+
+, it outputs H(
+
+0
+
+) = 1
+
+√
+
+2 0
+
++ 1
+
+√
+
+2 1
+
+. And for input
+
+1
+
+, H(
+
+1
+
+) = 1
+
+√
+
+2 0
+
+− 1
+
+√
+
+2 1
+
+. In pictures:
+
+1
+
+√
+
+2 0
+
++ 1
+
+√
+
+2 1
+
+H 1
+
+H 0
+
+1
+
+√
+
+2 0
+
+− 1
+
+√
+
+2 1
+
+Notice that in either case, measuring the resulting qubit yields 0 with probability 1/2 and 1 with probability 1/2. But what happens if the input to the Hadamard gate is an arbitrary superposition α_&#123;0&#125;
+
+0
+
++ α_&#123;1&#125;
+
+1
+
+? The answer, dictated by the linearity of quantum physics, is the superposition α_&#123;0&#125;H(
+
+0
+
+) + α_&#123;1&#125;H(
+
+1
+
+) =^&#123; &#125;α_&#123;0&#125;+α_&#123;1&#125;
+
+√
+
+2 0
+
++^&#123; &#125;α_&#123;0&#125;−α_&#123;1&#125;
+
+√
+
+2 1
+
+. And so, if we apply the Hadamard gate to the output of a Hadamard gate, it restores the qubit to its original state!
+
+Another basic gate is the controlled-_&#123;NOT&#125;, or_&#123; &#125;CNOT. It operates upon two qubits, with the first acting as a control qubit and the second as the target qubit. The_&#123; &#125;CNOT gate flips the second bit if and only if the first qubit is a 1. Thus_&#123; &#125;CNOT(
+
+00
+
+) =
+
+00
+
+and_&#123; &#125;CNOT(
+
+10
+
+) =
+
+11
+
+:
+
+00
+
+00
+
+10
+
+11
+
+Yet another basic gate, the controlled phase gate, is described below in the subsection describing the quantum circuit for the QFT.
+
+Now let us consider the following question: Suppose we have a quantum state on n qubits, α
+
+= P
+
+x∈&#123;0,1&#125;^&#123;n&#125; α_&#123;x&#125;
+
+x
+
+. How many of these 2^&#123;n&#125; amplitudes change if we apply the Hadamard gate to only the first qubit? The surprising answer is—all of them! The new superposition becomes
+
+β
+
+= P
+
+x∈&#123;0,1&#125;^&#123;n&#125; β_&#123;x&#125;
+
+x
+
+, where β_&#123;0&#125;y = α_&#123;0&#125;y+α_&#123;1&#125;y
+
+√
+
+2 and β_&#123;1&#125;y = α_&#123;0&#125;y−α_&#123;1&#125;y
+
+√
+
+2 . Looking at the results more closely, the quantum operation on the first qubit deals with each n −1 bit suffix y separately. Thus the pair of amplitudes α_&#123;0&#125;y and α_&#123;1&#125;y are transformed into (α_&#123;0&#125;y + α_&#123;1&#125;y)/
+
+√
+
+2 and (α_&#123;0&#125;y −α_&#123;1&#125;y)/
+
+√
+
+2. This is exactly the feature that will give us an exponential speedup in the quantum Fourier transform.
+
+### 10.5.2 Two basic types of quantum circuits
+
+A quantum circuit takes some number n of qubits as input, and outputs the same number of qubits. In the diagram these n qubits are carried by the n wires going from left to right. The quantum circuit consists of the application of a sequence of elementary quantum gates (of the kind described above) to single qubits and pairs of qubits.
+
+At a high level, there are two basic functionalities of quantum circuits that we use in the design of quantum algorithms:
+
+Quantum Fourier Transform These quantum circuits take as input n qubits in some state
+
+α
+
+and output the state
+
+β
+
+resulting from applying the QFT to
+
+α
+
+.
+
+Classical Functions Consider a function f with n input bits and m output bits, and suppose we have a classical circuit that outputs f(x). Then there is a quantum circuit that, on input consisting of an n-bit string x padded with m 0’s, outputs x and f(x):
+
+f(x) x C
+
+x
+
+f(x)
+
+x
+
+0
+
+Classical circuit Quantum circuit
+
+Now the input to this quantum circuit could be a superposition over the n bit strings x, P
+
+x
+
+x, 0^&#123;k&#125;
+
+, in which case the output has to be P
+
+x
+
+x, f(x)
+
+. Exercise 10.7 explores the construction of such circuits out of elementary quantum gates.
+
+Understanding quantum circuits at this high level is sufficient to follow the rest of this chapter. The next subsection on quantum circuits for the QFT can therefore be safely skipped by anyone not wanting to delve into these details.
+
+### 10.5.3 The quantum Fourier transform circuit
+
+Here we have reproduced the diagram (from Section 2.6.4) showing how the classical FFT circuit for M-vectors is composed of two FFT circuits for (M/2)-vectors followed by some simple gates.
+
+α_&#123;0&#125; α_&#123;2&#125;
+
+α_&#123;3&#125;
+
+j + M/2
+
+j α_&#123;1&#125;
+
+β_&#123;j&#125;+M/2 FFT_&#123;M/&#125;2
+
+FFT_&#123;M/&#125;2 ...
+
+...
+
+β_&#123;j&#125;
+
+FFT_&#123;M&#125; (input: α_&#123;0&#125;, . . . , α_&#123;M&#125;−1, output: β_&#123;0&#125;, . . . , β_&#123;M&#125;−1)
+
+α_&#123;M&#125;−2
+
+α_&#123;M&#125;−1
+
+Let’s see how to simulate this on a quantum system. The input is now encoded in the 2^&#123;m&#125;
+
+amplitudes of m = log M qubits. Thus the decomposition of the inputs into evens and odds, as shown in the preceding figure, is clearly determined by one of the qubits—the least significant qubit. How do we separate the even and odd inputs and apply the recursive circuits to compute FFT_&#123;M/&#125;2 on each half? The answer is remarkable: just apply the quantum circuit QFT_&#123;M/&#125;2 to the remaining m −1 qubits. The effect of this is to apply QFT_&#123;M/&#125;2 to the superposition of all the m-bit strings of the form x0 (of which there are M/2), and separately to the superposition of all the m-bit strings of the form x1. Thus the two recursive classical circuits can be emulated by a single quantum circuit—an exponential speedup when we unwind the recursion!
+
+QFT_&#123;M/&#125;2
+
+least significant bit
+
+m −1 qubits QFT_&#123;M/&#125;2
+
+H
+
+Let us now consider the gates in the classical FFT circuit after the recursive calls to FFT_&#123;M/&#125;2: the wires pair up j with M/2 + j, and ignoring for now the phase that is applied to the contents of the (M/2 + j)th wire, we must add and subtract these two quantities to obtain the jth and the (M/2 + j)th outputs, respectively. How would a quantum circuit achieve the result of these M classical gates? Simple: just perform the Hadamard gate on the first qubit! Recall from the preceding discussion (Section 10.5.1) that for every possible configuration of the remaining m −1 qubits x, this pairs up the strings 0x and 1x. Translating from binary, this means we are pairing up x and M/2+x. Moreover the result of the Hadamard gate is that for each such pair, the amplitudes are replaced by the sum and difference (normalized by 1/
+
+√
+
+2) , respectively. So far the QFT requires almost no gates at all! The phase that must be applied to the (M/2 + j)th wire for each j requires a little more work. Notice that the phase of ω^&#123;j&#125; must be applied only if the first qubit is 1. Now if j is represented by the m −1 bits j_&#123;1&#125; . . . j_&#123;m&#125;−1, then ω^&#123;j&#125; = Π^&#123;m&#125;−1
+
+l=1 ω^&#123;2&#125;^&#123;jl&#125;. Thus the phase ω^&#123;j&#125; can be applied by applying for the lth wire (for each l) a phase of ω^&#123;2&#125;^&#123;l&#125; if the lth qubit is a 1 and the first qubit is a 1. This task can be accomplished by another two-qubit quantum gate—the conditional phase gate. It leaves the two qubits unchanged unless they are both 1, in which case it applies a specified phase factor.
+
+The QFT circuit is now specified. The number of quantum gates is given by the formula S(m) = S(m−1)+O(m), which works out to S(m) = O(m^&#123;2&#125;). The QFT on inputs of size M = 2^&#123;m&#125;
+
+thus requires O(m^&#123;2&#125;) = O(log^&#123;2&#125; M) quantum operations.

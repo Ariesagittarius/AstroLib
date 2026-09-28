@@ -6,6 +6,21 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import katex from 'katex';
 import rehypeImageBlur from '../src/plugins/rehype/rehype-image-blur.mjs';
+import DOMPurify from 'dompurify';
+import mermaid from 'mermaid';
+
+DOMPurify.sanitize = (s) => s;
+DOMPurify.addHook = () => {};
+globalThis.window = { DOMPurify };
+globalThis.document = {
+  createElement: () => ({ getContext: () => null }),
+  getElementById: () => null
+};
+
+mermaid.initialize({
+  startOnLoad: false,
+  securityLevel: 'loose'
+});
 
 const detailFile = process.argv.find(a => a.startsWith('--detail='))?.split('=')[1];
 const showLines = process.argv.includes('--lines');
@@ -33,6 +48,7 @@ let ok = 0;
 const failures = [];
 const mathErrors = [];
 const imageErrors = [];
+const mermaidErrors = [];
 
 for (const file of files) {
   const content = fs.readFileSync(file, 'utf-8');
@@ -131,8 +147,7 @@ for (const file of files) {
 
   // 3. 本地图片与静态资源物理存在性校验 (Image Asset Integrity Gate)
   const mdImgMatches = content.matchAll(/!\[.*?\]\((.*?)\)/g);
-  const htmlImgMatches = content.matchAll(/<img\s+[^>]*src=["'](.*?)["']/g);
-  for (const m of [...mdImgMatches, ...htmlImgMatches]) {
+  for (const m of mdImgMatches) {
     const rawPath = (m[1] || '').trim();
     if (!rawPath || rawPath.startsWith('http://') || rawPath.startsWith('https://') || rawPath.startsWith('data:')) {
       continue;
@@ -151,6 +166,45 @@ for (const file of files) {
         ref: rawPath,
         resolved: path.relative(process.cwd(), resolvedPath).replace(/\\/g, '/'),
         line: getLine(m.index),
+        reason: '文件在磁盘上不存在 (FileNotFound)',
+      });
+    }
+  }
+
+  // 严格禁止原生 HTML <img src="./images/..."> 引用（无法被 Astro 打包管线识别导致生产/开发环境 404 破图）
+  const htmlImgMatches = content.matchAll(/<img\b[^>]*src=["'](.*?)["']/g);
+  for (const m of htmlImgMatches) {
+    const rawPath = (m[1] || '').trim();
+    if (rawPath.startsWith('./') || rawPath.startsWith('../') || rawPath.includes('images/')) {
+      fileHasError = true;
+      imageErrors.push({
+        file: relFile,
+        ref: rawPath,
+        resolved: 'Astro 资源打包违背',
+        line: getLine(m.index),
+        reason: '禁止在 MDX 中使用原生 HTML <img src="..."> 引用本地相对图片（会导致资源丢失与 404），必须使用 Markdown 语法 ![alt](path)',
+      });
+    }
+  }
+
+  // 4. Mermaid 图表语法与结构完整性校验 (Mermaid Syntax Integrity Gate)
+  const mermaidMatches = content.matchAll(/```mermaid([\s\S]*?)```/g);
+  let mermaidIdx = 0;
+  for (const m of mermaidMatches) {
+    mermaidIdx++;
+    const rawCode = m[1].trim();
+    if (!rawCode) continue;
+
+    try {
+      await mermaid.parse(rawCode);
+    } catch (err) {
+      fileHasError = true;
+      mermaidErrors.push({
+        file: relFile,
+        block: mermaidIdx,
+        line: getLine(m.index),
+        message: err.message || err.str || String(err),
+        snippet: rawCode.slice(0, 120).replace(/\s+/g, ' '),
       });
     }
   }
@@ -194,17 +248,28 @@ if (mathErrors.length) {
 }
 
 if (imageErrors.length) {
-  console.log(`\n🖼️ 图片资产缺失 (ImageNotFound): ${imageErrors.length} 处\n`);
+  console.log(`\n🖼️ 图片资产异常 (ImageAssetError): ${imageErrors.length} 处\n`);
   for (const img of imageErrors) {
     console.log(`${img.file}:${img.line}`);
     console.log(`  引用路径: ${img.ref}`);
-    console.log(`  磁盘定位: ${img.resolved} (文件不存在)`);
+    console.log(`  原因: ${img.reason || '文件不存在'}`);
+    console.log(`  定位: ${img.resolved}`);
   }
 }
 
-if (!failures.length && !mathErrors.length && !imageErrors.length) {
-  console.log('🎉 所有 MDX 语法、KaTeX 数学公式与本地图片资产均校验通过！');
+if (mermaidErrors.length) {
+  console.log(`\n📊 Mermaid 图表语法异常 (MermaidSyntaxError): ${mermaidErrors.length} 处\n`);
+  for (const mer of mermaidErrors) {
+    console.log(`${mer.file}:${mer.line} [图表块 ${mer.block}]`);
+    console.log(`  错误: ${mer.message}`);
+    console.log(`  片段: ${mer.snippet}`);
+  }
+}
+
+if (!failures.length && !mathErrors.length && !imageErrors.length && !mermaidErrors.length) {
+  console.log('🎉 所有 MDX 语法、KaTeX 数学公式、本地图片资产与 Mermaid 图表均校验通过！');
 } else {
   process.exit(1);
 }
+
 

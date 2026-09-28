@@ -71,6 +71,13 @@ export const EXERCISE_BANKS: ExerciseBank[] = [
     applicableBooks: ['linear_algebra_geometry'],
     description: '《线性代数与几何（第2版）》（北京邮电大学出版社）全书 9 章配套课后习题与参考答案。',
   },
+  {
+    id: 'comm_textbook_exercises',
+    title: '《通信原理》课后习题',
+    sourceType: 'textbook',
+    applicableBooks: ['communication_principles'],
+    description: '《通信原理（第5版）》（北京邮电大学出版社）全书 13 章配套思考题、课后习题与参考解析。',
+  },
 ];
 
 /**

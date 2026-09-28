@@ -1,0 +1,188 @@
+---
+title: '7.5 Zero-sum games'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 7.5 Zero-sum games
+
+When the primal is the LP that expresses the max-flow problem, it is possible to assign interpretations to the dual variables that show the dual to be none other than the minimumcut problem (Exercise 7.25). The relation between flows and cuts is therefore just a specific instance of the duality theorem. And in fact, the proof of this theorem falls out of the simplex algorithm, in much the same way as the max-flow min-cut theorem fell out of the analysis of the max-flow algorithm.
+
+### Visualizing duality
+
+One can solve the shortest-path problem by the following “analog” device: Given a weighted undirected graph, build a physical model of it in which each edge is a string of length equal to the edge’s weight, and each node is a knot at which the appropriate endpoints of strings are tied together. Then to find the shortest path from s to t, just pull s away from t until the gadget is taut. It is intuitively clear that this finds the shortest path from s to t.
+
+S
+
+D C
+
+A B
+
+T
+
+There is nothing remarkable or surprising about all this until we notice the following: the shortest-path problem is a minimization problem, right? Then why are we pulling s away from t, an act whose purpose is, obviously, maximization? Answer: By pulling s away from t we solve the dual of the shortest-path problem! This dual has a very simple form (Exercise 7.28), with one variable x_&#123;u&#125; for each node u:
+
+max x_&#123;S&#125; −x_&#123;T&#125; |x_&#123;u&#125; −x_&#123;v&#125;| ≤w_&#123;uv&#125; for all edges &#123;u, v&#125;
+
+In words, the dual problem is to stretch s and t as far apart as possible, subject to the constraint that the endpoints of any edge &#123;u, v&#125; are separated by a distance of at most w_&#123;uv&#125;.
+
+We can represent various conflict situations in life by matrix games. For example, the schoolyard rock-paper-scissors game is specified by the payoff matrix illustrated here. There are two players, called Row and Column, and they each pick a move from &#123;r, p, s&#125;. They then look up the matrix entry corresponding to their moves, and Column pays Row this amount. It is Row’s gain and Column’s loss.
+
+G =
+
+Column
+
+r p s
+
+r
+
+0 −1 1
+
+p
+
+1 0 −1
+
+Row
+
+s
+
+−1 1 0
+
+Now suppose the two of them play this game repeatedly. If Row always makes the same move, Column will quickly catch on and will always play the countermove, winning every time. Therefore Row should mix things up: we can model this by allowing Row to have a mixed strategy, in which on each turn she plays r with probability x_&#123;1&#125;, p with probability x_&#123;2&#125;, and s with probability x_&#123;3&#125;. This strategy is specified by the vector x = (x_&#123;1&#125;, x_&#123;2&#125;, x_&#123;3&#125;), positive numbers that add up to 1. Similarly, Column’s mixed strategy is some y = (y_&#123;1&#125;, y_&#123;2&#125;, y_&#123;3&#125;).^&#123;2&#125;
+
+On any given round of the game, there is an x_&#123;i&#125;y_&#123;j&#125; chance that Row and Column will play the ith and jth moves, respectively. Therefore the expected (average) payoff is
+
+X
+
+i,j
+
+G_&#123;ij&#125; · Prob[Row plays i, Column plays j] =
+
+X
+
+i,j
+
+G_&#123;ij&#125;x_&#123;i&#125;y_&#123;j&#125;.
+
+Row wants to maximize this, while Column wants to minimize it. What payoffs can they hope to achieve in rock-paper-scissors? Well, suppose for instance that Row plays the “completely random” strategy x = (1/3, 1/3, 1/3). If Column plays r, then the average payoff (reading the first column of the game matrix) will be
+
+1
+
+3 · 0 + 1
+
+3 · 1 + 1
+
+3 · −1 = 0.
+
+This is also true if Column plays p, or s. And since the payoff of any mixed strategy (y_&#123;1&#125;, y_&#123;2&#125;, y_&#123;3&#125;) is just a weighted average of the individual payoffs for playing r, p, and s, it must also be zero. This can be seen directly from the preceding formula,
+
+X
+
+i,j
+
+G_&#123;ij&#125;x_&#123;i&#125;y_&#123;j&#125; =
+
+X
+
+i,j
+
+G_&#123;ij&#125; · 1
+
+3y_&#123;j&#125; =
+
+X
+
+j
+
+y_&#123;j&#125;
+
+X
+
+i
+
+1
+
+3G_&#123;ij&#125;
+
+!
+
+=
+
+X
+
+j
+
+y_&#123;j&#125; · 0 = 0,
+
+where the second-to-last equality is the observation that every column of G adds up to zero. Thus by playing the “completely random” strategy, Row forces an expected payoff of zero, no matter what Column does. This means that Column cannot hope for a negative (expected) payoff (remember that he wants the payoff to be as small as possible). But symmetrically, if Column plays the completely random strategy, he also forces an expected payoff of zero, and thus Row cannot hope for a positive (expected) payoff. In short, the best each player can do is to play completely randomly, with an expected payoff of zero. We have mathematically confirmed what you knew all along about rock-paper-scissors!
+
+Let’s think about this in a slightly different way, by considering two scenarios:
+
+1. First Row announces her strategy, and then Column picks his.
+
+2. First Column announces his strategy, and then Row chooses hers.
+
+We’ve seen that the average payoff is the same (zero) in either case if both parties play optimally. But this might well be due to the high level of symmetry in rock-paper-scissors. In general games, we’d expect the first option to favor Column, since he knows Row’s strategy and can fully exploit it while choosing his own. Likewise, we’d expect the second option to favor Row. Amazingly, this is not the case: if both play optimally, then it doesn’t hurt a player
+
+2Also of interest are scenarios in which players alter their strategies from round to round, but these can get very complicated and are a vast subject unto themselves.
+
+to announce his or her strategy in advance! What’s more, this remarkable property is a consequence of—and in fact equivalent to—linear programming duality.
+
+Let’s investigate this with a nonsymmetric game. Imagine a presidential election scenario in which there are two candidates for office, and the moves they make correspond to campaign issues on which they can focus (the initials stand for economy, society, morality, and tax cut). The payoff entries are millions of votes lost by Column.
+
+G =
+
+m t
+
+e
+
+3 −1
+
+s
+
+−2 1
+
+Suppose Row announces that she will play the mixed strategy x = (1/2, 1/2). What should Column do? Move m will incur an expected loss of 1/2, while t will incur an expected loss of 0. The best response of Column is therefore the pure strategy y = (0, 1).
+
+More generally, once Row’s strategy x = (x_&#123;1&#125;, x_&#123;2&#125;) is fixed, there is always a pure strategy that is optimal for Column: either move m, with payoff 3x_&#123;1&#125; −2x_&#123;2&#125;, or t, with payoff −x_&#123;1&#125; + x_&#123;2&#125;, whichever is smaller. After all, any mixed strategy y is a weighted average of these two pure strategies and thus cannot beat the better of the two.
+
+Therefore, if Row is forced to announce x before Column plays, she knows that his best response will achieve an expected payoff of min&#123;3x_&#123;1&#125; −2x_&#123;2&#125;, −x_&#123;1&#125; + x_&#123;2&#125;&#125;. She should choose x defensively to maximize her payoff against this best response:
+
+Pick (x_&#123;1&#125;, x_&#123;2&#125;) that maximizes min&#123;3x_&#123;1&#125; −2x_&#123;2&#125;, −x_&#123;1&#125; + x_&#123;2&#125;&#125; |
+
+&#123;z
+
+&#125; payoff from Column’s best response to x
+
+This choice of x_&#123;i&#125;’s gives Row the best possible guarantee about her expected payoff. And we will now see that it can be found by an LP! The main trick is to notice that for fixed x_&#123;1&#125; and x_&#123;2&#125; the following are equivalent:
+
+z = min&#123;3x_&#123;1&#125; −2x_&#123;2&#125;, −x_&#123;1&#125; + x_&#123;2&#125;&#125;
+
+max z
+
+z ≤3x_&#123;1&#125; −2x_&#123;2&#125;
+
+z ≤−x_&#123;1&#125; + x_&#123;2&#125;
+
+And Row needs to choose x_&#123;1&#125; and x_&#123;2&#125; to maximize this z.
+
+max z −3x_&#123;1&#125; + 2x_&#123;2&#125; + z ≤0
+
+x_&#123;1&#125; − x_&#123;2&#125; + z ≤0 x_&#123;1&#125; + x_&#123;2&#125; = 1 x_&#123;1&#125;, x_&#123;2&#125; ≥0
+
+Symmetrically, if Column has to announce his strategy first, his best bet is to choose the mixed strategy y that minimizes his loss under Row’s best response, in other words,
+
+Pick (y_&#123;1&#125;, y_&#123;2&#125;) that minimizes max&#123;3y_&#123;1&#125; −y_&#123;2&#125;, −2y_&#123;1&#125; + y_&#123;2&#125;&#125; |
+
+&#123;z
+
+&#125; outcome of Row’s best response to y

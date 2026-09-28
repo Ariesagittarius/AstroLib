@@ -1,0 +1,119 @@
+/* ==========================================================================
+   Mermaid 图表排版与容器规范 (Mermaid Diagram Layout & Stabilization)
+   --------------------------------------------------------------------------
+   本文件集中治理 Mermaid 流程图与时序图在全站的排版、数学公式融合与视效对齐：
+   1. 彻底拔除 <foreignObject> 内 <p> 标签继承正文段落 margin/text-indent 导致的文字严重下坠与裁切；
+   2. 强制 <foreignObject> 为 overflow: visible，杜绝微小尺寸公差导致的文字断头断尾；
+   3. 确保 <foreignObject> 内部表格单元垂直居中 (vertical-align: middle)，杜绝 baseline 偏移；
+   4. 严禁在 foreignObject > div 上设置 height: 100%，避免 Mermaid 在预渲染测算时将节点撑爆为数千像素；
+   5. 融合 KaTeX 行内数学公式，消除 MathML display: block 造成的换行错位；
+   6. 适配暗色与亮色模式，提供轻盈学术呼吸感的卡片衬底与圆角线框。
+   ========================================================================== */
+
+.mermaid-container {
+  display: block;
+  width: 100%;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: var(--sl-color-bg-nav, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--sl-color-hairline, rgba(255, 255, 255, 0.08));
+  padding: 1.25rem 1rem;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.mermaid-render {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80px;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.mermaid-render svg,
+.mermaid-container svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+/* --------------------------------------------------------------------------
+   1. ForeignObject 溢出防御与盒模型重置
+   SVG foreignObject 规范默认 overflow: hidden，会导致微小公差裁切字符。
+   -------------------------------------------------------------------------- */
+.mermaid-container foreignObject,
+.mermaid-render foreignObject {
+  overflow: visible !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. 节点文本 <p> 标签段落外边距与缩进强力拔除 (核心根因治理)
+   Mermaid markdown 词法解析会将纯文本节点包裹为 <p>，继承 Starlight/Astro 正文的
+   margin: 1.15rem 0 与 text-indent: 2em，导致文字严重下坠 18px+ 跌出方框或被截断。
+   -------------------------------------------------------------------------- */
+.mermaid-container foreignObject p,
+.mermaid-render foreignObject p,
+.mermaid foreignObject p,
+svg.mermaid foreignObject p,
+[id^="mermaid-svg-"] foreignObject p {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: normal !important;
+  text-indent: 0 !important;
+  display: inline-block !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. 节点内部表格单元垂直对齐校准
+   注意：严禁设置 height: 100%，否则 Mermaid 测量阶段会以视口/外层为基准，
+   导致算出的节点高度高达数千像素。保持 natural height 并通过 vertical-align 居中。
+   -------------------------------------------------------------------------- */
+.mermaid-container foreignObject > div,
+.mermaid-render foreignObject > div {
+  vertical-align: middle !important;
+  text-align: center !important;
+  line-height: 1.35 !important;
+}
+
+.mermaid-container .nodeLabel,
+.mermaid-render .nodeLabel {
+  display: inline-block !important;
+  text-align: center !important;
+  line-height: 1.35 !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. KaTeX 公式在 Mermaid 节点内的自然行内融合
+   -------------------------------------------------------------------------- */
+.mermaid-container .nodeLabel .katex,
+.mermaid-render .nodeLabel .katex {
+  line-height: normal !important;
+  font-size: 1em !important;
+  vertical-align: middle !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.mermaid-container .nodeLabel .katex math,
+.mermaid-render .nodeLabel .katex math {
+  display: inline !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. 边标签 (Edge Labels) 外边距与行高规范
+   -------------------------------------------------------------------------- */
+.mermaid-container .edgeLabel,
+.mermaid-render .edgeLabel {
+  line-height: normal !important;
+}
+
+.mermaid-container .edgeLabel p,
+.mermaid-render .edgeLabel p {
+  margin: 0 !important;
+  padding: 0 4px !important;
+  text-indent: 0 !important;
+  line-height: normal !important;
+}

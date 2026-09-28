@@ -1,0 +1,278 @@
+---
+title: '3.3 平稳过程'
+---
+
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Solution from '@/components/Solution.astro';
+
+实际中的随机信号往往非常复杂。通信中经常采用一些理想化模型。平稳过程是随机信号分析中常用的一种理想化模型。
+
+## 3.3.1 平稳过程
+
+平稳的意思，大致来说就是**随机过程经过任意时延后，其统计特性不变**。按“统计特性”所指不同，可分出不同的平稳类型：若统计特性指随机过程上所有随机变量的联合分布，就是严平稳；若统计特性指均值和自相关函数，就是宽平稳。
+
+### 1. 严平稳
+
+<Knowledge id="3.3.1" title="严平稳（Strict-Sense Stationary, SSS）">
+若对任意正整数 $n$、任意时刻 $t_1, t_2, \dots, t_n$ 以及任意时移 $\Delta$，随机变量 $X(t_1), X(t_2), \dots, X(t_n)$ 与时移后的随机变量 $X(t_1+\Delta), X(t_2+\Delta), \dots, X(t_n+\Delta)$ 具有完全相同的联合概率分布，即：
+
+$$
+p_X(x_1, \dots, x_n, t_1, \dots, t_n) = p_X(x_1, \dots, x_n, t_1+\Delta, \dots, t_n+\Delta) \tag{3.3.1}
+$$
+
+则称 $X(t)$ 为**严平稳随机过程**或狭义平稳随机过程。
+</Knowledge>
+
+### 2. 广义平稳
+
+<Knowledge id="3.3.2" title="广义平稳（Wide-Sense Stationary, WSS）">
+若随机过程 $X(t)$ 满足：
+1. **均值为常数**：$\mathbb{E}[X(t)] = m_X$
+2. **自相关函数只与时间差有关**：$\mathbb{E}[X(t_1)X(t_2)] = R_X(t_1 - t_2)$
+
+则称 $X(t)$ 为**宽平稳随机过程**或**广义平稳随机过程**。在通信中，最常用到的是广义平稳过程，本书此后提到的平稳过程**默认指广义平稳过程**。
+</Knowledge>
+
+- 若 $X(t), Y(t)$ 分别平稳，且其互相关函数 $\mathbb{E}[X(t+\tau)Y(t)] = R_{XY}(\tau)$ 与绝对时间 $t$ 无关，则称 $X(t), Y(t)$ **联合平稳**。
+- 平稳过程是一般随机过程的特例，前面 3.2.3 节中给出的性质对平稳过程继续成立：
+  - 自相关函数为偶函数：$R_X(\tau) = R_X(-\tau)$；
+  - 自相关函数在 $\tau = 0$ 处最大且最大值是平均功率：$R_X(\tau) \le R_X(0) = \mathbb{E}[X^2(t)] = P_X$；
+  - 互相关函数时序调换：$R_{XY}(\tau) = R_{YX}(-\tau)$；
+  - 维纳-辛钦定理：自相关函数的傅氏变换是功率谱密度：$P_X(f) = \mathcal{F}[R_X(\tau)]$；互相关函数的傅氏变换是互功率谱密度：$P_{XY}(f) = \mathcal{F}[R_{XY}(\tau)]$。
+
+平稳过程的均值是常数。对于电压信号，常数是直流，直流在功率谱密度中表现为 $f = 0$ 处的冲激 $\delta(f)$。因此，如果平稳过程的功率谱密度中不包含 $\delta(f)$，说明它没有直流，均值为零：$\mathbb{E}[X(t)] = 0$。**但注意，从 $\mathbb{E}[X(t)] = 0$ 不能反推功率谱密度无 $\delta(f)$**。
+
+<Example id="3.3.1" title="零均值但功率谱含冲激的特例">
+设有随机信号 $X(t) = Z$，其中 $Z$ 以等概方式取值于 $\pm 1$。
+
+$X(t)$ 的均值为 $\mathbb{E}[X(t)] = \mathbb{E}[Z] = 0$。自相关函数为：
+
+$$
+\mathbb{E}[X(t+\tau)X(t)] = \mathbb{E}[Z^2] = 1
+$$
+
+均值与自相关函数均与 $t$ 无关，$X(t)$ 是平稳过程。其功率谱密度为：
+
+$$
+P_X(f) = \mathcal{F}[1] = \delta(f)
+$$
+
+此例表明：即使过程均值为 0，其样本函数可能是不随时间改变的直流电平（随机选取正负极性），因此在功率谱中依然具有直流分量 $\delta(f)$。
+</Example>
+
+若 $X(t), Y(t)$ 联合平稳，则 $X(t) + Y(t)$ 的均值为 $m_X + m_Y$，自相关函数为：
+
+$$
+\begin{aligned}
+\mathbb{E}[(X(t+\tau) + Y(t+\tau))(X(t) + Y(t))] &= \mathbb{E}[X(t+\tau)X(t)] + \mathbb{E}[X(t+\tau)Y(t)] \\
+&\quad + \mathbb{E}[Y(t+\tau)X(t)] + \mathbb{E}[Y(t+\tau)Y(t)] \\
+&= R_X(\tau) + R_{XY}(\tau) + R_{XY}(-\tau) + R_Y(\tau)
+\end{aligned} \tag{3.3.2}
+$$
+
+与 $t$ 无关，说明**联合平稳随机过程之和依然是平稳过程**。
+
+<Example id="3.3.2" title="各自平稳但不联合平稳的反例">
+设有两随机信号 $X(t) = \cos(2\pi t + \theta)$，$Y(t) = \cos(3\pi t + \theta)$，其中 $\theta \sim U[0, 2\pi]$。
+
+根据例 3.2.6 可知，$X(t)$ 与 $Y(t)$ 都是零均值平稳过程。但由前面算得的互相关函数：
+
+$$
+R_{XY}(t+\tau, t) = \frac{1}{2}\cos(2\pi\tau - \pi t)
+$$
+
+显见 $R_{XY}(t+\tau, t)$ 与绝对时间 $t$ 有关，故 $X(t), Y(t)$ **不是联合平稳**。
+</Example>
+
+### 3. 平稳序列
+
+若随机序列 $\{X_n\}$ 满足均值为常数，自相关函数只与时间差有关，即：
+
+$$
+\begin{aligned}
+\mathbb{E}[X_n] &= m_X \\
+\mathbb{E}[X_{n+m}X_n] &= R_X(m)
+\end{aligned} \tag{3.3.3}
+$$
+
+则称 $\{X_n\}$ 为**广义平稳序列**。
+
+## 3.3.2 遍历性
+
+对随机过程 $X(e,t)$ 按 $e$ 取平均和按 $t$ 取平均是有区别的：
+- 若 $X(e,t)$ 具有平稳性，则按 $e$ 平均后的结果与 $t$ 无关；
+- 若 $X(e,t)$ 具有**遍历性**（Ergodicity，亦称各态历经性），则按 $t$ 平均后的结果与 $e$ 无关。
+
+遍历性的物理含义是：**每一个样本函数都能经历其他样本的各种状态，使得只要观察一个样本函数，就能推知随机过程整体的统计特性**。
+
+设 $X(e,t)$ 是平稳过程，其均值为 $m_X$，自相关函数为 $R_X(\tau)$。一般说来，$X(e,t)$ 按时间平均计算的样本均值 $\overline{X(e,t)}$、样本自相关函数 $\overline{X(e, t+\tau)X(e,t)}$ 与所抽到的波形有关，具有随机性。
+
+<Knowledge id="3.3.3" title="广义平稳过程的遍历性条件">
+若样本均值以概率 1 等于随机过程的统计均值，样本自相关函数以概率 1 等于随机过程的自相关函数，即：
+
+$$
+P\big\{\,\overline{X(e,t)} = m_X\,\big\} = 1 \tag{3.3.4}
+$$
+
+$$
+P\big\{\,\overline{X(e, t+\tau)X(e, t)} = R_X(\tau)\,\big\} = 1 \tag{3.3.5}
+$$
+
+则称 $X(e,t)$ 为**广义平稳遍历过程**或**各态历经过程**。简单来说，就是**时间平均等于统计平均**。
+</Knowledge>
+
+遍历过程的每个样本函数具有相同的样本均值、样本自相关函数和功率谱密度。观察一个样本函数就能得到整个随机过程的均值、自相关函数及功率谱密度。
+
+<Example id="3.3.3" title="随机相位正弦波的各态历经性">
+设 $X(t) = \cos(2\pi f_0 t + \theta)$，其中 $f_0$ 是常数，$\theta$ 是在 $[0, 2\pi]$ 上均匀分布的随机变量。
+
+由例 3.2.6 可知，$X(t)$ 是零均值平稳过程，自相关函数为 $R_X(\tau) = \frac{1}{2}\cos(2\pi f_0 \tau)$，功率谱密度为：
+
+$$
+P_X(f) = \frac{1}{4}\big[\delta(f - f_0) + \delta(f + f_0)\big]
+$$
+
+计算样本均值：
+
+$$
+\overline{X(e,t)} = \overline{\cos[2\pi f_0 t + \theta(e)]} = 0 = \mathbb{E}[X(e,t)]
+$$
+
+样本自相关函数为：
+
+$$
+\overline{X(e, t+\tau)X(e,t)} = \overline{\cos[2\pi f_0(t+\tau) + \theta(e)]\cos[2\pi f_0 t + \theta(e)]} = \frac{1}{2}\cos(2\pi f_0 \tau) = R_X(\tau)
+$$
+
+因此 $X(t)$ 是遍历过程。
+</Example>
+
+## 3.3.3 循环平稳
+
+按是否平稳可将随机过程分为平稳过程和非平稳过程两类。平稳过程的均值、自相关函数与绝对时间 $t$ 无关，非平稳过程的均值或自相关函数中至少有一个与 $t$ 有关。
+
+<Knowledge id="3.3.4" title="循环平稳（Cyclostationarity）">
+若非平稳过程的均值或自相关函数是 $t$ 的周期函数，称为**循环平稳过程**或**周期平稳过程**。
+
+循环平稳过程可按一个周期的时间平均来求其平均自相关函数：
+
+$$
+\overline{R}_X(\tau) = \frac{1}{T_0}\int_{-T_0/2}^{T_0/2} R_X(t+\tau, t)\,\mathrm{d}t \tag{3.3.6}
+$$
+</Knowledge>
+
+<Example id="3.3.4" title="数字通信脉冲成形信号的循环平稳性">
+设 $X(t) = \sum_{n=-\infty}^\infty a_n g(t - nT_s)$，其中 $\{a_n\}$ 的元素以独立等概方式取值于 $\{\pm 1\}$，$g(t)$ 是确定实信号，其傅氏变换为 $G(f)$。试判断 $X(t)$ 的平稳性。
+</Example>
+
+<Solution>
+$X(t)$ 的均值为：
+
+$$
+\mathbb{E}[X(t)] = \mathbb{E}\left[\sum_{m=-\infty}^\infty a_m g(t - mT_s)\right] = \sum_{m=-\infty}^\infty \mathbb{E}[a_m] g(t - mT_s) = 0 \tag{3.3.7}
+$$
+
+自相关函数为：
+
+$$
+\begin{aligned}
+\mathbb{E}[X(t+\tau)X(t)] &= \mathbb{E}\left[\left\{\sum_{n=-\infty}^\infty a_n g(t + \tau - nT_s)\right\}\left\{\sum_{m=-\infty}^\infty a_m g(t - mT_s)\right\}\right] \\
+&= \sum_{n=-\infty}^\infty \sum_{m=-\infty}^\infty \mathbb{E}[a_n a_m] g(t + \tau - nT_s)g(t - mT_s) \\
+&= \sum_{n=-\infty}^\infty g(t + \tau - nT_s)g(t - nT_s)
+\end{aligned} \tag{3.3.8}
+$$
+
+上式右边与 $t$ 有关，因此 $X(t)$ 不是平稳过程。将右边无穷求和中的 $t$ 换成 $t + T_s$ 后结果不变，说明**自相关函数是 $t$ 的周期函数，周期为 $T_s$，$X(t)$ 是循环平稳过程**。
+
+将周期函数 $\mathbb{E}[X(t+\tau)X(t)]$ 展开为傅里叶级数：
+
+$$
+\mathbb{E}[X(t+\tau)X(t)] = \sum_{n=-\infty}^\infty R_X^{(n)}(\tau)\mathrm{e}^{\mathrm{j}2\pi \frac{n}{T_s} t} \tag{3.3.9}
+$$
+
+其中第 $n$ 项的系数展开计算为：
+
+$$
+\begin{aligned}
+R_X^{(n)}(\tau) &= \frac{1}{T_s}\int_{-T_s/2}^{T_s/2} \left\{\sum_{k=-\infty}^\infty g(t + \tau - kT_s)g(t - kT_s)\right\}\mathrm{e}^{-\mathrm{j}2\pi \frac{n}{T_s} t}\,\mathrm{d}t \\
+&= \frac{1}{T_s}\int_{-\infty}^\infty g(t+\tau)g(t)\mathrm{e}^{-\mathrm{j}2\pi \frac{n}{T_s} t}\,\mathrm{d}t \\
+&= \frac{1}{T_s}\int_{-\infty}^\infty G(f)\mathrm{e}^{\mathrm{j}2\pi f \tau} \cdot G^*\left(f - \frac{n}{T_s}\right)\mathrm{d}f \\
+&= \int_{-\infty}^\infty \left[\frac{1}{T_s}G(f)G^*\left(f - \frac{n}{T_s}\right)\right]\mathrm{e}^{\mathrm{j}2\pi f \tau}\,\mathrm{d}f \tag{3.3.11}
+\end{aligned}
+$$
+
+即 $R_X^{(n)}(\tau)$ 是 $\frac{1}{T_s}G(f)G^*\left(f - \frac{n}{T_s}\right)$ 的傅氏反变换，后者称为 $X(t)$ 的**周期谱**。
+
+$G(f)G^*\left(f - \frac{n}{T_s}\right)$ 是 $G(f)$ 与其频谱搬移 $G\left(f - \frac{n}{T_s}\right)$ 的共轭相乘。**如果 $G(f)$ 的带宽不超过 $\frac{1}{2T_s}$，频移后无重叠相乘为零，则对所有 $n \ne 0$ 均有 $R_X^{(n)}(\tau) = 0$**。此时 $\mathbb{E}[X(t+\tau)X(t)] = R_X^{(0)}(\tau)$ 与 $t$ 无关，**$X(t)$ 便直接成为平稳过程**。
+</Solution>
+
+## 3.3.4 平稳过程通过滤波器
+
+平稳过程通过线性时不变滤波器后仍然是平稳过程。设滤波器的冲激响应为 $h(t)$，传递函数为 $H(f)$，滤波器输入平稳过程 $X(t)$ 的均值为 $m_X$，自相关函数为 $R_X(\tau)$，则：
+
+### 1. 输出过程的均值
+
+$$
+m_Y(t) = \int_{-\infty}^\infty h(t-\tau)m_X\,\mathrm{d}\tau = m_X \int_{-\infty}^\infty h(u)\,\mathrm{d}u = m_X H(0) \tag{3.3.12}
+$$
+
+输出过程的均值为常数，等于输入均值乘直流增益 $H(0)$。
+
+### 2. 输出过程的自相关函数
+
+$$
+\begin{aligned}
+\mathbb{E}[Y(t_1)Y(t_2)] &= \mathbb{E}\left[\int_{-\infty}^\infty h(u)X(t_1-u)\,\mathrm{d}u \int_{-\infty}^\infty h(v)X(t_2-v)\,\mathrm{d}v\right] \\
+&= \iint_{-\infty}^\infty h(u)h(v)\mathbb{E}[X(t_1-u)X(t_2-v)]\,\mathrm{d}u\mathrm{d}v \\
+&= \iint_{-\infty}^\infty h(u)h(v)R_X(t_1-t_2 + v-u)\,\mathrm{d}u\mathrm{d}v
+\end{aligned} \tag{3.3.13}
+$$
+
+结果仅依赖于 $\tau = t_1 - t_2$，与绝对时间无关：
+
+$$
+R_Y(\tau) = R_X(\tau) * h(\tau) * h^*(-\tau)
+$$
+
+### 3. 互相关函数
+
+$$
+\begin{aligned}
+\mathbb{E}[Y(t_1)X(t_2)] &= \mathbb{E}\left[X(t_2)\int_{-\infty}^\infty h(v)X(t_1-v)\,\mathrm{d}v\right] \\
+&= \int_{-\infty}^\infty h(v)R_X(t_2 - t_1 + v)\,\mathrm{d}v \\
+&= \int_{-\infty}^\infty h(v)R_X(v - \tau)\,\mathrm{d}v = R_X(\tau) * h(\tau)
+\end{aligned} \tag{3.3.14}
+$$
+
+均值、自相关函数、互相关函数都与绝对时间无关，说明 **$X(t)$ 与 $Y(t)$ 平稳且联合平稳**。
+
+<Example id="3.3.5" title="平稳过程希尔伯特变换的正交性">
+设 $X(t)$ 是零均值平稳过程，其自相关函数为 $R_X(\tau)$，功率谱密度为 $P_X(f)$。求 $X(t)$ 的希尔伯特变换 $\widehat{X}(t)$ 的自相关函数、功率谱密度，并求互相关函数 $R_{X\widehat{X}}(\tau)$ 及 $R_{\widehat{X}X}(\tau)$。
+</Example>
+
+<Solution>
+希尔伯特变换是传递函数为 $H(f) = -\mathrm{j}\operatorname{sgn}(f)$ 的全通型移相滤波器。
+
+零均值平稳过程通过该滤波器后，零均值、平稳这两个特性继续保持，故 $\widehat{X}(t)$ 是零均值平稳过程，且 $X(t)$ 与 $\widehat{X}(t)$ 联合平稳。传递函数的模值为 $|H(f)| = 1$，因此 $\widehat{X}(t)$ 与 $X(t)$ 有完全相同的功率谱密度和自相关函数：
+
+$$
+P_{\widehat{X}}(f) = |H(f)|^2 P_X(f) = P_X(f), \quad R_{\widehat{X}}(\tau) = R_X(\tau)
+$$
+
+根据式 (3.3.14)，$\widehat{X}(t)$ 与 $X(t)$ 的互相关函数是 $R_X(\tau)$ 与 $h(v)$ 的卷积。由于 $h(t)$ 是希尔伯特变换的冲激响应，卷积结果就是 $R_X(\tau)$ 的希尔伯特变换：
+
+$$
+R_{\widehat{X}X}(\tau) = \widehat{R}_X(\tau) \tag{3.3.15}
+$$
+
+$R_X(\tau)$ 是偶函数，根据希尔伯特变换性质，偶函数的希尔伯特变换是**奇函数**，故 $R_{\widehat{X}X}(\tau)$ 及 $R_{X\widehat{X}}(\tau) = -R_{\widehat{X}X}(-\tau)$ 都是奇函数。
+
+对于奇函数，原点处取值必为零：
+
+$$
+R_{\widehat{X}X}(0) = 0 \implies \mathbb{E}[\widehat{X}(t)X(t)] = 0
+$$
+
+这证明了非常重要的经典定理：**零均值平稳过程与其希尔伯特变换在同一时刻互不相关（正交）**。
+</Solution>

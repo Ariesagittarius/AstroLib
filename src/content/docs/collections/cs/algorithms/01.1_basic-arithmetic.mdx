@@ -1,0 +1,130 @@
+---
+title: '1.1 Basic arithmetic'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 1.1 Basic arithmetic
+
+### Algorithms with numbers
+
+One of the main themes of this chapter is the dramatic contrast between two ancient problems that at first seem very similar:
+
+Factoring: Given a number N, express it as a product of its prime factors.
+
+Primality: Given a number N, determine whether it is a prime.
+
+Factoring is hard. Despite centuries of effort by some of the world’s smartest mathematicians and computer scientists, the fastest methods for factoring a number N take time exponential in the number of bits of N.
+
+On the other hand, we shall soon see that we can efficiently test whether N is prime! And (it gets even more interesting) this strange disparity between the two intimately related problems, one very hard and the other very easy, lies at the heart of the technology that enables secure communication in today’s global information environment.
+
+En route to these insights, we need to develop algorithms for a variety of computational tasks involving numbers. We begin with basic arithmetic, an especially appropriate starting point because, as we know, the word algorithms originally applied only to methods for these problems.
+
+### 1.1.1 Addition
+
+We were so young when we learned the standard technique for addition that we would scarcely have thought to ask why it works. But let’s go back now and take a closer look.
+
+It is a basic property of decimal numbers that
+
+The sum of any three single-digit numbers is at most two digits long.
+
+Quick check: the sum is at most 9 + 9 + 9 = 27, two digits long. In fact, this rule holds not just in decimal but in any base b ≥2 (Exercise 1.1). In binary, for instance, the maximum possible sum of three single-bit numbers is 3, which is a 2-bit number.
+
+This simple rule gives us a way to add two numbers in any base: align their right-hand ends, and then perform a single right-to-left pass in which the sum is computed digit by digit, maintaining the overflow as a carry. Since we know each individual sum is a two-digit
+
+### Bases and logs
+
+Naturally, there is nothing special about the number 10—we just happen to have 10 fingers, and so 10 was an obvious place to pause and take counting to the next level. The Mayans developed a similar positional system based on the number 20 (no shoes, see?). And of course today computers represent numbers in binary.
+
+How many digits are needed to represent the number N ≥0 in base b? Let’s see—with k digits in base b we can express numbers up to b^&#123;k&#125; −1; for instance, in decimal, three digits get us all the way up to 999 = 10^&#123;3&#125; −1. By solving for k, we find that ⌈log_&#123;b&#125;(N + 1)⌉digits (about log_&#123;b&#125; N digits, give or take 1) are needed to write N in base b.
+
+How much does the size of a number change when we change bases? Recall the rule for converting logarithms from base a to base b: log_&#123;b&#125; N = (log_&#123;a&#125; N)/(log_&#123;a&#125; b). So the size of integer N in base a is the same as its size in base b, times a constant factor log_&#123;a&#125; b. In big-O notation, therefore, the base is irrelevant, and we write the size simply as O(log N). When we do not specify a base, as we almost never will, we mean log_&#123;2&#125; N.
+
+Incidentally, this function log N appears repeatedly in our subject, in many guises. Here’s a sampling:
+
+1. log N is, of course, the power to which you need to raise 2 in order to obtain N.
+
+2. Going backward, it can also be seen as the number of times you must halve N to get down to 1. (More precisely: ⌈log N⌉.) This is useful when a number is halved at each iteration of an algorithm, as in several examples later in the chapter.
+
+3. It is the number of bits in the binary representation of N. (More precisely: ⌈log(N+1)⌉.)
+
+4. It is also the depth of a complete binary tree with N nodes. (More precisely: ⌊log N⌋.)
+
+5. It is even the sum 1 +^&#123; &#125;1
+
+2 +^&#123; &#125;1
+
+3 + · · · +^&#123; &#125;1
+
+N , to within a constant factor (Exercise 1.5).
+
+number, the carry is always a single digit, and so at any given step, three single-digit numbers are added. Here’s an example showing the addition 53 + 35 in binary.
+
+Carry: 1 1 1 1 1 1 0 1 0 1 (53) 1 0 0 0 1 1 (35)
+
+1 0 1 1 0 0 0 (88)
+
+Ordinarily we would spell out the algorithm in pseudocode, but in this case it is so familiar that we do not repeat it. Instead we move straight to analyzing its efficiency.
+
+Given two binary numbers x and y, how long does our algorithm take to add them? This is the kind of question we shall persistently be asking throughout this book. We want the answer expressed as a function of the size of the input: the number of bits of x and y, the number of keystrokes needed to type them in.
+
+Suppose x and y are each n bits long; in this chapter we will consistently use the letter n for the sizes of numbers. Then the sum of x and y is n + 1 bits at most, and each individual bit
+
+of this sum gets computed in a fixed amount of time. The total running time for the addition algorithm is therefore of the form c_&#123;0&#125; +c_&#123;1&#125;n, where c_&#123;0&#125; and c_&#123;1&#125; are some constants; in other words, it is linear. Instead of worrying about the precise values of c_&#123;0&#125; and c_&#123;1&#125;, we will focus on the big picture and denote the running time as O(n).
+
+Now that we have a working algorithm whose running time we know, our thoughts wander inevitably to the question of whether there is something even better.
+
+Is there a faster algorithm? (This is another persistent question.) For addition, the answer is easy: in order to add two n-bit numbers we must at least read them and write down the answer, and even that requires n operations. So the addition algorithm is optimal, up to multiplicative constants!
+
+Some readers may be confused at this point: Why O(n) operations? Isn’t binary addition something that computers today perform by just one instruction? There are two answers. First, it is certainly true that in a single instruction we can add integers whose size in bits is within the word length of today’s computers—32 perhaps. But, as will become apparent later in this chapter, it is often useful and necessary to handle numbers much larger than this, perhaps several thousand bits long. Adding and multiplying such large numbers on real computers is very much like performing the operations bit by bit. Second, when we want to understand algorithms, it makes sense to study even the basic algorithms that are encoded in the hardware of today’s computers. In doing so, we shall focus on the bit complexity of the algorithm, the number of elementary operations on individual bits—because this accounting reflects the amount of hardware, transistors and wires, necessary for implementing the algorithm.
+
+### 1.1.2 Multiplication and division
+
+Onward to multiplication! The grade-school algorithm for multiplying two numbers x and y is to create an array of intermediate sums, each representing the product of x by a single digit of y. These values are appropriately left-shifted and then added up. Suppose for instance that we want to multiply 13 × 11, or in binary notation, x = 1101 and y = 1011. The multiplication would proceed thus.
+
+1 1 0 1 × 1 0 1 1
+
+1 1 0 1 (1101 times 1) 1 1 0 1 (1101 times 1, shifted once) 0 0 0 0 (1101 times 0, shifted twice) + 1 1 0 1 (1101 times 1, shifted thrice)
+
+1 0 0 0 1 1 1 1 (binary 143)
+
+In binary this is particularly easy since each intermediate row is either zero or x itself, leftshifted an appropriate amount of times. Also notice that left-shifting is just a quick way to multiply by the base, which in this case is 2. (Likewise, the effect of a right shift is to divide by the base, rounding down if needed.)
+
+The correctness of this multiplication procedure is the subject of Exercise 1.6; let’s move on and figure out how long it takes. If x and y are both n bits, then there are n intermediate
+
+![Figure 1.1 Multiplication `a la Franc¸ais.](images/fig_1_1.png)
+
+rows, with lengths of up to 2n bits (taking the shifting into account). The total time taken to add up these rows, doing two numbers at a time, is
+
+O(n) + O(n) + · · · + O(n) |
+
+&#123;z
+
+&#125; n −1 times
+
+,
+
+which is O(n^&#123;2&#125;), quadratic in the size of the inputs: still polynomial but much slower than addition (as we have all suspected since elementary school).
+
+But Al Khwarizmi knew another way to multiply, a method which is used today in some European countries. To multiply two decimal numbers x and y, write them next to each other, as in the example below. Then repeat the following: divide the first number by 2, rounding down the result (that is, dropping the .5 if the number was odd), and double the second number. Keep going till the first number gets down to 1. Then strike out all the rows in which the first number is even, and add up whatever remains in the second column.
+
+11 13 5 26 2 52 (strike out) 1 104
+
+143 (answer)
+
+But if we now compare the two algorithms, binary multiplication and multiplication by repeated halvings of the multiplier, we notice that they are doing the same thing! The three numbers added in the second algorithm are precisely the multiples of 13 by powers of 2 that were added in the binary method. Only this time 11 was not given to us explicitly in binary, and so we had to extract its binary representation by looking at the parity of the numbers obtained from it by successive divisions by 2. Al Khwarizmi’s second algorithm is a fascinating mixture of decimal and binary!
+
+The same algorithm can thus be repackaged in different ways. For variety we adopt a third formulation, the recursive algorithm of Figure 1.1, which directly implements the rule
+
+x · y =
+
+ 2(x · ⌊y/2⌋) if y is even x + 2(x · ⌊y/2⌋) if y is odd.

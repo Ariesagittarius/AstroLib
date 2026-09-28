@@ -1,0 +1,106 @@
+---
+title: '3.3 Depth-first search in directed graphs'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 3.3 Depth-first search in directed graphs
+
+![Figure 3.7 DFS on a directed graph.](images/fig_3_7.png)
+
+procedure postvisit
+
+(v) post[v] = clock clock = clock + 1
+
+These timings will soon take on larger significance. Meanwhile, you might have noticed from Figure 3.4 that:
+
+Property For any nodes u and v, the two intervals [pre(u), post(u)] and [pre(v), post(v)] are either disjoint or one is contained within the other.
+
+Why? Because [pre(u), post(u)] is essentially the time during which vertex u was on the stack. The last-in, first-out behavior of a stack explains the rest.
+
+### 3.3.1 Types of edges
+
+Our depth-first search algorithm can be run verbatim on directed graphs, taking care to traverse edges only in their prescribed directions. Figure 3.7 shows an example and the search tree that results when vertices are considered in lexicographic order.
+
+In further analyzing the directed case, it helps to have terminology for important relationships between nodes of a tree. A is the root of the search tree; everything else is its descendant. Similarly, E has descendants F, G, and H, and conversely, is an ancestor of these three nodes. The family analogy is carried further: C is the parent of D, which is its child.
+
+For undirected graphs we distinguished between tree edges and nontree edges. In the directed case, there is a slightly more elaborate taxonomy:
+
+Tree edges are actually part of the DFS forest.
+
+Forward edges lead from a node to a nonchild descendant in the DFS tree.
+
+Back edges lead to an ancestor in the DFS tree.
+
+Cross edges lead to neither descendant nor ancestor; they therefore lead to a node that has already been completely explored (that is, already postvisited).
+
+Back
+
+Forward
+
+Cross
+
+Tree
+
+A
+
+B
+
+C D
+
+DFS tree
+
+Figure 3.7 has two forward edges, two back edges, and two cross edges. Can you spot them?
+
+Ancestor and descendant relationships, as well as edge types, can be read off directly from pre and post numbers. Because of the depth-first exploration strategy, vertex u is an ancestor of vertex v exactly in those cases where u is discovered first and v is discovered during explore(u). This is to say pre(u) &lt; pre(v) &lt; post(v) &lt; post(u), which we can depict pictorially as two nested intervals:
+
+u v v u
+
+The case of descendants is symmetric, since u is a descendant of v if and only if v is an ancestor of u. And since edge categories are based entirely on ancestor-descendant relationships, it follows that they, too, can be read off from pre and post numbers. Here is a summary of the various possibilities for an edge (u, v):
+
+pre/post ordering for (u, v) Edge type
+
+u v v u
+
+Tree/forward
+
+v u u v
+
+Back
+
+v u v u
+
+Cross
+
+You can confirm each of these characterizations by consulting the diagram of edge types. Do you see why no other orderings are possible?
+
+### 3.3.2 Directed acyclic graphs
+
+A cycle in a directed graph is a circular path v_&#123;0&#125; →v_&#123;1&#125; →v_&#123;2&#125; →· · · →v_&#123;k&#125; →v_&#123;0&#125;. Figure 3.7 has quite a few of them, for example, B →E →F →B. A graph without cycles is acyclic. It turns out we can test for acyclicity in linear time, with a single depth-first search.
+
+![Figure 3.8 A directed acyclic graph with one source, two sinks, and four possible lineariza-](images/fig_3_8.png)
+
+Property A directed graph has a cycle if and only if its depth-first search reveals a back edge.
+
+Proof. One direction is quite easy: if (u, v) is a back edge, then there is a cycle consisting of this edge together with the path from v to u in the search tree.
+
+Conversely, if the graph has a cycle v_&#123;0&#125; →v_&#123;1&#125; →· · · →v_&#123;k&#125; →v_&#123;0&#125;, look at the first node on this cycle to be discovered (the node with the lowest pre number). Suppose it is v_&#123;i&#125;. All the other v_&#123;j&#125; on the cycle are reachable from it and will therefore be its descendants in the search tree. In particular, the edge v_&#123;i&#125;−1 →v_&#123;i&#125; (or v_&#123;k&#125; →v_&#123;0&#125; if i = 0) leads from a node to its ancestor and is thus by definition a back edge.
+
+Directed acyclic graphs, or dags for short, come up all the time. They are good for modeling relations like causalities, hierarchies, and temporal dependencies. For example, suppose that you need to perform many tasks, but some of them cannot begin until certain others are completed (you have to wake up before you can get out of bed; you have to be out of bed, but not yet dressed, to take a shower; and so on). The question then is, what is a valid order in which to perform the tasks?
+
+Such constraints are conveniently represented by a directed graph in which each task is a node, and there is an edge from u to v if u is a precondition for v. In other words, before performing a task, all the tasks pointing to it must be completed. If this graph has a cycle, there is no hope: no ordering can possibly work. If on the other hand the graph is a dag, we would like if possible to linearize (or topologically sort) it, to order the vertices one after the other in such a way that each edge goes from an earlier vertex to a later vertex, so that all precedence constraints are satisfied. In Figure 3.8, for instance, one valid ordering is B, A, D, C, E, F. (Can you spot the other three?)
+
+What types of dags can be linearized? Simple: All of them. And once again depth-first search tells us exactly how to do it: simply perform tasks in decreasing order of their post numbers. After all, the only edges (u, v) in a graph for which post(u) &lt;post(v) are back edges (recall the table of edge types on page 95)—and we have seen that a dag cannot have back edges. Therefore:
+
+Property In a dag, every edge leads to a vertex with a lower post number.
+
+This gives us a linear-time algorithm for ordering the nodes of a dag. And, together with our earlier observations, it tells us that three rather different-sounding properties—acyclicity, linearizability, and the absence of back edges during a depth-first search—are in fact one and

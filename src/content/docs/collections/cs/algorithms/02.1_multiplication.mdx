@@ -1,0 +1,100 @@
+---
+title: '2.1 Multiplication'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 2.1 Multiplication
+
+### Divide-and-conquer algorithms
+
+The divide-and-conquer strategy solves a problem by:
+
+1. Breaking it into subproblems that are themselves smaller instances of the same type of problem
+
+2. Recursively solving these subproblems
+
+3. Appropriately combining their answers
+
+The real work is done piecemeal, in three different places: in the partitioning of problems into subproblems; at the very tail end of the recursion, when the subproblems are so small that they are solved outright; and in the gluing together of partial answers. These are held together and coordinated by the algorithm’s core recursive structure.
+
+As an introductory example, we’ll see how this technique yields a new algorithm for multiplying numbers, one that is much more efficient than the method we all learned in elementary school!
+
+The mathematician Carl Friedrich Gauss (1777–1855) once noticed that although the product of two complex numbers
+
+(a + bi)(c + di) = ac −bd + (bc + ad)i
+
+seems to involve four real-number multiplications, it can in fact be done with just three: ac, bd, and (a + b)(c + d), since
+
+bc + ad = (a + b)(c + d) −ac −bd.
+
+In our big-O way of thinking, reducing the number of multiplications from four to three seems wasted ingenuity. But this modest improvement becomes very significant when applied recursively.
+
+Let’s move away from complex numbers and see how this helps with regular multiplication. Suppose x and y are two n-bit integers, and assume for convenience that n is a power of 2 (the more general case is hardly any different). As a first step toward multiplying x and y, split each of them into their left and right halves, which are n/2 bits long:
+
+x =
+
+x_&#123;L&#125;
+
+x_&#123;R&#125;
+
+= 2^&#123;n/&#125;2x_&#123;L&#125; + x_&#123;R&#125;
+
+y =
+
+y_&#123;L&#125;
+
+y_&#123;R&#125;
+
+= 2^&#123;n/&#125;2y_&#123;L&#125; + y_&#123;R&#125;.
+
+For instance, if x = 10110110_&#123;2&#125; (the subscript 2 means “binary”) then x_&#123;L&#125; = 1011_&#123;2&#125;, x_&#123;R&#125; = 0110_&#123;2&#125;, and x = 1011_&#123;2&#125; × 2^&#123;4&#125; + 0110_&#123;2&#125;. The product of x and y can then be rewritten as
+
+xy = (2^&#123;n/&#125;2x_&#123;L&#125; + x_&#123;R&#125;)(2^&#123;n/&#125;2y_&#123;L&#125; + y_&#123;R&#125;) = 2^&#123;n&#125; x_&#123;L&#125;y_&#123;L&#125; + 2^&#123;n/&#125;2 (x_&#123;L&#125;y_&#123;R&#125; + x_&#123;R&#125;y_&#123;L&#125;) + x_&#123;R&#125;y_&#123;R&#125;.
+
+We will compute xy via the expression on the right. The additions take linear time, as do the multiplications by powers of 2 (which are merely left-shifts). The significant operations are the four n/2-bit multiplications, x_&#123;L&#125;y_&#123;L&#125;, x_&#123;L&#125;y_&#123;R&#125;, x_&#123;R&#125;y_&#123;L&#125;, x_&#123;R&#125;y_&#123;R&#125;; these we can handle by four recursive calls. Thus our method for multiplying n-bit numbers starts by making recursive calls to multiply these four pairs of n/2-bit numbers (four subproblems of half the size), and then evaluates the preceding expression in O(n) time. Writing T(n) for the overall running time on n-bit inputs, we get the recurrence relation
+
+T(n) = 4T(n/2) + O(n).
+
+We will soon see general strategies for solving such equations. In the meantime, this particular one works out to O(n^&#123;2&#125;), the same running time as the traditional grade-school multiplication technique. So we have a radically new algorithm, but we haven’t yet made any progress in efficiency. How can our method be sped up?
+
+This is where Gauss’s trick comes to mind. Although the expression for xy seems to demand four n/2-bit multiplications, as before just three will do: x_&#123;L&#125;y_&#123;L&#125;, x_&#123;R&#125;y_&#123;R&#125;, and (x_&#123;L&#125;+x_&#123;R&#125;)(y_&#123;L&#125;+y_&#123;R&#125;), since x_&#123;L&#125;y_&#123;R&#125;+x_&#123;R&#125;y_&#123;L&#125; = (x_&#123;L&#125;+x_&#123;R&#125;)(y_&#123;L&#125;+y_&#123;R&#125;)−x_&#123;L&#125;y_&#123;L&#125;−x_&#123;R&#125;y_&#123;R&#125;. The resulting algorithm, shown in Figure 2.1, has an improved running time of^&#123;1&#125;
+
+T(n) = 3T(n/2) + O(n).
+
+The point is that now the constant factor improvement, from 4 to 3, occurs at every level of the recursion, and this compounding effect leads to a dramatically lower time bound of O(n^&#123;1&#125;.59).
+
+This running time can be derived by looking at the algorithm’s pattern of recursive calls, which form a tree structure, as in Figure 2.2. Let’s try to understand the shape of this tree. At each successive level of recursion the subproblems get halved in size. At the (log_&#123;2&#125; n)^&#123;th&#125; level, the subproblems get down to size 1, and so the recursion ends. Therefore, the height of the tree is log_&#123;2&#125; n. The branching factor is 3—each problem recursively produces three smaller ones—with the result that at depth k in the tree there are 3^&#123;k&#125; subproblems, each of size n/2^&#123;k&#125;.
+
+For each subproblem, a linear amount of work is done in identifying further subproblems and combining their answers. Therefore the total time spent at depth k in the tree is
+
+3^&#123;k&#125; × O  n
+
+2^&#123;k&#125;
+
+
+
+=
+
+3
+
+2
+
+k
+
+× O(n).
+
+1Actually, the recurrence should read
+
+T(n) ≤3T(n/2 + 1) + O(n)
+
+since the numbers (x^&#123;L&#125; + x^&#123;R&#125;) and (y^&#123;L&#125; + y^&#123;R&#125;) could be n/2 + 1 bits long. The one we’re using is simpler to deal with and can be seen to imply exactly the same big-O running time.

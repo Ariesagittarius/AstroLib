@@ -1,0 +1,126 @@
+---
+title: '2.5 Matrix multiplication'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 2.5 Matrix multiplication
+
+This follows by taking expected values of both sides of the following statement:
+
+Time taken on an array of size n
+
+≤ (time taken on an array of size 3n/4) + (time to reduce array size to ≤3n/4),
+
+and, for the right-hand side, using the familiar property that the expectation of the sum is the sum of the expectations.
+
+From this recurrence we conclude that T(n) = O(n): on any input, our algorithm returns the correct answer after a linear number of steps, on the average.
+
+### The Unix sort command
+
+Comparing the algorithms for sorting and median-finding we notice that, beyond the common divide-and-conquer philosophy and structure, they are exact opposites. Mergesort splits the array in two in the most convenient way (first half, second half), without any regard to the magnitudes of the elements in each half; but then it works hard to put the sorted subarrays together. In contrast, the median algorithm is careful about its splitting (smaller numbers first, then the larger ones), but its work ends with the recursive call.
+
+Quicksort is a sorting algorithm that splits the array in exactly the same way as the median algorithm; and once the subarrays are sorted, by two recursive calls, there is nothing more to do. Its worst-case performance is Θ(n^&#123;2&#125;), like that of median-finding. But it can be proved (Exercise 2.24) that its average case is O(n log n); furthermore, empirically it outperforms other sorting algorithms. This has made quicksort a favorite in many applications— for instance, it is the basis of the code by which really enormous files are sorted.
+
+The product of two n × n matrices X and Y is a third n × n matrix Z = XY , with (i, j)th entry
+
+Z_&#123;ij&#125; =
+
+n X
+
+k=1
+
+X_&#123;ik&#125;Y_&#123;kj&#125;.
+
+To make it more visual, Z_&#123;ij&#125; is the dot product of the ith row of X with the jth column of Y :
+
+X Y Z
+
+i
+
+j
+
+(i, j) × =
+
+In general, XY is not the same as Y X; matrix multiplication is not commutative.
+
+The preceding formula implies an O(n^&#123;3&#125;) algorithm for matrix multiplication: there are n^&#123;2&#125;
+
+entries to be computed, and each takes O(n) time. For quite a while, this was widely believed
+
+to be the best running time possible, and it was even proved that in certain models of computation no algorithm could do better. It was therefore a source of great excitement when in 1969, the German mathematician Volker Strassen announced a significantly more efficient algorithm, based upon divide-and-conquer.
+
+Matrix multiplication is particularly easy to break into subproblems, because it can be performed blockwise. To see what this means, carve X into four n/2 × n/2 blocks, and also Y :
+
+X =
+
+A B C D
+
+
+
+, Y =
+
+E F G H
+
+
+
+.
+
+Then their product can be expressed in terms of these blocks and is exactly as if the blocks were single elements (Exercise 2.11).
+
+XY =
+
+A B C D
+
+ E F G H
+
+
+
+=
+
+AE + BG AF + BH CE + DG CF + DH
+
+
+
+We now have a divide-and-conquer strategy: to compute the size-n product XY , recursively compute eight size-n/2 products AE, BG, AF, BH, CE, DG, CF, DH, and then do a few O(n^&#123;2&#125;)- time additions. The total running time is described by the recurrence relation
+
+T(n) = 8T(n/2) + O(n^&#123;2&#125;).
+
+This comes out to an unimpressive O(n^&#123;3&#125;), the same as for the default algorithm. But the efficiency can be further improved, and as with integer multiplication, the key is some clever algebra. It turns out XY can be computed from just seven n/2 × n/2 subproblems, via a decomposition so tricky and intricate that one wonders how Strassen was ever able to discover it!
+
+XY =
+
+P_&#123;5&#125; + P_&#123;4&#125; −P_&#123;2&#125; + P_&#123;6&#125; P_&#123;1&#125; + P_&#123;2&#125; P_&#123;3&#125; + P_&#123;4&#125; P_&#123;1&#125; + P_&#123;5&#125; −P_&#123;3&#125; −P_&#123;7&#125;
+
+
+
+where
+
+P_&#123;1&#125; = A(F −H)
+
+P_&#123;2&#125; = (A + B)H
+
+P_&#123;3&#125; = (C + D)E
+
+P_&#123;4&#125; = D(G −E)
+
+P_&#123;5&#125; = (A + D)(E + H)
+
+P_&#123;6&#125; = (B −D)(G + H)
+
+P_&#123;7&#125; = (A −C)(E + F)
+
+The new running time is
+
+T(n) = 7T(n/2) + O(n^&#123;2&#125;),
+
+which by the master theorem works out to O(n^&#123;log&#125;_&#123;2&#125; 7) ≈O(n^&#123;2&#125;.81).

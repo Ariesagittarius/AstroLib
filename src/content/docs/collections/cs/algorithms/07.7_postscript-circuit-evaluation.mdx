@@ -1,0 +1,90 @@
+---
+title: '7.7 Postscript: circuit evaluation'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 7.7 Postscript: circuit evaluation
+
+### Linear programming in polynomial time
+
+Simplex is not a polynomial time algorithm. Certain rare kinds of linear programs cause it to go from one corner of the feasible region to a better corner and then to a still better one, and so on for an exponential number of steps. For a long time, linear programming was considered a paradox, a problem that can be solved in practice, but not in theory!
+
+Then, in 1979, a young Soviet mathematician called Leonid Khachiyan came up with the ellipsoid algorithm, one that is very different from simplex, extremely simple in its conception (but sophisticated in its proof) and yet one that solves any linear program in polynomial time. Instead of chasing the solution from one corner of the polyhedron to the next, Khachiyan’s algorithm confines it to smaller and smaller ellipsoids (skewed highdimensional balls). When this algorithm was announced, it became a kind of “mathematical Sputnik,” a splashy achievement that had the U.S. establishment worried, in the height of the Cold War, about the possible scientific superiority of the Soviet Union. The ellipsoid algorithm turned out to be an important theoretical advance, but did not compete well with simplex in practice. The paradox of linear programming deepened: A problem with two algorithms, one that is efficient in theory, and one that is efficient in practice!
+
+A few years later Narendra Karmarkar, a graduate student at UC Berkeley, came up with a completely different idea, which led to another provably polynomial algorithm for linear programming. Karmarkar’s algorithm is known as the interior point method, because it does just that: it dashes to the optimum corner not by hopping from corner to corner on the surface of the polyhedron like simplex does, but by cutting a clever path in the interior of the polyhedron. And it does perform well in practice.
+
+But perhaps the greatest advance in linear programming algorithms was not Khachiyan’s theoretical breakthrough or Karmarkar’s novel approach, but an unexpected consequence of the latter: the fierce competition between the two approaches, simplex and interior point, resulted in the development of very fast code for linear programming.
+
+The importance of linear programming stems from the astounding variety of problems that reduce to it and thereby bear witness to its expressive power. In a sense, this next one is the ultimate application.
+
+We are given a Boolean circuit, that is, a dag of gates of the following types.
+
+• Input gates have indegree zero, with value true or false.
+
+•^&#123; &#125;AND gates and_&#123; &#125;OR gates have indegree 2.
+
+•^&#123; &#125;NOT gates have indegree 1.
+
+In addition, one of the gates is designated as the output. Here’s an example.
+
+true
+
+AND
+
+NOT
+
+AND
+
+OR
+
+OR NOT
+
+output
+
+false true
+
+The_&#123; &#125;CIRCUIT VALUE problem is the following: when the laws of Boolean logic are applied to the gates in topological order, does the output evaluate to true?
+
+There is a simple, automatic way of translating this problem into a linear program. Create a variable x_&#123;g&#125; for each gate g, with constraints 0 ≤x_&#123;g&#125; ≤1. Add additional constraints for each type of gate:
+
+gate g
+
+g g
+
+x_&#123;g&#125; = 1 −x_&#123;h&#125;
+
+AND NOT OR
+
+x_&#123;g&#125; ≤x_&#123;h&#125; x_&#123;g&#125; ≤x_&#123;h&#125;^&#123;′&#125; x_&#123;g&#125; ≥x_&#123;h&#125; x_&#123;g&#125; ≥x_&#123;h&#125;^&#123;′&#125; x_&#123;g&#125; ≤x_&#123;h&#125; + x_&#123;h&#125;^&#123;′&#125;
+
+h h h^&#123;′&#125; h^&#123;′&#125; h
+
+x_&#123;g&#125; ≥x_&#123;h&#125; + x_&#123;h&#125;^&#123;′&#125; −1
+
+false true
+
+g
+
+x_&#123;g&#125; = 1 x_&#123;g&#125; = 0
+
+g
+
+These constraints force all the gates to take on exactly the right values—0 for false, and 1 for true. We don’t need to maximize or minimize anything, and we can read the answer off from the variable x_&#123;o&#125; corresponding to the output gate.
+
+This is a straightforward reduction to linear programming, from a problem that may not seem very interesting at first. However, the_&#123; &#125;CIRCUIT VALUE problem is in a sense the most general problem solvable in polynomial time! After all, any algorithm will eventually run on a computer, and the computer is ultimately a Boolean combinational circuit implemented on a chip. If the algorithm runs in polynomial time, it can be rendered as a Boolean circuit consisting of polynomially many copies of the computer’s circuit, one per unit of time, with the values of the gates in one layer used to compute the values for the next. Hence, the fact that
+
+CIRCUIT VALUE reduces to linear programming means that all problems that can be solved in polynomial time do!
+
+In our next topic, NP-completeness, we shall see that many hard problems reduce, much the same way, to integer programming, linear programming’s difficult twin.
+
+Another parting thought: by what other means can the circuit evaluation problem be solved? Let’s think—a circuit is a dag. And what algorithmic technique is most appropriate for solving problems on dags? That’s right: dynamic programming! Together with linear programming, the world’s two most general algorithmic techniques.

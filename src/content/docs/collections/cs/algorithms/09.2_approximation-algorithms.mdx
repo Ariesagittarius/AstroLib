@@ -1,0 +1,352 @@
+---
+title: '9.2 Approximation algorithms'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 9.2 Approximation algorithms
+
+In an optimization problem we are given an instance I and are asked to find the optimum solution—the one with the maximum gain if we have a maximization problem like_&#123; &#125;INDEPEN-
+
+DENT SET, or the minimum cost if we are dealing with a minimization problem such as the
+
+TSP. For every instance I, let us denote by_&#123; &#125;OPT(I) the value (benefit or cost) of the optimum solution. It makes the math a little simpler (and is not too far from the truth) to assume that
+
+OPT(I) is always a positive integer.
+
+We have already seen an example of a (famous) approximation algorithm in Section 5.4: the greedy scheme for_&#123; &#125;SET COVER. For any instance I of size n, we showed that this greedy algorithm is guaranteed to quickly find a set cover of cardinality at most_&#123; &#125;OPT(I) log n. This log n factor is known as the approximation guarantee of the algorithm.
+
+More generally, consider any minimization problem. Suppose now that we have an algorithm A for our problem which, given an instance I, returns a solution with value A(I). The approximation ratio of algorithm A is defined to be
+
+α_&#123;A&#125; = max
+
+I
+
+A(I)
+
+OPT(I).
+
+In other words, α_&#123;A&#125; measures by the factor by which the output of algorithm A exceeds the optimal solution, on the worst-case input. The approximation ratio can also be defined for maximization problems, such as_&#123; &#125;INDEPENDENT SET, in the same way—except that to get a number larger than 1 we take the reciprocal.
+
+So, when faced with an NP-complete optimization problem, a reasonable goal is to look for an approximation algorithm A whose α_&#123;A&#125; is as small as possible. But this kind of guarantee might seem a little puzzling: How can we come close to the optimum if we cannot determine the optimum? Let’s look at a simple example.
+
+### 9.2.1 Vertex cover
+
+We already know the_&#123; &#125;VERTEX COVER problem is NP-hard.
+
+V_&#123;ERTEX&#125; COVER
+
+Input: An undirected graph G = (V, E).
+
+Output: A subset of the vertices S ⊆V that touches every edge.
+
+Goal: Minimize |S|.
+
+See Figure 9.3 for an example.
+
+Since_&#123; &#125;VERTEX COVER is a special case of_&#123; &#125;SET COVER, we know from Chapter 5 that it can be approximated within a factor of O(log n) by the greedy algorithm: repeatedly delete the vertex of highest degree and include it in the vertex cover. And there are graphs on which the greedy algorithm returns a vertex cover that is indeed log n times the optimum.
+
+A better approximation algorithm for_&#123; &#125;VERTEX COVER is based on the notion of a matching, a subset of edges that have no vertices in common (Figure 9.4). A matching is maximal if no more edges can be added to it. Maximal matchings will help us find good vertex covers, and moreover, they are easy to generate: repeatedly pick edges that are disjoint from the ones chosen already, until this is no longer possible.
+
+![Figure 9.3 A graph whose optimal vertex cover, shown shaded, is of size 8.](images/fig_9_3.png)
+
+![Figure 9.4 (a) A matching, (b) its completion to a maximal matching, and (c) the resulting](images/fig_9_4.png)
+
+What is the relationship between matchings and vertex covers? Here is the crucial fact: any vertex cover of a graph G must be at least as large as the number of edges in any matching in G; that is, any matching provides a lower bound on_&#123; &#125;OPT. This is simply because each edge of the matching must be covered by one of its endpoints in any vertex cover! Finding such a lower bound is a key step in designing an approximation algorithm, because we must compare the quality of the solution found by our algorithm to_&#123; &#125;OPT, which is NP-complete to compute.
+
+One more observation completes the design of our approximation algorithm: let S be a set that contains both endpoints of each edge in a maximal matching M. Then S must be a vertex cover—if it isn’t, that is, if it doesn’t touch some edge e ∈E, then M could not possibly be maximal since we could still add e to it. But our cover S has 2|M| vertices. And from the previous paragraph we know that any vertex cover must have size at least |M|. So we’re done.
+
+Here’s the algorithm for_&#123; &#125;VERTEX COVER.
+
+Find a maximal matching M ⊆E Return S = &#123;all endpoints of edges in M&#125;
+
+This simple procedure always returns a vertex cover whose size is at most twice optimal!
+
+In summary, even though we have no way of finding the best vertex cover, we can easily find another structure, a maximal matching, with two key properties:
+
+1. Its size gives us a lower bound on the optimal vertex cover.
+
+2. It can be used to build a vertex cover, whose size can be related to that of the optimal cover using property 1.
+
+Thus, this simple algorithm has an approximation ratio of α_&#123;A&#125; ≤2. In fact, it is not hard to find examples on which it does make a 100% error; hence α_&#123;A&#125; = 2.
+
+### 9.2.2 Clustering
+
+We turn next to a clustering problem, in which we have some data (text documents, say, or images, or speech samples) that we want to divide into groups. It is often useful to define “distances” between these data points, numbers that capture how close or far they are from one another. Often the data are true points in some high-dimensional space and the distances are the usual Euclidean distance; in other cases, the distances are the result of some “similarity tests” to which we have subjected the data points. Assume that we have such distances and that they satisfy the usual metric properties:
+
+1. d(x, y) ≥0 for all x, y.
+
+2. d(x, y) = 0 if and only if x = y.
+
+3. d(x, y) = d(y, x).
+
+4. (Triangle inequality) d(x, y) ≤d(x, z) + d(z, y).
+
+We would like to partition the data points into groups that are compact in the sense of having small diameter.
+
+k-_&#123;CLUSTER&#125;
+
+Input: Points X = &#123;x_&#123;1&#125;, . . . , x_&#123;n&#125;&#125; with underlying distance metric d(·, ·); integer k.
+
+Output: A partition of the points into k clusters C_&#123;1&#125;, . . . , C_&#123;k&#125;.
+
+Goal: Minimize the diameter of the clusters,
+
+max
+
+j max x_&#123;a&#125;,x_&#123;b&#125;∈C_&#123;j&#125; d(x_&#123;a&#125;, x_&#123;b&#125;).
+
+One way to visualize this task is to imagine n points in space, which are to be covered by k spheres of equal size. What is the smallest possible diameter of the spheres? Figure 9.5 shows an example.
+
+This problem is NP-hard, but has a very simple approximation algorithm. The idea is to pick k of the data points as cluster centers and to then assign each of the remaining points to the center closest to it, thus creating k clusters. The centers are picked one at a time, using an intuitive rule: always pick the next center to be as far as possible from the centers chosen so far (see Figure 9.6).
+
+Pick any point µ_&#123;1&#125; ∈X as the first cluster center for i = 2 to k:
+
+Let µ_&#123;i&#125; be the point in X that is farthest from µ_&#123;1&#125;, . . . , µ_&#123;i&#125;−1 (i.e., that maximizes min_&#123;j&lt;i&#125; d(·, µ_&#123;j&#125;)) Create k clusters: C_&#123;i&#125; = &#123;all x ∈X whose closest center is µ_&#123;i&#125;&#125;
+
+![Figure 9.5 Some data points and the optimal k = 4 clusters.](images/fig_9_5.png)
+
+![Figure 9.6 (a) Four centers chosen by farthest-ﬁrst traversal. (b) The resulting clusters.](images/fig_9_6.png)
+
+It’s clear that this algorithm returns a valid partition. What’s more, the resulting diameter is guaranteed to be at most twice optimal.
+
+Here’s the argument. Let x ∈X be the point farthest from µ_&#123;1&#125;, . . . , µ_&#123;k&#125; (in other words the next center we would have chosen, if we wanted k + 1 of them), and let r be its distance to its closest center. Then every point in X must be within distance r of its cluster center. By the triangle inequality, this means that every cluster has diameter at most 2r.
+
+But how does r relate to the diameter of the optimal clustering? Well, we have identified k + 1 points &#123;µ_&#123;1&#125;, µ_&#123;2&#125;, . . . , µ_&#123;k&#125;, x&#125; that are all at a distance at least r from each other (why?). Any partition into k clusters must put two of these points in the same cluster and must therefore have diameter at least r.
+
+This algorithm has a certain high-level similarity to our scheme for_&#123; &#125;VERTEX COVER. Instead of a maximal matching, we use a different easily computable structure—a set of k points that cover all of X within some radius r, while at the same time being mutually separated by a distance of at least r. This structure is used both to generate a clustering and to give a lower bound on the optimal clustering.
+
+We know of no better approximation algorithm for this problem.
+
+### 9.2.3 TSP
+
+The triangle inequality played a crucial role in making the k-_&#123;CLUSTER&#125; problem approximable. It also helps with the_&#123; &#125;TRAVELING SALESMAN PROBLEM: if the distances between cities satisfy the metric properties, then there is an algorithm that outputs a tour of length at most 1.5 times optimal. We’ll now look at a slightly weaker result that achieves a factor of 2.
+
+Continuing with the thought processes of our previous two approximation algorithms, we can ask whether there is some structure that is easy to compute and that is plausibly related to the best traveling salesman tour (as well as providing a good lower bound on_&#123; &#125;OPT). A little thought and experimentation reveals the answer to be the minimum spanning tree.
+
+Let’s understand this relation. Removing any edge from a traveling salesman tour leaves a path through all the vertices, which is a spanning tree. Therefore,
+
+TSP cost ≥cost of this path ≥MST cost.
+
+Now, we somehow need to use the MST to build a traveling salesman tour. If we can use each edge twice, then by following the shape of the MST we end up with a tour that visits all the cities, some of them more than once. Here’s an example, with the MST on the left and the resulting tour on the right (the numbers show the order in which the edges are taken).
+
+Tulsa Albuquerque Amarillo
+
+Wichita
+
+Little Rock
+
+Dallas
+
+Houston
+
+San Antonio
+
+El Paso
+
+Tulsa
+
+Wichita
+
+Little Rock
+
+Dallas
+
+Houston El Paso
+
+Amarillo
+
+San Antonio
+
+Albuquerque
+
+5
+
+2
+
+1
+
+10 9
+
+11
+
+8 7
+
+12
+
+6
+
+4
+
+13
+
+14
+
+3
+
+15
+
+16
+
+Therefore, this tour has a length at most twice the MST cost, which as we’ve already seen is at most twice the TSP cost.
+
+This is the result we wanted, but we aren’t quite done because our tour visits some cities multiple times and is therefore not legal. To fix the problem, the tour should simply skip any city it is about to revisit, and instead move directly to the next new city in its list:
+
+Tulsa
+
+Wichita
+
+Little Rock
+
+Dallas
+
+Houston
+
+San Antonio
+
+El Paso
+
+Albuquerque
+
+Amarillo
+
+By the triangle inequality, these bypasses can only make the overall tour shorter.
+
+General TSP
+
+But what if we are interested in instances of TSP that do not satisfy the triangle inequality? It turns out that this is a much harder problem to approximate.
+
+Here is why: Recall that on page 259 we gave a polynomial-time reduction which given any graph G and integer any C > 0 produces an instance I(G, C) of the_&#123; &#125;TSP such that:
+
+(i) If G has a Rudrata path, then_&#123; &#125;OPT(I(G, C)) = n, the number of vertices in G.
+
+(ii) If G has no Rudrata path, then_&#123; &#125;OPT(I(G, C)) ≥n + C.
+
+This means that even an approximate solution to_&#123; &#125;TSP would enable us to solve R_&#123;UDRATA&#125;
+
+PATH! Let’s work out the details.
+
+Consider an approximation algorithm A for_&#123; &#125;TSP and let α_&#123;A&#125; denote its approximation ratio. From any instance G of R_&#123;UDRATA&#125; PATH, we will create an instance I(G, C) of_&#123; &#125;TSP using the specific constant C = nα_&#123;A&#125;. What happens when algorithm A is run on this_&#123; &#125;TSP instance? In case (i), it must output a tour of length at most α_&#123;A&#125;OPT(I(G, C)) = nα_&#123;A&#125;, whereas in case (ii) it must output a tour of length at least_&#123; &#125;OPT(I(G, C)) > nα_&#123;A&#125;. Thus we can figure out whether G has a Rudrata path! Here is the resulting procedure:
+
+Given any graph G:
+
+compute I(G, C) (with C = n · α_&#123;A&#125;) and run algorithm A on it if the resulting tour has length ≤nα_&#123;A&#125;:
+
+conclude that G has a Rudrata path else: conclude that G has no Rudrata path
+
+This tells us whether or not G has a Rudrata path; by calling the procedure a polynomial number of times, we can find the actual path (Exercise 8.2).
+
+We’ve shown that if_&#123; &#125;TSP has a polynomial-time approximation algorithm, then there is a polynomial algorithm for the NP-complete R_&#123;UDRATA&#125; PATH problem. So, unless P = NP, there cannot exist an efficient approximation algorithm for the_&#123; &#125;TSP.
+
+### 9.2.4 Knapsack
+
+Our last approximation algorithm is for a maximization problem and has a very impressive guarantee: given any ϵ > 0, it will return a solution of value at least (1 −ϵ) times the optimal value, in time that scales only polynomially in the input size and in 1/ϵ.
+
+The problem is_&#123; &#125;KNAPSACK, which we first encountered in Chapter 6. There are n items, with weights w_&#123;1&#125;, . . . , w_&#123;n&#125; and values v_&#123;1&#125;, . . . , v_&#123;n&#125; (all positive integers), and the goal is to pick the most valuable combination of items subject to the constraint that their total weight is at most W.
+
+Earlier we saw a dynamic programming solution to this problem with running time O(nW). Using a similar technique, a running time of O(nV ) can also be achieved, where V is the sum of the values. Neither of these running times is polynomial, because W and V can be very large, exponential in the size of the input.
+
+Let’s consider the O(nV ) algorithm. In the bad case when V is large, what if we simply scale down all the values in some way? For instance, if
+
+v_&#123;1&#125; = 117,586,003, v_&#123;2&#125; = 738,493,291, v_&#123;3&#125; = 238,827,453,
+
+we could simply knock off some precision and instead use 117, 738, and 238. This doesn’t change the problem all that much and will make the algorithm much, much faster!
+
+Now for the details. Along with the input, the user is assumed to have specified some approximation factor ϵ > 0.
+
+Discard any item with weight > W Let v_&#123;max&#125; = max_&#123;i&#125; v_&#123;i&#125; Rescale values bv_&#123;i&#125; = ⌊v_&#123;i&#125; · n
+
+ϵv^&#123;max&#125; ⌋ Run the dynamic programming algorithm with values &#123;bv_&#123;i&#125;&#125; Output the resulting choice of items
+
+Let’s see why this works. First of all, since the rescaled values bv_&#123;i&#125; are all at most n/ϵ, the dynamic program is efficient, running in time O(n^&#123;3&#125;/ϵ).
+
+Now suppose the optimal solution to the original problem is to pick some subset of items S, with total value K^&#123;∗&#125;. The rescaled value of this same assignment is
+
+X
+
+i∈S
+
+bv_&#123;i&#125; =
+
+X
+
+i∈S
+
+
+
+v_&#123;i&#125; · n
+
+ϵv^&#123;max&#125;
+
+
+
+≥
+
+X
+
+i∈S
+
+
+
+v_&#123;i&#125; · n
+
+ϵv^&#123;max&#125;
+
+−1
+
+
+
+≥K^&#123;∗&#125;· n
+
+ϵv^&#123;max&#125;
+
+−n.
+
+Therefore, the optimal assignment for the shrunken problem, call it bS, has a rescaled value of at least this much. In terms of the original values, assignment bS has a value of at least
+
+X
+
+i∈bS
+
+v_&#123;i&#125; ≥
+
+X
+
+i∈bS
+
+bv_&#123;i&#125; · ϵv^&#123;max&#125;
+
+n ≥
+
+
+
+K^&#123;∗&#125;· n
+
+ϵv^&#123;max&#125;
+
+−n
+
+
+
+· ϵv^&#123;max&#125;
+
+n = K^&#123;∗&#125;−ϵv^&#123;max&#125; ≥K^&#123;∗&#125;(1 −ϵ).
+
+### 9.2.5 The approximability hierarchy
+
+Given any NP-complete optimization problem, we seek the best approximation algorithm possible. Failing this, we try to prove lower bounds on the approximation ratios that are achievable in polynomial time (we just carried out such a proof for the general TSP). All told, NP-complete optimization problems are classified as follows:
+
+• Those for which, like the TSP, no finite approximation ratio is possible.
+
+• Those for which an approximation ratio is possible, but there are limits to how small this can be. V_&#123;ERTEX&#125; COVER, k-_&#123;CLUSTER&#125;, and the TSP with triangle inequality belong here. (For these problems we have not established limits to their approximability, but these limits do exist, and their proofs constitute some of the most sophisticated results in this field.)
+
+• Down below we have a more fortunate class of NP-complete problems for which approximability has no limits, and polynomial approximation algorithms with error ratios arbitrarily close to zero exist. K_&#123;NAPSACK&#125; resides here.

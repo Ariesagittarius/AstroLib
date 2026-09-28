@@ -1,0 +1,124 @@
+---
+title: '2.3 Mergesort'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 2.3 Mergesort
+
+### Binary search
+
+The ultimate divide-and-conquer algorithm is, of course, binary search: to find a key k in a large file containing keys z[0, 1, . . . , n −1] in sorted order, we first compare k with z[n/2], and depending on the result we recurse either on the first half of the file, z[0, . . . , n/2 −1], or on the second half, z[n/2, . . . , n −1]. The recurrence now is T(n) = T(⌈n/2⌉) + O(1), which is the case a = 1, b = 2, d = 0. Plugging into our master theorem we get the familiar solution: a running time of just O(log n).
+
+The problem of sorting a list of numbers lends itself immediately to a divide-and-conquer strategy: split the list into two halves, recursively sort each half, and then merge the two sorted sublists.
+
+function mergesort
+
+(a[1 . . . n]) Input: An array of numbers a[1 . . . n] Output: A sorted version of this array
+
+if n > 1:
+
+return merge(mergesort(a[1 . . .⌊n/2⌋]), mergesort(a[⌊n/2⌋+ 1 . . . n])) else:
+
+return a
+
+The correctness of this algorithm is self-evident, as long as a correct merge subroutine is specified. If we are given two sorted arrays x[1 . . . k] and y[1 . . . l], how do we efficiently merge them into a single sorted array z[1 . . . k + l]? Well, the very first element of z is either x[1] or y[1], whichever is smaller. The rest of z[·] can then be constructed recursively.
+
+function merge
+
+(x[1 . . . k], y[1 . . . l]) if k = 0: return y[1 . . . l] if l = 0: return x[1 . . . k] if x[1] ≤y[1]:
+
+return x[1] ◦merge(x[2 . . . k], y[1 . . . l]) else:
+
+return y[1] ◦merge(x[1 . . . k], y[2 . . . l])
+
+Here ◦denotes concatenation. This merge procedure does a constant amount of work per recursive call (provided the required array space is allocated in advance), for a total running time of O(k + l). Thus merge’s are linear, and the overall time taken by mergesort is
+
+T(n) = 2T(n/2) + O(n),
+
+or O(n log n).
+
+Looking back at the mergesort algorithm, we see that all the real work is done in merging, which doesn’t start until the recursion gets down to singleton arrays. The singletons are
+
+![Figure 2.4 The sequence of merge operations in mergesort.](images/fig_2_4.png)
+
+merged in pairs, to yield arrays with two elements. Then pairs of these 2-tuples are merged, producing 4-tuples, and so on. Figure 2.4 shows an example.
+
+This viewpoint also suggests how mergesort might be made iterative. At any given moment, there is a set of “active” arrays—initially, the singletons—which are merged in pairs to give the next batch of active arrays. These arrays can be organized in a queue, and processed by repeatedly removing two arrays from the front of the queue, merging them, and putting the result at the end of the queue.
+
+In the following pseudocode, the primitive operation inject adds an element to the end of the queue while eject removes and returns the element at the front of the queue.
+
+function iterative-mergesort
+
+(a[1 . . . n]) Input: elements a_&#123;1&#125;, a_&#123;2&#125;, . . . , a_&#123;n&#125; to be sorted
+
+Q = [ ] (empty queue) for i = 1 to n:
+
+inject(Q, [a_&#123;i&#125;]) while |Q| > 1:
+
+inject(Q, merge(eject(Q), eject(Q))) return eject(Q)
+
+### An n log n lower bound for sorting
+
+Sorting algorithms can be depicted as trees. The one in the following figure sorts an array of three elements, a_&#123;1&#125;, a_&#123;2&#125;, a_&#123;3&#125;. It starts by comparing a_&#123;1&#125; to a_&#123;2&#125; and, if the first is larger, compares it with a_&#123;3&#125;; otherwise it compares a_&#123;2&#125; and a_&#123;3&#125;. And so on. Eventually we end up at a leaf, and this leaf is labeled with the true order of the three elements as a permutation of 1, 2, 3. For example, if a_&#123;2&#125; &lt; a_&#123;1&#125; &lt; a_&#123;3&#125;, we get the leaf labeled “2 1 3.”
+
+3 2 1
+
+Yes
+
+a_&#123;2&#125; &lt; a_&#123;3&#125;?
+
+a_&#123;1&#125; &lt; a_&#123;2&#125;?
+
+a_&#123;1&#125; &lt; a_&#123;3&#125;?
+
+a_&#123;2&#125; &lt; a_&#123;3&#125;? a_&#123;1&#125; &lt; a_&#123;3&#125;?
+
+2 3 1
+
+2 1 3
+
+3 1 2 1 3 2
+
+1 2 3
+
+No
+
+The depth of the tree—the number of comparisons on the longest path from root to leaf, in this case 3—is exactly the worst-case time complexity of the algorithm.
+
+This way of looking at sorting algorithms is useful because it allows one to argue that mergesort is optimal, in the sense that Ω(n log n) comparisons are necessary for sorting n elements.
+
+Here is the argument: Consider any such tree that sorts an array of n elements. Each of its leaves is labeled by a permutation of &#123;1, 2, . . . , n&#125;. In fact, every permutation must appear as the label of a leaf. The reason is simple: if a particular permutation is missing, what happens if we feed the algorithm an input ordered according to this same permutation? And since there are n! permutations of n elements, it follows that the tree has at least n! leaves.
+
+We are almost done: This is a binary tree, and we argued that it has at least n! leaves. Recall now that a binary tree of depth d has at most 2^&#123;d&#125; leaves (proof: an easy induction on d). So, the depth of our tree—and the complexity of our algorithm—must be at least log(n!).
+
+And it is well known that log(n!) ≥c · n log n for some c > 0. There are many ways to see this. The easiest is to notice that n! ≥(n/2)^&#123;(&#125;n/2) because n! = 1 · 2 · · · · · n contains at least n/2 factors larger than n/2; and to then take logs of both sides. Another is to recall Stirling’s formula
+
+n! ≈
+
+s
+
+π
+
+
+
+2n + 1
+
+3
+
+
+
+· n^&#123;n&#125; · e^&#123;−&#125;n.
+
+Either way, we have established that any comparison tree that sorts n elements must make, in the worst case, Ω(n log n) comparisons, and hence mergesort is optimal!
+
+Well, there is some fine print: this neat argument applies only to algorithms that use comparisons. Is it conceivable that there are alternative sorting strategies, perhaps using sophisticated numerical manipulations, that work in linear time? The answer is yes, under certain exceptional circumstances: the canonical such example is when the elements to be sorted are integers that lie in a small range (Exercise 2.20).

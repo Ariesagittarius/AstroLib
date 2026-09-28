@@ -1,0 +1,38 @@
+---
+title: '10.6 Factoring as periodicity'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 10.6 Factoring as periodicity
+
+We have seen how the quantum Fourier transform can be used to find the period of a periodic superposition. Now we show, by a sequence of simple reductions, how factoring can be recast as a period-finding problem.
+
+Fix an integer N. A nontrivial square root of 1 modulo N (recall Exercises 1.36 and 1.40) is any integer x̸ ≡±1 mod N such that x^&#123;2&#125; ≡1 mod N. If we can find a nontrivial square root of 1 mod N, then it is easy to decompose N into a product of two nontrivial factors (and repeating the process would factor N):
+
+Lemma If x is a nontrivial square root of 1 modulo N, then gcd(x+1, N) is a nontrivial factor of N.
+
+Proof. x^&#123;2&#125; ≡1 mod N implies that N divides (x^&#123;2&#125; −1) = (x + 1)(x −1). But N does not divide either of these individual terms, since x̸ ≡±1 mod N. Therefore N must have a nontrivial factor in common with each of (x + 1) and (x −1). In particular, gcd(N, x + 1) is a nontrivial factor of N.
+
+Example. Let N = 15. Then 4^&#123;2&#125; ≡1 mod 15, but 4̸ ≡±1 mod 15. Both gcd(4 −1, 15) = 3 and gcd(4 + 1, 15) = 5 are nontrivial factors of 15.
+
+To complete the connection with periodicity, we need one further concept. Define the order of x modulo N to be the smallest positive integer r such that x^&#123;r&#125; ≡1 mod N. For instance, the order of 2 mod 15 is 4.
+
+Computing the order of a random number x mod N is closely related to the problem of finding nontrivial square roots, and thereby to factoring. Here’s the link.
+
+Lemma Let N be an odd composite, with at least two distinct prime factors, and let x be chosen uniformly at random between 0 and N −1. If gcd(x, N) = 1, then with probability at least 1/2, the order r of x mod N is even, and moreover x^&#123;r/&#125;2 is a nontrivial square root of 1 mod N.
+
+The proof of this lemma is left as an exercise. What it implies is that if we could compute the order r of a randomly chosen element x mod N, then there’s a good chance that this order is even and that x^&#123;r/&#125;2 is a nontrivial square root of 1 modulo N. In which case gcd(x^&#123;r/&#125;2 + 1, N) is a factor of N.
+
+Example. If x = 2 and N = 15, then the order of 2 is 4 since 2^&#123;4&#125; ≡1 mod 15. Raising 2 to half this power, we get a nontrivial root of 1: 2^&#123;2&#125; ≡4̸ ≡±1 mod 15. So we get a divisor of 15 by computing gcd(4 + 1, 15) = 5.
+
+Hence we have reduced_&#123; &#125;FACTORING to the problem of_&#123; &#125;ORDER FINDING. The advantage of this latter problem is that it has a natural periodic function associated with it: fix N and x, and consider the function f(a) = x^&#123;a&#125; mod N. If r is the order of x, then f(0) = f(r) = f(2r) = · · · = 1, and similarly, f(1) = f(r + 1) = f(2r + 1) = · · · = x. Thus f is periodic, with period r. And we can compute it efficiently by the repeated squaring algorithm from Section 1.2.2. So, in order to factor N, all we need to do is to figure out how to use the function f to set up a periodic superposition with period r; whereupon we can use quantum Fourier sampling as in Section 10.3 to find r. This is described in the next box.
