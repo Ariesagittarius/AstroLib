@@ -12,6 +12,7 @@ import Note from '@/components/Note.astro';
 import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 import Exercise from '@/components/Exercise.astro';
+import Algorithm from '@/components/Algorithm.astro';
 
 ## 6.4 Knapsack
 
@@ -41,12 +42,12 @@ $$
 
 where as usual our convention is that the maximum over an empty set is 0. We're done! The algorithm now writes itself, and it is characteristically simple and elegant.
 
-<div class="mineru-algorithm">
-$K(0) = 0$   
-for $w = 1$ to $W$:  
-$K(w) = \max \{K(w - w_i) + v_i:w_i\leq w\}$  
+<Algorithm>
+$K(0) = 0$
+for $w = 1$ to $W$:
+    $K(w) = \max \{K(w - w_i) + v_i : w_i \leq w\}$
 return $K(W)$
-</div>
+</Algorithm>
 
 This algorithm fills in a one-dimensional table of length $W + 1$ , in left-to-right order. Each entry can take up to $O ( n )$ time to compute, so the overall running time is $O ( n W )$
 
@@ -70,14 +71,16 @@ $$
 
 The algorithm then consists of filling out a two-dimensional table, with $W + 1$ rows and $n + 1$ columns. Each table entry takes just constant time, so even though the table is much larger than in the previous case, the running time remains the same, $O ( n W )$ . Here's the code.
 
-<div class="mineru-algorithm">
-Initialize all  $K(0,j)=0$  and all  $K(w,0)=0$ 
-for j=1 to n:
-    for w=1 to W:
-    if  $w_{j}>w:$ $K(w,j)=K(w,j-1)$ 
-    else:  $K(w,j)=\max\{K(w,j-1),K(w-w_{j},j-1)+v_{j}\}$ 
-return  $K(W,n)$
-</div>
+<Algorithm>
+Initialize all $K(0, j) = 0$ and all $K(w, 0) = 0$
+for $j = 1$ to n:
+    for $w = 1$ to W:
+        if $w_j > w$:
+            $K(w, j) = K(w, j - 1)$
+        else:
+            $K(w, j) = \max\{K(w, j - 1), K(w - w_j, j - 1) + v_j\}$
+return $K(W, n)$
+</Algorithm>
 
 <Knowledge title="Box: Memoization">
 
@@ -89,13 +92,13 @@ On the knapsack problem (with repetitions), such an algorithm would use a hash t
 
 A hash table, initially empty, holds values of K(w) indexed by w
 
-<div class="mineru-algorithm">
-function knapsack(w)
+<Algorithm>
+<u>function knapsack</u>(w)
 if w is in hash table: return K(w)
- $K(w) = \max\{\text{knapsack}(w - w_i) + v_i : w_i \leq w\}$ 
-insert  $K(w)$  into hash table, with key w
-return  $K(w)$
-</div>
+$K(w) = \max\{	ext{knapsack}(w - w_i) + v_i : w_i \leq w\}$
+insert $K(w)$ into hash table, with key w
+return $K(w)$
+</Algorithm>
 
 Since this algorithm never repeats a subproblem, its running time is O(nW), just like the dynamic program. However, the constant factor in this big-O notation is substantially larger because of the overhead of recursion.
 

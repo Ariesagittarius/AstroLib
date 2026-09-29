@@ -12,6 +12,7 @@ import Note from '@/components/Note.astro';
 import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 import Exercise from '@/components/Exercise.astro';
+import Algorithm from '@/components/Algorithm.astro';
 
 ## 2.6 The fast Fourier transform
 
@@ -78,9 +79,7 @@ A familiar instance of this is that “any two points determine a line.” We wi
 
 1. Its coefficients $a _ { 0 } , a _ { 1 } , \ldots , a _ { d }$
 
-<div class="mineru-algorithm">
-2. The values  $A(x_{0}), A(x_{1}), \ldots, A(x_{d})$
-</div>
+2. The values $A(x_0), A(x_1), \ldots, A(x_d)$
 
 Of these two representations, the second is the more attractive for polynomial multiplication. Since the product $C ( x )$ has degree 2d, it is completely determined by its value at any $2 d + 1$ points. And its value at any given point z is easy enough to figure out, just $A ( z )$ times $B ( z )$ Thus polynomial multiplication takes linear time in the value representation.
 
@@ -90,23 +89,22 @@ The problem is that we expect the input polynomials, and also their product, to 
 
 Figure 2.5 presents the resulting algorithm.
 
-<div class="mineru-algorithm">
-Figure 2.5 Polynomial multiplication
-Input: Coefficients of two polynomials, A(x) and B(x), of degree d
+<Algorithm title="Figure 2.5 Polynomial multiplication">
+Input:  Coefficients of two polynomials, A(x) and B(x), of degree d
 Output: Their product C = A · B
 
 Selection
-Pick some points  $x_{0}, x_{1}, \ldots, x_{n-1}$ , where  $n \geq 2d + 1$ 
+Pick some points $x_0, x_1, \ldots, x_{n-1}$, where $n \geq 2d + 1$
 
 Evaluation
-Compute  $A(x_{0}), A(x_{1}), \ldots, A(x_{n-1})$  and  $B(x_{0}), B(x_{1}), \ldots, B(x_{n-1})$ 
+Compute $A(x_0), A(x_1), \ldots, A(x_{n-1})$ and $B(x_0), B(x_1), \ldots, B(x_{n-1})$
 
 Multiplication
-Compute  $C(x_{k}) = A(x_{k})B(x_{k})$  for all  $k = 0, \ldots, n - 1$ 
+Compute $C(x_k) = A(x_k)B(x_k)$ for all $k = 0, \ldots, n - 1$
 
 Interpolation
-Recover  $C(x) = c_{0} + c_{1}x + \cdots + c_{2d}x^{2d}$
-</div>
+Recover $C(x) = c_0 + c_1 x + \cdots + c_{2d} x^{2d}$
+</Algorithm>
 
 The equivalence of the two polynomial representations makes it clear that this high-level approach is correct, but how efficient is it? Certainly the selection step and the n multiplications are no trouble at all, just linear time.<sup>3</sup> But (leaving aside interpolation, about which we know even less) how about evaluation? Evaluating a polynomial of degree $d \leq n$ at a single point takes $O ( n )$ steps (Exercise 2.29), and so the baseline for n points is $\Theta ( n ^ { 2 } )$ . We'll now see that the fast Fourier transform (FFT) does it in just $O ( n \log n )$ time, for a particularly clever choice of $x _ { 0 } , \ldots , x _ { n - 1 }$ in which the computations required by the individual points overlap with one another and can be shared.
 

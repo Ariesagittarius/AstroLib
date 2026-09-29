@@ -12,32 +12,34 @@ import Note from '@/components/Note.astro';
 import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 import Exercise from '@/components/Exercise.astro';
+import Algorithm from '@/components/Algorithm.astro';
 
 ## 2.3 Mergesort
 
 The problem of sorting a list of numbers lends itself immediately to a divide-and-conquer strategy: split the list into two halves, recursively sort each half, and then merge the two sorted sublists.
 
-```python
-function mergesort(a[1...n])
-Input: An array of numbers a[1...n]
+<Algorithm>
+<u>function mergesort</u>(a[1...n])
+Input:  An array of numbers a[1...n]
 Output: A sorted version of this array
+
 if n > 1:
-    return merge(mergesort(a[1...lf/2]), mergesort(a[lf/2] + 1...n]))
+    return merge(mergesort(a[1...$\lfloor n/2 floor$]), mergesort(a[$\lfloor n/2 floor$ + 1...n]))
 else:
     return a
-```
+</Algorithm>
 
 The correctness of this algorithm is self-evident, as long as a correct merge subroutine is specified. If we are given two sorted arrays $x [ 1 \ldots k ]$ and $y [ 1 \ldots l ]$ , how do we efficiently merge them into a single sorted array $z [ 1 \ldots k + l ] ?$ Well, the very first element of z is either x[1] or y[1], whichever is smaller. The rest of z[ ] can then be constructed recursively.
 
-```python
-function merge(x[1...k], y[1...l])
+<Algorithm>
+<u>function merge</u>(x[1...k], y[1...l])
 if k = 0: return y[1...l]
 if l = 0: return x[1...k]
 if x[1] ≤ y[1]:
     return x[1] ∘ merge(x[2...k], y[1...l])
 else:
     return y[1] ∘ merge(x[1...k], y[2...l])
-```
+</Algorithm>
 
 Here denotes concatenation. This merge procedure does a constant amount of work per recursive call (provided the required array space is allocated in advance), for a total running time of O(k + l). Thus merge's are linear, and the overall time taken by mergesort is
 
@@ -45,9 +47,7 @@ $$
 T (n) = 2 T (n / 2) + O (n),
 $$
 
-<div class="mineru-algorithm">
-or $O(n\log n)$
-</div>
+or $O(n\log n)$.
 
 Looking back at the mergesort algorithm, we see that all the real work is done in merging, which doesn't start until the recursion gets down to singleton arrays. The singletons are
 
@@ -61,16 +61,17 @@ This viewpoint also suggests how mergesort might be made iterative. At any given
 
 In the following pseudocode, the primitive operation inject adds an element to the end of the queue while eject removes and returns the element at the front of the queue.
 
-<div class="mineru-algorithm">
-function iterative-mergesort(a[1...n])
-Input: elements  $a_{1}, a_{2}, \ldots, a_{n}$  to be sorted
+<Algorithm>
+<u>function iterative-mergesort</u>(a[1...n])
+Input: elements $a_1, a_2, \ldots, a_n$ to be sorted
+
 Q = [ ] (empty queue)
 for i = 1 to n:
     inject(Q, [a_i])
-while |Q| &gt; 1:
+while |Q| > 1:
     inject(Q, merge(eject(Q), eject(Q)))
 return eject(Q)
-</div>
+</Algorithm>
 
 <Knowledge title="Box: An n log n lower bound for sorting">
 

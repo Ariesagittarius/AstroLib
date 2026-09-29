@@ -12,6 +12,7 @@ import Note from '@/components/Note.astro';
 import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 import Exercise from '@/components/Exercise.astro';
+import Algorithm from '@/components/Algorithm.astro';
 
 ## Chapter 5: Greedy algorithms
 
@@ -180,13 +181,17 @@ One way to store a set is as a directed tree (Figure 5.5). Nodes of the tree are
 
 In addition to a parent pointer π, each node also has a rank that, for the time being, should be interpreted as the height of the subtree hanging from that node.
 
-<div class="mineru-algorithm">
-procedure makeset(x)
- $\pi(x) = x$ 
-rank(x) = 0
-function find(x)
-while  $x \neq \pi(x)$ :  $x = \pi(x)$
-</div>
+<Algorithm>
+<u>procedure makeset</u>(x)
+$\pi(x) = x$
+$	ext{rank}(x) = 0$
+
+<u>function find</u>(x)
+while $x 
+eq \pi(x)$:
+    $x = \pi(x)$
+return x
+</Algorithm>
 
 ## Figure 5.5 A directed-tree representation of two sets B, E and A, C, D, F, G, H .
 
@@ -196,21 +201,18 @@ As can be expected, makeset is a constant-time operation. On the other hand, fin
 
 Merging two sets is easy: make the root of one point to the root of the other. But we have a choice here. If the representatives (roots) of the sets are $r _ { x }$ and $r _ { y } ,$ do we make $r _ { x }$ point to $r _ { y }$ or the other way around? Since tree height is the main impediment to computational efficiency, a good strategy is to make the root of the shorter tree point to the root of the taller tree. This way, the overall height increases only if the two trees being merged are equally tall. Instead of explicitly computing heights of trees, we will use the rank numbers of their root nodes—which is why this scheme is called union by rank.
 
-<div class="mineru-algorithm">
-$\frac{\text{procedure union}}{r_x = \text{find}(x)}(x, y)$ $r_y = \text{find}(y)$
-
+<Algorithm>
+<u>procedure union</u>(x, y)
+$r_x = 	ext{find}(x)$
+$r_y = 	ext{find}(y)$
 if $r_x = r_y$: return
-
-if $\text{rank}(r_x) > \text{rank}(r_y)$:
-
-$\pi(r_y) = r_x$
-
+if $	ext{rank}(r_x) > 	ext{rank}(r_y)$:
+    $\pi(r_y) = r_x$
 else:
-
-$\pi(r_x) = r_y$
-
-if $\text{rank}(r_x) = \text{rank}(r_y)$: $\text{rank}(r_y) = \text{rank}(r_y) + 1$
-</div>
+    $\pi(r_x) = r_y$
+    if $	ext{rank}(r_x) = 	ext{rank}(r_y)$:
+        $	ext{rank}(r_y) = 	ext{rank}(r_y) + 1$
+</Algorithm>
 
 See Figure 5.6 for an example.
 
@@ -339,12 +341,13 @@ $$
 
 Let's return to our discussion of minimum spanning tree algorithms. What the cut property tells us in most general terms is that any algorithm conforming to the following greedy schema is guaranteed to work.
 
-<div class="mineru-algorithm">
+<Algorithm>
 $X = \{ \}$ (edges picked so far)
 repeat until $|X| = |V| - 1$:
     pick a set $S \subset V$ for which $X$ has no edges between $S$ and $V - S$
-    let $e \in E$ be the minimum-weight edge between $S$ and $V - S$ $X = X \cup \{e\}$
-</div>
+    let $e \in E$ be the minimum-weight edge between $S$ and $V - S$
+    $X = X \cup \{e\}$
+</Algorithm>
 
 A popular alternative to Kruskal's algorithm is Prim's, in which the intermediate set of edges X always forms a subtree, and S is chosen to be the set of this tree's vertices.
 

@@ -12,6 +12,7 @@ import Note from '@/components/Note.astro';
 import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 import Exercise from '@/components/Exercise.astro';
+import Algorithm from '@/components/Algorithm.astro';
 
 ## Chapter 9: Coping with NP-completeness
 
@@ -87,24 +88,22 @@ More abstractly, a backtracking algorithm requires a test that looks at a subpro
 
 Figure 9.1 Backtracking reveals that φ is not satisfiable.
 
-<div class="mineru-algorithm">
-$(w \vee x \vee y \vee z), (w \vee \overline{x}), (x \vee \overline{y}), (y \vee \overline{z}), (z \vee \overline{w}), (\overline{w} \vee \overline{z})$ $w = 0$ $(x \vee y \vee z), (\overline{x}), (x \vee \overline{y}), (y \vee \overline{z})$ $w = 1$ $(x \vee \overline{y}), (y \vee \overline{z}), (z), (\overline{z})$ $x = 0$ $(y \vee z), (\overline{y}), (y \vee \overline{z})$ $x = 1$ $(), (y \vee \overline{z})$ $z = 0$ $(x \vee \overline{y}), ()$ $z = 1$ $(x \vee \overline{y}), (y), ()$ $y = 0$ $(z), (\overline{z})$ $y = 1$ $()$ $z = 0$ $z = 1$ $()$ $()$
-</div>
+$$ (w \vee x \vee y \vee z), (w \vee \overline{x}), (x \vee \overline{y}), (y \vee \overline{z}), (z \vee \overline{w}), (\overline{w} \vee \overline{z}) $$
 
 In the case of SAT, this test declares failure if there is an empty clause, success if there are no clauses, and uncertainty otherwise. The backtracking procedure then has the following format.
 
-<div class="mineru-algorithm">
-Start with some problem  $P_{0}$ 
-Let  $S = \{P_{0}\}$ , the set of active subproblems
+<Algorithm>
+Start with some problem $P_0$
+Let $S = \{P_0\}$, the set of active subproblems
 Repeat while S is nonempty:
-choose a subproblem  $P \in S$  and remove it from S
-expand it into smaller subproblems  $P_{1}, P_{2}, \ldots, P_{k}$ 
-For each  $P_{i}$ :
-If test( $P_{i}$ ) succeeds: halt and announce this solution
-If test( $P_{i}$ ) fails: discard  $P_{i}$ 
-Otherwise: add  $P_{i}$  to S
+    <u>choose</u> a subproblem $P \in S$ and remove it from S
+    <u>expand</u> it into smaller subproblems $P_1, P_2, \ldots, P_k$
+    For each $P_i$:
+        If <u>test</u>($P_i$) succeeds: halt and announce this solution
+        If <u>test</u>($P_i$) fails:    discard $P_i$
+        Otherwise:             add $P_i$ to S
 Announce that there is no solution
-</div>
+</Algorithm>
 
 For SAT, the choose procedure picks a clause, and expand picks a variable within that clause. We have already discussed some reasonable ways of making such choices.
 
@@ -118,18 +117,20 @@ follow the same pattern.
 
 As before, we will deal with partial solutions, each of which represents a subproblem, namely, what is the (cost of the) best way to complete this solution? And as before, we need a basis for eliminating partial solutions, since there is no other source of efficiency in our method. To reject a subproblem, we must be certain that its cost exceeds that of some other solution we have already encountered. But its exact cost is unknown to us and is generally not efficiently computable. So instead we use a quick lower bound on this cost.
 
-<div class="mineru-algorithm">
-Start with some problem  $P_{0}$ 
-Let  $S = \{P_{0}\}$ , the set of active subproblems
-bestsofar = ∞
+<Algorithm>
+Start with some problem $P_0$
+Let $S = \{P_0\}$, the set of active subproblems
+bestsofar = $\infty$
 Repeat while S is nonempty:
-choose a subproblem (partial solution)  $P \in S$  and remove it from S
-expand it into smaller subproblems  $P_{1}, P_{2}, \ldots, P_{k}$ 
-For each  $P_{i}$ :
-If  $P_{i}$  is a complete solution: update bestsofar
-else if lowerbound( $P_{i}$ ) &lt; bestsofar: add  $P_{i}$  to S
+    <u>choose</u> a subproblem (partial solution) $P \in S$ and remove it from S
+    <u>expand</u> it into smaller subproblems $P_1, P_2, \ldots, P_k$
+    For each $P_i$:
+        If $P_i$ is a complete solution:
+            update bestsofar
+        else if <u>lowerbound</u>($P_i$) &lt; bestsofar:
+            add $P_i$ to S
 return bestsofar
-</div>
+</Algorithm>
 
 Let's see how this works for the traveling salesman problem on a graph $G = ( V , E )$ with edge lengths $d _ { e } > 0 . \ \mathbf { A }$ partial solution is a simple path $a \sim b$ passing through some vertices $S \subseteq V$ , where S includes the endpoints a and b. We can denote such a partial solution by the tuple [a, S, b]—in fact, a will be fixed throughout the algorithm. The corresponding subproblem is to find the best completion of the tour, that is, the cheapest complementary path $b \sim a$ with intermediate nodes $V - S$ . Notice that the initial problem is of the form $[ a , \{ a \} , a ]$ for any $a \in V$ of our choosing.
 

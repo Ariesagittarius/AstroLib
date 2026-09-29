@@ -1,0 +1,155 @@
+---
+/**
+ * src/components/Algorithm.astro
+ * 遵循学术出版标准的 LaTeX ruled 算法块组件
+ * 风格对齐经典学术教材（如 DPV《Algorithms》、CLRS《算法导论》中 \begin{algorithm}[ruled] 规范）：
+ * 1. 顶线：2px 实体学术粗线
+ * 2. 标题区（如有）：Figure X.Y / Algorithm X.Y 粗体衬线 + 标题文本
+ * 3. 分割线（如有标题）：1px 细线
+ * 4. 伪代码正文区：等宽字体、保留代码缩进、数学公式无缝嵌入、严禁段落缩进（text-indent: 0）
+ * 5. 底线：2px 实体学术粗线
+ * 6. 无侧边卡片强调条、无 SaaS 圆角卡片灰底
+ */
+import { renderTitleHtml } from '../utils/render-title.mjs';
+import { srcAttrs } from '../utils/src-attrs.mjs';
+
+interface Props {
+  title?: string;
+  caption?: string;
+  id?: string;
+  [key: string]: any;
+}
+
+const { title: rawTitle, caption: rawCaption, id: explicitId, ...rest } = Astro.props;
+const fullTitle = (rawTitle || rawCaption || '').trim();
+
+let prefix = '';
+let text = '';
+
+if (fullTitle) {
+  // 匹配图/算法标号前缀，如 "Figure 1.7 An algorithm...", "Algorithm 1 ...", "图 1.7 ..."
+  const match = fullTitle.match(/^((?:Figure|Algorithm|图)\s*[\d\.\-]+[:\.]?)\s*(.*)$/i);
+  if (match) {
+    prefix = match[1];
+    text = match[2];
+  } else {
+    prefix = fullTitle;
+    text = '';
+  }
+}
+
+const cleanId =
+  explicitId ||
+  (fullTitle
+    ? fullTitle
+        .replace(/[^\w\u4e00-\u9fa5\.\-]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+    : undefined);
+---
+
+<div
+  class="academic-algorithm toc-chunk"
+  id={cleanId}
+  data-title={fullTitle || undefined}
+  {...srcAttrs(Astro.props)}
+>
+  {fullTitle && (
+    <div class="algorithm-caption" role="heading" aria-level="4">
+      <span class="algorithm-caption-prefix">{prefix}</span>
+      {text && <span class="algorithm-caption-text" set:html={renderTitleHtml(text)}></span>}
+    </div>
+  )}
+  <div class="algorithm-body">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .academic-algorithm {
+    position: relative;
+    margin: 1.75rem 0 1.5rem;
+    border-top: 2px solid var(--sl-color-gray-1, #1e293b);
+    border-bottom: 2px solid var(--sl-color-gray-1, #1e293b);
+    border-left: none !important;
+    border-right: none !important;
+    border-radius: 0 !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    text-indent: 0 !important;
+    overflow-x: auto;
+  }
+
+  :global(:root[data-theme='dark']) .academic-algorithm {
+    border-top-color: var(--sl-color-gray-2, #cbd5e1);
+    border-bottom-color: var(--sl-color-gray-2, #cbd5e1);
+  }
+
+  .algorithm-caption {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    padding: 0.4rem 0.25rem 0.45rem;
+    border-bottom: 1px solid var(--sl-color-hairline, rgba(128, 128, 128, 0.25));
+    font-family: var(--font-serif, "Source Serif Pro", "Noto Serif SC", serif);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--sl-color-text-main, #0f172a);
+    text-indent: 0 !important;
+  }
+
+  :global(:root[data-theme='dark']) .algorithm-caption {
+    color: var(--sl-color-white, #f8fafc);
+  }
+
+  .algorithm-caption-prefix {
+    font-weight: 700;
+    margin-right: 0.5rem;
+    font-family: var(--font-serif, "Source Serif Pro", "Noto Serif SC", serif);
+  }
+
+  .algorithm-caption-text {
+    font-weight: 400;
+    font-family: var(--font-serif, "Source Serif Pro", "Noto Serif SC", serif);
+  }
+
+  .algorithm-body {
+    display: block;
+    padding: 0.75rem 0.25rem 0.65rem;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+    font-size: 0.925rem;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    word-break: break-word;
+    tab-size: 4;
+    text-indent: 0 !important;
+    color: var(--sl-color-text-main, #0f172a);
+  }
+
+  :global(:root[data-theme='dark']) .algorithm-body {
+    color: var(--sl-color-gray-2, #e2e8f0);
+  }
+
+  /* 彻底消除所有内部段落的全局 text-indent 与多余外边距 */
+  .algorithm-body :global(p),
+  .algorithm-body :global(div),
+  .algorithm-body :global(span),
+  .algorithm-body :global(pre),
+  .algorithm-body :global(code) {
+    text-indent: 0 !important;
+    font-family: inherit;
+  }
+
+  .algorithm-body :global(p) {
+    margin: 0 !important;
+    line-height: inherit;
+  }
+
+  .algorithm-body :global(p + p) {
+    margin-top: 0.75rem !important;
+  }
+
+  .algorithm-body :global(u) {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+</style>

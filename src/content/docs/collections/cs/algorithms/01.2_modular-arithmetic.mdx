@@ -12,6 +12,7 @@ import Note from '@/components/Note.astro';
 import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 import Exercise from '@/components/Exercise.astro';
+import Algorithm from '@/components/Algorithm.astro';
 
 ## 1.2 Modular arithmetic
 
@@ -83,21 +84,18 @@ Division is not quite so easy. In ordinary arithmetic there is just one tricky c
 
 To complete the suite of modular arithmetic primitives we need for cryptography, we next turn to modular exponentiation, and then to the greatest common divisor, which is the key to division. For both tasks, the most obvious procedures take exponentially long, but with some ingenuity polynomial-time solutions can be found. A careful choice of algorithm makes all the difference.
 
-<div class="mineru-algorithm">
-Figure 1.4 Modular exponentiation.
+<Algorithm title="Figure 1.4 Modular exponentiation.">
+<u>function modexp</u>(x, y, N)
+Input:  Two n-bit integers x and N, an integer exponent y
+Output: $x^y \bmod N$
 
-function modexp(x,y,N)
-
-Input: Two n-bit integers x and N, an integer exponent y
-Output:  $x^{y} \mod N$ 
-
-if y=0: return 1
- $z=\text{modexp}(x,\lfloor y/2\rfloor,N)$ 
+if y = 0: return 1
+$z = \text{modexp}(x, \lfloor y/2 \rfloor, N)$
 if y is even:
-    return  $z^{2} \mod N$ 
+    return $z^2 \bmod N$
 else:
-    return  $x \cdot z^{2} \mod N$
-</div>
+    return $x \cdot z^2 \bmod N$
+</Algorithm>
 
 ## 1.2.2 Modular exponentiation
 
@@ -127,19 +125,14 @@ $$
 
 A polynomial-time algorithm is finally within reach!
 
-<div class="mineru-algorithm">
-Figure 1.5 Euclid's algorithm for finding the greatest common divisor of two numbers.
-
-function Euclid(a,b)
-
-Input: Two integers a and b with  $a \geq b \geq 0$ 
-
-Output: gcd(a,b)
+<Algorithm title="Figure 1.5 Euclid's algorithm for finding the greatest common divisor of two numbers.">
+<u>function Euclid</u>(a, b)
+Input:  Two integers a and b with $a \geq b \geq 0$
+Output: $\gcd(a, b)$
 
 if b = 0: return a
-
 return Euclid(b, a mod b)
-</div>
+</Algorithm>
 
 We can package this idea in a particularly simple form: the recursive algorithm of Figure 1.4, which works by executing, modulo $N$ , the self-evident rule
 
@@ -171,21 +164,15 @@ Here it goes. Any integer that divides both x and $y$ must also divide $x - y _ 
 
 Euclid's rule allows us to write down an elegant recursive algorithm (Figure 1.5), and its correctness follows immediately from the rule. In order to figure out its running time, we need to understand how quickly the arguments $( a , b )$ decrease with each successive recursive call. In a single round, arguments $( a , b )$ become (b, a mod b): their order is swapped, and the larger of them, $^ { a , }$ gets reduced to $a$ mod b. This is a substantial reduction.
 
-<div class="mineru-algorithm">
-Figure 1.6 A simple extension of Euclid's algorithm.
+<Algorithm title="Figure 1.6 A simple extension of Euclid's algorithm.">
+<u>function extended-Euclid</u>(a, b)
+Input:  Two positive integers a and b with $a \geq b \geq 0$
+Output: Integers x, y, d such that $d = \gcd(a, b)$ and $ax + by = d$
 
-function extended-Euclid(a,b)
-
-Input: Two positive integers a and b with  $a \geq b \geq 0$ 
-
-Output: Integers x,y,d such that  $d = \gcd(a, b)$  and  $ax + by = d$ 
-
-if b = 0: return (1,0,a)
-
- $(x', y', d) = \text{Extended-Euclid}(b, a \mod b)$ 
-
-return  $(y', x' - \lfloor a/b \rfloor y', d)$
-</div>
+if b = 0: return (1, 0, a)
+$(x', y', d) = \text{extended-Euclid}(b, a \bmod b)$
+return $(y', x' - \lfloor a/b \rfloor y', d)$
+</Algorithm>
 
 <Knowledge title="Lemma">
 

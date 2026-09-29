@@ -12,6 +12,7 @@ import Note from '@/components/Note.astro';
 import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 import Exercise from '@/components/Exercise.astro';
+import Algorithm from '@/components/Algorithm.astro';
 
 ## 7.6 The simplex algorithm
 
@@ -19,11 +20,11 @@ The extraordinary power and expressiveness of linear programs would be little co
 
 At a high level, the simplex algorithm takes a set of linear inequalities and a linear objective function and finds the optimal feasible point by the following strategy:
 
-<div class="mineru-algorithm">
+<Algorithm>
 let v be any vertex of the feasible region
-while there is a neighbor  $v'$  of v with better objective value:
-set  $v = v'$
-</div>
+while there is a neighbor $v'$ of v with better objective value:
+    set $v = v'$
+</Algorithm>
 
 In our 2D and 3D examples (Figure 7.1 and Figure 7.2), this was simple to visualize and made intuitive sense. But what if there are n variables, $x _ { 1 } , \ldots , x _ { n } ?$
 
@@ -199,8 +200,8 @@ Next, to select the best neighbor, we recall that the (local view of) the object
 
 It follows that the running time per iteration of simplex is just $O ( m n )$ . But how many iterations could there be? Naturally, there can't be more than $\textstyle { \binom { m + n } { n } }$ , which is an upper bound on the number of vertices. But this upper bound is exponential in n. And in fact, there are examples of LPs for which simplex does indeed take an exponential number of iterations. In other words, simplex is an exponential-time algorithm. However, such exponential examples do not occur in practice, and it is this fact that makes simplex so valuable and so widely used.
 
-<div class="mineru-algorithm">
-Gaussian elimination
+<Knowledge title="Box: Gaussian elimination">
+
 Under our algebraic definition, merely writing down the coordinates of a vertex involves solving a system of linear equations. How is this done?
 We are given a system of n linear equations in n unknowns, say n = 4 and
  $x_{1} - 2x_{3} = 2$ $x_{2} + x_{3} = 3$ $x_{1} + x_{2} - x_{4} = 4$ $x_{2} + 3x_{3} + x_{4} = 5$ 
@@ -208,19 +209,28 @@ The high school method for solving such systems is to repeatedly apply the follo
  $x_{1} - 2x_{3} = 2$ $x_{2} + x_{3} = 3$ $x_{2} + 2x_{3} - x_{4} = 2$ $x_{2} + 3x_{3} + x_{4} = 5$ 
 This transformation is clever in the following sense: it eliminates the variable  $x_{1}$  from the third equation, leaving just one equation with  $x_{1}$ . In other words, ignoring the first equation, we have a system of three equations in three unknowns: we decreased n by 1! We can solve this smaller system to get  $x_{2}, x_{3}, x_{4}$ , and then plug these into the first equation to get  $x_{1}$ .
 This suggests an algorithm—once more due to Gauss.
-procedure gauss(E, X)
-Input: A system  $E = \{e_{1}, \ldots, e_{n}\}$  of equations in n unknowns  $X = \{x_{1}, \ldots, x_{n}\}$ :
- $e_{1}: a_{11}x_{1} + a_{12}x_{2} + \cdots + a_{1n}x_{n} = b_{1}; \cdots; e_{n}: a_{n1}x_{1} + a_{n2}x_{2} + \cdots + a_{nn}x_{n} = b_{n}$ 
+
+<Algorithm title="procedure gauss(E, X)">
+Input:  A system $E = \{e_1, \ldots, e_n\}$ of equations in n unknowns $X = \{x_1, \ldots, x_n\}$:
+        $e_1: a_{11}x_1 + a_{12}x_2 + \cdots + a_{1n}x_n = b_1; \cdots; e_n: a_{n1}x_1 + a_{n2}x_2 + \cdots + a_{nn}x_n = b_n$
 Output: A solution of the system, if one exists
-if all coefficients  $a_{i1}$  are zero:
-    halt with message ''either infeasible or not linearly independent''
-if n = 1: return  $b_{1}/a_{11}$ 
-choose the coefficient  $a_{p1}$  of largest magnitude, and swap equations  $e_{1}, e_{p}$  for i = 2 to n:
-    $e_{i} = e_{i} - (a_{i1}/a_{i1}) \cdot e_{1}$ $(x_{2}, \ldots, x_{n}) = \text{gauss}(E - \{e_{1}\}, X - \{x_{1}\})$ $x_{1} = (b_{1} - \sum_{j>1} a_{1j}x_{j})/a_{11}$ 
-return  $(x_{1}, \ldots, x_{n})$ 
+
+if all coefficients $a_{i1}$ are zero:
+    halt with message "either infeasible or not linearly independent"
+if n = 1: return $b_1/a_{11}$
+
+choose the coefficient $a_{p1}$ of largest magnitude, and swap equations $e_1, e_p$
+for i = 2 to n:
+    $e_i = e_i - (a_{i1}/a_{11}) \cdot e_1$
+$(x_2, \ldots, x_n) = \text{gauss}(E - \{e_1\}, X - \{x_1\})$
+$x_1 = (b_1 - \sum_{j>1} a_{1j}x_j) / a_{11}$
+return $(x_1, \ldots, x_n)$
+</Algorithm>
+
 (When choosing the equation to swap into first place, we pick the one with largest  $|a_{p1}|$  for reasons of numerical accuracy; after all, we will be dividing by  $a_{p1}$ .)
 Gaussian elimination uses  $O(n^{2})$  arithmetic operations to reduce the problem size from n to n - 1, and thus uses  $O(n^{3})$  operations overall. To show that this is also a good estimate of the total running time, we need to argue that the numbers involved remain polynomially bounded—for instance, that the solution  $(x_{1}, \ldots, x_{n})$  does not require too much more precision to write down than the original coefficients  $a_{ij}$  and  $b_{i}$ . Do you see why this is true?
-</div>
+
+</Knowledge>
 
 <Knowledge title="Box: Linear programming in polynomial time">
 
