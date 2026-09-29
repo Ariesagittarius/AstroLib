@@ -15,147 +15,134 @@ import Exercise from '@/components/Exercise.astro';
 
 ## 9.3 Local search heuristics
 
-• Finally, there is another class of problems, between the first two given here, for which the approximation ratio is about log n._&#123; &#125;SET COVER is an example.
+Our next strategy for coping with NP-completeness is inspired by evolution (which is, after all, the world's best-tested optimization procedure)—by its incremental process of introducing small mutations, trying them out, and keeping them if they work well. This paradigm is called local search and can be applied to any optimization task. Here's how it looks for a minimization problem.
 
-(A humbling reminder: All this is contingent upon the assumption P̸ = NP. Failing this, this hierarchy collapses down to P, and all NP-complete optimization problems can be solved exactly in polynomial time.)
-
-A final point on approximation algorithms: often these algorithms, or their variants, perform much better on typical instances than their worst-case approximation ratio would have you believe.
-
-Our next strategy for coping with NP-completeness is inspired by evolution (which is, after all, the world’s best-tested optimization procedure)—by its incremental process of introducing small mutations, trying them out, and keeping them if they work well. This paradigm is called local search and can be applied to any optimization task. Here’s how it looks for a minimization problem.
-
-let s be any initial solution while there is some solution s^&#123;′&#125; in the neighborhood of s
-
-for which cost(s^&#123;′&#125;) &lt; cost(s): replace s by s^&#123;′&#125;
-
+<div class="mineru-algorithm">
+let s be any initial solution
+while there is some solution  $s'$  in the neighborhood of s
+    for which  $\text{cost}(s') < \text{cost}(s)$ : replace s by  $s'$ 
 return s
+</div>
 
-On each iteration, the current solution is replaced by a better one close to it, in its neighborhood. This neighborhood structure is something we impose upon the problem and is the central design decision in local search. As an illustration, let’s revisit the traveling salesman problem.
+On each iteration, the current solution is replaced by a better one close to it, in its neighborhood. This neighborhood structure is something we impose upon the problem and is the central design decision in local search. As an illustration, let's revisit the traveling salesman problem.
 
-### 9.3.1 Traveling salesman, once more
+## 9.3.1 Traveling salesman, once more
 
-Assume we have all interpoint distances between n cities, giving a search space of (n −1)! different tours. What is a good notion of neighborhood?
+Assume we have all interpoint distances between n cities, giving a search space of (n 1)! different tours. What is a good notion of neighborhood?
 
-The most obvious notion is to consider two tours as being close if they differ in just a few edges. They can’t differ in just one edge (do you see why?), so we will consider differences of two edges. We define the 2-change neighborhood of tour s as being the set of tours that can be obtained by removing two edges of s and then putting in two other edges. Here’s an example of a local move:
+The most obvious notion is to consider two tours as being close if they differ in just a few edges. They can't differ in just one edge (do you see why?), so we will consider differences of two edges. We define the 2-change neighborhood of tour s as being the set of tours that can be obtained by removing two edges of s and then putting in two other edges. Here's an example of a local move:
+
+![](images/691329baa1b4da4e865d9017f4b0d6be39475f909deca2324d27016c60eff324.jpg)
 
 We now have a well-defined local search procedure. How does it measure up under our two standard criteria for algorithms—what is its overall running time, and does it always return the best solution?
 
-Embarrassingly, neither of these questions has a satisfactory answer. Each iteration is certainly fast, because a tour has only O(n^&#123;2&#125;) neighbors. However, it is not clear how many
+Embarrassingly, neither of these questions has a satisfactory answer. Each iteration is certainly fast, because a tour has only $O ( n ^ { 2 } )$ neighbors. However, it is not clear how many iterations will be needed: whether for instance, there might be an exponential number of them. Likewise, all we can easily say about the final tour is that it is locally optimal—that is, it is superior to the tours in its immediate neighborhood. There might be better solutions further away. For instance, the following picture shows a possible final answer that is clearly suboptimal; the range of local moves is simply too limited to improve upon it.
 
-iterations will be needed: whether for instance, there might be an exponential number of them. Likewise, all we can easily say about the final tour is that it is locally optimal—that is, it is superior to the tours in its immediate neighborhood. There might be better solutions further away. For instance, the following picture shows a possible final answer that is clearly suboptimal; the range of local moves is simply too limited to improve upon it.
+![](images/78e3e8c3cb8f8905b7cd59222f0d0a80d99a4f975a2af79b14ceef79ddcabc8b.jpg)
 
 To overcome this, we may try a more generous neighborhood, for instance 3-change, consisting of tours that differ on up to three edges. And indeed, the preceding bad case gets fixed:
 
-But there is a downside, in that the size of a neighborhood becomes O(n^&#123;3&#125;), making each iteration more expensive. Moreover, there may still be suboptimal local minima, although fewer than before. To avoid these, we would have to go up to 4-change, or higher. In this manner, efficiency and quality often turn out to be competing considerations in a local search. Efficiency demands neighborhoods that can be searched quickly, but smaller neighborhoods can increase the abundance of low-quality local optima. The appropriate compromise is typically determined by experimentation.
+![](images/d86d32717cb4f76c73c54f4156efc078117c7689ef8c8d734cd7f8d7d1f0eb2b.jpg)
 
-![Figure 9.7 (a) Nine American cities. (b) Local search, starting at a random tour, and using](images/fig_9_7.png)
+But there is a downside, in that the size of a neighborhood becomes $O ( n ^ { 3 } )$ , making each iteration more expensive. Moreover, there may still be suboptimal local minima, although fewer than before. To avoid these, we would have to go up to 4-change, or higher. In this manner, efficiency and quality often turn out to be competing considerations in a local search. Efficiency demands neighborhoods that can be searched quickly, but smaller neighborhoods can increase the abundance of low-quality local optima. The appropriate compromise is typically determined by experimentation.
+
+Figure 9.7 (a) Nine American cities. (b) Local search, starting at a random tour, and using 3-change. The traveling salesman tour is found after three moves.
 
 (a)
 
-Tulsa Albuquerque Amarillo
-
 Wichita
 
+Tulsa
+
 Little Rock
+
+El Paso
 
 Dallas
 
 Houston
 
-San Antonio
+San Antonio  
+(b)  
+![](images/b45a740f7220198d7ac4bd09150833e2cb767dfeaba6cd4aaae7f53dc8597cfb.jpg)
 
-El Paso
+(ii)  
+![](images/efbf742f5f154314836d331f674fff90d1cb9d5814a6e64a4c3fa71e43b827ac.jpg)
 
-(b)
+(iii)  
+![](images/c176867badc7a7eac3371a1d0186896aa8e49b48f4608c39901d5a2ff232e66f.jpg)
 
-(i) (ii)
+(iv)  
+![](images/29e9a2c2f67309a26325c65785456612c0f64ba5cee89f1564ffb7b3902e253f.jpg)
 
-(iii) (iv)
-
-![Figure 9.8 Local search.](images/fig_9_8.png)
+![](images/d960f8937eb0588ac8215d3bd1fb4d6f4d0827d801de9987e8b3872935263e17.jpg)
 
 Figure 9.7 shows a specific example of local search at work. Figure 9.8 is a more abstract, stylized depiction of local search. The solutions crowd the unshaded area, and cost decreases when we move downward. Starting from an initial solution, the algorithm moves downhill until a local optimum is reached.
 
-In general, the search space might be riddled with local optima, and some of them may be of very poor quality. The hope is that with a judicious choice of neighborhood structure, most local optima will be reasonable. Whether this is the reality or merely misplaced faith, it is an empirical fact that local search algorithms are the top performers on a broad range of optimization problems. Let’s look at another such example.
+In general, the search space might be riddled with local optima, and some of them may be of very poor quality. The hope is that with a judicious choice of neighborhood structure, most local optima will be reasonable. Whether this is the reality or merely misplaced faith, it is an empirical fact that local search algorithms are the top performers on a broad range of optimization problems. Let's look at another such example.
 
-### 9.3.2 Graph partitioning
+## 9.3.2 Graph partitioning
 
-The problem of graph partitioning arises in a diversity of applications, from circuit layout to program analysis to image segmentation. We saw a special case of it,_&#123; &#125;BALANCED CUT, in Chapter 8.
+The problem of graph partitioning arises in a diversity of applications, from circuit layout to program analysis to image segmentation. We saw a special case of it, BALANCED CUT, in Chapter 8.
 
-G_&#123;RAPH&#125; PARTITIONING
+GRAPH PARTITIONING
 
-Input: An undirected graph G = (V, E) with nonnegative edge weights; a real number α ∈(0, 1/2].
+Input: An undirected graph $G \ : = \ : ( V , E )$ with nonnegative edge weights; a real number $\alpha \in ( 0 , 1 / 2 ]$
 
-Output: A partition of the vertices into two groups A and B, each of size at least α|V |.
+Output: A partition of the vertices into two groups A and B, each of size at least $\alpha | V |$
 
 Goal: Minimize the capacity of the cut (A, B).
 
 Figure 9.9 shows an example in which the graph has 16 nodes, all edge weights are 0 or 1, and the optimal solution has cost 0. Removing the restriction on the sizes of A and B
 
-![Figure 9.9 An instance of GRAPH PARTITIONING, with the optimal partition for α = 1/2.](images/fig_9_9.png)
+Figure 9.9 An instance of GRAPH PARTITIONING, with the optimal partition for $\alpha = 1 / 2$ Vertices on one side of the cut are shaded.
 
-would give the_&#123; &#125;MINIMUM CUT problem, which we know to be efficiently solvable using flow techniques. The present variant, however, is NP-hard. In designing a local search algorithm, it will be a big convenience to focus on the special case α = 1/2, in which A and B are forced to contain exactly half the vertices. The apparent loss of generality is purely cosmetic, as_&#123; &#125;GRAPH
+![](images/ef315000253c4122348952b0c9878151d7c180b901a5d07f2474cd82dfbcc69d.jpg)
 
-PARTITIONING reduces to this particular case.
+would give the MINIMUM CUT problem, which we know to be efficiently solvable using flow techniques. The present variant, however, is NP-hard. In designing a local search algorithm, it will be a big convenience to focus on the special case $\alpha = 1 / 2$ , in which A and B are forced to contain exactly half the vertices. The apparent loss of generality is purely cosmetic, as GRAPH PARTITIONING reduces to this particular case.
 
-We need to decide upon a neighborhood structure for our problem, and there is one obvious way to do this. Let (A, B), with |A| = |B|, be a candidate solution; we will define its neighbors to be all solutions obtainable by swapping one pair of vertices across the cut, that is, all solutions of the form (A −&#123;a&#125; + &#123;b&#125;, B −&#123;b&#125; + &#123;a&#125;) where a ∈A and b ∈B. Here’s an example of a local move:
+We need to decide upon a neighborhood structure for our problem, and there is one obvious way to do this. Let $( A , B )$ , with $| A | = | B |$ , be a candidate solution; we will define its neighbors to be all solutions obtainable by swapping one pair of vertices across the cut, that is, all solutions of the form $( A - \{ a \} + \{ b \} , B - \{ b \} + \{ a \} )$ where $a \in A$ and $b \in B$ . Here's an example of a local move:
 
-We now have a reasonable local search procedure, and we could just stop here. But there is still a lot of room for improvement in terms of the quality of the solutions produced. The search space includes some local optima that are quite far from the global solution. Here’s one which has cost 2.
+![](images/8f5a8d77f4518421d84048416c4e639dd98a74a2b8be9052b235ca85aab20532.jpg)
 
-What can be done about such suboptimal solutions? We could expand the neighborhood size to allow two swaps at a time, but this particular bad instance would still stubbornly resist. Instead, let’s look at some other generic schemes for improving local search procedures.
+We now have a reasonable local search procedure, and we could just stop here. But there is still a lot of room for improvement in terms of the quality of the solutions produced. The search space includes some local optima that are quite far from the global solution. Here's one which has cost 2.
 
-### 9.3.3 Dealing with local optima
+![](images/b555c12f88971e4eb16c59d9495b3ef1f95883fec6c4616a0f90d0c758abd8a3.jpg)  
+What can be done about such suboptimal solutions? We could expand the neighborhood size to allow two swaps at a time, but this particular bad instance would still stubbornly resist. Instead, let's look at some other generic schemes for improving local search procedures.
 
-Randomization and restarts
+## 9.3.3 Dealing with local optima
+
+## Randomization and restarts
 
 Randomization can be an invaluable ally in local search. It is typically used in two ways: to pick a random initial solution, for instance a random graph partition; and to choose a local move when several are available.
 
-When there are many local optima, randomization is a way of making sure that there is at least some probability of getting to the right one. The local search can then be repeated several times, with a different random seed on each invocation, and the best solution returned. If the probability of reaching a good local optimum on any given run is p, then within O(1/p) runs such a solution is likely to be found (recall Exercise 1.34).
+When there are many local optima, randomization is a way of making sure that there is at least some probability of getting to the right one. The local search can then be repeated several times, with a different random seed on each invocation, and the best solution returned. If the probability of reaching a good local optimum on any given run is $p ,$ then within $O ( 1 / p )$ runs such a solution is likely to be found (recall Exercise 1.34).
 
-Figure 9.10 shows a small instance of graph partitioning, along with the search space of solutions. There are a total of
+Figure 9.10 shows a small instance of graph partitioning, along with the search space of solutions. There are a total of $\binom { 8 } { 4 } = 7 0$ possible states, but since each of them has an identical twin in which the left and right sides of the cut are flipped, in effect there are just 35 solutions. In the figure, these are organized into seven groups for readability. There are five local optima, of which four are bad, with cost 2, and one is good, with cost 0. If local search is started at a random solution, and at each step a random neighbor of lower cost is selected, then the search is at most four times as likely to wind up in a bad solution than a good one. Thus only a small handful of repetitions is needed.
 
- 8
+## Simulated annealing
 
-4 
+In the example of Figure 9.10, each run of local search has a reasonable chance of finding the global optimum. This isn't always true. As the problem size grows, the ratio of bad to good local optima often increases, sometimes to the point of being exponentially large. In such cases, simply repeating the local search a few times is ineffective.
 
-= 70 possible states, but since each of them has an identical twin in which the left and right sides of the cut are flipped, in effect there are just 35 solutions. In the figure, these are organized into seven groups for readability. There are five local optima, of which four are bad, with cost 2, and one is good, with cost 0. If local search is started at a random solution, and at each step a random neighbor of lower cost is selected, then the search is at most four times as likely to wind up in a bad solution than a good one. Thus only a small handful of repetitions is needed.
+A different avenue of attack is to occasionally allow moves that actually increase the cost, in the hope that they will pull the search out of dead ends. This would be very useful at the bad local optima of Figure 9.10, for instance. The method of simulated annealing redefines the local search by introducing the notion of a temperature $T .$
 
-Simulated annealing
-
-In the example of Figure 9.10, each run of local search has a reasonable chance of finding the global optimum. This isn’t always true. As the problem size grows, the ratio of bad to good local optima often increases, sometimes to the point of being exponentially large. In such cases, simply repeating the local search a few times is ineffective.
-
-A different avenue of attack is to occasionally allow moves that actually increase the cost, in the hope that they will pull the search out of dead ends. This would be very useful at the bad local optima of Figure 9.10, for instance. The method of simulated annealing redefines the local search by introducing the notion of a temperature T.
-
-let s be any starting solution
-
+<div class="mineru-algorithm">
 repeat
-
-randomly choose a solution s^&#123;′&#125; in the neighborhood of s if ∆= cost(s^&#123;′&#125;) −cost(s) is negative:
-
-replace s by s^&#123;′&#125;
-
-else:
-
-replace s by s^&#123;′&#125; with probability e^&#123;−&#125;∆/T .
+    randomly choose a solution  $s'$  in the neighborhood of s
+    if  $\Delta = \text{cost}(s') - \text{cost}(s)$  is negative:
+    replace s by  $s'$ 
+    else:
+    replace s by  $s'$  with probability  $e^{-\Delta/T}$ .
+</div>
 
 If T is zero, this is identical to our previous local search. But if T is large, then moves that increase the cost are occasionally accepted. What value of T should be used?
 
-![Figure 9.10 The search space for a graph with eight nodes. The space contains 35 solutions,](images/fig_9_10.png)
+Figure 9.10 The search space for a graph with eight nodes. The space contains 35 solutions, which have been partitioned into seven groups for clarity. An example of each is shown. There are five local optima.
 
-4 states, cost 2
+![](images/66838de3fa83b4b953d3c5ee8a23355286c9266b1517b64f1cd9501a5d70997e.jpg)
 
-1 state, cost 0
-
-8 states, cost 3
-
-8 states, cost 4
-
-4 states, cost 6
-
-2 states, cost 4
-
-8 states, cost 3
-
-![Figure 9.11 Simulated annealing.](images/fig_9_11.png)
+Figure 9.11 Simulated annealing.  
+![](images/9aa935edc9f5ebee073406ed08fb16663dfa37a37a2f63f15d7fa9af38a371ef.jpg)
 
 The trick is to start with T large and then gradually reduce it to zero. Thus initially, the local search can wander around quite freely, with only a mild preference for low-cost solutions. As time goes on, this preference becomes stronger, and the system mostly sticks to the lower-cost region of the search space, with occasional excursions out of it to escape local optima. Eventually, when the temperature drops further, the system converges on a solution. Figure 9.11 shows this process schematically.
 

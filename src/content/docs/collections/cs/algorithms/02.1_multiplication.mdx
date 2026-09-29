@@ -13,9 +13,7 @@ import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 import Exercise from '@/components/Exercise.astro';
 
-## 2.1 Multiplication
-
-### Divide-and-conquer algorithms
+## Chapter 2: Divide-and-conquer algorithms
 
 The divide-and-conquer strategy solves a problem by:
 
@@ -25,76 +23,100 @@ The divide-and-conquer strategy solves a problem by:
 
 3. Appropriately combining their answers
 
-The real work is done piecemeal, in three different places: in the partitioning of problems into subproblems; at the very tail end of the recursion, when the subproblems are so small that they are solved outright; and in the gluing together of partial answers. These are held together and coordinated by the algorithm’s core recursive structure.
+The real work is done piecemeal, in three different places: in the partitioning of problems into subproblems; at the very tail end of the recursion, when the subproblems are so small that they are solved outright; and in the gluing together of partial answers. These are held together and coordinated by the algorithm's core recursive structure.
 
-As an introductory example, we’ll see how this technique yields a new algorithm for multiplying numbers, one that is much more efficient than the method we all learned in elementary school!
+As an introductory example, we'll see how this technique yields a new algorithm for multiplying numbers, one that is much more efficient than the method we all learned in elementary school!
+
+## 2.1 Multiplication
 
 The mathematician Carl Friedrich Gauss (1777–1855) once noticed that although the product of two complex numbers
 
-(a + bi)(c + di) = ac −bd + (bc + ad)i
+$$
+(a + b i) (c + d i) = a c - b d + (b c + a d) i
+$$
 
-seems to involve four real-number multiplications, it can in fact be done with just three: ac, bd, and (a + b)(c + d), since
+seems to involve four real-number multiplications, it can in fact be done with just three: $^ { a c , }$ bd, and $( a + b ) ( c + d )$ , since
 
-bc + ad = (a + b)(c + d) −ac −bd.
+$$
+b c + a d = (a + b) (c + d) - a c - b d.
+$$
 
-In our big-O way of thinking, reducing the number of multiplications from four to three seems wasted ingenuity. But this modest improvement becomes very significant when applied recursively.
+In our big-O way of thinking, reducing the number of multiplications from four to three seems wasted ingenuity. But this modest improvement becomes very significant when applied recur sively.
 
-Let’s move away from complex numbers and see how this helps with regular multiplication. Suppose x and y are two n-bit integers, and assume for convenience that n is a power of 2 (the more general case is hardly any different). As a first step toward multiplying x and y, split each of them into their left and right halves, which are n/2 bits long:
+Let's move away from complex numbers and see how this helps with regular multiplication. Suppose x and y are two n-bit integers, and assume for convenience that n is a power of 2 (the more general case is hardly any different). As a first step toward multiplying x and y, split each of them into their left and right halves, which are $n / 2$ bits long:
 
-x =
+$$
+x = \boxed {x _ {L}} \boxed {x _ {R}} = 2 ^ {n / 2} x _ {L} + x _ {R}
+$$
 
-x_&#123;L&#125;
+$$
+y = \boxed {y _ {L}} \boxed {y _ {R}} = 2 ^ {n / 2} y _ {L} + y _ {R}.
+$$
 
-x_&#123;R&#125;
+For instance, if $x = 1 0 1 1 0 1 1 0 _ { 2 }$ (the subscript 2 means “binary”) then $x _ { L } = 1 0 1 1 _ { 2 } , x _ { R } = 0 1 1 0 _ { 2 }$ and $x = 1 0 1 1 _ { 2 } \times 2 ^ { 4 } + 0 1 1 0 _ { 2 }$ . The product of $\cdot _ { x }$ and $y$ can then be rewritten as
 
-= 2^&#123;n/&#125;2x_&#123;L&#125; + x_&#123;R&#125;
+$$
+x y = (2 ^ {n / 2} x _ {L} + x _ {R}) (2 ^ {n / 2} y _ {L} + y _ {R}) = 2 ^ {n} x _ {L} y _ {L} + 2 ^ {n / 2} (x _ {L} y _ {R} + x _ {R} y _ {L}) + x _ {R} y _ {R}.
+$$
 
-y =
+We will compute $x y$ via the expression on the right. The additions take linear time, as do the multiplications by powers of 2 (which are merely left-shifts). The significant operations are the four $n / 2 – \mathrm { b i t }$ multiplications, $x _ { L } y _ { L } , \ x _ { L } y _ { R } , \ x _ { R } y _ { L } , \ x _ { R } y _ { R } ;$ these we can handle by four recursive calls. Thus our method for multiplying n-bit numbers starts by making recursive calls to multiply these four pairs of $n / 2$ -bit numbers (four subproblems of half the size), and then evaluates the preceding expression in $O ( n )$ time. Writing $T ( n )$ for the overall running time on n-bit inputs, we get the recurrence relation
 
-y_&#123;L&#125;
+$$
+T (n) = 4 T (n / 2) + O (n).
+$$
 
-y_&#123;R&#125;
+We will soon see general strategies for solving such equations. In the meantime, this particular one works out to $O ( n ^ { 2 } )$ , the same running time as the traditional grade-school multiplication technique. So we have a radically new algorithm, but we haven't yet made any progress in efficiency. How can our method be sped up?
 
-= 2^&#123;n/&#125;2y_&#123;L&#125; + y_&#123;R&#125;.
+This is where Gauss's trick comes to mind. Although the expression for xy seems to demand four $n / 2 { \cdot } \mathrm { b i t }$ multiplications, as before just three will do: $x _ { L } y _ { L } , x _ { R } y _ { R } $ , and $( x _ { L } + x _ { R } ) ( y _ { L } + y _ { R } )$ since $x _ { L } y _ { R } + x _ { R } y _ { L } = ( x _ { L } + x _ { R } ) ( y _ { L } + y _ { R } ) - x _ { L } y _ { L } - x _ { R } y _ { R }$ . The resulting algorithm, shown in Figure 2.1, has an improved running time $\mathbf { o f } ^ { 1 }$
 
-For instance, if x = 10110110_&#123;2&#125; (the subscript 2 means “binary”) then x_&#123;L&#125; = 1011_&#123;2&#125;, x_&#123;R&#125; = 0110_&#123;2&#125;, and x = 1011_&#123;2&#125; × 2^&#123;4&#125; + 0110_&#123;2&#125;. The product of x and y can then be rewritten as
+$$
+T (n) = 3 T (n / 2) + O (n).
+$$
 
-xy = (2^&#123;n/&#125;2x_&#123;L&#125; + x_&#123;R&#125;)(2^&#123;n/&#125;2y_&#123;L&#125; + y_&#123;R&#125;) = 2^&#123;n&#125; x_&#123;L&#125;y_&#123;L&#125; + 2^&#123;n/&#125;2 (x_&#123;L&#125;y_&#123;R&#125; + x_&#123;R&#125;y_&#123;L&#125;) + x_&#123;R&#125;y_&#123;R&#125;.
+The point is that now the constant factor improvement, from 4 to 3, occurs at every level of the recursion, and this compounding effect leads to a dramatically lower time bound of $O ( n ^ { 1 . 5 9 } )$
 
-We will compute xy via the expression on the right. The additions take linear time, as do the multiplications by powers of 2 (which are merely left-shifts). The significant operations are the four n/2-bit multiplications, x_&#123;L&#125;y_&#123;L&#125;, x_&#123;L&#125;y_&#123;R&#125;, x_&#123;R&#125;y_&#123;L&#125;, x_&#123;R&#125;y_&#123;R&#125;; these we can handle by four recursive calls. Thus our method for multiplying n-bit numbers starts by making recursive calls to multiply these four pairs of n/2-bit numbers (four subproblems of half the size), and then evaluates the preceding expression in O(n) time. Writing T(n) for the overall running time on n-bit inputs, we get the recurrence relation
-
-T(n) = 4T(n/2) + O(n).
-
-We will soon see general strategies for solving such equations. In the meantime, this particular one works out to O(n^&#123;2&#125;), the same running time as the traditional grade-school multiplication technique. So we have a radically new algorithm, but we haven’t yet made any progress in efficiency. How can our method be sped up?
-
-This is where Gauss’s trick comes to mind. Although the expression for xy seems to demand four n/2-bit multiplications, as before just three will do: x_&#123;L&#125;y_&#123;L&#125;, x_&#123;R&#125;y_&#123;R&#125;, and (x_&#123;L&#125;+x_&#123;R&#125;)(y_&#123;L&#125;+y_&#123;R&#125;), since x_&#123;L&#125;y_&#123;R&#125;+x_&#123;R&#125;y_&#123;L&#125; = (x_&#123;L&#125;+x_&#123;R&#125;)(y_&#123;L&#125;+y_&#123;R&#125;)−x_&#123;L&#125;y_&#123;L&#125;−x_&#123;R&#125;y_&#123;R&#125;. The resulting algorithm, shown in Figure 2.1, has an improved running time of^&#123;1&#125;
-
-T(n) = 3T(n/2) + O(n).
-
-The point is that now the constant factor improvement, from 4 to 3, occurs at every level of the recursion, and this compounding effect leads to a dramatically lower time bound of O(n^&#123;1&#125;.59).
-
-This running time can be derived by looking at the algorithm’s pattern of recursive calls, which form a tree structure, as in Figure 2.2. Let’s try to understand the shape of this tree. At each successive level of recursion the subproblems get halved in size. At the (log_&#123;2&#125; n)^&#123;th&#125; level, the subproblems get down to size 1, and so the recursion ends. Therefore, the height of the tree is log_&#123;2&#125; n. The branching factor is 3—each problem recursively produces three smaller ones—with the result that at depth k in the tree there are 3^&#123;k&#125; subproblems, each of size n/2^&#123;k&#125;.
+This running time can be derived by looking at the algorithm's pattern of recursive calls, which form a tree structure, as in Figure 2.2. Let's try to understand the shape of this tree. $\mathbf { A t }$ each successive level of recursion the subproblems get halved in size. At the $( \log _ { 2 } n ) ^ { \mathrm { t h } }$ level, the subproblems get down to size 1, and so the recursion ends. Therefore, the height of the tree is $\log _ { 2 } n$ The branching factor is 3—each problem recursively produces three smaller ones—with the result that at depth k in the tree there are $3 ^ { k }$ subproblems, each of size $n / 2 ^ { k }$
 
 For each subproblem, a linear amount of work is done in identifying further subproblems and combining their answers. Therefore the total time spent at depth k in the tree is
 
-3^&#123;k&#125; × O  n
+$$
+3 ^ {k} \times O \left(\frac {n}{2 ^ {k}}\right) = \left(\frac {3}{2}\right) ^ {k} \times O (n).
+$$
 
-2^&#123;k&#125;
+$$
+T (n) \leq 3 T (n / 2 + 1) + O (n)
+$$
 
-
+<div class="mineru-algorithm">
+Figure 2.1 A divide-and-conquer algorithm for integer multiplication.
 
-=
+function multiply(x,y)
 
-3
+Input: Positive integers x and y, in binary
 
-2
+Output: Their product
 
-k
+n = max(size of x, size of y)
 
-× O(n).
+if n = 1: return xy
 
-1Actually, the recurrence should read
+ $x_{L}$ ,  $x_{R}$  = leftmost  $\lceil n/2 \rceil$ , rightmost  $\lfloor n/2 \rfloor$  bits of x
 
-T(n) ≤3T(n/2 + 1) + O(n)
+ $y_{L}$ ,  $y_{R}$  = leftmost  $\lceil n/2 \rceil$ , rightmost  $\lfloor n/2 \rfloor$  bits of y
 
-since the numbers (x^&#123;L&#125; + x^&#123;R&#125;) and (y^&#123;L&#125; + y^&#123;R&#125;) could be n/2 + 1 bits long. The one we’re using is simpler to deal with and can be seen to imply exactly the same big-O running time.
+ $P_{1}$  = multiply( $x_{L},y_{L}$ )
+
+ $P_{2}$  = multiply( $x_{R},y_{R}$ )
+
+ $P_{3}$  = multiply( $x_{L} + x_{R},y_{L} + y_{R}$ )
+
+return  $P_{1} \times 2^{n} + (P_{3} - P_{1} - P_{2}) \times 2^{n/2} + P_{2}$
+</div>
+
+At the very top level, when $k = 0$ , this works out to $O ( n )$ . At the bottom, when $k = \log _ { 2 } n _ { \mathrm { : } }$ it is $O ( 3 ^ { \log _ { 2 } n } )$ , which can be rewritten as $O ( n ^ { \log _ { 2 } 3 } )$ (do you see why?). Between these two endpoints, the work done increases geometrically from $O ( n )$ to $O ( n ^ { \log _ { 2 } 3 } )$ , by a factor of $3 / 2$ per level. The sum of any increasing geometric series is, within a constant factor, simply the last term of the series: such is the rapidity of the increase (Exercise 0.2). Therefore the overall running time is $O ( n ^ { \log _ { 2 } 3 } )$ , which is about $O ( n ^ { 1 . 5 9 } )$ .
+
+In the absence of Gauss's trick, the recursion tree would have the same height, but the branching factor would be 4. There would be $4 ^ { \log _ { 2 } n } = n ^ { 2 }$ leaves, and therefore the running time would be at least this much. In divide-and-conquer algorithms, the number of subproblems translates into the branching factor ofthe recursion tree; small changes in this coefficient can have a big impact on running time.
+
+A practical note: it generally does not make sense to recurse all the way down to 1 bit. For most processors, 16- or 32-bit multiplication is a single operation, so by the time the numbers get into this range they should be handed over to the built-in procedure.
+
+Finally, the eternal question: Can we do better? It turns out that even faster algorithms for multiplying numbers exist, based on another important divide-and-conquer algorithm: the fast Fourier transform, to be explained in Section 2.6.

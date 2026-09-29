@@ -15,194 +15,78 @@ import Exercise from '@/components/Exercise.astro';
 
 ## 10.4 Periodicity
 
-![Figure 10.5 Examples of periodic superpositions.](images/fig_10_5.png)
+Suppose that the input to the $\operatorname { Q F T } , \left| \alpha \right. = \left( \alpha _ { 0 } , \alpha _ { 1 } , \dots , \alpha _ { M - 1 } \right)$ , is such that $\alpha _ { i } = \alpha _ { j }$ whenever $i \equiv j$ mod k, where k is a particular integer that divides M. That is, the array α consists of $M / k$ repetitions of some sequence $( \alpha _ { 0 } , \alpha _ { 1 } , \ldots , \alpha _ { k - 1 } )$ of length k. Moreover, suppose that exactly one of the k numbers $\alpha _ { 0 } , \ldots , \alpha _ { k - 1 }$ is nonzero, say $\alpha _ { j }$ . Then we say that $\left| \alpha \right.$ is periodic with period k and offset $j .$
 
-Input: A superposition of m = log M qubits,
-
-α
-
-= PM−1
-
-j=0 α_&#123;j&#125;
-
-j
-
-.
-
-Method: Using O(m^&#123;2&#125;) = O(log^&#123;2&#125; M) quantum operations perform the quantum FFT to obtain the superposition
-
-β
-
-= PM−1
-
-j=0 β_&#123;j&#125;
-
-j
-
-.
-
-Output: A random m-bit number j (that is, 0 ≤j ≤M −1), from the probability distribution Pr[j] = |β_&#123;j&#125;|^&#123;2&#125;.
-
-Quantum Fourier sampling is basically a quick way of getting a very rough idea about the output of the classical FFT, just detecting one of the larger components of the answer vector. In fact, we don’t even see the value of that component—we only see its index. How can we use such meager information? In which applications of the FFT is just the index of the large components enough? This is what we explore next.
-
-Suppose that the input to the QFT,
-
-α
-
-= (α_&#123;0&#125;, α_&#123;1&#125;, . . . , α_&#123;M&#125;−1), is such that α_&#123;i&#125; = α_&#123;j&#125; whenever i ≡j mod k, where k is a particular integer that divides M. That is, the array α consists of M/k repetitions of some sequence (α_&#123;0&#125;, α_&#123;1&#125;, . . . , α_&#123;k&#125;−1) of length k. Moreover, suppose that exactly one of the k numbers α_&#123;0&#125;, . . . , α_&#123;k&#125;−1 is nonzero, say α_&#123;j&#125;. Then we say that
-
-α
-
-is periodic with period k and offset j.
+<table><tr><td colspan="8">Figure 10.5 Examples of periodic superpositions.</td></tr><tr><td rowspan="2">period 3</td><td></td><td></td><td></td><td></td><td>···</td><td></td><td></td></tr><tr><td>0</td><td>3</td><td>6</td><td>9</td><td></td><td>M-6</td><td>M-3</td></tr><tr><td rowspan="2">period 4</td><td></td><td></td><td></td><td></td><td>···</td><td></td><td></td></tr><tr><td>1</td><td></td><td>5</td><td>9</td><td></td><td>M-7</td><td>M-3</td></tr></table>
 
 It turns out that if the input vector is periodic, we can use quantum Fourier sampling to compute its period! This is based on the following fact, proved in the next box:
 
-Suppose the input to quantum Fourier sampling is periodic with period k, for some k that divides M. Then the output will be a multiple of M/k, and it is equally likely to be any of the k multiples of M/k.
+Suppose the input to quantum Fourier sampling is periodic with period $k ,$ for some k that divides M. Then the output will be a multiple of $M / k$ , and it is equally likely to be any of the k multiples of $M / k$
 
-Now a little thought tells us that by repeating the sampling a few times (repeatedly preparing the periodic superposition and doing Fourier sampling), and then taking the greatest common divisor of all the indices returned, we will with very high probability get the number M/k— and from it the period k of the input!
+Now a little thought tells us that by repeating the sampling a few times (repeatedly preparing the periodic superposition and doing Fourier sampling), and then taking the greatest common divisor of all the indices returned, we will with very high probability get the number $M / k -$ and from it the period k of the input!
 
-### The Fourier transform of a periodic vector
+<Knowledge title="Box: The Fourier transform of a periodic vector">
 
-Suppose the vector
+Suppose the vector $| \pmb { \alpha } \rangle = ( \alpha _ { 0 } , \alpha _ { 1 } , \dots , \alpha _ { M - 1 } )$ is periodic with period k and with no offset (that is, the nonzero terms are $\alpha _ { 0 } , \alpha _ { k } , \alpha _ { 2 k } , . . . )$ . Thus,
 
-α
+$$
+\left| \boldsymbol {\alpha} \right\rangle = \sum_ {j = 0} ^ {M / k - 1} \sqrt {\frac {k}{M}} \left| j k \right\rangle .
+$$
 
-= (α_&#123;0&#125;, α_&#123;1&#125;, . . . , α_&#123;M&#125;−1) is periodic with period k and with no offset (that is, the nonzero terms are α_&#123;0&#125;, α_&#123;k&#125;, α_&#123;2&#125;k, . . .). Thus,
+We will show that its Fourier transform $\vert \beta \rangle = ( \beta _ { 0 } , \beta _ { 1 } , \dots , \beta _ { M - 1 } )$ is also periodic, with period $M / k$ and no offset.
 
-α
+Claim $\begin{array} { r } { | \beta \rangle = \frac { 1 } { \sqrt { k } } \sum _ { j = 0 } ^ { k - 1 } \left| \frac { j M } { k } \right. } \end{array}$
 
-=
+<Solution title="Proof">
 
-M/k−1 X
+In the input vector, the coefficient $\alpha _ { \ell }$ is $\sqrt { k / M }$ if k divides $\ell ,$ and is zero otherwise. We can plug this into the formula for the jth coefficient of $| \beta \rangle$
 
-j=0
+</Solution>
 
-q
+$$
+\beta_ {j} = \frac {1}{\sqrt {M}} \sum_ {\ell = 0} ^ {M - 1} \omega^ {j \ell} \alpha_ {\ell} = \frac {\sqrt {k}}{M} \sum_ {i = 0} ^ {M / k - 1} \omega^ {j i k}.
+$$
 
-k
+The summation is a geometric series, $1 + \omega ^ { j k } + \omega ^ { 2 j k } + \omega ^ { 3 j k } + \cdot \cdot \cdot$ , containing $M / k$ terms and with ratio $\omega ^ { j k }$ (recall that $\omega$ is a complex Mth root of unity). There are two cases. If the ratio is exactly 1, which happens if $j k \equiv 0$ mod $M$ , then the sum of the series is simply the number of terms. If the ratio isn't 1, we can apply the usual formula for geometric series to find that the sum is $\begin{array} { r } { \frac { 1 - \omega ^ { j k ( M / k ) } } { 1 - \omega ^ { j k } } = \frac { 1 - \omega ^ { M j } } { 1 - \omega ^ { j k } } = 0 } \end{array}$
 
-M
+Therefore $\beta _ { j }$ is $1 / \sqrt { k }$ if M divides $j k _ { ; }$ , and is zero otherwise.
 
-jk
+More generally, we can consider the original superposition to be periodic with period $k ,$ but with some offset $l < k :$
 
-.
+$$
+\left| \boldsymbol {\alpha} \right\rangle = \sum_ {j = 0} ^ {M / k - 1} \sqrt {\frac {k}{M}} \left| j k + l \right\rangle .
+$$
 
-We will show that its Fourier transform
+Then, as before, the Fourier transform $| \beta \rangle$ will have nonzero amplitudes precisely at multiples of $M / k$
 
-β
-
-= (β_&#123;0&#125;, β_&#123;1&#125;, . . . , β_&#123;M&#125;−1) is also periodic, with period M/k and no offset.
-
-Claim
-
-β
-
-= 1
-
-√
-
-k
-
-Pk−1
-
-j=0
-
-jM
-
-k
-
-.
-
-Proof. In the input vector, the coefficient α_&#123;ℓ&#125;is
-
-p
-
-k/M if k divides ℓ, and is zero otherwise. We can plug this into the formula for the jth coefficient of
-
-β
-
-:
-
-β_&#123;j&#125; = 1
-
-√
-
-M
-
-M−1 X
-
-ℓ=0
-
-ω^&#123;jℓ&#125;α_&#123;ℓ&#125;=
-
-√
-
-k
-
-M
-
-M/k−1 X
-
-i=0
-
-ω^&#123;jik&#125;.
-
-The summation is a geometric series, 1 + ω^&#123;jk&#125; + ω^&#123;2&#125;jk + ω^&#123;3&#125;jk + · · · , containing M/k terms and with ratio ω^&#123;jk&#125; (recall that ω is a complex Mth root of unity). There are two cases. If the ratio is exactly 1, which happens if jk ≡0 mod M, then the sum of the series is simply the number of terms. If the ratio isn’t 1, we can apply the usual formula for geometric series to find that the sum is_&#123; &#125;1−ω^&#123;jk&#125;(M/k)
-
-1−ω^&#123;jk&#125; =^&#123; &#125;1−ω^&#123;Mj&#125;
-
-1−ω^&#123;jk&#125; = 0.
-
-Therefore β_&#123;j&#125; is 1/
-
-√
-
-k if M divides jk, and is zero otherwise.
-
-More generally, we can consider the original superposition to be periodic with period k, but with some offset l &lt; k:
-
-α
-
-=
-
-M/k−1 X
-
-j=0
-
-q
-
-k
-
-M
-
-jk + l
-
-.
-
-Then, as before, the Fourier transform
-
-β
-
-will have nonzero amplitudes precisely at multiples of M/k:
-
-Claim
-
-β
-
-= 1
-
-√
-
-k
-
-Pk−1
-
-j=0 ω^&#123;ljM/k&#125; jM
-
-k
-
-.
+Claim $\begin{array} { r } { | \beta \rangle = \frac { 1 } { \sqrt { k } } \sum _ { j = 0 } ^ { k - 1 } \omega ^ { l j M / k } | \frac { j M } { k } \rangle } \end{array}$
 
 The proof of this claim is very similar to the preceding one (Exercise 10.5).
 
-We conclude that the QFT of any periodic superposition with period k is an array that is everywhere zero, except at indices that are multiples of M/k, and all these k nonzero coefficients have equal absolute values. So if we sample the output, we will get an index that is a multiple of M/k, and each of the k such indices will occur with probability 1/k.
+We conclude that the QFT of any periodic superposition with period k is an array that is everywhere zero, except at indices that are multiples of $M / k ,$ and all these k nonzero $c o e f f  \it$ cients have equal absolute values. So if we sample the output, we will get an index that is a multiple of $M / k _ { : }$ , and each of the k such indices will occur with probability $1 / k .$
+
+Let's make this more precise.
+
+<Knowledge title="Lemma">
+
+Suppose s independent samples are drawn uniformly from
+
+</Knowledge>
+
+$$
+0, \frac {M}{k}, \frac {2 M}{k}, \ldots , \frac {(k - 1) M}{k}.
+$$
+
+Then with probability at least $1 - k / 2 ^ { s }$ , the greatest common divisor of these samples is $M / k .$
+
+<Solution title="Proof">
+
+The only way this can fail is if all the samples are multiples of $j \cdot M / k$ , where $j$ is some integer greater than 1. So, fix any integer $j \geq 2$ . The chance that a particular sample is a multiple of $\dot { \mathrm { ~ \it ~ j M / k ~ } }$ is at most $1 / j \leq 1 / 2 ;$ and thus the chance that all the samples are multiples of $j M / k$ is at most $1 / 2 ^ { s }$
+
+</Solution>
+
+So far we have been thinking about a particular number $j ;$ the probability that this bad event will happen for some $j \leq k$ is at most equal to the sum of these probabilities over the different values of ${ \mathrm { ~ . ~ } } j .$ , which is no more than $k / 2 ^ { s }$ .
+
+We can make the failure probability as small as we like by taking s to be an appropriate multiple of log M.
+
+</Knowledge>

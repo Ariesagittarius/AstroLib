@@ -15,149 +15,48 @@ import Exercise from '@/components/Exercise.astro';
 
 ## 10.7 The quantum algorithm for factoring
 
-### Setting up a periodic superposition
-
-Let us now see how to use our periodic function f(a) = x^&#123;a&#125; mod N to set up a periodic superposition. Here is the procedure:
-
-• We start with two quantum registers, both initially 0.
-
-• Compute the quantum Fourier transform of the first register modulo M, to get a superposition over all numbers between 0 and M −1: 1
-
-√
-
-M
-
-PM−1
-
-a=0
-
-a, 0
-
-. This is because the initial superposition can be thought of as periodic with period M, so the transform is periodic with period 1.
-
-• We now compute the function f(a) = x^&#123;a&#125; mod N. The quantum circuit for doing this regards the contents of the first register a as the input to f, and the second register (which is initially 0) as the answer register. After applying this quantum circuit, the state of the two registers is: PM−1
-
-a=0
-
-1
-
-√
-
-M
-
-a, f(a)
-
-.
-
-• We now measure the second register. This gives a periodic superposition on the first register, with period r, the period of f. Here’s why:
-
-Since f is a periodic function with period r, for every rth value in the first register, the contents of the second register are the same. The measurement of the second register therefore yields f(k) for some random k between 0 and r −1. What is the state of the first register after this measurement? To answer this question, recall the rules of partial measurement outlined earlier in this chapter. The first register is now in a superposition of only those values a that are compatible with the outcome of the measurement on the second register. But these values of a are exactly k, k + r, k + 2r, . . . , k + M −r. So the resulting state of the first register is a periodic superposition α
-
-with period r, which is exactly the order of x that we wish to find!
-
-We can now put together all the pieces of the quantum algorithm for_&#123; &#125;FACTORING (see Figure 10.6). Since we can test in polynomial time whether the input is a prime or a prime power, we’ll assume that we have already done that and that the input is an odd composite number with at least two distinct prime factors.
+We can now put together all the pieces of the quantum algorithm for FACTORING (see Figure 10.6). Since we can test in polynomial time whether the input is a prime or a prime power, we'll assume that we have already done that and that the input is an odd composite number with at least two distinct prime factors.
 
 Input: an odd composite integer N.
 
 Output: a factor of N.
 
-1. Choose x uniformly at random in the range 1 ≤x ≤N −1.
+1. Choose x uniformly at random in the range $1 \leq x \leq N - 1$
 
-2. Let M be a power of 2 near N (for reasons we cannot get into here, it is best to choose M ≈N^&#123; &#125;2).
+2. Let M be a power of 2 near N (for reasons we cannot get into here, it is best to choose $M \approx N ^ { 2 } )$ .
 
 3. Repeat s = 2 log N times:
 
-(a) Start with two quantum registers, both initially 0, the first large enough to store a
+(a) Start with two quantum registers, both initially 0, the first large enough to store a number modulo M and the second modulo N.
 
-number modulo M and the second modulo N.
+Figure 10.6 Quantum factoring.  
+![](images/11a2b4b28aef7cda853135c6e43d37b0fd311b52fefcefa59851e5cc0d91ea75.jpg)
 
-![Figure 10.6 Quantum factoring.](images/fig_10_6.png)
+(b) Use the periodic function $f ( a ) \equiv x ^ { a }$ mod N to create a periodic superposition $\left| \alpha \right.$ of length M as follows (see box for details):
 
-PM−1
+i. Apply the $\mathbf { Q F T }$ to the first register to obtain the superposition $\textstyle \sum _ { a = 0 } ^ { M - 1 } { \frac { 1 } { \sqrt { M } } } { \big | } a , 0 \rangle$
 
-a, 0
+ii. Compute $f ( a ) \ : = \ : x ^ { a }$ mod N using a quantum circuit, to get the superposition $\textstyle \sum _ { a = 0 } ^ { M - 1 } { \frac { 1 } { \sqrt { M } } } { \dot { | a , x ^ { a } } }$ mod $N \rangle$
 
-1
+iii. Measure the second register. Now the first register contains the periodic superposition $\begin{array} { r } { \left| \alpha \right. = \sum _ { j = 0 } ^ { M / r - 1 } \sqrt { \frac { r } { M } } \big | j r + k \big \rangle } \end{array}$ where k is a random offset between 0 and $r - 1$ (recall that r is the order of x modulo N).
 
-PM−1
+(c) Fourier sample the superposition $\left| \alpha \right.$ to obtain an index between 0 and $M - 1$
 
-a, x^&#123;a&#125; mod N
+Let $g$ be the gcd of the resulting indices $j _ { 1 } , \dots , j _ { s }$
 
-(b) Use the periodic function f(a) ≡x^&#123;a&#125; mod N to create a periodic superposition
+4. If $M / g$ is even, then compute $\operatorname* { g c d } ( N , x ^ { M / 2 g } + 1 )$ and output it if it is a nontrivial factor of $N ;$ otherwise return to step 1.
 
-α
+From previous lemmas, we know that this method works for at least half the choices of $x ,$ and hence the entire procedure has to be repeated only a couple of times on average before a factor is found.
 
-of length M as follows (see box for details):
+But there is one aspect of this algorithm, having to do with the number M, that is still quite unclear: M, the size of our FFT, must be a power of 2. And for our period-detecting idea to work, the period must divide M—hence it should also be a power of 2. But the period in our case is the order of $x ,$ definitely not a power of 2!
 
-i. Apply the QFT to the first register to obtain the superposition PM−1
+The reason it all works anyway is the following: the quantum Fourier transform can detect the period of a periodic vector even $i f$ it does not divide M. But the derivation is not as clean as in the case when the period does divide $M ,$ so we shall not go any further into this.
 
-a=0
+Let n = log N be the number of bits of the input N. The running time of the algorithm is dominated by the 2 log $N = O ( n )$ repetitions of step 3. Since modular exponentiation takes
 
-1
+$O ( n ^ { 3 } )$ steps (as we saw in Section 1.2.2) and the quantum Fourier transform takes $O ( n ^ { 2 } )$ steps, the total running time for the quantum factoring algorithm is $O ( n ^ { 3 } \log { n } )$ 1
 
-√
-
-M
-
-a, 0
-
-.
-
-ii. Compute f(a) = x^&#123;a&#125; mod N using a quantum circuit, to get the superposition PM−1
-
-a=0
-
-1
-
-√
-
-M
-
-a, x^&#123;a&#125; mod N
-
-.
-
-iii. Measure the second register. Now the first register contains the periodic super-
-
-position
-
-α
-
-= PM/r−1
-
-j=0
-
-p
-
-r
-
-M
-
-jr + k
-
-where k is a random offset between 0 and r −1 (recall that r is the order of x modulo N).
-
-(c) Fourier sample the superposition
-
-α
-
-to obtain an index between 0 and M −1.
-
-Let g be the gcd of the resulting indices j_&#123;1&#125;, . . . , j_&#123;s&#125;.
-
-4. If M/g is even, then compute gcd(N, x^&#123;M/&#125;2g + 1) and output it if it is a nontrivial factor of N; otherwise return to step 1.
-
-From previous lemmas, we know that this method works for at least half the choices of x, and hence the entire procedure has to be repeated only a couple of times on average before a factor is found.
-
-But there is one aspect of this algorithm, having to do with the number M, that is still quite unclear: M, the size of our FFT, must be a power of 2. And for our period-detecting idea to work, the period must divide M—hence it should also be a power of 2. But the period in our case is the order of x, definitely not a power of 2!
-
-The reason it all works anyway is the following: the quantum Fourier transform can detect the period of a periodic vector even if it does not divide M. But the derivation is not as clean as in the case when the period does divide M, so we shall not go any further into this.
-
-Let n = log N be the number of bits of the input N. The running time of the algorithm is dominated by the 2 log N = O(n) repetitions of step 3. Since modular exponentiation takes
-
-O(n^&#123;3&#125;) steps (as we saw in Section 1.2.2) and the quantum Fourier transform takes O(n^&#123;2&#125;) steps, the total running time for the quantum factoring algorithm is O(n^&#123;3&#125; log n).
-
-### Quantum physics meets computation
+<Knowledge title="Box: Quantum physics meets computation">
 
 In the early days of computer science, people wondered whether there were much more powerful computers than those made up of circuits composed of elementary gates. But since the seventies this question has been considered well settled. Computers implementing the von Neumann architecture on silicon were the obvious winners, and it was widely accepted that any other way of implementing computers is polynomially equivalent to them. That is, a T-step computation on any computer takes at most some polynomial in T steps on another. This fundamental principle is called the extended Church-Turing thesis. Quantum computers violate this fundamental thesis and therefore call into question some of our most basic assumptions about computers.
 
@@ -166,3 +65,5 @@ Can quantum computers be built? This is the challenge that is keeping busy many 
 But there is another possibility: What if all these efforts at implementing quantum computers fail? This would be even more interesting, because it would point to some fundamental flaw in quantum physics, a theory that has stood unchallenged for a century.
 
 Quantum computation is motivated as much by trying to clarify the mysterious nature of quantum physics as by trying to create novel and superpowerful computers.
+
+</Knowledge>

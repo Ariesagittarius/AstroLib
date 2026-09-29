@@ -15,135 +15,43 @@ import Exercise from '@/components/Exercise.astro';
 
 ## 7.2 Flows in networks
 
-### Matrix-vector notation
-
-A linear function like x_&#123;1&#125; + 6x_&#123;2&#125; can be written as the dot product of two vectors
-
-c =
-
-1
-
-6
-
-
-
-and x =
-
-x_&#123;1&#125;
-
-x_&#123;2&#125;
-
-
-
-,
-
-denoted c · x or c^&#123;T&#125; x. Similarly, linear constraints can be compiled into matrix-vector form:
-
-x_&#123;1&#125; ≤ 200 x_&#123;2&#125; ≤ 300 x_&#123;1&#125; + x_&#123;2&#125; ≤ 400
-
-=⇒
-
-
-
-
-
-1 0 0 1 1 1
-
-
-
-
-
-|
-
-&#123;z
-
-&#125;
-
-x_&#123;1&#125;
-
-x_&#123;2&#125;
-
-
-
-≤
-
-
-
-
-
-200 300 400
-
-
-
-
-
-|
-
-&#123;z
-
-&#125;
-
-.
-
-A x ≤ b
-
-Here each row of matrix A corresponds to one constraint: its dot product with x is at most the value in the corresponding row of b. In other words, if the rows of A are the vectors a_&#123;1&#125;, . . . , a_&#123;m&#125;, then the statement Ax ≤b is equivalent to
-
-a_&#123;i&#125; · x ≤b_&#123;i&#125; for all i = 1, . . . , m.
-
-With these notational conveniences, a generic LP can be expressed simply as
-
-max c^&#123;T&#125; x
-
-Ax ≤b
-
-x ≥0.
-
-### 7.2.1 Shipping oil
+## 7.2.1 Shipping oil
 
 Figure 7.4(a) shows a directed graph representing a network of pipelines along which oil can be sent. The goal is to ship as much oil as possible from the source s to the sink t. Each pipeline has a maximum capacity it can handle, and there are no opportunities for storing oil en route. Figure 7.4(b) shows a possible flow from s to t, which ships 7 units in all. Is this the best that can be done?
 
-### 7.2.2 Maximizing flow
+## 7.2.2 Maximizing flow
 
-The networks we are dealing with consist of a directed graph G = (V, E); two special nodes s, t ∈V , which are, respectively, a source and sink of G; and capacities c_&#123;e&#125; > 0 on the edges.
+The networks we are dealing with consist of a directed graph $G = ( V , E )$ ; two special nodes $s , t \in V$ , which are, respectively, a source and sink of $G ;$ and capacities $c _ { e } > 0$ on the edges.
 
-We would like to send as much oil as possible from s to t without exceeding the capacities of any of the edges. A particular shipping scheme is called a flow and consists of a variable f_&#123;e&#125; for each edge e of the network, satisfying the following two properties:
+We would like to send as much oil as possible from s to t without exceeding the capacities of any of the edges. A particular shipping scheme is called a flow and consists of a variable $f _ { e }$ for each edge e of the network, satisfying the following two properties:
 
-1. It doesn’t violate edge capacities: 0 ≤f_&#123;e&#125; ≤c_&#123;e&#125; for all e ∈E.
+1. It doesn't violate edge capacities: $0 \leq f _ { e } \leq c _ { e }$ for all $e \in E .$
 
-2. For all nodes u except s and t, the amount of flow entering u equals the amount leaving
+2. For all nodes u except s and $t ,$ the amount of flow entering u equals the amount leaving
 
-![Figure 7.4 (a) A network with edge capacities. (b) A ﬂow in the network.](images/fig_7_4.png)
+Figure 7.4 (a) A network with edge capacities. (b) A flow in the network.
 
-u: X
+![](images/d45e3033a4a9a72ac7cb7c2c24d73e6ac301e81e45474e0a1357f18d7c294631.jpg)
 
-(w,u)∈E
+u:
 
-f_&#123;wu&#125; =
-
-X
-
-(u,z)∈E
-
-f_&#123;uz&#125;.
+$$
+\sum_ {(w, u) \in E} f _ {w u} = \sum_ {(u, z) \in E} f _ {u z}.
+$$
 
 In other words, flow is conserved.
 
 The size of a flow is the total quantity sent from s to t and, by the conservation principle, is equal to the quantity leaving s:
 
-size(f) =
+$$
+\operatorname{size} (f) = \sum_ {(s, u) \in E} f _ {s u}.
+$$
 
-X
+In short, our goal is to assign values to $\{ f _ { e } : e \in E \}$ that will satisfy a set of linear constraints and maximize a linear objective function. But this is a linear program! The maximum-flow problem reduces to linear programming.
 
-(s,u)∈E
+For example, for the network of Figure 7.4 the LP has 11 variables, one per edge. It seeks to maximize $f _ { s a } + f _ { s b } + f _ { s c }$ subject to a total of 27 constraints: 11 for nonnegativity (such as $f _ { s a } \geq 0 )$ , 11 for capacity (such as $f _ { s a } \leq 3 )$ , and 5 for flow conservation (one for each node of the graph other than s and $t ,$ such as $f _ { s c } + f _ { d c } = f _ { c e } )$ . Simplex would take no time at all to correctly solve the problem and to confirm that, in our example, a flow of 7 is in fact optimal.
 
-f_&#123;su&#125;.
-
-In short, our goal is to assign values to &#123;f_&#123;e&#125; : e ∈E&#125; that will satisfy a set of linear constraints and maximize a linear objective function. But this is a linear program! The maximum-flow problem reduces to linear programming.
-
-For example, for the network of Figure 7.4 the LP has 11 variables, one per edge. It seeks to maximize f_&#123;sa&#125; + f_&#123;sb&#125; + f_&#123;sc&#125; subject to a total of 27 constraints: 11 for nonnegativity (such as f_&#123;sa&#125; ≥0), 11 for capacity (such as f_&#123;sa&#125; ≤3), and 5 for flow conservation (one for each node of the graph other than s and t, such as f_&#123;sc&#125; + f_&#123;dc&#125; = f_&#123;ce&#125;). Simplex would take no time at all to correctly solve the problem and to confirm that, in our example, a flow of 7 is in fact optimal.
-
-### 7.2.3 A closer look at the algorithm
+## 7.2.3 A closer look at the algorithm
 
 All we know so far of the simplex algorithm is the vague geometric intuition that it keeps making local moves on the surface of a convex feasible region, successively improving the objective function until it finally reaches the optimal solution. Once we have studied it in more detail (Section 7.6), we will be in a position to understand exactly how it handles flow LPs, which is useful as a source of inspiration for designing direct max-flow algorithms.
 
@@ -155,405 +63,110 @@ Repeat: choose an appropriate path from s to t, and increase flow along the edge
 
 Figure 7.5(a)–(d) shows a small example in which simplex halts after two iterations. The final flow has size 2, which is easily seen to be optimal.
 
-![Figure 7.5 An illustration of the max-ﬂow algorithm. (a) A toy network. (b) The ﬁrst path](images/fig_7_5.png)
+Figure 7.5 An illustration of the max-flow algorithm. (a) A toy network. (b) The first path chosen. (c) The second path chosen. (d) The final flow. (e) We could have chosen this path first. (f) In which case, we would have to allow this second path.
 
-(a)
+(a)  
+![](images/db7a518011182754810004ce6d66ef938f35e34eb455599c9833f9fc1a2b90e0.jpg)
 
-s
+(b)  
+![](images/5cf40961c67602ffc121070d91fe303f921309c429b333ac8b22b3eed0b9f029.jpg)
 
-b
+(c)  
+![](images/3cab293753a5a317aa116ee0d0f48a733de9abcdbb97e05d7bba876813bcf32a.jpg)
 
-a
+(d)  
+![](images/d8a546b625327d1fe045a438a2069729014c185ebe3ecfc35f5dc66a95a2010e.jpg)
 
-t
+(e)  
+![](images/8e877a898496e046a2bddefa5f0a8a3a59467db106b944852c4e4892cc84a804.jpg)
 
-1 1
+(f)  
+![](images/43ad0e64d61d6c3779ab8f32f2c9d1144d5ceee2a41b1fc43bfa724d33523e58.jpg)
 
-1 1
+There is just one complication. What if we had initially chosen a different path, the one in Figure 7.5(e)? This gives only one unit of flow and yet seems to block all other paths. Simplex gets around this problem by also allowing paths to cancel existing flow. In this particular case, it would subsequently choose the path of Figure 7.5(f). Edge $( b , a )$ of this path isn't in the original network and has the effect of canceling flow previously assigned to edge $( a , b )$
 
-1
+To summarize, in each iteration simplex looks for an $s - t$ path whose edges $( u , v )$ can be of two types:
 
-(b)
+1. $( u , v )$ is in the original network, and is not yet at full capacity.
 
-s
+2. The reverse edge $( v , u )$ is in the original network, and there is some flow along it.
 
-a
+If the current flow is $f ,$ then in the first case, edge $( u , v )$ can handle up to $c _ { u v } - f _ { u v }$ additional units of flow, and in the second case, upto $f _ { v u }$ additional units (canceling all or part of the existing flow on $( v , u ) )$ . These flow-increasing opportunities can be captured in a residual network $G ^ { f } = ( V , E ^ { f } )$ , which has exactly the two types of edges listed, with residual capacities
 
-t
+cf:
 
-(c)
+$$
+\left\{ \begin{array}{c l} c _ {u v} - f _ {u v} & \textbf {i f} (u, v) \in E \textbf {a n d} f _ {u v} <   c _ {u v} \\ f _ {v u} & \textbf {i f} (v, u) \in E \textbf {a n d} f _ {v u} > 0 \end{array} \right.
+$$
 
-s
+Thus we can equivalently think of simplex as choosing an $s - t$ path in the residual network.
 
-b
-
-t
-
-(d)
-
-s
-
-b
-
-a
-
-t
-
-1 1
-
-1 1
-
-0
-
-(e)
-
-s
-
-b
-
-a
-
-t
-
-1
-
-1
-
-1
-
-(f)
-
-s
-
-b
-
-a
-
-t
-
-1
-
-1
-
-1
-
-There is just one complication. What if we had initially chosen a different path, the one in Figure 7.5(e)? This gives only one unit of flow and yet seems to block all other paths. Simplex gets around this problem by also allowing paths to cancel existing flow. In this particular case, it would subsequently choose the path of Figure 7.5(f). Edge (b, a) of this path isn’t in the original network and has the effect of canceling flow previously assigned to edge (a, b).
-
-To summarize, in each iteration simplex looks for an s −t path whose edges (u, v) can be of two types:
-
-1. (u, v) is in the original network, and is not yet at full capacity.
-
-2. The reverse edge (v, u) is in the original network, and there is some flow along it.
-
-If the current flow is f, then in the first case, edge (u, v) can handle up to c_&#123;uv&#125; −f_&#123;uv&#125; additional units of flow, and in the second case, upto f_&#123;vu&#125; additional units (canceling all or part of the existing flow on (v, u)). These flow-increasing opportunities can be captured in a residual network G^&#123;f&#125; = (V, E^&#123;f&#125;), which has exactly the two types of edges listed, with residual capacities
-
-c^&#123;f&#125;:  c_&#123;uv&#125; −f_&#123;uv&#125; if (u, v) ∈E and f_&#123;uv&#125; &lt; c_&#123;uv&#125; f_&#123;vu&#125; if (v, u) ∈E and f_&#123;vu&#125; > 0
-
-Thus we can equivalently think of simplex as choosing an s −t path in the residual network.
-
-By simulating the behavior of simplex, we get a direct algorithm for solving max-flow. It proceeds in iterations, each time explicitly constructing G^&#123;f&#125;, finding a suitable s −t path in G^&#123;f&#125; by using, say, a linear-time breadth-first search, and halting if there is no longer any such path along which flow can be increased.
+By simulating the behavior of simplex, we get a direct algorithm for solving max-flow. It proceeds in iterations, each time explicitly constructing $G ^ { f }$ , finding a suitable $s - t$ path in $G ^ { f }$ by using, say, a linear-time breadth-first search, and halting if there is no longer any such path along which flow can be increased.
 
 Figure 7.6 illustrates the algorithm on our oil example.
 
-### 7.2.4 A certificate of optimality
+## 7.2.4 A certificate of optimality
 
 Now for a truly remarkable fact: not only does simplex correctly compute a maximum flow, but it also generates a short proof of the optimality of this flow!
 
-Let’s see an example of what this means. Partition the nodes of the oil network (Figure 7.4) into two groups, L = &#123;s, a, b&#125; and R = &#123;c, d, e, t&#125;:
+Let's see an example of what this means. Partition the nodes of the oil network (Figure 7.4) into two groups, $L = \{ s , a , b \}$ and $R = \{ c , d , e , t \}$ :
 
-s
+![](images/bca7edadeb1ed3cb0e0e77d68565760a3d0db892dacdd4dcee33e06b2e2053cd.jpg)
 
-a
+Any oil transmitted must pass from L to R. Therefore, no flow can possibly exceed the total capacity of the edges from L to $R ,$ which is 7. But this means that the flow we found earlier, of size 7, must be optimal!
 
-b
+More generally, an $( s , t ) – c u t$ partitions the vertices into two disjoint groups L and R such that s is in L and t is in R. Its capacity is the total capacity of the edges from $L$ to $R ,$ and as argued previously, is an upper bound on any flow:
 
-c
+Pick any flow f and any (s, t)-cut (L, R). Then size $( f ) \ \leq$ capacity(L, R).
 
-d
+Some cuts are large and give loose upper bounds—cut $( \{ s , b , c \} , \{ a , d , e , t \} )$ has a capacity of 19. But there is also a cut of capacity 7, which is effectively a certificate of optimality of the maximum flow. This isn't just a lucky property of our oil network; such a cut always exists.
 
-e
+Max-flow min-cut theorem The size ofthe maximum flow in a network equals the capacity of the smallest $( s , t ) \ – c u t .$
 
-t 3
+Moreover, our algorithm automatically finds this cut as a by-product!
 
-3
+Let's see why this is true. Suppose f is the final flow when the algorithm terminates. We know that node t is no longer reachable from s in the residual network $G ^ { f }$ . Let L be the nodes that are reachable from s in $G ^ { f }$ , and let $R = V - L$ be the rest of the nodes. Then $( L , R )$ is a cut in the graph G:
 
-4
-
-10 1
-
-2
-
-1
-
-5
-
-1
-
-2
-
-5
-
-L R
-
-Any oil transmitted must pass from L to R. Therefore, no flow can possibly exceed the total capacity of the edges from L to R, which is 7. But this means that the flow we found earlier, of size 7, must be optimal!
-
-More generally, an (s, t)-cut partitions the vertices into two disjoint groups L and R such that s is in L and t is in R. Its capacity is the total capacity of the edges from L to R, and as argued previously, is an upper bound on any flow:
-
-Pick any flow f and any (s, t)-cut (L, R). Then size(f) ≤capacity(L, R).
-
-Some cuts are large and give loose upper bounds—cut (&#123;s, b, c&#125;, &#123;a, d, e, t&#125;) has a capacity of 19. But there is also a cut of capacity 7, which is effectively a certificate of optimality of the maximum flow. This isn’t just a lucky property of our oil network; such a cut always exists.
-
-Max-flow min-cut theorem The size of the maximum flow in a network equals the capacity of the smallest (s, t)-cut.
-
-Moreover, our algorithm automatically finds this cut as a by-product! Let’s see why this is true. Suppose f is the final flow when the algorithm terminates. We know that node t is no longer reachable from s in the residual network G^&#123;f&#125;. Let L be the nodes that are reachable from s in G^&#123;f&#125;, and let R = V −L be the rest of the nodes. Then (L, R) is a cut in the graph G:
-
-L R
-
-t s
-
-e^&#123;′&#125;
-
-e
+![](images/2528cd292df919c4164abf26cafd05465e237e3b1dbb18663be6f9d2987604f1.jpg)
 
 We claim that
 
-size(f) = capacity(L, R).
+$$
+\operatorname{size} (f) = \operatorname{capacity} (L, R).
+$$
 
-To see this, observe that by the way L is defined, any edge going from L to R must be at full capacity (in the current flow f), and any edge from R to L must have zero flow. (So, in the figure, f_&#123;e&#125; = c_&#123;e&#125; and f_&#123;e&#125;^&#123;′&#125; = 0.) Therefore the net flow across (L, R) is exactly the capacity of the cut.
+To see this, observe that by the way L is defined, any edge going from L to $R$ must be at full capacity (in the current flow $f ) _ { - }$ , and any edge from $R$ to $L$ must have zero flow. $( \mathbf { S } \mathbf { 0 } ,$ in the figure, $f _ { e } = c _ { e }$ and $f _ { e ^ { \prime } } = 0 . )$ Therefore the net flow across $( L , R )$ is exactly the capacity of the cut.
 
-### 7.2.5 Efficiency
+## 7.2.5 Efficiency
 
-Each iteration of our maximum-flow algorithm is efficient, requiring O(|E|) time if a depthfirst or breadth-first search is used to find an s −t path. But how many iterations are there?
+Each iteration of our maximum-flow algorithm is efficient, requiring $O ( | E | )$ time if a depthfirst or breadth-first search is used to find an $s - t$ path. But how many iterations are there?
 
-Suppose all edges in the original network have integer capacities ≤C. Then an inductive argument shows that on each iteration of the algorithm, the flow is always an integer and increases by an integer amount. Therefore, since the maximum flow is at most C|E| (why?), it follows that the number of iterations is at most this much. But this is hardly a reassuring bound: what if C is in the millions?
+Suppose all edges in the original network have integer capacities $\le C$ . Then an inductive argument shows that on each iteration of the algorithm, the flow is always an integer and increases by an integer amount. Therefore, since the maximum flow is at most $C | E |$ (why?), it follows that the number of iterations is at most this much. But this is hardly a reassuring bound: what if C is in the millions?
 
-We examine this issue further in Exercise 7.31. It turns out that it is indeed possible to construct bad examples in which the number of iterations is proportional to C, if s −t paths are not carefully chosen. However, if paths are chosen in a sensible manner—in particular, by using a breadth-first search, which finds the path with the fewest edges—then the number of iterations is at most O(|V | · |E|), no matter what the capacities are. This latter bound gives an overall running time of O(|V | · |E|^&#123;2&#125;) for maximum flow.
+We examine this issue further in Exercise 7.31. It turns out that it is indeed possible to construct bad examples in which the number of iterations is proportional to $C , i f s - t$ paths are not carefully chosen. However, if paths are chosen in a sensible manner—in particular, by using a breadth-first search, which finds the path with the fewest edges—then the number of iterations is at most $O ( | V | \cdot | E | )$ , no matter what the capacities are. This latter bound gives an overall running time of $O ( | V | \cdot | E | ^ { 2 } )$ for maximum flow.
 
-![Figure 7.6 The max-ﬂow algorithm applied to the network of Figure 7.4. At each iteration,](images/fig_7_6.png)
+Figure 7.6 The max-flow algorithm applied to the network of Figure 7.4. At each iteration, the current flow is shown on the left and the residual network on the right. The paths chosen are shown in bold.
 
-Current flow Residual graph
+Current flow
 
-(a)
+Residual graph
 
-s
+![](images/8c175666c9d58aa6cad3326a42aef4de39cf1f0c4a9ddb1bc6c10ed0c2fdf291.jpg)
 
-a
+![](images/6f005f999d0b3abfbfc3f45d1c16d82970d6ebb10c3aa80382e2cac37e73e4ce.jpg)
 
-b
+![](images/3277bae7f42bd8315db787cdc0bac98e2b8def908e6c917fd0595f464f89ca9d.jpg)
 
-c
+![](images/181e2d229e78e17cf63437c82a5631d4e66110136836cd1eafe12102bff8eb0b.jpg)
 
-d
+![](images/e904bbe9efd993b3ac211083402ffcf6350a3fc55d38f82b67bdb0ee64873bdc.jpg)
 
-e
+![](images/9c405b53dbd55eec898d49bae569375d9c8950538f7f06b6c9446d74152689ea.jpg)
 
-t s
+![](images/06a2a1b8df1733eb689838ffab5587449ba9693e566707214cd59824c714b418.jpg)
 
-a
+Residual Graph
 
-b
+![](images/1e8a9042fc186e7e5739b006f6b5fff439c526f5c34be6aeb6aeddffca7738b7.jpg)
 
-c
-
-d
-
-e
-
-t 3
-
-3
-
-4
-
-10 1
-
-2
-
-1
-
-5
-
-1
-
-2
-
-5
-
-(b)
-
-s
-
-a
-
-b
-
-c
-
-d
-
-e
-
-t
-
-1
-
-1
-
-1
-
-1
-
-1
-
-s
-
-a
-
-b
-
-c
-
-d
-
-e
-
-t 3
-
-4
-
-10 1
-
-1 1
-
-2 1 2
-
-1
-
-1
-
-1
-
-4
-
-1
-
-4
-
-(c)
-
-s
-
-a
-
-b
-
-c
-
-d
-
-e
-
-t
-
-1
-
-1 1
-
-2
-
-2
-
-2
-
-s
-
-a
-
-b
-
-c
-
-d
-
-e
-
-t 3
-
-4
-
-10 1
-
-1 1
-
-2
-
-1
-
-4
-
-2
-
-2 1
-
-3 2
-
-(d)
-
-s
-
-a
-
-b
-
-c
-
-d
-
-e
-
-t 1 1
-
-2
-
-2
-
-5
-
-4
-
-3
-
-s
-
-a
-
-b
-
-c
-
-d
-
-e
-
-t 3
-
-10 1
-
-1 1
-
-2
-
-2
-
-2 1
-
-3 1
-
-1
-
-4
-
-5
-
-![Figure 7.6 Continued](images/fig_7_6.png)
-
+<table><tr><td>Figure 7.7 An edge between two people means they like each other. Is it possible to pair everyone up happily?</td></tr><tr><td>![](images/03d6e821440faee6cf8b9e19a4665b22a73f6c31b06ca38b94fdb93932cbf5cc.jpg)</td></tr></table>

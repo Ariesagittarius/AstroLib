@@ -17,22 +17,50 @@ import Exercise from '@/components/Exercise.astro';
 
 We have seen how the quantum Fourier transform can be used to find the period of a periodic superposition. Now we show, by a sequence of simple reductions, how factoring can be recast as a period-finding problem.
 
-Fix an integer N. A nontrivial square root of 1 modulo N (recall Exercises 1.36 and 1.40) is any integer x̸ ≡±1 mod N such that x^&#123;2&#125; ≡1 mod N. If we can find a nontrivial square root of 1 mod N, then it is easy to decompose N into a product of two nontrivial factors (and repeating the process would factor N):
+Fix an integer N. A nontrivial square root of 1 modulo N (recall Exercises 1.36 and 1.40) is any integer $x \not \equiv \pm 1$ mod N such that $x ^ { 2 } \equiv 1$ mod N. If we can find a nontrivial square root of 1 mod N, then it is easy to decompose N into a product of two nontrivial factors (and repeating the process would factor N):
 
-Lemma If x is a nontrivial square root of 1 modulo N, then gcd(x+1, N) is a nontrivial factor of N.
+<Knowledge title="Lemma">
 
-Proof. x^&#123;2&#125; ≡1 mod N implies that N divides (x^&#123;2&#125; −1) = (x + 1)(x −1). But N does not divide either of these individual terms, since x̸ ≡±1 mod N. Therefore N must have a nontrivial factor in common with each of (x + 1) and (x −1). In particular, gcd(N, x + 1) is a nontrivial factor of N.
+Ifx is a nontrivial square root of1 modulo $N _ { z }$ then $\operatorname* { g c d } ( x + 1 , N )$ is a nontrivial factor of N.
 
-Example. Let N = 15. Then 4^&#123;2&#125; ≡1 mod 15, but 4̸ ≡±1 mod 15. Both gcd(4 −1, 15) = 3 and gcd(4 + 1, 15) = 5 are nontrivial factors of 15.
+</Knowledge>
 
-To complete the connection with periodicity, we need one further concept. Define the order of x modulo N to be the smallest positive integer r such that x^&#123;r&#125; ≡1 mod N. For instance, the order of 2 mod 15 is 4.
+<Solution title="Proof">
 
-Computing the order of a random number x mod N is closely related to the problem of finding nontrivial square roots, and thereby to factoring. Here’s the link.
+$x ^ { 2 } \equiv 1$ mod N implies that N divides $( x ^ { 2 } - 1 ) = ( x + 1 ) ( x - 1 )$ . But N does not divide either of these individual terms, since $x \not \equiv \pm 1$ mod N. Therefore N must have a nontrivial factor in common with each of $( x + 1 )$ and $( x - 1 )$ . In particular, $\operatorname* { g c d } ( N , x + 1 )$ is a nontrivial factor of N.
 
-Lemma Let N be an odd composite, with at least two distinct prime factors, and let x be chosen uniformly at random between 0 and N −1. If gcd(x, N) = 1, then with probability at least 1/2, the order r of x mod N is even, and moreover x^&#123;r/&#125;2 is a nontrivial square root of 1 mod N.
+</Solution>
 
-The proof of this lemma is left as an exercise. What it implies is that if we could compute the order r of a randomly chosen element x mod N, then there’s a good chance that this order is even and that x^&#123;r/&#125;2 is a nontrivial square root of 1 modulo N. In which case gcd(x^&#123;r/&#125;2 + 1, N) is a factor of N.
+Example. Let $N = 1 5$ . Then $4 ^ { 2 } \equiv 1$ mod 15, but $4 \not \equiv \pm 1$ mod 15. Both $\operatorname* { g c d } ( 4 - 1 , 1 5 ) = 3$ and $\operatorname* { g c d } ( 4 + 1 , 1 5 ) = 5$ are nontrivial factors of 15.
 
-Example. If x = 2 and N = 15, then the order of 2 is 4 since 2^&#123;4&#125; ≡1 mod 15. Raising 2 to half this power, we get a nontrivial root of 1: 2^&#123;2&#125; ≡4̸ ≡±1 mod 15. So we get a divisor of 15 by computing gcd(4 + 1, 15) = 5.
+To complete the connection with periodicity, we need one further concept. Define the order of $x$ modulo N to be the smallest positive integer r such that $x ^ { r } \equiv 1$ mod N. For instance, the order of 2 mod 15 is 4.
 
-Hence we have reduced_&#123; &#125;FACTORING to the problem of_&#123; &#125;ORDER FINDING. The advantage of this latter problem is that it has a natural periodic function associated with it: fix N and x, and consider the function f(a) = x^&#123;a&#125; mod N. If r is the order of x, then f(0) = f(r) = f(2r) = · · · = 1, and similarly, f(1) = f(r + 1) = f(2r + 1) = · · · = x. Thus f is periodic, with period r. And we can compute it efficiently by the repeated squaring algorithm from Section 1.2.2. So, in order to factor N, all we need to do is to figure out how to use the function f to set up a periodic superposition with period r; whereupon we can use quantum Fourier sampling as in Section 10.3 to find r. This is described in the next box.
+Computing the order of a random number x mod N is closely related to the problem of finding nontrivial square roots, and thereby to factoring. Here's the link.
+
+<Knowledge title="Lemma">
+
+Let N be an odd composite with at least two distinct prime factors and let $x$ be chosen uniformly at random between 0 and $N - 1$ $I f \operatorname* { g c d } ( x , N ) = 1$ , then with probability at least $1 / 2 _ { ; }$ , the order r of x mod N is even, and moreover $x ^ { r / 2 }$ is a nontrivial square root $o f$ 1 mod $N$ .
+
+</Knowledge>
+
+The proof of this lemma is left as an exercise. What it implies is that if we could compute the order r of a randomly chosen element x mod N, then there's a good chance that this order is even and that $x ^ { r / 2 }$ is a nontrivial square root of 1 modulo N. In which case gcd $( x ^ { r / 2 } + 1 , N )$ is a factor of $N$ .
+
+Example. If $x = 2$ and $N = 1 5$ , then the order of 2 is 4 since $2 ^ { 4 } \equiv 1$ mod 15. Raising 2 to half this power, we get a nontrivial root of $1 \colon 2 ^ { 2 } \equiv 4 \not \equiv \pm 1$ mod 15. So we get a divisor of 15 by computing gcd $( 4 + 1 , 1 5 ) = 5$
+
+Hence we have reduced FACTORING to the problem of ORDER FINDING. The advantage of this latter problem is that it has a natural periodic function associated with it: fix N and $x ,$ and consider the function $f ( a ) = x ^ { a }$ mod N. If r is the order of $x ,$ then $f ( 0 ) = f ( r ) = f ( 2 r ) = \cdots = 1$ and similarly, $f ( 1 ) = f ( r + 1 ) = f ( 2 r + 1 ) = \cdots = x$ . Thus $f$ is periodic, with period r. And we can compute it efficiently by the repeated squaring algorithm from Section 1.2.2. So, in order to factor $N$ , all we need to do is to figure out how to use the function $f$ to set up a periodic superposition with period $r ;$ whereupon we can use quantum Fourier sampling as in Section 10.3 to find $r .$ . This is described in the next box.
+
+<Knowledge title="Box: Setting up a periodic superposition">
+
+Let us now see how to use our periodic function $f ( a ) = x ^ { a }$ mod N to set up a periodic superposition. Here is the procedure:
+
+We start with two quantum registers, both initially 0.
+
+Compute the quantum Fourier transform of the first register modulo M, to get a superposition over all numbers between 0 and $\begin{array} { r } { M \mathrm { ~ - ~ } 1 : \mathrm { ~ } \frac { 1 } { \sqrt { M } } \mathrm { ~ } \overline { { \sum _ { a = 0 } ^ { M - 1 } \left| a , 0 \right. } } } \end{array}$ This is because the initial superposition can be thought of as periodic with period M, so the transform is periodic with period 1.
+
+We now compute the function $f ( a ) = x ^ { a }$ mod N. The quantum circuit for doing this regards the contents of the first register a as the input to f, and the second register (which is initially 0) as the answer register. After applying this quantum circuit, the state of the two registers is: $\textstyle \sum _ { a = 0 } ^ { M - 1 } { \frac { 1 } { \sqrt { M } } } { \big | } a , f ( a ) \rangle$
+
+We now measure the second register. This gives a periodic superposition on the first register, with period r, the period of f. Here's why:
+
+Since f is a periodic function with period r, for every rth value in the first register, the contents of the second register are the same. The measurement of the second register therefore yields f(k) for some random k between 0 and $r - 1$ What is the state of the first register after this measurement? To answer this question, recall the rules of partial measurement outlined earlier in this chapter. The first register is now in a superposition of only those values a that are compatible with the outcome of the measurement on the second register. But these values of a are exactly $k , k + r , k +$ $2 r , \ldots , k + M - r$ . So the resulting state of the first register is a periodic superposition α with period r, which is exactly the order of x that we wish to find!
+
+</Knowledge>

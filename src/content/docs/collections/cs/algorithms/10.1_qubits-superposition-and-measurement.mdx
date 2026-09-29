@@ -13,328 +13,85 @@ import Block from '@/components/Block.astro';
 import Method from '@/components/Method.astro';
 import Exercise from '@/components/Exercise.astro';
 
-## 10.1 Qubits, superposition, and measurement
+## Chapter 10: Quantum algorithms
 
-### Quantum algorithms
-
-This book started with the world’s oldest and most widely used algorithms (the ones for adding and multiplying numbers) and an ancient hard problem (_&#123;FACTORING&#125;). In this last chapter the tables are turned: we present one of the latest algorithms—and it is an efficient algorithm for
-
-FACTORING!
+This book started with the world's oldest and most widely used algorithms (the ones for adding and multiplying numbers) and an ancient hard problem (FACTORING). In this last chapter the tables are turned: we present one of the latest algorithms—and it is an efficient algorithm for FACTORING!
 
 There is a catch, of course: this algorithm needs a quantum computer to execute.
 
-Quantum physics is a beautiful and mysterious theory that describes Nature in the small, at the level of elementary particles. One of the major discoveries of the nineties was that quantum computers—computers based on quantum physics principles—are radically different from those that operate according to the more familiar principles of classical physics. Surprisingly, they can be exponentially more powerful: as we shall see, quantum computers can solve_&#123; &#125;FACTORING in polynomial time! As a result, in a world with quantum computers, the systems that currently safeguard business transactions on the Internet (and are based on the RSA cryptosystem) will no longer be secure.
+Quantum physics is a beautiful and mysterious theory that describes Nature in the small, at the level of elementary particles. One of the major discoveries of the nineties was that quantum computers—computers based on quantum physics principles—are radically different from those that operate according to the more familiar principles of classical physics. Surprisingly, they can be exponentially more powerful: as we shall see, quantum computers can solve FACTORING in polynomial time! As a result, in a world with quantum computers, the systems that currently safeguard business transactions on the Internet (and are based on the RSA cryptosystem) will no longer be secure.
 
-In this section we introduce the basic features of quantum physics that are necessary for understanding how quantum computers work.^&#123;1&#125;
+## 10.1 Qubits, superposition, and measurement
+
+In this section we introduce the basic features of quantum physics that are necessary for understanding how quantum computers work.<sup>1</sup>
 
 In ordinary computer chips, bits are physically represented by low and high voltages on wires. But there are many other ways a bit could be stored—for instance, in the state of a hydrogen atom. The single electron in this atom can either be in the ground state (the lowest energy configuration) or it can be in an excited state (a high energy configuration). We can use these two states to encode for bit values 0 and 1, respectively.
 
-Let us now introduce some quantum physics notation. We denote the ground state of our electron by
+Let us now introduce some quantum physics notation. We denote the ground state of our electron by 0 , since it encodes for bit value 0, and likewise the excited state by 1 . These are the two possible states of the electron in classical physics. Many of the most counterintuitive aspects of quantum physics arise from the superposition principle which states that if a
 
-0
+Figure 10.1 An electron can be in a ground state or in an excited state. In the Dirac notation used in quantum physics, these are denoted 0 and 1 . But the superposition principle says that, in fact, the electron is in a state that is a linear combination of these two: $\alpha _ { 0 } | 0 \rangle + \alpha _ { 1 } | 1 \rangle$ This would make immediate sense if the α's were probabilities, nonnegative real numbers adding to 1. But the superposition principle insists that they can be arbitrary complex numbers, as long as the squares of their norms add up to 1!
 
-, since it encodes for bit value 0, and likewise the excited state by
+ground state 0  
+![](images/b35f6541e38b5ffd39f19daac7710477686658e0a65b27f71f21578e9cd7c331.jpg)
 
-1
+![](images/8c035fce3c88c0ed31cfdf9148040ba81c813524f83a8270e81d15ae7da79d68.jpg)
 
-. These are the two possible states of the electron in classical physics. Many of the most counterintuitive aspects of quantum physics arise from the superposition principle which states that if a
+quantum system can be in one of two states, then it can also be in any linear superposition of those two states. For instance, the state of the electron could well be $\textstyle { \frac { 1 } { \sqrt { 2 } } } | 0 \rangle + { \frac { 1 } { \sqrt { 2 } } } | 1 \rangle$ or ${ \scriptstyle { \frac { 1 } { \sqrt { 2 } } } } \left| 0 \right. \ - \ { \scriptstyle { \frac { 1 } { \sqrt { 2 } } } } \left| 1 \right.$ ; or an infinite number of other combinations of the form $\alpha _ { 0 } | 0 \rangle + \alpha _ { 1 } | 1 \rangle$ . The coefficient $\alpha _ { 0 }$ is called the amplitude of state $| 0 \rangle$ , and similarly with $\alpha _ { 1 }$ . And—if things aren't already strange enough—the α's can be complex numbers, as long as they are normalized so that $| \alpha _ { 0 } | ^ { 2 } + | \alpha _ { 1 } | ^ { 2 } = 1$ . For example, ${ \scriptstyle { \frac { 1 } { \sqrt { 5 } } } } | 0 \rangle + { \scriptstyle { \frac { 2 i } { \sqrt { 5 } } } } | 1 \rangle$ (where i is the imaginary unit, $\sqrt { - 1 } )$ is a perfectly valid quantum state! Such a superposition, $\alpha _ { 0 } | 0 \rangle + \alpha _ { 1 } | 1 \rangle$ , is the basic unit of encoded information in quantum computers (Figure 10.1). It is called a qubit (pronounced “cubit”).
 
-1This field is so strange that the famous physicist Richard Feynman is quoted as having said, “I think I can safely say that no one understands quantum physics.” So there is little chance you will understand the theory in depth after reading this section! But if you are interested in learning more, see the recommended reading at the book’s end.
+The whole concept of a superposition suggests that the electron does not make up its mind about whether it is in the ground or excited state, and the amplitude $\alpha _ { 0 }$ is a measure of its inclination toward the ground state. Continuing along this line of thought, it is tempting to think of $\alpha _ { 0 }$ as the probability that the electron is in the ground state. But then how are we to make sense of the fact that $\alpha _ { 0 }$ can be negative, or even worse, imaginary? This is one of the most mysterious aspects of quantum physics, one that seems to extend beyond our intuitions about the physical world.
 
-![Figure 10.1 An electron can be in a ground state or in an excited state. In the Dirac notation](images/fig_10_1.png)
-
-ground state
-
-0
-
-excited state
-
-1
-
-superposition α_&#123;0&#125;
-
-0
-
-+ α_&#123;1&#125;
-
-1
-
-quantum system can be in one of two states, then it can also be in any linear superposition of those two states. For instance, the state of the electron could well be 1
-
-√
-
-2 0
-
-+ 1
-
-√
-
-2 1
-
-or
-
-1
-
-√
-
-2 0
-
-− 1
-
-√
-
-2 1
-
-; or an infinite number of other combinations of the form α_&#123;0&#125;
-
-0
-
-+ α_&#123;1&#125;
-
-1
-
-. The
-
-coefficient α_&#123;0&#125; is called the amplitude of state
-
-0
-
-, and similarly with α_&#123;1&#125;. And—if things aren’t already strange enough—the α’s can be complex numbers, as long as they are normalized so that |α_&#123;0&#125;|^&#123;2&#125; + |α_&#123;1&#125;|^&#123;2&#125; = 1. For example, 1
-
-√
-
-5 0
-
-+^&#123; &#125;2i
-
-√
-
-5 1
-
-(where i is the imaginary unit, √
-
-−1) is a
-
-perfectly valid quantum state! Such a superposition, α_&#123;0&#125;
-
-0
-
-+α_&#123;1&#125;
-
-1
-
-, is the basic unit of encoded information in quantum computers (Figure 10.1). It is called a qubit (pronounced “cubit”).
-
-The whole concept of a superposition suggests that the electron does not make up its mind about whether it is in the ground or excited state, and the amplitude α_&#123;0&#125; is a measure of its inclination toward the ground state. Continuing along this line of thought, it is tempting to think of α_&#123;0&#125; as the probability that the electron is in the ground state. But then how are we to make sense of the fact that α_&#123;0&#125; can be negative, or even worse, imaginary? This is one of the most mysterious aspects of quantum physics, one that seems to extend beyond our intuitions about the physical world.
-
-This linear superposition, however, is the private world of the electron. For us to get a glimpse of the electron’s state we must make a measurement, and when we do so, we get a single bit of information—0 or 1. If the state of the electron is α_&#123;0&#125;
-
-0
-
-+ α_&#123;1&#125;
-
-1
-
-, then the outcome of the measurement is 0 with probability |α_&#123;0&#125;|^&#123;2&#125; and 1 with probability |α_&#123;1&#125;|^&#123;2&#125; (luckily we normalized so |α_&#123;0&#125;|^&#123;2&#125; + |α_&#123;1&#125;|^&#123;2&#125; = 1). Moreover, the act of measurement causes the system to change its state: if the outcome of the measurement is 0, then the new state of the system is 0
-
-(the ground state), and if the outcome is 1, the new state is
-
-1
-
-(the excited state). This feature of quantum physics, that a measurement disturbs the system and forces it to choose (in this case ground or excited state), is another strange phenomenon with no classical analog.
+This linear superposition, however, is the private world of the electron. For us to get a glimpse of the electron's state we must make a measurement, and when we do so, we get a single bit of information—0 or 1. If the state of the electron is $\alpha _ { 0 } | 0 \rangle + \alpha _ { 1 } | 1 \rangle$ , then the outcome of the measurement is 0 with probability $| \alpha _ { 0 } | ^ { 2 }$ and 1 with probability $| \dot { \alpha } _ { 1 } | ^ { 2 }$ (luckily we normalized so $| \alpha _ { 0 } | ^ { 2 } + | \alpha _ { 1 } | ^ { 2 } = 1 )$ . Moreover, the act of measurement causes the system to change its state: if the outcome of the measurement is 0, then the new state of the system is 0 (the ground state), and if the outcome is 1, the new state is 1 (the excited state). This feature of quantum physics, that a measurement disturbs the system and forces it to choose (in this case ground or excited state), is another strange phenomenon with no classical analog.
 
 The superposition principle holds not just for 2-level systems like the one we just described, but in general for k-level systems. For example, in reality the electron in the hydrogen atom can be in one of many energy levels, starting with the ground state, the first excited state, the
 
-![Figure 10.2 Measurement of a superposition has the effect of forcing the system to decide on](images/fig_10_2.png)
+Figure 10.2 Measurement of a superposition has the effect of forcing the system to decide on a particular state, with probabilities determined by the amplitudes.
 
-with prob |α_&#123;0&#125;|^&#123;2&#125;
+![](images/b81e8bd710aa7b0acade8bc8fc61fff7f6ddb18ea4f7af022b6f7c0b5e739a45.jpg)
 
-with prob |α_&#123;1&#125;|^&#123;2&#125; α_&#123;0&#125;
+second excited state, and so on. So we could consider a k-level system consisting of the ground state and the first $k - 1$ excited states, and we could denote these by $\left| 0 \right. , \left| 1 \right. , \left| 2 \right. , \ldots , \left| k - 1 \right.$ The superposition principle would then say that the general quantum state of the system is $\alpha _ { 0 } \big | 0 \big \rangle + \alpha _ { 1 } \big | 1 \big \rangle + \dots + \alpha _ { k - 1 } \big | k - 1 \big \rangle$ , where $\begin{array} { r } { \sum _ { j = 0 } ^ { k - 1 } | \alpha _ { j } | ^ { 2 } = 1 } \end{array}$ . Measuring the state of the system would now reveal a number between 0 and $\dot { k } - 1$ , and outcome $j$ would occur with probability $| \alpha _ { j } | ^ { 2 }$ . As before, the measurement would disturb the system, and the new state would actually become $| j \rangle$ or the jth excited state.
 
-0
-
-+ α_&#123;1&#125;
-
-1
-
-state
-
-0
-
-state
-
-1
-
-second excited state, and so on. So we could consider a k-level system consisting of the ground state and the first k −1 excited states, and we could denote these by
-
-0
-
-,
-
-1
-
-,
-
-2
-
-, . . . ,
-
-k −1
-
-. The superposition principle would then say that the general quantum state of the system is α_&#123;0&#125;
-
-0
-
-+ α_&#123;1&#125;
-
-1
-
-+ · · · + α_&#123;k&#125;−1
-
-k −1
-
-, where Pk−1
-
-j=0 |α_&#123;j&#125;|^&#123;2&#125; = 1. Measuring the state of the system would now reveal a number between 0 and k −1, and outcome j would occur with probability |α_&#123;j&#125;|^&#123;2&#125;. As before, the measurement would disturb the system, and the new state would actually become
-
-j
-
-or the jth excited state. How do we encode n bits of information? We could choose k = 2^&#123;n&#125; levels of the hydrogen atom. But a more promising option is to use n qubits.
+How do we encode n bits of information? We could choose $k = 2 ^ { n }$ levels of the hydrogen atom. But a more promising option is to use n qubits.
 
 Let us start by considering the case of two qubits, that is, the state of the electrons of two hydrogen atoms. Since each electron can be in either the ground or excited state, in classical physics the two electrons have a total of four possible states—00, 01, 10, or 11—and are therefore suitable for storing 2 bits of information. But in quantum physics, the superposition principle tells us that the quantum state of the two electrons is a linear combination of the four classical states,
 
-α
+$$
+\left| \boldsymbol {\alpha} \right\rangle = \alpha_ {0 0} \left| 0 0 \right\rangle + \alpha_ {0 1} \left| 0 1 \right\rangle + \alpha_ {1 0} \left| 1 0 \right\rangle + \alpha_ {1 1} \left| 1 1 \right\rangle ,
+$$
 
-= α_&#123;00&#125;
-
-00
-
-+ α_&#123;01&#125;
-
-01
-
-+ α_&#123;10&#125;
-
-10
-
-+ α_&#123;11&#125;
-
-11
-
-,
-
-normalized so that P
-
-x∈&#123;0,1&#125;^&#123;2&#125;|α_&#123;x&#125;|^&#123;2&#125; = 1.^&#123;2&#125; Measuring the state of the system now reveals 2 bits of information, and the probability of outcome x ∈&#123;0, 1&#125;^&#123;2&#125; is |α_&#123;x&#125;|^&#123;2&#125;. Moreover, as before, if the outcome of measurement is jk, then the new state of the system is
-
-jk
-
-: if jk = 10, for example, then the first electron is in the excited state and the second electron is in the ground state.
+normalized so that $\begin{array} { r } { \sum _ { x \in \{ 0 , 1 \} ^ { 2 } } | \alpha _ { x } | ^ { 2 } = 1 . ^ { 2 } } \end{array}$ Measuring the state of the system now reveals 2 bits of information, and the probability of outcome $x \ \in \ \{ 0 , 1 \} ^ { 2 } \ \mathrm { i s } \ | \alpha _ { x } | ^ { 2 }$ . Moreover, as before, if the outcome of measurement is $j k ,$ , then the new state of the system is $\left| j k \right. : { \mathrm { i f ~ } } j k = 1 0 .$ , for example, then the first electron is in the excited state and the second electron is in the ground state.
 
 An interesting question comes up here: what if we make a partial measurement? For instance, if we measure just the first qubit, what is the probability that the outcome is 0? This is simple. It is exactly the same as it would have been had we measured both qubits, namely,
 
-2Recall that &#123;0, 1&#125;^&#123;2&#125; denotes the set consisting of the four 2-bit binary strings and in general &#123;0, 1&#125;^&#123;n&#125; denotes the set of all n-bit binary strings.
+<Knowledge title="Box: Entanglement">
 
-### Entanglement
+Suppose we have two qubits, the first in the state $\alpha _ { 0 } | 0 \rangle + \alpha _ { 1 } | 1 \rangle$ and the second in the state $\beta _ { 0 } | 0 \rangle + \beta _ { 1 } | 1 \rangle$ . What is the joint state of the two qubits? The answer is, the (tensor) product of the two: $\dot { \alpha } _ { 0 } \beta _ { 0 } | 0 0 \rangle + \alpha _ { 0 } \beta _ { 1 } | 0 1 \rangle + \alpha _ { 1 } \beta _ { 0 } | 1 0 \rangle + \alpha _ { 1 } \beta _ { 1 } | 1 1 \rangle$
 
-Suppose we have two qubits, the first in the state α_&#123;0&#125;
+Given an arbitrary state of two qubits, can we specify the state of each individual qubit in this way? No, in general the two qubits are entangled and cannot be decomposed into the states of the individual qubits. For example, consider the state $\textstyle { \left| { \psi } \right. } = { \frac { 1 } { \sqrt { 2 } } } { \left| { 0 0 } \right. } + { \overline { { \frac { 1 } { \sqrt { 2 } } } } } { \left| { 1 1 } \right. }$ , which is one of the famous Bell states. It cannot be decomposed into states of the two individual qubits (see Exercise 10.1). Entanglement is one of the most mysterious aspects of quantum mechanics and is ultimately the source of the power of quantum computation.
 
-0
+Pr $\{ { \mathrm { 1 s t ~ b i t ~ } } = 0 \} = { \mathrm { P r } } \{ 0 0 \} + { \mathrm { P r } } \{ 0 1 \} = | \alpha _ { 0 0 } | ^ { 2 } + | \alpha _ { 0 1 } | ^ { 2 }$ . Fine, but how much does this partial measurement disturb the state of the system?
 
-+ α_&#123;1&#125;
+The answer is elegant. If the outcome of measuring the first qubit is 0, then the new superposition is obtained by crossing out all terms of $\left| \alpha \right.$ that are inconsistent with this outcome (that is, whose first bit is 1). Of course the sum of the squares of the amplitudes is no longer 1, so we must renormalize. In our example, this new state would be
 
-1
+$$
+\left| \boldsymbol {\alpha} _ {\mathrm{new}} \right\rangle = \frac {\alpha_ {0 0}}{\sqrt {\left| \alpha_ {0 0} \right| ^ {2} + \left| \alpha_ {0 1} \right| ^ {2}}} \left| 0 0 \right\rangle + \frac {\alpha_ {0 1}}{\sqrt {\left| \alpha_ {0 0} \right| ^ {2} + \left| \alpha_ {0 1} \right| ^ {2}}} \left| 0 1 \right\rangle .
+$$
 
-and the second in the state β_&#123;0&#125;
+Finally, let us consider the general case of n hydrogen atoms. Think of n as a fairly small number of atoms, say $n = 5 0 0$ . Classically the states of the 500 electrons could be used to store 500 bits of information in the obvious way. But the quantum state of the 500 qubits is a linear superposition of all $2 ^ { 5 0 0 }$ possible classical states:
 
-0
+$$
+\sum_ {x \in \{0, 1 \} ^ {n}} \alpha_ {x} | x \rangle .
+$$
 
-+ β_&#123;1&#125;
+It is as if Nature has $2 ^ { 5 0 0 }$ scraps of paper on the side, each with a complex number written on $\mathbf { i t } ,$ just to keep track of the state of this system of 500 hydrogen atoms! Moreover, at each moment, as the state of the system evolves in time, it is as though Nature crosses out the complex number on each scrap of paper and replaces it with its new value.
 
-1
-
-. What is the joint state of the two qubits? The answer is, the (tensor) product of the two: α_&#123;0&#125;β_&#123;0&#125;
-
-00
-
-+ α_&#123;0&#125;β_&#123;1&#125;
-
-01
-
-+ α_&#123;1&#125;β_&#123;0&#125;
-
-10
-
-+ α_&#123;1&#125;β_&#123;1&#125;
-
-11
-
-. Given an arbitrary state of two qubits, can we specify the state of each individual qubit in this way? No, in general the two qubits are entangled and cannot be decomposed into the states of the individual qubits. For example, consider the state
-
-ψ
-
-= 1
-
-√
-
-2 00
-
-+^&#123; &#125;1
-
-√
-
-2 11
-
-, which is one of the famous Bell states. It cannot be decomposed into states of the two individual qubits (see Exercise 10.1). Entanglement is one of the most mysterious aspects of quantum mechanics and is ultimately the source of the power of quantum computation.
-
-Pr &#123;1st bit = 0&#125; = Pr &#123;00&#125; + Pr &#123;01&#125; = |α_&#123;00&#125;|^&#123; &#125;2 + |α_&#123;01&#125;|^&#123; &#125;2. Fine, but how much does this partial measurement disturb the state of the system?
-
-The answer is elegant. If the outcome of measuring the first qubit is 0, then the new superposition is obtained by crossing out all terms of
-
-α
-
-that are inconsistent with this outcome (that is, whose first bit is 1). Of course the sum of the squares of the amplitudes is no longer 1, so we must renormalize. In our example, this new state would be
-
-α^&#123;new&#125;
-
-= α_&#123;00&#125;
-
-q
-
-|α_&#123;00&#125;|^&#123; &#125;2 + |α_&#123;01&#125;|^&#123; &#125;2
-
-00
-
-+ α_&#123;01&#125;
-
-q
-
-|α_&#123;00&#125;|^&#123; &#125;2 + |α_&#123;01&#125;|^&#123; &#125;2
-
-01
-
-.
-
-Finally, let us consider the general case of n hydrogen atoms. Think of n as a fairly small number of atoms, say n = 500. Classically the states of the 500 electrons could be used to store 500 bits of information in the obvious way. But the quantum state of the 500 qubits is a linear superposition of all 2^&#123;500&#125; possible classical states:
-
-X
-
-x∈&#123;0,1&#125;^&#123;n&#125;
-
-α_&#123;x&#125;
-
-x
-
-.
-
-It is as if Nature has 2^&#123;500&#125; scraps of paper on the side, each with a complex number written on it, just to keep track of the state of this system of 500 hydrogen atoms! Moreover, at each moment, as the state of the system evolves in time, it is as though Nature crosses out the complex number on each scrap of paper and replaces it with its new value.
-
-Let us consider the effort involved in doing all this. The number 2^&#123;500&#125; is much larger than estimates of the number of elementary particles in the universe. Where, then, does Nature store this information? How could microscopic quantum systems of a few hundred atoms contain more information than we can possibly store in the entire classical universe? Surely this is a most extravagant theory about the amount of effort put in by Nature just to keep a tiny system evolving in time.
+Let us consider the effort involved in doing all this. The number $2 ^ { 5 0 0 }$ is much larger than estimates of the number of elementary particles in the universe. Where, then, does Nature store this information? How could microscopic quantum systems of a few hundred atoms contain more information than we can possibly store in the entire classical universe? Surely this is a most extravagant theory about the amount of effort put in by Nature just to keep a tiny system evolving in time.
 
 In this phenomenon lies the basic motivation for quantum computation. After all, if Nature is so extravagant at the quantum level, why should we base our computers on classical physics? Why not tap into this massive amount of effort being expended at the quantum level?
 
-But there is a fundamental problem: this exponentially large linear superposition is the private world of the electrons. Measuring the system only reveals n bits of information. As before, the probability that the outcome is a particular 500-bit string x is |α_&#123;x&#125;|^&#123;2&#125;. And the new state after measurement is just
+But there is a fundamental problem: this exponentially large linear superposition is the private world of the electrons. Measuring the system only reveals n bits of information. As before, the probability that the outcome is a particular 500-bit string x is $| \alpha _ { x } | ^ { 2 }$ . And the new state after measurement is just $| x \rangle$
 
-x
+Figure 10.3 A quantum algorithm takes n “classical” bits as its input, manipulates them so as to create a superposition of their 2n possible states, manipulates this exponentially large superposition to obtain the final quantum result, and then measures the result to get (with the appropriate probability distribution) the n output bits. For the middle phase, there are elementary operations which count as one step and yet manipulate all the exponentially many amplitudes of the superposition.
 
-.
+![](images/703cb88c83731ab7d61a5c2f68f2469c5d61375c565ced08695c4762124beaf6.jpg)
+
+</Knowledge>

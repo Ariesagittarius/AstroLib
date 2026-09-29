@@ -19,33 +19,29 @@ In order to display human-level intelligence, a computer must be able to perform
 
 The most primitive object in a Horn formula is a Boolean variable, taking value either true or false. For instance, variables x, y, and z might denote the following possibilities.
 
-x ≡ the murder took place in the kitchen
+x  the murder took place in the kitchen
 
-y ≡ the butler is innocent
+y  the butler is innocent
 
-z ≡ the colonel was asleep at 8 pm
+z the colonel was asleep at 8 pm
 
-A literal is either a variable x or its negation
+A literal is either a variable x or its negation $\overline { { x } } ( ^ { \mathfrak { a } } \mathrm { N O T } \ x ^ { \mathfrak { 3 } } )$ . In Horn formulas, knowledge about variables is represented by two kinds of clauses:
 
-x (“_&#123;NOT&#125; x”). In Horn formulas, knowledge about variables is represented by two kinds of clauses:
+1. Implications, whose left-hand side is an AND of any number of positive literals and whose right-hand side is a single positive literal. These express statements of the form “if the conditions on the left hold, then the one on the right must also be true.” For instance,
 
-1. Implications, whose left-hand side is an_&#123; AND&#125; of any number of positive literals and whose right-hand side is a single positive literal. These express statements of the form “if the conditions on the left hold, then the one on the right must also be true.” For instance,
+$$
+(z \land w) \Rightarrow u
+$$
 
-(z ∧w) ⇒u
+might mean “if the colonel was asleep at 8 pm and the murder took place at 8 pm then the colonel is innocent.” A degenerate type of implication is the singleton ${ ^ { 6 6 } } \Rightarrow x ,$ ,” meaning simply that x is true: “the murder definitely occurred in the kitchen.”
 
-might mean “if the colonel was asleep at 8 pm and the murder took place at 8 pm then the colonel is innocent.” A degenerate type of implication is the singleton “⇒x,” meaning simply that x is true: “the murder definitely occurred in the kitchen.”
+2. Pure negative clauses, consisting of an OR of any number of negative literals, as in
 
-2. Pure negative clauses, consisting of an_&#123; &#125;OR of any number of negative literals, as in
+$$
+(\overline {{u}} \vee \overline {{v}} \vee \overline {{y}})
+$$
 
-(
-
-u ∨
-
-v ∨
-
-y)
-
-(“they can’t all be innocent”).
+(“they can't all be innocent”).
 
 Given a set of clauses of these two types, the goal is to determine whether there is a consistent explanation: an assignment of true/false values to the variables that satisfies all the clauses. This is also called a satisfying assignment.
 
@@ -53,6 +49,28 @@ The two kinds of clauses pull us in different directions. The implications tell 
 
 In other words, our algorithm for Horn clauses is the following greedy scheme (stingy is perhaps more descriptive):
 
-Input: a Horn formula Output: a satisfying assignment, if one exists
+Input: a Horn formula
+
+Output: a satisfying assignment, if one exists
 
 set all variables to false
+
+while there is an implication that is not satisfied: set the right-hand variable of the implication to true
+
+if all pure negative clauses are satisfied: return the assignment else: return ''formula is not satisfiable''
+
+For instance, suppose the formula is
+
+$$
+(w \land y \land z) \Rightarrow x, (x \land z) \Rightarrow w, x \Rightarrow y, \Rightarrow x, (x \land y) \Rightarrow w, (\overline {{w}} \lor \overline {{x}} \lor \overline {{y}}), (\overline {{z}}).
+$$
+
+We start with everything false and then notice that x must be true on account of the singleton implication $\Rightarrow \ x$ . Then we see that y must also be true, because of $x \Rightarrow y$ . And so on.
+
+To see why the algorithm is correct, notice that if it returns an assignment, this assignment satisfies both the implications and the negative clauses, and so it is indeed a satisfying truth assignment of the input Horn formula. So we only have to convince ourselves that if the algorithm finds no satisfying assignment, then there really is none. This is so because our “stingy” rule maintains the following invariant:
+
+If a certain set of variables is set to true, then they must be true in any satisfying assignment.
+
+Hence, if the truth assignment found after the while loop does not satisfy the negative clauses, there can be no satisfying truth assignment.
+
+Horn formulas lie at the heart of Prolog (“programming by logic”), a language in which you program by specifying desired properties of the output, using simple logical expressions. The workhorse of Prolog interpreters is our greedy satisfiability algorithm. Conveniently, it can be implemented in time linear in the length of the formula; do you see how (Exercise 5.32)?

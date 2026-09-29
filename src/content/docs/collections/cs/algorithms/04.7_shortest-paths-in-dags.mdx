@@ -15,8 +15,6 @@ import Exercise from '@/components/Exercise.astro';
 
 ## 4.7 Shortest paths in dags
 
-![Figure 4.14 The Bellman-Ford algorithm illustrated on a sample graph.](images/fig_4_14.png)
-
 There are two subclasses of graphs that automatically exclude the possibility of negative cycles: graphs without negative edges, and graphs without cycles. We already know how to efficiently handle the former. We will now see how the single-source shortest-path problem can be solved in just linear time on directed acyclic graphs.
 
 As before, we need to perform a sequence of updates that includes every shortest path as a subsequence. The key source of efficiency is that
@@ -25,7 +23,27 @@ In any path of a dag, the vertices appear in increasing linearized order.
 
 Therefore, it is enough to linearize (that is, topologically sort) the dag by depth-first search, and then visit the vertices in sorted order, updating the edges out of each. The algorithm is given in Figure 4.15.
 
-Notice that our scheme doesn’t require edges to be positive. In particular, we can find longest paths in a dag by the same algorithm: just negate all edge lengths.
+Notice that our scheme doesn't require edges to be positive. In particular, we can find longest paths in a dag by the same algorithm: just negate all edge lengths.
 
-![Figure 4.15 A single-source shortest-path algorithm for directed acyclic graphs.](images/fig_4_15.png)
+```txt
+Figure 4.15 A single-source shortest-path algorithm for directed acyclic graphs.
 
+procedure dag-shortest-paths(G,l,s)
+
+Input: Dag G = (V,E);
+edge lengths {le:e∈E}; vertex s∈V
+
+Output: For all vertices u reachable from s, dist(u) is set to the distance from s to u.
+
+for all u∈V:
+    dist(u) = ∞
+    prev(u) = nil
+
+dist(s) = 0
+
+Linearize G
+
+for each u∈V, in linearized order:
+    for all edges (u,v) ∈ E:
+    update(u,v)
+```

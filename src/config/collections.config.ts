@@ -373,7 +373,7 @@ export const collections: Collection[] = [
         tags: ['算法', '算法设计与分析', '动态规划', '图论算法', 'NP完全性', '分治算法', '量子算法', 'DPV'],
         cover: '/covers/algorithms.jpg',
         entryPoint: '00_preface',
-        trackClasses: ['.example-card', '.knowledge-card', '.exercise-card', '.fallback-block'],
+        trackClasses: ['.example-card', '.knowledge-card', '.exercise-card', '.method-card', '.fallback-block'],
         modules: {
           'Theorem': { emoji: '📐', short: '理', aliases: ['Theorem', '定理'], theme: 'chip-conclusion' },
           'Lemma': { emoji: '🧩', short: '引', aliases: ['Lemma', '引理'], theme: 'chip-conclusion' },

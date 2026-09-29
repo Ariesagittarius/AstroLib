@@ -15,49 +15,11 @@ import Exercise from '@/components/Exercise.astro';
 
 ## 8.2 NP-complete problems
 
-### Hard problems, easy problems
+## Hard problems, easy problems
 
 In short, the world is full of search problems, some of which can be solved efficiently, while others seem to be very hard. This is depicted in the following table.
 
-Hard problems (NP-complete)
-
-Easy problems (in P)
-
-3_&#123;SAT&#125;
-
-2_&#123;SAT&#125;, H_&#123;ORN&#125; SAT
-
-TRAVELING SALESMAN PROBLEM
-
-MINIMUM SPANNING TREE
-
-LONGEST PATH
-
-SHORTEST PATH
-
-3D_&#123; &#125;MATCHING
-
-BIPARTITE MATCHING
-
-KNAPSACK
-
-UNARY KNAPSACK
-
-INDEPENDENT SET
-
-INDEPENDENT SET on trees
-
-INTEGER LINEAR PROGRAMMING
-
-LINEAR PROGRAMMING
-
-R_&#123;UDRATA&#125; PATH
-
-E_&#123;ULER&#125; PATH
-
-BALANCED CUT
-
-MINIMUM CUT
+<table><tr><td>Hard problems (NP-complete)</td><td>Easy problems (in P)</td></tr><tr><td>3SAT</td><td>2SAT, HORN SAT</td></tr><tr><td>TRAVELING SALESMAN PROBLEM</td><td>MINIMUM SPANNING TREE</td></tr><tr><td>LONGEST PATH</td><td>SHORTEST PATH</td></tr><tr><td>3D MATCHING</td><td>BIPARTITE MATCHING</td></tr><tr><td>KNAPSACK</td><td>UNARY KNAPSACK</td></tr><tr><td>INDEPENDENT SET</td><td>INDEPENDENT SET on trees</td></tr><tr><td>INTEGER LINEAR PROGRAMMING</td><td>LINEAR PROGRAMMING</td></tr><tr><td>RUDRATA PATH</td><td>EULER PATH</td></tr><tr><td>BALANCED CUT</td><td>MINIMUM CUT</td></tr></table>
 
 This table is worth contemplating. On the right we have problems that can be solved efficiently. On the left, we have a bunch of hard nuts that have escaped efficient solution over many decades or centuries.
 
@@ -65,13 +27,13 @@ The various problems on the right can be solved by algorithms that are specializ
 
 In stark contrast, the problems on the left are all difficult for the same reason! At their core, they are all the same problem, just in different disguises! They are all equivalent: as we shall see in Section 8.3, each of them can be reduced to any of the others—and back.
 
-### P and NP
+## P and NP
 
-It’s time to introduce some important concepts. We know what a search problem is: its defining characteristic is that any proposed solution can be quickly checked for correctness, in the sense that there is an efficient checking algorithm C that takes as input the given instance I (the data specifying the problem to be solved), as well as the proposed solution S, and outputs true if and only if S really is a solution to instance I. Moreover the running time of C(I, S) is bounded by a polynomial in |I|, the length of the instance. We denote the class of all search problems by NP.
+It's time to introduce some important concepts. We know what a search problem is: its defining characteristic is that any proposed solution can be quickly checked for correctness, in the sense that there is an efficient checking algorithm that takes as input the given instance I (the data specifying the problem to be solved), as well as the proposed solution S, and outputs true if and only if S really is a solution to instance I. Moreover the running time of (I, S) is bounded by a polynomial in I , the length of the instance. We denote the class of all search problems by NP.
 
-We’ve seen many examples of NP search problems that are solvable in polynomial time. In such cases, there is an algorithm that takes as input an instance I and has a running time polynomial in |I|. If I has a solution, the algorithm returns such a solution; and if I has no solution, the algorithm correctly reports so. The class of all search problems that can be solved in polynomial time is denoted P. Hence, all the search problems on the right-hand side of the table are in P.
+We've seen many examples of NP search problems that are solvable in polynomial time. In such cases, there is an algorithm that takes as input an instance I and has a running time polynomial in I . If I has a solution, the algorithm returns such a solution; and if I has no solution, the algorithm correctly reports so. The class ofall search problems that can be solved in polynomial time is denoted P. Hence, all the search problems on the right-hand side of the table are in P.
 
-### Why P and NP?
+## Why P and NP?
 
 Okay, P must stand for “polynomial.” But why use the initials NP (the common chatroom abbreviation for “no problem”) to describe the class of search problems, some of which are terribly hard?
 
@@ -79,29 +41,19 @@ NP stands for “nondeterministic polynomial time,” a term going back to the r
 
 Incidentally, the original definition of NP (and its most common usage to this day) was not as a class of search problems, but as a class of decision problems: algorithmic questions that can be answered by yes or no. Example: “Is there a truth assignment that satisfies this Boolean formula?” But this too reflects a historical reality: At the time the theory of NPcompleteness was being developed, researchers in the theory of computation were interested in formal languages, a domain in which such decision problems are of central importance.
 
-Are there search problems that cannot be solved in polynomial time? In other words, is P̸ = NP? Most algorithms researchers think so. It is hard to believe that exponential search can always be avoided, that a simple trick will crack all these hard problems, famously unsolved for decades and centuries. And there is a good reason for mathematicians to believe that P̸ = NP—the task of finding a proof for a given mathematical assertion is a search problem and is therefore in NP (after all, when a formal proof of a mathematical statement is written out in excruciating detail, it can be checked mechanically, line by line, by an efficient algorithm). So if P = NP, there would be an efficient method to prove any theorem, thus eliminating the need for mathematicians! All in all, there are a variety of reasons why it is widely believed that P̸ = NP. However, proving this has turned out to be extremely difficult, one of the deepest and most important unsolved puzzles of mathematics.
+Are there search problems that cannot be solved in polynomial time? In other words, is P = NP? Most algorithms researchers think so. It is hard to believe that exponential search can always be avoided, that a simple trick will crack all these hard problems, famously unsolved for decades and centuries. And there is a good reason for mathematicians to believe that $\mathbf { P } \neq \mathbf { N P } .$ —the task of finding a proof for a given mathematical assertion is a search problem and is therefore in NP (after all, when a formal proof of a mathematical statement is written out in excruciating detail, it can be checked mechanically, line by line, by an efficient algorithm). So if $\mathbf { P } = \mathbf { N P }$ , there would be an efficient method to prove any theorem, thus eliminating the need for mathematicians! All in all, there are a variety of reasons why it is widely believed that $\mathbf { P } \neq \mathbf { N P }$ . However, proving this has turned out to be extremely difficult, one of the deepest and most important unsolved puzzles of mathematics.
 
-### Reductions, again
+<Knowledge title="Box: Reductions">
 
-Even if we accept that P̸ = NP, what about the specific problems on the left side of the table? On the basis of what evidence do we believe that these particular problems have no efficient algorithm (besides, of course, the historical fact that many clever mathematicians and computer scientists have tried hard and failed to find any)? Such evidence is provided by reductions, which translate one search problem into another. What they demonstrate is that the problems on the left side of the table are all, in some sense, exactly the same problem, except that they are stated in different languages. What’s more, we will also use reductions to show that these problems are the hardest search problems in NP—if even one of them has a polynomial time algorithm, then every problem in NP has a polynomial time algorithm. Thus if we believe that P̸ = NP, then all these search problems are hard.
+Even if we accept that $\mathbf { P } \neq \mathbf { N P }$ , what about the specific problems on the left side of the table? On the basis of what evidence do we believe that these particular problems have no efficient algorithm (besides, of course, the historical fact that many clever mathematicians and computer scientists have tried hard and failed to find any)? Such evidence is provided by reductions, which translate one search problem into another. What they demonstrate is that the problems on the left side of the table are all, in some sense, exactly the same problem, except that they are stated in different languages. What's more, we will also use reductions to show that these problems are the hardest search problems in NP—if even one of them has a polynomial time algorithm, then every problem in NP has a polynomial time algorithm. Thus if we believe that $\mathbf { P } \neq \mathbf { N P }$ , then all these search problems are hard.
 
-We defined reductions in Chapter 7 and saw many examples of them. Let’s now specialize this definition to search problems. A reduction from search problem A to search problem B is a polynomial-time algorithm f that transforms any instance I of A into an instance f(I) of B, together with another polynomial-time algorithm h that maps any solution S of f(I) back into a solution h(S) of I; see the following diagram. If f(I) has no solution, then neither does
+We defined reductions in Chapter 7 and saw many examples of them. Let's now specialize this definition to search problems. A reduction from search problem A to search problem B is a polynomial-time algorithm f that transforms any instance I of A into an instance $f ( I )$ of B, together with another polynomial-time algorithm h that maps any solution S of $f ( I )$ back into a solution $h ( S )$ of $I ;$ see the following diagram. If f(I) has no solution, then neither does
 
 I. These two translation procedures f and h imply that any algorithm for B can be converted into an algorithm for A by bracketing it between f and h.
 
-I Instance Instance f(I) f
-
 Algorithm for A
 
-for B Algorithm
-
-Solution S of f(I)
-
-No solution to f(I) No solution to I
-
-h(S) of I
-
-Solution h
+<table><tr><td rowspan="2">Instance I</td><td rowspan="2">f</td><td rowspan="2">Instance f(I)</td><td rowspan="2">Algorithm for B</td><td>Solution S of f(I)</td><td rowspan="2">h</td><td>Solution h(S) of I</td></tr><tr><td>No solution to f(I)</td><td>No solution to I</td></tr></table>
 
 And now we can finally define the class of the hardest search problems.
 
@@ -109,32 +61,39 @@ A search problem is NP-complete if all other search problems reduce to it.
 
 This is a very strong requirement indeed. For a problem to be NP-complete, it must be useful in solving every search problem in the world! It is remarkable that such problems exist. But they do, and the first column of the table we saw earlier is filled with the most famous examples. In Section 8.3 we shall see how all these problems reduce to one another, and also why all other search problems reduce to them.
 
-### The two ways to use reductions
+</Knowledge>
+<Knowledge title="Box: The two ways to use reductions">
 
 So far in this book the purpose of a reduction from a problem A to a problem B has been straightforward and honorable: We know how to solve B efficiently, and we want to use this knowledge to solve A. In this chapter, however, reductions from A to B serve a somewhat perverse goal: we know A is hard, and we use the reduction to prove that B is hard as well!
 
 If we denote a reduction from A to B by
 
-A −→B
+$$
+A \longrightarrow B
+$$
 
 then we can say that difficulty flows in the direction of the arrow, while efficient algorithms move in the opposite direction. It is through this propagation of difficulty that we know NP-complete problems are hard: all other search problems reduce to them, and thus each NP-complete problem contains the complexity of all search problems. If even one NP-complete problem is in P, then P = NP.
 
 Reductions also have the convenient property that they compose.
 
-If A −→B and B −→C, then A −→C .
+$$
+\text {   If   } A \longrightarrow B \text {   and   } B \longrightarrow C, \text {   then   } A \longrightarrow C  .
+$$
 
-To see this, observe first of all that any reduction is completely specified by the pre- and postprocessing functions f and h (see the reduction diagram). If (f_&#123;AB&#125;, h_&#123;AB&#125;) and (f_&#123;BC&#125;, h_&#123;BC&#125;) define the reductions from A to B and from B to C, respectively, then a reduction from A to C is given by compositions of these functions: f_&#123;BC&#125; ◦f_&#123;AB&#125; maps an instance of A to an instance of C and h_&#123;AB&#125; ◦h_&#123;BC&#125; sends a solution of C back to a solution of A.
+To see this, observe first of all that any reduction is completely specified by the pre- and postprocessing functions $f$ and h (see the reduction diagram). If $\left( f _ { A B } , h _ { A B } \right)$ and $\left( f _ { B C } , h _ { B C } \right)$ define the reductions from A to B and from B to $C ,$ , respectively, then a reduction from A to C is given by compositions of these functions: $f _ { B C } \circ f _ { A B }$ maps an instance of A to an instance of C and $h _ { A B } \circ h _ { B C }$ sends a solution of C back to a solution of A.
 
 This means that once we know a problem A is NP-complete, we can use it to prove that a new search problem B is also NP-complete, simply by reducing A to B. Such a reduction establishes that all problems in NP reduce to B, via A.
 
-![Figure 8.6 The space NP of all search problems, assuming P̸ = NP.](images/fig_8_6.png)
+Figure 8.6 The space NP of all search problems, assuming P = NP.  
+![](images/c6ac7513fee24b2c067f04958ff42d0f397b951b4ce0e36921eed1a0b12b4941.jpg)  
+Increasing difficulty
 
-### Factoring
+</Knowledge>
+## Factoring
 
-One last point: we started off this book by introducing another famously hard search problem:
+One last point: we started off this book by introducing another famously hard search problem: FACTORING, the task of finding all prime factors of a given integer. But the difficulty of FACTORING is of a different nature than that of the other hard search problems we have just seen. For example, nobody believes that FACTORING is NP-complete. One major difference is that, in the case of FACTORING, the definition does not contain the now familiar clause “or report that none exists.” A number can always be factored into primes.
 
-FACTORING, the task of finding all prime factors of a given integer. But the difficulty of
+Another difference (possibly not completely unrelated) is this: as we shall see in Chapter 10, FACTORING succumbs to the power of quantum computation—while SAT, TSP and the other NP-complete problems do not seem to.
 
-FACTORING is of a different nature than that of the other hard search problems we have just seen. For example, nobody believes that_&#123; &#125;FACTORING is NP-complete. One major difference is that, in the case of_&#123; &#125;FACTORING, the definition does not contain the now familiar clause “or report that none exists.” A number can always be factored into primes.
-
-Another difference (possibly not completely unrelated) is this: as we shall see in Chapter 10,_&#123; &#125;FACTORING succumbs to the power of quantum computation—while_&#123; &#125;SAT,_&#123; &#125;TSP and the other NP-complete problems do not seem to.
+Figure 8.7 Reductions between search problems.  
+![](images/6536a89dc6922cc625adaa8ce0349341df116fa5347c69ab78715caf81639675.jpg)

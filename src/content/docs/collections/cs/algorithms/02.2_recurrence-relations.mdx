@@ -15,120 +15,61 @@ import Exercise from '@/components/Exercise.astro';
 
 ## 2.2 Recurrence relations
 
-![Figure 2.1 A divide-and-conquer algorithm for integer multiplication.](images/fig_2_1.png)
+Divide-and-conquer algorithms often follow a generic pattern: they tackle a problem of size n by recursively solving, say, a subproblems of size $n / b$ and then combining these answers in $O ( n ^ { d } )$ time, for some $a , b , d > 0$ (in the multiplication algorithm, $a = 3 , b = 2 ,$ , and $d = 1 )$ . Their running time can therefore be captured by the equation $T ( n ) = a T ( \lceil n / b \rceil ) + O ( n ^ { d } )$ . We next derive a closed-form solution to this general recurrence so that we no longer have to solve it explicitly in each new instance.
 
-At the very top level, when k = 0, this works out to O(n). At the bottom, when k = log_&#123;2&#125; n, it is O(3^&#123;log&#125;_&#123;2&#125; n), which can be rewritten as O(n^&#123;log&#125;_&#123;2&#125; 3) (do you see why?). Between these two endpoints, the work done increases geometrically from O(n) to O(n^&#123;log&#125;_&#123;2&#125; 3), by a factor of 3/2 per level. The sum of any increasing geometric series is, within a constant factor, simply the last term of the series: such is the rapidity of the increase (Exercise 0.2). Therefore the overall running time is O(n^&#123;log&#125;_&#123;2&#125; 3), which is about O(n^&#123;1&#125;.59).
+Figure 2.2 Divide-and-conquer integer multiplication. (a) Each problem is divided into three subproblems. (b) The levels of recursion.
 
-In the absence of Gauss’s trick, the recursion tree would have the same height, but the branching factor would be 4. There would be 4^&#123;log&#125;_&#123;2&#125; n = n^&#123;2&#125; leaves, and therefore the running time would be at least this much. In divide-and-conquer algorithms, the number of subproblems translates into the branching factor of the recursion tree; small changes in this coefficient can have a big impact on running time.
+(a)  
+![](images/db9783f6ecda6c3c9095e632a9578dda11b1b638efd01efd84ace4dbefca9ea7.jpg)
 
-A practical note: it generally does not make sense to recurse all the way down to 1 bit. For most processors, 16- or 32-bit multiplication is a single operation, so by the time the numbers get into this range they should be handed over to the built-in procedure.
+(b)  
+![](images/e24711c025ce8b07ac8decfaf890301033d1aba1685026a404411aea5ed913e7.jpg)
 
-Finally, the eternal question: Can we do better? It turns out that even faster algorithms for multiplying numbers exist, based on another important divide-and-conquer algorithm: the fast Fourier transform, to be explained in Section 2.6.
+Master theorem<sup>2</sup> $I f T ( n ) = a T ( \lceil n / b \rceil ) + O ( n ^ { d } )$ for some constants $a > 0 , b > 1$ and $d \geq 0 .$ then
 
-Divide-and-conquer algorithms often follow a generic pattern: they tackle a problem of size n by recursively solving, say, a subproblems of size n/b and then combining these answers in O(n^&#123;d&#125;) time, for some a, b, d > 0 (in the multiplication algorithm, a = 3, b = 2, and d = 1). Their running time can therefore be captured by the equation T(n) = aT(⌈n/b⌉) + O(n^&#123;d&#125;). We next derive a closed-form solution to this general recurrence so that we no longer have to solve it explicitly in each new instance.
+$$
+T (n) = \left\{ \begin{array}{l l} O (n ^ {d}) & \text {if} d > \log_ {b} a \\ O (n ^ {d} \log n) & \text {if} d = \log_ {b} a \\ O (n ^ {\log_ {b} a}) & \text {if} d <   \log_ {b} a. \end{array} \right.
+$$
 
-![Figure 2.2 Divide-and-conquer integer multiplication. (a) Each problem is divided into three](images/fig_2_2.png)
+This single theorem tells us the running times of most of the divide-and-conquer procedures we are likely to use.
 
-(a)
+<Solution title="Proof">
 
-10110010 × 01100011
+To prove the claim, let's start by assuming for the sake of convenience that n is a power of $b .$ This will not influence the final bound in any important way—after all, n is at most a multiplicative factor of b away from some power of b (Exercise 2.2)—and it will allow us to ignore the rounding effect in $\lceil n / b \rceil$
 
-1011 × 0110 0010 × 0011 1101 × 1001
+</Solution>
 
-(b)
+Next, notice that the size of the subproblems decreases by a factor of b with each level of recursion, and therefore reaches the base case after $\log _ { b } n$ levels. This is the height of the recursion tree. Its branching factor is $^ { a , }$ so the kth level of the tree is made up of $a ^ { k }$ subproblems, each of size $n / b ^ { k }$ (Figure 2.3). The total work done at this level is
 
-2
+Figure 2.3 Each problem of size n is divided into a subproblems of size $n / b .$  
+![](images/14227647ce9271e4854aba55f9f3ee1c39c6806b85e34dadc5d83beba1032405.jpg)
 
-1 1 1
+$$
+a ^ {k} \times O \left(\frac {n}{b ^ {k}}\right) ^ {d} = O (n ^ {d}) \times \left(\frac {a}{b ^ {d}}\right) ^ {k}.
+$$
 
-2
+As k goes from 0 (the root) to $\log _ { b } n$ (the leaves), these numbers form a geometric series with ratio $a / b ^ { d }$ . Finding the sum of such a series in big-O notation is easy (Exercise 0.2), and comes down to three cases.
 
-1 1 1
+## 1. The ratio is less than 1.
 
-2
-
-1 1 1
-
-2
-
-1 1 1
-
-Size n
-
-Size n/2
-
-· · · · · ·
-
-......
-
-log n levels Size n/4
-
-Master theorem^&#123;2&#125; If T(n) = aT(⌈n/b⌉) + O(n^&#123;d&#125;) for some constants a > 0, b > 1, and d ≥0, then
-
-T(n) =
-
- 
-
-
-
-O(n^&#123;d&#125;) if d > log_&#123;b&#125; a O(n^&#123;d&#125; log n) if d = log_&#123;b&#125; a O(n^&#123;log&#125;_&#123;b&#125; a) if d &lt; log_&#123;b&#125; a .
-
-This single theorem tells us the running times of most of the divide-and-conquer procedures we are likely to use. Proof. To prove the claim, let’s start by assuming for the sake of convenience that n is a power of b. This will not influence the final bound in any important way—after all, n is at most a multiplicative factor of b away from some power of b (Exercise 2.2)—and it will allow us to ignore the rounding effect in ⌈n/b⌉.
-
-Next, notice that the size of the subproblems decreases by a factor of b with each level of recursion, and therefore reaches the base case after log_&#123;b&#125; n levels. This is the height of the recursion tree. Its branching factor is a, so the kth level of the tree is made up of a^&#123;k&#125;
-
-2There are even more general results of this type, but we will not be needing them.
-
-![Figure 2.3 Each problem of size n is divided into a subproblems of size n/b.](images/fig_2_3.png)
-
-subproblems, each of size n/b^&#123;k&#125; (Figure 2.3). The total work done at this level is
-
-a^&#123;k&#125; × O
-
- n
-
-b^&#123;k&#125;
-
-d
-
-= O(n^&#123;d&#125;) ×
-
- a
-
-b^&#123;d&#125;
-
-k
-
-.
-
-As k goes from 0 (the root) to log_&#123;b&#125; n (the leaves), these numbers form a geometric series with ratio a/b^&#123;d&#125;. Finding the sum of such a series in big-O notation is easy (Exercise 0.2), and comes down to three cases.
-
-1. The ratio is less than 1.
-
-Then the series is decreasing, and its sum is just given by its first term, O(n^&#123;d&#125;).
+Then the series is decreasing, and its sum is just given by its first term, $O ( n ^ { d } )$
 
 2. The ratio is greater than 1.
 
-The series is increasing and its sum is given by its last term, O(n^&#123;log&#125;_&#123;b&#125; a):
+The series is increasing and its sum is given by its last term, $O ( n ^ { \log _ { b } a } )$
 
-n^&#123;d&#125;  a
-
-b^&#123;d&#125;
-
-log_&#123;b&#125; n
-
-= n^&#123;d&#125;
-
- a^&#123;log&#125;_&#123;b&#125; n
-
-(b^&#123;log&#125;_&#123;b&#125; n)^&#123;d&#125;
-
-
-
-= a^&#123;log&#125;_&#123;b&#125; n = a^&#123;(log&#125;_&#123;a&#125; n)(log_&#123;b&#125; a) = n^&#123;log&#125;_&#123;b&#125; a.
+$$
+n ^ {d} \left(\frac {a}{b ^ {d}}\right) ^ {\log_ {b} n} = n ^ {d} \left(\frac {a ^ {\log_ {b} n}}{(b ^ {\log_ {b} n}) ^ {d}}\right) = a ^ {\log_ {b} n} = a ^ {(\log_ {a} n) (\log_ {b} a)} = n ^ {\log_ {b} a}.
+$$
 
 3. The ratio is exactly 1.
 
-In this case all O(log n) terms of the series are equal to O(n^&#123;d&#125;).
+In this case all $O ( \log n )$ terms of the series are equal to $O ( n ^ { d } )$
 
 These cases translate directly into the three contingencies in the theorem statement.
+
+<Knowledge title="Box: Binary search">
+
+The ultimate divide-and-conquer algorithm is, of course, binary search: to find a key k in a large file containing keys $z [ 0 , 1 , \ldots , n - 1 ]$ in sorted order, we first compare k with $z [ n / 2 ]$ , and depending on the result we recurse either on the first half of the file, $z [ 0 , \ldots , n / 2 - 1 ]$ , or on the second half, $z [ n / 2 , \ldots , n - 1 ]$ . The recurrence now is $T ( n ) = T ( \lceil n / 2 \rceil ) + O ( 1 )$ , which is the case $a = 1 , b = 2 , d = 0 .$ Plugging into our master theorem we get the familiar solution: a running time of just O(log n).
+
+</Knowledge>

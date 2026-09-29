@@ -15,26 +15,26 @@ import Exercise from '@/components/Exercise.astro';
 
 ## 10.2 The plan
 
-![Figure 10.3 A quantum algorithm takes n “classical” bits as its input, manipulates them so](images/fig_10_3.png)
-
-Exponential superposition
-
-Input x Output y n-bit string n-bit string
-
 A quantum algorithm is unlike any you have seen so far. Its structure reflects the tension between the exponential “private workspace” of an n-qubit system and the mere n bits that can be obtained through measurement.
 
 The input to a quantum algorithm consists of n classical bits, and the output also consists of n classical bits. It is while the quantum system is not being watched that the quantum effects take over and we have the benefit of Nature working exponentially hard on our behalf.
 
-If the input is an n-bit string x, then the quantum computer takes as input n qubits in state
+If the input is an n-bit string x, then the quantum computer takes as input n qubits in state x . Then a series of quantum operations are performed, by the end of which the state of the n qubits has been transformed to some superposition $\textstyle \sum _ { y } \alpha _ { y } | y \rangle$ . Finally, a measurement is made, and the output is the n-bit string y with probability $| \alpha _ { y } | ^ { 2 } .$ . Observe that this output is random. But this is not a problem, as we have seen before with randomized algorithms such as the one for primality testing. As long as y corresponds to the right answer with high enough probability, we can repeat the whole process a few times to make the chance of failure miniscule.
 
-x
+Now let us look more closely at the quantum part of the algorithm. Some of the key quantum operations (which we will soon discuss) can be thought of as looking for certain kinds ofpatterns in a superposition of states. Because of this, it is helpful to think of the algorithm as having two stages. In the first stage, the n classical bits of the input are “unpacked” into an exponentially large superposition, which is expressly set up so as to have an underlying pattern or regularity that, if detected, would solve the task at hand. The second stage then consists of a suitable set of quantum operations, followed by a measurement, which reveals
 
-. Then a series of quantum operations are performed, by the end of which the state of the n qubits has been transformed to some superposition P
+the hidden pattern.
 
-y α_&#123;y&#125;
+All this probably sounds quite mysterious at the moment, but more details are on the way. In Section 10.3 we will give a high-level description of the most important operation that can be efficiently performed by a quantum computer: a quantum version of the fast Fourier transform (FFT). We will then describe certain patterns that this quantum FFT is ideally suited to detect, and will show how to recast the problem of factoring an integer N in terms of detecting precisely such a pattern. Finally we will see how to set up the initial stage of the quantum algorithm, which converts the input N into an exponentially large superposition with the right kind of pattern.
 
-y
+The algorithm to factor a large integer N can be viewed as a sequence of reductions (and everything shown here in italics will be defined in good time):
 
-. Finally, a measurement is made, and the output is the n-bit string y with probability |α_&#123;y&#125;|^&#123;2&#125;. Observe that this output is random. But this is not a problem, as we have seen before with randomized algorithms such as the one for primality testing. As long as y corresponds to the right answer with high enough probability, we can repeat the whole process a few times to make the chance of failure miniscule.
+FACTORING is reduced to finding a nontrivial square root of 1 modulo N.
 
-Now let us look more closely at the quantum part of the algorithm. Some of the key quantum operations (which we will soon discuss) can be thought of as looking for certain kinds of patterns in a superposition of states. Because of this, it is helpful to think of the algorithm as having two stages. In the first stage, the n classical bits of the input are “unpacked” into an exponentially large superposition, which is expressly set up so as to have an underlying pattern or regularity that, if detected, would solve the task at hand. The second stage then consists of a suitable set of quantum operations, followed by a measurement, which reveals
+Finding such a root is reduced to computing the order of a random integer modulo N.
+
+The order of an integer is precisely the period of a particular periodic superposition.
+
+Finally, periods of superpositions can be found by the quantum FFT.
+
+We begin with the last step.

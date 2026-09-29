@@ -15,174 +15,34 @@ import Exercise from '@/components/Exercise.astro';
 
 ## 10.3 The quantum Fourier transform
 
-the hidden pattern.
+Recall the fast Fourier transform (FFT) from Chapter 2. It takes as input an M-dimensional, complex-valued vector α (where M is a power of2, say $M = 2 ^ { m } )$ , and outputs an M-dimensional complex-valued vector $\beta \colon$
 
-All this probably sounds quite mysterious at the moment, but more details are on the way. In Section 10.3 we will give a high-level description of the most important operation that can be efficiently performed by a quantum computer: a quantum version of the fast Fourier transform (FFT). We will then describe certain patterns that this quantum FFT is ideally suited to detect, and will show how to recast the problem of factoring an integer N in terms of detecting precisely such a pattern. Finally we will see how to set up the initial stage of the quantum algorithm, which converts the input N into an exponentially large superposition with the right kind of pattern.
+$$
+\left[ \begin{array}{c} \beta_ {0} \\ \beta_ {1} \\ \beta_ {2} \\ \vdots \\ \beta_ {M - 1} \end{array} \right] = \frac {1}{\sqrt {M}} \left[ \begin{array}{c c c c c} 1 & 1 & 1 & \dots & 1 \\ 1 & \omega & \omega^ {2} & \dots & \omega^ {M - 1} \\ 1 & \omega^ {2} & \omega^ {4} & \dots & \omega^ {2 (M - 1)} \\ & \vdots & & & \\ 1 & \omega^ {j} & \omega^ {2 j} & \dots & \omega^ {(M - 1) j} \\ & \vdots & & & \\ 1 & \omega^ {(M - 1)} & \omega^ {2 (M - 1)} & \dots & \omega^ {(M - 1) (M - 1)} \end{array} \right] \left[ \begin{array}{c} \alpha_ {0} \\ \alpha_ {1} \\ \alpha_ {2} \\ \vdots \\ \alpha_ {M - 1} \end{array} \right],
+$$
 
-The algorithm to factor a large integer N can be viewed as a sequence of reductions (and everything shown here in italics will be defined in good time):
+where $\omega$ is a complex Mth root of unity (the extra factor of $\sqrt { M }$ is new and has the effect of ensuring that if the $| \alpha _ { i } | ^ { 2 }$ add up to 1, then so do the $| \beta _ { i } | ^ { 2 } )$ . Although the preceding equation suggests an $O ( M ^ { 2 } )$ algorithm, the classical FFT is able to perform this calculation in just $O ( M \log M )$ steps, and it is this speedup that has had the profound effect of making digital signal processing practically feasible. We will now see that quantum computers can implement the FFT exponentially faster, in $O ( \log ^ { 2 } M )$ time!
 
-• F_&#123;ACTORING&#125; is reduced to finding a nontrivial square root of 1 modulo N.
+But wait, how can any algorithm take time less than M, the length of the input? The point is that we can encode the input in a superposition of just $m = \log M$ qubits: after all, this superposition consists of $2 ^ { m }$ amplitude values. In the notation we introduced earlier, we would write the superposition as $\begin{array} { r } { \dot { | \alpha \rangle } = \sum _ { j = 0 } ^ { M - 1 } \alpha _ { j } \dot { | j \rangle } } \end{array}$ where $\alpha _ { i }$ is the amplitude of the m-bit binary string corresponding to the number i in the natural way. This brings up an important
 
-• Finding such a root is reduced to computing the order of a random integer modulo N.
+Figure 10.4 The classical FFT circuit from Chapter 2. Input vectors of M bits are processed in a sequence of m = log M levels.
 
-• The order of an integer is precisely the period of a particular periodic superposition.
+![](images/7f46319773c2551214d1aed88ac9c94841093078c7cbb7ce8b9e1a18e291df7d.jpg)
 
-• Finally, periods of superpositions can be found by the quantum FFT.
+point: the $| j \rangle$ notation is really just another way of writing a vector, where the index of each entry of the vector is written out explicitly in the special bracket symbol.
 
-We begin with the last step.
+Starting from this input superposition α , the quantum Fourier transform (QFT) manipulates it appropriately in m = log M stages. At each stage the superposition evolves so that it encodes the intermediate results at the same stage of the classical FFT (whose circuit, with m = log M stages, is reproduced from Chapter 2 in Figure 10.4). As we will see in Section 10.5, this can be achieved with m quantum operations per stage. Ultimately, after m such stages and $m ^ { 2 } = \log ^ { 2 } M$ elementary operations, we obtain the superposition β that corresponds to the desired output of the QFT.
 
-Recall the fast Fourier transform (FFT) from Chapter 2. It takes as input an M-dimensional, complex-valued vector α (where M is a power of 2, say M = 2^&#123;m&#125;), and outputs an M-dimensional complex-valued vector β:
+So far we have only considered the good news about the QFT: its amazing speed. Now it is time to read the fine print. The classical FFT algorithm actually outputs the M complex numbers $\beta _ { 0 } , \dots , \beta _ { M - 1 }$ . In contrast, the QFT only prepares a superposition $\begin{array} { r } { | \beta \rangle = \sum _ { i = 0 } ^ { M - 1 } \bar { \beta } | j \rangle } \end{array}$ And, as we saw earlier, these amplitudes are part of the “private world” of this quantum system.
 
-
+Thus the only way to get our hands on this result is by measuring it! And measuring the state of the system only yields m = log M classical bits: specifically, the output is index j with probability $| \beta _ { j } | ^ { 2 }$
 
-
+So, instead of QFT, it would be more accurate to call this algorithm quantum Fourier sampling. Moreover, even though we have confined our attention to the case $M = 2 ^ { m }$ in this section, the algorithm can be implemented for arbitrary values of M, and can be summarized as follows:
 
-β_&#123;0&#125; β_&#123;1&#125; β_&#123;2&#125;
+Input: A superposition of m = log M qubits, $\begin{array} { r } { | \alpha \rangle = \sum _ { j = 0 } ^ { M - 1 } \alpha _ { j } | j \rangle } \end{array}$
 
-... β_&#123;M&#125;−1
+Method: Using $O ( m ^ { 2 } ) = O ( \log ^ { 2 } M )$ quantum operations perform the quantum FFT to obtain the superposition $\begin{array} { r } { \mathinner { | { \bar { \beta } } \rangle } = \dot { \sum } _ { j = 0 } ^ { M - 1 } \beta _ { j } \mathinner { | { j } \rangle } } \end{array}$
 
-
+Output: A random m-bit number $j$ (that is, $0 \leq j \leq M - 1 )$ , from the probability distribution $P r [ j ] = | \beta _ { j } | ^ { 2 }$
 
-
-
-= 1
-
-√
-
-M
-
-
-
-
-
-1 1 1 · · · 1 1 ω ω^&#123;2&#125; · · · ω^&#123;M&#125;−1
-
-1 ω^&#123;2&#125; ω^&#123;4&#125; · · · ω^&#123;2(&#125;M−1) ... 1 ω^&#123;j&#125; ω^&#123;2&#125;j · · · ω^&#123;(&#125;M−1)j ... 1 ω^&#123;(&#125;M−1) ω^&#123;2(&#125;M−1) · · · ω^&#123;(&#125;M−1)(M−1)
-
-
-
-
-
-
-
-
-
-α_&#123;0&#125; α_&#123;1&#125; α_&#123;2&#125;
-
-... α_&#123;M&#125;−1
-
-
-
-
-
-,
-
-where ω is a complex Mth root of unity (the extra factor of
-
-√
-
-M is new and has the effect of ensuring that if the |α_&#123;i&#125;|^&#123;2&#125; add up to 1, then so do the |β_&#123;i&#125;|^&#123;2&#125;). Although the preceding equation suggests an O(M^&#123; &#125;2) algorithm, the classical FFT is able to perform this calculation in just O(M log M) steps, and it is this speedup that has had the profound effect of making digital signal processing practically feasible. We will now see that quantum computers can implement the FFT exponentially faster, in O(log^&#123;2&#125; M) time!
-
-But wait, how can any algorithm take time less than M, the length of the input? The point is that we can encode the input in a superposition of just m = log M qubits: after all, this superposition consists of 2^&#123;m&#125; amplitude values. In the notation we introduced earlier, we would write the superposition as
-
-α
-
-= PM−1
-
-j=0 α_&#123;j&#125;
-
-j
-
-where α_&#123;i&#125; is the amplitude of the m-bit binary string corresponding to the number i in the natural way. This brings up an important
-
-![Figure 10.4 The classical FFT circuit from Chapter 2. Input vectors of M bits are processed](images/fig_10_4.png)
-
-α_&#123;0&#125;
-
-α_&#123;4&#125;
-
-α_&#123;2&#125;
-
-α_&#123;6&#125;
-
-α_&#123;1&#125;
-
-α_&#123;5&#125;
-
-α_&#123;7&#125;
-
-α_&#123;3&#125;
-
-1
-
-4
-
-4
-
-4
-
-4
-
-6
-
-6 7
-
-4
-
-4
-
-2
-
-2 6 3
-
-2 5
-
-4
-
-β_&#123;0&#125;
-
-β_&#123;1&#125;
-
-β_&#123;2&#125;
-
-β_&#123;3&#125;
-
-β_&#123;4&#125;
-
-β_&#123;5&#125;
-
-β_&#123;6&#125;
-
-β_&#123;7&#125;
-
-point: the
-
-j
-
-notation is really just another way of writing a vector, where the index of each entry of the vector is written out explicitly in the special bracket symbol.
-
-Starting from this input superposition
-
-α
-
-, the quantum Fourier transform (QFT) manipulates it appropriately in m = log M stages. At each stage the superposition evolves so that it encodes the intermediate results at the same stage of the classical FFT (whose circuit, with m = log M stages, is reproduced from Chapter 2 in Figure 10.4). As we will see in Section 10.5, this can be achieved with m quantum operations per stage. Ultimately, after m such stages and m^&#123;2&#125; = log^&#123;2&#125; M elementary operations, we obtain the superposition
-
-β
-
-that corresponds to the desired output of the QFT.
-
-So far we have only considered the good news about the QFT: its amazing speed. Now it is time to read the fine print. The classical FFT algorithm actually outputs the M complex numbers β_&#123;0&#125;, . . . , β_&#123;M&#125;−1. In contrast, the QFT only prepares a superposition
-
-β
-
-= PM−1
-
-j=0 β
-
-j
-
-. And, as we saw earlier, these amplitudes are part of the “private world” of this quantum system.
-
-Thus the only way to get our hands on this result is by measuring it! And measuring the state of the system only yields m = log M classical bits: specifically, the output is index j with probability |β_&#123;j&#125;|^&#123;2&#125;.
-
-So, instead of QFT, it would be more accurate to call this algorithm quantum Fourier sampling. Moreover, even though we have confined our attention to the case M = 2^&#123;m&#125; in this section, the algorithm can be implemented for arbitrary values of M, and can be summarized as follows:
+Quantum Fourier sampling is basically a quick way of getting a very rough idea about the output of the classical FFT, just detecting one of the larger components of the answer vector. In fact, we don't even see the value of that component—we only see its index. How can we use such meager information? In which applications of the FFT is just the index of the large components enough? This is what we explore next.

@@ -15,472 +15,307 @@ import Exercise from '@/components/Exercise.astro';
 
 ## 8.3 The reductions
 
-![Figure 8.7 Reductions between search problems.](images/fig_8_7.png)
-
 We shall now see that the search problems of Section 8.1 can be reduced to one another as depicted in Figure 8.7. As a consequence, they are all NP-complete.
 
-Before we tackle the specific reductions in the tree, let’s warm up by relating two versions of the Rudrata problem.
+Before we tackle the specific reductions in the tree, let's warm up by relating two versions of the Rudrata problem.
 
-R_&#123;UDRATA&#125; (s, t)-P_&#123;ATH&#125;−→R_&#123;UDRATA&#125; C_&#123;YCLE&#125;
+## RUDRATA (s, t)-PATH RUDRATA CYCLE
 
-Recall the R_&#123;UDRATA&#125; CYCLE problem: given a graph, is there a cycle that passes through each vertex exactly once? We can also formulate the closely related R_&#123;UDRATA&#125; (s, t)-_&#123;PATH&#125; problem, in which two vertices s and t are specified, and we want a path starting at s and ending at t that goes through each vertex exactly once. Is it possible that R_&#123;UDRATA&#125; CYCLE is easier than R_&#123;UDRATA&#125; (s, t)-_&#123;PATH&#125;? We will show by a reduction that the answer is no.
+Recall the RUDRATA CYCLE problem: given a graph, is there a cycle that passes through each vertex exactly once? We can also formulate the closely related RUDRATA (s, t)-PATH problem, in which two vertices s and t are specified, and we want a path starting at s and ending at t that goes through each vertex exactly once. Is it possible that RUDRATA CYCLE is easier than RUDRATA $( s , t ) \mathbf { - P A T H ? }$ We will show by a reduction that the answer is no.
 
-The reduction maps an instance (G = (V, E), s, t) of R_&#123;UDRATA&#125; (s, t)-_&#123;PATH&#125; into an instance G^&#123;′&#125; = (V^&#123; &#125;′, E^&#123;′&#125;) of R_&#123;UDRATA&#125; CYCLE as follows: G^&#123;′&#125; is simply G with an additional vertex x and two new edges &#123;s, x&#125; and &#123;x, t&#125;. For instance:
+The reduction maps an instance $( G = ( V , E ) , s , t )$ of RUDRATA (s, t)-PATH into an instance $G ^ { \prime } = ( V ^ { \prime } , E ^ { \prime } )$ of RUDRATA CYCLE as follows: $G ^ { \prime }$ is simply G with an additional vertex x and two new edges $\{ s , x \}$ and x, t . For instance:
 
-G G^&#123;′&#125;
+![](images/4d382fc823cfdca70f031f3da6c57c53cdf562c2ad5e64940e6eeb65b5e8711e.jpg)
 
-s
+So $V ^ { \prime } = V \cup \{ x \}$ , and $E ^ { \prime } = E \cup \{ \{ s , x \} , \{ x , t \} \}$ . How do we recover a Rudrata $( s , t ) \ – p a t h$ in $G$ given any Rudrata cycle in $G ^ { \prime } \hat { \ ? }$ Easy, we just delete the edges $\{ s , x \}$ and $\{ x , t \}$ from the cycle.
 
-t t
+RUDRATA (s, t)-PATH
 
-s
-
-x
-
-So V^&#123; &#125;′ = V ∪&#123;x&#125;, and E^&#123;′&#125; = E ∪&#123;&#123;s, x&#125;, &#123;x, t&#125;&#125;. How do we recover a Rudrata (s, t)-path in G given any Rudrata cycle in G^&#123;′&#125;? Easy, we just delete the edges &#123;s, x&#125; and &#123;x, t&#125; from the cycle.
-
-Instance:
-
-nodes s, t G = (V, E)
-
-&#123;s, x&#125;, &#123;x, t&#125;
-
-G^&#123;′&#125; = (V^&#123; &#125;′, E^&#123;′&#125;) R_&#123;UDRATA&#125;
-
-CYCLE and edges &#123;s, x&#125;, &#123;x, t&#125;
-
-No solution
-
-Solution:
-
-path Add node x Solution: cycle
-
-No solution
-
-Delete edges
-
-R_&#123;UDRATA&#125; (s, t)-_&#123;PATH&#125;
+<table><tr><td rowspan="2">Instance: G = (V, E) nodes s, t</td><td rowspan="2">Add node x and edges &#123;s, x&#125;, &#123;x, t&#125;</td><td rowspan="2">G&#x27; = (V&#x27;, E&#x27;)</td><td rowspan="2">RUDRATA CYCLE</td><td>Solution: cycle</td><td>Delete edges &#123;s, x&#125;, &#123;x, t&#125;</td><td>Solution: path</td></tr><tr><td colspan="2">No solution</td><td>No solution</td></tr></table>
 
 To confirm the validity of this reduction, we have to show that it works in the case of either outcome depicted.
 
-1. When the instance of R_&#123;UDRATA&#125; CYCLE has a solution.
+1. When the instance of RUDRATA CYCLE has a solution.
 
-Since the new vertex x has only two neighbors, s and t, any Rudrata cycle in G^&#123;′&#125; must consecutively traverse the edges &#123;t, x&#125; and &#123;x, s&#125;. The rest of the cycle then traverses every other vertex en route from s to t. Thus deleting the two edges &#123;t, x&#125; and &#123;x, s&#125; from the Rudrata cycle gives a Rudrata path from s to t in the original graph G.
+Since the new vertex x has only two neighbors, s and t, any Rudrata cycle in $G ^ { \prime }$ must consecutively traverse the edges $\{ t , x \}$ and $\{ x , s \}$ . The rest of the cycle then traverses every other vertex en route from s to t. Thus deleting the two edges $\{ t , x \}$ and $\{ x , s \}$ from the Rudrata cycle gives a Rudrata path from s to t in the original graph G.
 
-2. When the instance of R_&#123;UDRATA&#125; CYCLE does not have a solution.
+## 2. When the instance of RUDRATA CYCLE does not have a solution.
 
-In this case we must show that the original instance of R_&#123;UDRATA&#125; (s, t)-_&#123;PATH&#125; cannot have a solution either. It is usually easier to prove the contrapositive, that is, to show that if there is a Rudrata (s, t)-path in G, then there is also a Rudrata cycle in G^&#123;′&#125;. But this is easy: just add the two edges &#123;t, x&#125; and &#123;x, s&#125; to the Rudrata path to close the cycle.
+In this case we must show that the original instance of RUDRATA (s, t)-PATH cannot have a solution either. It is usually easier to prove the contrapositive, that is, to show that if there is a Rudrata $( s , t )$ -path in $G ,$ then there is also a Rudrata cycle in $G ^ { \prime }$ . But this is easy: just add the two edges $\{ t , x \}$ and $\{ x , s \}$ to the Rudrata path to close the cycle.
 
-One last detail, crucial but typically easy to check, is that the pre- and postprocessing functions take time polynomial in the size of the instance (G, s, t).
+One last detail, crucial but typically easy to check, is that the pre- and postprocessing functions take time polynomial in the size of the instance $( G , s , t )$
 
-It is also possible to go in the other direction and reduce R_&#123;UDRATA&#125; CYCLE to R_&#123;UDRATA&#125; (s, t)-_&#123;PATH&#125;. Together, these reductions demonstrate that the two Rudrata variants are in essence the same problem—which is not too surprising, given that their descriptions are almost the same. But most of the other reductions we will see are between pairs of problems that, on the face of it, look quite different. To show that they are essentially the same, our reductions will have to cleverly translate between them.
+It is also possible to go in the other direction and reduce RUDRATA CYCLE to RUDRATA $( s , t ) \mathrm { - P A T H }$ Together, these reductions demonstrate that the two Rudrata variants are in essence the same problem—which is not too surprising, given that their descriptions are almost the same. But most of the other reductions we will see are between pairs of problems that, on the face of $\mathrm { i t } ,$ look quite different. To show that they are essentially the same, our reductions will have to cleverly translate between them.
 
-3S_&#123;AT&#125;−→I_&#123;NDEPENDENT&#125; S_&#123;ET&#125;
+## 3SAT INDEPENDENT SET
 
-One can hardly think of two more different problems. In 3_&#123;SAT&#125; the input is a set of clauses, each with three or fewer literals, for example
+One can hardly think of two more different problems. In 3SAT the input is a set of clauses, each with three or fewer literals, for example
 
-(
+$$
+(\overline {{x}} \vee y \vee \overline {{z}}) (x \vee \overline {{y}} \vee z) (x \vee y \vee z) (\overline {{x}} \vee \overline {{y}}),
+$$
 
-x ∨y ∨
+and the aim is to find a satisfying truth assignment. In INDEPENDENT SET the input is a graph and a number $^ { g , }$ and the problem is to find a set of $g$ pairwise non-adjacent vertices. We must somehow relate Boolean logic with graphs!
 
-z) (x ∨
+Let us think. To form a satisfying truth assignment we must pick one literal from each clause and give it the value true. But our choices must be consistent: if we choose x in one clause, we cannot choose x in another. Any consistent choice of literals, one from each clause, specifies a truth assignment (variables for which neither literal has been chosen can take on either value).
 
-y ∨z) (x ∨y ∨z) (
+So, let us represent a clause, say $( x \vee \overline { { y } } \vee z )$ , by a triangle, with vertices labeled $x , { \overline { { y } } } , z .$ . Why triangle? Because a triangle has its three vertices maximally connected, and thus forces us to pick only one of them for the independent set. Repeat this construction for all clauses—a clause with two literals will be represented simply by an edge joining the literals. (A clause with one literal is silly and can be removed in a preprocessing step, since the value of the variable is determined.) In the resulting graph, an independent set has to pick at most one literal from each group (clause). To force exactly one choice from each clause, take the goal g to be the number of clauses; in our example, g = 4.
 
-x ∨
+Figure 8.8 The graph corresponding to (x <sub>∨</sub> y <sub>∨</sub> z) (x <sub>∨</sub> y <sub>∨</sub> z) (x <sub>∨</sub> y <sub>∨</sub> z) (x <sub>∨</sub> y).  
+![](images/4e714792c938cc64ac23a31d75f7e1f780ed3f8ccbdade008c0d224c5e87c9b2.jpg)
 
-y),
+All that is missing now is a way to prevent us from choosing opposite literals (that is, both x and x) in different clauses. But this is easy: put an edge between any two vertices that correspond to opposite literals. The resulting graph for our example is shown in Figure 8.8.
 
-and the aim is to find a satisfying truth assignment. In_&#123; &#125;INDEPENDENT SET the input is a graph and a number g, and the problem is to find a set of g pairwise non-adjacent vertices. We must somehow relate Boolean logic with graphs!
+Let's recap the construction. Given an instance I of 3SAT, we create an instance (G, g) of INDEPENDENT SET as follows.
 
-Let us think. To form a satisfying truth assignment we must pick one literal from each clause and give it the value true. But our choices must be consistent: if we choose
+Graph G has a triangle for each clause (or just an edge, if the clause has two literals), with vertices labeled by the clause's literals, and has additional edges between any two vertices that represent opposite literals.
 
-x in one clause, we cannot choose x in another. Any consistent choice of literals, one from each clause, specifies a truth assignment (variables for which neither literal has been chosen can take on either value).
-
-So, let us represent a clause, say (x ∨
-
-y ∨z), by a triangle, with vertices labeled x,
-
-y, z. Why triangle? Because a triangle has its three vertices maximally connected, and thus forces us
-
-![Figure 8.8 The graph corresponding to (](images/fig_8_8.png)
-
-to pick only one of them for the independent set. Repeat this construction for all clauses—a clause with two literals will be represented simply by an edge joining the literals. (A clause with one literal is silly and can be removed in a preprocessing step, since the value of the variable is determined.) In the resulting graph, an independent set has to pick at most one literal from each group (clause). To force exactly one choice from each clause, take the goal g to be the number of clauses; in our example, g = 4.
-
-All that is missing now is a way to prevent us from choosing opposite literals (that is, both x and
-
-x) in different clauses. But this is easy: put an edge between any two vertices that correspond to opposite literals. The resulting graph for our example is shown in Figure 8.8.
-
-Let’s recap the construction. Given an instance I of 3_&#123;SAT&#125;, we create an instance (G, g) of
-
-INDEPENDENT SET as follows.
-
-• Graph G has a triangle for each clause (or just an edge, if the clause has two literals), with vertices labeled by the clause’s literals, and has additional edges between any two vertices that represent opposite literals.
-
-• The goal g is set to the number of clauses.
+The goal g is set to the number of clauses.
 
 Clearly, this construction takes polynomial time. However, recall that for a reduction we do not just need an efficient way to map instances of the first problem to instances of the second (the function f in the diagram on page 245), but also a way to reconstruct a solution to the first instance from any solution of the second (the function h). As always, there are two things to show.
 
 1. Given an independent set S of g vertices in G, it is possible to efficiently recover a satisfying truth assignment to I.
 
-For any variable x, the set S cannot contain vertices labeled both x and
-
-x, because any such pair of vertices is connected by an edge. So assign x a value of true if S contains a vertex labeled x, and a value of false if S contains a vertex labeled
-
-x (if S contains neither, then assign either value to x). Since S has g vertices, it must have one vertex per clause; this truth assignment satisfies those particular literals, and thus satisfies all clauses.
+For any variable x, the set S cannot contain vertices labeled both x and x, because any such pair of vertices is connected by an edge. So assign x a value of true if S contains a vertex labeled x, and a value of false if S contains a vertex labeled x (if S contains neither, then assign either value to x). Since S has g vertices, it must have one vertex per clause; this truth assignment satisfies those particular literals, and thus satisfies all clauses.
 
 2. If graph G has no independent set of size g, then the Boolean formula I is unsatisfiable.
 
-It is usually cleaner to prove the contrapositive, that if I has a satisfying assignment then G has an independent set of size g. This is easy: for each clause, pick any literal whose value under the satisfying assignment is true (there must be at least one such literal), and add the corresponding vertex to S. Do you see why set S must be independent?
+It is usually cleaner to prove the contrapositive, that if I has a satisfying assignment then G has an independent set of size $g .$ This is easy: for each clause, pick any literal whose value under the satisfying assignment is true (there must be at least one such literal), and add the corresponding vertex to S. Do you see why set S must be independent?
 
-S_&#123;AT&#125;−→3S_&#123;AT&#125;
+## SAT 3SAT
 
-This is an interesting and common kind of reduction, from a problem to a special case of itself. We want to show that the problem remains hard even if its inputs are restricted somehow—in the present case, even if all clauses are restricted to have ≤3 literals. Such reductions modify the given instance so as to get rid of the forbidden feature (clauses with ≥4 literals) while keeping the instance essentially the same, in that we can read off a solution to the original instance from any solution of the modified one.
+This is an interesting and common kind of reduction, from a problem to a special case of itself. We want to show that the problem remains hard even if its inputs are restricted somehow—in the present case, even if all clauses are restricted to have $: \le 3$ literals. Such reductions modify the given instance so as to get rid of the forbidden feature (clauses with $\geq 4$ literals) while keeping the instance essentially the same, in that we can read off a solution to the original instance from any solution of the modified one.
 
-Here’s the trick for reducing_&#123; &#125;SAT to 3_&#123;SAT&#125;: given an instance I of_&#123; &#125;SAT, use exactly the same instance for 3_&#123;SAT&#125;, except that any clause with more than three literals, (a_&#123;1&#125; ∨a_&#123;2&#125; ∨· · · ∨a_&#123;k&#125;) (where the a_&#123;i&#125;’s are literals and k > 3), is replaced by a set of clauses,
+Here's the trick for reducing SAT to 3SAT: given an instance I of SAT, use exactly the same instance for 3SAT, except that any clause with more than three literals, $( a _ { 1 } \lor a _ { 2 } \lor \cdots \lor a _ { k } )$ (where the $a _ { i } \mathbf { \bar { s } }$ are literals and $k > 3 )$ , is replaced by a set of clauses,
 
-(a_&#123;1&#125; ∨a_&#123;2&#125; ∨y_&#123;1&#125;) (
+$$
+\left(a _ {1} \vee a _ {2} \vee y _ {1}\right) \left(\overline {{y}} _ {1} \vee a _ {3} \vee y _ {2}\right) \left(\overline {{y}} _ {2} \vee a _ {4} \vee y _ {3}\right) \dots \left(\overline {{y}} _ {k - 3} \vee a _ {k - 1} \vee a _ {k}\right),
+$$
 
-y_&#123;1&#125; ∨a_&#123;3&#125; ∨y_&#123;2&#125;) (
+where the $y _ { i } \mathbf { \vec { s } }$ are new variables. Call the resulting 3SAT instance $I ^ { \prime } .$ The conversion from I to $I ^ { \prime }$ is clearly polynomial time.
 
-y_&#123;2&#125; ∨a_&#123;4&#125; ∨y_&#123;3&#125;) · · · (
+Why does this reduction work? I0 is equivalent to I in terms of satisfiability, because for any assignment to the $a _ { i } \mathbf { \dot { s } }$
 
-y_&#123;k&#125;−3 ∨a_&#123;k&#125;−1 ∨a_&#123;k&#125;),
+$$
+\left\{ \begin{array}{c} (a _ {1} \vee a _ {2} \vee \dots \vee a _ {k}) \\ \text {is satisfied} \end{array} \right\} \Longleftrightarrow \left\{ \begin{array}{c} \text {there is a setting of the } y_i \text{ 's for which} \\ (a _ {1} \vee a _ {2} \vee y _ {1}) (\overline {{y}} _ {1} \vee a _ {3} \vee y _ {2}) \dots (\overline {{y}} _ {k - 3} \vee a _ {k - 1} \vee a _ {k}) \\ \text {are all satisfied} \end{array} \right\}
+$$
 
-where the y_&#123;i&#125;’s are new variables. Call the resulting 3_&#123;SAT&#125; instance I^&#123; &#125;′. The conversion from I to I^&#123;′&#125; is clearly polynomial time.
+To see this, first suppose that the clauses on the right are all satisfied. Then at least one of the literals $a _ { 1 } , \ldots , a _ { k }$ must be true—otherwise $y _ { 1 }$ would have to be true, which would in turn force $y _ { 2 }$ to be true, and so on, eventually falsifying the last clause. But this means $( a _ { 1 } \lor a _ { 2 } \lor \cdots \lor a _ { k } )$ is also satisfied.
 
-Why does this reduction work? I^&#123;′&#125; is equivalent to I in terms of satisfiability, because for any assignment to the a_&#123;i&#125;’s,
+Conversely, if $( a _ { 1 } \lor a _ { 2 } \lor \cdots \lor a _ { k } )$ is satisfied, then some $a _ { i }$ must be true. Set $y _ { 1 } , \ldots , y _ { i - 2 }$ to true and the rest to false. This ensures that the clauses on the right are all satisfied.
 
- (a_&#123;1&#125; ∨a_&#123;2&#125; ∨· · · ∨a_&#123;k&#125;)
+Thus, any instance of SAT can be transformed into an equivalent instance of 3SAT. In fact, 3SAT remains hard even under the further restriction that no variable appears in more than three clauses. To show this, we must somehow get rid of any variable that appears too many times.
 
-is satisfied
+Here's the reduction from 3SAT to its constrained version. Suppose that in the 3SAT instance, variable x appears in $k > 3$ clauses. Then replace its first appearance by $x _ { 1 }$ , its second appearance by $x _ { 2 }$ , and so on, replacing each of its k appearances by a different new variable. Finally, add the clauses
 
-
-
-⇐⇒
-
- 
-
-
-
-there is a setting of the y_&#123;i&#125;’s for which (a_&#123;1&#125; ∨a_&#123;2&#125; ∨y_&#123;1&#125;) (
-
-y_&#123;1&#125; ∨a_&#123;3&#125; ∨y_&#123;2&#125;) · · · (
-
-y_&#123;k&#125;−3 ∨a_&#123;k&#125;−1 ∨a_&#123;k&#125;) are all satisfied
-
- 
-
-
-
-To see this, first suppose that the clauses on the right are all satisfied. Then at least one of the literals a_&#123;1&#125;, . . . , a_&#123;k&#125; must be true—otherwise y_&#123;1&#125; would have to be true, which would in turn force y_&#123;2&#125; to be true, and so on, eventually falsifying the last clause. But this means (a_&#123;1&#125; ∨a_&#123;2&#125; ∨· · · ∨a_&#123;k&#125;) is also satisfied.
-
-Conversely, if (a_&#123;1&#125; ∨a_&#123;2&#125; ∨· · · ∨a_&#123;k&#125;) is satisfied, then some a_&#123;i&#125; must be true. Set y_&#123;1&#125;, . . . , y_&#123;i&#125;−2 to true and the rest to false. This ensures that the clauses on the right are all satisfied.
-
-Thus, any instance of_&#123; &#125;SAT can be transformed into an equivalent instance of 3_&#123;SAT&#125;. In fact, 3_&#123;SAT&#125; remains hard even under the further restriction that no variable appears in more than three clauses. To show this, we must somehow get rid of any variable that appears too many times.
-
-Here’s the reduction from 3_&#123;SAT&#125; to its constrained version. Suppose that in the 3_&#123;SAT&#125; instance, variable x appears in k > 3 clauses. Then replace its first appearance by x_&#123;1&#125;, its second appearance by x_&#123;2&#125;, and so on, replacing each of its k appearances by a different new variable. Finally, add the clauses
-
-(
-
-x_&#123;1&#125; ∨x_&#123;2&#125;) (
-
-x_&#123;2&#125; ∨x_&#123;3&#125;) · · · (
-
-x_&#123;k&#125; ∨x_&#123;1&#125;).
+$$
+\left(\overline {{x}} _ {1} \vee x _ {2}\right) \left(\overline {{x}} _ {2} \vee x _ {3}\right) \dots \left(\overline {{x}} _ {k} \vee x _ {1}\right).
+$$
 
 And repeat for every variable that appears more than three times.
 
-![Figure 8.9 S is a vertex cover if and only if V −S is an independent set.](images/fig_8_9.png)
+Figure 8.9 S is a vertex cover if and only if V S is an independent set.
 
-It is easy to see that in the new formula no variable appears more than three times (and in fact, no literal appears more than twice). Furthermore, the extra clauses involving x_&#123;1&#125;, x_&#123;2&#125;, . . . , x_&#123;k&#125; constrain these variables to have the same value; do you see why? Hence the original instance of 3_&#123;SAT&#125; is satisfiable if and only if the constrained instance is satisfiable.
+![](images/ee37e47e6ea44cfa9143ca8ea61433bb5dd6ac8cda30bc84cebbd50306f3650f.jpg)
 
-I_&#123;NDEPENDENT&#125; S_&#123;ET&#125;−→V_&#123;ERTEX&#125; C_&#123;OVER&#125;
+It is easy to see that in the new formula no variable appears more than three times (and in fact, no literal appears more than twice). Furthermore, the extra clauses involving $x _ { 1 } , x _ { 2 } , \ldots , x _ { k }$ constrain these variables to have the same value; do you see why? Hence the original instance of 3SAT is satisfiable if and only if the constrained instance is satisfiable.
 
-Some reductions rely on ingenuity to relate two very different problems. Others simply record the fact that one problem is a thin disguise of another. To reduce_&#123; &#125;INDEPENDENT SET to
+## INDEPENDENT SET VERTEX COVER
 
-VERTEX COVER we just need to notice that a set of nodes S is a vertex cover of graph G = (V, E) (that is, S touches every edge in E) if and only if the remaining nodes, V −S, are an independent set of G (Figure 8.9).
+Some reductions rely on ingenuity to relate two very different problems. Others simply record the fact that one problem is a thin disguise of another. To reduce INDEPENDENT SET to VERTEX COVER we just need to notice that a set of nodes S is a vertex cover of graph $G =$ $( V , E )$ (that is, S touches every edge in E) if and only if the remaining nodes, $V - S _ { i }$ , are an independent set of G (Figure 8.9).
 
-Therefore, to solve an instance (G, g) of_&#123; &#125;INDEPENDENT SET, simply look for a vertex cover of G with |V | −g nodes. If such a vertex cover exists, then take all nodes not in it. If no such vertex cover exists, then G cannot possibly have an independent set of size g.
+Therefore, to solve an instance $( G , g )$ of INDEPENDENT SET, simply look for a vertex cover of G with $| V | - g$ nodes. If such a vertex cover exists, then take all nodes not in it. If no such vertex cover exists, then G cannot possibly have an independent set of size g.
 
-I_&#123;NDEPENDENT&#125; S_&#123;ET&#125;−→C_&#123;LIQUE&#125;
+## INDEPENDENT SET CLIQUE
 
-I_&#123;NDEPENDENT&#125; SET and_&#123; &#125;CLIQUE are also easy to reduce to one another. Define the complement of a graph G = (V, E) to be
+INDEPENDENT SET and CLIQUE are also easy to reduce to one another. Define the complement of a graph $G = ( V , E )$ to be $\overline { { G } } = ( V , \overline { { E } } )$ , where $\overline { E }$ contains precisely those unordered pairs of vertices that are not in E. Then a set of nodes S is an independent set of G if and only if S is a clique of $\overline { { G } } .$ . To paraphrase, these nodes have no edges between them in G if and only if they have all possible edges between them in G.
 
-G = (V,
+Therefore, we can reduce INDEPENDENT SET to CLIQUE by mapping an instance $( G , g )$ of INDEPENDENT SET to the corresponding instance $( { \overline { { G } } } , g )$ of CLIQUE; the solution to both is identical.
 
-E), where
+## 3SAT 3D MATCHING
 
-E contains precisely those unordered pairs of vertices that are not in E. Then a set of nodes S is an independent set of G if and only if S is a clique of
-
-G. To paraphrase, these nodes have no edges between them in G if and only if they have all possible edges between them in
-
-G. Therefore, we can reduce_&#123; &#125;INDEPENDENT SET to_&#123; &#125;CLIQUE by mapping an instance (G, g) of_&#123; &#125;INDEPENDENT SET to the corresponding instance (
-
-G, g) of_&#123; &#125;CLIQUE; the solution to both is identical.
-
-3S_&#123;AT&#125;−→3D M_&#123;ATCHING&#125;
-
-Again, two very different problems. We must reduce 3_&#123;SAT&#125; to the problem of finding, among a set of boy-girl-pet triples, a subset that contains each boy, each girl, and each pet exactly once. In short, we must design sets of boy-girl-pet triples that somehow behave like Boolean variables and gates!
+Again, two very different problems. We must reduce 3SAT to the problem of finding, among a set of boy-girl-pet triples, a subset that contains each boy, each girl, and each pet exactly once. In short, we must design sets of boy-girl-pet triples that somehow behave like Boolean variables and gates!
 
 Consider the following set of four triples, each represented by a triangular node joining a boy, girl, and pet:
 
-p_&#123;1&#125;
+![](images/40f6d49c01d1dbf1310fd97e0a8b506e7c1baad12d4fdaab67853d43edcfaba9.jpg)
 
-p_&#123;3&#125;
+Suppose that the two boys $b _ { 0 }$ and $b _ { 1 }$ and the two girls $g _ { 0 }$ and $g _ { 1 }$ are not involved in any other triples. (The four pets $p _ { 0 } , \ldots , p _ { 3 }$ will of course belong to other triples as well; for otherwise the instance would trivially have no solution.) Then any matching must contain either the two triples $( b _ { 0 } , g _ { 1 } , p _ { 0 } ) , ( b _ { 1 } , g _ { 0 } , p _ { 2 } )$ or the two triples $( b _ { 0 } , g _ { 0 } , p _ { 1 } ) , ( b _ { 1 } , g _ { 1 } , p _ { 3 } )$ , because these are the only ways in which these two boys and girls can find any match. Therefore, this “gadget” has two possible states: it behaves like a Boolean variable!
 
-g_&#123;0&#125;
+To then transform an instance of 3SAT to one of 3D MATCHING, we start by creating a copy of the preceding gadget for each variable $x .$ . Call the resulting nodes $p _ { x 1 } , b _ { x 0 } , g _ { x 1 }$ , and so on. The intended interpretation is that boy $b _ { x 0 }$ is matched with girl ${ g } _ { x 1 }$ if $x =$ true, and with girl $g _ { x 0 }$ if $x = \mathtt { f a l s e }$
 
-g_&#123;1&#125; b_&#123;1&#125;
+Next we must create triples that somehow mimic clauses. For each clause, say $c = ( x \vee \overline { { y } } \vee z )$ introduce a new boy $b _ { c }$ and a new girl $g _ { c }$ . They will be involved in three triples, one for each literal in the clause. And the pets in these triples must reflect the three ways whereby the clause can be satisfied: (1) x = true, $\left( 2 \right) y = \mathtt { f a l s e } , \left( 3 \right) z = \mathtt { t r u e }$ . For (1), we have the triple $\left( b _ { c } , g _ { c } , p _ { x 1 } \right)$ , where $p _ { x 1 }$ is the pet $p _ { 1 }$ in the gadget for x. Here is why we chose $p _ { 1 } \colon$ if $x =$ true, then $b _ { x 0 }$ is matched with $g _ { x 1 }$ and $b _ { x 1 }$ with $g _ { x 0 }$ , and so pets $p _ { x 0 }$ and $p _ { x 2 }$ are taken. In which case $b _ { c }$ and $g _ { c }$ can be matched with $p _ { x 1 }$ . But if $\boldsymbol { x } = \mathtt { f a l s e }$ , then $p _ { x 1 }$ and $p _ { x 3 }$ are taken, and so $g _ { c }$ and $b _ { c }$ cannot be accommodated this way. We do the same thing for the other two literals of the clause, which yield triples involving $b _ { c }$ and $g _ { c }$ with either $p _ { y 0 }$ or $p _ { y 2 }$ (for the negated variable y) and with either $p _ { z 1 }$ or $p _ { z 3 }$ (for variable z).
 
-b_&#123;0&#125;
+We have to make sure that for every occurrence of a literal in a clause c there is a different pet to match with $b _ { c }$ and $g _ { c }$ . But this is easy: by an earlier reduction we can assume that no literal appears more than twice, and so each variable gadget has enough pets, two for negated occurrences and two for unnegated.
 
-p_&#123;0&#125; p_&#123;2&#125;
+The reduction now seems complete: from any matching we can recover a satisfying truth assignment by simply looking at each variable gadget and seeing with which girl $b _ { x 0 }$ was matched. And from any satisfying truth assignment we can match the gadget corresponding to each variable x so that triples $( b _ { x 0 } , g _ { x 1 } , p _ { x 0 } )$ and $( b _ { x 1 } , g _ { x 0 } , p _ { x 2 } )$ are chosen if x = true and triples $( b _ { x 0 } , g _ { x 0 } , p _ { x 1 } )$ and $( b _ { x 1 } , g _ { x 1 } , p _ { x 3 } )$ are chosen if x = false; and for each clause c match $b _ { c }$ and $g _ { c }$ with the pet that corresponds to one of its satisfying literals.
 
-Suppose that the two boys b_&#123;0&#125; and b_&#123;1&#125; and the two girls g_&#123;0&#125; and g_&#123;1&#125; are not involved in any other triples. (The four pets p_&#123;0&#125;, . . . , p_&#123;3&#125; will of course belong to other triples as well; for otherwise the instance would trivially have no solution.) Then any matching must contain either the two triples (b_&#123;0&#125;, g_&#123;1&#125;, p_&#123;0&#125;), (b_&#123;1&#125;, g_&#123;0&#125;, p_&#123;2&#125;) or the two triples (b_&#123;0&#125;, g_&#123;0&#125;, p_&#123;1&#125;), (b_&#123;1&#125;, g_&#123;1&#125;, p_&#123;3&#125;), because these are the only ways in which these two boys and girls can find any match. Therefore, this “gadget” has two possible states: it behaves like a Boolean variable!
+But one last problem remains: in the matching defined at the end of the last paragraph, some pets may be left unmatched. In fact, if there are $n$ variables and $m$ clauses, then exactly
 
-To then transform an instance of 3_&#123;SAT&#125; to one of 3D_&#123; &#125;MATCHING, we start by creating a copy of the preceding gadget for each variable x. Call the resulting nodes p_&#123;x&#125;1, b_&#123;x&#125;0, g_&#123;x&#125;1, and so on. The intended interpretation is that boy b_&#123;x&#125;0 is matched with girl g_&#123;x&#125;1 if x = true, and with girl g_&#123;x&#125;0 if x = false.
+$2 n - m$ pets will be left unmatched (you can check that this number is sure to be positive, because we have at most three occurrences of every variable, and at least two literals in every clause). But this is easy to fix: Add $2 n - m$ new boy-girl couples that are “generic animallovers,” and match them by triples with all the pets!
 
-Next we must create triples that somehow mimic clauses. For each clause, say c = (x∨
+## 3D MATCHING ZOE
 
-y∨z), introduce a new boy b_&#123;c&#125; and a new girl g_&#123;c&#125;. They will be involved in three triples, one for each literal in the clause. And the pets in these triples must reflect the three ways whereby the clause can be satisfied: (1) x = true, (2) y = false, (3) z = true. For (1), we have the triple (b_&#123;c&#125;, g_&#123;c&#125;, p_&#123;x&#125;1), where p_&#123;x&#125;1 is the pet p_&#123;1&#125; in the gadget for x. Here is why we chose p_&#123;1&#125;: if x = true, then b_&#123;x&#125;0 is matched with g_&#123;x&#125;1 and b_&#123;x&#125;1 with g_&#123;x&#125;0, and so pets p_&#123;x&#125;0 and p_&#123;x&#125;2 are taken. In which case b_&#123;c&#125; and g_&#123;c&#125; can be matched with p_&#123;x&#125;1. But if x = false, then p_&#123;x&#125;1 and p_&#123;x&#125;3 are taken, and so g_&#123;c&#125; and b_&#123;c&#125; cannot be accommodated this way. We do the same thing for the other two literals of the clause, which yield triples involving b_&#123;c&#125; and g_&#123;c&#125; with either p_&#123;y&#125;0 or p_&#123;y&#125;2 (for the negated variable y) and with either p_&#123;z&#125;1 or p_&#123;z&#125;3 (for variable z).
+Recall that in ZOE we are given an $m \times n$ matrix A with 0 1 entries, and we must find a $0 - 1$ vector $\mathbf { x } = ( x _ { 1 } , \ldots , x _ { n } )$ such that the m equations
 
-We have to make sure that for every occurrence of a literal in a clause c there is a different pet to match with b_&#123;c&#125; and g_&#123;c&#125;. But this is easy: by an earlier reduction we can assume that no literal appears more than twice, and so each variable gadget has enough pets, two for negated occurrences and two for unnegated.
+$$
+\mathbf {A x} = \mathbf {1}
+$$
 
-The reduction now seems complete: from any matching we can recover a satisfying truth assignment by simply looking at each variable gadget and seeing with which girl b_&#123;x&#125;0 was matched. And from any satisfying truth assignment we can match the gadget corresponding to each variable x so that triples (b_&#123;x&#125;0, g_&#123;x&#125;1, p_&#123;x&#125;0) and (b_&#123;x&#125;1, g_&#123;x&#125;0, p_&#123;x&#125;2) are chosen if x = true and triples (b_&#123;x&#125;0, g_&#123;x&#125;0, p_&#123;x&#125;1) and (b_&#123;x&#125;1, g_&#123;x&#125;1, p_&#123;x&#125;3) are chosen if x = false; and for each clause c match b_&#123;c&#125; and g_&#123;c&#125; with the pet that corresponds to one of its satisfying literals.
+are satisfied, where by 1 we denote the column vector of all 1's. How can we express the 3D MATCHING problem in this framework?
 
-But one last problem remains: in the matching defined at the end of the last paragraph, some pets may be left unmatched. In fact, if there are n variables and m clauses, then exactly
+ZOE and ILP are very useful problems precisely because they provide a format in which many combinatorial problems can be expressed. In such a formulation we think of the $0 - 1$ variables as describing a solution, and we write equations expressing the constraints of the problem.
 
-2n −m pets will be left unmatched (you can check that this number is sure to be positive, because we have at most three occurrences of every variable, and at least two literals in every clause). But this is easy to fix: Add 2n −m new boy-girl couples that are “generic animallovers,” and match them by triples with all the pets!
+For example, here is how we express an instance of 3D MATCHING (m boys, m girls, m pets, and n boy-girl-pet triples) in the language of ZOE. We have 0 1 variables $x _ { 1 } , \ldots , x _ { n } .$ one per triple, where $x _ { i } = 1$ means that the ith triple is chosen for the matching, and $x _ { i } = 0$ means that it is not chosen.
 
-3D M_&#123;ATCHING&#125;−→ZOE
+Now all we have to do is write equations stating that the solution described by the $x _ { i } \mathbf { \dot { s } }$ is a legitimate matching. For each boy (or girl, or pet), suppose that the triples containing him (or her, or it) are those numbered $j _ { 1 } , j _ { 2 } , \dots , j _ { k } ;$ the appropriate equation is then
 
-Recall that in_&#123; &#125;ZOE we are given an m × n matrix A with 0 −1 entries, and we must find a 0 −1 vector x = (x_&#123;1&#125;, . . . , x_&#123;n&#125;) such that the m equations
+$$
+x _ {j _ {1}} + x _ {j _ {2}} + \dots + x _ {j _ {k}} = 1,
+$$
 
-Ax = 1
+which states that exactly one of these triples must be included in the matching. For example, here is the A matrix for an instance of 3D MATCHING we saw earlier.
 
-are satisfied, where by 1 we denote the column vector of all 1’s. How can we express the 3D
+![](images/95ee117c90774c04b27ee4cd0f10e41d82118febd0a6e1918039bea22fd676d5.jpg)
 
-MATCHING problem in this framework?
-
-Z_&#123;OE&#125; and_&#123; &#125;ILP are very useful problems precisely because they provide a format in which many combinatorial problems can be expressed. In such a formulation we think of the 0 −1 variables as describing a solution, and we write equations expressing the constraints of the problem.
-
-For example, here is how we express an instance of 3D_&#123; &#125;MATCHING (m boys, m girls, m pets, and n boy-girl-pet triples) in the language of_&#123; &#125;ZOE. We have 0 −1 variables x_&#123;1&#125;, . . . , x_&#123;n&#125;, one per triple, where x_&#123;i&#125; = 1 means that the ith triple is chosen for the matching, and x_&#123;i&#125; = 0 means that it is not chosen.
-
-Now all we have to do is write equations stating that the solution described by the x_&#123;i&#125;’s is a legitimate matching. For each boy (or girl, or pet), suppose that the triples containing him (or her, or it) are those numbered j_&#123;1&#125;, j_&#123;2&#125;, . . . , j_&#123;k&#125;; the appropriate equation is then
-
-x_&#123;j&#125;_&#123;1&#125; + x_&#123;j&#125;_&#123;2&#125; + · · · + x_&#123;j&#125;_&#123;k&#125; = 1,
-
-which states that exactly one of these triples must be included in the matching. For example, here is the A matrix for an instance of 3D M_&#123;ATCHING&#125; we saw earlier.
-
-Armadillo Bobcat
-
-Carol
-
-Beatrice
-
-Alice Chet
-
-Bob
-
-Al
-
-Canary
-
-A =
-
-
-
-            
-
-1 0 0 0 0 0 0 0 1 1 0 1 1 0 0 1 0 0 0 1 0 1 0 0 0 0 0 1 1 0 1 0 0 0 1 0 0 1 1 0 0 1 0 0 0
-
-
-
-            
+$$
+\mathbf {A} = \left( \begin{array}{c c c c c} 1 & 0 & 0 & 0 & 0 \\ 0 & 0 & 0 & 1 & 1 \\ 0 & 1 & 1 & 0 & 0 \\ 1 & 0 & 0 & 0 & 1 \\ 0 & 1 & 0 & 0 & 0 \\ 0 & 0 & 1 & 1 & 0 \\ 1 & 0 & 0 & 0 & 1 \\ 0 & 0 & 1 & 1 & 0 \\ 0 & 1 & 0 & 0 & 0 \end{array} \right)
+$$
 
 The five columns of A correspond to the five triples, while the nine rows are for Al, Bob, Chet, Alice, Beatrice, Carol, Armadillo, Bobcat, and Canary, respectively.
 
 It is straightforward to argue that solutions to the two instances translate back and forth.
 
-ZOE−→S_&#123;UBSET&#125; S_&#123;UM&#125;
+This is a reduction between two special cases of ILP: one with many equations but only 0 1 coefficients, and the other with a single equation but arbitrary integer coefficients. The reduction is based on a simple and time-honored idea: 0 1 vectors can encode numbers!
 
-This is a reduction between two special cases of_&#123; &#125;ILP: one with many equations but only 0 − 1 coefficients, and the other with a single equation but arbitrary integer coefficients. The reduction is based on a simple and time-honored idea: 0 −1 vectors can encode numbers!
+For example, given this instance of ZOE:
 
-For example, given this instance of_&#123; &#125;ZOE:
+$$
+\mathbf {A} = \left( \begin{array}{c c c c} 1 & 0 & 0 & 0 \\ 0 & 0 & 0 & 1 \\ 0 & 1 & 1 & 0 \\ 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 \end{array} \right),
+$$
 
-A =
+we are looking for a set of columns of A that, added together, make up the all-1's vector. But if we think of the columns as binary integers (read from top to bottom), we are looking for a subset of the integers 18, 5, 4, 8 that add up to the binary integer $1 1 1 1 1 _ { 2 } = 3 1$ . And this is an instance of SUBSET SUM. The reduction is complete!
 
-
+Except for one detail, the one that usually spoils the close connection between 0 1 vectors and binary integers: carry. Because of carry, 5-bit binary integers can add up to 31 (for example, $5 + 6 + 2 0 = 3 1$ or, in binary, $0 0 1 0 1 _ { 2 } + 0 0 1 1 0 _ { 2 } + 1 0 1 0 0 _ { 2 } = 1 1 1 1 1 _ { 2 } )$ even when the sum of the corresponding vectors is not (1, 1, 1, 1, 1). But this is easy to fix: Think of the column vectors not as integers in base 2, but as integers in base n + 1—one more than the number of columns. This way, since at most n integers are added, and all their digits are 0 and 1, there can be no carry, and our reduction works.
 
-    
+## ZOE ILP
 
-1 0 0 0 0 0 0 1 0 1 1 0 1 0 0 0 0 1 0 0
+3SAT is a special case of SAT—or, SAT is a generalization of 3SAT. By special case we mean that the instances of 3SAT are a subset of the instances of SAT (in particular, the ones with no long clauses), and the definition of solution is the same in both problems (an assignment satisfying all clauses). Consequently, there is a reduction from 3SAT to SAT, in which the input undergoes no transformation, and the solution to the target instance is also kept unchanged. In other words, functions f and h from the reduction diagram (on page 245) are both the identity.
 
-
+This sounds trivial enough, but it is a very useful and common way of establishing that a problem is NP-complete: Simply notice that it is a generalization of a known NP-complete problem. For example, the SET COVER problem is NP-complete because it is a generalization of VERTEX COVER (and also, incidentally, of 3D MATCHING). See Exercise 8.10 for more examples.
 
-    
+Often it takes a little work to establish that one problem is a special case of another. The reduction from ZOE to ILP is a case in point. In ILP we are looking for an integer vector x that satisfies $\mathbf { A x } \leq \mathbf { b }$ , for given matrix A and vector b. To write an instance of ZOE in this precise form, we need to rewrite each equation of the ZOE instance as two inequalities (recall the transformations of Section 7.1.4), and to add for each variable $x _ { i }$ the inequalities $x _ { i } \leq 1$ and $- x _ { i } \le 0$
 
-,
+Figure 8.10 Rudrata cycle with paired edges: $C = \{ ( e _ { 1 } , e _ { 3 } ) , ( e _ { 5 } , e _ { 6 } ) , ( e _ { 4 } , e _ { 5 } ) , ( e _ { 3 } , e _ { 7 } ) , ( e _ { 3 } , e _ { 8 } ) \}$  
+![](images/72407a1506768646e3d7379cb962c323dbb7fea6db5b2e307f73ae4f1c66c0b2.jpg)
 
-we are looking for a set of columns of A that, added together, make up the all-1’s vector. But if we think of the columns as binary integers (read from top to bottom), we are looking for a subset of the integers 18, 5, 4, 8 that add up to the binary integer 11111_&#123;2&#125; = 31. And this is an instance of_&#123; &#125;SUBSET SUM. The reduction is complete!
+## ZOE RUDRATA CYCLE
 
-Except for one detail, the one that usually spoils the close connection between 0 −1 vectors and binary integers: carry. Because of carry, 5-bit binary integers can add up to 31 (for example, 5 + 6 + 20 = 31 or, in binary, 00101_&#123;2&#125; + 00110_&#123;2&#125; + 10100_&#123;2&#125; = 11111_&#123;2&#125;) even when the sum of the corresponding vectors is not (1, 1, 1, 1, 1). But this is easy to fix: Think of the column vectors not as integers in base 2, but as integers in base n + 1—one more than the number of columns. This way, since at most n integers are added, and all their digits are 0 and 1, there can be no carry, and our reduction works.
+In the RUDRATA CYCLE problem we seek a cycle in a graph that visits every vertex exactly once. We shall prove it NP-complete in two stages: first we will reduce ZOE to a generalization of RUDRATA CYCLE, called RUDRATA CYCLE WITH PAIRED EDGES, and then we shall see how to get rid of the extra features of that problem and reduce it to the plain RUDRATA CYCLE problem.
 
-ZOE−→ILP
+In an instance of RUDRATA CYCLE WITH PAIRED EDGES we are given a graph $G = ( V , E )$ and a set $C \subseteq E \times E$ of pairs of edges. We seek a cycle that (1) visits all vertices once, like a Rudrata cycle should, and (2) for every pair of edges $( e , e ^ { \prime } )$ in $C _ { i }$ , traverses either edge e or edge e0—exactly one of them. In the simple example of Figure 8.10 a solution is shown in bold. Notice that we allow two or more parallel edges between two nodes—a feature that doesn't make sense in most graph problems—since now the different copies of an edge can be paired with other copies of edges in ways that do make a difference.
 
-3_&#123;SAT&#125; is a special case of_&#123; &#125;SAT—or,_&#123; &#125;SAT is a generalization of 3_&#123;SAT&#125;. By special case we mean that the instances of 3_&#123;SAT&#125; are a subset of the instances of_&#123; &#125;SAT (in particular, the ones with no long clauses), and the definition of solution is the same in both problems (an assignment satisfying all clauses). Consequently, there is a reduction from 3_&#123;SAT&#125; to_&#123; &#125;SAT, in which the input undergoes no transformation, and the solution to the target instance is also kept unchanged. In other words, functions f and h from the reduction diagram (on page 245) are both the identity.
+Now for the reduction of ZOE to RUDRATA CYCLE WITH PAIRED EDGES. Given an instance of ZOE, Ax = 1 (where A is an $m \times n$ matrix with 0 1 entries, and thus describes m equations in n variables), the graph we construct has the very simple structure shown in Figure 8.11: a cycle that connects m+n collections of parallel edges. For each variable $x _ { i }$ we have two parallel edges (corresponding to $x _ { i } = 1$ and $x _ { i } = 0 )$ . And for each equation $x _ { j _ { 1 } } + \cdot \cdot \cdot + x _ { j _ { k } } = 1$ involving k variables we have k parallel edges, one for every variable appearing in the equation. This is the whole graph. Evidently, any Rudrata cycle in this graph must traverse the $m + n$ collections of parallel edges one by one, choosing one edge from each collection. This way, the cycle “chooses” for each variable a value—0 or 1—and, for each equation, a variable appearing in it.
 
-This sounds trivial enough, but it is a very useful and common way of establishing that a problem is NP-complete: Simply notice that it is a generalization of a known NP-complete problem. For example, the_&#123; &#125;SET COVER problem is NP-complete because it is a generalization of_&#123; &#125;VERTEX COVER (and also, incidentally, of 3D_&#123; &#125;MATCHING). See Exercise 8.10 for more examples.
+The whole reduction can't be this simple, of course. The structure of the matrix A (and not just its dimensions) must be reflected somewhere, and there is one place left: the set C of pairs of edges such that exactly one edge in each pair is traversed. For every equation (recall there are m in total), and for every variable $x _ { i }$ appearing in it, we add to C the pair $( e , e ^ { \prime } )$ where e is the edge corresponding to the appearance of $x _ { i }$ in that particular equation (on the left-hand side of Figure 8.11), and $e ^ { \prime }$ is the edge corresponding to the variable assignment $x _ { i } = 0$ (on the right side of the figure). This completes the construction.
 
-Often it takes a little work to establish that one problem is a special case of another. The reduction from_&#123; &#125;ZOE to_&#123; &#125;ILP is a case in point. In_&#123; &#125;ILP we are looking for an integer vector x that satisfies Ax ≤b, for given matrix A and vector b. To write an instance of_&#123; &#125;ZOE in this precise form, we need to rewrite each equation of the_&#123; &#125;ZOE instance as two inequalities (recall the transformations of Section 7.1.4), and to add for each variable x_&#123;i&#125; the inequalities x_&#123;i&#125; ≤1 and −x_&#123;i&#125; ≤0.
+![](images/07b0550ee636c9baf7abc57c67d297161b405bd33b0739962006e0bea6cb6d3d.jpg)
 
-![Figure 8.10 Rudrata cycle with paired edges: C = &#123;(e1, e3), (e5, e6), (e4, e5), (e3, e7), (e3, e8)&#125;.](images/fig_8_10.png)
+Take any solution of this instance of RUDRATA CYCLE WITH PAIRED EDGES. As discussed before, it picks a value for each variable and a variable for every equation. We claim that the values thus chosen are a solution to the original instance of ZOE. If a variable $x _ { i }$ has value 1, then the edge $x _ { i } = 0$ is not traversed, and thus all edges associated with $x _ { i }$ on the equation side must be traversed (since they are paired in $C$ with the $x _ { i } = 0$ edge). So, in each equation exactly one of the variables appearing in it has value 1—which is the same as saying that all equations are satisfied. The other direction is straightforward as well: from a solution to the instance of ZOE one easily obtains an appropriate Rudrata cycle.
 
-ZOE−→R_&#123;UDRATA&#125; C_&#123;YCLE&#125;
+Getting Rid of the Edge Pairs. So far we have a reduction from ZOE to RUDRATA CYCLE WITH PAIRED EDGES; but we are really interested in RUDRATA CYCLE, which is a special case of the problem with paired edges: the one in which the set of pairs $C$ is empty. To accomplish our goal, we need, as usual, to find a way of getting rid of the unwanted feature—in this case the edge pairs.
 
-In the R_&#123;UDRATA&#125; CYCLE problem we seek a cycle in a graph that visits every vertex exactly once. We shall prove it NP-complete in two stages: first we will reduce_&#123; &#125;ZOE to a generalization of R_&#123;UDRATA&#125; CYCLE, called R_&#123;UDRATA&#125; CYCLE WITH PAIRED EDGES, and then we shall see how to get rid of the extra features of that problem and reduce it to the plain R_&#123;UDRATA&#125; CYCLE problem.
+Consider the graph shown in Figure 8.12, and suppose that it is a part of a larger graph G in such a way that only the four endpoints $a , b , c ,$ d touch the rest of the graph. We claim that this graph has the following important property: in any Rudrata cycle of G the subgraph shown must be traversed in one of the two ways shown in bold in Figure 8.12(b) and (c). Here is why. Suppose that the cycle first enters the subgraph from vertex $a$ continuing to $f .$ . Then it must continue to vertex $^ { g , }$ because $g$ has degree 2 and so it must be visited immediately after one of its adjacent nodes is visited—otherwise there is no way to include it in the cycle. Hence we must go on to node $h ,$ and here we seem to have a choice. We could continue on to $j ,$ or return to $c .$ But if we take the second option, how are we going to visit the rest of the subgraph? (A Rudrata cycle must leave no vertex unvisited.) It is easy to see that this would be impossible, and so from $h$ we have no choice but to continue to $j$ and from there to visit the rest of the graph as shown in Figure 8.12(b). By symmetry, if the Rudrata cycle enters this subgraph at $^ { c , }$ it must traverse it as in Figure 8.12(c). And these are the only two ways.
 
-In an instance of R_&#123;UDRATA&#125; CYCLE WITH PAIRED EDGES we are given a graph G = (V, E) and a set C ⊆E × E of pairs of edges. We seek a cycle that (1) visits all vertices once, like a Rudrata cycle should, and (2) for every pair of edges (e, e^&#123;′&#125;) in C, traverses either edge e or edge e^&#123;′&#125;—exactly one of them. In the simple example of Figure 8.10 a solution is shown in bold. Notice that we allow two or more parallel edges between two nodes—a feature that doesn’t make sense in most graph problems—since now the different copies of an edge can be paired with other copies of edges in ways that do make a difference.
+But this property tells us something important: this gadget behaves just like two edges $\{ a , b \}$ and $\{ c , d \}$ that are paired up in the RUDRATA CYCLE WITH PAIRED EDGES problem (see Figure 8.12(d)).
 
-Now for the reduction of_&#123; &#125;ZOE to R_&#123;UDRATA&#125; CYCLE WITH PAIRED EDGES. Given an instance of_&#123; &#125;ZOE, Ax = 1 (where A is an m×n matrix with 0−1 entries, and thus describes m equations in n variables), the graph we construct has the very simple structure shown in Figure 8.11: a cycle that connects m+n collections of parallel edges. For each variable x_&#123;i&#125; we have two parallel edges (corresponding to x_&#123;i&#125; = 1 and x_&#123;i&#125; = 0). And for each equation x_&#123;j&#125;_&#123;1&#125; + · · · + x_&#123;j&#125;_&#123;k&#125; = 1 involving k variables we have k parallel edges, one for every variable appearing in the equation. This is the whole graph. Evidently, any Rudrata cycle in this graph must traverse the m + n collections of parallel edges one by one, choosing one edge from each collection. This way, the cycle “chooses” for each variable a value—0 or 1—and, for each equation, a variable appearing in it.
+The rest of the reduction is now clear: to reduce RUDRATA CYCLE WITH PAIRED EDGES to RUDRATA CYCLE we go through the pairs in $C$ one by one. To get rid of each pair $( \{ a , b \} , \{ c , d \} )$ we replace the two edges with the gadget in Figure 8.12(a). For any other pair in $C$ that involves $\{ a , b \}$ , we replace the edge $\{ a , b \}$ with the new edge $\{ a , f \}$ , where $f$ is from the gadget: the traversal of $\{ a , f \}$ is from now on an indication that edge $\{ a , b \}$ in the old graph would be traversed. Similarly, $\{ c , h \}$ replaces $\{ c , d \}$ After C such replacements (performed in polynomial time, since each replacement adds only 12 vertices to the graph) we are done, and the Rudrata cycles in the resulting graph will be in one-to-one correspondence with the Rudrata cycles in the original graph that conform to the constraints in $C$
 
-The whole reduction can’t be this simple, of course. The structure of the matrix A (and not just its dimensions) must be reflected somewhere, and there is one place left: the set C of pairs of edges such that exactly one edge in each pair is traversed. For every equation (recall there are m in total), and for every variable x_&#123;i&#125; appearing in it, we add to C the pair (e, e^&#123;′&#125;) where e is the edge corresponding to the appearance of x_&#123;i&#125; in that particular equation (on the left-hand side of Figure 8.11), and e^&#123;′&#125; is the edge corresponding to the variable assignment
+Figure 8.12 A gadget for enforcing paired behavior.
 
-![Figure 8.11 Reducing ZOE to RUDRATA CYCLE WITH PAIRED EDGES.](images/fig_8_11.png)
+(a)  
+(b)  
+![](images/cd3314fb092ced5ea76d09f057c0d8a240402a0d58641e36a9b8ebf899179472.jpg)  
+(c)
 
-x_&#123;i&#125; = 0 (on the right side of the figure). This completes the construction.
+(d)
 
-Take any solution of this instance of R_&#123;UDRATA&#125; CYCLE WITH PAIRED EDGES. As discussed before, it picks a value for each variable and a variable for every equation. We claim that the values thus chosen are a solution to the original instance of_&#123; &#125;ZOE. If a variable x_&#123;i&#125; has value 1, then the edge x_&#123;i&#125; = 0 is not traversed, and thus all edges associated with x_&#123;i&#125; on the equation side must be traversed (since they are paired in C with the x_&#123;i&#125; = 0 edge). So, in each equation exactly one of the variables appearing in it has value 1—which is the same as saying that all equations are satisfied. The other direction is straightforward as well: from a solution to the instance of_&#123; &#125;ZOE one easily obtains an appropriate Rudrata cycle.
+Given a graph $G = ( V , E )$ , construct the following instance of the TSP: the set of cities is the same as V, and the distance between cities u and v is 1 if $\{ u , v \}$ is an edge of G and $1 + \alpha$ otherwise, for some $\alpha > 1$ to be determined. The budget of the TSP instance is equal to the number of nodes, V .
 
-Getting Rid of the Edge Pairs. So far we have a reduction from_&#123; &#125;ZOE to R_&#123;UDRATA&#125; CYCLE
+It is easy to see that if G has a Rudrata cycle, then the same cycle is also a tour within the budget of the TSP instance; and that conversely, if G has no Rudrata cycle, then there is no solution: the cheapest possible TSP tour has cost at least $n + \alpha$ (it must use at least one edge of length $1 + \alpha _ { ; }$ , and the total length of all $n - 1$ others is at least $n - 1 )$ . Thus RUDRATA CYCLE reduces to TSP.
 
-WITH PAIRED EDGES; but we are really interested in R_&#123;UDRATA&#125; CYCLE, which is a special case of the problem with paired edges: the one in which the set of pairs C is empty. To accomplish our goal, we need, as usual, to find a way of getting rid of the unwanted feature—in this case the edge pairs.
+In this reduction, we introduced the parameter α because by varying it, we can obtain two interesting results. If $\alpha = 1$ , then all distances are either 1 or 2, and so this instance of the TSP satisfies the triangle inequality: if i, j, k are cities, then $d _ { i j } + d _ { j k } \geq d _ { i k }$ (proof: $a + b \geq c$ holds for any numbers $1 \leq a , b , c \leq 2 )$ . This is a special case of the TSP which is of practical importance and which, as we shall see in Chapter 9, is in a certain sense easier, because it can be efficiently approximated.
 
-Consider the graph shown in Figure 8.12, and suppose that it is a part of a larger graph G in such a way that only the four endpoints a, b, c, d touch the rest of the graph. We claim that this graph has the following important property: in any Rudrata cycle of G the subgraph shown must be traversed in one of the two ways shown in bold in Figure 8.12(b) and (c). Here is why. Suppose that the cycle first enters the subgraph from vertex a continuing to f. Then it must continue to vertex g, because g has degree 2 and so it must be visited immediately after one of its adjacent nodes is visited—otherwise there is no way to include it in the cycle. Hence we must go on to node h, and here we seem to have a choice. We could continue on to j, or return to c. But if we take the second option, how are we going to visit the rest of the subgraph? (A Rudrata cycle must leave no vertex unvisited.) It is easy to see that this would be impossible, and so from h we have no choice but to continue to j and from there to visit the
+If on the other hand α is large, then the resulting instance of the TSP may not satisfy the triangle inequality, but has another important property: either it has a solution of cost n or less, or all its solutions have cost at least $n + \alpha$ (which now can be arbitrarily larger than n). There can be nothing in between! As we shall see in Chapter 9, this important gap property implies that, unless $\mathbf { P } = \mathbf { N P }$ , no approximation algorithm is possible.
 
-rest of the graph as shown in Figure 8.12(b). By symmetry, if the Rudrata cycle enters this subgraph at c, it must traverse it as in Figure 8.12(c). And these are the only two ways.
+## ANY PROBLEM IN NP SAT
 
-But this property tells us something important: this gadget behaves just like two edges &#123;a, b&#125; and &#123;c, d&#125; that are paired up in the R_&#123;UDRATA&#125; CYCLE WITH PAIRED EDGES problem (see Figure 8.12(d)).
+We have reduced SAT to the various search problems in Figure 8.7. Now we come full circle and argue that all these problems—and in fact all problems in NP—reduce to SAT.
 
-The rest of the reduction is now clear: to reduce R_&#123;UDRATA&#125; CYCLE WITH PAIRED EDGES to R_&#123;UDRATA&#125; CYCLE we go through the pairs in C one by one. To get rid of each pair (&#123;a, b&#125;, &#123;c, d&#125;) we replace the two edges with the gadget in Figure 8.12(a). For any other pair in C that involves &#123;a, b&#125;, we replace the edge &#123;a, b&#125; with the new edge &#123;a, f&#125;, where f is from the gadget: the traversal of &#123;a, f&#125; is from now on an indication that edge &#123;a, b&#125; in the old graph would be traversed. Similarly, &#123;c, h&#125; replaces &#123;c, d&#125;. After |C| such replacements (performed in polynomial time, since each replacement adds only 12 vertices to the graph) we are done, and the Rudrata cycles in the resulting graph will be in one-to-one correspondence with the Rudrata cycles in the original graph that conform to the constraints in C.
+In particular, we shall show that all problems in NP can be reduced to a generalization of SAT which we call CIRCUIT SAT. In CIRCUIT SAT we are given a (Boolean) circuit (see Figure 8.13, and recall Section 7.7), a dag whose vertices are gates of five different types:
 
-![Figure 8.12 A gadget for enforcing paired behavior.](images/fig_8_12.png)
+AND gates and OR gates have indegree 2.
 
-R_&#123;UDRATA&#125; C_&#123;YCLE&#125;−→TSP
+NOT gates have indegree 1.
 
-Given a graph G = (V, E), construct the following instance of the_&#123; &#125;TSP: the set of cities is the same as V , and the distance between cities u and v is 1 if &#123;u, v&#125; is an edge of G and 1 + α otherwise, for some α > 1 to be determined. The budget of the_&#123; &#125;TSP instance is equal to the number of nodes, |V |.
+Known input gates have no incoming edges and are labeled false or true.
 
-It is easy to see that if G has a Rudrata cycle, then the same cycle is also a tour within the budget of the_&#123; &#125;TSP instance; and that conversely, if G has no Rudrata cycle, then there is no solution: the cheapest possible_&#123; &#125;TSP tour has cost at least n + α (it must use at least one edge of length 1+α, and the total length of all n−1 others is at least n−1). Thus R_&#123;UDRATA&#125; CYCLE reduces to_&#123; &#125;TSP.
-
-In this reduction, we introduced the parameter α because by varying it, we can obtain two interesting results. If α = 1, then all distances are either 1 or 2, and so this instance of the
-
-TSP satisfies the triangle inequality: if i, j, k are cities, then d_&#123;ij&#125; + d_&#123;jk&#125; ≥d_&#123;ik&#125; (proof: a + b ≥c holds for any numbers 1 ≤a, b, c ≤2). This is a special case of the_&#123; &#125;TSP which is of practical importance and which, as we shall see in Chapter 9, is in a certain sense easier, because it can be efficiently approximated.
-
-If on the other hand α is large, then the resulting instance of the_&#123; &#125;TSP may not satisfy the triangle inequality, but has another important property: either it has a solution of cost n or less, or all its solutions have cost at least n + α (which now can be arbitrarily larger than n). There can be nothing in between! As we shall see in Chapter 9, this important gap property implies that, unless P = NP, no approximation algorithm is possible.
-
-ANY PROBLEM IN NP−→S_&#123;AT&#125;
-
-We have reduced_&#123; &#125;SAT to the various search problems in Figure 8.7. Now we come full circle and argue that all these problems—and in fact all problems in NP—reduce to_&#123; &#125;SAT.
-
-In particular, we shall show that all problems in NP can be reduced to a generalization of_&#123; &#125;SAT which we call_&#123; &#125;CIRCUIT SAT. In_&#123; &#125;CIRCUIT SAT we are given a (Boolean) circuit (see Figure 8.13, and recall Section 7.7), a dag whose vertices are gates of five different types:
-
-•^&#123; &#125;AND gates and_&#123; &#125;OR gates have indegree 2.
-
-•^&#123; &#125;NOT gates have indegree 1.
-
-• Known input gates have no incoming edges and are labeled false or true.
-
-• Unknown input gates have no incoming edges and are labeled “?”.
+Unknown input gates have no incoming edges and are labeled “?”.
 
 One of the sinks of the dag is designated as the output gate.
 
-Given an assignment of values to the unknown inputs, we can evaluate the gates of the circuit in topological order, using the rules of Boolean logic (such as false ∨true = true), until we obtain the value at the output gate. This is the value of the circuit for the particular assignment to the inputs. For instance, the circuit in Figure8.13 evaluates to false under the assignment true, false, true (from left to right).
+Given an assignment of values to the unknown inputs, we can evaluate the gates of the circuit in topological order, using the rules of Boolean logic (such as false true = true), until we obtain the value at the output gate. This is the value of the circuit for the particular assignment to the inputs. For instance, the circuit in Figure8.13 evaluates to false under the assignment true, false, true (from left to right).
 
-C_&#123;IRCUIT&#125; SAT is then the following search problem: Given a circuit, find a truth assignment for the unknown inputs such that the output gate evaluates to true, or report that no such assignment exists. For example, if presented with the circuit in Figure 8.13 we could have
+CIRCUIT SAT is then the following search problem: Given a circuit, find a truth assignment for the unknown inputs such that the output gate evaluates to true, or report that no such assignment exists. For example, if presented with the circuit in Figure 8.13 we could have returned the assignment (false, true, true) because, if we substitute these values to the unknown inputs (from left to right), the output becomes true.
 
-![Figure 8.13 An instance of CIRCUIT SAT.](images/fig_8_13.png)
+![](images/8beb9e5ac153ef840da1732a097c823a581575c451d74ae112c79b5a87aea2c5.jpg)
 
-returned the assignment (false, true, true) because, if we substitute these values to the unknown inputs (from left to right), the output becomes true.
+CIRCUIT SAT is a generalization of SAT. To see why, notice that SAT asks for a satisfying truth assignment for a circuit that has this simple structure: a bunch of AND gates at the top join the clauses, and the result of this big AND is the output. Each clause is the OR of its literals. And each literal is either an unknown input gate or the NOT of one. There are no known input gates.
 
-C_&#123;IRCUIT&#125; SAT is a generalization of_&#123; &#125;SAT. To see why, notice that_&#123; &#125;SAT asks for a satisfying truth assignment for a circuit that has this simple structure: a bunch of_&#123; &#125;AND gates at the top join the clauses, and the result of this big_&#123; &#125;AND is the output. Each clause is the_&#123; &#125;OR of its literals. And each literal is either an unknown input gate or the_&#123; &#125;NOT of one. There are no known input gates.
+Going in the other direction, CIRCUIT SAT can also be reduced to SAT. Here is how we can rewrite any circuit in conjunctive normal form (the AND of clauses): for each gate g in the circuit we create a variable g, and we model the effect of the gate using a few clauses:
 
-Going in the other direction,_&#123; &#125;CIRCUIT SAT can also be reduced to_&#123; &#125;SAT. Here is how we can rewrite any circuit in conjunctive normal form (the_&#123; &#125;AND of clauses): for each gate g in the circuit we create a variable g, and we model the effect of the gate using a few clauses:
+![](images/fbad4b6cb1c576650ab5a7aa6fd5b7b225419810151c9e6ae099ce9d834cd6c8.jpg)
 
-Gate g
+(Do you see that these clauses do, in fact, force exactly the desired effect?) And to finish up, if g is the output gate, we force it to be true by adding the clause (g). The resulting instance of SAT is equivalent to the given instance of CIRCUIT SAT: the satisfying truth assignments of this conjunctive normal form are in one-to-one correspondence with those of the circuit.
 
-g g g
+Now that we know CIRCUIT SAT reduces to SAT, we turn to our main job, showing that all search problems reduce to CIRCUIT SAT. So, suppose that A is a problem in NP. We must discover a reduction from A to CIRCUIT SAT. This sounds very difficult, because we know almost nothing about A!
 
-g
+All we know about A is that it is a search problem, so we must put this knowledge to work. The main feature of a search problem is that any solution to it can quickly be checked: there is an algorithm that checks, given an instance I and a proposed solution S, whether or not S is a solution of I. Moreover, makes this decision in time polynomial in the length of I (we can assume that S is itself encoded as a binary string, and we know that the length of this string is polynomial in the length of I).
 
-AND NOT OR
-
-h_&#123;1&#125; h_&#123;1&#125; h_&#123;2&#125; h_&#123;2&#125; h
-
-false true
-
-(g) (
-
-g)
-
-(g ∨
-
-h_&#123;2&#125;) (g ∨
-
-h_&#123;1&#125;) (
-
-g ∨h_&#123;1&#125; ∨h_&#123;2&#125;)
-
-(
-
-g ∨h_&#123;1&#125;)
-
-(
-
-g ∨h_&#123;2&#125;)
-
-(g ∨h) (
-
-g ∨
-
-h) (g ∨
-
-h_&#123;1&#125; ∨
-
-h_&#123;2&#125;)
-
-(Do you see that these clauses do, in fact, force exactly the desired effect?) And to finish up, if g is the output gate, we force it to be true by adding the clause (g). The resulting instance of_&#123; &#125;SAT is equivalent to the given instance of_&#123; &#125;CIRCUIT SAT: the satisfying truth assignments of this conjunctive normal form are in one-to-one correspondence with those of the circuit.
-
-Now that we know_&#123; &#125;CIRCUIT SAT reduces to_&#123; &#125;SAT, we turn to our main job, showing that all search problems reduce to_&#123; &#125;CIRCUIT SAT. So, suppose that A is a problem in NP. We must discover a reduction from A to_&#123; &#125;CIRCUIT SAT. This sounds very difficult, because we know almost nothing about A!
-
-All we know about A is that it is a search problem, so we must put this knowledge to work. The main feature of a search problem is that any solution to it can quickly be checked: there is an algorithm C that checks, given an instance I and a proposed solution S, whether or not S is a solution of I. Moreover, C makes this decision in time polynomial in the length of I (we can assume that S is itself encoded as a binary string, and we know that the length of this string is polynomial in the length of I).
-
-Recall now our argument in Section 7.7 that any polynomial algorithm can be rendered as a circuit, whose input gates encode the input to the algorithm. Naturally, for any input length (number of input bits) the circuit will be scaled to the appropriate number of inputs, but the total number of gates of the circuit will be polynomial in the number of inputs. If the polynomial algorithm in question solves a problem that requires a yes or no answer (as is the situation with C: “Does S encode a solution to the instance encoded by I?”), then this answer is given at the output gate.
+Recall now our argument in Section 7.7 that any polynomial algorithm can be rendered as a circuit, whose input gates encode the input to the algorithm. Naturally, for any input length (number of input bits) the circuit will be scaled to the appropriate number of inputs, but the total number of gates of the circuit will be polynomial in the number of inputs. If the polynomial algorithm in question solves a problem that requires a yes or no answer (as is the situation with : “Does S encode a solution to the instance encoded by I?”), then this answer is given at the output gate.
 
 We conclude that, given any instance I of problem A, we can construct in polynomial time a circuit whose known inputs are the bits of I, and whose unknown inputs are the bits of S, such that the output is true if and only if the unknown inputs spell a solution S of I. In other words, the satisfying truth assignments to the unknown inputs of the circuit are in one-to-one correspondence with the solutions of instance I of A. The reduction is complete.
 
-### Unsolvable problems
+<Knowledge title="Box: Unsolvable problems">
 
 At least an NP-complete problem can be solved by some algorithm—the trouble is that this algorithm will be exponential. But it turns out there are perfectly decent computational problems for which no algorithms exist at all!
 
-One famous problem of this sort is an arithmetical version of_&#123; &#125;SAT. Given a polynomial equation in many variables, perhaps
+One famous problem of this sort is an arithmetical version of SAT. Given a polynomial equation in many variables, perhaps
 
-x^&#123;3&#125;yz + 2y^&#123;4&#125;z^&#123;2&#125; −7xy^&#123;5&#125;z = 6,
+$$
+x ^ {3} y z + 2 y ^ {4} z ^ {2} - 7 x y ^ {5} z = 6,
+$$
 
-are there integer values of x, y, z that satisfy it? There is no algorithm that solves this problem. No algorithm at all, polynomial, exponential, doubly exponential, or worse! Such problems are called unsolvable.
+are there integer values of $x , y , z$ that satisfy it? There is no algorithm that solves this problem. No algorithm at all, polynomial, exponential, doubly exponential, or worse! Such problems are called unsolvable.
 
 The first unsolvable problem was discovered in 1936 by Alan M. Turing, then a student of mathematics at Cambridge, England. ] When Turing came up with it, there were no computers or programming languages (in fact, it can be argued that these things came about later exactly because this brilliant thought occurred to Turing). But today we can state it in familiar terms.
 
 Suppose that you are given a program in your favorite programming language, along with a particular input. Will the program ever terminate, once started on this input? This is a very reasonable question. Many of us would be ecstatic if we had an algorithm, call it terminates(p,x), that took as input a file containing a program p, and a file of data x, and after grinding away, finally told us whether or not p would ever stop if started on x.
 
-But how would you go about writing the program terminates? (If you haven’t seen this before, it’s worth thinking about it for a while, to appreciate the difficulty of writing such an “universal infinite-loop detector.”)
+But how would you go about writing the program terminates? (If you haven't seen this before, it's worth thinking about it for a while, to appreciate the difficulty of writing such an “universal infinite-loop detector.”)
 
-Well, you can’t. Such an algorithm does not exist! And here is the proof: Suppose we actually had such a program terminates(p,x). Then we could use it as a subroutine of the following evil program:
+Well, you can't. Such an algorithm does not exist!
 
-function paradox(z:file) 1: if terminates(z,z) goto 1
+And here is the proof: Suppose we actually had such a program terminates $\left( \mathbb { p } , \mathbb { x } \right)$ Then we could use it as a subroutine of the following evil program:
+
+function paradox(z:file)
+
+1: if terminates(z,z) goto 1
 
 Notice what paradox does: it terminates if and only if program z does not terminate when given its own code as input.
 
 You should smell trouble. What if we put this program in a file named paradox and we executed paradox(paradox)? Would this execution ever stop? Or not? Neither answer is possible. Since we arrived at this contradiction by assuming that there is an algorithm for telling whether programs terminate, we must conclude that this problem cannot be solved by any algorithm.
 
-By the way, all this tells us something important about programming: It will never be automated, it will forever depend on discipline, ingenuity, and hackery. We now know that you can’t tell whether a program has an infinite loop. But can you tell if it has a buffer overrun? Do you see how to use the unsolvability of the “halting problem” to show that this, too, is unsolvable?
+By the way, all this tells us something important about programming: It will never be automated, it will forever depend on discipline, ingenuity, and hackery. We now know that you can't tell whether a program has an infinite loop. But can you tell if it has a buffer overrun? Do you see how to use the unsolvability of the “halting problem” to show that this, too, is unsolvable?
+
+</Knowledge>

@@ -15,301 +15,299 @@ import Exercise from '@/components/Exercise.astro';
 
 ## 1.2 Modular arithmetic
 
-![Figure 1.2 Division.](images/fig_1_2.png)
-
-Is this algorithm correct? The preceding recursive rule is transparently correct; so checking the correctness of the algorithm is merely a matter of verifying that it mimics the rule and that it handles the base case (y = 0) properly.
-
-How long does the algorithm take? It must terminate after n recursive calls, because at each call y is halved—that is, its number of bits is decreased by one. And each recursive call requires these operations: a division by 2 (right shift); a test for odd/even (looking up the last bit); a multiplication by 2 (left shift); and possibly one addition, a total of O(n) bit operations. The total time taken is thus O(n^&#123;2&#125;), just as before.
-
-Can we do better? Intuitively, it seems that multiplication requires adding about n multiples of one of the inputs, and we know that each addition is linear, so it would appear that n^&#123;2&#125;
-
-bit operations are inevitable. Astonishingly, in Chapter 2 we’ll see that we can do significantly better!
-
-Division is next. To divide an integer x by another integer y̸ = 0 means to find a quotient q and a remainder r, where x = yq + r and r &lt; y. We show the recursive version of division in Figure 1.2; like multiplication, it takes quadratic time. The analysis of this algorithm is the subject of Exercise 1.8.
-
-With repeated addition or multiplication, numbers can get cumbersomely large. So it is fortunate that we reset the hour to zero whenever it reaches 24, and the month to January after every stretch of 12 months. Similarly, for the built-in arithmetic operations of computer processors, numbers are restricted to some size, 32 bits say, which is considered generous enough for most purposes.
+With repeated addition or multiplication, numbers can get cumbersomely large. So it is fortunate that we reset the hour to zero whenever it reaches 24, and the month to January after every stretch of 12 months. Similarly, for the built-in arithmetic operations of computer pro cessors, numbers are restricted to some size, 32 bits say, which is considered generous enough for most purposes.
 
 For the applications we are working toward—primality testing and cryptography—it is necessary to deal with numbers that are significantly larger than 32 bits, but whose range is nonetheless limited.
 
-Modular arithmetic is a system for dealing with restricted ranges of integers. We define x modulo N to be the remainder when x is divided by N; that is, if x = qN + r with 0 ≤r &lt; N,
+Modular arithmetic is a system for dealing with restricted ranges of integers. We define x modulo N to be the remainder when x is divided by N; that is, if $x = q N + r { \mathrm { ~ w i t h ~ } } 0 \leq r < N$ 2 then x modulo N is equal to r. This gives an enhanced notion ofequivalence between numbers: x and y are congruent modulo N if they differ by a multiple of N, or in symbols,
 
-![Figure 1.3 Addition modulo 8.](images/fig_1_3.png)
+Figure 1.3 Addition modulo 8.  
+![](images/dd6caa702cfc7b7c2f93183741d8d72368ef674a0186c0277d87c7cd74b9455c.jpg)
 
-then x modulo N is equal to r. This gives an enhanced notion of equivalence between numbers: x and y are congruent modulo N if they differ by a multiple of N, or in symbols,
+$$
+x \equiv y \pmod {N} \iff N \text {   divides   } (x - y).
+$$
 
-x ≡y (mod N) ⇐⇒ N divides (x −y).
+For instance, $2 5 3 \equiv 1 3$ (mod 60) because 253 13 is a multiple of 60; more familiarly, 253 minutes is 4 hours and 13 minutes. These numbers can also be negative, as in $5 9 \ \equiv \ - 1$ (mod 60): when it is 59 minutes past the hour, it is also 1 minute short of the next hour.
 
-For instance, 253 ≡13 (mod 60) because 253 −13 is a multiple of 60; more familiarly, 253 minutes is 4 hours and 13 minutes. These numbers can also be negative, as in 59 ≡−1 (mod 60): when it is 59 minutes past the hour, it is also 1 minute short of the next hour.
+One way to think of modular arithmetic is that it limits numbers to a predefined range $\{ 0 , 1 , \ldots , N - 1 \}$ and wraps around whenever you try to leave this range—like the hand of a clock (Figure 1.3).
 
-One way to think of modular arithmetic is that it limits numbers to a predefined range &#123;0, 1, . . . , N −1&#125; and wraps around whenever you try to leave this range—like the hand of a clock (Figure 1.3).
+Another interpretation is that modular arithmetic deals with all the integers, but divides them into N equivalence classes, each of the form $\{ i + k N : k \in \mathbb { Z } \}$ for some i between 0 and $N - 1$ . For example, there are three equivalence classes modulo 3:
 
-Another interpretation is that modular arithmetic deals with all the integers, but divides them into N equivalence classes, each of the form &#123;i + kN : k ∈Z&#125; for some i between 0 and N −1. For example, there are three equivalence classes modulo 3:
-
-· · · −9 −6 −3 0 3 6 9 · · · · · · −8 −5 −2 1 4 7 10 · · · · · · −7 −4 −1 2 5 8 11 · · ·
+$$
+\begin{array}{c c c c c c c c c} \dots & - 9 & - 6 & - 3 & 0 & 3 & 6 & 9 & \dots \\ \dots & - 8 & - 5 & - 2 & 1 & 4 & 7 & 1 0 & \dots \\ \dots & - 7 & - 4 & - 1 & 2 & 5 & 8 & 1 1 & \dots \end{array}
+$$
 
 Any member of an equivalence class is substitutable for any other; when viewed modulo 3, the numbers 5 and 11 are no different. Under such substitutions, addition and multiplication remain well-defined:
 
-Substitution rule If x ≡x^&#123;′&#125; (mod N) and y ≡y^&#123;′&#125; (mod N), then:
+Substitution rule ${ \cal I } f x \equiv x ^ { \prime }$ (mod N) and $y \equiv y ^ { \prime }$ (mod N), then:
 
-x + y ≡x^&#123;′&#125; + y^&#123;′&#125; (mod N) and xy ≡x^&#123;′&#125;y^&#123;′&#125; (mod N).
+$$
+x + y \equiv x ^ {\prime} + y ^ {\prime} \pmod {N} \textbf {a n d} x y \equiv x ^ {\prime} y ^ {\prime} \pmod {N}.
+$$
 
-(See Exercise 1.9.) For instance, suppose you watch an entire season of your favorite television show in one sitting, starting at midnight. There are 25 episodes, each lasting 3 hours. At what time of day are you done? Answer: the hour of completion is (25 × 3) mod 24, which (since 25 ≡1 mod 24) is 1 × 3 = 3 mod 24, or three o’clock in the morning. It is not hard to check that in modular arithmetic, the usual associative, commutative, and distributive properties of addition and multiplication continue to apply, for instance:
+(See Exercise 1.9.) For instance, suppose you watch an entire season of your favorite television show in one sitting, starting at midnight. There are 25 episodes, each lasting 3 hours. At what time of day are you done? Answer: the hour of completion is $( 2 5 \times 3 )$ mod 24, which (since 25 1 mod 24) is $1 \times 3 = 3$ mod 24, or three o'clock in the morning.
 
-x + (y + z) ≡(x + y) + z (mod N) Associativity
+It is not hard to check that in modular arithmetic, the usual associative, commutative, and distributive properties of addition and multiplication continue to apply, for instance:
 
-xy ≡yx (mod N) Commutativity
-
-x(y + z) ≡xy + yz (mod N) Distributivity
+$$
+\begin{array}{r l r} x + (y + z) \equiv (x + y) + z \pmod {N} & \text { Associativity } \\ x y \equiv y x \pmod {N} & \text { Commutativity } \\ x (y + z) \equiv x y + y z \pmod {N} & \text { Distributivity } \end{array}
+$$
 
 Taken together with the substitution rule, this implies that while performing a sequence of arithmetic operations, it is legal to reduce intermediate results to their remainders modulo N at any stage. Such simplifications can be a dramatic help in big calculations. Witness, for instance:
 
-2^&#123;345&#125; ≡(2^&#123;5&#125;)^&#123;69&#125; ≡32^&#123;69&#125; ≡1^&#123;69&#125; ≡1 (mod 31).
+$$
+2 ^ {3 4 5} \equiv (2 ^ {5}) ^ {6 9} \equiv 3 2 ^ {6 9} \equiv 1 ^ {6 9} \equiv 1 \pmod {3 1}.
+$$
 
-### Two’s complement
+<Knowledge title="Box: Two's complement">
 
-Modular arithmetic is nicely illustrated in two’s complement, the most common format for storing signed integers. It uses n bits to represent numbers in the range [−2^&#123;n&#125;−1, 2^&#123;n&#125;−1 −1] and is usually described as follows:
+Modular arithmetic is nicely illustrated in two's complement, the most common format for storing signed integers. It uses n bits to represent numbers in the range $[ - 2 ^ { n - 1 } , 2 ^ { n - 1 } - 1 ]$ and is usually described as follows:
 
-• Positive integers, in the range 0 to 2^&#123;n&#125;−1 −1, are stored in regular binary and have a leading bit of 0.
+Positive integers, in the range 0 to $2 ^ { n - 1 } - 1$ , are stored in regular binary and have a leading bit of 0.
 
-• Negative integers −x, with 1 ≤x ≤2^&#123;n&#125;−1, are stored by first constructing x in binary, then flipping all the bits, and finally adding 1. The leading bit in this case is 1.
+Negative integers $- \boldsymbol { x } ,$ with $1 \leq x \leq 2 ^ { n - 1 }$ , are stored by first constructing $x$ in binary, then flipping all the bits, and finally adding 1. The leading bit in this case is 1.
 
-(And the usual description of addition and multiplication in this format is even more arcane!)
+(And the usual description ofaddition and multiplication in this format is even more arcane!)
 
-Here’s a much simpler way to think about it: any number in the range −2^&#123;n&#125;−1 to 2^&#123;n&#125;−1 −1 is stored modulo 2^&#123;n&#125;. Negative numbers −x therefore end up as 2^&#123;n&#125; −x. Arithmetic operations like addition and subtraction can be performed directly in this format, ignoring any overflow bits that arise.
+Here's a much simpler way to think about it: any number in the range $- 2 ^ { n - 1 } \mathrm { t } 0 \ 2 ^ { n - 1 } - 1$ is stored modulo $2 ^ { n }$ . Negative numbers $- x$ therefore end up as $2 ^ { n } - x$ . Arithmetic operations like addition and subtraction can be performed directly in this format, ignoring any overflow bits that arise.
 
-### 1.2.1 Modular addition and multiplication
+</Knowledge>
+## 1.2.1 Modular addition and multiplication
 
-To add two numbers x and y modulo N, we start with regular addition. Since x and y are each in the range 0 to N −1, their sum is between 0 and 2(N −1). If the sum exceeds N −1, we merely need to subtract off N to bring it back into the required range. The overall computation therefore consists of an addition, and possibly a subtraction, of numbers that never exceed 2N. Its running time is linear in the sizes of these numbers, in other words O(n), where n = ⌈log N⌉is the size of N; as a reminder, our convention is to use the letter n to denote input size.
+To add two numbers x and y modulo N, we start with regular addition. Since x and y are each in the range 0 to $N - 1$ , their sum is between 0 and $2 ( N - 1 )$ . If the sum exceeds $N - 1$ , we merely need to subtract off N to bring it back into the required range. The overall computation therefore consists of an addition, and possibly a subtraction, of numbers that never exceed $2 N$ . Its running time is linear in the sizes of these numbers, in other words $O ( n )$ , where $n = \lceil \log N \rceil$ is the size of $N ;$ ; as a reminder, our convention is to use the letter $n$ to denote input size.
 
-To multiply two mod-N numbers x and y, we again just start with regular multiplication and then reduce the answer modulo N. The product can be as large as (N −1)^&#123;2&#125;, but this is still at most 2n bits long since log(N −1)^&#123;2&#125; = 2 log(N −1) ≤2n. To reduce the answer modulo N, we compute the remainder upon dividing it by N, using our quadratic-time division algorithm. Multiplication thus remains a quadratic operation.
+To multiply two mod-N numbers x and $y ,$ we again just start with regular multiplication and then reduce the answer modulo N. The product can be as large as $( N - 1 ) ^ { 2 }$ , but this is still at most 2n bits long since $\log ( N - 1 ) ^ { 2 } = 2 \log ( N - 1 ) \leq 2 n$ . To reduce the answer modulo N, we compute the remainder upon dividing it by N, using our quadratic-time division algorithm. Multiplication thus remains a quadratic operation.
 
-Division is not quite so easy. In ordinary arithmetic there is just one tricky case—division by zero. It turns out that in modular arithmetic there are potentially other such cases as well, which we will characterize toward the end of this section. Whenever division is legal, however, it can be managed in cubic time, O(n^&#123;3&#125;).
+Division is not quite so easy. In ordinary arithmetic there is just one tricky case—division by zero. It turns out that in modular arithmetic there are potentially other such cases as well, which we will characterize toward the end of this section. Whenever division is legal, however, it can be managed in cubic time, $O ( n ^ { 3 } )$ .
 
-To complete the suite of modular arithmetic primitives we need for cryptography, we next turn to modular exponentiation, and then to the greatest common divisor, which is the key to
+To complete the suite of modular arithmetic primitives we need for cryptography, we next turn to modular exponentiation, and then to the greatest common divisor, which is the key to division. For both tasks, the most obvious procedures take exponentially long, but with some ingenuity polynomial-time solutions can be found. A careful choice of algorithm makes all the difference.
 
-![Figure 1.4 Modular exponentiation.](images/fig_1_4.png)
+<div class="mineru-algorithm">
+Figure 1.4 Modular exponentiation.
 
-division. For both tasks, the most obvious procedures take exponentially long, but with some ingenuity polynomial-time solutions can be found. A careful choice of algorithm makes all the difference.
+function modexp(x,y,N)
 
-### 1.2.2 Modular exponentiation
+Input: Two n-bit integers x and N, an integer exponent y
+Output:  $x^{y} \mod N$ 
 
-In the cryptosystem we are working toward, it is necessary to compute x^&#123;y&#125; mod N for values of x, y, and N that are several hundred bits long. Can this be done quickly?
+if y=0: return 1
+ $z=\text{modexp}(x,\lfloor y/2\rfloor,N)$ 
+if y is even:
+    return  $z^{2} \mod N$ 
+else:
+    return  $x \cdot z^{2} \mod N$
+</div>
 
-The result is some number modulo N and is therefore itself a few hundred bits long. However, the raw value of x^&#123;y&#125; could be much, much longer than this. Even when x and y are just 20-bit numbers, x^&#123;y&#125; is at least (2^&#123;19&#125;)^&#123;(2&#125;^&#123;19&#125;) = 2^&#123;(19)(524288)&#125;, about 10 million bits long! Imagine what happens if y is a 500-bit number!
+## 1.2.2 Modular exponentiation
 
-To make sure the numbers we are dealing with never grow too large, we need to perform all intermediate computations modulo N. So here’s an idea: calculate x^&#123;y&#125; mod N by repeatedly multiplying by x modulo N. The resulting sequence of intermediate products,
+In the cryptosystem we are working toward, it is necessary to compute $x ^ { y }$ mod N for values of $x , y ,$ and N that are several hundred bits long. Can this be done quickly?
 
-x mod N →x^&#123;2&#125; mod N →x^&#123;3&#125; mod N →· · · →x^&#123;y&#125; mod N,
+The result is some number modulo N and is therefore itself a few hundred bits long. However, the raw value of $x ^ { y }$ could be much, much longer than this. Even when x and $y$ are just 20-bit numbers, $x ^ { y }$ is at least $\left( 2 ^ { 1 9 } \right) ^ { ( 2 ^ { 1 9 } ) } = 2 ^ { ( 1 9 ) ( 5 2 4 2 8 8 ) }$ , about 10 million bits long! Imagine what happens if $y$ is a 500-bit number!
 
-consists of numbers that are smaller than N, and so the individual multiplications do not take too long. But there’s a problem: if y is 500 bits long, we need to perform y −1 ≈2^&#123;500&#125;
+To make sure the numbers we are dealing with never grow too large, we need to perform all intermediate computations modulo N. So here's an idea: calculate $x ^ { y }$ mod $N$ by repeatedly multiplying by x modulo $N$ . The resulting sequence of intermediate products,
 
-multiplications! This algorithm is clearly exponential in the size of y.
+$$
+x \bmod N \to x ^ {2} \bmod N \to x ^ {3} \bmod N \to \dots \to x ^ {y} \bmod N,
+$$
 
-Luckily, we can do better: starting with x and squaring repeatedly modulo N, we get
+consists of numbers that are smaller than $N ,$ and so the individual multiplications do not take too long. But there's a problem: if $y$ is 500 bits long, we need to perform $y - 1 \approx 2 ^ { 5 0 0 }$ multiplications! This algorithm is clearly exponential in the size of $y .$ .
 
-x mod N →x^&#123;2&#125; mod N →x^&#123;4&#125; mod N →x^&#123;8&#125; mod N →· · · →x^&#123;2&#125;^&#123;⌊&#125;log y⌋mod N.
+Luckily, we can do better: starting with x and squaring repeatedly modulo $N _ { : }$ , we get
 
-Each takes just O(log^&#123;2&#125; N) time to compute, and in this case there are only log y multiplications. To determine x^&#123;y&#125; mod N, we simply multiply together an appropriate subset of these powers, those corresponding to 1’s in the binary representation of y. For instance,
+$$
+x \bmod N \to x ^ {2} \bmod N \to x ^ {4} \bmod N \to x ^ {8} \bmod N \to \dots \to x ^ {2 ^ {\lfloor \log y \rfloor}} \bmod N.
+$$
 
-x^&#123;25&#125; = x^&#123;11001&#125;_&#123;2&#125; = x^&#123;10000&#125;_&#123;2&#125; · x^&#123;1000&#125;_&#123;2&#125; · x^&#123;1&#125;_&#123;2&#125; = x^&#123;16&#125; · x^&#123;8&#125; · x^&#123;1&#125;.
+Each takes just $O ( \log ^ { 2 } N )$ time to compute, and in this case there are only log $y$ multiplications. To determine $x ^ { y }$ mod N, we simply multiply together an appropriate subset of these powers, those corresponding to 1's in the binary representation of ${ \bf { \dot { y } } } .$ . For instance,
+
+$$
+x ^ {2 5} = x ^ {1 1 0 0 1 _ {2}} = x ^ {1 0 0 0 0 _ {2}} \cdot x ^ {1 0 0 0 _ {2}} \cdot x ^ {1 _ {2}} = x ^ {1 6} \cdot x ^ {8} \cdot x ^ {1}.
+$$
 
 A polynomial-time algorithm is finally within reach!
 
-![Figure 1.5 Euclid’s algorithm for ﬁnding the greatest common divisor of two numbers.](images/fig_1_5.png)
+<div class="mineru-algorithm">
+Figure 1.5 Euclid's algorithm for finding the greatest common divisor of two numbers.
 
-We can package this idea in a particularly simple form: the recursive algorithm of Figure 1.4, which works by executing, modulo N, the self-evident rule
+function Euclid(a,b)
 
-x^&#123;y&#125; =
+Input: Two integers a and b with  $a \geq b \geq 0$ 
 
- (x^&#123;⌊&#125;y/2⌋)^&#123;2&#125; if y is even x · (x^&#123;⌊&#125;y/2⌋)^&#123;2&#125; if y is odd.
+Output: gcd(a,b)
 
-In doing so, it closely parallels our recursive multiplication algorithm (Figure 1.1). For instance, that algorithm would compute the product x · 25 by an analogous decomposition to the one we just saw: x · 25 = x · 16 + x · 8 + x · 1. And whereas for multiplication the terms x · 2^&#123;i&#125;
+if b = 0: return a
 
-come from repeated doubling, for exponentiation the corresponding terms x^&#123;2&#125;^&#123;i&#125; are generated by repeated squaring.
+return Euclid(b, a mod b)
+</div>
 
-Let n be the size in bits of x, y, and N (whichever is largest of the three). As with multiplication, the algorithm will halt after at most n recursive calls, and during each call it multiplies n-bit numbers (doing computation modulo N saves us here), for a total running time of O(n^&#123;3&#125;).
+We can package this idea in a particularly simple form: the recursive algorithm of Figure 1.4, which works by executing, modulo $N$ , the self-evident rule
 
-### 1.2.3 Euclid’s algorithm for greatest common divisor
+$$
+x ^ {y} = \left\{ \begin{array}{c l} (x ^ {\lfloor y / 2 \rfloor}) ^ {2} & \text {if y is even} \\ x \cdot (x ^ {\lfloor y / 2 \rfloor}) ^ {2} & \text {if y is odd.} \end{array} \right.
+$$
 
-Our next algorithm was discovered well over 2000 years ago by the mathematician Euclid, in ancient Greece. Given two integers a and b, it finds the largest integer that divides both of them, known as their greatest common divisor (gcd).
+In doing so, it closely parallels our recursive multiplication algorithm (Figure 1.1). For instance, that algorithm would compute the product $x \cdot 2 5$ by an analogous decomposition to the one we just saw: $x \cdot 2 5 = x \cdot 1 6 + x \cdot 8 + x \cdot 1$ . And whereas for multiplication the terms $x \cdot 2 ^ { i }$ come from repeated doubling, for exponentiation the corresponding terms $x ^ { 2 ^ { i } }$ are generated by repeated squaring.
 
-The most obvious approach is to first factor a and b, and then multiply together their common factors. For instance, 1035 = 3^&#123;2&#125; · 5 · 23 and 759 = 3 · 11 · 23, so their gcd is 3 · 23 = 69. However, we have no efficient algorithm for factoring. Is there some other way to compute greatest common divisors?
+Let n be the size in bits of $x , y ,$ , and N (whichever is largest of the three). As with multiplication, the algorithm will halt after at most n recursive calls, and during each call it multiplies n-bit numbers (doing computation modulo N saves us here), for a total running time of $O ( n ^ { 3 } )$
 
-Euclid’s algorithm uses the following simple formula.
+## 1.2.3 Euclid's algorithm for greatest common divisor
 
-Euclid’s rule If x and y are positive integers with x ≥y, then gcd(x, y) = gcd(x mod y, y).
+Our next algorithm was discovered well over 2000 years ago by the mathematician Euclid, in ancient Greece. Given two integers a and $b ,$ it finds the largest integer that divides both of them, known as their greatest common divisor (gcd).
 
-Proof. It is enough to show the slightly simpler rule gcd(x, y) = gcd(x −y, y) from which the one stated can be derived by repeatedly subtracting y from x.
+The most obvious approach is to first factor a and $b ,$ and then multiply together their common factors. For instance, $1 0 3 5 = 3 ^ { 2 } \cdot 5 \cdot 2 3$ and $7 5 9 = 3 \cdot 1 1 \cdot 2 3$ , so their gcd is $3 \cdot 2 3 = 6 9$ However, we have no efficient algorithm for factoring. Is there some other way to compute greatest common divisors?
 
-Here it goes. Any integer that divides both x and y must also divide x −y, so gcd(x, y) ≤ gcd(x −y, y). Likewise, any integer that divides both x −y and y must also divide both x and y, so gcd(x, y) ≥gcd(x −y, y).
+Euclid's algorithm uses the following simple formula.
 
-Euclid’s rule allows us to write down an elegant recursive algorithm (Figure 1.5), and its correctness follows immediately from the rule. In order to figure out its running time, we need to understand how quickly the arguments (a, b) decrease with each successive recursive call. In a single round, arguments (a, b) become (b, a mod b): their order is swapped, and the larger of them, a, gets reduced to a mod b. This is a substantial reduction.
+Euclid's rule If x and y are positive integers with $x \geq y ,$ , then gcd $( x , y ) = \operatorname* { g c d } ( x \ \mathrm { m o d } \ y , y )$
 
-![Figure 1.6 A simple extension of Euclid’s algorithm.](images/fig_1_6.png)
+<Solution title="Proof">
 
-Lemma If a ≥b, then a mod b &lt; a/2.
+It is enough to show the slightly simpler rule $\operatorname* { g c d } ( x , y ) = \operatorname* { g c d } ( x - y , y )$ from which the one stated can be derived by repeatedly subtracting y from x.
 
-Proof. Witness that either b ≤a/2 or b > a/2. These two cases are shown in the following figure. If b ≤a/2, then we have a mod b &lt; b ≤a/2; and if b > a/2, then a mod b = a −b &lt; a/2.
+</Solution>
 
-a a/2 b a
+Here it goes. Any integer that divides both x and $y$ must also divide $x - y _ { ; }$ , so gcd $( x , y ) \leq$ $\operatorname* { g c d } ( x - y , y )$ . Likewise, any integer that divides both $x - y$ and y must also divide both x and y, so gcd $( x , y ) \geq \operatorname* { g c d } ( x - y , y )$ .
 
-a mod b
+Euclid's rule allows us to write down an elegant recursive algorithm (Figure 1.5), and its correctness follows immediately from the rule. In order to figure out its running time, we need to understand how quickly the arguments $( a , b )$ decrease with each successive recursive call. In a single round, arguments $( a , b )$ become (b, a mod b): their order is swapped, and the larger of them, $^ { a , }$ gets reduced to $a$ mod b. This is a substantial reduction.
 
-b
+<div class="mineru-algorithm">
+Figure 1.6 A simple extension of Euclid's algorithm.
 
-a mod b
+function extended-Euclid(a,b)
 
-a/2
+Input: Two positive integers a and b with  $a \geq b \geq 0$ 
 
-This means that after any two consecutive rounds, both arguments, a and b, are at the very least halved in value—the length of each decreases by at least one bit. If they are initially n-bit integers, then the base case will be reached within 2n recursive calls. And since each call involves a quadratic-time division, the total time is O(n^&#123;3&#125;).
+Output: Integers x,y,d such that  $d = \gcd(a, b)$  and  $ax + by = d$ 
 
-### 1.2.4 An extension of Euclid’s algorithm
+if b = 0: return (1,0,a)
 
-A small extension to Euclid’s algorithm is the key to dividing in the modular world.
+ $(x', y', d) = \text{Extended-Euclid}(b, a \mod b)$ 
 
-To motivate it, suppose someone claims that d is the greatest common divisor of a and b: how can we check this? It is not enough to verify that d divides both a and b, because this only shows d to be a common factor, not necessarily the largest one. Here’s a test that can be used if d is of a particular form.
+return  $(y', x' - \lfloor a/b \rfloor y', d)$
+</div>
 
-Lemma If d divides both a and b, and d = ax + by for some integers x and y, then necessarily d = gcd(a, b).
+<Knowledge title="Lemma">
 
-Proof. By the first two conditions, d is a common divisor of a and b and so it cannot exceed the greatest common divisor; that is, d ≤gcd(a, b). On the other hand, since gcd(a, b) is a common divisor of a and b, it must also divide ax + by = d, which implies gcd(a, b) ≤d. Putting these together, d = gcd(a, b).
+$H a \geq b ,$ then a mod $b < a / 2 .$
 
-So, if we can supply two numbers x and y such that d = ax + by, then we can be sure d = gcd(a, b). For instance, we know gcd(13, 4) = 1 because 13 · 1 + 4 · (−3) = 1. But when can we find these numbers: under what circumstances can gcd(a, b) be expressed in this checkable form? It turns out that it always can. What is even better, the coefficients x and y can be found by a small extension to Euclid’s algorithm; see Figure 1.6.
+</Knowledge>
 
-Lemma For any positive integers a and b, the extended Euclid algorithm returns integers x, y, and d such that gcd(a, b) = d = ax + by.
+<Solution title="Proof">
 
-Proof. The first thing to confirm is that if you ignore the x’s and y’s, the extended algorithm is exactly the same as the original. So, at least we compute d = gcd(a, b).
+Witness that either $b \leq a / 2$ or $b > a / 2$ . These two cases are shown in the following figure. $\mathrm { I f } b \le a / 2$ , then we have a mod $b < b \leq a / 2 ;$ and if $b > a / 2$ , then a mod $b = a - b < a / 2$
 
-For the rest, the recursive nature of the algorithm suggests a proof by induction. The recursion ends when b = 0, so it is convenient to do induction on the value of b.
+</Solution>
 
-The base case b = 0 is easy enough to check directly. Now pick any larger value of b. The algorithm finds gcd(a, b) by calling gcd(b, a mod b). Since a mod b &lt; b, we can apply the inductive hypothesis to this recursive call and conclude that the x^&#123;′&#125; and y^&#123;′&#125; it returns are correct:
+![](images/bc64544cf23625443c0740f8eb7b10a5b4703273d2f39f9743d77069e2a2ab09.jpg)
 
-gcd(b, a mod b) = bx^&#123;′&#125; + (a mod b)y^&#123;′&#125;.
+This means that after any two consecutive rounds, both arguments, a and $b ,$ are at the very least halved in value—the length of each decreases by at least one bit. If they are initially n-bit integers, then the base case will be reached within $2 n$ recursive calls. And since each call involves a quadratic-time division, the total time is $O ( n ^ { 3 } )$
 
-Writing (a mod b) as (a −⌊a/b⌋b), we find
+## 1.2.4 An extension of Euclid's algorithm
 
-d = gcd(a, b) = gcd(b, a mod b) = bx^&#123;′&#125;+(a mod b)y^&#123;′&#125; = bx^&#123;′&#125;+(a−⌊a/b⌋b)y^&#123;′&#125; = ay^&#123;′&#125;+b(x^&#123;′&#125;−⌊a/b⌋y^&#123;′&#125;).
+A small extension to Euclid's algorithm is the key to dividing in the modular world.
 
-Therefore d = ax+by with x = y^&#123;′&#125; and y = x^&#123;′&#125;−⌊a/b⌋y^&#123;′&#125;, thus validating the algorithm’s behavior on input (a, b).
+To motivate it, suppose someone claims that d is the greatest common divisor of a and b: how can we check this? It is not enough to verify that d divides both a and $b ,$ because this only shows d to be a common factor, not necessarily the largest one. Here's a test that can be used if d is of a particular form.
 
-Example. To compute gcd(25, 11), Euclid’s algorithm would proceed as follows:
+<Knowledge title="Lemma">
 
-25
+Ifd divides both a and $b ,$ and $d = a x + b y$ for some integers x and $y ,$ then necessarily $d = \operatorname* { g c d } ( a , b )$
 
-= 2 · 11
+</Knowledge>
 
-+ 3
+<Solution title="Proof">
 
-11
+By the first two conditions, d is a common divisor of a and b and so it cannot exceed the greatest common divisor; that is, $d \leq \operatorname* { g c d } ( a , b )$ . On the other hand, since $\operatorname { g c d } ( a , b )$ is a common divisor of a and $b ,$ it must also divide $a x + b y = d , $ which implies gcd $( a , b ) \leq d .$ . Putting these together, $d = \operatorname* { g c d } ( a , b )$ .
 
-= 3 · 3
+</Solution>
 
-+ 2
+So, if we can supply two numbers x and y such that $d = a x + b y .$ , then we can be sure $d = \operatorname* { g c d } ( a , b )$ . For instance, we know gcd $( 1 3 , 4 ) = 1$ because $1 3 \cdot 1 + 4 \cdot ( - 3 ) = 1$ . But when can we find these numbers: under what circumstances can $\operatorname* { g c d } ( a , b )$ be expressed in this checkable form? It turns out that it always can. What is even better, the coefficients x and y can be found by a small extension to Euclid's algorithm; see Figure 1.6.
 
-3
+<Knowledge title="Lemma">
 
-= 1 · 2
+For any positive integers a and $b ,$ the extended Euclid algorithm returns integers $x ,$ $y ,$ and d such that $\operatorname* { g c d } ( a , b ) = d = a x + b y$
 
-+ 1
+</Knowledge>
 
-2
+<Solution title="Proof">
 
-= 2 · 1
+The first thing to confirm is that if you ignore the $x _ { \mathbf { s } }$ and $y ^ { \prime } \mathbf { s } ,$ , the extended algorithm is exactly the same as the original. So, at least we compute $d = \operatorname* { g c d } ( a , b )$
 
-+ 0
+</Solution>
 
-(at each stage, the gcd computation has been reduced to the underlined numbers). Thus gcd(25, 11) = gcd(11, 3) = gcd(3, 2) = gcd(2, 1) = gcd(1, 0) = 1.
+For the rest, the recursive nature of the algorithm suggests a proof by induction. The recursion ends when $b = 0 .$ so it is convenient to do induction on the value of b.
 
-To find x and y such that 25x + 11y = 1, we start by expressing 1 in terms of the last pair (1, 0). Then we work backwards and express it in terms of (2, 1), (3, 2), (11, 3), and finally (25, 11). The first step is:
+The base case $b = 0$ is easy enough to check directly. Now pick any larger value of $b .$ The algorithm finds $\operatorname* { g c d } ( a , b )$ by calling gcd(b, a mod b). Since $a$ mod $b < b ,$ we can apply the inductive hypothesis to this recursive call and conclude that the $x ^ { \prime }$ and $y ^ { \prime }$ it returns are correct:
 
-1 = 1
+$$
+\operatorname * {g c d} (b, a \bmod b) = b x ^ {\prime} + (a \bmod b) y ^ {\prime}.
+$$
 
-−0
+Writing (a mod b) as $( a - \lfloor a / b \rfloor b )$ , we find
 
-.
+$$
+d = \operatorname * {g c d} (a, b) = \operatorname * {g c d} (b, a \bmod b) = b x ^ {\prime} + (a \bmod b) y ^ {\prime} = b x ^ {\prime} + (a - \lfloor a / b \rfloor b) y ^ {\prime} = a y ^ {\prime} + b (x ^ {\prime} - \lfloor a / b \rfloor y ^ {\prime}).
+$$
 
-To rewrite this in terms of (2, 1), we use the substitution 0 = 2 −2 · 1 from the last line of the gcd calculation to get:
+Therefore $d = a x + b y$ with $x = y ^ { \prime }$ and $y = x ^ { \prime } - \lfloor a / b \rfloor y ^ { \prime }$ , thus validating the algorithm's behavior on input (a, b).
 
-1 = 1
+Example. To compute gcd(25, 11), Euclid's algorithm would proceed as follows:
 
-−(2
+$$
+\begin{array}{r c l} \underline {{2 5}} & = & 2 \cdot \underline {{1 1}} + 3 \\ \underline {{1 1}} & = & 3 \cdot \underline {{3}} + 2 \\ \underline {{3}} & = & 1 \cdot \underline {{2}} + 1 \\ \underline {{2}} & = & 2 \cdot \underline {{1}} + 0 \end{array}
+$$
 
-−2 · 1
+(at each stage, the gcd computation has been reduced to the underlined numbers). Thus $\operatorname* { g c d } ( 2 5 , 1 1 ) = \operatorname* { g c d } ( 1 1 , 3 ) = \operatorname* { g c d } ( 3 , 2 ) = \operatorname* { g c d } ( 2 , 1 ) = \operatorname* { g c d } ( 1 , 0 ) = 1$
 
-) = −1 · 2
+To find x and y such that $2 5 x + 1 1 y = 1$ , we start by expressing 1 in terms of the last pair (1, 0). Then we work backwards and express it in terms of (2, 1), (3, 2), (11, 3), and finally (25, 11). The first step is:
 
-+ 3 · 1
+$$
+1 = \underline {{1}} - \underline {{0}}.
+$$
 
-.
+To rewrite this in terms of (2, 1), we use the substitution $0 = 2 - 2 \cdot 1$ from the last line of the gcd calculation to get:
 
-The second-last line of the gcd calculation tells us that 1 = 3 −1 · 2. Substituting:
+$$
+1 = \underline {{1}} - (\underline {{2}} - 2 \cdot \underline {{1}}) = - 1 \cdot \underline {{2}} + 3 \cdot \underline {{1}}.
+$$
 
-1 = −1 · 2
+The second-last line of the gcd calculation tells us that $1 = 3 - 1 \cdot 2$ . Substituting:
 
-+ 3(3
+$$
+1 = - 1 \cdot \underline {{2}} + 3 (\underline {{3}} - 1 \cdot \underline {{2}}) = 3 \cdot \underline {{3}} - 4 \cdot \underline {{2}}.
+$$
 
-−1 · 2
+Continuing in this same way with substitutions $2 = 1 1 - 3 \cdot 3$ and 3 = 25 2 11 gives:
 
-) = 3 · 3
+$$
+1 = 3 \cdot \underline {{3}} - 4 (\underline {{1 1}} - 3 \cdot \underline {{3}}) = - 4 \cdot \underline {{1 1}} + 1 5 \cdot \underline {{3}} = - 4 \cdot \underline {{1 1}} + 1 5 (\underline {{2 5}} - 2 \cdot \underline {{1 1}}) = 1 5 \cdot \underline {{2 5}} - 3 4 \cdot \underline {{1 1}}.
+$$
 
-−4 · 2
+We're done: $1 5 \cdot 2 5 - 3 4 \cdot 1 1 = 1 , \mathbf { s _ { 0 } } x = 1 5 \mathrm { ~ a n d ~ } y = - 3 4 .$
 
-.
+## 1.2.5 Modular division
 
-Continuing in this same way with substitutions 2 = 11 −3 · 3 and 3 = 25 −2 · 11 gives:
+In real arithmetic, every number $a \neq 0$ has an inverse, $1 / a ,$ , and dividing by a is the same as multiplying by this inverse. In modular arithmetic, we can make a similar definition.
 
-1 = 3 · 3
+We say x is the multiplicative inverse of a modulo N if $a x \equiv 1$ (mod N).
 
-−4(11
+There can be at most one such x modulo N (Exercise 1.23), and we shall denote it by a−1. However, this inverse does not always exist! For instance, 2 is not invertible modulo 6: that is, 2x 1 mod 6 for every possible choice of x. In this case, a and N are both even and thus then a mod N is always even, since a mod $N = a - k N$ for some k. More generally, we can be certain that gcd(a, N) divides ax mod N, because this latter quantity can be written in the form $a x + k N$ . So if $\operatorname* { g c d } ( a , N ) > 1$ , then ax $\not\equiv$ 1 mod N, no matter what x might be, and therefore a cannot have a multiplicative inverse modulo N.
 
-−3 · 3
+In fact, this is the only circumstance in which a is not invertible. When $\operatorname* { g c d } ( a , N ) = 1$ (we say a and N are relatively prime), the extended Euclid algorithm gives us integers x and y such that $a x + N y = 1$ , which means that $a x \equiv 1$ (mod N). Thus x is a's sought inverse.
 
-) = −4 · 11
+Example. Continuing with our previous example, suppose we wish to compute 11−1 mod 25. Using the extended Euclid algorithm, we find that $1 5 \cdot 2 5 - 3 4 \cdot 1 1 = 1$ . Reducing both sides modulo 25, we have $- 3 4 \cdot 1 1 \equiv 1$ mod 25. So 34 16 mod 25 is the inverse of 11 mod 25.
 
-+ 15 · 3
-
-= −4 · 11
-
-+ 15(25
-
-−2 · 11
-
-) = 15 · 25
-
-−34 · 11
-
-.
-
-We’re done: 15 · 25 −34 · 11 = 1, so x = 15 and y = −34.
-
-### 1.2.5 Modular division
-
-In real arithmetic, every number a̸ = 0 has an inverse, 1/a, and dividing by a is the same as multiplying by this inverse. In modular arithmetic, we can make a similar definition.
-
-We say x is the multiplicative inverse of a modulo N if ax ≡1 (mod N).
-
-There can be at most one such x modulo N (Exercise 1.23), and we shall denote it by a^&#123;−&#125;1. However, this inverse does not always exist! For instance, 2 is not invertible modulo 6: that is, 2x̸ ≡1 mod 6 for every possible choice of x. In this case, a and N are both even and thus then a mod N is always even, since a mod N = a −kN for some k. More generally, we can be certain that gcd(a, N) divides ax mod N, because this latter quantity can be written in the form ax + kN. So if gcd(a, N) > 1, then ax̸ ≡1 mod N, no matter what x might be, and therefore a cannot have a multiplicative inverse modulo N.
-
-In fact, this is the only circumstance in which a is not invertible. When gcd(a, N) = 1 (we say a and N are relatively prime), the extended Euclid algorithm gives us integers x and y such that ax + Ny = 1, which means that ax ≡1 (mod N). Thus x is a’s sought inverse.
-
-Example. Continuing with our previous example, suppose we wish to compute 11^&#123;−&#125;1 mod 25. Using the extended Euclid algorithm, we find that 15 · 25 −34 · 11 = 1. Reducing both sides modulo 25, we have −34 · 11 ≡1 mod 25. So −34 ≡16 mod 25 is the inverse of 11 mod 25.
-
-Modular division theorem For any a mod N, a has a multiplicative inverse modulo N if and only if it is relatively prime to N. When this inverse exists, it can be found in time O(n^&#123;3&#125;) (where as usual n denotes the number of bits of N) by running the extended Euclid algorithm.
+Modular division theorem For any a mod N a has a multiplicative inverse modulo N if and only if it is relatively prime to N. When this inverse exists, it can be found in time $O ( n ^ { 3 } )$ (where as usual n denotes the number of bits of N) by running the extended Euclid algorithm.
 
 This resolves the issue of modular division: when working modulo N, we can divide by numbers relatively prime to N—and only by these. And to actually carry out the division, we multiply by the inverse.
 
-### Is your social security number a prime?
+## Is your social security number a prime?
 
 The numbers 7, 17, 19, 71, and 79 are primes, but how about 717-19-7179? Telling whether a reasonably large number is a prime seems tedious because there are far too many candidate factors to try. However, there are some clever tricks to speed up the process. For instance, you can omit even-valued candidates after you have eliminated the number 2. You can actually omit all candidates except those that are themselves primes.
 
-In fact, a little further thought will convince you that you can proclaim N a prime as soon as you have rejected all candidates up to
+In fact, a little further thought will convince you that you can proclaim N a prime as soon as you have rejected all candidates up to $\sqrt { N }$ , for if N can indeed be factored as $N = K \cdot L ,$ then it is impossible for both factors to exceed $\sqrt { N }$
 
-√
-
-N, for if N can indeed be factored as N = K · L, then it is impossible for both factors to exceed
-
-√
-
-N. We seem to be making progress! Perhaps by omitting more and more candidate factors, a truly efficient primality test can be discovered.
+We seem to be making progress! Perhaps by omitting more and more candidate factors, a truly efficient primality test can be discovered.
 
 Unfortunately, there is no fast primality test down this road. The reason is that we have been trying to tell if a number is a prime by factoring it. And factoring is a hard problem!
 
