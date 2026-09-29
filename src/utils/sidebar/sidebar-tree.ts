@@ -74,7 +74,7 @@ export function buildTwoTierSidebar(
       const bookEntries = col.books.map((book: any) => {
         const isCurrentBook = isCurrentCol && book.slug === currentBookSlug;
         const entryUrl = `/collections/${col.slug}/${book.slug}/${cleanSlug(book.entryPoint)}/`;
-        const chapters = getBookEntries(sidebar, col.slug, book.slug);
+        const chapters = isCurrentBook ? getBookEntries(sidebar, col.slug, book.slug) : null;
 
         if (chapters && chapters.length > 0) {
           return {
@@ -82,8 +82,8 @@ export function buildTwoTierSidebar(
             label: book.title,
             href: entryUrl,
             isBook: true,
-            isCurrentBook,
-            collapsed: !isCurrentBook,
+            isCurrentBook: true,
+            collapsed: false,
             entries: chapters,
           };
         }
@@ -93,7 +93,7 @@ export function buildTwoTierSidebar(
           label: book.title,
           href: entryUrl,
           isBook: true,
-          isCurrentBook,
+          isCurrentBook: false,
         };
       });
 
