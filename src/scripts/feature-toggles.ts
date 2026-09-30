@@ -1855,6 +1855,7 @@ export function initFeatureToggles(): void {
   syncAllPunctChips();
   syncAllFontSizeSliders();
   syncAllTransModeChips();
+  syncAllTransProviderChips();
 
   // 当 @material/web 的 md-filter-chip 完成注册后触发初次水合对齐
   if (typeof customElements !== 'undefined' && customElements.whenDefined) {
@@ -1863,6 +1864,7 @@ export function initFeatureToggles(): void {
       syncAllPunctChips();
       syncAllAiSettings();
       syncAllTransModeChips();
+      syncAllTransProviderChips();
     }).catch(() => {});
   }
 
@@ -1903,6 +1905,7 @@ export function initFeatureToggles(): void {
     syncAllCacheButtons();
     syncAllAiSettings();
     syncAllTransModeChips();
+    syncAllTransProviderChips();
     syncAllPunctChips();
     syncAllFontSizeSliders();
     syncAllPwaCard();

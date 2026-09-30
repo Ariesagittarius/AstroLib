@@ -67,7 +67,7 @@ export interface ITranslationProvider {
  */
 export interface ParagraphUnit {
   id: string; // 唯一锚点标识，如 "p-0", "p-1", "box-0"
-  type: 'heading' | 'paragraph' | 'math' | 'code' | 'quote' | 'card' | 'list-item';
+  type: 'heading' | 'paragraph' | 'math' | 'code' | 'quote' | 'card' | 'card-title' | 'table-cell' | 'list-item';
   index: number;
   sourceText: string; // 原始英文文本（含公式/代码标记）
   translatedText?: string; // 翻译后的中文文本（含公式/代码标记）

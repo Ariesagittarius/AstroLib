@@ -940,6 +940,14 @@ export class TranslationDockController {
         chunk.map(async (unit) => {
           if (signal.aborted) return;
 
+          // 严格跳过公式块与代码块的翻译
+          if (unit.type === 'math' || unit.type === 'code') {
+            unit.status = 'done';
+            unit.translatedText = unit.sourceText;
+            this.updateCardContent(dockContent, unit);
+            return;
+          }
+
           // 若非强制刷新且该段已回填完成，直接跳过请求
           if (!forceRefresh && unit.status === 'done' && unit.translatedText) {
             this.updateCardContent(dockContent, unit);
@@ -1434,6 +1442,13 @@ export class TranslationDockController {
         chunk.map(async (unit) => {
           if (signal.aborted) return;
 
+          // 严格跳过公式块与代码块的翻译
+          if (unit.type === 'math' || unit.type === 'code') {
+            unit.status = 'done';
+            unit.translatedText = unit.sourceText;
+            return;
+          }
+
           if (!forceRefresh && unit.status === 'done' && unit.translatedText) {
             this.updateInlineBlockContent(contentContainer, unit);
             return;
@@ -1503,6 +1518,7 @@ export class TranslationDockController {
     const contentContainer = document.querySelector<HTMLElement>('.sl-markdown-content') || document.querySelector<HTMLElement>('article');
     if (contentContainer) {
       contentContainer.querySelectorAll<HTMLElement>('.trans-inline-block').forEach((el) => el.remove());
+      contentContainer.querySelectorAll<HTMLElement>('.has-trans-inline').forEach((el) => el.classList?.remove('has-trans-inline'));
       const toolbar = contentContainer.querySelector<HTMLElement>('#trans-inline-toolbar');
       if (toolbar) toolbar.remove();
     }
@@ -1512,17 +1528,50 @@ export class TranslationDockController {
 
   private renderInlineBlocks(container: HTMLElement, paragraphs: ParagraphUnit[]): void {
     for (const unit of paragraphs) {
+      // 严格跳过公式与代码块，不注入任何行内翻译结构
+      if (unit.type === 'math' || unit.type === 'code') continue;
+
       const srcEl = container.querySelector<HTMLElement>(`[data-trans-id="${unit.id}"]`);
       if (!srcEl) continue;
 
       let inlineBlock = container.querySelector<HTMLElement>(`[data-trans-inline-id="${unit.id}"]`);
       if (!inlineBlock) {
         inlineBlock = document.createElement('div');
-        inlineBlock.className = `trans-inline-block ${unit.type === 'heading' ? 'is-heading' : ''}`;
+        const isCardTitle =
+          unit.type === 'card-title' ||
+          srcEl.getAttribute?.('data-trans-card-title') === 'true' ||
+          srcEl.classList?.contains('card-header');
+
+        const isTableCell =
+          unit.type === 'table-cell' ||
+          srcEl.tagName === 'TH' ||
+          srcEl.tagName === 'TD' ||
+          srcEl.getAttribute?.('data-trans-kind') === 'table-cell';
+
+        const isInsideAlgorithm = Boolean(srcEl.closest?.('.academic-algorithm, .mineru-algorithm, .algorithm-body'));
+        const isNoIndent = srcEl.classList?.contains('noindent') || isInsideAlgorithm || isTableCell;
+
+        inlineBlock.className = `trans-inline-block ${unit.type === 'heading' ? 'is-heading' : ''} ${isCardTitle ? 'is-card-title' : ''} ${isTableCell ? 'is-table-cell' : ''} ${isNoIndent ? 'is-noindent' : ''} ${isInsideAlgorithm ? 'is-algorithm-item' : ''}`.trim();
         inlineBlock.setAttribute('data-trans-inline-id', unit.id);
         inlineBlock.setAttribute('role', 'region');
-        inlineBlock.setAttribute('aria-label', '段落中文译文');
-        srcEl.after(inlineBlock);
+        inlineBlock.setAttribute(
+          'aria-label',
+          isCardTitle ? '卡片标题中文译文' : isTableCell ? '表格单元格中文译文' : '段落中文译文'
+        );
+
+        if (isCardTitle || isTableCell) {
+          srcEl.classList?.add('has-trans-inline');
+          srcEl.appendChild(inlineBlock);
+        } else {
+          srcEl.after(inlineBlock);
+          // 若在算法等预格式化块内，清理与下个元素之间多余的纯空行文本节点，避免 pre-wrap 导致巨大空白
+          if (isInsideAlgorithm) {
+            const nextNode = inlineBlock.nextSibling;
+            if (nextNode && nextNode.nodeType === 3 /* TEXT_NODE */ && /^\s+$/.test(nextNode.nodeValue || '')) {
+              nextNode.nodeValue = '';
+            }
+          }
+        }
       }
 
       this.updateInlineBlockContent(container, unit, inlineBlock);
@@ -1538,12 +1587,7 @@ export class TranslationDockController {
     const isSatisfied = Boolean(unit.isSatisfied);
 
     if (isError) {
-      block.innerHTML = `
-        <div class="trans-inline-error">
-          <span class="trans-inline-error-text">⚠️ 翻译未成功 (${this.escapeHtml(unit.error || '请求异常')})</span>
-          <button type="button" class="trans-inline-retry-btn">重试</button>
-        </div>
-      `;
+      block.innerHTML = `<div class="trans-inline-error"><span class="trans-inline-error-text">⚠️ 翻译未成功 (${this.escapeHtml(unit.error || '请求异常')})</span><button type="button" class="trans-inline-retry-btn">重试</button></div>`;
       block.querySelector('.trans-inline-retry-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
         this.retrySingleUnitInline(block, unit);
@@ -1551,13 +1595,12 @@ export class TranslationDockController {
       return;
     }
 
-    block.innerHTML = `
-      <div class="trans-inline-inner">
-        <div class="trans-inline-text ${isDone ? '' : 'trans-pulse-text'}">
-          ${isDone ? this.escapeHtml(unit.translatedText || unit.sourceText) : '<div class="trans-skeleton-line"></div>'}
-        </div>
-        ${isDone ? `
-        <div class="trans-inline-actions">
+    const textContent = isDone
+      ? this.escapeHtml((unit.translatedText || unit.sourceText).trim())
+      : '<div class="trans-skeleton-line"></div>';
+
+    const actionsContent = isDone
+      ? `<div class="trans-inline-actions">
           <button
             type="button"
             class="trans-inline-action-btn trans-inline-satisfy-btn ${isSatisfied ? 'is-satisfied' : ''}"
@@ -1574,9 +1617,10 @@ export class TranslationDockController {
           >
             <md-icon class="trans-inline-icon">content_copy</md-icon>
           </button>
-        </div>` : ''}
-      </div>
-    `;
+        </div>`
+      : '';
+
+    block.innerHTML = `<div class="trans-inline-inner"><div class="trans-inline-text ${isDone ? '' : 'trans-pulse-text'}">${textContent}</div>${actionsContent}</div>`;
 
     if (isDone) {
       const textEl = block.querySelector<HTMLElement>('.trans-inline-text');
@@ -1684,6 +1728,10 @@ export class TranslationDockController {
     switch (type) {
       case 'heading':
         return '标题';
+      case 'card-title':
+        return '卡片标题';
+      case 'table-cell':
+        return '表格';
       case 'math':
         return '公式';
       case 'code':

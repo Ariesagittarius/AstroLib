@@ -105,7 +105,7 @@ export class TranslationExporter {
       const srcText = u.sourceText.trim();
       const statusBadge = u.isCustomEdited ? ' *(★ 读者精修)*' : u.isSatisfied ? ' *(★ 满意采纳)*' : '';
 
-      if (u.type === 'heading') {
+      if (u.type === 'heading' || u.type === 'card-title') {
         lines.push(`### ${srcText}`);
         lines.push(`> **【译】** ${transText}${statusBadge}`);
         lines.push('');
@@ -163,7 +163,7 @@ export class TranslationExporter {
     for (const u of units) {
       const transText = (u.translatedText || u.sourceText).trim();
 
-      if (u.type === 'heading') {
+      if (u.type === 'heading' || u.type === 'card-title') {
         lines.push(`## ${transText}`);
         lines.push('');
       } else {

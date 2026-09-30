@@ -185,6 +185,13 @@ export class TranslationService {
           // 跳过空文本或非翻译类单元（如纯公式块若不需要翻译文本）
           if (!unit.sourceText.trim()) return;
 
+          // 严格跳过行间公式块与算法代码块的翻译
+          if (unit.type === 'math' || unit.type === 'code') {
+            unit.status = 'done';
+            unit.translatedText = unit.sourceText;
+            return;
+          }
+
           unit.status = 'translating';
           const res = await this.translate(unit.sourceText, options);
           if (res.success) {

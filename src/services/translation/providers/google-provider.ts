@@ -32,7 +32,10 @@ export class GoogleTranslateProvider implements ITranslationProvider {
 
     const sourceLang = options.sourceLang || 'en';
     const targetLang = options.targetLang || 'zh-CN';
-    const apiKey = options.apiKey || (typeof process !== 'undefined' ? process.env?.GOOGLE_TRANSLATE_API_KEY : '');
+    // 只有当明确传入以 AIzaSy 开头的 Google 格式密钥或服务端配置了 GOOGLE_TRANSLATE_API_KEY 时才走付费接口
+    // 杜绝其他服务商 (如智谱、DeepSeek) 的密钥误传入导致 Google 400 Bad Request
+    const isGoogleKey = Boolean(options.apiKey && options.apiKey.startsWith('AIzaSy'));
+    const apiKey = isGoogleKey ? options.apiKey : (typeof process !== 'undefined' ? process.env?.GOOGLE_TRANSLATE_API_KEY : '');
 
     // 模式 A: 官方 Google Cloud Translation API
     if (apiKey) {

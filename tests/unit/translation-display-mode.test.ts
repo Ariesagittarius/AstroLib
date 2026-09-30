@@ -48,8 +48,18 @@ class FakeElement {
     contains: (cls: string) => this.className.split(' ').filter(Boolean).includes(cls),
   };
 
+  public nodeType: number = 1;
+  public nodeValue: string | null = null;
+
   get parentNode(): FakeElement | null {
     return this.parentElement;
+  }
+
+  get nextSibling(): FakeElement | null {
+    if (!this.parentElement) return null;
+    const idx = this.parentElement.children.indexOf(this);
+    if (idx === -1 || idx === this.parentElement.children.length - 1) return null;
+    return this.parentElement.children[idx + 1];
   }
 
   constructor(tagName: string) {
@@ -124,6 +134,21 @@ class FakeElement {
   prepend(child: FakeElement) {
     child.parentElement = this;
     this.children.unshift(child);
+  }
+
+  appendChild(child: FakeElement) {
+    child.parentElement = this;
+    this.children.push(child);
+  }
+
+  matches(sel: string): boolean {
+    const parts = sel.split(',').map((s) => s.trim());
+    for (const p of parts) {
+      if (p.startsWith('.') && this.classList.contains(p.slice(1))) return true;
+      if (p.startsWith('#') && this.id === p.slice(1)) return true;
+      if (this.tagName.toLowerCase() === p.toLowerCase()) return true;
+    }
+    return false;
   }
 
   remove() {
@@ -475,5 +500,169 @@ describe('Translation Display Mode Suite (侧边栏对照 vs 段落下方显示)
     controller.hideInlineTranslations();
     const remainingToolbar = rootArticle.querySelector('.trans-inline-toolbar');
     expect(remainingToolbar).toBeNull();
+  });
+
+  it('跳过行间公式与代码块验证：<pre> 和 .katex-display 绝不被提取为翻译单元，且绝不插入行内译文块', async () => {
+    // 构造包含代码块与行间公式的 DOM
+    const pre = new FakeElement('pre');
+    pre.textContent = 'function mergesort(a[1...n])';
+    pre.parentElement = rootArticle;
+    rootArticle.children.push(pre);
+
+    const katex = new FakeElement('div');
+    katex.className = 'katex-display';
+    katex.textContent = '$$T(n) = 2T(n/2) + O(n)$$';
+    katex.parentElement = rootArticle;
+    rootArticle.children.push(katex);
+
+    const { TranslationDockController } = await import('../../src/services/translation/client/translation-dock-controller');
+    const controller = TranslationDockController.getInstance();
+    controller.setDisplayMode('inline', false);
+
+    await controller.showInlineTranslations(true);
+
+    // 验证 pre 和 katex-display 没有被赋予 data-trans-id
+    expect(pre.hasAttribute('data-trans-id')).toBe(false);
+    expect(katex.hasAttribute('data-trans-id')).toBe(false);
+
+    // 验证 pre 和 katex-display 下方绝对没有生成行内译文块
+    const allInlineBlocks = rootArticle.querySelectorAll('.trans-inline-block');
+    for (const block of allInlineBlocks) {
+      expect(block.innerHTML).not.toContain('function mergesort');
+      expect(block.innerHTML).not.toContain('T(n)');
+    }
+
+    controller.hideInlineTranslations();
+  });
+
+  it('卡片精准切分与原位包裹验证：卡片标题与卡片正文分别翻译，卡片标题包裹在 card-header 内部，卡片正文包裹在 card-body 内部', async () => {
+    // 构造卡片结构
+    const card = new FakeElement('div');
+    card.className = 'knowledge-card';
+    card.setAttribute('data-title', 'Box: Binary search');
+    card.parentElement = rootArticle;
+
+    const header = new FakeElement('div');
+    header.className = 'card-header';
+    header.textContent = 'Box: Binary search';
+    header.parentElement = card;
+    card.children.push(header);
+
+    const body = new FakeElement('div');
+    body.className = 'card-body';
+    body.parentElement = card;
+    card.children.push(body);
+
+    const p = new FakeElement('p');
+    p.textContent = 'The ultimate divide-and-conquer algorithm is binary search.';
+    p.parentElement = body;
+    body.children.push(p);
+
+    rootArticle.children.push(card);
+
+    const { TranslationDockController } = await import('../../src/services/translation/client/translation-dock-controller');
+    const controller = TranslationDockController.getInstance();
+    controller.setDisplayMode('inline', false);
+
+    await controller.showInlineTranslations(true);
+
+    // 核心断言 1：卡片标题被单独提取并赋予 data-trans-id
+    expect(header.hasAttribute('data-trans-id')).toBe(true);
+    expect(header.getAttribute('data-trans-card-title')).toBe('true');
+
+    // 核心断言 2：卡片标题的行内翻译块位于 card-header 内部，带有 is-card-title 样式类
+    const headerInline = header.querySelector('.trans-inline-block');
+    expect(headerInline).not.toBeNull();
+    expect(headerInline?.classList.contains('is-card-title')).toBe(true);
+
+    // 核心断言 3：卡片正文 p 的行内翻译块位于 card-body 内部，绝不溢出到 card 外侧
+    const bodyInline = body.querySelector('.trans-inline-block');
+    expect(bodyInline).not.toBeNull();
+
+    // 验证整个 card 外部没有被多余插入译文块
+    const directChildrenOfCard = card.children;
+    expect(directChildrenOfCard.length).toBe(2); // 仅有 header 和 body
+
+    controller.hideInlineTranslations();
+  });
+
+  it('表格单元格原位行内翻译验证：翻译块必须置于 td / th 单元格内部，赋予 is-table-cell 与 is-noindent 类，不得打破表格 tr 布局', async () => {
+    const table = new FakeElement('table');
+    table.parentElement = rootArticle;
+
+    const tr = new FakeElement('tr');
+    tr.parentElement = table;
+    table.children.push(tr);
+
+    const th = new FakeElement('th');
+    th.textContent = 'Operation';
+    th.parentElement = tr;
+    tr.children.push(th);
+
+    const td = new FakeElement('td');
+    td.textContent = 'Copying array';
+    td.parentElement = tr;
+    tr.children.push(td);
+
+    rootArticle.children.push(table);
+
+    const { TranslationDockController } = await import('../../src/services/translation/client/translation-dock-controller');
+    const controller = TranslationDockController.getInstance();
+    controller.setDisplayMode('inline', false);
+
+    await controller.showInlineTranslations(true);
+
+    // 单元格被赋予 data-trans-id
+    expect(th.hasAttribute('data-trans-id')).toBe(true);
+    expect(td.hasAttribute('data-trans-id')).toBe(true);
+
+    // 核心断言 1：tr 的直接子节点依然只有 th 和 td，译文块必须包裹在 th/td 内部，绝不能直接成为 tr 的子元素
+    expect(tr.children.length).toBe(2);
+    expect(tr.children[0]).toBe(th);
+    expect(tr.children[1]).toBe(td);
+
+    // 核心断言 2：th 和 td 内部均存在行内译文块，且具备 is-table-cell 和 is-noindent 类
+    const thInline = th.querySelector('.trans-inline-block');
+    const tdInline = td.querySelector('.trans-inline-block');
+    expect(thInline).not.toBeNull();
+    expect(tdInline).not.toBeNull();
+
+    expect(thInline?.classList.contains('is-table-cell')).toBe(true);
+    expect(thInline?.classList.contains('is-noindent')).toBe(true);
+    expect(tdInline?.classList.contains('is-table-cell')).toBe(true);
+    expect(tdInline?.classList.contains('is-noindent')).toBe(true);
+
+    controller.hideInlineTranslations();
+  });
+
+  it('算法块伪代码行内翻译紧凑排版验证：算法块内部段落翻译块具有 is-algorithm-item 和 is-noindent，且内部文本模板无冗余换行', async () => {
+    const algo = new FakeElement('div');
+    algo.className = 'academic-algorithm';
+    algo.parentElement = rootArticle;
+
+    const body = new FakeElement('div');
+    body.className = 'algorithm-body';
+    body.parentElement = algo;
+    algo.children.push(body);
+
+    const p = new FakeElement('p');
+    p.textContent = 'Input: Coefficients of two polynomials';
+    p.parentElement = body;
+    body.children.push(p);
+
+    rootArticle.children.push(algo);
+
+    const { TranslationDockController } = await import('../../src/services/translation/client/translation-dock-controller');
+    const controller = TranslationDockController.getInstance();
+    controller.setDisplayMode('inline', false);
+
+    await controller.showInlineTranslations(true);
+
+    const pInline = body.querySelector('.trans-inline-block');
+    expect(pInline).not.toBeNull();
+    expect(pInline?.classList.contains('is-algorithm-item')).toBe(true);
+    expect(pInline?.classList.contains('is-noindent')).toBe(true);
+
+    controller.hideInlineTranslations();
   });
 });

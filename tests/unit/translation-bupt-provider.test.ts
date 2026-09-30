@@ -39,6 +39,16 @@ describe('BUPT DeepSeek Translation Provider Suite', () => {
     expect(cleanFn(inputWithCodeBlock)).toBe('这是被 markdown 代码块包裹的译文。');
   });
 
+  it('针对短标题输入发生模型扩写添油加醋时，能自动截断并保留首行核心译文', () => {
+    const provider = new BuptTranslateProvider();
+    const sourceText = '2.3 Mergesort';
+    const hallucinatedOutput = `2.3 归并排序
+归并排序是一种高效的排序算法，它基于分治策略。该算法的基本思想是将输入数组分成两半...`;
+
+    const cleaned = provider.cleanTranslatedOutput(hallucinatedOutput, sourceText);
+    expect(cleaned).toBe('2.3 归并排序');
+  });
+
   it('单段调用时能正确配合 StructurePreservingMasker 保护公式与组件占位符', async () => {
     const provider = new BuptTranslateProvider();
     // Mock requestNode 返回包含占位符的中文译文

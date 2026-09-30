@@ -36,6 +36,16 @@ describe('Zhipu AI GLM-4 Translation Provider Suite', () => {
     expect(cleanFn(inputWithCodeBlock)).toBe('这是被 markdown 代码块包裹的译文。');
   });
 
+  it('针对短标题输入发生模型扩写添油加醋时，能自动截断并保留首行核心译文', () => {
+    const provider = new ZhipuTranslateProvider();
+    const sourceText = '2.3 Mergesort';
+    const hallucinatedOutput = `2.3 归并排序
+归并排序是一种高效的排序算法，它基于分治策略。该算法的基本思想是将输入数组分成两半...`;
+
+    const cleaned = provider.cleanTranslatedOutput(hallucinatedOutput, sourceText);
+    expect(cleaned).toBe('2.3 归并排序');
+  });
+
   it('当未配置 API Key 时应抛出明确友好的配置指引异常', async () => {
     const provider = new ZhipuTranslateProvider();
     const origEnv = process.env.ZHIPU_API_KEY;

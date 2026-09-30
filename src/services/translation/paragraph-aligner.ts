@@ -69,7 +69,7 @@ export class ParagraphAligner {
     if (!container) return [];
 
     const units: ParagraphUnit[] = [];
-    // 选取正文中所有顶层核心阅读语义块
+    const cardSelector = '.knowledge-card, .example-card, .variant-card, .method-card, .summary-card, .exercise-card';
     const selector = [
       'h1',
       'h2',
@@ -77,27 +77,152 @@ export class ParagraphAligner {
       'h4',
       'p',
       'blockquote',
-      '.katex-display',
-      'pre',
-      '.knowledge-card',
-      '.example-card',
-      '.variant-card',
-      '.method-card',
-      '.exercise-card',
+      'th',
+      'td',
+      cardSelector,
     ].join(', ');
 
     const elements = container.querySelectorAll<HTMLElement>(selector);
     let index = 0;
 
     elements.forEach((el) => {
-      // 避免选取卡片内部嵌套的子段落，以及已经存在的行内翻译块
-      if (el.closest('.trans-inline-block')) {
-        return;
-      }
-      if (el.parentElement && el.parentElement.closest('.knowledge-card, .example-card, .variant-card, .exercise-card')) {
+      // 避免选取已存在的行内翻译块内部的节点
+      if (el.closest?.('.trans-inline-block')) {
         return;
       }
 
+      // 如果当前元素位于某个卡片内部且自身不是卡片容器，跳过（后续在卡片容器处统一提取其标题与正文）
+      const parentCard = el.closest?.<HTMLElement>(cardSelector);
+      if (parentCard && parentCard !== el) {
+        return;
+      }
+
+      // 1. 卡片类组件：分别提取卡片标题和卡片正文区域
+      if (this.isCardElement(el)) {
+        // 1.1 提取卡片标题
+        const headerEl = el.querySelector<HTMLElement>('.card-header');
+        const titleText = el.getAttribute('data-title')?.trim() || (headerEl ? this.getElementTextWithFormulas(headerEl, true) : '');
+
+        if (headerEl && titleText && titleText.length >= 1) {
+          const transId = `p-${index}`;
+          headerEl.setAttribute('data-trans-id', transId);
+          headerEl.setAttribute('data-trans-card-title', 'true');
+          headerEl.classList.add('trans-source-block');
+
+          units.push({
+            id: transId,
+            type: 'card-title',
+            index,
+            sourceText: titleText,
+            status: 'idle',
+          });
+          index++;
+        }
+
+        // 1.2 提取卡片正文（必须在 card-body 区域内部提取）
+        const bodyEl = el.querySelector<HTMLElement>('.card-body');
+        if (bodyEl) {
+          // 抓取 card-body 内的段落与表格单元格，跳过行间公式与代码块
+          const bodyParas = Array.from(bodyEl.querySelectorAll<HTMLElement>('p, blockquote, th, td')).filter(
+            (p) => {
+              if (p.closest('.katex-display') || p.closest('pre') || p.closest('.trans-inline-block')) {
+                return false;
+              }
+              const pTag = p.tagName.toLowerCase();
+              if (pTag === 'p' && p.closest('th, td')) return false;
+              if (pTag === 'th' || pTag === 'td') {
+                if (p.querySelector('th, td')) return false;
+              }
+              return true;
+            }
+          );
+
+          if (bodyParas.length > 0) {
+            bodyParas.forEach((p) => {
+              const pTag = p.tagName.toLowerCase();
+              const isCell = pTag === 'th' || pTag === 'td';
+              const text = this.getElementTextWithFormulas(p);
+              if (!text || text.length < 2) return;
+              if (isCell && !/[a-zA-Z\u4e00-\u9fa5]/.test(text)) return;
+
+              const transId = `p-${index}`;
+              p.setAttribute('data-trans-id', transId);
+              if (isCell) p.setAttribute('data-trans-kind', 'table-cell');
+              p.classList.add('trans-source-block');
+
+              units.push({
+                id: transId,
+                type: isCell ? 'table-cell' : 'paragraph',
+                index,
+                sourceText: text,
+                status: 'idle',
+              });
+              index++;
+            });
+          } else {
+            // 若 card-body 无显式 <p> 标签，直接将 card-body 本身作为正文单元
+            const text = this.getElementTextWithFormulas(bodyEl);
+            if (text && text.length >= 2) {
+              const transId = `p-${index}`;
+              bodyEl.setAttribute('data-trans-id', transId);
+              bodyEl.classList.add('trans-source-block');
+
+              units.push({
+                id: transId,
+                type: 'paragraph',
+                index,
+                sourceText: text,
+                status: 'idle',
+              });
+              index++;
+            }
+          }
+        }
+        return;
+      }
+
+      // 2. 严格跳过行间公式 (.katex-display) 与算法代码块 (pre) 的翻译提取
+      const tagName = el.tagName.toLowerCase();
+      if (
+        tagName === 'pre' ||
+        Boolean(el.classList?.contains('katex-display')) ||
+        el.closest?.('.katex-display') ||
+        el.closest?.('pre')
+      ) {
+        return;
+      }
+
+      // 3. 表格单元格处理：若当前元素是 p 但位于单元格内，跳过（统一以 th / td 为单位提取）
+      if (tagName === 'p' && el.closest?.('th, td')) {
+        return;
+      }
+
+      // 表格单元格 (th, td) 提取
+      if (tagName === 'th' || tagName === 'td') {
+        if (el.querySelector('th, td')) {
+          return;
+        }
+
+        const text = this.getElementTextWithFormulas(el);
+        if (!text || text.length < 2) return;
+        // 必须包含自然语言文字（字母或汉字），跳过纯数字、纯符号或仅有图片的单元格
+        if (!/[a-zA-Z\u4e00-\u9fa5]/.test(text)) return;
+
+        const transId = `p-${index}`;
+        el.setAttribute('data-trans-id', transId);
+        el.setAttribute('data-trans-kind', 'table-cell');
+        el.classList.add('trans-source-block');
+
+        units.push({
+          id: transId,
+          type: 'table-cell',
+          index,
+          sourceText: text,
+          status: 'idle',
+        });
+        index++;
+        return;
+      }
 
       const text = this.getElementTextWithFormulas(el);
       if (!text || text.length < 2) return;
@@ -107,12 +232,8 @@ export class ParagraphAligner {
       el.classList.add('trans-source-block');
 
       let type: ParagraphUnit['type'] = 'paragraph';
-      const tagName = el.tagName.toLowerCase();
       if (tagName.startsWith('h')) type = 'heading';
-      else if (el.classList.contains('katex-display')) type = 'math';
-      else if (tagName === 'pre') type = 'code';
       else if (tagName === 'blockquote') type = 'quote';
-      else if (el.classList.contains('knowledge-card') || el.classList.contains('example-card')) type = 'card';
 
       units.push({
         id: transId,
@@ -125,6 +246,22 @@ export class ParagraphAligner {
     });
 
     return units;
+  }
+
+  private static isCardElement(el: HTMLElement): boolean {
+    if (el.matches?.('.knowledge-card, .example-card, .variant-card, .method-card, .summary-card, .exercise-card')) {
+      return true;
+    }
+    const cls = el.className || '';
+    return (
+      typeof cls === 'string' &&
+      (cls.includes('knowledge-card') ||
+        cls.includes('example-card') ||
+        cls.includes('variant-card') ||
+        cls.includes('method-card') ||
+        cls.includes('summary-card') ||
+        cls.includes('exercise-card'))
+    );
   }
 
   /**
@@ -244,17 +381,24 @@ export class ParagraphAligner {
   /**
    * 从带有 KaTeX 的 DOM 元素中提取保留公式语法的文本内容
    */
-  private static getElementTextWithFormulas(el: HTMLElement): string {
+  private static getElementTextWithFormulas(el: HTMLElement, isHeader = false): string {
     // 若元素携带 data-latex (由 rehype-katex-source 回填)，优先提取原生 LaTeX
-    const clone = el.cloneNode(true) as HTMLElement;
+    const clone = typeof el.cloneNode === 'function' ? (el.cloneNode(true) as HTMLElement) : el;
 
-    // 针对行内公式替换为 $data-latex$
-    clone.querySelectorAll<HTMLElement>('.katex[data-latex], [data-latex]').forEach((kEl) => {
-      const latex = kEl.getAttribute('data-latex') || '';
-      const isDisplay = kEl.classList.contains('katex-display') || kEl.getAttribute('data-display') === 'true';
-      const replacement = document.createTextNode(isDisplay ? `\n$$${latex}$$\n` : ` $${latex}$ `);
-      kEl.parentNode?.replaceChild(replacement, kEl);
-    });
+    if (clone.querySelectorAll) {
+      // 若是卡片标题，先移除图标和辅助元素，避免文字受损
+      if (isHeader) {
+        clone.querySelectorAll<HTMLElement>('.card-mdicon, svg, [aria-hidden="true"]').forEach((icon) => icon.remove?.());
+      }
+
+      // 针对行内公式替换为 $data-latex$
+      clone.querySelectorAll<HTMLElement>('.katex[data-latex], [data-latex]').forEach((kEl) => {
+        const latex = kEl.getAttribute('data-latex') || '';
+        const isDisplay = kEl.classList.contains('katex-display') || kEl.getAttribute('data-display') === 'true';
+        const replacement = document.createTextNode(isDisplay ? `\n$$${latex}$$\n` : ` $${latex}$ `);
+        kEl.parentNode?.replaceChild(replacement, kEl);
+      });
+    }
 
     return clone.textContent?.trim() || '';
   }
