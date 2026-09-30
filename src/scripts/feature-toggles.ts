@@ -173,8 +173,9 @@ import {
   TranslationStorage,
   TRANSLATION_DISPLAY_MODE_KEY,
   TRANSLATION_DISPLAY_MODE_CHANGE_EVENT,
+  TRANSLATION_PROVIDER_CHANGE_EVENT,
 } from '../services/translation/storage/translation-storage';
-import type { TranslationDisplayMode } from '../services/translation/types';
+import type { TranslationDisplayMode, TranslationProviderId } from '../services/translation/types';
 
 const STORAGE_KEY = 'starlight-features';
 
@@ -281,8 +282,9 @@ export function resetToggles(): void {
   savePunctStyle('dot');
   saveFontSize(DEFAULT_FONT_SIZE);
 
-  // 重置双语助读呈现方式为侧边栏对照 (sidebar)
+  // 重置双语助读呈现方式为侧边栏对照 (sidebar)，服务商为 Google
   TranslationStorage.setDisplayMode('sidebar');
+  TranslationStorage.setProvider('google');
 
   syncAllCheckboxes();
   syncAllThemeModes();
@@ -293,6 +295,7 @@ export function resetToggles(): void {
   syncAllCacheButtons();
   syncAllAiSettings();
   syncAllTransModeChips();
+  syncAllTransProviderChips();
   syncAllPunctChips();
   syncAllFontSizeSliders();
   syncAllLiteMode();
@@ -305,6 +308,18 @@ export function syncAllTransModeChips(): void {
   document.querySelectorAll<any>('.ft-trans-mode-chip-set md-filter-chip').forEach((chip) => {
     const chipVal = chip.getAttribute('data-trans-mode-val');
     const isSelected = chipVal === currentMode;
+    chip.selected = isSelected;
+    chip.toggleAttribute('selected', isSelected);
+    chip.classList.toggle('active', isSelected);
+  });
+}
+
+/** 同步全站所有界面的翻译服务商 Chips */
+export function syncAllTransProviderChips(): void {
+  const currentProvider = TranslationStorage.getProvider();
+  document.querySelectorAll<any>('.ft-trans-provider-chip-set md-filter-chip').forEach((chip) => {
+    const chipVal = chip.getAttribute('data-trans-provider-val');
+    const isSelected = chipVal === currentProvider;
     chip.selected = isSelected;
     chip.toggleAttribute('selected', isSelected);
     chip.classList.toggle('active', isSelected);
@@ -357,6 +372,25 @@ function updateCampusNetworkUI(): void {
           // 未选该提供商：对外隐藏，贯彻「只在校园网环境显示」原则
           buptChip.classList.add('hidden');
           buptChip.style.display = 'none';
+        }
+      }
+    }
+
+    const transBuptChip = root.querySelector<any>('.ft-trans-provider-bupt');
+    if (transBuptChip) {
+      const activeTransProvider = TranslationStorage.getProvider();
+      if (_isCampusNetworkAvailable) {
+        transBuptChip.classList.remove('hidden');
+        transBuptChip.style.display = '';
+        transBuptChip.title = '北京邮电大学「人人有算力」校内专属服务 · 校园网已连通';
+      } else {
+        if (activeTransProvider === 'bupt') {
+          transBuptChip.classList.remove('hidden');
+          transBuptChip.style.display = '';
+          transBuptChip.title = '未检测到校园网环境 · 非校园网环境不可用';
+        } else {
+          transBuptChip.classList.add('hidden');
+          transBuptChip.style.display = 'none';
         }
       }
     }
@@ -808,6 +842,8 @@ class StarlightFeatureToggles extends HTMLElement {
     syncAllPrewarmButtons();
     syncAllCacheButtons();
     syncAllAiSettings();
+    syncAllTransModeChips();
+    syncAllTransProviderChips();
     syncAllPunctChips();
     syncAllFontSizeSliders();
     syncAllLiteMode();
@@ -1581,6 +1617,23 @@ class StarlightFeatureToggles extends HTMLElement {
       });
     });
 
+    // 绑定双语助读服务商 Chips
+    root.querySelectorAll<any>('.ft-trans-provider-chip-set md-filter-chip').forEach((chip) => {
+      chip.addEventListener('click', (e: Event) => {
+        const pVal = chip.getAttribute('data-trans-provider-val') as TranslationProviderId | null;
+        if (!pVal) return;
+        const currentP = TranslationStorage.getProvider();
+        if (pVal === currentP) {
+          e.preventDefault();
+          syncAllTransProviderChips();
+          return;
+        }
+        e.stopPropagation();
+        TranslationStorage.setProvider(pVal);
+        syncAllTransProviderChips();
+      });
+    });
+
     // 绑定来源跳转方式 Chips
 
     root.querySelectorAll<any>('.ft-ai-src-chip-set md-filter-chip').forEach((chip) => {
@@ -1891,6 +1944,8 @@ export function initFeatureToggles(): void {
       syncAllPunctChips();
     } else if (e.key === TRANSLATION_DISPLAY_MODE_KEY) {
       syncAllTransModeChips();
+    } else if (e.key === 'astrolib_trans_provider') {
+      syncAllTransProviderChips();
     } else if (e.key === FONT_SIZE_KEY) {
       applyFontSize();
 
@@ -1905,6 +1960,14 @@ export function initFeatureToggles(): void {
 
   // 监听浏览器 PWA 安装横幅事件与安装完成事件
   if (typeof window !== 'undefined') {
+    window.addEventListener(TRANSLATION_DISPLAY_MODE_CHANGE_EVENT, () => {
+      syncAllTransModeChips();
+    });
+
+    window.addEventListener(TRANSLATION_PROVIDER_CHANGE_EVENT, () => {
+      syncAllTransProviderChips();
+    });
+
     window.addEventListener('beforeinstallprompt', (e: Event) => {
       e.preventDefault();
       setDeferredInstallPrompt(e);

@@ -15,7 +15,11 @@
 import { sideloadManager } from '../../../components/sideload/sideload-manager.ts';
 import { getProviderApiKey, saveProviderApiKey, AI_CONFIG_CHANGE_EVENT } from '../../../ai/ai-config.ts';
 import { ParagraphAligner } from '../paragraph-aligner.ts';
-import { TranslationStorage, TRANSLATION_DISPLAY_MODE_CHANGE_EVENT } from '../storage/translation-storage.ts';
+import {
+  TranslationStorage,
+  TRANSLATION_DISPLAY_MODE_CHANGE_EVENT,
+  TRANSLATION_PROVIDER_CHANGE_EVENT,
+} from '../storage/translation-storage.ts';
 import { TranslationExporter } from '../export/translation-exporter.ts';
 import type { ParagraphUnit, TranslationProviderId, TranslationExportFormat, TranslationDisplayMode } from '../types.ts';
 
@@ -69,12 +73,7 @@ export class TranslationDockController {
     this.isInitialized = true;
 
     // 恢复用户上次选择的翻译提供商与呈现模式
-    const savedProvider = (typeof localStorage !== 'undefined'
-      ? localStorage.getItem('astrolib_trans_provider')
-      : null) as TranslationProviderId | null;
-    if (savedProvider && ['google', 'gemini', 'bupt', 'deepseek'].includes(savedProvider)) {
-      this.currentProvider = savedProvider === 'deepseek' ? 'bupt' : savedProvider;
-    }
+    this.currentProvider = TranslationStorage.getProvider();
     this.displayMode = TranslationStorage.getDisplayMode();
 
     // 全局事件委托：绑定所有侧载操作、服务商切换、一键触发器
@@ -89,13 +88,38 @@ export class TranslationDockController {
         return;
       }
 
-      // 2. 重新翻译本节
+      // 2. 重新翻译本节 (侧边栏刷新按钮)
       if (target.closest('#trans-sidebar-refresh')) {
         e.preventDefault();
         if (this.displayMode === 'sidebar') {
           this.startTranslation(true);
         } else {
           this.showInlineTranslations(true);
+        }
+        return;
+      }
+
+      // 2.1 行内控制条：重新翻译全文
+      if (target.closest('#trans-inline-refresh-btn')) {
+        e.preventDefault();
+        this.showInlineTranslations(true);
+        return;
+      }
+
+      // 2.2 行内控制条：退出助读
+      if (target.closest('#trans-inline-exit-btn')) {
+        e.preventDefault();
+        this.hideInlineTranslations();
+        return;
+      }
+
+      // 2.3 行内控制条：就地切换翻译服务商
+      const inlinePill = target.closest<HTMLButtonElement>('[data-inline-provider]');
+      if (inlinePill) {
+        e.preventDefault();
+        const p = inlinePill.getAttribute('data-inline-provider') as TranslationProviderId | null;
+        if (p && p !== this.currentProvider) {
+          this.setProvider(p);
         }
         return;
       }
@@ -253,6 +277,14 @@ export class TranslationDockController {
       const forceTrigger = Boolean(e?.detail?.forceTrigger);
       if (mode && (mode === 'sidebar' || mode === 'inline')) {
         this.setDisplayMode(mode, false, forceTrigger);
+      }
+    });
+
+    // 监听全局翻译服务商变更事件
+    window.addEventListener(TRANSLATION_PROVIDER_CHANGE_EVENT, (e: any) => {
+      const p = e?.detail?.provider as TranslationProviderId | undefined;
+      if (p && p !== this.currentProvider) {
+        this.setProvider(p);
       }
     });
 
@@ -777,18 +809,31 @@ export class TranslationDockController {
         el.classList.remove('is-active');
       }
     });
+    this.syncInlineToolbarUI();
   }
 
-  private setProvider(provider: TranslationProviderId): void {
+  public getProvider(): TranslationProviderId {
+    return this.currentProvider;
+  }
+
+  public setProvider(provider: TranslationProviderId): void {
+    if (this.currentProvider === provider && !this.isTranslating) return;
     this.currentProvider = provider;
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('astrolib_trans_provider', provider);
-    }
+    TranslationStorage.setProvider(provider);
     this.syncProviderChips();
     this.syncSettingsDrawerUI();
+    this.syncInlineToolbarUI();
 
-    // 重新发起翻译
-    this.startTranslation(true);
+    // 根据当前呈现方式，重新发起翻译以新服务商刷新内容
+    if (this.displayMode === 'sidebar') {
+      if (sideloadManager.getActivePanelId() === 'translate') {
+        this.startTranslation(true);
+      }
+    } else {
+      if (this.isInlineActive) {
+        this.showInlineTranslations(true);
+      }
+    }
   }
 
   public async startTranslation(forceRefresh = false): Promise<void> {
@@ -1333,7 +1378,8 @@ export class TranslationDockController {
     // 2. 本地持久化缓存回填
     const { hydratedCount } = TranslationStorage.hydrateUnits(chapterKey, this.paragraphs);
 
-    // 3. 渲染行内对照译文块
+    // 3. 渲染行内控制条与行内对照译文块
+    this.renderInlineToolbar(contentContainer);
     this.renderInlineBlocks(contentContainer, this.paragraphs);
 
     if (!forceRefresh && hydratedCount === this.paragraphs.length) {
@@ -1424,6 +1470,8 @@ export class TranslationDockController {
     const contentContainer = document.querySelector<HTMLElement>('.sl-markdown-content') || document.querySelector<HTMLElement>('article');
     if (contentContainer) {
       contentContainer.querySelectorAll<HTMLElement>('.trans-inline-block').forEach((el) => el.remove());
+      const toolbar = contentContainer.querySelector<HTMLElement>('#trans-inline-toolbar');
+      if (toolbar) toolbar.remove();
     }
 
     this.updateTriggerActiveState(false);
@@ -1437,7 +1485,7 @@ export class TranslationDockController {
       let inlineBlock = container.querySelector<HTMLElement>(`[data-trans-inline-id="${unit.id}"]`);
       if (!inlineBlock) {
         inlineBlock = document.createElement('div');
-        inlineBlock.className = 'trans-inline-block';
+        inlineBlock.className = `trans-inline-block ${unit.type === 'heading' ? 'is-heading' : ''}`;
         inlineBlock.setAttribute('data-trans-inline-id', unit.id);
         inlineBlock.setAttribute('role', 'region');
         inlineBlock.setAttribute('aria-label', '段落中文译文');
@@ -1472,30 +1520,28 @@ export class TranslationDockController {
 
     block.innerHTML = `
       <div class="trans-inline-inner">
-        <div class="trans-inline-meta">
-          <span class="trans-inline-badge">译文</span>
-          <div class="trans-inline-actions">
-            <button
-              type="button"
-              class="trans-inline-action-btn trans-inline-satisfy-btn ${isSatisfied ? 'is-satisfied' : ''}"
-              title="${isSatisfied ? '取消采纳' : '采纳满意译文'}"
-              aria-label="采纳满意译文"
-            >
-              <md-icon class="trans-inline-icon">${isSatisfied ? 'star' : 'star_border'}</md-icon>
-            </button>
-            <button
-              type="button"
-              class="trans-inline-action-btn trans-inline-copy-btn"
-              title="复制译文"
-              aria-label="复制译文"
-            >
-              <md-icon class="trans-inline-icon">content_copy</md-icon>
-            </button>
-          </div>
-        </div>
         <div class="trans-inline-text ${isDone ? '' : 'trans-pulse-text'}">
-          ${isDone ? this.escapeHtml(unit.translatedText || unit.sourceText) : '<div class="trans-skeleton-line"></div><div class="trans-skeleton-line short"></div>'}
+          ${isDone ? this.escapeHtml(unit.translatedText || unit.sourceText) : '<div class="trans-skeleton-line"></div>'}
         </div>
+        ${isDone ? `
+        <div class="trans-inline-actions">
+          <button
+            type="button"
+            class="trans-inline-action-btn trans-inline-satisfy-btn ${isSatisfied ? 'is-satisfied' : ''}"
+            title="${isSatisfied ? '取消采纳' : '采纳满意译文'}"
+            aria-label="采纳满意译文"
+          >
+            <md-icon class="trans-inline-icon">${isSatisfied ? 'star' : 'star_border'}</md-icon>
+          </button>
+          <button
+            type="button"
+            class="trans-inline-action-btn trans-inline-copy-btn"
+            title="复制译文"
+            aria-label="复制译文"
+          >
+            <md-icon class="trans-inline-icon">content_copy</md-icon>
+          </button>
+        </div>` : ''}
       </div>
     `;
 
@@ -1624,6 +1670,55 @@ export class TranslationDockController {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  private renderInlineToolbar(container: HTMLElement): void {
+    let toolbar = container.querySelector<HTMLElement>('#trans-inline-toolbar');
+    if (!toolbar) {
+      toolbar = document.createElement('div');
+      toolbar.id = 'trans-inline-toolbar';
+      toolbar.className = 'trans-inline-toolbar';
+      toolbar.setAttribute('role', 'toolbar');
+      toolbar.setAttribute('aria-label', '双语助读控制条');
+      container.prepend(toolbar);
+    }
+
+    const currentP = this.currentProvider;
+    toolbar.innerHTML = `
+      <div class="trans-inline-toolbar-left">
+        <span class="trans-inline-toolbar-title">
+          <svg class="trans-inline-toolbar-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+          </svg>
+          <span>双语助读</span>
+        </span>
+        <span class="trans-inline-toolbar-sep">/</span>
+        <div class="trans-inline-provider-pills" role="radiogroup" aria-label="选择翻译服务商">
+          <button type="button" class="trans-inline-pill ${currentP === 'google' ? 'is-active' : ''}" data-inline-provider="google" title="Google 翻译 (免密默认)">Google 翻译</button>
+          <button type="button" class="trans-inline-pill ${currentP === 'bupt' ? 'is-active' : ''}" data-inline-provider="bupt" title="北京邮电大学「人人有算力」校内专属服务">北邮校内</button>
+          <button type="button" class="trans-inline-pill ${currentP === 'gemini' ? 'is-active' : ''}" data-inline-provider="gemini" title="Google Gemini 学术翻译">Gemini</button>
+        </div>
+      </div>
+      <div class="trans-inline-toolbar-right">
+        <button type="button" class="trans-inline-toolbar-btn" id="trans-inline-refresh-btn" title="重新翻译全文">
+          <md-icon class="trans-inline-btn-icon">refresh</md-icon>
+          <span>重新翻译</span>
+        </button>
+        <button type="button" class="trans-inline-toolbar-btn trans-inline-close-btn" id="trans-inline-exit-btn" title="退出双语助读模式">
+          <md-icon class="trans-inline-btn-icon">close</md-icon>
+          <span>退出助读</span>
+        </button>
+      </div>
+    `;
+  }
+
+  public syncInlineToolbarUI(): void {
+    const toolbar = document.getElementById('trans-inline-toolbar');
+    if (!toolbar) return;
+    toolbar.querySelectorAll<HTMLButtonElement>('[data-inline-provider]').forEach((btn) => {
+      const p = btn.getAttribute('data-inline-provider');
+      btn.classList.toggle('is-active', p === this.currentProvider);
+    });
   }
 }
 

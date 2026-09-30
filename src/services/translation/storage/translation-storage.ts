@@ -11,12 +11,16 @@
  * ============================================================================
  */
 
-import type { ParagraphUnit, StoredChapterTranslation, StoredUnitTranslation, TranslationDisplayMode } from '../types.ts';
+import type { ParagraphUnit, StoredChapterTranslation, StoredUnitTranslation, TranslationDisplayMode, TranslationProviderId } from '../types.ts';
 
 const STORAGE_PREFIX = 'astrolib_trans_doc_';
 export const TRANSLATION_DISPLAY_MODE_KEY = 'astrolib_trans_display_mode';
 export const DEFAULT_TRANSLATION_DISPLAY_MODE: TranslationDisplayMode = 'sidebar';
 export const TRANSLATION_DISPLAY_MODE_CHANGE_EVENT = 'astrolib:translation-display-mode-change';
+
+export const TRANSLATION_PROVIDER_KEY = 'astrolib_trans_provider';
+export const DEFAULT_TRANSLATION_PROVIDER: TranslationProviderId = 'google';
+export const TRANSLATION_PROVIDER_CHANGE_EVENT = 'astrolib:translation-provider-change';
 
 export class TranslationStorage {
   /**
@@ -281,6 +285,37 @@ export class TranslationStorage {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
         new CustomEvent(TRANSLATION_DISPLAY_MODE_CHANGE_EVENT, { detail: { mode } })
+      );
+    }
+  }
+
+  /**
+   * 获取当前全局翻译服务商 ('google' | 'bupt' | 'gemini' 等)
+   */
+  public static getProvider(): TranslationProviderId {
+    if (typeof localStorage === 'undefined') return DEFAULT_TRANSLATION_PROVIDER;
+    try {
+      const p = localStorage.getItem(TRANSLATION_PROVIDER_KEY) as TranslationProviderId | null;
+      if (p && ['google', 'gemini', 'bupt', 'deepseek', 'custom'].includes(p)) {
+        return p === 'deepseek' ? 'bupt' : p;
+      }
+    } catch {}
+    return DEFAULT_TRANSLATION_PROVIDER;
+  }
+
+  /**
+   * 设置并持久化全局翻译服务商，并派发全局同步事件
+   */
+  public static setProvider(provider: TranslationProviderId): void {
+    if (typeof localStorage === 'undefined') return;
+    const normalized = provider === 'deepseek' ? 'bupt' : provider;
+    const prev = this.getProvider();
+    try {
+      localStorage.setItem(TRANSLATION_PROVIDER_KEY, normalized);
+    } catch {}
+    if (prev !== normalized && typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent(TRANSLATION_PROVIDER_CHANGE_EVENT, { detail: { provider: normalized } })
       );
     }
   }

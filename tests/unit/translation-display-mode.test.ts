@@ -121,6 +121,11 @@ class FakeElement {
     }
   }
 
+  prepend(child: FakeElement) {
+    child.parentElement = this;
+    this.children.unshift(child);
+  }
+
   remove() {
     if (this.parentElement) {
       const idx = this.parentElement.children.indexOf(this);
@@ -258,6 +263,7 @@ describe('Translation Display Mode Suite (侧边栏对照 vs 段落下方显示)
         if (id === 'astrolib-sideload-dock') return new FakeElement('div');
         if (id === 'sideload-panel-title') return new FakeElement('span');
         if (id === 'sideload-back-to-toc') return new FakeElement('button');
+        if (id === 'trans-inline-toolbar') return rootArticle.querySelector('#trans-inline-toolbar');
         return null;
       },
       createElement: (tag: string) => new FakeElement(tag),
@@ -400,5 +406,74 @@ describe('Translation Display Mode Suite (侧边栏对照 vs 段落下方显示)
     // 正文中必须立即出现段落下翻译块（解决“选择段落下方显示时正文没有反应”的问题）
     const inlineBlocks = rootArticle.querySelectorAll('.trans-inline-block');
     expect(inlineBlocks.length).toBeGreaterThan(0);
+  });
+
+  it('极简减负验证：行内翻译块绝不包含冗余的「译文」Badge 与独立 meta 标题行', async () => {
+    const { TranslationDockController } = await import('../../src/services/translation/client/translation-dock-controller');
+    const controller = TranslationDockController.getInstance();
+    await controller.showInlineTranslations(true);
+
+    const inlineBlocks = rootArticle.querySelectorAll('.trans-inline-block');
+    expect(inlineBlocks.length).toBeGreaterThan(0);
+
+    for (const block of inlineBlocks) {
+      // 核心断言：绝对没有 .trans-inline-badge 与 .trans-inline-meta
+      expect(block.innerHTML).not.toContain('trans-inline-badge');
+      expect(block.innerHTML).not.toContain('trans-inline-meta');
+      expect(block.innerHTML).not.toContain('>译文<');
+
+      // 核心断言：正文紧凑包裹在 .trans-inline-text 内
+      expect(block.innerHTML).toContain('trans-inline-text');
+    }
+  });
+
+  it('服务商配置验证：TranslationStorage 与 Controller 支撑服务商持久化与就地切换', async () => {
+    const { TranslationDockController } = await import('../../src/services/translation/client/translation-dock-controller');
+    const controller = TranslationDockController.getInstance();
+
+    // 默认提供商应为 google
+    expect(TranslationStorage.getProvider()).toBe('google');
+    expect(controller.getProvider()).toBe('google');
+
+    // 切换至 gemini
+    controller.setProvider('gemini');
+    expect(TranslationStorage.getProvider()).toBe('gemini');
+    expect(controller.getProvider()).toBe('gemini');
+    expect(store.get('astrolib_trans_provider')).toBe('gemini');
+
+    // 切换至 bupt
+    controller.setProvider('bupt');
+    expect(TranslationStorage.getProvider()).toBe('bupt');
+    expect(controller.getProvider()).toBe('bupt');
+  });
+
+  it('行内模式下服务商切换与控制条联动验证：切换服务商立即以新服务商重译正文，并同步控制条状态', async () => {
+    const { TranslationDockController } = await import('../../src/services/translation/client/translation-dock-controller');
+    const controller = TranslationDockController.getInstance();
+    controller.setDisplayMode('inline', false);
+
+    // 开启行内助读
+    await controller.showInlineTranslations();
+
+    // 验证正文顶端挂载了行内控制条
+    const toolbar = rootArticle.querySelector('.trans-inline-toolbar');
+    expect(toolbar).not.toBeNull();
+    expect(toolbar?.innerHTML).toContain('双语助读');
+    expect(toolbar?.innerHTML).toContain('data-inline-provider="gemini"');
+
+    // 清空 fetch 调用记录并切换服务商为 gemini
+    (globalThis.fetch as any).mockClear();
+    controller.setProvider('gemini');
+
+    // 验证调用了翻译端点重新发起翻译，且请求体内 provider 为 gemini
+    expect(globalThis.fetch).toHaveBeenCalled();
+    const calls = (globalThis.fetch as any).mock.calls;
+    const lastCallBody = JSON.parse(calls[0][1].body);
+    expect(lastCallBody.provider).toBe('gemini');
+
+    // 关闭行内助读时，控制条随之安全移除
+    controller.hideInlineTranslations();
+    const remainingToolbar = rootArticle.querySelector('.trans-inline-toolbar');
+    expect(remainingToolbar).toBeNull();
   });
 });
