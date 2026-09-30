@@ -4,6 +4,7 @@
 import { collections } from '../config/collections.config.mjs';
 import { features, crossRefRefs } from '../config/features.config.mjs';
 import '../styles/components/page-sidebar.css';
+import '../styles/components/translation-dock.css';
 
 // 引用联动模式：'interactive'（默认，可点击/跨页联动）| 'static'（统一静态 chip）。
 const refsMode = crossRefRefs() === 'static' ? 'static' : 'interactive';
@@ -100,6 +101,226 @@ const bookConfigJson = JSON.stringify(currentBook);
       <!-- 侧载激活时由 chat-controller 将聊天主面板挂载于此 -->
     </div>
   </section>
+
+  <!-- 面板 4: 双语助读与章节翻译专属侧载面板 -->
+  <section class="sideload-panel-view" data-panel-id="translate" aria-hidden="true">
+    <div class="trans-sidebar-panel" id="trans-sidebar-panel" aria-hidden="true">
+      <div class="trans-sidebar-header">
+        <div class="trans-sidebar-title-group">
+          <!-- 返回本章大纲快捷按钮 -->
+          <button
+            type="button"
+            class="sideload-back-btn"
+            id="trans-back-to-toc"
+            title="返回本节大纲 (Esc)"
+            aria-label="返回本节大纲"
+          >
+            <md-icon class="sideload-back-icon" aria-hidden="true">arrow_back</md-icon>
+          </button>
+          <h3 class="trans-sidebar-title">双语助读</h3>
+          <span class="trans-sidebar-count-badge" id="trans-para-count">0 段</span>
+          <span class="trans-satisfied-count-badge" id="trans-satisfied-count" style="display: none;" title="已采纳满意段落数">0 采纳</span>
+        </div>
+        <div class="trans-sidebar-actions">
+          <button
+            type="button"
+            class="trans-sidebar-action-btn"
+            id="trans-sidebar-export"
+            title="导出译文 (Markdown / JSON / TXT)"
+            aria-label="导出译文"
+          >
+            <md-icon class="trans-action-icon" aria-hidden="true">download</md-icon>
+          </button>
+          <button
+            type="button"
+            class="trans-sidebar-action-btn"
+            id="trans-sidebar-settings"
+            title="设置 API Key 与模型配置"
+            aria-label="设置 API Key"
+          >
+            <md-icon class="trans-action-icon" aria-hidden="true">settings</md-icon>
+          </button>
+          <button
+            type="button"
+            class="trans-sidebar-action-btn"
+            id="trans-sidebar-refresh"
+            title="重新翻译本节"
+            aria-label="重新翻译"
+          >
+            <md-icon class="trans-action-icon" aria-hidden="true">refresh</md-icon>
+          </button>
+          <button
+            type="button"
+            class="trans-sidebar-action-btn"
+            id="trans-sidebar-close"
+            title="关闭翻译栏并恢复大纲 (Esc)"
+            aria-label="关闭翻译栏"
+          >
+            <md-icon class="trans-action-icon" aria-hidden="true">close</md-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- 提供商选择栏 (M3 Filter Chips: Google 翻译默认 / Gemini 可选 / DeepSeek 北邮校内) -->
+      <div class="trans-provider-bar">
+        <span class="trans-provider-label">接口:</span>
+        <div class="trans-provider-chips" role="radiogroup" aria-label="选择翻译服务商">
+          <button type="button" class="trans-chip is-active" data-provider="google" title="Google 翻译 (成熟/稳定/默认)">
+            <span class="trans-chip-dot"></span>
+            Google 翻译
+          </button>
+          <button type="button" class="trans-chip" data-provider="gemini" title="Google Gemini (前沿理科推理/学术深度翻译)">
+            <span class="trans-chip-dot"></span>
+            Gemini 学术
+          </button>
+          <button type="button" class="trans-chip" data-provider="bupt" title="DeepSeek V4 Flash (北京邮电大学「人人有算力」校内专属服务，免翻直连)">
+            <span class="trans-chip-dot"></span>
+            DeepSeek (北邮)
+          </button>
+        </div>
+      </div>
+
+      <!-- 翻译设置折叠抽屉 (API Key 配置与说明) -->
+      <div class="trans-settings-drawer" id="trans-settings-drawer" style="display: none;" aria-hidden="true">
+        <div class="trans-settings-inner">
+          <div class="trans-settings-header-row">
+            <div class="trans-settings-provider-tag" id="trans-settings-provider-tag">
+              <span class="trans-settings-tag-dot"></span>
+              <span id="trans-settings-provider-name">DeepSeek (北邮)</span>
+            </div>
+            <button type="button" class="trans-settings-close-btn" id="trans-settings-close" title="收起设置" aria-label="收起设置">
+              <md-icon class="trans-settings-close-icon" aria-hidden="true">expand_less</md-icon>
+            </button>
+          </div>
+
+          <div class="trans-settings-content">
+            <!-- 译文呈现方式选择 (侧边栏对照 vs 段落下方显示) -->
+            <div class="trans-settings-field">
+              <div class="trans-field-label-row">
+                <label class="trans-field-label">译文显示类别</label>
+              </div>
+              <div class="trans-display-mode-chips" role="radiogroup" aria-label="选择译文显示类别">
+                <button type="button" class="trans-mode-chip is-active" data-trans-mode="sidebar" title="在右侧侧载栏以 1:1 对照卡片流呈现">
+                  侧边栏对照
+                </button>
+                <button type="button" class="trans-mode-chip" data-trans-mode="inline" title="在正文所有段落下方直接显示译文，不影响右侧边栏">
+                  段落下方显示
+                </button>
+              </div>
+              <div class="trans-settings-mode-tip">
+                💡 切换为「段落下方显示」后，译文直接呈现在各段落下方，右侧边栏保持显示本节大纲。
+              </div>
+            </div>
+
+            <div class="trans-settings-field">
+              <div class="trans-field-label-row">
+                <label for="trans-api-key-input" class="trans-field-label">API 密钥 (API Key)</label>
+
+                <span class="trans-key-status-badge" id="trans-key-status-badge">默认配置</span>
+              </div>
+              <div class="trans-field-input-box">
+                <input
+                  type="password"
+                  id="trans-api-key-input"
+                  class="trans-field-input"
+                  placeholder="sk-bupt-... 或 sk-..."
+                  spellcheck="false"
+                  autocomplete="off"
+                />
+                <button type="button" class="trans-field-eye-btn" id="trans-key-toggle-eye" title="显示/隐藏密钥" aria-label="显示/隐藏密钥">
+                  <md-icon class="trans-field-eye-icon" aria-hidden="true">visibility</md-icon>
+                </button>
+              </div>
+            </div>
+
+            <div class="trans-settings-tip" id="trans-settings-tip">
+              💡 密钥仅保存在本地浏览器。若留空，将自动使用服务端默认配置。
+            </div>
+            <div class="trans-settings-alert" id="trans-settings-alert" style="display: none;"></div>
+
+            <div class="trans-settings-btn-row">
+              <button type="button" class="trans-settings-save-btn" id="trans-settings-save">
+                <md-icon class="trans-btn-icon" aria-hidden="true">save</md-icon>
+                <span class="trans-btn-text">保存并应用</span>
+              </button>
+              <button type="button" class="trans-settings-clear-btn" id="trans-settings-clear" title="清空本地密钥恢复默认">
+                清空密钥
+              </button>
+              <button type="button" class="trans-settings-more-btn" id="trans-settings-more" title="打开全站 AI 参数设置">
+                全站设置
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 译文导出折叠抽屉 (支持双语 Markdown / 中文 Markdown / 文本 / JSON) -->
+      <div class="trans-export-drawer" id="trans-export-drawer" style="display: none;" aria-hidden="true">
+        <div class="trans-export-inner">
+          <div class="trans-export-header-row">
+            <span class="trans-export-title">导出章节译文</span>
+            <button type="button" class="trans-export-close-btn" id="trans-export-close" title="收起导出面板" aria-label="收起导出面板">
+              <md-icon class="trans-export-close-icon" aria-hidden="true">expand_less</md-icon>
+            </button>
+          </div>
+
+          <div class="trans-export-content">
+            <!-- 格式选择 -->
+            <div class="trans-export-field">
+              <span class="trans-export-label">导出格式</span>
+              <div class="trans-export-chips" id="trans-export-fmt-group">
+                <button type="button" class="trans-export-chip is-active" data-export-fmt="bilingual-markdown">
+                  双语 Markdown (.md)
+                </button>
+                <button type="button" class="trans-export-chip" data-export-fmt="chinese-markdown">
+                  纯中文 Markdown (.md)
+                </button>
+                <button type="button" class="trans-export-chip" data-export-fmt="bilingual-text">
+                  双语文本 (.txt)
+                </button>
+                <button type="button" class="trans-export-chip" data-export-fmt="json">
+                  对照数据 (.json)
+                </button>
+              </div>
+            </div>
+
+            <!-- 范围选择 -->
+            <div class="trans-export-field">
+              <span class="trans-export-label">导出范围</span>
+              <div class="trans-export-chips" id="trans-export-scope-group">
+                <button type="button" class="trans-export-chip is-active" data-export-scope="all">
+                  全部已译段落
+                </button>
+                <button type="button" class="trans-export-chip" data-export-scope="satisfied">
+                  仅已采纳段落 (<span id="trans-export-satisfied-num">0</span>)
+                </button>
+              </div>
+            </div>
+
+            <div class="trans-export-btn-row">
+              <button type="button" class="trans-export-download-btn" id="trans-export-download">
+                <md-icon class="trans-btn-icon" aria-hidden="true">file_download</md-icon>
+                <span class="trans-btn-text">立即下载文件</span>
+              </button>
+              <button type="button" class="trans-export-approve-all-btn" id="trans-export-approve-all" title="将当前所有已翻译段落一键标记为满意采纳">
+                全部标记为采纳
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 翻译进度条 -->
+      <div class="trans-progress-bar" id="trans-progress-bar" style="display: none;">
+        <div class="trans-progress-fill" id="trans-progress-fill"></div>
+      </div>
+
+      <!-- 段落卡片流容器 (严格 1:1 双向对应正文段落) -->
+      <div class="trans-sidebar-content" id="trans-sidebar-content">
+        <!-- 动态注入段落对照卡片 -->
+      </div>
+    </div>
+  </section>
 </aside>
 
 <!-- 移动端本地导航 VPLocalNav（VitePress 移植：顶部 sticky 条 + 大纲 popup 下拉面板） -->
@@ -114,6 +335,11 @@ const bookConfigJson = JSON.stringify(currentBook);
           <md-icon class="header-mdicon action-btn-icon" aria-hidden="true">arrow_upward</md-icon>
         </a>
         <div class="vp-local-nav-actions">
+          {features.translation?.enabled && (
+            <button type="button" class="vp-local-nav-btn-link" data-translation-trigger data-tooltip="双语助读" title="双语助读与段落翻译" aria-label="双语助读">
+              <md-icon class="header-mdicon action-btn-icon" aria-hidden="true">translate</md-icon>
+            </button>
+          )}
           {features.exercises?.enabled && (
             <button type="button" class="vp-local-nav-btn-link" data-exercise-trigger data-tooltip="课后习题" title="查看本章课后真题与自测练习" aria-label="课后习题与真题">
               <md-icon class="header-mdicon action-btn-icon" aria-hidden="true">quiz</md-icon>
@@ -165,6 +391,7 @@ const bookConfigJson = JSON.stringify(currentBook);
   import { initImageBlur } from './sidebar/image-blur-loader';
   import { initExerciseSidebarTriggerDelegation, probeActiveExerciseSession } from './exercises/lazy-exercise-sidebar';
   import { sideloadManager } from './sideload/sideload-manager';
+  import '../services/translation/client/translation-dock-controller';
 
   function syncRelationGraphButtonVisibility() {
     const isShow = localStorage.getItem('astro-show-relation-graph-btn') !== 'false';

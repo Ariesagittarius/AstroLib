@@ -169,7 +169,15 @@ import {
   syncAllPwaCard,
 } from './settings/pwa-service';
 
+import {
+  TranslationStorage,
+  TRANSLATION_DISPLAY_MODE_KEY,
+  TRANSLATION_DISPLAY_MODE_CHANGE_EVENT,
+} from '../services/translation/storage/translation-storage';
+import type { TranslationDisplayMode } from '../services/translation/types';
+
 const STORAGE_KEY = 'starlight-features';
+
 
 /** 主题切换动画偏好存储键：'instant'（即时切换，默认，无过渡）| 'animate'（柔和过渡） */
 type FeatureMeta = { id: string; label: string; build: boolean; runtime: boolean; devOnly: boolean };
@@ -273,6 +281,9 @@ export function resetToggles(): void {
   savePunctStyle('dot');
   saveFontSize(DEFAULT_FONT_SIZE);
 
+  // 重置双语助读呈现方式为侧边栏对照 (sidebar)
+  TranslationStorage.setDisplayMode('sidebar');
+
   syncAllCheckboxes();
   syncAllThemeModes();
   syncAllFontButtons();
@@ -281,13 +292,27 @@ export function resetToggles(): void {
   syncAllPrewarmButtons();
   syncAllCacheButtons();
   syncAllAiSettings();
+  syncAllTransModeChips();
   syncAllPunctChips();
   syncAllFontSizeSliders();
   syncAllLiteMode();
   apply();
 }
 
+/** 同步全站所有界面的翻译呈现方式 Chips */
+export function syncAllTransModeChips(): void {
+  const currentMode = TranslationStorage.getDisplayMode();
+  document.querySelectorAll<any>('.ft-trans-mode-chip-set md-filter-chip').forEach((chip) => {
+    const chipVal = chip.getAttribute('data-trans-mode-val');
+    const isSelected = chipVal === currentMode;
+    chip.selected = isSelected;
+    chip.toggleAttribute('selected', isSelected);
+    chip.classList.toggle('active', isSelected);
+  });
+}
+
 let _isCampusNetworkChecked = false;
+
 let _isCampusNetworkAvailable = false;
 let _campusProbePromise: Promise<boolean> | null = null;
 
@@ -1539,7 +1564,25 @@ class StarlightFeatureToggles extends HTMLElement {
       });
     });
 
+    // 绑定双语助读呈现方式 Chips
+    root.querySelectorAll<any>('.ft-trans-mode-chip-set md-filter-chip').forEach((chip) => {
+      chip.addEventListener('click', (e: Event) => {
+        const modeVal = chip.getAttribute('data-trans-mode-val') as TranslationDisplayMode | null;
+        if (!modeVal) return;
+        const currentMode = TranslationStorage.getDisplayMode();
+        if (modeVal === currentMode) {
+          e.preventDefault();
+          syncAllTransModeChips();
+          return;
+        }
+        e.stopPropagation();
+        TranslationStorage.setDisplayMode(modeVal);
+        syncAllTransModeChips();
+      });
+    });
+
     // 绑定来源跳转方式 Chips
+
     root.querySelectorAll<any>('.ft-ai-src-chip-set md-filter-chip').forEach((chip) => {
       chip.addEventListener('click', (e: Event) => {
         const srcVal = chip.getAttribute('data-ai-src-val') as 'new' | 'same' | null;
@@ -1758,6 +1801,7 @@ export function initFeatureToggles(): void {
   syncAllFontButtons();
   syncAllPunctChips();
   syncAllFontSizeSliders();
+  syncAllTransModeChips();
 
   // 当 @material/web 的 md-filter-chip 完成注册后触发初次水合对齐
   if (typeof customElements !== 'undefined' && customElements.whenDefined) {
@@ -1765,6 +1809,7 @@ export function initFeatureToggles(): void {
       syncAllFontButtons();
       syncAllPunctChips();
       syncAllAiSettings();
+      syncAllTransModeChips();
     }).catch(() => {});
   }
 
@@ -1772,6 +1817,11 @@ export function initFeatureToggles(): void {
   window.addEventListener('astrolib:font-change', (e: any) => {
     const pref = e?.detail || loadFontPref();
     syncAllFontButtons(pref);
+  });
+
+  // 监听全局翻译呈现方式变更
+  window.addEventListener(TRANSLATION_DISPLAY_MODE_CHANGE_EVENT, () => {
+    syncAllTransModeChips();
   });
 
   onAiConfigChange(() => {
@@ -1799,6 +1849,7 @@ export function initFeatureToggles(): void {
     syncAllPrewarmButtons();
     syncAllCacheButtons();
     syncAllAiSettings();
+    syncAllTransModeChips();
     syncAllPunctChips();
     syncAllFontSizeSliders();
     syncAllPwaCard();
@@ -1838,8 +1889,11 @@ export function initFeatureToggles(): void {
     } else if (e.key === PUNCT_STYLE_KEY) {
       applyPunctStyle();
       syncAllPunctChips();
+    } else if (e.key === TRANSLATION_DISPLAY_MODE_KEY) {
+      syncAllTransModeChips();
     } else if (e.key === FONT_SIZE_KEY) {
       applyFontSize();
+
       syncAllFontSizeSliders();
     } else if (e.key === LITE_MODE_KEY) {
       applyLiteMode();

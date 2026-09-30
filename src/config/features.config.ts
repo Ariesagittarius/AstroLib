@@ -245,6 +245,21 @@ const featureDefs: Record<string, FeatureManifest<any>> = {
     },
   }),
 
+  translation: defineFeature({
+    id: 'translation',
+    cat: 'reader',
+    label: '章节双语助读与翻译',
+    desc: '为英文教材提供结构无损的专业学术翻译与段落级双语对照',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+    config: {
+      defaultProvider: 'google',
+      defaultDisplayMode: 'sidebar',
+    },
+  }),
+
+
   feedback: defineFeature({
     id: 'feedback',
     cat: 'reader',

@@ -67,6 +67,12 @@ class SideloadManager {
       widthTier: 'wide',
       allowDrawer: true,
     });
+    this.register({
+      id: 'translate',
+      title: '双语助读',
+      widthTier: 'wide',
+      allowDrawer: true,
+    });
   }
 
   /**
@@ -275,6 +281,10 @@ class SideloadManager {
     return () => this.listeners.delete(listener);
   }
 
+  public getActivePanelId(): string {
+    return this.activePanelId;
+  }
+
   /**
    * 同步状态至 <html> / <body> 与 CSS 变量
    */
@@ -305,6 +315,14 @@ class SideloadManager {
     } else {
       body.classList.remove('ai-sidebar-active');
       document.querySelector('.custom-page-sidebar')?.classList.remove('has-ai-active');
+    }
+
+    if (state.activePanelId === 'translate') {
+      body.classList.add('translate-sidebar-active');
+      document.querySelector('.custom-page-sidebar')?.classList.add('has-translate-active');
+    } else {
+      body.classList.remove('translate-sidebar-active');
+      document.querySelector('.custom-page-sidebar')?.classList.remove('has-translate-active');
     }
 
     // 2. 注入核心 CSS 变量（驱动宽度平滑过渡）
