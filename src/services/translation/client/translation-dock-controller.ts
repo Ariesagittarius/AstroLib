@@ -46,6 +46,7 @@ export class TranslationDockController {
   private currentProvider: TranslationProviderId = 'google';
   private displayMode: TranslationDisplayMode = 'sidebar';
   private isInlineActive = false;
+  private currentChapterKey: string = '';
   private paragraphs: ParagraphUnit[] = [];
   private isTranslating = false;
   private isSettingsOpen = false;
@@ -209,8 +210,8 @@ export class TranslationDockController {
       if (modeChip) {
         e.preventDefault();
         const targetMode = modeChip.getAttribute('data-trans-mode') as TranslationDisplayMode | null;
-        if (targetMode && targetMode !== this.displayMode) {
-          this.setDisplayMode(targetMode, true);
+        if (targetMode) {
+          this.setDisplayMode(targetMode, true, true);
         }
         return;
       }
@@ -249,8 +250,9 @@ export class TranslationDockController {
     // 监听全局译文呈现方式变更事件
     window.addEventListener(TRANSLATION_DISPLAY_MODE_CHANGE_EVENT, (e: any) => {
       const mode = e?.detail?.mode;
+      const forceTrigger = Boolean(e?.detail?.forceTrigger);
       if (mode && (mode === 'sidebar' || mode === 'inline')) {
-        this.setDisplayMode(mode, false);
+        this.setDisplayMode(mode, false, forceTrigger);
       }
     });
 
@@ -267,9 +269,18 @@ export class TranslationDockController {
       }
     });
 
-    // 页面切页路由跳转时重置段落状态
+    // 页面切页路由跳转时重置段落状态与联动
     document.addEventListener('astro:page-load', () => {
-      this.paragraphs = [];
+      const newKey = TranslationStorage.normalizeKey();
+      if (this.currentChapterKey !== newKey) {
+        this.currentChapterKey = newKey;
+        this.paragraphs = [];
+        if (this.unbindSync) {
+          this.unbindSync();
+          this.unbindSync = null;
+        }
+      }
+      this.syncDisplayModeChips();
       if (this.displayMode === 'sidebar') {
         if (sideloadManager.getActivePanelId() === 'translate') {
           this.onPanelActivated();
@@ -279,7 +290,6 @@ export class TranslationDockController {
           this.showInlineTranslations();
         }
       }
-      this.syncDisplayModeChips();
     });
 
     // 快捷键: Alt+Y (译) 与 Alt+Shift+T 开启双语助读
@@ -319,11 +329,8 @@ export class TranslationDockController {
     return this.displayMode;
   }
 
-  public setDisplayMode(mode: TranslationDisplayMode, persist = true): void {
-    if (this.displayMode === mode) {
-      this.syncDisplayModeChips();
-      return;
-    }
+  public setDisplayMode(mode: TranslationDisplayMode, persist = true, forceTrigger = false): void {
+    const isModeChanged = this.displayMode !== mode;
     this.displayMode = mode;
     if (persist) {
       TranslationStorage.setDisplayMode(mode);
@@ -332,16 +339,21 @@ export class TranslationDockController {
 
     if (mode === 'inline') {
       // 切换至行内段落下显示：
-      // 若右侧边栏当前正处于 translate 面板，立即安全关闭并无条件退回大纲，不影响右侧栏
+      // 1. 若右侧边栏当前正处于 translate 面板，立即安全关闭并无条件退回大纲，保持右侧栏不受影响
       if (sideloadManager.getActivePanelId() === 'translate') {
         sideloadManager.switchToDefault();
+      }
+      // 2. 无论右侧栏当前为何种面板，只要进入 inline 模式且尚未呈现行内翻译，或者显式触发/模式变更，立即在正文呈现段落下对照翻译
+      if (!this.isInlineActive || isModeChanged || forceTrigger) {
         this.showInlineTranslations();
       }
     } else if (mode === 'sidebar') {
       // 切换回侧边栏对照：
-      // 若正文中已有行内译文，清理行内译文并呼出右侧侧载栏
+      // 1. 若正文中已有行内译文，清理行内译文并呼出右侧侧载栏
       if (this.isInlineActive) {
         this.hideInlineTranslations();
+        sideloadManager.open('translate');
+      } else if (forceTrigger) {
         sideloadManager.open('translate');
       }
     }
@@ -799,9 +811,11 @@ export class TranslationDockController {
     if (!contentContainer || !dockContent) return;
 
     const chapterKey = TranslationStorage.normalizeKey();
+    const hasTransIds = Boolean(contentContainer.querySelector('[data-trans-id]'));
 
     // 1. 扫描正文 DOM 提取段落
-    if (this.paragraphs.length === 0 || forceRefresh) {
+    if (this.currentChapterKey !== chapterKey || !hasTransIds || this.paragraphs.length === 0 || forceRefresh) {
+      this.currentChapterKey = chapterKey;
       this.paragraphs = ParagraphAligner.extractFromArticleDom(contentContainer);
     }
 
@@ -1307,9 +1321,11 @@ export class TranslationDockController {
     this.updateTriggerActiveState(true);
 
     const chapterKey = TranslationStorage.normalizeKey();
+    const hasTransIds = Boolean(contentContainer.querySelector('[data-trans-id]'));
 
     // 1. 扫描正文 DOM 提取段落
-    if (this.paragraphs.length === 0 || forceRefresh) {
+    if (this.currentChapterKey !== chapterKey || !hasTransIds || this.paragraphs.length === 0 || forceRefresh) {
+      this.currentChapterKey = chapterKey;
       this.paragraphs = ParagraphAligner.extractFromArticleDom(contentContainer);
     }
     if (this.paragraphs.length === 0) return;

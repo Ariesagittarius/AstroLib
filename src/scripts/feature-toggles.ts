@@ -1569,15 +1569,15 @@ class StarlightFeatureToggles extends HTMLElement {
       chip.addEventListener('click', (e: Event) => {
         const modeVal = chip.getAttribute('data-trans-mode-val') as TranslationDisplayMode | null;
         if (!modeVal) return;
-        const currentMode = TranslationStorage.getDisplayMode();
-        if (modeVal === currentMode) {
-          e.preventDefault();
-          syncAllTransModeChips();
-          return;
-        }
         e.stopPropagation();
         TranslationStorage.setDisplayMode(modeVal);
         syncAllTransModeChips();
+        // 显式派发带 forceTrigger 的全局事件，确保无论当前模式是否改变，均立即在正文/侧载栏生效
+        window.dispatchEvent(
+          new CustomEvent(TRANSLATION_DISPLAY_MODE_CHANGE_EVENT, {
+            detail: { mode: modeVal, forceTrigger: true },
+          })
+        );
       });
     });
 

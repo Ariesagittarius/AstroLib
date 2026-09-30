@@ -385,22 +385,20 @@ describe('Translation Display Mode Suite (侧边栏对照 vs 段落下方显示)
     expect(inlineBlocks.length).toBeGreaterThan(0);
   });
 
-  it('若用户在行内翻译开启时切换至 sidebar，行内翻译应清理且右侧边栏自动打开翻译面板', async () => {
+  it('若用户在侧边栏未处于翻译状态时在设置中选择 inline，正文应立即呈现段落下翻译且右侧栏完全保持 toc', async () => {
     const { TranslationDockController } = await import('../../src/services/translation/client/translation-dock-controller');
     const controller = TranslationDockController.getInstance();
-    controller.setDisplayMode('inline', false);
-
-    // 开启行内翻译
-    await controller.showInlineTranslations();
-    expect(rootArticle.querySelectorAll('.trans-inline-block').length).toBeGreaterThan(0);
+    controller.setDisplayMode('sidebar', false);
     expect(sideloadManager.getActivePanelId()).toBe('toc');
 
-    // 用户切换回 sidebar 模式
-    controller.setDisplayMode('sidebar', false);
+    // 用户在设置中切换显示方式为 inline
+    controller.setDisplayMode('inline', false);
 
-    // 行内翻译应被清理
-    expect(rootArticle.querySelectorAll('.trans-inline-block').length).toBe(0);
-    // 右侧边栏应被打开
-    expect(sideloadManager.getActivePanelId()).toBe('translate');
+    // 右侧边栏必须绝对保持为大纲 toc
+    expect(sideloadManager.getActivePanelId()).toBe('toc');
+
+    // 正文中必须立即出现段落下翻译块（解决“选择段落下方显示时正文没有反应”的问题）
+    const inlineBlocks = rootArticle.querySelectorAll('.trans-inline-block');
+    expect(inlineBlocks.length).toBeGreaterThan(0);
   });
 });
