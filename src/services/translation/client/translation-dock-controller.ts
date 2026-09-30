@@ -658,6 +658,24 @@ export class TranslationDockController {
       if (keyInput) {
         this.handleKeyInput(keyInput.value);
       }
+    } else if (this.currentProvider === 'zhipu') {
+      if (providerNameEl) providerNameEl.textContent = '智谱开放平台 (GLM-4-Flash 免费)';
+      const currentKey = getProviderApiKey('zhipu') || (typeof localStorage !== 'undefined' ? localStorage.getItem('astrolib_ai_provider_key_zhipu') || '' : '');
+      if (keyInput && document.activeElement !== keyInput) {
+        keyInput.value = currentKey;
+        keyInput.placeholder = '请填写智谱 API Key (例如: xxxxxxxxx.yyyyyyyyy)';
+      }
+      if (badgeEl) {
+        const hasKey = Boolean(currentKey.trim());
+        badgeEl.textContent = hasKey ? '已配置 (本地)' : '未配置';
+        badgeEl.className = `trans-key-status-badge ${hasKey ? 'is-configured' : ''}`;
+      }
+      if (tipEl) {
+        tipEl.textContent = '💡 智谱开放平台 GLM-4-Flash 为永久免费模型，请前往 open.bigmodel.cn 复制 API Key。若配置在服务端的 .env (ZHIPU_API_KEY)，此处可留空。';
+      }
+      if (keyInput) {
+        this.handleKeyInput(keyInput.value);
+      }
     }
   }
 
@@ -692,6 +710,13 @@ export class TranslationDockController {
         alertEl.textContent = '提示：Google Gemini 官方密钥通常以 AIzaSy 开头。';
         return;
       }
+    } else if (this.currentProvider === 'zhipu') {
+      if (trimmed.startsWith('ghp_')) {
+        alertEl.style.display = 'block';
+        alertEl.className = 'trans-settings-alert';
+        alertEl.textContent = '❌ 检测到 GitHub 访问令牌 (ghp_...)！智谱开放平台无法使用此密钥，请前往 open.bigmodel.cn 获取 API Key。';
+        return;
+      }
     }
 
     alertEl.style.display = 'none';
@@ -708,11 +733,11 @@ export class TranslationDockController {
     const key = input.value.trim();
 
     // 格式阻止拦截：例如误粘了 GitHub Token
-    if (this.currentProvider === 'bupt' && key && key.startsWith('ghp_')) {
+    if ((this.currentProvider === 'bupt' || this.currentProvider === 'zhipu') && key && key.startsWith('ghp_')) {
       if (alertEl) {
         alertEl.style.display = 'block';
         alertEl.className = 'trans-settings-alert';
-        alertEl.textContent = '❌ 无法保存：检测到 GitHub 令牌 (ghp_...)，北邮网关仅接受 sk- 开头密钥。';
+        alertEl.textContent = '❌ 无法保存：检测到 GitHub 令牌 (ghp_...)，请填写对应大模型服务商的有效 API Key。';
       }
       return;
     }
@@ -771,6 +796,14 @@ export class TranslationDockController {
     if (this.currentProvider === 'gemini') {
       const key = (getProviderApiKey('gemini') || (typeof localStorage !== 'undefined' ? localStorage.getItem('astrolib_ai_provider_key_gemini') || '' : '')).trim();
       if (key && !key.startsWith('AIzaSy...')) {
+        return key;
+      }
+      return undefined;
+    }
+
+    if (this.currentProvider === 'zhipu') {
+      const key = (getProviderApiKey('zhipu') || (typeof localStorage !== 'undefined' ? localStorage.getItem('astrolib_ai_provider_key_zhipu') || '' : '')).trim();
+      if (key && !key.startsWith('ghp_')) {
         return key;
       }
       return undefined;
@@ -1696,6 +1729,7 @@ export class TranslationDockController {
         <div class="trans-inline-provider-pills" role="radiogroup" aria-label="选择翻译服务商">
           <button type="button" class="trans-inline-pill ${currentP === 'google' ? 'is-active' : ''}" data-inline-provider="google" title="Google 翻译 (免密默认)">Google 翻译</button>
           <button type="button" class="trans-inline-pill ${currentP === 'bupt' ? 'is-active' : ''}" data-inline-provider="bupt" title="北京邮电大学「人人有算力」校内专属服务">北邮校内</button>
+          <button type="button" class="trans-inline-pill ${currentP === 'zhipu' ? 'is-active' : ''}" data-inline-provider="zhipu" title="智谱开放平台 GLM-4-Flash (免费模型)">智谱 GLM-4</button>
           <button type="button" class="trans-inline-pill ${currentP === 'gemini' ? 'is-active' : ''}" data-inline-provider="gemini" title="Google Gemini 学术翻译">Gemini</button>
         </div>
       </div>

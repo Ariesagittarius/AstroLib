@@ -22,6 +22,7 @@ import { StructurePreservingMasker } from './masker.ts';
 import { GoogleTranslateProvider } from './providers/google-provider.ts';
 import { GeminiTranslateProvider } from './providers/gemini-provider.ts';
 import { BuptTranslateProvider } from './providers/bupt-provider.ts';
+import { ZhipuTranslateProvider } from './providers/zhipu-provider.ts';
 
 const MAX_CACHE_ENTRIES = 500;
 
@@ -32,10 +33,11 @@ export class TranslationService {
   private cache = new Map<string, string>(); // key: `provider:text` -> translatedText
 
   private constructor() {
-    // 默认内置注册 Google 翻译（默认首选）、Gemini 学术翻译与北邮 DeepSeek 校内服务商
+    // 默认内置注册 Google 翻译（默认首选）、Gemini 学术翻译、北邮 DeepSeek 校内服务商与智谱 GLM-4 免费学术翻译
     this.registerProvider(new GoogleTranslateProvider());
     this.registerProvider(new GeminiTranslateProvider());
     this.registerProvider(new BuptTranslateProvider());
+    this.registerProvider(new ZhipuTranslateProvider());
   }
 
   public static getInstance(): TranslationService {

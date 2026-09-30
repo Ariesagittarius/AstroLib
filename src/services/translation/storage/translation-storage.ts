@@ -296,7 +296,7 @@ export class TranslationStorage {
     if (typeof localStorage === 'undefined') return DEFAULT_TRANSLATION_PROVIDER;
     try {
       const p = localStorage.getItem(TRANSLATION_PROVIDER_KEY) as TranslationProviderId | null;
-      if (p && ['google', 'gemini', 'bupt', 'deepseek', 'custom'].includes(p)) {
+      if (p && ['google', 'gemini', 'bupt', 'zhipu', 'deepseek', 'custom'].includes(p)) {
         return p === 'deepseek' ? 'bupt' : p;
       }
     } catch {}

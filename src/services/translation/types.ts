@@ -6,7 +6,7 @@
  * 遵循 Rule 1 (UI is not a domain model) & Rule 7 (Utils Purity)
  */
 
-export type TranslationProviderId = 'google' | 'gemini' | 'bupt' | 'deepseek' | 'custom';
+export type TranslationProviderId = 'google' | 'gemini' | 'bupt' | 'zhipu' | 'deepseek' | 'custom';
 
 export type MaskTokenType =
   | 'frontmatter'

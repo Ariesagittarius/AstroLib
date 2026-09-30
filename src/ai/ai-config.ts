@@ -13,7 +13,7 @@
 
 import { extractErrorMessageAndStatus, parseAiError } from './error-handler.ts';
 
-export type AiProviderId = 'gemini' | 'deepseek' | 'bupt' | 'custom';
+export type AiProviderId = 'gemini' | 'deepseek' | 'bupt' | 'zhipu' | 'custom';
 
 export interface AiModelDef {
   id: string;
@@ -222,6 +222,34 @@ export const DEFAULT_AI_PROVIDERS: AiProviderDef[] = [
     ],
   },
   {
+    id: 'zhipu',
+    label: '智谱 AI (GLM-4)',
+    defaultEndpoint: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+    keyPlaceholder: '智谱 API Key (open.bigmodel.cn)',
+    defaultModelId: 'glm-4-flash',
+    desc: '智谱开放平台新一代大模型，GLM-4-Flash 永久免费，国内免翻直连',
+    models: [
+      {
+        id: 'glm-4-flash',
+        label: 'GLM-4-Flash (免费)',
+        provider: 'zhipu',
+        desc: '推荐 · 官方永久免费模型，高速推理与高并发，学术翻译精准',
+      },
+      {
+        id: 'glm-4-plus',
+        label: 'GLM-4-Plus',
+        provider: 'zhipu',
+        desc: '智谱旗舰级高精度推理模型',
+      },
+      {
+        id: 'glm-4-air',
+        label: 'GLM-4-Air',
+        provider: 'zhipu',
+        desc: '智谱高性价比超轻量推理模型',
+      },
+    ],
+  },
+  {
     id: 'custom',
     label: '自定义',
     defaultEndpoint: '',
@@ -413,7 +441,7 @@ export function getAiProvider(providerId?: string): AiProviderDef {
  */
 export function getActiveAiProviderId(): AiProviderId {
   const saved = safeGetItem(STORAGE_KEYS.ACTIVE_PROVIDER) as any;
-  if (saved === 'gemini' || saved === 'deepseek' || saved === 'bupt' || saved === 'custom') {
+  if (saved === 'gemini' || saved === 'deepseek' || saved === 'bupt' || saved === 'zhipu' || saved === 'custom') {
     return saved;
   }
   // 检查当前模型属于哪个提供商
@@ -421,6 +449,7 @@ export function getActiveAiProviderId(): AiProviderId {
   if (activeModelId) {
     if (activeModelId.startsWith('gemini')) return 'gemini';
     if (activeModelId.startsWith('deepseek')) return 'deepseek';
+    if (activeModelId.startsWith('glm-')) return 'zhipu';
     const customs = getCustomAiModels();
     if (customs.some((c) => c.id === activeModelId)) return 'custom';
   }
