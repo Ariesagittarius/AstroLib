@@ -1,10 +1,3 @@
-// scripts/generate-epub.mjs
-// 为所有图书生成“全书下载”EPUB3 文件，输出到 public/epub/<book-slug>.epub
-// （astro build 会原样拷贝 public/ 到 dist/，因此这些文件可直接静态下载）
-//
-// 用法：
-//   node scripts/generate-epub.mjs            # 生成全部图书
-//   node scripts/generate-epub.mjs --only math_analysis   # 只生成指定 slug
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -21,13 +14,11 @@ const KATEX_DIR = path.join(ROOT, 'node_modules', 'katex', 'dist');
 const PUB_COVERS = path.join(ROOT, 'public', 'covers');
 const SITE_CSS = path.join(__dirname, 'epub', 'site.css');
 
-// ---------------------------------------------------------------- 参数
 const args = process.argv.slice(2);
 const onlySlug = args.includes('--only') ? args[args.indexOf('--only') + 1] : null;
 
-// ---------------------------------------------------------------- 图书元数据（中央配置）
 async function loadBookMeta() {
-  const meta = new Map(); // `${colSlug}/${bookSlug}` -> { title, description, cover }
+  const meta = new Map();
   const merge = (colSlug, book) => {
     if (!book?.slug) return;
     const key = `${colSlug}/${book.slug}`;
@@ -48,7 +39,6 @@ async function loadBookMeta() {
   return meta;
 }
 
-// ---------------------------------------------------------------- 扫描图书目录
 function scanBooks() {
   const books = [];
   for (const colName of fs.readdirSync(CONTENT_ROOT)) {
@@ -72,7 +62,6 @@ function naturalSort(a, b) {
   return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
 }
 
-// ---------------------------------------------------------------- 小工具
 function sha256Hex(s) {
   return crypto.createHash('sha256').update(s).digest('hex');
 }
@@ -90,7 +79,6 @@ function escXml(s) {
     .replace(/"/g, '&quot;');
 }
 
-// ---------------------------------------------------------------- 章节渲染（并发池）
 async function renderAllChapters(book) {
   const jobs = book.mdxFiles.map((f, i) => ({ file: f, index: i }));
   const results = new Array(jobs.length);
@@ -115,7 +103,6 @@ async function renderAllChapters(book) {
   return results;
 }
 
-// ---------------------------------------------------------------- 组装（异步主流程）
 async function generateOneBook(book, meta) {
   const title = meta?.title || book.slug;
   const description = meta?.description || '';
@@ -126,8 +113,7 @@ async function generateOneBook(book, meta) {
 
   const chapters = await renderAllChapters(book);
 
-  // 收集全部图片
-  const imageFiles = new Map(); // name -> absolute path
+  const imageFiles = new Map();
   for (const ch of chapters) {
     for (const name of ch.images) {
       const abs = path.join(book.dir, 'images', name);
@@ -136,14 +122,12 @@ async function generateOneBook(book, meta) {
   }
   console.log(`   引用图片 ${imageFiles.size} 张`);
 
-  // 封面（仅本地文件；远程 URL 不联网抓取）
   let coverName = null;
   if (meta?.cover && meta.cover.startsWith('/')) {
     const coverPath = path.join(ROOT, 'public', meta.cover.replace(/^\//, ''));
     if (fs.existsSync(coverPath)) coverName = path.basename(meta.cover);
   }
 
-  // ---------- 组装 zip 条目 ----------
   const entries = [];
   entries.push({ name: 'mimetype', data: 'application/epub+zip', store: true });
   entries.push({
@@ -156,8 +140,7 @@ async function generateOneBook(book, meta) {
 </container>`,
   });
 
-  // ---------- 章节 XHTML ----------
-  const chapterFiles = []; // { id, href, title }
+  const chapterFiles = [];
   chapters.forEach((ch, i) => {
     const num = String(i + 1).padStart(2, '0');
     const href = `text/ch${num}.xhtml`;
@@ -169,7 +152,6 @@ async function generateOneBook(book, meta) {
     entries.push({ name: `OEBPS/${href}`, data: doc });
   });
 
-  // ---------- 书名页 ----------
   const titleHref = 'text/title.xhtml';
   const titleBody = `
   <div class="title-page">
@@ -184,13 +166,11 @@ async function generateOneBook(book, meta) {
   </div>`;
   entries.push({ name: `OEBPS/${titleHref}`, data: xhtmlDoc(title, titleBody) });
 
-  // ---------- CSS ----------
   const katexCss = fs.readFileSync(path.join(KATEX_DIR, 'katex.min.css'), 'utf8');
   entries.push({ name: 'OEBPS/katex.min.css', data: katexCss });
   const siteCss = fs.readFileSync(SITE_CSS, 'utf8');
   entries.push({ name: 'OEBPS/css/site.css', data: siteCss });
 
-  // ---------- KaTeX 字体（woff2 + woff，与 katex.min.css 的相对路径 fonts/ 对齐） ----------
   const fontDir = path.join(KATEX_DIR, 'fonts');
   let fontItems = [];
   if (fs.existsSync(fontDir)) {
@@ -202,7 +182,6 @@ async function generateOneBook(book, meta) {
     }
   }
 
-  // ---------- 图片 ----------
   const imgItems = [];
   for (const [name, absPath] of imageFiles) {
     const data = fs.readFileSync(absPath);
@@ -214,7 +193,6 @@ async function generateOneBook(book, meta) {
     });
   }
 
-  // ---------- 封面 ----------
   let coverItem = null;
   if (coverName) {
     const coverPath = path.join(PUB_COVERS, coverName);
@@ -229,7 +207,6 @@ async function generateOneBook(book, meta) {
     }
   }
 
-  // ---------- nav.xhtml ----------
   const navItems = [
     `<li><a href="${titleHref}">书名页</a></li>`,
     ...chapterFiles.map((c) => `<li><a href="${c.href}">${escXml(plainTitle(c.title))}</a></li>`),
@@ -260,7 +237,6 @@ async function generateOneBook(book, meta) {
 </html>`;
   entries.push({ name: 'OEBPS/nav.xhtml', data: nav });
 
-  // ---------- content.opf ----------
   const manifest = [
     `<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>`,
     `<item id="title" href="${titleHref}" media-type="application/xhtml+xml"/>`,
@@ -300,7 +276,6 @@ async function generateOneBook(book, meta) {
 </package>`;
   entries.push({ name: 'OEBPS/content.opf', data: opf });
 
-  // ---------- 打包 ----------
   const zip = createZip(entries);
   const outFile = path.join(OUT_DIR, `${book.slug}.epub`);
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
@@ -310,7 +285,6 @@ async function generateOneBook(book, meta) {
   return { slug: book.slug, size: zip.length };
 }
 
-// ---------------------------------------------------------------- XHTML 文档外壳
 function xhtmlDoc(title, body) {
   return `<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
@@ -326,10 +300,9 @@ ${body}
 </html>`;
 }
 
-// ---------------------------------------------------------------- 主流程
 async function main() {
   if (!features.epub.enabled) {
-    // 功能开关统一在 src/config/features.config.mjs：关闭 EPUB 则不生成（节省构建时间/体积）。
+
     console.log('[epub] 已跳过：EPUB 功能关闭（features.config.mjs 中 epub.enabled=false）。');
     return;
   }

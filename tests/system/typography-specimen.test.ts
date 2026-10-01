@@ -16,7 +16,7 @@ describe('Typography Specimen XeLaTeX Compilation System Test', () => {
         fs.rmSync(tmpDir, { recursive: true, force: true });
       }
     } catch {
-      // 忽略临时目录清理失败
+
     }
   });
 
@@ -50,13 +50,11 @@ describe('Typography Specimen XeLaTeX Compilation System Test', () => {
     const texPath = path.join(tmpDir, 'specimen.tex');
     fs.writeFileSync(texPath, texSource, 'utf8');
 
-    // 第一次编译生成 aux
     execSync(`"${xelatexCmd}" -file-line-error -interaction=nonstopmode specimen.tex`, {
       cwd: tmpDir,
       stdio: 'pipe',
     });
 
-    // 第二次编译确认交叉引用
     execSync(`"${xelatexCmd}" -file-line-error -interaction=nonstopmode specimen.tex`, {
       cwd: tmpDir,
       stdio: 'pipe',

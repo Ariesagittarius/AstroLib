@@ -3,18 +3,6 @@ import fs from 'node:fs';
 const DEFAULT_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
 const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 
-/**
- * High-res Multimodal Vision Streaming Client for Google Gemini 3.5 Flash Lite
- * @param {string} prompt - Task instructions and prompt
- * @param {string[]} imagePaths - Local file paths of page images (JPEG/PNG)
- * @param {object} [options]
- * @param {string} [options.model] - Gemini model identifier (defaults to gemini-3.5-flash-lite)
- * @param {string} [options.apiKey] - Google API key (defaults to env or key)
- * @param {number} [options.retries=5] - Maximum retry attempts on network error / 503
- * @param {number} [options.temperature=0.1] - Sampling temperature
- * @param {number} [options.maxOutputTokens=65536] - Max output token quota
- * @returns {Promise<{text: string, thought: string, durationMs: number}>}
- */
 export async function streamGeminiVision(prompt, imagePaths, options = {}) {
   const apiKey = options.apiKey || process.env.GEMINI_API_KEY || DEFAULT_API_KEY;
   const model = options.model || DEFAULT_MODEL;
@@ -99,7 +87,7 @@ export async function streamGeminiVision(prompt, imagePaths, options = {}) {
               process.stdout.write(`[GeminiVision] 分片: ${chunkCount}, 正文: ${fullText.length} 字, 思考: ${fullThought.length} 字\r`);
             }
           } catch {
-            // Ignore minor JSON chunk fragmenting
+
           }
         }
       }

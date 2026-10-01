@@ -1,15 +1,3 @@
-/**
- * notices.config.ts
- * ============================================================================
- * 全站提示框架（Notice Framework）配置、模板中心与通用插值引擎
- * 
- * 遵循架构规范：
- * 1. UI 不是数据模型，本文件是全站提示项的结构、模板与预设唯一声明源；
- * 2. 泛化模板架构：框架不硬编码业务字段，支持任意自定义占位符（如 {model}, {author}, {reviewer}）；
- * 3. 图书在 collections.config.ts 或 MDX Frontmatter 中通过 notices 数组声明提示，支持跨层级级联与参数覆写。
- * ============================================================================
- */
-
 import type { NoticeConfig, NoticeTemplate, NoticeItem } from '../types/notices.ts';
 
 const RESERVED_NOTICE_KEYS = new Set([
@@ -32,9 +20,6 @@ const RESERVED_NOTICE_KEYS = new Set([
   'params',
 ]);
 
-/**
- * 文本参数通用插值工具
- */
 export function interpolateText(text: string, params: Record<string, any> = {}): string {
   if (typeof text !== 'string' || !text.includes('{')) {
     return text;
@@ -48,9 +33,6 @@ export function interpolateText(text: string, params: Record<string, any> = {}):
   });
 }
 
-/**
- * Wiki 提示通用模板库 (NOTICE_TEMPLATES)
- */
 export const NOTICE_TEMPLATES: Record<string, NoticeTemplate> = {
   aiGenerated: {
     id: 'ai-generated',

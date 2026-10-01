@@ -1,22 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/submit-indexnow.mjs
- * ============================================================================
- * Bing & 搜索引擎 IndexNow 批量实时推送脚本
- * ============================================================================
- *
- * 原理：
- * 1. IndexNow 是由微软 Bing 发起并被 Yandex、Naver 采纳的主动推送协议；
- * 2. 本脚本自动读取生产构建产物中的 sitemap，提取全站所有 URL 清单；
- * 3. 自动检验/创建 IndexNow 验证密钥文件（{key}.txt）；
- * 4. 向 IndexNow API 批量提交，使 Bingbot 在数分钟内完成收录与更新重爬。
- *
- * 用法：
- *   node scripts/submit-indexnow.mjs
- *   node scripts/submit-indexnow.mjs --key=YOUR_32_HEX_KEY
- *   node scripts/submit-indexnow.mjs --dry-run
- * ============================================================================
- */
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -26,13 +8,11 @@ import { features } from '../src/config/features.config.mjs';
 const siteUrl = (features.seo?.config?.siteUrl || process.env.SITE_URL || 'https://astrolib.cloud').replace(/\/$/, '');
 const host = new URL(siteUrl).host;
 
-// 解析 CLI 参数
 const args = process.argv.slice(2);
 const isDryRun = args.includes('--dry-run');
 const isOnBuild = args.includes('--on-build');
 const keyArg = args.find(a => a.startsWith('--key='))?.split('=')[1];
 
-// 若作为构建生命周期钩子（--on-build）调用，仅在生产环境或显式声明时触发
 if (isOnBuild) {
   const isVercel = process.env.VERCEL === '1';
   const isVercelProd = isVercel && (process.env.VERCEL_ENV === 'production' || process.env.VERCEL_GIT_COMMIT_REF === 'main');
@@ -62,7 +42,6 @@ if (!apiKey) {
   }
 }
 
-// 检查 public/{apiKey}.txt 验证文件是否存在（仅在正式提交时检查）
 if (!isDryRun) {
   const keyFilePath = path.resolve('public', `${apiKey}.txt`);
   if (!fs.existsSync(keyFilePath)) {
@@ -78,10 +57,8 @@ if (!isDryRun) {
   }
 }
 
-// 提取全站 URL 列表
 let urlList = [];
 
-// 优先从 dist/sitemap-0.xml 中提取真实的构建产物 URL
 const sitemapPath = path.resolve('dist', 'sitemap-0.xml');
 if (fs.existsSync(sitemapPath)) {
   const sitemapContent = fs.readFileSync(sitemapPath, 'utf-8');
@@ -90,7 +67,6 @@ if (fs.existsSync(sitemapPath)) {
   console.log(`[IndexNow] 成功从 dist/sitemap-0.xml 提取 ${urlList.length} 个 URL`);
 }
 
-// 若无构建产物，回退到基础站点路由
 if (urlList.length === 0) {
   console.log('[IndexNow] 提示：未检测到 dist/ 生产构建产物，推送核心基础路由。建议先运行 npm run build。');
   urlList = [

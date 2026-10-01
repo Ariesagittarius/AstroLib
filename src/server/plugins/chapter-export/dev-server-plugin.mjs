@@ -1,21 +1,3 @@
-/**
- * dev-server-plugin.mjs: 章节 LaTeX / PDF 导出 · Vite dev server 端点插件
- *
- * 在 Vite connect middleware 层拦截 /__chapter_export__/* 请求：
- * 1) GET /__chapter_export__/health 探活与编译器探测
- * 2) GET /__chapter_export__/export?pathname=...&format=tex|zip|pdf
- *    - 实时解析当前页面对应的 MDX 章节文件
- *    - 调用 scripts/export-chapter-latex.mjs 执行独立进程导出与编译
- *    - format=tex: 下载独立 .tex 源码
- *    - format=zip: 下载含 .tex、.sty 宏包与插图的完整离线可编译压缩包
- *    - format=pdf: 调用本地 XeLaTeX 双遍编译并直出 PDF 流
- *
- * 遵循架构规则：
- * - 纯 .mjs 模块，绝不向 astro.config.mjs 引入未转译的 TypeScript 依赖
- * - 仅在 dev 模式（isEffective('chapterExport')）下挂载，生产构建零污染
- * - 纯 Publishing/Processing 服务，不修改磁盘上的 MDX 源数据 (Rule 9)
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -50,9 +32,6 @@ function parseJsonBody(req) {
   });
 }
 
-/**
- * 探测本地可用的 XeLaTeX 编译器绝对路径
- */
 function findXelatexBin() {
   const candidates = [
     'xelatex',
@@ -71,10 +50,6 @@ function findXelatexBin() {
   return null;
 }
 
-/**
- * 根据前端传入的 pathname 查找对应的本地 MDX 章节文件
- * 兼容 Astro Content Layer 默认的 cleanSlug 规则 (如 2.2_... -> 22_...)
- */
 function resolveMdxPathFromUrl(pathname) {
   if (!pathname) return null;
   let decoded = pathname;
@@ -85,7 +60,6 @@ function resolveMdxPathFromUrl(pathname) {
     }
   } catch (e) {}
 
-  // 匹配 /collections/:colSlug/:bookSlug/:chapterSlug?
   const match = decoded.match(/\/collections\/([^/]+)\/([^/]+)(?:\/([^/?#]+))?/);
   if (!match) return null;
 
@@ -107,7 +81,6 @@ function resolveMdxPathFromUrl(pathname) {
   const normalizeKey = (s) => s.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '').toLowerCase();
   const targetKey = normalizeKey(rawChapterSlug);
 
-  // 在书籍目录中匹配文件
   const files = fs.readdirSync(bookDir);
   for (const file of files) {
     if (!file.endsWith('.mdx') && !file.endsWith('.md')) continue;
@@ -138,7 +111,6 @@ async function handle(req, res) {
   const url = new URL(raw, 'http://localhost');
   if (!url.pathname.startsWith('/__chapter_export__')) return false;
 
-  // 1. 探活与能力探测
   if (url.pathname === '/__chapter_export__/health') {
     const xelatexBin = findXelatexBin();
     sendJson(res, 200, {
@@ -150,7 +122,6 @@ async function handle(req, res) {
     return true;
   }
 
-  // 2. 导出主端点
   if (url.pathname === '/__chapter_export__/export' && req.method === 'GET') {
     const pagePathname = url.searchParams.get('pathname');
     const format = url.searchParams.get('format') || 'tex';
@@ -203,7 +174,6 @@ async function handle(req, res) {
         cmdArgs.push('--compile');
       }
 
-      // 运行独立导出脚本
       execSync(cmdArgs.join(' '), {
         cwd: ROOT,
         stdio: 'pipe',
@@ -215,7 +185,6 @@ async function handle(req, res) {
         'expires': '0',
       };
 
-      // 寻找产物并返回
       const outFiles = fs.readdirSync(tempOutDir);
 
       if (format === 'tex') {
@@ -286,7 +255,6 @@ async function handle(req, res) {
     }
   }
 
-  // 3. 原生 LaTeX 源码本地 XeLaTeX 编译直出 PDF 端点 (供习题导出与通用导出复用)
   if (url.pathname === '/__chapter_export__/compile-latex' && req.method === 'POST') {
     const xelatexBin = findXelatexBin();
     if (!xelatexBin) {
@@ -311,7 +279,6 @@ async function handle(req, res) {
       const mainTexPath = path.join(tempOutDir, 'main.tex');
       fs.writeFileSync(mainTexPath, latex, 'utf8');
 
-      // 执行 XeLaTeX 双遍编译解决交叉引用与页码（解耦执行，防止第 1 遍非致命退出码阻断第 2 遍）
       const runXeLaTeXPass = (pass) => {
         try {
           execSync(`"${xelatexBin}" -file-line-error -interaction=nonstopmode main.tex`, {
@@ -326,7 +293,7 @@ async function handle(req, res) {
       };
 
       runXeLaTeXPass(1);
-      // 只要产生了 main.aux 或 main.pdf，继续执行第 2 遍编译以准确解析交叉引用与总页数
+
       if (fs.existsSync(path.join(tempOutDir, 'main.aux')) || fs.existsSync(path.join(tempOutDir, 'main.pdf'))) {
         runXeLaTeXPass(2);
       }

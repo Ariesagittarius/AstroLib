@@ -1,10 +1,3 @@
-/**
- * Reader Feedback & Errata System · Issue Formatter & Dispatch Engine
- *
- * Implements strict, academic, developer-centric English formatting for
- * GitHub Issues and handles dual-mode submission (Bot Proxy & Prefilled URL).
- */
-
 export interface ErrataPayload {
   bookTitle: string;
   bookSlug: string;
@@ -47,10 +40,6 @@ export const FEEDBACK_CATEGORIES: CategoryOption[] = [
   { id: 'custom', label: 'Custom / Other', desc: 'Other issues not listed above' },
 ];
 
-/**
- * Generates concise, structured English title for GitHub Issues.
- * Format: [Errata] <Book Title> · <Chapter Title>: <Category> (<shortFile>:<line>)
- */
 export function formatIssueTitle(data: ErrataPayload): string {
   const shortFile = (data.filePath || 'unknown.mdx').split('/').pop() || 'unknown.mdx';
   const cat = data.customCategory?.trim() || data.categoryLabel || 'General Errata';
@@ -60,9 +49,6 @@ export function formatIssueTitle(data: ErrataPayload): string {
   return `[Errata] ${book} · ${chapter}: ${cat} (${shortFile}${lineStr})`;
 }
 
-/**
- * Formats full English issue markdown body for triage.
- */
 export function formatIssueBody(data: ErrataPayload): string {
   const codeLang = data.isFormula ? 'latex' : 'markdown';
   const categoryName = data.customCategory?.trim()
@@ -118,9 +104,6 @@ export function formatIssueBody(data: ErrataPayload): string {
   return lines.join('\n');
 }
 
-/**
- * Builds prefilled GitHub Issue creation URL.
- */
 export function buildGithubIssueUrl(data: ErrataPayload, config: FeedbackConfig): string {
   const repo = config.githubRepo || 'Ariesagittarius/AstroLib';
   const title = formatIssueTitle(data);
@@ -137,9 +120,6 @@ export function buildGithubIssueUrl(data: ErrataPayload, config: FeedbackConfig)
   return `${base}?${params.toString()}`;
 }
 
-/**
- * Submits payload to the Serverless Bot Proxy API.
- */
 export async function submitToBotProxy(
   data: ErrataPayload,
   endpoint: string,

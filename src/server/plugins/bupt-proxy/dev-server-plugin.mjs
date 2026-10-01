@@ -1,8 +1,3 @@
-// src/server/plugins/bupt-proxy/dev-server-plugin.mjs
-// Vite Dev Server 插件：为北京邮电大学「人人有算力」AI 资源服务平台提供本地中继反代
-// 原理：Node.js 本地进程自动绕过本地科学上网客户端对校内域名的 fake-ip 劫持，
-// 直接建立至校内专用网关 10.3.19.2 的 TLS SNI 连接，并支持全双工 SSE 流式透明转发与鉴权预填。
-
 import https from 'node:https';
 import net from 'node:net';
 import dns from 'node:dns';
@@ -13,7 +8,6 @@ const BUPT_CAMPUS_IP = '10.3.19.2';
 const PROXY_PATH_PREFIX = '/api/proxy/bupt';
 const DEFAULT_BUPT_SUBPATH = '/llm-gw/v1/chat/completions';
 
-// 自定义 SNI 直连解析器：强制将 myai.bupt.edu.cn 映射为校内专用 IP 10.3.19.2
 function customLookup(hostname, options, callback) {
   if (typeof options === 'function') {
     callback = options;
@@ -33,7 +27,6 @@ const directAgent = new https.Agent({
   keepAlive: true,
 });
 
-// 内存缓存校园网探针结果（15 秒），避免每次页面请求都发起 TCP 探测
 let _campusCache = { isCampus: false, lastCheck: 0 };
 
 async function probeCampusNetwork() {
@@ -62,9 +55,6 @@ async function probeCampusNetwork() {
   });
 }
 
-/**
- * 构造与启动 BUPT AI 本地中继 Vite Dev Server 插件
- */
 export function buptProxyDevServerPlugin() {
   return {
     name: 'astrolib-bupt-proxy-dev-server',
@@ -75,7 +65,6 @@ export function buptProxyDevServerPlugin() {
           return next();
         }
 
-        // 1. 响应浏览器 CORS 预检
         if (req.method === 'OPTIONS') {
           res.writeHead(204, {
             'Access-Control-Allow-Origin': '*',
@@ -89,7 +78,6 @@ export function buptProxyDevServerPlugin() {
         const parsedUrl = new URL(rawUrl, 'http://localhost');
         const pathname = parsedUrl.pathname;
 
-        // 2. 健康与校园网连通探测端点 (极速 2ms TCP 探针，零阻塞)
         if (
           req.method === 'GET' &&
           (pathname === `${PROXY_PATH_PREFIX}/health` || pathname === `${PROXY_PATH_PREFIX}/health/`)
@@ -114,18 +102,16 @@ export function buptProxyDevServerPlugin() {
           return;
         }
 
-        // 3. 计算目标上游 URL（自动规范化 subPath）
         let subPath = pathname.slice(PROXY_PATH_PREFIX.length);
         if (!subPath || subPath === '/') {
           subPath = DEFAULT_BUPT_SUBPATH;
         } else if (!subPath.startsWith('/llm-gw/v1/')) {
-          // 若前端直接请求 /api/proxy/bupt/chat/completions，自动补全网关前缀
+
           subPath = `/llm-gw/v1${subPath.startsWith('/') ? '' : '/'}${subPath}`;
         }
 
         const targetUrl = `https://${BUPT_GATEWAY_HOST}${subPath}${parsedUrl.search}`;
 
-        // 4. 清洗并构造转发请求头
         const forwardHeaders = {};
         const HOP_BY_HOP_HEADERS = new Set([
           'host',
@@ -146,15 +132,13 @@ export function buptProxyDevServerPlugin() {
         }
 
         forwardHeaders['Host'] = BUPT_GATEWAY_HOST;
-        // 显式声明要求明文，避免上游 gzip 压缩导致浏览器本地中继解析异常
+
         forwardHeaders['accept-encoding'] = 'identity';
 
-        // 若请求中未包含 Authorization 且环境变量存在 BUPT_API_KEY，自动补齐
         if (!forwardHeaders['authorization'] && process.env.BUPT_API_KEY) {
           forwardHeaders['authorization'] = `Bearer ${process.env.BUPT_API_KEY.trim()}`;
         }
 
-        // 5. 读取请求体
         const hasBody = ['POST', 'PUT', 'PATCH'].includes(req.method || '');
 
         async function readBody(readable) {
@@ -171,7 +155,6 @@ export function buptProxyDevServerPlugin() {
           forwardHeaders['content-length'] = Buffer.byteLength(bodyBuffer);
         }
 
-        // 6. 发起上游请求与流式透传
         const clientReq = https.request(
           targetUrl,
           {
@@ -205,7 +188,6 @@ export function buptProxyDevServerPlugin() {
 
             res.writeHead(upstreamRes.statusCode || 200, responseHeaders);
 
-            // 自动透明解压：若上游忽略 identity 仍返回 gzip/deflate/br，自动解压后推送纯净文本至浏览器
             let stream = upstreamRes;
             const contentEncoding = (upstreamRes.headers['content-encoding'] || '').toLowerCase();
             if (contentEncoding === 'gzip') {
@@ -235,7 +217,6 @@ export function buptProxyDevServerPlugin() {
           }
         );
 
-        // 客户端提前关闭时，终止上游请求
         res.on('close', () => {
           if (!res.writableFinished) {
             clientReq.destroy();

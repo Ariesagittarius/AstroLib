@@ -7,10 +7,6 @@ const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '../../../../');
 const OFFLINE_PACKS_DIR = path.join(ROOT, 'dist', 'offline-packs');
 
-/**
- * offlinePackDevServerPlugin
- * 在 Vite 开发环境下透明挂载 /offline-packs/* 端点，从 dist/offline-packs 读取并分发
- */
 export function offlinePackDevServerPlugin() {
   return {
     name: 'astrolib-offline-pack-dev-server',

@@ -1,4 +1,3 @@
-// scripts/vision_reconstruct/build_ch05.cjs
 const fs = require('fs');
 const path = require('path');
 const katex = require('katex');
@@ -15,7 +14,6 @@ if (ch05Questions.length !== 20) {
   process.exit(1);
 }
 
-// Check sequential IDs
 for (let i = 0; i < 20; i++) {
   const expectedId = `LAG-TB-CH05-Q${String(i + 1).padStart(2, '0')}`;
   if (ch05Questions[i].id !== expectedId) {
@@ -24,7 +22,6 @@ for (let i = 0; i < 20; i++) {
   }
 }
 
-// KaTeX 校验
 let errCount = 0;
 function testMath(str, qid, field) {
   if (!str) return;

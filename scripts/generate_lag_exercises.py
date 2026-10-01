@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+
 """
 scripts/generate_lag_exercises.py
 《线性代数与几何》（北京邮电大学出版社）《大邮数学集》历年期末真题生成与图谱归并脚本。
@@ -27,24 +27,22 @@ FULL_DB_PATH = os.path.join(DATA_DIR, "bupt_math_full_database.json")
 OUTPUT_LAG_PATH = os.path.join(DATA_DIR, "linear_algebra_geometry_exercises.json")
 CHAPTER_INDEX_PATH = os.path.join(DATA_DIR, "chapter_index.json")
 
-
 def make_self_contained_stem(stem: str, sec_type: str) -> str:
     """如果题干简短或为小问编号，且大题标题中包含方程组/矩阵/定义等前提，将其前置以保证题目自包含性"""
     premise = re.sub(r'^[一二三四五六七八九十]+、\s*（[^）]*分\s*）\s*', '', sec_type or '').strip()
     if not premise or len(premise) < 10:
         return stem
-    # 针对 (1) 求...，（2）求... 小问
+
     if re.match(r'^[（(][1-9][)）]', stem) or stem.startswith('(1)') or stem.startswith('（1）'):
         if not premise.endswith('：') and not premise.endswith(':'):
             return f"{premise}\n\n{stem}"
         return f"{premise}\n{stem}"
-    # 针对题干非常短且大题标题含有具体条件的题目
+
     if len(stem) < 25 and not any(kw in stem for kw in ['\\begin', '\\matrix', '已知', '设']):
         if any(kw in premise for kw in ['求', '证明', '计算', '判断']) and len(premise) > len(stem) + 15:
             return premise
         return f"{premise}\n\n{stem}"
     return stem
-
 
 def main():
     print("================================================================")
@@ -68,10 +66,8 @@ def main():
     total_extracted = 0
     all_q_ids = []
 
-    # 倒排索引
     lag_inverted_index: Dict[str, List[str]] = {}
 
-    # 遍历试卷与题目
     for paper in target_papers:
         p_id = paper.get("paper_id")
         p_raw_title = paper.get("raw_title", "")
@@ -86,7 +82,6 @@ def main():
             sec_type = q.get("meta", {}).get("section_type", "")
             final_stem = make_self_contained_stem(orig_stem, sec_type)
 
-            # 构造 QuestionItem 用于分类
             options_list = [
                 OptionItem(key=opt.get("key", ""), text=opt.get("text", ""))
                 for opt in q.get("content", {}).get("options", [])
@@ -111,12 +106,10 @@ def main():
                 )
             )
 
-            # 精准映射至《线性代数与几何》
             lag_mapping = classifier._classify_linear_algebra_geometry(q_obj)
             ch_num = lag_mapping.chapter
             sec_slug = lag_mapping.section_slug
 
-            # 更新 q 数据字典
             q["content"]["stem"] = final_stem
             if "mapping" not in q or not isinstance(q["mapping"], dict):
                 q["mapping"] = {}
@@ -142,7 +135,6 @@ def main():
         print(f"   • 第 {ch} 章 ({ch_title}): {count:3d} 道")
     print("----------------------------------------------------------------")
 
-    # 1. 导出 linear_algebra_geometry_exercises.json
     lag_payload = {
         "course": "linear_algebra_geometry",
         "title": "线性代数与几何真题题库",
@@ -157,7 +149,6 @@ def main():
         json.dump(lag_payload, f, ensure_ascii=False, indent=2)
     print(f"💾 已导出《线性代数与几何》真题题库: {OUTPUT_LAG_PATH}")
 
-    # 2. 更新 chapter_index.json
     if os.path.exists(CHAPTER_INDEX_PATH):
         try:
             with open(CHAPTER_INDEX_PATH, "r", encoding="utf-8") as f:
@@ -172,13 +163,11 @@ def main():
         json.dump(ch_idx, f, ensure_ascii=False, indent=2)
     print(f"💾 已更新章节检索倒排索引: {CHAPTER_INDEX_PATH}")
 
-    # 3. 回写同步 bupt_math_full_database.json (保留 mapping 同步)
     with open(FULL_DB_PATH, "w", encoding="utf-8") as f:
         json.dump(full_db, f, ensure_ascii=False, indent=2)
     print(f"💾 已同步回写全量题库数据库: {FULL_DB_PATH}")
 
     print("\n🎉 《线性代数与几何》大邮数学集真题数据生成完毕！")
-
 
 if __name__ == "__main__":
     main()

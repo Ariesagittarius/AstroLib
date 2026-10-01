@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import re
 from .mdx_sanitizer import MdxSanitizer, TextCleaner
 
@@ -89,7 +88,6 @@ class ExerciseParser:
                 idx += 1
                 continue
 
-            # 图号恢复
             num = None
             mf = self.FIGREF_RE.search(s)
             if mf:

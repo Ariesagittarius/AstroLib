@@ -19,24 +19,20 @@ BATCH_55_PATH = os.path.join(ROOT_DIR, 'test/output/5.5_batch_74_83.mdx')
 with open(F54_PATH, 'r', encoding='utf-8') as f:
     orig_54 = f.read()
 
-# 1. 移除可能有的重复一级/三级小节大标题
 orig_54 = re.sub(r'###\s*第四节[^\n]*\n+', '', orig_54)
 
-# 2. 截取到例 4.4 题干处
 idx_ex44 = orig_54.find('例 4.4')
 if idx_ex44 == -1:
     raise ValueError("未在 5.4 中找到 例 4.4")
 cut_pos = orig_54.find('</Example>', idx_ex44) + len('</Example>')
 base_54 = orig_54[:cut_pos].strip()
 
-# 3. 读取 5.5 batch 中截取的 Lagrange 乘数法部分 (第 1 行至第 183 行)
 with open(BATCH_55_PATH, 'r', encoding='utf-8') as f:
     batch_lines = f.readlines()
 
 lagrange_lines = batch_lines[:183]
 lagrange_raw = ''.join(lagrange_lines).strip()
 
-# 4. 修复 lagrange_raw 中 cases 内 tag 语法异常
 lagrange_fixed = lagrange_raw
 lagrange_fixed = re.sub(r'L_x = 2z \+ y \+ \\lambda yz = 0,\s*\\tag\{1\}', r'L_x = 2z + y + \\lambda yz = 0, & \\text{①}', lagrange_fixed)
 lagrange_fixed = re.sub(r'L_y = 2z \+ x \+ \\lambda xz = 0,\s*\\tag\{2\}', r'L_y = 2z + x + \\lambda xz = 0, & \\text{②}', lagrange_fixed)
@@ -47,10 +43,8 @@ lagrange_fixed = re.sub(r'\(y - x\)\(1 \+ \\lambda z\) = 0,\s*\\tag\{5\}', r'(y 
 lagrange_fixed = re.sub(r'\(2z - y\)\(2 \+ \\lambda x\) = 0,\s*\\tag\{6\}', r'(2z - y)(2 + \\lambda x) = 0, \\tag{4.28}', lagrange_fixed)
 lagrange_fixed = re.sub(r'x = y = 2z,\s*\\tag\{7\}', r'x = y = 2z, \\tag{4.29}', lagrange_fixed)
 
-# 确保带 tag 的公式为独立 display block
 lagrange_fixed = re.sub(r'(?<!\$)\$(?!\$)([^$\r\n]*?\\tag\{[^{}]+\}[^$\r\n]*?)\$(?!\$)', r'\n\n$$\n\1\n$$\n\n', lagrange_fixed)
 
-# 5. 补充中间内容 (例 4.4 解答、例 4.5、最小二乘法、产出水平、有约束极值引论)
 middle_content = """
 
 <Solution title="解">

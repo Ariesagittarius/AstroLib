@@ -1,8 +1,3 @@
-/**
- * src/scripts/pages/library-client.ts
- * 图书馆检索页客户端控制器：URL 参数解析、多维属性筛选、排序与详情弹窗
- */
-
 export function initLibraryClient(): void {
       interface FilterState {
         query: string;
@@ -27,7 +22,6 @@ export function initLibraryClient(): void {
       const sortSelect = document.getElementById('sort-select') as HTMLSelectElement;
       const emptyBox = document.getElementById('lib-empty-box');
 
-      // Modal
       const modal = document.getElementById('details-modal');
       const modalClose = document.getElementById('dialog-close-btn');
       const dialogTitle = document.getElementById('dialog-title');

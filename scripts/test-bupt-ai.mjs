@@ -1,24 +1,10 @@
-/**
- * scripts/test-bupt-ai.mjs
- * =============================================================================
- * 北京邮电大学「人人有算力」大模型 API 网关 (BUPT AI Gateway) 真实连通性与性能测试脚本
- * -----------------------------------------------------------------------------
- * 运行方式：
- *   node scripts/test-bupt-ai.mjs
- *   node scripts/test-bupt-ai.mjs --key sk-bupt-xxxx
- *   $env:BUPT_API_KEY="sk-bupt-xxxx"; node scripts/test-bupt-ai.mjs
- * =============================================================================
- */
-
 import https from 'node:https';
 import dns from 'node:dns';
 
 const BUPT_GATEWAY_HOST = 'myai.bupt.edu.cn';
-const BUPT_CAMPUS_IP = '10.3.19.2'; // 校内真实网关 IP
+const BUPT_CAMPUS_IP = '10.3.19.2';
 const BUPT_BASE_URL = `https://${BUPT_GATEWAY_HOST}/llm-gw/v1`;
 
-// 自适应 DNS 解析器：若本地存在代理/TUN 模式干扰导致无法解析或解析为 fake-ip，
-// 自动平滑直连校内 IP 10.3.19.2，同时完整保留 TLS SNI 与 Host 请求头
 function customLookup(hostname, options, callback) {
   if (typeof options === 'function') {
     callback = options;
@@ -111,7 +97,6 @@ async function runTests() {
   console.log(`[配置] API Key 状态  : ${key ? `已配置 (前缀: ${key.slice(0, 7)}...)` : '未提供 (进入网络连通性与鉴权格式探针模式)'}`);
   console.log('-'.repeat(70));
 
-  // Step 1: 探测网关连通性与 CORS 响应
   console.log('▶ [Step 1/4] 正在探测网关网络连通性与 CORS 预检...');
   try {
     const optRes = await new Promise((resolve, reject) => {
@@ -141,7 +126,6 @@ async function runTests() {
     return;
   }
 
-  // Step 2: 探测鉴权机制与错误码
   console.log('\n▶ [Step 2/4] 正在探测鉴权机制与 LiteLLM 虚拟密钥识别...');
   try {
     const probeRes = await makeRequest('/models', {
@@ -180,7 +164,6 @@ async function runTests() {
     return;
   }
 
-  // Step 3: 单轮同步补全真实测试
   console.log(`\n▶ [Step 3/4] 正在发起真实单轮对话补全 (模型: ${model})...`);
   try {
     const chatRes = await makeRequest('/chat/completions', {
@@ -209,7 +192,6 @@ async function runTests() {
     console.error(`  ✗ 请求异常: ${err.message}`);
   }
 
-  // Step 4: 流式输出与首字延迟 (TTFT) 压测
   console.log(`\n▶ [Step 4/4] 正在测试 SSE 流式输出与首字延迟 (TTFT)...`);
   try {
     const { status, stream, startTime } = await makeRequest('/chat/completions', {

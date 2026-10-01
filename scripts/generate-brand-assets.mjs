@@ -7,7 +7,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 
-// Find input image
 const possibleInputs = [
   path.join(projectRoot, '.tmp', 'ChatGPT Image 2026年9月15日 20_36_13.png'),
   'D:/Antigravity/project/AstroLib/.tmp/ChatGPT Image 2026年9月15日 20_36_13.png',
@@ -31,15 +30,11 @@ if (!inputPath || !fs.existsSync(inputPath)) {
 
 console.log('Using source image:', inputPath);
 
-/**
- * Builds a multi-resolution ICO file buffer containing standard PNG images.
- * @param {Array<{ width: number, height: number, buffer: Buffer }>} pngEntries
- */
 function createIco(pngEntries) {
   const header = Buffer.alloc(6);
-  header.writeUInt16LE(0, 0); // Reserved
-  header.writeUInt16LE(1, 2); // 1 = ICO
-  header.writeUInt16LE(pngEntries.length, 4); // Number of images
+  header.writeUInt16LE(0, 0);
+  header.writeUInt16LE(1, 2);
+  header.writeUInt16LE(pngEntries.length, 4);
 
   let currentOffset = 6 + pngEntries.length * 16;
   const dirEntries = [];
@@ -48,12 +43,12 @@ function createIco(pngEntries) {
     const dir = Buffer.alloc(16);
     dir.writeUInt8(entry.width >= 256 ? 0 : entry.width, 0);
     dir.writeUInt8(entry.height >= 256 ? 0 : entry.height, 1);
-    dir.writeUInt8(0, 2); // Palette
-    dir.writeUInt8(0, 3); // Reserved
-    dir.writeUInt16LE(1, 4); // Planes
-    dir.writeUInt16LE(32, 6); // Bits per pixel
-    dir.writeUInt32LE(entry.buffer.length, 8); // Image size in bytes
-    dir.writeUInt32LE(currentOffset, 12); // Image offset
+    dir.writeUInt8(0, 2);
+    dir.writeUInt8(0, 3);
+    dir.writeUInt16LE(1, 4);
+    dir.writeUInt16LE(32, 6);
+    dir.writeUInt32LE(entry.buffer.length, 8);
+    dir.writeUInt32LE(currentOffset, 12);
     dirEntries.push(dir);
     currentOffset += entry.buffer.length;
   }
@@ -68,12 +63,10 @@ function createIco(pngEntries) {
 async function run() {
   const publicDir = path.join(projectRoot, 'public');
 
-  // 1. Trim transparency to exact content boundaries
   const trimmedBuffer = await sharp(inputPath).trim().toBuffer();
   const trimmedMeta = await sharp(trimmedBuffer).metadata();
   console.log(`Trimmed content bounding box: ${trimmedMeta.width}x${trimmedMeta.height}`);
 
-  // 2. Generate Header Logo (Horizontal rectangular ratio ~1.29:1 with 2% margin)
   const logoPaddingX = Math.round(trimmedMeta.width * 0.02);
   const logoPaddingY = Math.round(trimmedMeta.height * 0.02);
   const logoCanvasW = trimmedMeta.width + logoPaddingX * 2;
@@ -97,7 +90,6 @@ async function run() {
     .png()
     .toBuffer();
 
-  // 2.1 astrolib-logo.webp (High-res 512px retina)
   const logoWebp = await sharp(logoBaseBuffer)
     .resize({ width: 512 })
     .webp({ quality: 92, effort: 6, alphaQuality: 100 })
@@ -105,7 +97,6 @@ async function run() {
   fs.writeFileSync(path.join(publicDir, 'astrolib-logo.webp'), logoWebp);
   console.log(`Created public/astrolib-logo.webp (${logoWebp.length} bytes)`);
 
-  // 2.2 astrolib-logo.png (High-res 512px fallback)
   const logoPng = await sharp(logoBaseBuffer)
     .resize({ width: 512 })
     .png({ compressionLevel: 9 })
@@ -114,7 +105,6 @@ async function run() {
   fs.writeFileSync(path.join(publicDir, 'astrolib-logo-google.png'), logoPng);
   console.log(`Created public/astrolib-logo.png (${logoPng.length} bytes)`);
 
-  // 3. Generate Favicon Master (1:1 square canvas with ~4% breathing margin)
   const favPadding = Math.round(trimmedMeta.width * 0.04);
   const squareSize = trimmedMeta.width + favPadding * 2;
   const favLeft = favPadding;
@@ -138,7 +128,6 @@ async function run() {
     .png()
     .toBuffer();
 
-  // 3.1 favicon.png (512x512)
   const fav512Png = await sharp(favSquareMaster)
     .resize(512, 512)
     .png({ compressionLevel: 9 })
@@ -146,7 +135,6 @@ async function run() {
   fs.writeFileSync(path.join(publicDir, 'favicon.png'), fav512Png);
   console.log(`Created public/favicon.png (${fav512Png.length} bytes)`);
 
-  // 3.2 favicon.webp (512x512)
   const fav512Webp = await sharp(favSquareMaster)
     .resize(512, 512)
     .webp({ quality: 92, effort: 6, alphaQuality: 100 })
@@ -154,7 +142,6 @@ async function run() {
   fs.writeFileSync(path.join(publicDir, 'favicon.webp'), fav512Webp);
   console.log(`Created public/favicon.webp (${fav512Webp.length} bytes)`);
 
-  // 3.3 apple-touch-icon.png (180x180)
   const appleTouchPng = await sharp(favSquareMaster)
     .resize(180, 180)
     .png({ compressionLevel: 9 })
@@ -162,7 +149,6 @@ async function run() {
   fs.writeFileSync(path.join(publicDir, 'apple-touch-icon.png'), appleTouchPng);
   console.log(`Created public/apple-touch-icon.png (${appleTouchPng.length} bytes)`);
 
-  // 3.4 favicon-32x32.png & webp
   const fav32Png = await sharp(favSquareMaster)
     .resize(32, 32)
     .png({ compressionLevel: 9 })
@@ -176,7 +162,6 @@ async function run() {
   fs.writeFileSync(path.join(publicDir, 'favicon-32x32.webp'), fav32Webp);
   console.log(`Created public/favicon-32x32.png and .webp`);
 
-  // 3.5 favicon-16x16.png & webp
   const fav16Png = await sharp(favSquareMaster)
     .resize(16, 16)
     .png({ compressionLevel: 9 })
@@ -190,13 +175,11 @@ async function run() {
   fs.writeFileSync(path.join(publicDir, 'favicon-16x16.webp'), fav16Webp);
   console.log(`Created public/favicon-16x16.png and .webp`);
 
-  // 3.6 favicon-48x48.png for ICO multi-resolution
   const fav48Png = await sharp(favSquareMaster)
     .resize(48, 48)
     .png({ compressionLevel: 9 })
     .toBuffer();
 
-  // 3.7 favicon.ico (Multi-size: 16x16, 32x32, 48x48)
   const icoBuffer = createIco([
     { width: 16, height: 16, buffer: fav16Png },
     { width: 32, height: 32, buffer: fav32Png },
@@ -205,7 +188,6 @@ async function run() {
   fs.writeFileSync(path.join(publicDir, 'favicon.ico'), icoBuffer);
   console.log(`Created public/favicon.ico (${icoBuffer.length} bytes, 3 sizes)`);
 
-  // 3.8 favicon.svg (Vector container embedding crisp base64 PNG data)
   const fav64Png = await sharp(favSquareMaster)
     .resize(64, 64)
     .png({ compressionLevel: 9 })

@@ -1,12 +1,3 @@
-/**
- * 图片资产与打包管线契约测试 (Image Asset Packaging & Integrity Contract)
- *
- * 守护目标：
- * 1. 《通信原理》及全站 MDX 章节中引用的所有本地图片资源，在磁盘上必须真实物理存在，杜绝 404 破图；
- * 2. 严格禁止在正文 MDX 中使用原生 HTML `<img src="./images/...">` 标签，
- *    确保 100% 采用 Astro 可识别的 Markdown 图片语法 `![alt](path)`，让 Vite 资产打包管线正常收集。
- */
-
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';

@@ -1,6 +1,6 @@
 # AstroLib: 统一教材章节与习题 LaTeX/PDF 导出架构审查 (ARCHITECTURE_REVIEW)
 
-**日期**：2026-09-07 (Phase 2 Final Correction)  
+**日期**：2026-09-07 (Phase 2 Final Correction)
 **审查目的**：消除章节导出与习题导出各自为政的潜在分裂风险，将二者收敛入统一的 Publishing / Export 管道，共享配置模型、排版基础设施、资源解析器与云端编译引擎。
 
 ---

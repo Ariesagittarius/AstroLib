@@ -10,7 +10,6 @@ import {
   clearOfflinePack,
 } from '../../src/scripts/pwa-offline-manager.ts';
 
-// 内存 Cache 模拟
 class MemoryCache {
   store = new Map<string, Response>();
 
@@ -21,7 +20,7 @@ class MemoryCache {
 
   async match(request: any): Promise<Response | undefined> {
     const key = typeof request === 'string' ? request : (request.url || '');
-    // 仿真 sw.js 的精准匹配与尾部斜杠容错匹配
+
     if (this.store.has(key)) return this.store.get(key)!.clone();
     const alt = key.endsWith('/') ? key.slice(0, -1) : key + '/';
     if (this.store.has(alt)) return this.store.get(alt)!.clone();
@@ -96,7 +95,6 @@ describe('PWA Offline Pack 真实产物端到端离线可用性测试 (Real Pack
     const packStat = fs.statSync(packPath);
     const sizeMb = packStat.size / (1024 * 1024);
 
-    // 必须经过高强度压缩，且严格小于 Vercel 100MB 静态文件上限
     expect(sizeMb).toBeGreaterThan(10);
     expect(sizeMb).toBeLessThan(100);
 
@@ -109,7 +107,6 @@ describe('PWA Offline Pack 真实产物端到端离线可用性测试 (Real Pack
     const packPath = path.join(offlineDir, 'astrolib-all.json.gz');
     const packBuffer = fs.readFileSync(packPath);
 
-    // 模拟服务端拦截 /offline-packs/astrolib-all.json.gz 并返回真实 Gzip 字节流
     global.fetch = vi.fn().mockImplementation(async (url: string) => {
       if (url === PRIMARY_PACK_URL) {
         return new Response(packBuffer, {
@@ -132,13 +129,11 @@ describe('PWA Offline Pack 真实产物端到端离线可用性测试 (Real Pack
     expect(res.total).toBeGreaterThan(500);
     expect(progressReports.includes(100)).toBe(true);
 
-    // 验证状态查询接口
     const status = await getOfflinePackStatus();
     expect(status.hasPack).toBe(true);
     expect(status.count).toBe(res.total);
     expect(Number(status.approxSizeMb)).toBeGreaterThan(100);
 
-    // 验证 Service Worker 匹配：抽取 3 篇真实核心章节，验证是否能完全离线命中
     const cache = await memoryCaches.open(PACK_CACHE_NAME);
     const testRoutes = [
       '/collections/math/linear_algebra/00_内容简介/',

@@ -1,22 +1,12 @@
-/**
- * @deprecated
- * @archived [2026-09] Typst 导出功能已按学术排版规范归档封存。
- * 现全站练习册与试卷导出统一采用基于 Jinwen-XU/homework 的 LaTeX 导出引擎：
- * @see src/publishing/latex/latex-generator.ts
- *
- * src/publishing/typst/typst-generator.ts
- * 历史版本 Typst 练习本与试卷源码生成引擎（封存备份）
- */
-
 import type { SlimQuestionItem } from '../../types/exercises';
 
 export interface TypstExportConfig {
-  template: 'handout' | 'exam'; // 讲义练习本 vs 课程自测试卷
+  template: 'handout' | 'exam';
   paperSize: 'a4' | 'b5';
   fontFamily: 'serif' | 'sans';
-  fontSize: number; // 10, 10.5, 11, 12
-  writingSpace: 'comfortable' | 'compact' | 'none'; // 留白：充裕(手写演算) / 紧凑(节约纸张) / 纯题干(无留白)
-  answerPlacement: 'appendix' | 'none'; // 文末附录参考答案与解析 / 纯题卷无答案
+  fontSize: number;
+  writingSpace: 'comfortable' | 'compact' | 'none';
+  answerPlacement: 'appendix' | 'none';
   title: string;
   subtitle?: string;
   courseName?: string;
@@ -34,9 +24,6 @@ export const DEFAULT_TYPST_CONFIG: TypstExportConfig = {
   courseName: '数学分析',
 };
 
-/**
- * 转换纸张代码为 Typst 标准名称
- */
 function getTypstPaperSize(paper: string): string {
   switch (paper) {
     case 'b5':
@@ -54,7 +41,6 @@ import {
   escapeTypstString,
 } from './syntax-converter.ts';
 
-// 重新导出语法转换纯函数，维持 100% 外部向后兼容性
 export {
   convertLatexToTypst,
   convertLatexMathToTypst,
@@ -62,24 +48,17 @@ export {
   escapeTypstString,
 };
 
-/**
- * 格式化选择题选项
- */
 function formatChoiceItem(textRaw: string): string {
   const typst = convertLatexToTypst(textRaw).trim();
   if (!typst) return '[]';
 
-  // 如果已经是纯公式 $...$
   if (typst.startsWith('$') && typst.endsWith('$') && (typst.match(/\$/g) || []).length === 2) {
     return typst;
   }
-  // 否则使用 content block 包装
+
   return `[${typst}]`;
 }
 
-/**
- * 获取留白高度数值 (cm)
- */
 function getSpaceHeight(type: string, writingSpace: 'comfortable' | 'compact' | 'none'): number {
   if (writingSpace === 'none' || type === 'choice') return 0;
 
@@ -90,16 +69,12 @@ function getSpaceHeight(type: string, writingSpace: 'comfortable' | 'compact' | 
     return 2.5;
   }
 
-  // comfortable
   if (type === 'blank') return 1.0;
   if (type === 'calc') return 5.0;
   if (type === 'proof') return 7.5;
   return 4.0;
 }
 
-/**
- * 主生成函数：根据题目列表与配置生成纯正学术出版级 Typst 文档源码
- */
 export function generateTypstDocument(
   questions: SlimQuestionItem[],
   userConfig: Partial<TypstExportConfig> = {}
@@ -107,7 +82,6 @@ export function generateTypstDocument(
   const config: TypstExportConfig = { ...DEFAULT_TYPST_CONFIG, ...userConfig };
   const typstPaper = getTypstPaperSize(config.paperSize);
 
-  // 题型分块
   const typeGroups: Record<string, SlimQuestionItem[]> = {
     choice: [],
     blank: [],
@@ -121,7 +95,6 @@ export function generateTypstDocument(
     typeGroups[t].push(q);
   });
 
-  // 字体配置：跨平台优雅学术衬线 / 无衬线字体栈
   const fontBody =
     config.fontFamily === 'serif'
       ? '("New Computer Modern", "Times New Roman", "Source Han Serif SC", "SimSun", "STSong", "Songti SC")'
@@ -222,9 +195,6 @@ export function generateTypstDocument(
 }
 `;
 
-  // -------------------------------------------------------------------------
-  // 卷头 / 章头排版
-  // -------------------------------------------------------------------------
   if (isExam) {
     code += `
 // -------------------------------------------------------------------------
@@ -241,7 +211,7 @@ export function generateTypstDocument(
 ]
 `;
   } else {
-    // 讲义练习本 Handout
+
     code += `
 // -------------------------------------------------------------------------
 // 章节讲义卷头
@@ -263,9 +233,6 @@ export function generateTypstDocument(
 `;
   }
 
-  // -------------------------------------------------------------------------
-  // 题目列表分大题渲染
-  // -------------------------------------------------------------------------
   let questionIndex = 1;
   const sectionRoman = ['一', '二', '三', '四', '五', '六', '七', '八'];
   let currentSectionIdx = 0;
@@ -295,7 +262,6 @@ export function generateTypstDocument(
       code += `#block(width: 100%, breakable: ${isBreakable})[\n`;
       code += `  *${qNum}.* #h(0.35em) ${stemTypst}\n`;
 
-      // 选择题选项排版 (#choice 宏)
       if (q.type === 'choice' && q.options && q.options.length > 0) {
         const maxOptLen = Math.max(
           ...q.options.map((o) => (o.text_raw || o.text_html || '').length)
@@ -311,7 +277,6 @@ export function generateTypstDocument(
         code += `  )\n`;
       }
 
-      // 自然书写留白空间（纯白空白，无灰底/无水纹/无虚线框）
       if (spaceHeight > 0) {
         code += `  #v(${spaceHeight}cm)\n`;
       } else {
@@ -322,9 +287,6 @@ export function generateTypstDocument(
     });
   });
 
-  // -------------------------------------------------------------------------
-  // 参考答案与提示 (Solutions & Hints)
-  // -------------------------------------------------------------------------
   if (config.answerPlacement === 'appendix') {
     code += `
 // -------------------------------------------------------------------------

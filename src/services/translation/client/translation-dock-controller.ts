@@ -1,17 +1,3 @@
-/**
- * src/services/translation/client/translation-dock-controller.ts
- * ============================================================================
- * AstroLib 双语助读侧载面板前端交互控制器
- * ============================================================================
- * 核心交互：
- * 1. 扫描正文 DOM 提取段落，并在正文段落注入 data-trans-id 标记；
- * 2. 渲染右侧卡片流，实现【段落与段落之间严格 1:1 双向对应】；
- * 3. 支持 Google 翻译 (默认) 与 Google Gemini 学术翻译提供商实时切换；
- * 4. 驱动公式 KaTeX 实时排版，悬浮双向高亮与点击平滑定位滚动；
- * 5. 遵从 SideloadManager 状态机规范，支持 Esc 键与返回大纲闭环。
- * ============================================================================
- */
-
 import { sideloadManager } from '../../../components/sideload/sideload-manager.ts';
 import { getProviderApiKey, saveProviderApiKey, AI_CONFIG_CHANGE_EVENT } from '../../../ai/ai-config.ts';
 import { ParagraphAligner } from '../paragraph-aligner.ts';
@@ -61,7 +47,6 @@ export class TranslationDockController {
   private unbindSync: (() => void) | null = null;
   private abortController: AbortController | null = null;
 
-
   public static getInstance(): TranslationDockController {
     if (!this.instance) {
       this.instance = new TranslationDockController();
@@ -73,23 +58,19 @@ export class TranslationDockController {
     if (this.isInitialized || typeof window === 'undefined') return;
     this.isInitialized = true;
 
-    // 恢复用户上次选择的翻译提供商与呈现模式
     this.currentProvider = TranslationStorage.getProvider();
     this.displayMode = TranslationStorage.getDisplayMode();
 
-    // 全局事件委托：绑定所有侧载操作、服务商切换、一键触发器
     document.addEventListener('click', (e) => {
       const target = e.target as HTMLElement | null;
       if (!target) return;
 
-      // 1. 返回大纲或关闭侧载栏
       if (target.closest('#trans-back-to-toc') || target.closest('#trans-sidebar-close')) {
         e.preventDefault();
         sideloadManager.switchToDefault();
         return;
       }
 
-      // 2. 重新翻译本节 (侧边栏刷新按钮)
       if (target.closest('#trans-sidebar-refresh')) {
         e.preventDefault();
         if (this.displayMode === 'sidebar') {
@@ -100,21 +81,18 @@ export class TranslationDockController {
         return;
       }
 
-      // 2.1 行内控制条：重新翻译全文
       if (target.closest('#trans-inline-refresh-btn')) {
         e.preventDefault();
         this.showInlineTranslations(true);
         return;
       }
 
-      // 2.2 行内控制条：退出助读
       if (target.closest('#trans-inline-exit-btn')) {
         e.preventDefault();
         this.hideInlineTranslations();
         return;
       }
 
-      // 2.3 行内控制条：就地切换翻译服务商
       const inlinePill = target.closest<HTMLButtonElement>('[data-inline-provider]');
       if (inlinePill) {
         e.preventDefault();
@@ -125,49 +103,42 @@ export class TranslationDockController {
         return;
       }
 
-      // 3. 展开/折叠翻译设置抽屉
       if (target.closest('#trans-sidebar-settings')) {
         e.preventDefault();
         this.toggleSettingsDrawer();
         return;
       }
 
-      // 4. 收起设置抽屉
       if (target.closest('#trans-settings-close')) {
         e.preventDefault();
         this.toggleSettingsDrawer(false);
         return;
       }
 
-      // 5. 展开/折叠导出抽屉
       if (target.closest('#trans-sidebar-export')) {
         e.preventDefault();
         this.toggleExportDrawer();
         return;
       }
 
-      // 6. 收起导出抽屉
       if (target.closest('#trans-export-close')) {
         e.preventDefault();
         this.toggleExportDrawer(false);
         return;
       }
 
-      // 7. 执行下载导出
       if (target.closest('#trans-export-download')) {
         e.preventDefault();
         this.handleExportDownload();
         return;
       }
 
-      // 8. 全部标为采纳
       if (target.closest('#trans-export-approve-all')) {
         e.preventDefault();
         this.handleMarkAllSatisfied();
         return;
       }
 
-      // 9. 切换导出格式
       const fmtChip = target.closest<HTMLButtonElement>('[data-export-fmt]');
       if (fmtChip) {
         e.preventDefault();
@@ -179,7 +150,6 @@ export class TranslationDockController {
         return;
       }
 
-      // 10. 切换导出范围
       const scopeChip = target.closest<HTMLButtonElement>('[data-export-scope]');
       if (scopeChip) {
         e.preventDefault();
@@ -191,35 +161,30 @@ export class TranslationDockController {
         return;
       }
 
-      // 11. 切换密码明文/掩码
       if (target.closest('#trans-key-toggle-eye')) {
         e.preventDefault();
         this.toggleKeyVisibility();
         return;
       }
 
-      // 12. 保存密钥
       if (target.closest('#trans-settings-save')) {
         e.preventDefault();
         this.handleSaveKey();
         return;
       }
 
-      // 13. 清空密钥
       if (target.closest('#trans-settings-clear')) {
         e.preventDefault();
         this.handleClearKey();
         return;
       }
 
-      // 14. 打开系统全站 AI 偏好设置
       if (target.closest('#trans-settings-more')) {
         e.preventDefault();
         this.openFullAiSettings();
         return;
       }
 
-      // 15. 切换翻译服务商 (Google / Gemini / BUPT DeepSeek)
       const chip = target.closest<HTMLButtonElement>('.trans-provider-chips [data-provider]');
       if (chip) {
         e.preventDefault();
@@ -230,7 +195,6 @@ export class TranslationDockController {
         return;
       }
 
-      // 15.1 切换译文呈现方式 (侧边栏对照 vs 段落下方显示)
       const modeChip = target.closest<HTMLButtonElement>('[data-trans-mode]');
       if (modeChip) {
         e.preventDefault();
@@ -241,7 +205,6 @@ export class TranslationDockController {
         return;
       }
 
-      // 16. 触发双语助读面板开关 (来自顶栏、正文芯片、本地导航等所有位置)
       const trigger = target.closest('[data-translation-trigger]');
       if (trigger) {
         e.preventDefault();
@@ -250,7 +213,6 @@ export class TranslationDockController {
       }
     });
 
-    // 监听输入框实时校验
     document.addEventListener('input', (e) => {
       const target = e.target as HTMLElement | null;
       if (target && target.id === 'trans-api-key-input') {
@@ -258,7 +220,6 @@ export class TranslationDockController {
       }
     });
 
-    // 回车保存
     document.addEventListener('keydown', (e) => {
       const target = e.target as HTMLElement | null;
       if (target && target.id === 'trans-api-key-input' && e.key === 'Enter') {
@@ -267,12 +228,10 @@ export class TranslationDockController {
       }
     });
 
-    // 监听全站 AI 设置变更事件联动
     window.addEventListener(AI_CONFIG_CHANGE_EVENT, () => {
       this.syncSettingsDrawerUI();
     });
 
-    // 监听全局译文呈现方式变更事件
     window.addEventListener(TRANSLATION_DISPLAY_MODE_CHANGE_EVENT, (e: any) => {
       const mode = e?.detail?.mode;
       const forceTrigger = Boolean(e?.detail?.forceTrigger);
@@ -281,7 +240,6 @@ export class TranslationDockController {
       }
     });
 
-    // 监听全局翻译服务商变更事件
     window.addEventListener(TRANSLATION_PROVIDER_CHANGE_EVENT, (e: any) => {
       const p = e?.detail?.provider as TranslationProviderId | undefined;
       if (p && p !== this.currentProvider) {
@@ -289,12 +247,11 @@ export class TranslationDockController {
       }
     });
 
-    // 监听 SideloadManager 侧载状态事件
     window.addEventListener('astrolib:sideload-change', (e: any) => {
       const activeId = e?.detail?.activePanelId;
       if (activeId === 'translate') {
         if (this.displayMode === 'inline') {
-          // 行内模式下严禁占用或影响右侧边栏，安全恢复默认大纲
+
           sideloadManager.switchToDefault();
           return;
         }
@@ -302,7 +259,6 @@ export class TranslationDockController {
       }
     });
 
-    // 页面切页路由跳转时重置段落状态与联动
     document.addEventListener('astro:page-load', () => {
       const newKey = TranslationStorage.normalizeKey();
       if (this.currentChapterKey !== newKey) {
@@ -325,7 +281,6 @@ export class TranslationDockController {
       }
     });
 
-    // 快捷键: Alt+Y (译) 与 Alt+Shift+T 开启双语助读
     window.addEventListener('keydown', (e) => {
       const target = e.target as HTMLElement | null;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'MD-OUTLINED-TEXT-FIELD' || target.isContentEditable)) {
@@ -371,18 +326,16 @@ export class TranslationDockController {
     this.syncDisplayModeChips();
 
     if (mode === 'inline') {
-      // 切换至行内段落下显示：
-      // 1. 若右侧边栏当前正处于 translate 面板，立即安全关闭并无条件退回大纲，保持右侧栏不受影响
+
       if (sideloadManager.getActivePanelId() === 'translate') {
         sideloadManager.switchToDefault();
       }
-      // 2. 无论右侧栏当前为何种面板，只要进入 inline 模式且尚未呈现行内翻译，或者显式触发/模式变更，立即在正文呈现段落下对照翻译
+
       if (!this.isInlineActive || isModeChanged || forceTrigger) {
         this.showInlineTranslations();
       }
     } else if (mode === 'sidebar') {
-      // 切换回侧边栏对照：
-      // 1. 若正文中已有行内译文，清理行内译文并呼出右侧侧载栏
+
       if (this.isInlineActive) {
         this.hideInlineTranslations();
         sideloadManager.open('translate');
@@ -402,7 +355,6 @@ export class TranslationDockController {
       }
     });
   }
-
 
   public toggleSettingsDrawer(open?: boolean): void {
     const drawer = document.getElementById('trans-settings-drawer');
@@ -563,7 +515,6 @@ export class TranslationDockController {
       }, 1500);
     }
   }
-
 
   private toggleKeyVisibility(): void {
     const input = document.getElementById('trans-api-key-input') as HTMLInputElement | null;
@@ -733,7 +684,6 @@ export class TranslationDockController {
 
     const key = input.value.trim();
 
-    // 格式阻止拦截：例如误粘了 GitHub Token
     if ((this.currentProvider === 'bupt' || this.currentProvider === 'zhipu') && key && key.startsWith('ghp_')) {
       if (alertEl) {
         alertEl.style.display = 'block';
@@ -745,7 +695,6 @@ export class TranslationDockController {
 
     saveProviderApiKey(this.currentProvider, key);
 
-    // 按钮反馈动效
     if (saveBtn) {
       const textSpan = saveBtn.querySelector('.trans-btn-text');
       const iconSpan = saveBtn.querySelector('.trans-btn-icon');
@@ -762,7 +711,6 @@ export class TranslationDockController {
 
     this.syncSettingsDrawerUI();
 
-    // 立即重新触发翻译以应用新密钥
     this.startTranslation(true);
   }
 
@@ -774,7 +722,6 @@ export class TranslationDockController {
     saveProviderApiKey(this.currentProvider, '');
     this.syncSettingsDrawerUI();
 
-    // 重新发起翻译测试默认配置
     this.startTranslation(true);
   }
 
@@ -790,7 +737,7 @@ export class TranslationDockController {
 
     if (this.currentProvider === 'bupt') {
       const key = (getProviderApiKey('bupt') || (typeof localStorage !== 'undefined' ? localStorage.getItem('astrolib_ai_provider_key_bupt') || '' : '')).trim();
-      // 只有以 sk- 开头才是合法可用的 BUPT key，过滤掉残余的 ghp_ 等错误 key
+
       if (key && key.startsWith('sk-') && !key.startsWith('sk-bupt-...')) {
         return key;
       }
@@ -840,10 +787,8 @@ export class TranslationDockController {
     this.syncSettingsDrawerUI();
     this.updateSatisfiedCountBadge();
 
-    // 若尚未加载段落或章节已更换，执行解析与翻译
     this.startTranslation(false);
   }
-
 
   private syncProviderChips(): void {
     document.querySelectorAll('.trans-provider-chips [data-provider]').forEach((el) => {
@@ -869,7 +814,6 @@ export class TranslationDockController {
     this.syncSettingsDrawerUI();
     this.syncInlineToolbarUI();
 
-    // 根据当前呈现方式，重新发起翻译以新服务商刷新内容
     if (this.displayMode === 'sidebar') {
       if (sideloadManager.getActivePanelId() === 'translate') {
         this.startTranslation(true);
@@ -884,7 +828,7 @@ export class TranslationDockController {
   public async startTranslation(forceRefresh = false): Promise<void> {
     if (this.isTranslating) {
       if (!forceRefresh) return;
-      // 切换服务商或强制刷新时，立即终止进行中的上一次翻译
+
       if (this.abortController) {
         this.abortController.abort();
         this.abortController = null;
@@ -903,7 +847,6 @@ export class TranslationDockController {
     const chapterKey = TranslationStorage.normalizeKey();
     const hasTransIds = Boolean(contentContainer.querySelector('[data-trans-id]'));
 
-    // 1. 扫描正文 DOM 提取段落
     if (this.currentChapterKey !== chapterKey || !hasTransIds || this.paragraphs.length === 0 || forceRefresh) {
       this.currentChapterKey = chapterKey;
       this.paragraphs = ParagraphAligner.extractFromArticleDom(contentContainer);
@@ -913,18 +856,14 @@ export class TranslationDockController {
       countBadge.textContent = `${this.paragraphs.length} 段`;
     }
 
-    // 2. 本地持久化缓存回填 (Hydration)
     const { hydratedCount } = TranslationStorage.hydrateUnits(chapterKey, this.paragraphs);
     this.updateSatisfiedCountBadge();
 
-    // 3. 渲染卡片骨架或已回填卡片
     this.renderSkeletonCards(dockContent, this.paragraphs);
 
-    // 4. 绑定双向悬浮与定位联动
     if (this.unbindSync) this.unbindSync();
     this.unbindSync = ParagraphAligner.bindBidirectionalSync(contentContainer, dockContent);
 
-    // 若非强制刷新，且所有段落均已从本地缓存瞬间回填完成，则实现 0 网络请求即时呈现
     if (!forceRefresh && hydratedCount === this.paragraphs.length && this.paragraphs.length > 0) {
       if (progressBar) progressBar.style.display = 'none';
       return;
@@ -940,7 +879,6 @@ export class TranslationDockController {
       progressFill.style.width = `${Math.max(10, initialPct)}%`;
     }
 
-    // 5. 分块请求翻译端点 (/api/translate)
     let completedCount = hydratedCount;
     const total = this.paragraphs.length;
     const CHUNK_SIZE = 4;
@@ -952,7 +890,6 @@ export class TranslationDockController {
         chunk.map(async (unit) => {
           if (signal.aborted) return;
 
-          // 严格跳过公式块与代码块的翻译
           if (unit.type === 'math' || unit.type === 'code') {
             unit.status = 'done';
             unit.translatedText = unit.sourceText;
@@ -960,7 +897,6 @@ export class TranslationDockController {
             return;
           }
 
-          // 若非强制刷新且该段已回填完成，直接跳过请求
           if (!forceRefresh && unit.status === 'done' && unit.translatedText) {
             this.updateCardContent(dockContent, unit);
             return;
@@ -990,7 +926,7 @@ export class TranslationDockController {
 
           if (signal.aborted) return;
           completedCount++;
-          // 局部更新卡片内容
+
           this.updateCardContent(dockContent, unit);
 
           if (progressFill) {
@@ -1001,7 +937,6 @@ export class TranslationDockController {
       );
     }
 
-    // 整章完成批量持久化更新
     const chapterTitle = document.querySelector('h1')?.textContent?.trim() || document.title;
     TranslationStorage.saveChapter(chapterKey, this.paragraphs, chapterTitle);
     this.updateSatisfiedCountBadge();
@@ -1047,32 +982,23 @@ export class TranslationDockController {
     }
   }
 
-  /**
-   * 统一翻译请求调度：采用纯客户端本地直连范式（对标 AI 解题与智能问答），
-   * 由读者浏览器直接与大模型及翻译服务通信，零依赖易崩服务端，完全无状态本地执行。
-   */
   private async requestTranslation(
     text: string,
     signal?: AbortSignal
   ): Promise<{ ok: boolean; translatedText?: string; error?: string }> {
     const apiKey = this.getEffectiveApiKey();
 
-    // 1. 若为 Google 翻译（无需密钥即可直连）或用户已在本地配置了 API Key：
-    // 优先采用纯客户端本地直连范式（对标 AI 解题与智能问答），
-    // 由读者浏览器直接与服务商通信，零依赖服务端，彻底消除 Vercel Serverless Function 500 故障
     if (this.currentProvider === 'google' || apiKey) {
       const clientRes = await this.requestClientDirectTranslation(text, apiKey, signal);
       if (clientRes.ok) {
         return clientRes;
       }
-      // 若客户端直连明确指出了鉴权或频控错误（如 Key 错误），直接呈现给用户
+
       if (clientRes.error && (clientRes.error.includes('鉴权失败') || clientRes.error.includes('频次受限'))) {
         return clientRes;
       }
     }
 
-    // 2. 若本地未配置 API Key，或客户端直连因浏览器特殊网络受阻：
-    // 尝试向全站统一服务端点发起请求（使用服务端环境变量 .env 兜底配置）
     try {
       const res = await fetch('/api/translate', {
         method: 'POST',
@@ -1093,10 +1019,9 @@ export class TranslationDockController {
         }
       }
     } catch {
-      // 服务端兜底不可达
+
     }
 
-    // 3. 服务端若未配置或调用失败，向用户明确提示配置本地 API Key
     if (!apiKey && this.currentProvider !== 'google') {
       const providerNames: Record<string, string> = {
         zhipu: '智谱 GLM-4 (open.bigmodel.cn 免费获取)',
@@ -1114,10 +1039,6 @@ export class TranslationDockController {
     return { ok: false, error: '翻译请求未成功，请检查网络或更换服务商' };
   }
 
-  /**
-   * 客户端本地直连翻译引擎（支持智谱 GLM-4、Google 翻译、Google Gemini、北邮 DeepSeek 等）
-   * 100% 运行在读者本地浏览器，无状态、低延迟、零服务端瓶颈。
-   */
   private async requestClientDirectTranslation(
     text: string,
     apiKey?: string,
@@ -1125,7 +1046,6 @@ export class TranslationDockController {
   ): Promise<{ ok: boolean; translatedText?: string; error?: string }> {
     const provider = this.currentProvider;
 
-    // 1. 智谱开放平台 GLM-4 (免费、国内免翻直连)
     if (provider === 'zhipu') {
       if (!apiKey) {
         return {
@@ -1196,7 +1116,6 @@ export class TranslationDockController {
       }
     }
 
-    // 2. Google Gemini (学术推理)
     if (provider === 'gemini') {
       if (!apiKey) {
         return {
@@ -1266,7 +1185,6 @@ export class TranslationDockController {
       }
     }
 
-    // 3. 北京邮电大学「人人有算力」校内模型服务网关
     if (provider === 'bupt') {
       const endpoint =
         typeof import.meta !== 'undefined' && import.meta.env?.DEV
@@ -1333,7 +1251,6 @@ export class TranslationDockController {
       }
     }
 
-    // 4. DeepSeek 官方
     if (provider === 'deepseek') {
       if (!apiKey) {
         return {
@@ -1393,9 +1310,8 @@ export class TranslationDockController {
       }
     }
 
-    // 5. Google 翻译 (客户端直连)
     if (provider === 'google') {
-      // 模式 A: 官方 Google Cloud Translation API（若用户配置了 AIzaSy 密钥）
+
       if (apiKey && apiKey.startsWith('AIzaSy')) {
         try {
           const maskResult = StructurePreservingMasker.mask(text, false);
@@ -1419,7 +1335,6 @@ export class TranslationDockController {
         } catch {}
       }
 
-      // 模式 B: 客户端直连 Google Chrome 高速官方协议 (Access-Control-Allow-Origin: *，零配额无配置)
       try {
         const maskResult = StructurePreservingMasker.mask(text, false);
         const res = await fetch('https://clients5.google.com/translate_a/t?client=dict-chrome-ex', {
@@ -1454,7 +1369,6 @@ export class TranslationDockController {
         if (signal?.aborted) throw clientErr;
       }
 
-      // 模式 C: 降级 GTX 协议
       try {
         const maskResult = StructurePreservingMasker.mask(text, false);
         const gtxUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-CN&dt=t&q=${encodeURIComponent(maskResult.maskedText)}`;
@@ -1479,9 +1393,6 @@ export class TranslationDockController {
     return { ok: false, error: '未识别的翻译服务商' };
   }
 
-  /**
-   * 清洗模型输出，移除思考链、XML 边界与多余的 markdown 代码块包裹，防短标题扩写
-   */
   private cleanClientLlmOutput(raw: string, sourceText = ''): string {
     let text = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
     text = text.replace(/<\/?(?:source_text|text_to_translate|translation|translated_text)>/gi, '').trim();
@@ -1581,7 +1492,6 @@ export class TranslationDockController {
       })
       .join('');
 
-    // 绑定卡片交互与公式渲染
     paragraphs.forEach((unit) => {
       const card = container.querySelector<HTMLElement>(`[data-trans-card-id="${unit.id}"]`);
       if (card) {
@@ -1843,17 +1753,14 @@ export class TranslationDockController {
     const chapterKey = TranslationStorage.normalizeKey();
     const hasTransIds = Boolean(contentContainer.querySelector('[data-trans-id]'));
 
-    // 1. 扫描正文 DOM 提取段落
     if (this.currentChapterKey !== chapterKey || !hasTransIds || this.paragraphs.length === 0 || forceRefresh) {
       this.currentChapterKey = chapterKey;
       this.paragraphs = ParagraphAligner.extractFromArticleDom(contentContainer);
     }
     if (this.paragraphs.length === 0) return;
 
-    // 2. 本地持久化缓存回填
     const { hydratedCount } = TranslationStorage.hydrateUnits(chapterKey, this.paragraphs);
 
-    // 3. 渲染行内控制条与行内对照译文块
     this.renderInlineToolbar(contentContainer);
     this.renderInlineBlocks(contentContainer, this.paragraphs);
 
@@ -1865,7 +1772,6 @@ export class TranslationDockController {
     this.abortController = new AbortController();
     const signal = this.abortController.signal;
 
-    // 4. 分块请求翻译
     const total = this.paragraphs.length;
     const CHUNK_SIZE = 4;
 
@@ -1876,7 +1782,6 @@ export class TranslationDockController {
         chunk.map(async (unit) => {
           if (signal.aborted) return;
 
-          // 严格跳过公式块与代码块的翻译
           if (unit.type === 'math' || unit.type === 'code') {
             unit.status = 'done';
             unit.translatedText = unit.sourceText;
@@ -1942,7 +1847,7 @@ export class TranslationDockController {
 
   private renderInlineBlocks(container: HTMLElement, paragraphs: ParagraphUnit[]): void {
     for (const unit of paragraphs) {
-      // 严格跳过公式与代码块，不注入任何行内翻译结构
+
       if (unit.type === 'math' || unit.type === 'code') continue;
 
       const srcEl = container.querySelector<HTMLElement>(`[data-trans-id="${unit.id}"]`);
@@ -1978,10 +1883,10 @@ export class TranslationDockController {
           srcEl.appendChild(inlineBlock);
         } else {
           srcEl.after(inlineBlock);
-          // 若在算法等预格式化块内，清理与下个元素之间多余的纯空行文本节点，避免 pre-wrap 导致巨大空白
+
           if (isInsideAlgorithm) {
             const nextNode = inlineBlock.nextSibling;
-            if (nextNode && nextNode.nodeType === 3 /* TEXT_NODE */ && /^\s+$/.test(nextNode.nodeValue || '')) {
+            if (nextNode && nextNode.nodeType === 3  && /^\s+$/.test(nextNode.nodeValue || '')) {
               nextNode.nodeValue = '';
             }
           }
@@ -2212,7 +2117,6 @@ export class TranslationDockController {
   }
 }
 
-// 自动初始化挂载
 if (typeof window !== 'undefined') {
   const initController = () => {
     TranslationDockController.getInstance().init();

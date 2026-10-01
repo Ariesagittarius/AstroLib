@@ -47,7 +47,6 @@ async function main() {
     fs.mkdirSync(OUT_DIR_DIST, { recursive: true });
   }
 
-  // 清理可能遗留的超过 100MB 的旧版未压缩全站大文件（防止 Vercel 静态部署超限失败）
   const legacyAllJson = path.join(OUT_DIR_DIST, 'astrolib-all.json');
   if (fs.existsSync(legacyAllJson)) {
     try {
@@ -91,13 +90,11 @@ async function main() {
       const bookRawBytes = Buffer.byteLength(bookJson, 'utf8');
       const bookRawMb = (bookRawBytes / (1024 * 1024)).toFixed(2);
 
-      // Gzip 高强度压缩 (level 9)
       const bookGzBuffer = zlib.gzipSync(Buffer.from(bookJson, 'utf8'), { level: 9 });
       const bookGzMb = (bookGzBuffer.length / (1024 * 1024)).toFixed(2);
       const bookGzFileName = `${col.slug}-${book.slug}.json.gz`;
       fs.writeFileSync(path.join(OUT_DIR_DIST, bookGzFileName), bookGzBuffer);
 
-      // 若未压缩体积低于 85MB，同时生成一份未压缩 json 供兼容性使用；超出则仅保留 .gz
       const bookRawFileName = `${col.slug}-${book.slug}.json`;
       if (Number(bookRawMb) < 85) {
         fs.writeFileSync(path.join(OUT_DIR_DIST, bookRawFileName), bookJson, 'utf8');
@@ -124,7 +121,6 @@ async function main() {
     }
   }
 
-  // 合成全站 Gzip 汇总包 (压缩后 ~45MB，安全满足 Vercel 100MB 限制)
   console.log(`\n📦 正在合成全站 Gzip 压缩汇总包 (astrolib-all.json.gz)...`);
   const allPackData = {
     version: '1.1.0',
@@ -141,7 +137,6 @@ async function main() {
   fs.writeFileSync(path.join(OUT_DIR_DIST, allGzFileName), allGzBuffer);
   console.log(`  ✔ 全站总包已生成: ${allGzFileName} (共 ${totalArticles} 篇, Gzip: ${allGzMb} MB / 原始: ${allRawMb} MB)`);
 
-  // 写入清单文件
   manifest.totalArticles = totalArticles;
   manifest.allPackFileName = allGzFileName;
   manifest.allSizeMb = allGzMb;

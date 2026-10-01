@@ -1,15 +1,3 @@
-/**
- * src/publishing/typography/presets/classic.ts
- * 经典 TeX 预设 (Classic) - Core 核心通用学术预设
- *
- * 设计理念：
- * - 传统 TeX 庄重学术气质与纯正数理风格
- * - 中文正文：Fandol 中文 (FandolSong)
- * - 中文标题：Fandol 黑体 (FandolHei)
- * - 西文与公式：Latin Modern (Roman & Math)
- * - 辅助楷体：Fandol 楷体 (FandolKai)
- */
-
 import type { TypographyPreset } from '../types.ts';
 
 export const PRESET_CLASSIC: TypographyPreset = {

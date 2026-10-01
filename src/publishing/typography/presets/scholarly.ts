@@ -1,15 +1,3 @@
-/**
- * src/publishing/typography/presets/scholarly.ts
- * 现代学术教材预设 (Scholarly) - Core 核心通用学术预设
- *
- * 设计理念：
- * - 现代中文大学数理教材行业典范
- * - 中文正文：思源宋体 (Source Han Serif SC)
- * - 中文标题：思源黑体 (Source Han Sans SC)
- * - 西文与公式：STIX Two (Text & Math)
- * - 辅助楷体：霞鹜文楷 GB Lite (LXGW WenKai GB Lite)
- */
-
 import type { TypographyPreset } from '../types.ts';
 
 export const PRESET_SCHOLARLY: TypographyPreset = {

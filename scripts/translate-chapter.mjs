@@ -1,16 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/translate-chapter.mjs
- * ============================================================================
- * AstroLib 学术教材结构无损翻译命令行工具 (CLI)
- * ============================================================================
- * 使用示例：
- *   node scripts/translate-chapter.mjs --file src/content/docs/collections/cs/algorithms/01.1_basic-arithmetic.mdx
- *   node scripts/translate-chapter.mjs --file ... --provider bupt --dry-run
- *   node scripts/translate-chapter.mjs --file ... --provider gemini --dry-run
- *   node scripts/translate-chapter.mjs --file ... --output ...
- * ============================================================================
- */
 
 import fs from 'node:fs';
 import path from 'node:path';

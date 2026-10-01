@@ -1,23 +1,7 @@
-/**
- * src/services/translation/export/translation-exporter.ts
- * ============================================================================
- * AstroLib 双语助读多格式导出器 (Headless Translation Exporter)
- * ============================================================================
- * 职责：
- * 1. 独立纯函数/无头编译器，遵循 Rule 2 (Publishing is independent)；
- * 2. 支持导出为双语对照 Markdown (.md)、纯中文排版 Markdown (.md)、
- *    双语对照文本 (.txt) 以及结构化数据 (.json)；
- * 3. 支持「全量段落」与「仅已采纳/满意段落」两种导出范围筛选；
- * 4. 驱动浏览器端原生无服务器无痛文件下载 (Blob Stream)。
- * ============================================================================
- */
-
 import type { ParagraphUnit, TranslationExportFormat, TranslationExportOptions } from '../types.ts';
 
 export class TranslationExporter {
-  /**
-   * 格式化并生成导出文件内容
-   */
+
   public static generateExport(
     units: ParagraphUnit[],
     options: TranslationExportOptions
@@ -75,10 +59,6 @@ export class TranslationExporter {
     }
   }
 
-  /**
-   * 导出为高质量双语对照 Markdown (.md)
-   * 体例：英文原文在上，中文译文在下（或引用块包裹），保留完整 KaTeX 公式与代码结构
-   */
   public static exportAsBilingualMarkdown(
     units: ParagraphUnit[],
     options: { chapterTitle?: string; onlySatisfied?: boolean }
@@ -136,10 +116,6 @@ export class TranslationExporter {
     return lines.join('\n');
   }
 
-  /**
-   * 导出为纯中文排版 Markdown (.md)
-   * 体例：通篇标准中文教材，保留原始公式与结构
-   */
   public static exportAsChineseMarkdown(
     units: ParagraphUnit[],
     options: { chapterTitle?: string; onlySatisfied?: boolean }
@@ -175,9 +151,6 @@ export class TranslationExporter {
     return lines.join('\n');
   }
 
-  /**
-   * 导出为双语对齐纯文本 (.txt)
-   */
   public static exportAsBilingualText(
     units: ParagraphUnit[],
     options: { chapterTitle?: string; onlySatisfied?: boolean }
@@ -210,9 +183,6 @@ export class TranslationExporter {
     return lines.join('\n');
   }
 
-  /**
-   * 导出为结构化 JSON 数据 (.json)
-   */
   public static exportAsJson(
     units: ParagraphUnit[],
     options: { chapterTitle?: string; onlySatisfied?: boolean }
@@ -239,9 +209,6 @@ export class TranslationExporter {
     return JSON.stringify(payload, null, 2);
   }
 
-  /**
-   * 驱动浏览器下载文件
-   */
   public static downloadFile(filename: string, content: string, mimeType: string = 'text/markdown;charset=utf-8'): void {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
 

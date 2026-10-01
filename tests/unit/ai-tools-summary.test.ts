@@ -53,9 +53,6 @@ describe('AI Tools Exploration Summary & Auto-collapse (Unit Tests)', () => {
         { name: 'book_slice_search' },
       ];
 
-      // 6 次检索 (1 book_retrieve + 5 book_slice_search)
-      // 5 段阅读 (4 book_read_section + 1 book_chunk)
-      // 1 次大纲 (1 book_chapter_outline)
       const summary = formatExplorationSummary(toolLog);
       expect(summary).toBe('已完成 12 步工具探索 (6 次检索，5 段阅读，1 次大纲)');
     });

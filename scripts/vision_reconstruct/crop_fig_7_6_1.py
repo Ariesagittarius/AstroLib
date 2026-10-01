@@ -9,8 +9,6 @@ doc = pymupdf.open(PDF_PATH)
 zoom = 2.0
 mat = pymupdf.Matrix(zoom, zoom)
 
-# 图 7.6.1 哈夫曼编码树图
-# Doc page 265 (phys_266, book 251), bbox [80, 350, 460, 575]
 page = doc[265]
 rect = pymupdf.Rect(80, 350, 460, 575)
 pix = page.get_pixmap(matrix=mat, clip=rect)

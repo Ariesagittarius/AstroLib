@@ -1,8 +1,3 @@
-/**
- * src/scripts/settings/pwa-service.ts
- * PWA 独立桌面应用与全量离线资源包管理服务
- */
-
 import { getOfflinePackStatus } from '../pwa-offline-manager';
 
 let deferredInstallPrompt: any = null;
@@ -11,12 +6,10 @@ export function setDeferredInstallPrompt(prompt: any): void {
   deferredInstallPrompt = prompt;
 }
 
-/** 供外部或事件获取当前暂存的安装提示 */
 export function getDeferredInstallPrompt(): any {
   return deferredInstallPrompt;
 }
 
-/** 同步当前所有实例的 PWA 独立应用卡片状态 */
 export function syncAllPwaCard(): void {
   if (typeof document === 'undefined') return;
   const isStandalone = (
@@ -79,7 +72,6 @@ export function syncAllPwaCard(): void {
     }
   });
 
-  // 同步全量离线数据包状态
   getOfflinePackStatus().then((status) => {
     document.querySelectorAll<HTMLElement>('.ft-pwa-pack-box').forEach((box) => {
       const badge = box.querySelector<HTMLElement>('[data-pwa-pack-badge]');

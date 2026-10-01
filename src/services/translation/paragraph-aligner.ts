@@ -1,33 +1,14 @@
-/**
- * src/services/translation/paragraph-aligner.ts
- * ============================================================================
- * AstroLib 段落对齐与双向联动引擎 (Paragraph Aligner & Bidirectional Linker)
- * ============================================================================
- * 核心职责：
- * 1. 从正文 DOM 或 Markdown 文本中提取离散的段落单元（ParagraphUnit）；
- * 2. 保证每个段落具备唯一的索引与标识（data-trans-id="p-0", "p-1"...）；
- * 3. 驱动正文段落与右侧侧载栏（Sideload Dock）翻译卡片之间的双向联动：
- *    - 侧载卡片悬浮 (Hover) -> 正文对应段落微光高亮 (Highlight)；
- *    - 侧载卡片点击 (Click) -> 正文平滑定位滚动至视口中央 (Scroll-into-view)；
- *    - 正文滚动阅读 (IntersectionObserver) -> 侧载栏同步高亮当前聚焦段落。
- * ============================================================================
- */
-
 import type { ParagraphUnit } from './types.ts';
 
 export class ParagraphAligner {
-  /**
-   * 从纯 Markdown/MDX 文本中分块提取段落（可用于构建期或预编译）
-   */
+
   static extractFromMarkdown(markdown: string): ParagraphUnit[] {
     if (!markdown) return [];
 
-    // 剔除 Frontmatter 与 import 声明
     const body = markdown
       .replace(/^---[\r\n]+[\s\S]*?[\r\n]+---(?:\r?\n)?/, '')
       .replace(/^(?:import\s+[\s\S]*?from\s+['"][^'"]+['"];?|import\s+['"][^'"]+['"];?)\s*$/gm, '');
 
-    // 双换行分段切分（保留卡片与公式块完整性）
     const rawBlocks = body.split(/\n\s*\n/);
     const units: ParagraphUnit[] = [];
     let index = 0;
@@ -62,9 +43,6 @@ export class ParagraphAligner {
     return units;
   }
 
-  /**
-   * 从客户端文章容器 DOM 提取所有可读段落单元并赋予 data-trans-id 标记
-   */
   static extractFromArticleDom(container: HTMLElement): ParagraphUnit[] {
     if (!container) return [];
 
@@ -86,20 +64,18 @@ export class ParagraphAligner {
     let index = 0;
 
     elements.forEach((el) => {
-      // 避免选取已存在的行内翻译块内部的节点
+
       if (el.closest?.('.trans-inline-block')) {
         return;
       }
 
-      // 如果当前元素位于某个卡片内部且自身不是卡片容器，跳过（后续在卡片容器处统一提取其标题与正文）
       const parentCard = el.closest?.<HTMLElement>(cardSelector);
       if (parentCard && parentCard !== el) {
         return;
       }
 
-      // 1. 卡片类组件：分别提取卡片标题和卡片正文区域
       if (this.isCardElement(el)) {
-        // 1.1 提取卡片标题
+
         const headerEl = el.querySelector<HTMLElement>('.card-header');
         const titleText = el.getAttribute('data-title')?.trim() || (headerEl ? this.getElementTextWithFormulas(headerEl, true) : '');
 
@@ -119,10 +95,9 @@ export class ParagraphAligner {
           index++;
         }
 
-        // 1.2 提取卡片正文（必须在 card-body 区域内部提取）
         const bodyEl = el.querySelector<HTMLElement>('.card-body');
         if (bodyEl) {
-          // 抓取 card-body 内的段落与表格单元格，跳过行间公式与代码块
+
           const bodyParas = Array.from(bodyEl.querySelectorAll<HTMLElement>('p, blockquote, th, td')).filter(
             (p) => {
               if (p.closest('.katex-display') || p.closest('pre') || p.closest('.trans-inline-block')) {
@@ -160,7 +135,7 @@ export class ParagraphAligner {
               index++;
             });
           } else {
-            // 若 card-body 无显式 <p> 标签，直接将 card-body 本身作为正文单元
+
             const text = this.getElementTextWithFormulas(bodyEl);
             if (text && text.length >= 2) {
               const transId = `p-${index}`;
@@ -181,7 +156,6 @@ export class ParagraphAligner {
         return;
       }
 
-      // 2. 严格跳过行间公式 (.katex-display) 与算法代码块 (pre) 的翻译提取
       const tagName = el.tagName.toLowerCase();
       if (
         tagName === 'pre' ||
@@ -192,12 +166,10 @@ export class ParagraphAligner {
         return;
       }
 
-      // 3. 表格单元格处理：若当前元素是 p 但位于单元格内，跳过（统一以 th / td 为单位提取）
       if (tagName === 'p' && el.closest?.('th, td')) {
         return;
       }
 
-      // 表格单元格 (th, td) 提取
       if (tagName === 'th' || tagName === 'td') {
         if (el.querySelector('th, td')) {
           return;
@@ -205,7 +177,7 @@ export class ParagraphAligner {
 
         const text = this.getElementTextWithFormulas(el);
         if (!text || text.length < 2) return;
-        // 必须包含自然语言文字（字母或汉字），跳过纯数字、纯符号或仅有图片的单元格
+
         if (!/[a-zA-Z\u4e00-\u9fa5]/.test(text)) return;
 
         const transId = `p-${index}`;
@@ -264,9 +236,6 @@ export class ParagraphAligner {
     );
   }
 
-  /**
-   * 绑定正文与侧载对照卡片的双向高亮与平滑定位滚动
-   */
   static bindBidirectionalSync(
     articleContainer: HTMLElement,
     dockContainer: HTMLElement,
@@ -274,7 +243,6 @@ export class ParagraphAligner {
   ): () => void {
     const cleanupFns: Array<() => void> = [];
 
-    // 1. 侧载卡片事件监听
     const handleDockMouseOver = (e: MouseEvent) => {
       const card = (e.target as HTMLElement).closest<HTMLElement>('[data-trans-card-id]');
       if (!card) return;
@@ -313,7 +281,6 @@ export class ParagraphAligner {
       dockContainer.removeEventListener('click', handleDockClick);
     });
 
-    // 2. 正文段落事件监听 (Hover 回溯高亮侧载对应卡片)
     const handleArticleMouseOver = (e: MouseEvent) => {
       const block = (e.target as HTMLElement).closest<HTMLElement>('[data-trans-id]');
       if (!block) return;
@@ -378,20 +345,16 @@ export class ParagraphAligner {
     }
   }
 
-  /**
-   * 从带有 KaTeX 的 DOM 元素中提取保留公式语法的文本内容
-   */
   private static getElementTextWithFormulas(el: HTMLElement, isHeader = false): string {
-    // 若元素携带 data-latex (由 rehype-katex-source 回填)，优先提取原生 LaTeX
+
     const clone = typeof el.cloneNode === 'function' ? (el.cloneNode(true) as HTMLElement) : el;
 
     if (clone.querySelectorAll) {
-      // 若是卡片标题，先移除图标和辅助元素，避免文字受损
+
       if (isHeader) {
         clone.querySelectorAll<HTMLElement>('.card-mdicon, svg, [aria-hidden="true"]').forEach((icon) => icon.remove?.());
       }
 
-      // 针对行内公式替换为 $data-latex$
       clone.querySelectorAll<HTMLElement>('.katex[data-latex], [data-latex]').forEach((kEl) => {
         const latex = kEl.getAttribute('data-latex') || '';
         const isDisplay = kEl.classList.contains('katex-display') || kEl.getAttribute('data-display') === 'true';

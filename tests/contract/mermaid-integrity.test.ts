@@ -1,12 +1,3 @@
-/**
- * Mermaid 图表语法与公式契约测试 (Mermaid Integrity Invariant Contract)
- *
- * 守护目标：
- * 1. 全站所有 MDX 章节中的 Mermaid 图表必须 100% 通过 mermaid.parse 官方词法与语法分析；
- * 2. 边标签中含有括号、花括号、下划线等特殊字符时必须使用双引号包裹，杜绝 Parse error；
- * 3. 节点中包含数学公式时，必须符合 Mermaid 官方规范使用双美元符号 $$...$$，严禁裸单美元符号。
- */
-
 import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -94,7 +85,7 @@ describe('Mermaid Integrity Invariant Contract (图表语法与数学公式契�
         }
 
         if (inMermaid) {
-          // 检查 -->|label|，若包含 () 且未加引号
+
           const match = line.match(/(-->|---\||--\s*\|)([^"|\n]+)\|/);
           if (match) {
             const label = match[2];

@@ -12,7 +12,6 @@ describe('Academic Algorithm Block & Typography Invariant Contract', () => {
     expect(fs.existsSync(componentPath)).toBe(true);
     const code = fs.readFileSync(componentPath, 'utf-8');
 
-    // 必须包含顶底粗线、无圆角、无背景、强制 text-indent: 0
     expect(code).toContain('border-top: 2px solid');
     expect(code).toContain('border-bottom: 2px solid');
     expect(code).toContain('border-radius: 0 !important');
@@ -31,7 +30,6 @@ describe('Academic Algorithm Block & Typography Invariant Contract', () => {
     expect(css).toContain('.algorithm-body');
     expect(css).toContain('.algorithm-caption');
 
-    // 核心防御 3 reset
     expect(css).toMatch(/\.academic-algorithm[\s\S]*?text-indent:\s*0\s*!important/);
   });
 
@@ -55,13 +53,11 @@ describe('Academic Algorithm Block & Typography Invariant Contract', () => {
   it('06.6_shortest-paths.mdx (Floyd-Warshall 与 TSP) 必须正确采用 <Algorithm> 并具备正确的伪代码层级缩进', () => {
     const content = fs.readFileSync(path.join(algosDir, '06.6_shortest-paths.mdx'), 'utf-8');
 
-    // Floyd-Warshall 算法块
     expect(content).toContain('for $i = 1$ to $n$:');
     expect(content).toContain('    for $j = 1$ to $n$:');
     expect(content).toContain('        $\\text{dist}(i, j, 0) = \\infty$');
     expect(content).toContain('            $\\text{dist}(i, j, k) = \\min\\{\\text{dist}(i, k, k - 1) + \\text{dist}(k, j, k - 1), \\text{dist}(i, j, k - 1)\\}');
 
-    // TSP 算法块
     expect(content).toContain('$C(\\{1\\}, 1) = 0$');
     expect(content).toContain('for $s = 2$ to $n$:');
     expect(content).toContain('    for all subsets $S \\subseteq \\{1, 2, \\ldots, n\\}$ of size s and containing 1:');

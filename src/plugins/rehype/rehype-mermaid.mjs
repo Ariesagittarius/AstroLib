@@ -1,9 +1,3 @@
-/**
- * rehype-mermaid：在 HTML AST (HAST) 中拦截 language-mermaid 代码块，
- * 将其转换为自带 data-mermaid-code 属性的 .mermaid-container DOM 结构，
- * 避免 Expressive Code 将流程图代码块误渲染为带有语法高亮 HTML 标签的代码框。
- */
-
 import { visitParents, SKIP } from 'unist-util-visit-parents';
 import { toText } from 'hast-util-to-text';
 

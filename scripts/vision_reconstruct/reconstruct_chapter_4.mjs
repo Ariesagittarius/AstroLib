@@ -11,14 +11,13 @@ const rebuildDir = path.join(ROOT_DIR, 'src/content/docs/collections/math/engine
 if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 if (!fs.existsSync(rebuildDir)) fs.mkdirSync(rebuildDir, { recursive: true });
 
-// Chapter 4 Section Specifications
 const SECTIONS = [
   {
     chapter: 4,
     section: '4.1',
     title: '几类简单的微分方程',
     startPage: 262,
-    endPage: 282, // Cuts before 习题 4.1 on Phys 282
+    endPage: 282,
     leadIn: `本节主要讨论几类能直接利用积分方法求解的简单微分方程及其应用。\n\n`
   },
   {
@@ -26,7 +25,7 @@ const SECTIONS = [
     section: '4.2',
     title: '高阶线性微分方程',
     startPage: 284,
-    endPage: 308, // Cuts before 习题 4.2 on Phys 308
+    endPage: 308,
     leadIn: `本节讨论高阶线性微分方程的有关概念、解的性质与结构，以及常系数高阶线性微分方程的求解方法。\n\n`
   },
   {
@@ -34,7 +33,7 @@ const SECTIONS = [
     section: '4.3',
     title: '线性微分方程组',
     startPage: 310,
-    endPage: 335, // Cuts before 习题 4.3 on Phys 335
+    endPage: 335,
     leadIn: `本节讨论线性微分方程组解的结构、常系数线性微分方程组的求解方法及其应用。\n\n`
   }
 ];
@@ -64,11 +63,11 @@ export function buildPrompt(section, title, isFirstBatch, isLastBatch) {
 3. 100% 工业级 KaTeX 纯净度与独立块级：
    - 变量符号统一用 $...$（如 $x, y, y', y'', \\Delta x, \\mathrm{d}x, \\frac{\\mathrm{d}y}{\\mathrm{d}x}$）；
    - 【带编号公式】：所有带 \\tag{X.Y} 的公式必须作为独立块级公式，且前后必须留有纯空行：
-     
+
      $$
      formula \\tag{X.Y}
      $$
-     
+
      严禁写在行内 $...$ 中，严禁紧贴正文不留空行（否则 KaTeX 将抛出 parse error 报错）。
 
 4. 响应式配图规范（本章配图均已就绪）：
@@ -96,18 +95,15 @@ export function buildPrompt(section, title, isFirstBatch, isLastBatch) {
 export function cleanBatchText(rawText) {
   let cleaned = rawText.trim();
 
-  // Strip thinking outline preamble if present
   cleaned = cleaned.replace(/^---[\s\S]*?\*\*思考大纲\*\*[\s\S]*?---\s*/i, '');
   cleaned = cleaned.replace(/^---[\s\S]*?#\s*教材扫描图内容描述[\s\S]*?---\s*/i, '');
   cleaned = cleaned.replace(/^[\s\S]*?<\/thought>\s*/i, '');
 
-  // Strip outer code blocks
   if (cleaned.startsWith('```')) {
     cleaned = cleaned.replace(/^```[a-zA-Z0-9_-]*\r?\n/, '');
     cleaned = cleaned.replace(/\r?\n```\s*$/, '');
   }
 
-  // Remove trailing exercises if any leaked
   cleaned = cleaned.replace(/##\s*习题\s*[\d\.]+[\s\S]*$/, '');
   cleaned = cleaned.replace(/###\s*习题\s*[\d\.]+[\s\S]*$/, '');
   cleaned = cleaned.replace(/<Knowledge[^>]*title=["'][^"']*习题[\s\S]*$/, '');
@@ -119,47 +115,37 @@ export function cleanBatchText(rawText) {
 export function postProcessSectionMdx(content) {
   let text = content;
 
-  // 1. Convert any single $ with \tag to $$ display block
   text = text.replace(/(?<!\$)\$(?!\$)([^$\r\n]*?\\tag\{[^{}]+\}[^$\r\n]*?)\$(?!\$)/g, (match, formula) => {
     return `\n\n$$\n${formula.trim()}\n$$\n\n`;
   });
 
-  // 2. Ensure every single-line $$ formula containing \tag is broken into 3 lines with blank lines
   text = text.replace(/(?<!\$)\$\$([^\$\r\n]*?\\tag\{[^{}]+\}[^\$\r\n]*?)\$\$(?!\$)/g, (match, formula) => {
     return `\n\n$$\n${formula.trim()}\n$$\n\n`;
   });
 
-  // 3. Ensure blank line before and after display $$ blocks (using callbacks to avoid $$ string replacement bug)
   text = text.replace(/([^\r\n])\s*\n\$\$/g, (match, p1) => `${p1}\n\n$$`);
   text = text.replace(/\$\$\s*\n([^\r\n])/g, (match, p1) => `$$\n\n${p1}`);
 
-  // 4. Normalize KaTeX circled numbers in tag
   text = text.replace(/\\tag\{①\}/g, '\\tag{1}');
   text = text.replace(/\\tag\{②\}/g, '\\tag{2}');
   text = text.replace(/\\tag\{③\}/g, '\\tag{3}');
 
-  // 5. Ensure blank line after opening JSX cards and before closing JSX cards
   text = text.replace(/(<(?:Knowledge|Solution|Example|SideNote|Block|Analysis)[^>]*>)([^\r\n])/g, '$1\n\n$2');
   text = text.replace(/([^\r\n])(<\/(?:Knowledge|Solution|Example|SideNote|Block|Analysis)>)/g, '$1\n\n$2');
 
-  // 6. Truncate exercises if any leaked
   text = text.replace(/<Knowledge[^>]*title=["'][^"']*习题[\s\S]*$/, '');
   text = text.replace(/##\s*习题[\s\S]*$/, '');
   text = text.replace(/###\s*习题[\s\S]*$/, '');
   text = text.replace(/第\s*4\s*章习题[\s\S]*$/, '');
   text = text.replace(/综合练习题[\s\S]*$/, '');
 
-  // 7. Balance JSX tags with token stream to remove orphan closing tags and close unclosed cards
   text = balanceJsxCards(text);
 
-  // 8. Remove hallucinated table image placeholders if any
   text = text.replace(/<figure[^>]*>\s*<img[^>]*src=["'][^"']*fig_4_\d+_\d+\.png["'][^>]*>\s*<figcaption>[^<]*<\/figcaption>\s*<\/figure>/gi, '');
 
-  // 9. Image path normalization
   text = text.replace(/!\[(.*?)\]\(images\//g, '![$1](./images/');
   text = text.replace(/!\[(.*?)\]\(\.\/images\/fig_4\.(\d+)\.png\)/g, '![$1](./images/fig_4_$2.png)');
 
-  // 10. Deduplicate excessive newlines
   text = text.replace(/\n{4,}/g, '\n\n\n');
 
   return text.trim();
@@ -187,24 +173,22 @@ export function balanceJsxCards(text) {
       } else {
         const idxInStack = stack.map(s => s.tag).lastIndexOf(tagName);
         if (idxInStack === -1) {
-          // Orphan closing tag
+
           toRemove.push({ start: match.index, end: match.index + match[0].length });
         } else {
-          // Unclosed inner tags exist: pop until matching tag
+
           stack.splice(idxInStack);
         }
       }
     }
   }
 
-  // Remove orphan closing tags in reverse order
   let balancedText = text;
   toRemove.sort((a, b) => b.start - a.start);
   for (const r of toRemove) {
     balancedText = balancedText.slice(0, r.start) + balancedText.slice(r.end);
   }
 
-  // Close remaining unclosed tags
   while (stack.length > 0) {
     const unclosed = stack.pop();
     balancedText += `\n</${unclosed.tag}>\n`;
@@ -245,7 +229,6 @@ async function runSection(sec) {
   console.log(`📖 物理页范围：Phys ${sec.startPage} ~ ${sec.endPage} (共 ${sec.endPage - sec.startPage + 1} 页)`);
   console.log(`======================================================`);
 
-  // Build batches (3 pages per batch)
   const batches = [];
   for (let p = sec.startPage; p <= sec.endPage; p += 3) {
     const bEnd = Math.min(p + 2, sec.endPage);
@@ -299,7 +282,6 @@ async function runSection(sec) {
     chunkOutputs.push(chunkText);
   }
 
-  // Assemble and Post-Process Section MDX
   const joinedBody = chunkOutputs.join('\n\n');
   const processedBody = postProcessSectionMdx(joinedBody);
   const finalMdx = buildHeader(sec.section, sec.title, sec.leadIn) + processedBody + buildFooter(sec.chapter, sec.section, sec.title);
@@ -308,7 +290,6 @@ async function runSection(sec) {
   fs.writeFileSync(targetFile, finalMdx, 'utf-8');
   console.log(`\n📄 [Assembly] 已保存第 ${sec.section} 节到：${targetFile} (${finalMdx.length} 字符)`);
 
-  // Quality scan gate
   console.log(`🔍 [Scan] 正在校验 ${path.basename(targetFile)}...`);
   try {
     const scanOut = execSync(`node scripts/scan-mdx.mjs "${targetFile}"`, { encoding: 'utf-8' });
@@ -327,7 +308,6 @@ async function main() {
   console.log(`🌟 目标章节：4.1 ~ 4.3 全量 3 个大节 (Phys 262 ~ 335, 共 74 页)`);
   console.log(`=============================================================\n`);
 
-  // 1. Materialize chapter 4 figures first
   try {
     console.log(`[Materialize] 正在实体化第四章插图资产...`);
     execSync(`.venv\\Scripts\\python scripts/vision_reconstruct/materialize_figures.py --chapter 4`, { stdio: 'inherit' });
@@ -335,7 +315,6 @@ async function main() {
     console.warn(`[Materialize Warning]`, err.message);
   }
 
-  // 2. Ensure pages exist
   const missingPages = [];
   for (let p = 262; p <= 335; p++) {
     if (!fs.existsSync(path.join(chPagesDir, `phys_${p}.jpg`))) {
@@ -367,7 +346,6 @@ async function main() {
   console.log(`已完成文件清单：`);
   completedFiles.forEach(f => console.log(`  - ${f}`));
 
-  // Global validation on Chapter 4
   console.log(`\n🔍 正在对第四章执行全量质量门禁复核...`);
   try {
     const globalScan = execSync(`node scripts/scan-mdx.mjs "src/content/docs/collections/math/engineering_analysis_rebuild"`, { encoding: 'utf-8' });

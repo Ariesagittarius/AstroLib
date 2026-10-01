@@ -1,11 +1,6 @@
 import { NOTICE_PRESETS } from './notices.config.ts';
 import type { Collection, Book } from '../types/collections.ts';
 
-/**
- * 中央书库配置：合集（collections）与图书（books）的唯一数据源。
- *
- * 遵循 Rule 1 (UI is not a domain model) & Rule 3 (Source of Truth)
- */
 export const collections: Collection[] = [
   {
     id: 'math',

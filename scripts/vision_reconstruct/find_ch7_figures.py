@@ -5,7 +5,6 @@ doc = pymupdf.open("task/通信原理(第5版) -- 杨鸿文 -- 5, 2024 -- 北京
 
 fig_regex = re.compile(r"图\s*7\s*[\.．]\s*(\d+)")
 
-# Book page 239 is doc page 253 (phys_254) to book page 284 is doc page 298 (phys_299)
 for p in range(253, 298):
     phys_p = p + 1
     page = doc[p]

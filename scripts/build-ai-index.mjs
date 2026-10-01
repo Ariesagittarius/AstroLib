@@ -1,11 +1,3 @@
-// scripts/build-ai-index.mjs
-// 构建期：为所有图书生成“书内检索索引”，输出到 public/ai-index/<col>-<book>.json
-// （astro build 会把 public/ 原样拷到 dist/，这些文件即可被客户端懒加载）。
-//
-// 开关：src/config/features.config.mjs 里 features.aiAsk.enabled —— 关闭则跳过生成。
-// 用法：
-//   node scripts/build-ai-index.mjs                  # 生成全部图书
-//   node scripts/build-ai-index.mjs --only math_analysis   # 只生成指定 slug
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

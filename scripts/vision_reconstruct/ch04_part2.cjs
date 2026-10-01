@@ -1,4 +1,3 @@
-// scripts/vision_reconstruct/ch04_part2.cjs
 module.exports = [
   {
     id: "LAG-TB-CH04-Q17",

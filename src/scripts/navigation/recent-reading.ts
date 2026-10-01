@@ -1,15 +1,9 @@
-/**
- * 最近阅读记录维护模块
- * 监听页面加载与 SPA 路由切换，将当前正在阅读的书籍与章节标题持久化到 localStorage
- */
-
 declare global {
   interface Window {
     __renderCustomMath?: (el?: any) => void;
   }
 }
 
-// 保持全局兼容性桩函数（构建期已完成转译，运行期无需操作）
 if (typeof window !== 'undefined' && !window.__renderCustomMath) {
   window.__renderCustomMath = function renderCustomMath() {};
 }
@@ -44,7 +38,6 @@ export function updateRecentReading(): void {
   }
 }
 
-// 初始化自执行：初次加载与 SPA 换页时触发更新
 if (typeof window !== 'undefined') {
   updateRecentReading();
   document.addEventListener('astro:page-load', () => {

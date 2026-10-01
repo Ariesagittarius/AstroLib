@@ -1,7 +1,3 @@
-/**
- * 全局数字资源弹层事件委托 (零生命周期依赖，无论初次加载还是 SPA 换页均即刻响应)
- */
-
 declare global {
   interface Window {
     __academicResourceBound?: boolean;
@@ -28,7 +24,6 @@ export function initAcademicResourcePopovers(): void {
     const target = e.target;
     if (!(target instanceof Element)) return;
 
-    // 1. 点击关闭按钮
     const closeBtn = target.closest('.js-resource-close, .js-qr-close');
     if (closeBtn) {
       e.stopPropagation();
@@ -45,7 +40,6 @@ export function initAcademicResourcePopovers(): void {
       return;
     }
 
-    // 2. 点击触发按钮
     const triggerBtn = target.closest('.js-resource-trigger, .js-qr-trigger');
     if (triggerBtn) {
       e.stopPropagation();
@@ -69,12 +63,10 @@ export function initAcademicResourcePopovers(): void {
       return;
     }
 
-    // 3. 点击在 popover 内部：阻止冒泡关闭
     if (target.closest('.js-resource-popover, .js-qr-popover')) {
       return;
     }
 
-    // 4. 点击其他任何区域：收起所有打开的 popover
     closeAllResourcePopovers();
   });
 

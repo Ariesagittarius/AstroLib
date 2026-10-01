@@ -9,7 +9,7 @@ for p in range(232, 248):
     blocks = page.get_text("blocks")
     for b in blocks:
         text = b[4].strip()
-        # Look for 图 or figure indicators
+
         for line in text.splitlines():
             line_clean = line.strip()
             if "6.5." in line_clean:

@@ -163,7 +163,7 @@
       ▼
 [public/data/cross-ref/<col>-<book>.json] (全书所有编号 → 章节/URL/标题的映射表)
       │
-      ├──► [构建期 (rehypeCrossRef)]: 
+      ├──► [构建期 (rehypeCrossRef)]:
       │       在 Markdown 处理阶段直接将正文出现的“例题 1.74”转换为
       │       <span class="block-ref-badge" data-target="...">例题 1.74</span>
       │

@@ -1,10 +1,10 @@
 # AstroLib 全方位性能优化验收报告 (Web Performance Optimization Report)
 
-**项目**: AstroLib (`my-astro-site`)  
-**技术栈**: Astro 7.2.8 + Starlight 0.41.9 + Vite 8.2.2 / Rolldown + 纯 SSG  
-**测试基准**: 595 页面完整静态构建产物、真实 DOM 复杂度与加载链路全流程度量  
-**日期**: 2026-09-06  
-**工程师**: Senior Web Performance Engineer  
+**项目**: AstroLib (`my-astro-site`)
+**技术栈**: Astro 7.2.8 + Starlight 0.41.9 + Vite 8.2.2 / Rolldown + 纯 SSG
+**测试基准**: 595 页面完整静态构建产物、真实 DOM 复杂度与加载链路全流程度量
+**日期**: 2026-09-06
+**工程师**: Senior Web Performance Engineer
 
 ---
 

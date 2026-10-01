@@ -1,8 +1,3 @@
-/**
- * src/types/features.ts
- * AstroLib 特性模块 (Feature Registry) 类型契约定义
- */
-
 export type FeatureCategory = 'reader' | 'extra' | 'dev';
 
 export interface FeatureConfig {
