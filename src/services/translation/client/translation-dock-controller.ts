@@ -21,6 +21,7 @@ import {
   TRANSLATION_PROVIDER_CHANGE_EVENT,
 } from '../storage/translation-storage.ts';
 import { TranslationExporter } from '../export/translation-exporter.ts';
+import { StructurePreservingMasker } from '../masker.ts';
 import type { ParagraphUnit, TranslationProviderId, TranslationExportFormat, TranslationDisplayMode } from '../types.ts';
 
 let _renderMath: any = null;
@@ -955,41 +956,19 @@ export class TranslationDockController {
           }
 
           try {
-            const apiKey = this.getEffectiveApiKey();
-
-            // 调用本地 Dev Server 接口
-            const res = await fetch('/api/translate', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              signal,
-              body: JSON.stringify({
-                text: unit.sourceText,
-                provider: this.currentProvider,
-                preserveStructure: true,
-                ...(apiKey ? { apiKey } : {}),
-              }),
-            });
-
+            const res = await this.requestTranslation(unit.sourceText, signal);
             if (signal.aborted) return;
 
-            if (res.ok) {
-              const data = await res.json();
-              if (data.ok && data.translatedText) {
-                unit.translatedText = data.translatedText;
-                unit.status = 'done';
-                unit.provider = this.currentProvider;
-                unit.error = undefined;
-                TranslationStorage.saveUnit(chapterKey, unit);
-              } else {
-                unit.translatedText = unit.sourceText;
-                unit.status = 'error';
-                unit.error = data.error || '翻译失败';
-              }
+            if (res.ok && res.translatedText) {
+              unit.translatedText = res.translatedText;
+              unit.status = 'done';
+              unit.provider = this.currentProvider;
+              unit.error = undefined;
+              TranslationStorage.saveUnit(chapterKey, unit);
             } else {
-              const errData = await res.json().catch(() => null);
               unit.translatedText = unit.sourceText;
               unit.status = 'error';
-              unit.error = errData?.error || `HTTP ${res.status}`;
+              unit.error = res.error || '翻译失败';
             }
           } catch (err: any) {
             if (signal.aborted) return;
@@ -1033,37 +1012,18 @@ export class TranslationDockController {
     }
     card.classList.remove('trans-card-error');
 
-    const apiKey = this.getEffectiveApiKey();
-
     try {
-      const res = await fetch('/api/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: unit.sourceText,
-          provider: this.currentProvider,
-          preserveStructure: true,
-          ...(apiKey ? { apiKey } : {}),
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.ok && data.translatedText) {
-          unit.translatedText = data.translatedText;
-          unit.status = 'done';
-          unit.provider = this.currentProvider;
-          unit.error = undefined;
-          TranslationStorage.saveUnit(TranslationStorage.normalizeKey(), unit);
-          this.updateSatisfiedCountBadge();
-        } else {
-          unit.status = 'error';
-          unit.error = data.error || '翻译失败';
-        }
+      const res = await this.requestTranslation(unit.sourceText);
+      if (res.ok && res.translatedText) {
+        unit.translatedText = res.translatedText;
+        unit.status = 'done';
+        unit.provider = this.currentProvider;
+        unit.error = undefined;
+        TranslationStorage.saveUnit(TranslationStorage.normalizeKey(), unit);
+        this.updateSatisfiedCountBadge();
       } else {
-        const errData = await res.json().catch(() => null);
         unit.status = 'error';
-        unit.error = errData?.error || `HTTP ${res.status}`;
+        unit.error = res.error || '翻译失败';
       }
     } catch (err: any) {
       unit.status = 'error';
@@ -1074,6 +1034,221 @@ export class TranslationDockController {
     if (dockContent) {
       this.updateCardContent(dockContent, unit);
     }
+  }
+
+  /**
+   * 统一翻译请求调度：优先请求全站服务端点 (/api/translate)，在 404 或网络不可达时智能客户端直连降级
+   */
+  private async requestTranslation(
+    text: string,
+    signal?: AbortSignal
+  ): Promise<{ ok: boolean; translatedText?: string; error?: string }> {
+    const apiKey = this.getEffectiveApiKey();
+
+    // 1. 优先尝试请求全站统一翻译接口 (/api/translate)
+    try {
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal,
+        body: JSON.stringify({
+          text,
+          provider: this.currentProvider,
+          preserveStructure: true,
+          ...(apiKey ? { apiKey } : {}),
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ok && data.translatedText) {
+          return { ok: true, translatedText: data.translatedText };
+        }
+        return { ok: false, error: data.error || '翻译失败' };
+      }
+
+      // 如果返回非 404（例如 400 校验错误或 500 业务明确错误）
+      if (res.status !== 404) {
+        const errData = await res.json().catch(() => null);
+        return { ok: false, error: errData?.error || `HTTP ${res.status}` };
+      }
+    } catch (netErr: any) {
+      if (signal?.aborted) throw netErr;
+      // 网络连接异常或服务端 404，平滑降级至客户端直连
+    }
+
+    // 2. 若服务端端点返回 404 或不可达，进行智能客户端直连降级处理
+    return await this.requestClientDirectTranslation(text, apiKey, signal);
+  }
+
+  /**
+   * 客户端无状态直连翻译降级处理（支持智谱 GLM-4 与 Google Gemini）
+   */
+  private async requestClientDirectTranslation(
+    text: string,
+    apiKey?: string,
+    signal?: AbortSignal
+  ): Promise<{ ok: boolean; translatedText?: string; error?: string }> {
+    const provider = this.currentProvider;
+
+    if (provider === 'zhipu') {
+      if (!apiKey) {
+        return {
+          ok: false,
+          error: '未配置智谱 API Key，请在侧栏右上角设置中填写 (open.bigmodel.cn 免费获取)',
+        };
+      }
+
+      try {
+        const maskResult = StructurePreservingMasker.mask(text, false);
+        const res = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          signal,
+          body: JSON.stringify({
+            model: 'glm-4-flash',
+            temperature: 0.1,
+            messages: [
+              {
+                role: 'system',
+                content:
+                  '你是一个无状态的高校教材纯文本翻译引擎。你的唯一任务是将输入的英文直接翻译为规范的简体中文。\n【核心铁律】：1. 严禁扩写；2. 严格 1:1 对等；3. 形如 ⟦ASTRO_TOK_N⟧ 的占位符必须原封不动保留；4. 仅输出翻译结果本身。',
+              },
+              {
+                role: 'user',
+                content: `请直接翻译以下英文内容为简体中文（严禁扩写、仅输出译文）：\n<source_text>\n${maskResult.maskedText}\n</source_text>`,
+              },
+            ],
+          }),
+        });
+
+        if (!res.ok) {
+          const errText = await res.text().catch(() => '');
+          let msg = `HTTP ${res.status}`;
+          try {
+            const j = JSON.parse(errText);
+            if (j?.error?.message) msg = j.error.message;
+          } catch {}
+          return { ok: false, error: `智谱 API 异常 (${msg})` };
+        }
+
+        const data = await res.json();
+        let content = data?.choices?.[0]?.message?.content;
+        if (typeof content !== 'string') {
+          return { ok: false, error: '智谱 API 未返回有效内容' };
+        }
+
+        content = content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        content = content.replace(/<\/?(?:source_text|translation|translated_text)>/gi, '').trim();
+        if (content.startsWith('```') && content.endsWith('```')) {
+          content = content.replace(/^```(?:markdown|md|text)?\n([\s\S]*?)\n```$/i, '$1').trim();
+        }
+        content = content.replace(/^(?:好的[，,！!]?|以下是翻译[：:]?|翻译如下[：:]?|译文[：:]?)\s*/i, '').trim();
+
+        if (maskResult.tokens.size > 0) {
+          const unmasked = StructurePreservingMasker.unmask(content, maskResult.tokens);
+          content = unmasked.restoredText;
+        }
+
+        return { ok: true, translatedText: content };
+      } catch (err: any) {
+        if (signal?.aborted) throw err;
+        return { ok: false, error: err?.message || '智谱直连翻译失败' };
+      }
+    }
+
+    if (provider === 'gemini') {
+      if (!apiKey) {
+        return {
+          ok: false,
+          error: '未配置 Gemini API Key，请在侧栏右上角设置中填写 (aistudio.google.com)',
+        };
+      }
+
+      try {
+        const maskResult = StructurePreservingMasker.mask(text, false);
+        const res = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          signal,
+          body: JSON.stringify({
+            model: 'gemini-3.8-flash',
+            temperature: 0.1,
+            messages: [
+              {
+                role: 'system',
+                content:
+                  '你是一个无状态的高校教材纯文本翻译引擎。你的唯一任务是将输入的英文直接翻译为规范的简体中文。\n【核心铁律】：1. 严禁扩写；2. 严格 1:1 对等；3. 形如 ⟦ASTRO_TOK_N⟧ 的占位符必须原封不动保留；4. 仅输出翻译结果本身。',
+              },
+              {
+                role: 'user',
+                content: `请直接翻译以下英文内容为简体中文（严禁扩写、仅输出译文）：\n<source_text>\n${maskResult.maskedText}\n</source_text>`,
+              },
+            ],
+          }),
+        });
+
+        if (!res.ok) {
+          const errText = await res.text().catch(() => '');
+          return { ok: false, error: `Gemini API 异常 (HTTP ${res.status}): ${errText.slice(0, 100)}` };
+        }
+
+        const data = await res.json();
+        let content = data?.choices?.[0]?.message?.content;
+        if (typeof content !== 'string') {
+          return { ok: false, error: 'Gemini API 未返回有效内容' };
+        }
+
+        content = content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        content = content.replace(/<\/?(?:source_text|translation|translated_text)>/gi, '').trim();
+        if (content.startsWith('```') && content.endsWith('```')) {
+          content = content.replace(/^```(?:markdown|md|text)?\n([\s\S]*?)\n```$/i, '$1').trim();
+        }
+        content = content.replace(/^(?:好的[，,！!]?|以下是翻译[：:]?|翻译如下[：:]?|译文[：:]?)\s*/i, '').trim();
+
+        if (maskResult.tokens.size > 0) {
+          const unmasked = StructurePreservingMasker.unmask(content, maskResult.tokens);
+          content = unmasked.restoredText;
+        }
+
+        return { ok: true, translatedText: content };
+      } catch (err: any) {
+        if (signal?.aborted) throw err;
+        return { ok: false, error: err?.message || 'Gemini 直连翻译失败' };
+      }
+    }
+
+    if (provider === 'google') {
+      if (apiKey && apiKey.startsWith('AIzaSy')) {
+        try {
+          const maskResult = StructurePreservingMasker.mask(text, false);
+          const url = `https://translation.googleapis.com/language/translate/v2?key=${encodeURIComponent(apiKey)}`;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json; charset=utf-8' },
+            signal,
+            body: JSON.stringify({ q: maskResult.maskedText, source: 'en', target: 'zh-CN', format: 'text' }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            let trans = data?.data?.translations?.[0]?.translatedText || '';
+            if (maskResult.tokens.size > 0) {
+              trans = StructurePreservingMasker.unmask(trans, maskResult.tokens).restoredText;
+            }
+            return { ok: true, translatedText: trans };
+          }
+        } catch {}
+      }
+      return { ok: false, error: '翻译服务端点未就绪 (HTTP 404)' };
+    }
+
+    return { ok: false, error: '当前环境暂未连接到校内翻译端点' };
   }
 
   private renderSkeletonCards(container: HTMLElement, paragraphs: ParagraphUnit[]): void {
@@ -1455,39 +1630,19 @@ export class TranslationDockController {
           }
 
           try {
-            const apiKey = this.getEffectiveApiKey();
-            const res = await fetch('/api/translate', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              signal,
-              body: JSON.stringify({
-                text: unit.sourceText,
-                provider: this.currentProvider,
-                preserveStructure: true,
-                ...(apiKey ? { apiKey } : {}),
-              }),
-            });
-
+            const res = await this.requestTranslation(unit.sourceText, signal);
             if (signal.aborted) return;
 
-            if (res.ok) {
-              const data = await res.json();
-              if (data.ok && data.translatedText) {
-                unit.translatedText = data.translatedText;
-                unit.status = 'done';
-                unit.provider = this.currentProvider;
-                unit.error = undefined;
-                TranslationStorage.saveUnit(chapterKey, unit);
-              } else {
-                unit.translatedText = unit.sourceText;
-                unit.status = 'error';
-                unit.error = data.error || '翻译失败';
-              }
+            if (res.ok && res.translatedText) {
+              unit.translatedText = res.translatedText;
+              unit.status = 'done';
+              unit.provider = this.currentProvider;
+              unit.error = undefined;
+              TranslationStorage.saveUnit(chapterKey, unit);
             } else {
-              const errData = await res.json().catch(() => null);
               unit.translatedText = unit.sourceText;
               unit.status = 'error';
-              unit.error = errData?.error || `HTTP ${res.status}`;
+              unit.error = res.error || '翻译失败';
             }
           } catch (err: any) {
             if (signal.aborted) return;
@@ -1587,10 +1742,21 @@ export class TranslationDockController {
     const isSatisfied = Boolean(unit.isSatisfied);
 
     if (isError) {
-      block.innerHTML = `<div class="trans-inline-error"><span class="trans-inline-error-text">⚠️ 翻译未成功 (${this.escapeHtml(unit.error || '请求异常')})</span><button type="button" class="trans-inline-retry-btn">重试</button></div>`;
+      const isKeyError = (unit.error || '').includes('Key') || (unit.error || '').includes('密钥') || (unit.error || '').includes('401');
+      const fixKeyBtn = isKeyError ? '<button type="button" class="trans-inline-fix-key-btn">配置密钥</button>' : '';
+      block.innerHTML = `<div class="trans-inline-error"><span class="trans-inline-error-text">⚠️ 翻译未成功 (${this.escapeHtml(unit.error || '请求异常')})</span><button type="button" class="trans-inline-retry-btn">重试</button>${fixKeyBtn}</div>`;
       block.querySelector('.trans-inline-retry-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
         this.retrySingleUnitInline(block, unit);
+      });
+      block.querySelector('.trans-inline-fix-key-btn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.displayMode === 'sidebar') {
+          this.toggleSettingsDrawer(true);
+        } else {
+          sideloadManager.open('translate');
+          this.toggleSettingsDrawer(true);
+        }
       });
       return;
     }
@@ -1670,34 +1836,17 @@ export class TranslationDockController {
     if (textEl) {
       textEl.innerHTML = '<div class="trans-skeleton-line"></div>';
     }
-    const apiKey = this.getEffectiveApiKey();
     try {
-      const res = await fetch('/api/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: unit.sourceText,
-          provider: this.currentProvider,
-          preserveStructure: true,
-          ...(apiKey ? { apiKey } : {}),
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.ok && data.translatedText) {
-          unit.translatedText = data.translatedText;
-          unit.status = 'done';
-          unit.provider = this.currentProvider;
-          unit.error = undefined;
-          TranslationStorage.saveUnit(TranslationStorage.normalizeKey(), unit);
-        } else {
-          unit.status = 'error';
-          unit.error = data.error || '翻译失败';
-        }
+      const res = await this.requestTranslation(unit.sourceText);
+      if (res.ok && res.translatedText) {
+        unit.translatedText = res.translatedText;
+        unit.status = 'done';
+        unit.provider = this.currentProvider;
+        unit.error = undefined;
+        TranslationStorage.saveUnit(TranslationStorage.normalizeKey(), unit);
       } else {
-        const errData = await res.json().catch(() => null);
         unit.status = 'error';
-        unit.error = errData?.error || `HTTP ${res.status}`;
+        unit.error = res.error || '翻译失败';
       }
     } catch (err: any) {
       unit.status = 'error';
