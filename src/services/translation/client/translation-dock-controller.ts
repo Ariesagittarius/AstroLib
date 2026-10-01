@@ -783,7 +783,10 @@ export class TranslationDockController {
   }
 
   private getEffectiveApiKey(): string | undefined {
-    if (this.currentProvider === 'google') return undefined;
+    if (this.currentProvider === 'google') {
+      const key = (getProviderApiKey('google' as any) || (typeof localStorage !== 'undefined' ? localStorage.getItem('astrolib_ai_provider_key_google') || '' : '')).trim();
+      return key && key.startsWith('AIzaSy') ? key : undefined;
+    }
 
     if (this.currentProvider === 'bupt') {
       const key = (getProviderApiKey('bupt') || (typeof localStorage !== 'undefined' ? localStorage.getItem('astrolib_ai_provider_key_bupt') || '' : '')).trim();
@@ -805,6 +808,14 @@ export class TranslationDockController {
     if (this.currentProvider === 'zhipu') {
       const key = (getProviderApiKey('zhipu') || (typeof localStorage !== 'undefined' ? localStorage.getItem('astrolib_ai_provider_key_zhipu') || '' : '')).trim();
       if (key && !key.startsWith('ghp_')) {
+        return key;
+      }
+      return undefined;
+    }
+
+    if (this.currentProvider === 'deepseek') {
+      const key = (getProviderApiKey('deepseek') || (typeof localStorage !== 'undefined' ? localStorage.getItem('astrolib_ai_provider_key_deepseek') || '' : '')).trim();
+      if (key && key.startsWith('sk-')) {
         return key;
       }
       return undefined;
@@ -1037,7 +1048,8 @@ export class TranslationDockController {
   }
 
   /**
-   * 统一翻译请求调度：优先请求全站服务端点 (/api/translate)，在 404 或网络不可达时智能客户端直连降级
+   * 统一翻译请求调度：采用纯客户端本地直连范式（对标 AI 解题与智能问答），
+   * 由读者浏览器直接与大模型及翻译服务通信，零依赖易崩服务端，完全无状态本地执行。
    */
   private async requestTranslation(
     text: string,
@@ -1045,7 +1057,22 @@ export class TranslationDockController {
   ): Promise<{ ok: boolean; translatedText?: string; error?: string }> {
     const apiKey = this.getEffectiveApiKey();
 
-    // 1. 优先尝试请求全站统一翻译接口 (/api/translate)
+    // 1. 若为 Google 翻译（无需密钥即可直连）或用户已在本地配置了 API Key：
+    // 优先采用纯客户端本地直连范式（对标 AI 解题与智能问答），
+    // 由读者浏览器直接与服务商通信，零依赖服务端，彻底消除 Vercel Serverless Function 500 故障
+    if (this.currentProvider === 'google' || apiKey) {
+      const clientRes = await this.requestClientDirectTranslation(text, apiKey, signal);
+      if (clientRes.ok) {
+        return clientRes;
+      }
+      // 若客户端直连明确指出了鉴权或频控错误（如 Key 错误），直接呈现给用户
+      if (clientRes.error && (clientRes.error.includes('鉴权失败') || clientRes.error.includes('频次受限'))) {
+        return clientRes;
+      }
+    }
+
+    // 2. 若本地未配置 API Key，或客户端直连因浏览器特殊网络受阻：
+    // 尝试向全站统一服务端点发起请求（使用服务端环境变量 .env 兜底配置）
     try {
       const res = await fetch('/api/translate', {
         method: 'POST',
@@ -1064,25 +1091,32 @@ export class TranslationDockController {
         if (data.ok && data.translatedText) {
           return { ok: true, translatedText: data.translatedText };
         }
-        return { ok: false, error: data.error || '翻译失败' };
       }
-
-      // 如果返回非 404（例如 400 校验错误或 500 业务明确错误）
-      if (res.status !== 404) {
-        const errData = await res.json().catch(() => null);
-        return { ok: false, error: errData?.error || `HTTP ${res.status}` };
-      }
-    } catch (netErr: any) {
-      if (signal?.aborted) throw netErr;
-      // 网络连接异常或服务端 404，平滑降级至客户端直连
+    } catch {
+      // 服务端兜底不可达
     }
 
-    // 2. 若服务端端点返回 404 或不可达，进行智能客户端直连降级处理
-    return await this.requestClientDirectTranslation(text, apiKey, signal);
+    // 3. 服务端若未配置或调用失败，向用户明确提示配置本地 API Key
+    if (!apiKey && this.currentProvider !== 'google') {
+      const providerNames: Record<string, string> = {
+        zhipu: '智谱 GLM-4 (open.bigmodel.cn 免费获取)',
+        gemini: 'Google Gemini (aistudio.google.com)',
+        deepseek: 'DeepSeek (api.deepseek.com)',
+        bupt: 'DeepSeek (北京邮电大学)',
+      };
+      const name = providerNames[this.currentProvider] || this.currentProvider;
+      return {
+        ok: false,
+        error: `未配置 API Key，请在侧栏右上角设置中填写 ${name}`,
+      };
+    }
+
+    return { ok: false, error: '翻译请求未成功，请检查网络或更换服务商' };
   }
 
   /**
-   * 客户端无状态直连翻译降级处理（支持智谱 GLM-4 与 Google Gemini）
+   * 客户端本地直连翻译引擎（支持智谱 GLM-4、Google 翻译、Google Gemini、北邮 DeepSeek 等）
+   * 100% 运行在读者本地浏览器，无状态、低延迟、零服务端瓶颈。
    */
   private async requestClientDirectTranslation(
     text: string,
@@ -1091,6 +1125,7 @@ export class TranslationDockController {
   ): Promise<{ ok: boolean; translatedText?: string; error?: string }> {
     const provider = this.currentProvider;
 
+    // 1. 智谱开放平台 GLM-4 (免费、国内免翻直连)
     if (provider === 'zhipu') {
       if (!apiKey) {
         return {
@@ -1115,7 +1150,7 @@ export class TranslationDockController {
               {
                 role: 'system',
                 content:
-                  '你是一个无状态的高校教材纯文本翻译引擎。你的唯一任务是将输入的英文直接翻译为规范的简体中文。\n【核心铁律】：1. 严禁扩写；2. 严格 1:1 对等；3. 形如 ⟦ASTRO_TOK_N⟧ 的占位符必须原封不动保留；4. 仅输出翻译结果本身。',
+                  '你是一个无状态的高校教材纯文本翻译引擎。你的唯一任务是将输入的英文直接翻译为规范的简体中文。\n【核心铁律】：1. 严禁扩写，严禁添加任何解释；2. 严格 1:1 对等；3. 形如 ⟦ASTRO_TOK_N⟧ 的占位符必须原封不动保留；4. 仅输出翻译结果本身。',
               },
               {
                 role: 'user',
@@ -1132,6 +1167,12 @@ export class TranslationDockController {
             const j = JSON.parse(errText);
             if (j?.error?.message) msg = j.error.message;
           } catch {}
+          if (res.status === 401) {
+            return { ok: false, error: '智谱 API Key 鉴权失败，请检查密钥是否正确' };
+          }
+          if (res.status === 429) {
+            return { ok: false, error: '智谱 API 请求频次受限 (429)，请稍后重试' };
+          }
           return { ok: false, error: `智谱 API 异常 (${msg})` };
         }
 
@@ -1141,12 +1182,7 @@ export class TranslationDockController {
           return { ok: false, error: '智谱 API 未返回有效内容' };
         }
 
-        content = content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
-        content = content.replace(/<\/?(?:source_text|translation|translated_text)>/gi, '').trim();
-        if (content.startsWith('```') && content.endsWith('```')) {
-          content = content.replace(/^```(?:markdown|md|text)?\n([\s\S]*?)\n```$/i, '$1').trim();
-        }
-        content = content.replace(/^(?:好的[，,！!]?|以下是翻译[：:]?|翻译如下[：:]?|译文[：:]?)\s*/i, '').trim();
+        content = this.cleanClientLlmOutput(content, text);
 
         if (maskResult.tokens.size > 0) {
           const unmasked = StructurePreservingMasker.unmask(content, maskResult.tokens);
@@ -1160,6 +1196,7 @@ export class TranslationDockController {
       }
     }
 
+    // 2. Google Gemini (学术推理)
     if (provider === 'gemini') {
       if (!apiKey) {
         return {
@@ -1170,7 +1207,12 @@ export class TranslationDockController {
 
       try {
         const maskResult = StructurePreservingMasker.mask(text, false);
-        const res = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
+        const endpoint =
+          typeof import.meta !== 'undefined' && import.meta.env?.DEV
+            ? '/api/proxy/gemini/v1beta/openai/chat/completions'
+            : 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json; charset=utf-8',
@@ -1184,7 +1226,7 @@ export class TranslationDockController {
               {
                 role: 'system',
                 content:
-                  '你是一个无状态的高校教材纯文本翻译引擎。你的唯一任务是将输入的英文直接翻译为规范的简体中文。\n【核心铁律】：1. 严禁扩写；2. 严格 1:1 对等；3. 形如 ⟦ASTRO_TOK_N⟧ 的占位符必须原封不动保留；4. 仅输出翻译结果本身。',
+                  '你是一个无状态的高校教材纯文本翻译引擎。你的唯一任务是将输入的英文直接翻译为规范的简体中文。\n【核心铁律】：1. 严禁扩写，严禁添加任何解释；2. 严格 1:1 对等；3. 形如 ⟦ASTRO_TOK_N⟧ 的占位符必须原封不动保留；4. 仅输出翻译结果本身。',
               },
               {
                 role: 'user',
@@ -1196,7 +1238,12 @@ export class TranslationDockController {
 
         if (!res.ok) {
           const errText = await res.text().catch(() => '');
-          return { ok: false, error: `Gemini API 异常 (HTTP ${res.status}): ${errText.slice(0, 100)}` };
+          let msg = `HTTP ${res.status}`;
+          try {
+            const j = JSON.parse(errText);
+            if (j?.error?.message) msg = j.error.message;
+          } catch {}
+          return { ok: false, error: `Gemini API 异常 (${msg})` };
         }
 
         const data = await res.json();
@@ -1205,12 +1252,7 @@ export class TranslationDockController {
           return { ok: false, error: 'Gemini API 未返回有效内容' };
         }
 
-        content = content.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
-        content = content.replace(/<\/?(?:source_text|translation|translated_text)>/gi, '').trim();
-        if (content.startsWith('```') && content.endsWith('```')) {
-          content = content.replace(/^```(?:markdown|md|text)?\n([\s\S]*?)\n```$/i, '$1').trim();
-        }
-        content = content.replace(/^(?:好的[，,！!]?|以下是翻译[：:]?|翻译如下[：:]?|译文[：:]?)\s*/i, '').trim();
+        content = this.cleanClientLlmOutput(content, text);
 
         if (maskResult.tokens.size > 0) {
           const unmasked = StructurePreservingMasker.unmask(content, maskResult.tokens);
@@ -1224,7 +1266,136 @@ export class TranslationDockController {
       }
     }
 
+    // 3. 北京邮电大学「人人有算力」校内模型服务网关
+    if (provider === 'bupt') {
+      const endpoint =
+        typeof import.meta !== 'undefined' && import.meta.env?.DEV
+          ? '/api/proxy/bupt/chat/completions'
+          : 'https://myai.bupt.edu.cn/llm-gw/v1/chat/completions';
+
+      try {
+        const maskResult = StructurePreservingMasker.mask(text, false);
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json; charset=utf-8',
+        };
+        if (apiKey) {
+          headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers,
+          signal,
+          body: JSON.stringify({
+            model: 'deepseek-v4-flash',
+            temperature: 0.1,
+            messages: [
+              {
+                role: 'system',
+                content:
+                  '你是一个无状态的高校教材纯文本翻译引擎。你的唯一任务是将输入的英文直接翻译为规范的简体中文。\n【核心铁律】：1. 严禁扩写，严禁添加任何解释；2. 严格 1:1 对等；3. 形如 ⟦ASTRO_TOK_N⟧ 的占位符必须原封不动保留；4. 仅输出翻译结果本身。',
+              },
+              {
+                role: 'user',
+                content: `请直接翻译以下英文内容为简体中文（严禁扩写、仅输出译文）：\n<source_text>\n${maskResult.maskedText}\n</source_text>`,
+              },
+            ],
+          }),
+        });
+
+        if (!res.ok) {
+          const errText = await res.text().catch(() => '');
+          let msg = `HTTP ${res.status}`;
+          try {
+            const j = JSON.parse(errText);
+            if (j?.error?.message) msg = j.error.message;
+          } catch {}
+          return { ok: false, error: `北邮校内网关异常 (${msg})` };
+        }
+
+        const data = await res.json();
+        let content = data?.choices?.[0]?.message?.content;
+        if (typeof content !== 'string') {
+          return { ok: false, error: '北邮网关未返回有效内容' };
+        }
+
+        content = this.cleanClientLlmOutput(content, text);
+
+        if (maskResult.tokens.size > 0) {
+          const unmasked = StructurePreservingMasker.unmask(content, maskResult.tokens);
+          content = unmasked.restoredText;
+        }
+
+        return { ok: true, translatedText: content };
+      } catch (err: any) {
+        if (signal?.aborted) throw err;
+        return { ok: false, error: err?.message || '北邮校内网关直连失败' };
+      }
+    }
+
+    // 4. DeepSeek 官方
+    if (provider === 'deepseek') {
+      if (!apiKey) {
+        return {
+          ok: false,
+          error: '未配置 DeepSeek API Key，请在侧栏右上角设置中填写 (api.deepseek.com)',
+        };
+      }
+
+      try {
+        const maskResult = StructurePreservingMasker.mask(text, false);
+        const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          signal,
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            temperature: 0.1,
+            messages: [
+              {
+                role: 'system',
+                content:
+                  '你是一个无状态的高校教材纯文本翻译引擎。你的唯一任务是将输入的英文直接翻译为规范的简体中文。\n【核心铁律】：1. 严禁扩写，严禁添加任何解释；2. 严格 1:1 对等；3. 形如 ⟦ASTRO_TOK_N⟧ 的占位符必须原封不动保留；4. 仅输出翻译结果本身。',
+              },
+              {
+                role: 'user',
+                content: `请直接翻译以下英文内容为简体中文（严禁扩写、仅输出译文）：\n<source_text>\n${maskResult.maskedText}\n</source_text>`,
+              },
+            ],
+          }),
+        });
+
+        if (!res.ok) {
+          const errText = await res.text().catch(() => '');
+          return { ok: false, error: `DeepSeek API 异常 (HTTP ${res.status}): ${errText.slice(0, 100)}` };
+        }
+
+        const data = await res.json();
+        let content = data?.choices?.[0]?.message?.content;
+        if (typeof content !== 'string') {
+          return { ok: false, error: 'DeepSeek API 未返回有效内容' };
+        }
+
+        content = this.cleanClientLlmOutput(content, text);
+
+        if (maskResult.tokens.size > 0) {
+          const unmasked = StructurePreservingMasker.unmask(content, maskResult.tokens);
+          content = unmasked.restoredText;
+        }
+
+        return { ok: true, translatedText: content };
+      } catch (err: any) {
+        if (signal?.aborted) throw err;
+        return { ok: false, error: err?.message || 'DeepSeek 直连翻译失败' };
+      }
+    }
+
+    // 5. Google 翻译 (客户端直连)
     if (provider === 'google') {
+      // 模式 A: 官方 Google Cloud Translation API（若用户配置了 AIzaSy 密钥）
       if (apiKey && apiKey.startsWith('AIzaSy')) {
         try {
           const maskResult = StructurePreservingMasker.mask(text, false);
@@ -1238,17 +1409,105 @@ export class TranslationDockController {
           if (res.ok) {
             const data = await res.json();
             let trans = data?.data?.translations?.[0]?.translatedText || '';
+            if (trans) {
+              if (maskResult.tokens.size > 0) {
+                trans = StructurePreservingMasker.unmask(trans, maskResult.tokens).restoredText;
+              }
+              return { ok: true, translatedText: trans };
+            }
+          }
+        } catch {}
+      }
+
+      // 模式 B: 客户端直连 Google Chrome 高速官方协议 (Access-Control-Allow-Origin: *，零配额无配置)
+      try {
+        const maskResult = StructurePreservingMasker.mask(text, false);
+        const res = await fetch('https://clients5.google.com/translate_a/t?client=dict-chrome-ex', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+          },
+          signal,
+          body: new URLSearchParams({
+            sl: 'en',
+            tl: 'zh-CN',
+            q: maskResult.maskedText,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          let trans = '';
+          if (Array.isArray(data) && typeof data[0] === 'string') {
+            trans = data.join('');
+          } else if (Array.isArray(data) && Array.isArray(data[0])) {
+            trans = data[0].filter((p: any) => typeof p === 'string').join('');
+          }
+          if (trans) {
             if (maskResult.tokens.size > 0) {
               trans = StructurePreservingMasker.unmask(trans, maskResult.tokens).restoredText;
             }
             return { ok: true, translatedText: trans };
           }
-        } catch {}
+        }
+      } catch (clientErr: any) {
+        if (signal?.aborted) throw clientErr;
       }
-      return { ok: false, error: '翻译服务端点未就绪 (HTTP 404)' };
+
+      // 模式 C: 降级 GTX 协议
+      try {
+        const maskResult = StructurePreservingMasker.mask(text, false);
+        const gtxUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-CN&dt=t&q=${encodeURIComponent(maskResult.maskedText)}`;
+        const gtxRes = await fetch(gtxUrl, { signal });
+        if (gtxRes.ok) {
+          const gtxData = await gtxRes.json();
+          let trans = (gtxData?.[0] || []).map((p: any) => p?.[0] || '').join('');
+          if (trans) {
+            if (maskResult.tokens.size > 0) {
+              trans = StructurePreservingMasker.unmask(trans, maskResult.tokens).restoredText;
+            }
+            return { ok: true, translatedText: trans };
+          }
+        }
+      } catch (gtxErr: any) {
+        if (signal?.aborted) throw gtxErr;
+      }
+
+      return { ok: false, error: 'Google 翻译直连受阻，建议在顶栏切换为智谱 GLM-4 免费模型' };
     }
 
-    return { ok: false, error: '当前环境暂未连接到校内翻译端点' };
+    return { ok: false, error: '未识别的翻译服务商' };
+  }
+
+  /**
+   * 清洗模型输出，移除思考链、XML 边界与多余的 markdown 代码块包裹，防短标题扩写
+   */
+  private cleanClientLlmOutput(raw: string, sourceText = ''): string {
+    let text = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+    text = text.replace(/<\/?(?:source_text|text_to_translate|translation|translated_text)>/gi, '').trim();
+    if (text.startsWith('```') && text.endsWith('```')) {
+      text = text.replace(/^```(?:markdown|md|text)?\n([\s\S]*?)\n```$/i, '$1').trim();
+    }
+    text = text.replace(/^(?:好的[，,！!]?|以下是翻译[：:]?|翻译如下[：:]?|译文[：:]?)\s*/i, '').trim();
+
+    const trimmedSource = sourceText.trim();
+    const isSingleLine = !trimmedSource.includes('\n');
+    const wordCount = trimmedSource.split(/\s+/).length;
+    const isShortHeading = isSingleLine && (trimmedSource.startsWith('#') || wordCount <= 8);
+
+    if (isShortHeading && text) {
+      const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      let firstLine = lines[0] || text;
+      if (wordCount <= 5 && firstLine.length > 30) {
+        const sentenceMatch = firstLine.match(/^([^。！？\n]+[。！？]?)/);
+        if (sentenceMatch && sentenceMatch[1].length < firstLine.length) {
+          firstLine = sentenceMatch[1].trim();
+        }
+      }
+      text = firstLine;
+    }
+
+    return text.trim();
   }
 
   private renderSkeletonCards(container: HTMLElement, paragraphs: ParagraphUnit[]): void {
