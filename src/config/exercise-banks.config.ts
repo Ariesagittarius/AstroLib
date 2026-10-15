@@ -78,6 +78,20 @@ export const EXERCISE_BANKS: ExerciseBank[] = [
     applicableBooks: ['communication_principles'],
     description: '《通信原理（第5版）》（北京邮电大学出版社）全书 13 章配套思考题、课后习题与参考解析。',
   },
+  {
+    id: 'digital_circuit_textbook_exercises',
+    title: '《数字电路与逻辑设计》课后习题',
+    sourceType: 'textbook',
+    applicableBooks: ['digital_circuit'],
+    description: '《数字电路与逻辑设计（第2版）》（北京邮电大学出版社）全书 10 章配套课后习题。',
+  },
+  {
+    id: 'electronic_circuits_textbook_exercises',
+    title: '《电子电路基础》课后习题',
+    sourceType: 'textbook',
+    applicableBooks: ['electronic_circuits'],
+    description: '《电子电路基础（第2版）》（高等教育出版社）全书 7 章配套课后习题与官方参考答案。',
+  },
 ];
 
 /**

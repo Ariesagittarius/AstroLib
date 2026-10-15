@@ -2140,3 +2140,163 @@ html[data-theme='dark'] .academic-resource-pop-header {
   margin-top: 0.75rem !important;
 }
 
+/* ==========================================================================
+   全站学术纯净网页打印排版规范 (@media print)
+   保证在浏览器直接打印或导出 PDF 时：
+   1. 仅渲染主讲义/教材正文（.main-pane / main / .sl-markdown-content），宽度自适应 100%；
+   2. 彻底隐藏所有非正文元素：顶栏 (header)、左侧栏 (sidebar)、右侧侧载栏与大纲 (right-sidebar / dock)、
+      底部导航与版权 (footer / pager)、全站浮层对话框 (#astro-overlay-root / md-dialog / dialog)、
+      以及所有操作按钮、悬浮窗、AI 气泡、复制图标与徽章动作等；
+   3. 避免正文内卡片、定理、例题、公式与表格跨页截断。
+   ========================================================================== */
+@media print {
+  @page {
+    margin: 1.5cm;
+    size: auto;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: auto !important;
+  }
+
+  /* 强制浅色打印调色板，防止黑夜模式下产生大黑块或反色遮罩 */
+  :root,
+  :root[data-theme='dark'],
+  html[data-site-theme='material-you'][data-theme='dark'] {
+    --sl-color-bg: #ffffff !important;
+    --sl-color-bg-nav: #ffffff !important;
+    --sl-color-text: #000000 !important;
+    --sl-color-white: #000000 !important;
+    --sl-color-black: #ffffff !important;
+    --sl-color-gray-1: #1a1a1a !important;
+    --sl-color-gray-2: #333333 !important;
+    --sl-color-gray-3: #555555 !important;
+    --sl-color-gray-4: #777777 !important;
+    --sl-color-gray-5: #999999 !important;
+    --sl-color-gray-6: #e5e5e5 !important;
+    --sl-color-hairline: #e0e0e0 !important;
+    --sl-color-hairline-shade: #e0e0e0 !important;
+    --md-sys-color-background: #ffffff !important;
+    --md-sys-color-surface: #ffffff !important;
+    --md-sys-color-on-surface: #000000 !important;
+    --md-sys-color-on-background: #000000 !important;
+  }
+
+  /* 页面布局容器铺满与外边距重置：打破两栏/桌面多栏对正文宽度的挤压与偏移 */
+  .page {
+    display: block !important;
+    min-height: auto !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .main-frame {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .lg\:sl-flex {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .main-pane,
+  [data-has-sidebar] .main-pane,
+  [data-has-sidebar][data-has-toc] .main-pane {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: static !important;
+    isolation: auto !important;
+    transform: none !important;
+  }
+
+  main {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .content-panel {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  .sl-markdown-content {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* 彻底屏蔽所有非正文元素、顶栏、侧边栏、大纲栏、底栏、操作弹窗与遮罩 */
+  header,
+  .header,
+  .page > header,
+  nav.sidebar,
+  .sidebar-pane,
+  .right-sidebar-container,
+  .right-sidebar,
+  .astrolib-sideload-dock,
+  .custom-page-sidebar,
+  footer,
+  .sl-footer,
+  .prev-next,
+  .pagination-links,
+  .vp-local-nav,
+  #astro-overlay-root,
+  #chapter-export-modal,
+  md-dialog,
+  dialog,
+  [role="dialog"],
+  .astrolib-dialog,
+  .astrolib-sideload-scrim,
+  .scrim,
+  .vp-sidebar-toggle-btn,
+  .vp-right-sidebar-toggle-btn,
+  .mobile-menu-toggle,
+  .toc-mobile-toggle,
+  .katex-actions,
+  .copy-formula-tooltip,
+  .sideload-dock-fab,
+  #quick-settings-panel,
+  #quick-settings-btn,
+  #sidenote-ai-btn,
+  #editor-floating-tools,
+  .vp-search-wrapper,
+  .outline-marker {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+
+  /* 保证卡片、代码块、表格、公式环境页面自适应与防截断 */
+  .sl-markdown-content .card,
+  .sl-markdown-content .starlight-aside,
+  .sl-markdown-content blockquote,
+  .sl-markdown-content table {
+    break-inside: avoid;
+  }
+}
+
+

@@ -259,6 +259,16 @@ const featureDefs: Record<string, FeatureManifest<any>> = {
     },
   }),
 
+  blankDocument: defineFeature({
+    id: 'blankDocument',
+    cat: 'reader',
+    label: '空白文档与学术工作台',
+    desc: '阅览任意文章时随时打开独立空白文档，自主编辑元数据与正文，具备公式/Mermaid实时渲染、双语助读与PDF导出能力',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+  }),
+
 
   feedback: defineFeature({
     id: 'feedback',

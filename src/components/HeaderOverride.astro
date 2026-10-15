@@ -83,6 +83,21 @@ const shouldRenderSearch =
 			<md-icon class="header-mdicon vp-translate-icon" aria-hidden="true">translate</md-icon>
 		</button>
 
+		<!-- 空白文档与学术工作台专属入口 (Alt+B) -->
+		<a
+			href="/blank/"
+			target="_blank"
+			rel="noopener noreferrer"
+			class="vp-blank-doc-btn"
+			id="vp-blank-doc-btn"
+			data-blank-doc-trigger
+			aria-label="打开空白文档与学术工作台 (Alt+B)"
+			title="打开空白文档与学术工作台 (Alt+B)"
+			data-tooltip="空白文档 (Alt+B)"
+		>
+			<md-icon class="header-mdicon vp-blank-doc-icon" aria-hidden="true">edit_document</md-icon>
+		</a>
+
 		<!-- 1. 书籍与学习工具聚合菜单 -->
 		<HeaderToolsMenu />
 
@@ -120,7 +135,8 @@ const shouldRenderSearch =
 
 	.vp-sidebar-toggle-btn,
 	.vp-right-sidebar-toggle-btn,
-	.vp-translate-btn {
+	.vp-translate-btn,
+	.vp-blank-doc-btn {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -135,9 +151,11 @@ const shouldRenderSearch =
 		flex-shrink: 0;
 		transition: background-color 0.15s ease, color 0.15s ease;
 		position: relative;
+		text-decoration: none;
 	}
 
-	.vp-translate-icon {
+	.vp-translate-icon,
+	.vp-blank-doc-icon {
 		font-size: 1.25rem !important;
 		width: 1.25rem;
 		height: 1.25rem;
@@ -149,13 +167,15 @@ const shouldRenderSearch =
 
 	:global([data-theme='dark']) .vp-sidebar-toggle-btn,
 	:global([data-theme='dark']) .vp-right-sidebar-toggle-btn,
-	:global([data-theme='dark']) .vp-translate-btn {
+	:global([data-theme='dark']) .vp-translate-btn,
+	:global([data-theme='dark']) .vp-blank-doc-btn {
 		color: var(--sl-color-gray-2, #e2e8f0);
 	}
 
 	.vp-sidebar-toggle-btn:hover,
 	.vp-right-sidebar-toggle-btn:hover,
-	.vp-translate-btn:hover {
+	.vp-translate-btn:hover,
+	.vp-blank-doc-btn:hover {
 		background-color: var(--sl-color-gray-6, rgba(125, 125, 125, 0.1));
 		color: var(--sl-color-text-accent);
 	}
@@ -190,13 +210,15 @@ const shouldRenderSearch =
 	   ========================================================================== */
 	.vp-sidebar-toggle-btn[data-tooltip],
 	.vp-right-sidebar-toggle-btn[data-tooltip],
-	.vp-translate-btn[data-tooltip] {
+	.vp-translate-btn[data-tooltip],
+	.vp-blank-doc-btn[data-tooltip] {
 		position: relative;
 	}
 
 	.vp-sidebar-toggle-btn[data-tooltip]::before,
 	.vp-right-sidebar-toggle-btn[data-tooltip]::before,
-	.vp-translate-btn[data-tooltip]::before {
+	.vp-translate-btn[data-tooltip]::before,
+	.vp-blank-doc-btn[data-tooltip]::before {
 		content: attr(data-tooltip);
 		position: absolute;
 		top: calc(100% + 8px);
@@ -220,7 +242,8 @@ const shouldRenderSearch =
 
 	.vp-sidebar-toggle-btn[data-tooltip]::after,
 	.vp-right-sidebar-toggle-btn[data-tooltip]::after,
-	.vp-translate-btn[data-tooltip]::after {
+	.vp-translate-btn[data-tooltip]::after,
+	.vp-blank-doc-btn[data-tooltip]::after {
 		content: '';
 		position: absolute;
 		top: calc(100% + 3px);
@@ -247,7 +270,11 @@ const shouldRenderSearch =
 	.vp-translate-btn[data-tooltip]:hover::before,
 	.vp-translate-btn[data-tooltip]:hover::after,
 	.vp-translate-btn[data-tooltip]:focus-visible::before,
-	.vp-translate-btn[data-tooltip]:focus-visible::after {
+	.vp-translate-btn[data-tooltip]:focus-visible::after,
+	.vp-blank-doc-btn[data-tooltip]:hover::before,
+	.vp-blank-doc-btn[data-tooltip]:hover::after,
+	.vp-blank-doc-btn[data-tooltip]:focus-visible::before,
+	.vp-blank-doc-btn[data-tooltip]:focus-visible::after {
 		opacity: 1;
 		visibility: visible;
 		transform: translateX(-50%) translateY(0);
@@ -448,4 +475,40 @@ const shouldRenderSearch =
 		setupHeaderSidebars();
 	}
 	document.addEventListener('astro:page-load', setupHeaderSidebars);
+
+	// 全局监听 Alt+B 开启空白文档与学术工作台，并支持选中文段携带
+	if (typeof window !== 'undefined' && !(window as any).__blankDocBound) {
+		(window as any).__blankDocBound = true;
+		window.addEventListener('keydown', (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement | null;
+			if (target && (
+				target.tagName === 'INPUT' ||
+				target.tagName === 'TEXTAREA' ||
+				target.tagName === 'MD-OUTLINED-TEXT-FIELD' ||
+				target.isContentEditable
+			)) {
+				return;
+			}
+			if (e.altKey && e.key.toLowerCase() === 'b' && !e.ctrlKey && !e.metaKey) {
+				e.preventDefault();
+				const selection = window.getSelection()?.toString().trim();
+				if (selection) {
+					sessionStorage.setItem('astrolib_blank_import_snippet', selection);
+				}
+				sessionStorage.setItem('astrolib_blank_return_url', window.location.href);
+				window.open('/blank/', '_blank');
+			}
+		});
+
+		document.addEventListener('click', (e) => {
+			const target = (e.target as HTMLElement | null)?.closest('[data-blank-doc-trigger]');
+			if (target) {
+				const selection = window.getSelection()?.toString().trim();
+				if (selection) {
+					sessionStorage.setItem('astrolib_blank_import_snippet', selection);
+				}
+				sessionStorage.setItem('astrolib_blank_return_url', window.location.href);
+			}
+		});
+	}
 </script>

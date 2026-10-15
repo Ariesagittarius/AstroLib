@@ -13,7 +13,7 @@ import {
   formatLatexContent,
   getVisualWidth,
   escapeLatexMeta,
-} from '../core/clean-math';
+} from '../core/clean-math.ts';
 
 export type LatexExportConfig = ExerciseExportSettings;
 export const DEFAULT_LATEX_CONFIG: LatexExportConfig = DEFAULT_EXERCISE_EXPORT_SETTINGS;

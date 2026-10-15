@@ -96,6 +96,12 @@ class MdxSanitizer:
         # 6. 修复双重 \tag 冲突（保留后一个或有效公式编号）
         s = re.sub(r'\\tag\s*\{[^}]*\}\s*(\\tag\s*\{[^}]*\})', r'\1', s)
 
+        # 7. 修复 \hline 在单元格花括号内部或非法位置报错
+        s = re.sub(r'\\\\\s*&\s*\{\s*\\hline\s*([^}]+)\}', r'\\\\ \\hline & \1', s)
+        s = re.sub(r'\\\\\s*\{\s*\\hline\s*([^}]+)\}', r'\\\\ \\hline \1', s)
+        s = re.sub(r'\{\s*\\hline\s*([^}]*)\}', r'\\hline \1', s)
+        s = re.sub(r'\\\\\s*&\s*\\hline\b', r'\\\\ \\hline &', s)
+
         return s
 
     @classmethod
@@ -170,6 +176,7 @@ class MdxSanitizer:
             lines = lines.splitlines()
         out = [self.sanitize_line(line) for line in lines]
         text = '\n'.join(out)
+        text = re.sub(r'(?<!\\)\$\$(.+?)(?<!\\)\$\$', lambda m: f"$${self.sanitize_math(m.group(1))}$$", text, flags=re.DOTALL)
         return self.fn_mark_to_sup(text)
 
     @staticmethod

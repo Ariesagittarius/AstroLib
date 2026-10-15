@@ -25,7 +25,7 @@ export {
   mathToBookmarkText,
   formatHeadingLatex,
   escapeLatexMeta,
-} from './core/clean-math';
+} from './core/clean-math.ts';
 
 export {
   type LatexExportConfig,
@@ -33,7 +33,7 @@ export {
   formatChoiceTasks,
   getSpaceLatex,
   generateLatexDocument,
-} from './renderers/exercise-renderer';
+} from './renderers/exercise-renderer.ts';
 
 export {
   type ChapterLatexConfig,
@@ -44,4 +44,4 @@ export {
   renderSemanticBlocks,
   renderChapterLatexDocument,
   generateChapterLatexDocument,
-} from './renderers/chapter-renderer';
+} from './renderers/chapter-renderer.ts';

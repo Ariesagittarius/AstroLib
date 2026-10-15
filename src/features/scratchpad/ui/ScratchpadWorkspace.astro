@@ -1,0 +1,306 @@
+---
+/**
+ * src/features/scratchpad/ui/ScratchpadWorkspace.astro
+ * ============================================================================
+ * 空白文档与学术工作台主体组件 (Material You / M3 极简风格)
+ * ============================================================================
+ */
+import { TEMPLATE_PRESETS } from '../core/storage.ts';
+import ScratchpadTranslationDrawer from './ScratchpadTranslationDrawer.astro';
+import '../../../styles/components/scratchpad.css';
+---
+
+<div class="scratchpad-container" id="scratchpad-root">
+  <!-- 1. 顶栏操作区 (Action Bar) -->
+  <header class="scratchpad-topbar">
+    <div class="scratchpad-topbar-left">
+      <a href="/" class="scratchpad-back-link" id="scratchpad-back-btn" title="返回原文章" aria-label="返回原文章">
+        <md-icon aria-hidden="true">arrow_back</md-icon>
+      </a>
+      <div class="scratchpad-title-group">
+        <h1 class="scratchpad-doc-title" id="scratchpad-doc-title-header">空白文档</h1>
+        <span class="scratchpad-doc-badge">学术实验工作台 · 实时预览</span>
+      </div>
+    </div>
+
+    <!-- 视口模式切换 Segmented 控制器 -->
+    <div class="scratchpad-view-mode-selector" role="group" aria-label="视口模式">
+      <button type="button" class="scratchpad-view-btn is-active" data-view-mode="split" title="分屏对照模式">
+        <md-icon style="font-size: 16px;">vertical_split</md-icon>
+        <span>分屏</span>
+      </button>
+      <button type="button" class="scratchpad-view-btn" data-view-mode="preview" title="专注阅读模式">
+        <md-icon style="font-size: 16px;">visibility</md-icon>
+        <span>阅读</span>
+      </button>
+      <button type="button" class="scratchpad-view-btn" data-view-mode="edit" title="专注写作模式">
+        <md-icon style="font-size: 16px;">edit_note</md-icon>
+        <span>写作</span>
+      </button>
+    </div>
+
+    <!-- 动作按钮组 -->
+    <div class="scratchpad-topbar-right">
+      <!-- 顶栏浮动目录 (TOC Dropdown) -->
+      <div class="scratchpad-toc-dropdown-wrap">
+        <button
+          type="button"
+          class="scratchpad-action-chip"
+          id="scratchpad-toc-trigger"
+          title="查看文档大纲 (Alt+O)"
+          aria-label="文档大纲"
+          aria-haspopup="true"
+          aria-expanded="false"
+        >
+          <md-icon style="font-size: 18px;">toc</md-icon>
+          <span>大纲</span>
+          <span class="scratchpad-toc-badge" id="scratchpad-toc-badge">0</span>
+        </button>
+
+        <div class="scratchpad-toc-popup" id="scratchpad-toc-popup" role="menu" aria-label="文档大纲">
+          <div class="scratchpad-toc-popup-header">
+            <span class="scratchpad-toc-popup-title">文档大纲</span>
+            <button type="button" class="scratchpad-toc-popup-close" id="scratchpad-toc-popup-close" aria-label="关闭大纲">
+              <md-icon style="font-size: 16px;">close</md-icon>
+            </button>
+          </div>
+          <ul class="scratchpad-toc-popup-list" id="scratchpad-toc-list">
+            <li class="scratchpad-toc-empty">暂无大纲（输入 # 标题即可生成）</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 双语助读快捷入口 -->
+      <button
+        type="button"
+        class="scratchpad-action-chip is-primary"
+        id="scratchpad-translate-btn"
+        data-scratchpad-translate
+        data-translation-trigger
+        title="开启章节双语对照与学术翻译 (Alt+Y)"
+        aria-label="双语助读"
+      >
+        <md-icon style="font-size: 18px;">translate</md-icon>
+        <span>双语助读</span>
+      </button>
+
+      <!-- 模板选择器 -->
+      <button
+        type="button"
+        class="scratchpad-action-chip"
+        id="scratchpad-template-trigger"
+        data-scratchpad-open-templates
+        title="载入权威学术模板"
+        aria-label="模板库"
+      >
+        <md-icon style="font-size: 18px;">auto_stories</md-icon>
+        <span>模板</span>
+      </button>
+
+      <!-- 导出 / 打印 -->
+      <button
+        type="button"
+        class="scratchpad-action-chip"
+        id="scratchpad-print-btn"
+        data-scratchpad-print
+        title="学术打印或另存为 PDF (Alt+P)"
+        aria-label="打印 PDF"
+      >
+        <md-icon style="font-size: 18px;">print</md-icon>
+        <span>打印 PDF</span>
+      </button>
+
+      <!-- 导出 Markdown -->
+      <button
+        type="button"
+        class="scratchpad-action-chip"
+        data-scratchpad-export-md
+        title="下载 Markdown 源码 (.md)"
+        aria-label="导出 MD"
+      >
+        <md-icon style="font-size: 18px;">download</md-icon>
+        <span>导出 MD</span>
+      </button>
+
+      <!-- 元数据开关 -->
+      <button
+        type="button"
+        class="scratchpad-action-chip"
+        id="scratchpad-meta-toggle"
+        title="展开/收起元数据配置"
+        aria-label="元数据"
+      >
+        <md-icon style="font-size: 18px;">tune</md-icon>
+        <span>元数据</span>
+      </button>
+
+      <!-- 重置清空 -->
+      <button
+        type="button"
+        class="scratchpad-action-chip"
+        data-scratchpad-reset
+        title="清空当前草稿"
+        aria-label="重置草稿"
+      >
+        <md-icon style="font-size: 18px;">restart_alt</md-icon>
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 可折叠元数据面板 (Metadata Panel) -->
+  <section class="scratchpad-meta-panel" id="scratchpad-meta-panel" aria-label="元数据编辑">
+    <div id="meta-form-fields" class="scratchpad-meta-grid">
+      <div class="meta-field-group">
+        <label class="meta-field-label" for="meta-field-title">文档标题 (Title)</label>
+        <input type="text" id="meta-field-title" class="meta-field-input" placeholder="输入文章标题" />
+      </div>
+      <div class="meta-field-group">
+        <label class="meta-field-label" for="meta-field-author">作者 / 来源 (Author)</label>
+        <input type="text" id="meta-field-author" class="meta-field-input" placeholder="作者或机构名称" />
+      </div>
+      <div class="meta-field-group">
+        <label class="meta-field-label" for="meta-field-subject">学科 / 领域 (Subject)</label>
+        <input type="text" id="meta-field-subject" class="meta-field-input" placeholder="如：大学数学 / 量子物理" />
+      </div>
+      <div class="meta-field-group">
+        <label class="meta-field-label" for="meta-field-tags">标签 (Tags，逗号分隔)</label>
+        <input type="text" id="meta-field-tags" class="meta-field-input" placeholder="Draft, Math, Translation" />
+      </div>
+      <div class="meta-field-group" style="grid-column: 1 / -1;">
+        <label class="meta-field-label" for="meta-field-desc">简要说明 (Description)</label>
+        <input type="text" id="meta-field-desc" class="meta-field-input" placeholder="输入一句话摘要" />
+      </div>
+    </div>
+
+    <!-- YAML 原始源码输入区 -->
+    <div id="meta-raw-yaml-field" hidden style="margin-top: 0.5rem;">
+      <label class="meta-field-label" for="meta-field-raw-yaml">原始 YAML Frontmatter</label>
+      <textarea id="meta-field-raw-yaml" class="scratchpad-textarea" style="height: 120px; font-size: 0.85rem; border: 1px solid var(--sl-color-hairline); border-radius: 6px; padding: 0.5rem;"></textarea>
+    </div>
+
+    <div class="meta-panel-footer">
+      <button type="button" class="meta-toggle-btn" id="meta-toggle-raw-yaml">切换至 YAML 源码</button>
+    </div>
+  </section>
+
+  <!-- 3. 主工作区：左侧编辑 + 右侧预览 -->
+  <main class="scratchpad-main-workspace">
+    <!-- 左侧编辑面板 -->
+    <section class="scratchpad-editor-pane" aria-label="Markdown 编辑区">
+      <!-- 快捷工具栏 -->
+      <div class="scratchpad-quick-toolbar">
+        <button type="button" class="scratchpad-tool-btn" data-insert-action="h2" title="二级标题 (## )">H2</button>
+        <button type="button" class="scratchpad-tool-btn" data-insert-action="h3" title="三级标题 (### )">H3</button>
+        <button type="button" class="scratchpad-tool-btn" data-insert-action="bold" title="粗体 (**text**)">加粗</button>
+        <button type="button" class="scratchpad-tool-btn" data-insert-action="quote" title="引用 (> )">引用</button>
+        <div class="scratchpad-tool-divider"></div>
+
+        <!-- 公式类 -->
+        <button type="button" class="scratchpad-tool-btn" data-insert-action="math-inline" title="行内数学公式 ($...$)">$x$</button>
+        <button type="button" class="scratchpad-tool-btn" data-insert-action="math-block" title="块级数学公式 ($$...$$)">$$\int$$</button>
+        <div class="scratchpad-tool-divider"></div>
+
+        <!-- 学术卡片类 -->
+        <button type="button" class="scratchpad-tool-btn" data-insert-action="theorem" title="插入定理卡片 (&lt;Theorem&gt;)">定理</button>
+        <button type="button" class="scratchpad-tool-btn" data-insert-action="definition" title="插入定义卡片 (&lt;Definition&gt;)">定义</button>
+        <button type="button" class="scratchpad-tool-btn" data-insert-action="example" title="插入例题卡片 (&lt;Example&gt;)">例题</button>
+        <button type="button" class="scratchpad-tool-btn" data-insert-action="note" title="插入注解卡片 (&lt;Note&gt;)">注意</button>
+        <button type="button" class="scratchpad-tool-btn" data-insert-action="solution" title="插入折叠解析 (&lt;Solution&gt;)">解析</button>
+        <button type="button" class="scratchpad-tool-btn" data-insert-action="algorithm" title="插入算法卡片 (&lt;Algorithm&gt;)">算法</button>
+        <div class="scratchpad-tool-divider"></div>
+
+        <!-- 图表与表格 -->
+        <button type="button" class="scratchpad-tool-btn" data-insert-action="mermaid" title="插入 Mermaid 流程图">Mermaid</button>
+        <button type="button" class="scratchpad-tool-btn" data-insert-action="table" title="插入表格">表格</button>
+        <button type="button" class="scratchpad-tool-btn" data-insert-action="code" title="插入代码块">代码</button>
+      </div>
+
+      <!-- 编辑文本域 -->
+      <div class="scratchpad-textarea-wrap">
+        <textarea
+          id="scratchpad-textarea"
+          class="scratchpad-textarea"
+          placeholder="在此输入 Markdown 正文... 支持 KaTeX 公式、Mermaid 图表与 <Theorem> 等学术卡片"
+          spellcheck="false"
+          aria-label="Markdown 源码输入区"
+        ></textarea>
+      </div>
+
+      <!-- 底栏状态指示器 -->
+      <footer class="scratchpad-statusbar">
+        <div class="scratchpad-stats-group">
+          <span id="scratchpad-stat-words">0 词</span>
+          <span>·</span>
+          <span id="scratchpad-stat-chars">0 字符</span>
+          <span>·</span>
+          <span id="scratchpad-stat-paras">0 段落</span>
+        </div>
+        <div class="scratchpad-save-status" id="scratchpad-save-status">
+          已自动保存在本地
+        </div>
+      </footer>
+    </section>
+
+    <!-- 右侧渲染预览区 (严格按照 AstroLib 原书排版样式渲染) -->
+    <section class="scratchpad-preview-pane" aria-label="排版渲染预览区">
+      <div class="scratchpad-preview-container">
+        <article role="article" class="sl-markdown-content" id="blank-doc-article">
+          <!-- 动态渲染区 -->
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <!-- 4. 专属双语助读侧滑抽屉 -->
+  <ScratchpadTranslationDrawer />
+</div>
+
+<!-- 5. 模板选择器 M3 模态对话框 (默认绝对隐藏，绝不裸露于页面流) -->
+<div class="scratchpad-modal-overlay" id="scratchpad-template-modal" role="dialog" aria-modal="true" aria-labelledby="tpl-modal-title">
+  <div class="scratchpad-modal-card">
+    <div class="scratchpad-modal-header">
+      <h2 class="scratchpad-modal-title" id="tpl-modal-title">载入学术预设模板</h2>
+      <button type="button" class="scratchpad-modal-close-btn" id="scratchpad-template-close-btn" aria-label="关闭模板选择">
+        <md-icon>close</md-icon>
+      </button>
+    </div>
+    <div class="scratchpad-modal-body">
+      <p class="scratchpad-modal-tip">
+        选择一个模板以快速体验双语助读、极限公式排版、Mermaid 拓扑图或 AstroLib 全量学术卡片：
+      </p>
+      <div class="scratchpad-template-grid">
+        {TEMPLATE_PRESETS.map((tpl) => (
+          <div class="scratchpad-tpl-card" data-template-id={tpl.id} role="button" tabindex="0">
+            <div>
+              {tpl.badge && <span class="tpl-card-badge">{tpl.badge}</span>}
+              <h3 class="tpl-card-title">{tpl.title}</h3>
+              <p class="tpl-card-desc">{tpl.description}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 控制器启动脚本 -->
+<script>
+  import '@material/web/icon/icon.js';
+  import { ScratchpadController } from '../client/scratchpad-controller.ts';
+  import { sideloadManager } from '../../../components/sideload/sideload-manager.ts';
+  import { TranslationDockController } from '../../../services/translation/client/translation-dock-controller.ts';
+
+  function init() {
+    sideloadManager.init();
+    TranslationDockController.getInstance().init();
+    ScratchpadController.getInstance().init();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  document.addEventListener('astro:page-load', init);
+</script>

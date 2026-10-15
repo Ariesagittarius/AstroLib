@@ -1,0 +1,88 @@
+---
+title: '8.4 VHDL中的属性和运算符'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 8.4.1 VHDL中的属性
+
+VHDL 的属性(attribute)有着丰富的内涵。通常,属性表达了数据的一些特征,如范围、边界值、变化情况等。属性可增强描述的表现力和准确性,也可改善 VHDL 程序的可读性和通用性。VHDL 属性有预定义和用户自定义的两种。这里简要介绍一些预定义属性。
+
+
+表达属性的一般格式如下：
+
+
+项目名属性名
+
+
+其中项目名可以是数据对象、数据类型、实体、结构体、块、元件等，属性名为项目名的某一特征。
+
+
+(1) 数据类型的常用属性: 'LEFT、'RIGHT、'HIGH、'LOW。
+
+
+例如，用语句“SUBTYPE t IS INTEGER RANGE 3 TO 31；”定义数据类型 t 后，则属性 $t'$ LEFT 表达 t 的左范围边界，数值为 3。属性 $t'$ RIGHT 表达 t 的右范围边界，数值为 31。同理，t 的上限 $t'$ HIGHT 为 31，t 的下限 $t'$ LOW 为 3。可用这些属性对信号或变量赋值，也可将它们用做 LOOP 语句中的循环控制变量。
+
+### (2) 数组的常用属性
+
+例如,用语句“TYPE a IS ARRAY(15 DOWNTO 0)OF BIT;”定义了数组类型 a 后,可用表 8.4.1 说明数组的一些常用属性及取值。
+
+
+表 8.4.1 数组的常用属性
+
+
+<table><tr><td>数组a的属性</td><td>意义</td><td>a的属性的结果</td></tr><tr><td> $a'LEFT$ </td><td>数组a的下标的左边界</td><td>15</td></tr><tr><td> $a'RIGHT$ </td><td>数组a的下标的右边界</td><td>0</td></tr><tr><td> $a'HIGH$ </td><td>数组a的下标的上限</td><td>15</td></tr><tr><td> $a'LOW$ </td><td>数组a的下标的下限</td><td>0</td></tr><tr><td> $a'RANGE$ </td><td>数组a的下标的排列</td><td>15到0</td></tr><tr><td> $a'REVERSE RANGE$ </td><td>数组a的下标的逆排列</td><td>0到15</td></tr><tr><td> $a'LENGH$ </td><td>数组元素的个数</td><td>16</td></tr></table>
+
+### (3) 信号的常用属性
+
+例如,用语句“SIGNAL s:std\_logic;”定义了信号 s 后,可由表 8.4.2 给出信号的几个常用属性。
+
+
+表 8.4.2 信号的常用属性
+
+
+<table><tr><td>信号s的属性</td><td>意义</td></tr><tr><td> $s'STABLE$ </td><td>若s取值没有改变,则属性值为TRUE,反之为FALSE</td></tr><tr><td> $s'EVENT$ </td><td>若s取值有改变,则属性值为TRUE,反之为FALSE</td></tr><tr><td> $s'LAST_EVENT$ </td><td>s上次取值改变到当前所经过的时间</td></tr><tr><td> $s'LAST_VALUE$ </td><td>s最近一次改变之前的取值</td></tr></table>
+
+
+属性 s'STABLE 本身也可作为信号使用,例如可用在进程的敏感信号表中。目前的 VHDL 综合器在信号属性中一般只支持'EVENT 和'STABLE。
+
+## 8.4.2 VHDL中的运算符
+
+表 8.4.3 列出了 VHDL 预定义的运算符号、操作数的数据类型、运算结果的数据类型。
+
+
+表 8.4.3 VHDL 的运算符
+
+
+<table><tr><td>类别</td><td>运算符</td><td>操作数类型</td><td>结果类型</td></tr><tr><td>算术运算符</td><td>+、-、*、/、**、MOD、REN、ABS</td><td>整型、实型、物理型</td><td>与操作数相同</td></tr><tr><td>移位运算符</td><td>SLL、SLA、SRL、SRA、ROL、ROR</td><td>bit、boolean、std_logic 数组</td><td>与操作数相同</td></tr><tr><td>逻辑运算符</td><td>NOT、AND、OR、NAND、NOR、XOR</td><td>bit、boolean、std_logic</td><td>与操作数相同</td></tr><tr><td>关系运算符</td><td>=、/=、&lt;、&lt;=、&gt;、&gt;=</td><td>任何类型</td><td>TRUE 或 FALSE</td></tr><tr><td>连接运算符</td><td>&amp;</td><td>数组或数组元素</td><td>数组</td></tr></table>
+
+
+表 8.4.3 中,“\* \*”为乘方运算,MOD 为取模,REN 为取余,ABS 为取绝对值。
+
+
+SLL 为逻辑左移, SRL 为逻辑左移, SLA 为算术左移, SRA 为算术右移, ROL 为逻辑循环左移, ROR 为逻辑循环右移。各种移位的意义见于例 8.6.4 中。
+
+
+“/=”表示不等于，“&lt;”表示小于，“>”表示大于。
+
+
+使用连接运算符 & 可将元素连接起来构成数组, 或将数组连接成更大的数组。例如:
+
+
+```txt
+
+则语句 ajb &lt;= a & b; 等价于: ajb(0) &lt;= a; ajb(1) &lt;= b;。
+
+```
+
+
+在 VHDL 中, 可根据需要对运算符进行重载, 即为其再定义处理函数。例如, 对 std\_logic 型数据进行逻辑与运算时, 需对 AND 运算符重载, 见例 8.5.4。

@@ -89,4 +89,59 @@ describe('Exercises Dataset Acceptance Suite', () => {
     }
     expect(totalQ).toBeGreaterThan(300);
   });
+
+  it('数字电路与逻辑设计课后习题库 digital_circuit_textbook_exercises 具备有效题量与结构', () => {
+    const file = path.join(exDir, 'digital_circuit_textbook_exercises.json');
+    expect(fs.existsSync(file)).toBe(true);
+    const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+
+    expect(data.book).toBe('digital_circuit');
+    expect(data.total_chapters).toBe(10);
+    expect(data.total_questions).toBe(262);
+    expect(data.chapters).toBeDefined();
+
+    let totalQ = 0;
+    for (const [ch, qList] of Object.entries<any[]>(data.chapters)) {
+      expect(Array.isArray(qList)).toBe(true);
+      expect(qList.length).toBeGreaterThan(0);
+      totalQ += qList.length;
+
+      for (const q of qList.slice(0, 3)) {
+        expect(q.id).toBeDefined();
+        expect(q.content?.stem).toBeDefined();
+        expect(q.source?.raw_title).toContain('《数字电路与逻辑设计》');
+      }
+    }
+    expect(totalQ).toBe(262);
+  });
+
+  it('电子电路基础课后习题库 electronic_circuits_textbook_exercises 具备有效题量与官方答案回填', () => {
+    const file = path.join(exDir, 'electronic_circuits_textbook_exercises.json');
+    expect(fs.existsSync(file)).toBe(true);
+    const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+
+    expect(data.book).toBe('electronic_circuits');
+    expect(data.total_chapters).toBe(7);
+    expect(data.total_questions).toBe(277);
+    expect(data.chapters).toBeDefined();
+
+    let totalQ = 0;
+    let answeredQ = 0;
+    for (const [ch, qList] of Object.entries<any[]>(data.chapters)) {
+      expect(Array.isArray(qList)).toBe(true);
+      expect(qList.length).toBeGreaterThan(0);
+      totalQ += qList.length;
+
+      for (const q of qList) {
+        expect(q.id).toBeDefined();
+        expect(q.content?.stem).toBeDefined();
+        if (q.content?.solution) {
+          answeredQ++;
+        }
+      }
+    }
+    expect(totalQ).toBe(277);
+    // 验证书末官方答案回填率（216 题）
+    expect(answeredQ).toBeGreaterThanOrEqual(200);
+  });
 });

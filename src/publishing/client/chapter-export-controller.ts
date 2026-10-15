@@ -485,7 +485,19 @@
       const fmt = selectFormat?.value || 'print';
       if (fmt === 'print') {
         closeModal();
-        window.print();
+        let printed = false;
+        const doPrint = () => {
+          if (printed) return;
+          printed = true;
+          modal.removeEventListener('closed', doPrint);
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              window.print();
+            }, 60);
+          });
+        };
+        modal.addEventListener('closed', doPrint, { once: true });
+        setTimeout(doPrint, 250);
         return;
       }
       if (fmt === 'pdf-cloud') {

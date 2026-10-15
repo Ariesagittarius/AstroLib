@@ -24,7 +24,7 @@ import {
   formatHeadingLatex,
   escapeLatexMeta,
   cleanMathFormula,
-} from '../core/clean-math';
+} from '../core/clean-math.ts';
 
 export type ChapterLatexConfig = ChapterExportSettings;
 export const DEFAULT_CHAPTER_LATEX_CONFIG: ChapterLatexConfig & { embedStyle?: boolean; styleSource?: string } = {
@@ -512,11 +512,12 @@ export function renderChapterLatexDocument(
   }{%
     \\IfFontExistsTF{Noto Sans CJK SC}{%
       \\setCJKsansfont{Noto Sans CJK SC}[AutoFakeBold=true]%
-  }{%
-    \\IfFontExistsTF{FandolHei-Regular.otf}{%
-      \\setCJKsansfont{FandolHei-Regular.otf}[AutoFakeBold=true]%
     }{%
-      \\setCJKsansfont{SimHei}[AutoFakeBold=true]%
+      \\IfFontExistsTF{FandolHei-Regular.otf}{%
+        \\setCJKsansfont{FandolHei-Regular.otf}[AutoFakeBold=true]%
+      }{%
+        \\setCJKsansfont{SimHei}[AutoFakeBold=true]%
+      }%
     }%
   }%
 }%

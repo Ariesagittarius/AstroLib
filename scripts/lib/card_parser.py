@@ -5,8 +5,8 @@ from .mdx_sanitizer import MdxSanitizer, TextCleaner
 class CardParser:
     """例题、知识点、提示、解题与板块 AST 识别与渲染器。"""
 
-    EX_RE = re.compile(r'^(?:#{0,6}\s*)?(?:例|例题)\s*(\d+(?:\.\d+)*)\s*(.*)$')
-    KN_RE = re.compile(r'^(?:#{0,6}\s*)?(定理|定义|性质|推论|引理|命题|公理)\s*(\d+(?:\.\d+)*)\s*(.*)$')
+    EX_RE = re.compile(r'^(?:#{0,6}\s*)?[【\[]?\s*(?:例|例题)\s*(\d+(?:[\.\-－]\d+)*)\s*[】\]]?\s*(.*)$')
+    KN_RE = re.compile(r'^(?:#{0,6}\s*)?[【\[]?\s*(定理|定义|性质|推论|引理|命题|公理|规则|定律)\s*(\d+(?:[\.\-－]\d+)*)?\s*[】\]]?\s*(.*)$')
     NOTE_RE = re.compile(
         r'^(?:'
         r'(?:#{1,6}\s*|[*_]{2}|【|\[)(注意|警告|注|想一想|提示)'
@@ -62,6 +62,7 @@ class CardParser:
         cur = None
         cur_sol = None
         in_display_math = False
+        in_code_block = False
         prev_line_empty = False
 
         def strip_trailing_empty(lines_list: list[str]):
@@ -108,6 +109,35 @@ class CardParser:
                         cur[1].append('')
                     elif cur[0] in ('solution', 'block', 'note'):
                         cur[2].append('')
+                continue
+
+            # 跟踪 ``` 或 ~~~ 代码块
+            if s.startswith('```') or s.startswith('~~~'):
+                in_code_block = not in_code_block
+                if cur is None:
+                    cur = ('para', [raw])
+                elif cur[0] == 'card':
+                    target = cur_sol[1] if cur_sol else cur[3]
+                    add_line(target, raw)
+                elif cur[0] == 'para':
+                    add_line(cur[1], raw)
+                elif cur[0] in ('solution', 'block', 'note'):
+                    add_line(cur[2], raw)
+                prev_line_empty = False
+                continue
+
+            # 在代码块内部时，直接原样存入当前缓冲区，避免误匹配代码注释或内部例题标识
+            if in_code_block:
+                if cur is None:
+                    cur = ('para', [raw])
+                elif cur[0] == 'card':
+                    target = cur_sol[1] if cur_sol else cur[3]
+                    add_line(target, raw)
+                elif cur[0] == 'para':
+                    add_line(cur[1], raw)
+                elif cur[0] in ('solution', 'block', 'note'):
+                    add_line(cur[2], raw)
+                prev_line_empty = False
                 continue
 
             # 跟踪 $$ 跨行公式块
@@ -176,15 +206,15 @@ class CardParser:
             if m and not self.is_ref_quote(m.group(3)):
                 flush()
                 kind = m.group(1).strip()
-                num = m.group(2).strip()
+                num = (m.group(2) or '').strip()
                 rest = m.group(3).strip()
                 m_sub = self.SUBTITLE_RE.match(rest)
                 if m_sub:
                     sub = m_sub.group(1).strip()
                     first_line = m_sub.group(2).strip()
-                    card_title = f"{kind} {num} {sub}"
+                    card_title = f"{kind} {num} {sub}" if num else f"{kind} {sub}"
                 else:
-                    card_title = f"{kind} {num}"
+                    card_title = f"{kind} {num}" if num else kind
                     first_line = rest
                 cur = ('card', 'knowledge', card_title, [first_line] if first_line else [], [])
                 prev_line_empty = False

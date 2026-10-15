@@ -1,0 +1,852 @@
+/**
+ * src/styles/components/scratchpad.css
+ * ============================================================================
+ * 空白文档与学术工作台专属样式表 (Google Material You / M3 规范)
+ * ============================================================================
+ */
+
+/* 0. 界面设计令牌与字体系统 (Google 几何无衬线 + 思源黑体统一界面字体栈) */
+:root {
+  --scratchpad-font-ui: var(--font-brand, 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif),
+    var(--font-cjk-han-sans, 'Noto Sans SC Variable', local('Source Han Sans SC'), local('Source Han Sans CN'), local('Noto Sans SC'), local('Noto Sans CJK SC'), local('思源黑体'), sans-serif);
+}
+
+/* 1. 工作台主容器：填满整个视口，全局应用统一界面字体 */
+.scratchpad-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  background-color: var(--sl-color-bg, #ffffff);
+  color: var(--sl-color-text, #1e293b);
+  box-sizing: border-box;
+  font-family: var(--scratchpad-font-ui);
+}
+
+.scratchpad-topbar,
+.scratchpad-doc-title,
+.scratchpad-doc-badge,
+.scratchpad-view-mode-selector,
+.scratchpad-view-btn,
+.scratchpad-action-chip,
+.scratchpad-toc-popup,
+.scratchpad-meta-panel,
+.scratchpad-quick-toolbar,
+.scratchpad-tool-btn,
+.scratchpad-statusbar,
+.scratchpad-modal-card,
+.scratchpad-trans-drawer,
+.scratchpad-toast {
+  font-family: var(--scratchpad-font-ui);
+}
+
+/* 2. 顶栏操作区 (Action Bar) */
+.scratchpad-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 3.5rem;
+  padding: 0 1rem;
+  background-color: var(--sl-color-bg-nav, rgba(255, 255, 255, 0.9));
+  border-bottom: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.08));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  flex-shrink: 0;
+  z-index: var(--layer-header, 30);
+  gap: 0.75rem;
+}
+
+.scratchpad-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.scratchpad-back-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--sl-color-text-accent, var(--sl-color-text));
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+  flex-shrink: 0;
+}
+.scratchpad-back-link:hover {
+  background-color: var(--sl-color-gray-6, rgba(0, 0, 0, 0.06));
+}
+
+.scratchpad-title-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.scratchpad-doc-title {
+  font-size: 1rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.scratchpad-doc-badge {
+  font-size: 0.75rem;
+  color: var(--sl-color-gray-3, #64748b);
+  white-space: nowrap;
+}
+
+/* 视口模式 Segmented 切换器 */
+.scratchpad-view-mode-selector {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--sl-color-gray-6, rgba(0, 0, 0, 0.04));
+  padding: 0.2rem;
+  border-radius: 20px;
+  border: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.06));
+}
+
+.scratchpad-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 1.85rem;
+  padding: 0 0.75rem;
+  border: none;
+  background: transparent;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--sl-color-gray-2, #475569);
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.scratchpad-view-btn.is-active {
+  background-color: var(--sl-color-bg, #ffffff);
+  color: var(--sl-color-text-accent, #0f766e);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  font-weight: 600;
+}
+
+.scratchpad-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.scratchpad-action-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 2rem;
+  padding: 0 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.15));
+  background: transparent;
+  color: var(--sl-color-text, #1e293b);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.scratchpad-action-chip:hover {
+  background-color: var(--sl-color-gray-6, rgba(0, 0, 0, 0.04));
+  border-color: var(--sl-color-gray-4, #94a3b8);
+}
+
+.scratchpad-action-chip.is-primary {
+  background-color: var(--sl-color-text-accent, #0f766e);
+  color: #ffffff;
+  border-color: transparent;
+}
+.scratchpad-action-chip.is-primary:hover {
+  filter: brightness(1.08);
+}
+.scratchpad-action-chip.is-active {
+  background-color: var(--sl-color-gray-6, rgba(0, 0, 0, 0.08));
+  border-color: var(--sl-color-text-accent);
+  color: var(--sl-color-text-accent);
+}
+
+/* 3. 顶栏浮动 Popup 目录 (TOC Dropdown) */
+.scratchpad-toc-dropdown-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.scratchpad-toc-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--sl-color-gray-6, rgba(0, 0, 0, 0.08));
+  color: var(--sl-color-text-accent, #0f766e);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0 0.35rem;
+  height: 1.15rem;
+  min-width: 1.15rem;
+  border-radius: 10px;
+  margin-left: 0.15rem;
+}
+
+.scratchpad-toc-popup {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 20rem;
+  max-width: 90vw;
+  max-height: 28rem;
+  background-color: var(--sl-color-bg, #ffffff);
+  border: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.12));
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  z-index: var(--layer-popover, 300);
+  overflow: hidden;
+  flex-direction: column;
+}
+
+.scratchpad-toc-popup.is-open {
+  display: flex;
+}
+
+.scratchpad-toc-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.08));
+  background-color: var(--sl-color-bg-nav, rgba(0, 0, 0, 0.02));
+  flex-shrink: 0;
+}
+
+.scratchpad-toc-popup-title {
+  font-size: 0.9rem;
+  font-weight: 650;
+  color: var(--sl-color-text, #1e293b);
+}
+
+.scratchpad-toc-popup-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--sl-color-gray-3, #64748b);
+  cursor: pointer;
+}
+.scratchpad-toc-popup-close:hover {
+  background-color: var(--sl-color-gray-6, rgba(0, 0, 0, 0.06));
+}
+
+.scratchpad-toc-popup-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0;
+  overflow-y: auto;
+  max-height: 24rem;
+  scrollbar-width: thin;
+}
+
+.scratchpad-toc-popup-item {
+  margin: 0;
+  padding: 0;
+}
+
+.scratchpad-toc-popup-link {
+  display: block;
+  padding: 0.4rem 1rem;
+  color: var(--sl-color-text, #334155);
+  text-decoration: none;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  transition: background-color 0.12s ease, color 0.12s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.scratchpad-toc-popup-link:hover {
+  background-color: var(--sl-color-gray-6, rgba(0, 0, 0, 0.05));
+  color: var(--sl-color-text-accent, #0f766e);
+}
+.scratchpad-toc-popup-item.level-2 .scratchpad-toc-popup-link {
+  font-weight: 600;
+  padding-left: 1rem;
+}
+.scratchpad-toc-popup-item.level-3 .scratchpad-toc-popup-link {
+  padding-left: 1.75rem;
+  font-size: 0.82rem;
+  color: var(--sl-color-gray-2, #64748b);
+}
+.scratchpad-toc-popup-item.level-4 .scratchpad-toc-popup-link {
+  padding-left: 2.5rem;
+  font-size: 0.78rem;
+  color: var(--sl-color-gray-3, #94a3b8);
+}
+
+.scratchpad-toc-empty {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: var(--sl-color-gray-3, #94a3b8);
+  font-size: 0.85rem;
+}
+
+/* 4. 元数据折叠面板 */
+.scratchpad-meta-panel {
+  display: none;
+  background-color: var(--sl-color-bg-nav, rgba(0, 0, 0, 0.02));
+  border-bottom: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.08));
+  padding: 1rem 1.5rem;
+  flex-shrink: 0;
+}
+.scratchpad-meta-panel.is-open {
+  display: block;
+}
+
+.scratchpad-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem 1.25rem;
+}
+
+.meta-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.meta-field-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--sl-color-gray-3, #64748b);
+  letter-spacing: 0.02em;
+}
+.meta-field-input {
+  height: 2.1rem;
+  padding: 0 0.65rem;
+  border-radius: 6px;
+  border: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.2));
+  background-color: var(--sl-color-bg, #ffffff);
+  color: var(--sl-color-text);
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.meta-field-input:focus {
+  border-color: var(--sl-color-text-accent, #0f766e);
+}
+
+.meta-panel-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}
+
+.meta-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--sl-color-text-accent);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+/* 5. 工作区主布局 (Split / Reader / Editor) —— 填满空间 */
+.scratchpad-main-workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 分屏模式：左右均分 50% / 50% 撑满全屏 */
+.view-split .scratchpad-editor-pane {
+  flex: 1;
+  min-width: 0;
+  max-width: 50%;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.08));
+}
+.view-split .scratchpad-preview-pane {
+  flex: 1;
+  min-width: 0;
+  max-width: 50%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* 仅编辑模式：单栏撑满 */
+.view-edit .scratchpad-editor-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.view-edit .scratchpad-preview-pane {
+  display: none !important;
+}
+
+/* 仅预览阅读模式：单栏撑满 */
+.view-preview .scratchpad-editor-pane {
+  display: none !important;
+}
+.view-preview .scratchpad-preview-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  width: 100%;
+}
+
+/* 6. 编辑区内部排版 */
+.scratchpad-editor-pane {
+  background-color: var(--sl-color-bg, #ffffff);
+  height: 100%;
+}
+
+/* 快捷插入工具条 */
+.scratchpad-quick-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.75rem;
+  background-color: var(--sl-color-bg-nav, rgba(0, 0, 0, 0.02));
+  border-bottom: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.06));
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+.scratchpad-quick-toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+.scratchpad-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.75rem;
+  padding: 0 0.45rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--sl-color-gray-2, #475569);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.scratchpad-tool-btn:hover {
+  background-color: var(--sl-color-gray-6, rgba(0, 0, 0, 0.05));
+  border-color: var(--sl-color-hairline, rgba(0, 0, 0, 0.1));
+}
+
+.scratchpad-tool-divider {
+  width: 1px;
+  height: 1.1rem;
+  background-color: var(--sl-color-hairline, rgba(0, 0, 0, 0.15));
+  margin: 0 0.2rem;
+  flex-shrink: 0;
+}
+
+/* 编辑文本域 */
+.scratchpad-textarea-wrap {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+  display: flex;
+}
+
+.scratchpad-textarea {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  padding: 1.25rem 1.5rem;
+  border: none;
+  outline: none;
+  resize: none;
+  background-color: transparent;
+  color: var(--sl-color-text, #1e293b);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-size: 0.95rem;
+  line-height: 1.65;
+  box-sizing: border-box;
+  tab-size: 2;
+}
+
+/* 编辑器底栏状态条 */
+.scratchpad-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 1.85rem;
+  padding: 0 1rem;
+  background-color: var(--sl-color-bg-nav, rgba(0, 0, 0, 0.02));
+  border-top: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.06));
+  font-size: 0.76rem;
+  color: var(--sl-color-gray-3, #64748b);
+  flex-shrink: 0;
+}
+
+.scratchpad-stats-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.scratchpad-save-status {
+  transition: opacity 0.2s ease;
+}
+.scratchpad-save-status.is-saving {
+  color: var(--sl-color-text-accent);
+}
+
+/* 7. 预览区排版：严格对齐全站学术阅读正文字体栈 (读取中西文两栏偏好与字阶) */
+.scratchpad-preview-pane {
+  background-color: var(--sl-color-bg, #ffffff);
+  padding: 2rem 2.5rem 6rem;
+  box-sizing: border-box;
+}
+
+.scratchpad-preview-container {
+  max-width: 52rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+#blank-doc-article,
+.scratchpad-preview-pane .sl-markdown-content {
+  font-family: var(--font-reading, var(--academic-font-body)) !important;
+  font-size: var(--academic-font-size-body, 1rem);
+  line-height: var(--academic-line-height-body, 1.74) !important;
+  color: var(--academic-color-ink, #111111);
+  letter-spacing: var(--academic-letter-spacing-body, normal);
+  font-weight: var(--academic-font-weight-body, 400);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
+  font-feature-settings: "chws" 1;
+}
+
+#blank-doc-article :is(p, li, dd, td, th, blockquote, .fallback-content, .card-body) {
+  font-family: var(--font-reading, var(--academic-font-body)) !important;
+  font-size: var(--academic-font-size-body, 1rem);
+  line-height: var(--academic-line-height-body, 1.74) !important;
+}
+
+#blank-doc-article :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-heading, var(--academic-font-heading)) !important;
+  color: var(--academic-color-heading, #000000);
+  font-weight: var(--academic-font-weight-heading, 650);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.blank-doc-empty-hint {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--sl-color-gray-3, #94a3b8);
+  font-size: 0.95rem;
+  border: 1px dashed var(--sl-color-hairline, rgba(0, 0, 0, 0.15));
+  border-radius: 12px;
+  margin-top: 2rem;
+}
+
+/* 8. 独立弹窗遮罩与 M3 模板对话框（默认绝对隐藏，绝不裸露于页面流） */
+.scratchpad-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: var(--layer-dialog, 500);
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.scratchpad-modal-overlay.is-open {
+  display: flex;
+}
+
+.scratchpad-modal-card {
+  width: 100%;
+  max-width: 44rem;
+  max-height: 85vh;
+  background-color: var(--sl-color-bg, #ffffff);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.1));
+  animation: scratchpad-modal-in 0.18s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+
+@keyframes scratchpad-modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.scratchpad-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.08));
+}
+
+.scratchpad-modal-title {
+  font-size: 1.15rem;
+  font-weight: 650;
+  margin: 0;
+}
+
+.scratchpad-modal-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--sl-color-gray-3, #64748b);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.scratchpad-modal-close-btn:hover {
+  background-color: var(--sl-color-gray-6, rgba(0, 0, 0, 0.06));
+}
+
+.scratchpad-modal-body {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  max-height: calc(85vh - 7rem);
+}
+
+.scratchpad-modal-tip {
+  margin: 0 0 1rem 0;
+  font-size: 0.86rem;
+  color: var(--sl-color-gray-3, #64748b);
+  line-height: 1.5;
+}
+
+.scratchpad-template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.scratchpad-tpl-card {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.12));
+  border-radius: 10px;
+  cursor: pointer;
+  background-color: var(--sl-color-bg, #ffffff);
+  transition: all 0.16s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: left;
+}
+.scratchpad-tpl-card:hover {
+  border-color: var(--sl-color-text-accent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.tpl-card-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--sl-color-text-accent);
+  background-color: var(--sl-color-gray-6, rgba(0, 0, 0, 0.05));
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  width: fit-content;
+}
+
+.tpl-card-title {
+  font-size: 0.95rem;
+  font-weight: 650;
+  margin: 0 0 0.35rem 0;
+  color: var(--sl-color-text, #1e293b);
+}
+
+.tpl-card-desc {
+  font-size: 0.82rem;
+  color: var(--sl-color-gray-3, #64748b);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* 9. 双语助读滑入式侧抽屉 (Side Sheet) —— 仅在激活时出现，平常 0 宽度完全不占空间 */
+.scratchpad-trans-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: clamp(21rem, 30vw, 26rem);
+  max-width: 90vw;
+  background-color: var(--sl-color-bg, #ffffff);
+  border-left: 1px solid var(--sl-color-hairline, rgba(0, 0, 0, 0.12));
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  z-index: var(--layer-dialog, 500);
+  transform: translateX(100%);
+  transition: transform 0.24s cubic-bezier(0.1, 0.9, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.scratchpad-trans-drawer.is-open {
+  transform: translateX(0);
+}
+
+/* 10. 轻量 Toast 提示 */
+.scratchpad-toast {
+  position: fixed;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(1rem);
+  background-color: var(--sl-color-gray-1, #1e293b);
+  color: #ffffff;
+  padding: 0.5rem 1.25rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  z-index: var(--layer-toast, 900);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.22s cubic-bezier(0.2, 0, 0, 1);
+}
+.scratchpad-toast.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* 11. 移动端与小屏自适应 (< 1024px) */
+@media (max-width: 63.999rem) {
+  .scratchpad-topbar {
+    padding: 0 0.6rem;
+  }
+  .scratchpad-doc-badge {
+    display: none;
+  }
+  .view-split .scratchpad-editor-pane {
+    max-width: 100%;
+    min-width: 100%;
+  }
+  .view-split .scratchpad-preview-pane {
+    display: none;
+  }
+  .scratchpad-preview-pane {
+    padding: 1.25rem 1rem 4rem;
+  }
+}
+
+/* 12. 学术打印样式 (@media print) —— 仅打印预览正文部分 */
+@media print {
+  @page {
+    margin: 1.5cm;
+    size: auto;
+  }
+
+  /* 彻底屏蔽所有 UI 控件、编辑器、顶栏、侧栏、弹窗 */
+  .scratchpad-topbar,
+  .scratchpad-meta-panel,
+  .scratchpad-editor-pane,
+  .scratchpad-statusbar,
+  .scratchpad-quick-toolbar,
+  .scratchpad-modal-overlay,
+  .scratchpad-toc-popup,
+  .scratchpad-trans-drawer,
+  .trans-inline-toolbar,
+  .scratchpad-toast,
+  .blank-page-sideload-aside,
+  .custom-page-sidebar,
+  #astro-overlay-root,
+  nav,
+  header,
+  footer {
+    display: none !important;
+  }
+
+  html,
+  body,
+  .scratchpad-page-body,
+  .blank-page-shell,
+  .blank-page-main,
+  .scratchpad-container,
+  .scratchpad-main-workspace {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .scratchpad-preview-pane {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+
+  .scratchpad-preview-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #blank-doc-article {
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
