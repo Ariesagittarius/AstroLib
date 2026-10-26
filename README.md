@@ -11,6 +11,7 @@ A modern, quiet, and typographic reading system for university mathematics and s
   <a href="https://starlight.astro.build"><img src="https://img.shields.io/badge/Starlight-v0.41-purple?style=flat-square" alt="Starlight" /></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/Node-%3E%3D20.0-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node" /></a>
   <a href="https://katex.org"><img src="https://img.shields.io/badge/KaTeX-Fast_Math-00d084?style=flat-square&logo=latex&logoColor=white" alt="KaTeX" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/Code_License-GPL--3.0-blue?style=flat-square&logo=gnu" alt="GPL-3.0 License" /></a>
   <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/"><img src="https://img.shields.io/badge/Dataset_License-CC_BY--NC--SA_4.0-blue?style=flat-square" alt="CC License" /></a>
   <a href="https://github.com/Ariesagittarius/AstroLib/releases"><img src="https://img.shields.io/badge/EPUB3-Offline_Export-orange?style=flat-square" alt="EPUB" /></a>
 </p>
@@ -190,5 +191,7 @@ AstroLib 作为纯静态架构（SSG），**日常浏览、学习与生产打包
 
 ## 📜 License
 
-- **系统源代码**：遵循开源理念构建，具体条款以仓库补充的 `LICENSE` 为准。
-- **教材与题目数据**：受各自知识产权或 CC 协议约束，**代码许可不适用于任何教材原文与试卷数据**。
+本项目采用双重开源授权架构：
+
+- **系统源代码与工程基础设施**：遵循 **[GNU General Public License v3.0 (GPL-3.0)](LICENSE)** 协议，任何分发、修改或集成该技术框架的衍生项目均须在 GPL-3.0 协议下开源。
+- **教材、学术文档与真题数据**：遵循 **[CC BY-NC-SA 4.0](LICENSE-CONTENT)**（知识共享署名-非商业性使用-相同方式共享 4.0 国际许可）协议，严格禁止商业化盈利，且衍生内容须以相同方式共享。教材原文版权归原作者及原出版社所有。
