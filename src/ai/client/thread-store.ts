@@ -1,8 +1,3 @@
-/**
- * src/ai/client/thread-store.ts
- * AI 学术问答多会话与历史记录持久化管理器
- */
-
 export interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;

@@ -1,8 +1,3 @@
-/**
- * src/types/sidebar.ts
- * AstroLib 侧边栏与目录树类型契约定义
- */
-
 export interface SidebarItem {
   label: string;
   link?: string;

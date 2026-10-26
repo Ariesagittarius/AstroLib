@@ -1,10 +1,3 @@
-/**
- * tests/unit/scratchpad-parser.test.ts
- * ============================================================================
- * 空白文档与学术工作台 Markdown/KaTeX/卡片解析引擎 单元测试
- * ============================================================================
- */
-
 import { describe, it, expect } from 'vitest';
 import {
   parseFrontmatter,
@@ -88,7 +81,7 @@ Body text`;
 
       expect(html).toContain('class="katex"');
       expect(html).toContain('data-latex=');
-      // 验证公式源码经过编码保护
+
       expect(decodeURIComponent(html.match(/data-latex="([^"]*)"/)?.[1] || '')).toBe('E = mc^2');
     });
 
@@ -122,7 +115,6 @@ d &= e + f
       const markdown = '测试公式下标：$a_i + b_j = c_{i, j}$ 与 $x * y * z$。';
       const { html } = renderMarkdown(markdown);
 
-      // 如果被 markdown 误解析，会出现 <em> 或 <strong> 标签打碎公式
       expect(html).not.toContain('<em>');
       expect(html).not.toContain('<strong>');
       expect(html).toContain('class="katex"');

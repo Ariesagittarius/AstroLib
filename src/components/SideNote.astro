@@ -25,7 +25,6 @@ const {
 const displayTitle = title !== undefined ? title : '注';
 const cleanId = displayTitle ? displayTitle.trim().replace(/\s+/g, '-') : undefined;
 
-// 根据标题文本或传入的 type 自动推断学术语义类别
 let noteKind = type || 'note';
 if (!type && title) {
   const t = title.trim();
@@ -40,7 +39,6 @@ if (!type && title) {
   }
 }
 
-// AI 徽标开关：遵循系统级 features.aiAsk.enabled 且默认在 think 类型中启用，支持 Props.ai 显式覆盖
 const isAiEnabled = Boolean(features.aiAsk?.enabled) && (ai !== undefined ? Boolean(ai) : (noteKind === 'think'));
 ---
 
@@ -110,8 +108,7 @@ const isAiEnabled = Boolean(features.aiAsk?.enabled) && (ai !== undefined ? Bool
   </div>
 </div>
 
-<style>
-  .astrolib-sidenote {
+<style>.astrolib-sidenote {
     box-sizing: border-box;
     padding: 0.65rem 0.85rem;
     font-size: 0.86rem;
@@ -124,7 +121,6 @@ const isAiEnabled = Boolean(features.aiAsk?.enabled) && (ai !== undefined ? Bool
     transition: border-color 0.2s ease, background-color 0.2s ease;
   }
 
-  /* 桌面端浮动模式：依附于正文右侧，高度随上下文并列排版 */
   @media (min-width: 50rem) {
     .astrolib-sidenote.sidenote-float.sidenote-right {
       float: right;
@@ -140,7 +136,6 @@ const isAiEnabled = Boolean(features.aiAsk?.enabled) && (ai !== undefined ? Bool
     }
   }
 
-  /* 移动端与内联模式：撑满宽度，自然降级为紧凑说明块 */
   @media (max-width: 49.99rem) {
     .astrolib-sidenote.sidenote-float {
       float: none !important;
@@ -155,7 +150,6 @@ const isAiEnabled = Boolean(features.aiAsk?.enabled) && (ai !== undefined ? Bool
     margin: 1.15rem 0 !important;
   }
 
-  /* 头部标题区 */
   .sidenote-header {
     display: flex;
     align-items: center;
@@ -175,14 +169,13 @@ const isAiEnabled = Boolean(features.aiAsk?.enabled) && (ai !== undefined ? Bool
     min-width: 0;
   }
 
-  /* Material 3 规范微交互按钮：AI 解答徽标 (Assist Chip 风格) */
   .sidenote-ai-btn {
     display: inline-flex;
     align-items: center;
     gap: 0.28rem;
     height: 1.35rem;
     padding: 0 0.45rem;
-    border-radius: 9999px; /* M3 Pill shape */
+    border-radius: 9999px;
     border: 1px solid var(--sl-color-accent-subtle, rgba(56, 189, 248, 0.28));
     background-color: var(--sl-color-accent-low, rgba(56, 189, 248, 0.06));
     color: var(--sl-color-accent, #38bdf8);
@@ -251,7 +244,6 @@ const isAiEnabled = Boolean(features.aiAsk?.enabled) && (ai !== undefined ? Bool
     color: var(--sl-color-white, #f8fafc);
   }
 
-  /* 正文区 */
   .sidenote-content {
     color: var(--sl-color-gray-2, #cbd5e1);
   }
@@ -266,12 +258,10 @@ const isAiEnabled = Boolean(features.aiAsk?.enabled) && (ai !== undefined ? Bool
     margin-bottom: 0;
   }
 
-  /* KaTeX 公式在旁注中的字阶微调 */
   .sidenote-content :global(.katex) {
     font-size: 0.95em;
   }
 
-  /* 学术语义类型色阶：克制衬托，无刺眼高饱和度 */
   .sidenote-think {
     border-left-color: var(--sl-color-accent, #38bdf8);
     background-color: var(--sl-color-accent-low, rgba(56, 189, 248, 0.05));
@@ -312,25 +302,20 @@ const isAiEnabled = Boolean(features.aiAsk?.enabled) && (ai !== undefined ? Bool
   }
 </style>
 
-<script>
-  // 提取携带完整 LaTeX 语法的学术题目文本（保留公式原貌）
-  function extractLatexAwareText(root: HTMLElement): string {
+<script>function extractLatexAwareText(root: HTMLElement): string {
     const clone = root.cloneNode(true) as HTMLElement;
 
-    // 1. 块级公式：恢复为 $$...$$
     clone.querySelectorAll<HTMLElement>('.katex-display[data-latex], [data-latex].katex-display').forEach((el) => {
       const latex = el.getAttribute('data-latex') || '';
       el.textContent = `\n$$${latex}$$\n`;
     });
 
-    // 2. 行内公式：恢复为 $...$（跳过已被块级公式覆盖的子节点）
     clone.querySelectorAll<HTMLElement>('.katex[data-latex]').forEach((el) => {
       if (el.closest('.katex-display')) return;
       const latex = el.getAttribute('data-latex') || '';
       el.textContent = `$${latex}$`;
     });
 
-    // 3. 移除多余的按钮与样式/脚本等非正文元素
     clone.querySelectorAll('button, script, style, .sidenote-ai-btn').forEach((el) => el.remove());
 
     const rawText = clone.innerText || clone.textContent || '';
@@ -395,4 +380,3 @@ const isAiEnabled = Boolean(features.aiAsk?.enabled) && (ai !== undefined ? Bool
   }
   document.addEventListener('astro:page-load', initSideNoteAi);
 </script>
-

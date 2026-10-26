@@ -1,7 +1,3 @@
-// scripts/build-cross-ref-data.mjs
-// 构建期：为所有图书生成“全局跨页引用索引数据”，输出到 public/data/cross-ref/<col>-<book>.json
-// （astro build 会把 public/ 原样拷到 dist/，供客户端按需懒加载，避免将 200KB-350KB 的 JSON 塞入每一个 HTML 文件）。
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

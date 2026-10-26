@@ -6,15 +6,15 @@ OUT_DIR = "src/content/docs/collections/telecom/communication_principles/images"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 FIGURE_BOXES_7_10 = {
-    # 图 7.10.1 预测编码器原理图
+
     "fig_7_10_1.png": (287, [80, 380, 460, 495]),
-    # 图 7.10.2 线性预测编码器原理图
+
     "fig_7_10_2.png": (287, [80, 520, 460, 665]),
-    # 图 7.10.3 DPCM 系统原理图
+
     "fig_7_10_3.png": (289, [80, 380, 460, 490]),
-    # 图 7.10.4 简单 ΔM 原理框图
+
     "fig_7_10_4.png": (291, [80, 90, 460, 205]),
-    # 图 7.10.5 简单 ΔM 的波形图 (过载噪声与空载颗粒噪声)
+
     "fig_7_10_5.png": (291, [80, 500, 460, 610]),
 }
 

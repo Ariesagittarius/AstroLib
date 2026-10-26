@@ -19,7 +19,7 @@ describe('BUPT AI Gateway Provider Suite (Unit Tests)', () => {
     expect(bupt!.models.some((m) => m.id === 'deepseek-v4-flash')).toBe(true);
 
     const endpoint = getBuptDefaultEndpoint();
-    // 在 Vitest (DEV 态) 下返回本地 Dev Proxy 端点
+
     expect(endpoint).toBe(BUPT_DEV_PROXY_ENDPOINT);
   });
 
@@ -44,7 +44,7 @@ describe('BUPT AI Gateway Provider Suite (Unit Tests)', () => {
   });
 
   it('should probe campus network reachability gracefully', async () => {
-    // 模拟 fetch 成功 (包含 DEV 模式下的 json 数据)
+
     const originalFetch = globalThis.fetch;
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -55,7 +55,6 @@ describe('BUPT AI Gateway Provider Suite (Unit Tests)', () => {
     const isAvailable = await checkBuptCampusNetwork();
     expect(isAvailable).toBe(true);
 
-    // 模拟 fetch 失败（校外环境或超时）
     globalThis.fetch = vi.fn().mockRejectedValue(new Error('Network unreachable'));
     const isUnavailable = await checkBuptCampusNetwork();
     expect(isUnavailable).toBe(false);

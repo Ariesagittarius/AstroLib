@@ -1,16 +1,3 @@
-/**
- * src/features/scratchpad/core/storage.ts
- * ============================================================================
- * 空白文档草稿持久化与预设模板库 (Storage & Template Presets)
- * ============================================================================
- * 职责：
- * 1. 负责草稿数据在浏览器 localStorage 中的防抖暂存与即时回填；
- * 2. 检查并消费来自正文划选的临时文段 (sessionStorage)；
- * 3. 内置 5 套权威学术预设模板，供边界查看与双语助读即开即测；
- * 4. 遵守 Rule 9: 绝不向本地代码仓库写入临时状态。
- * ============================================================================
- */
-
 import type { ScratchpadDraft, TemplatePreset, WorkspaceViewMode } from '../types.ts';
 import { serializeFrontmatter } from './markdown-parser.ts';
 
@@ -18,9 +5,6 @@ export const STORAGE_KEY_DRAFT = 'astrolib_blank_doc_draft';
 export const STORAGE_KEY_VIEW_MODE = 'astrolib_blank_view_mode';
 export const SESSION_KEY_SNIPPET = 'astrolib_blank_import_snippet';
 
-/**
- * 内置学术预设模板集
- */
 export const TEMPLATE_PRESETS: TemplatePreset[] = [
   {
     id: 'literature-translation',
@@ -296,9 +280,7 @@ $$
 ];
 
 export class ScratchpadStorage {
-  /**
-   * 读取保存的本地草稿
-   */
+
   public static loadDraft(): ScratchpadDraft | null {
     if (typeof localStorage === 'undefined') return null;
     try {
@@ -314,9 +296,6 @@ export class ScratchpadStorage {
     }
   }
 
-  /**
-   * 保存草稿至本地 localStorage
-   */
   public static saveDraft(draft: ScratchpadDraft): void {
     if (typeof localStorage === 'undefined') return;
     try {
@@ -326,9 +305,6 @@ export class ScratchpadStorage {
     }
   }
 
-  /**
-   * 清除本地草稿
-   */
   public static clearDraft(): void {
     if (typeof localStorage === 'undefined') return;
     try {
@@ -336,9 +312,6 @@ export class ScratchpadStorage {
     } catch {}
   }
 
-  /**
-   * 读取视口模式偏好（split / preview / edit）
-   */
   public static getViewMode(): WorkspaceViewMode {
     if (typeof localStorage === 'undefined') return 'split';
     try {
@@ -347,16 +320,13 @@ export class ScratchpadStorage {
         return mode;
       }
     } catch {}
-    // 默认大屏 split，小屏 preview
+
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
       return 'preview';
     }
     return 'split';
   }
 
-  /**
-   * 保存视口模式偏好
-   */
   public static setViewMode(mode: WorkspaceViewMode): void {
     if (typeof localStorage === 'undefined') return;
     try {
@@ -364,9 +334,6 @@ export class ScratchpadStorage {
     } catch {}
   }
 
-  /**
-   * 检查并消费来自阅读页划选的临时文段
-   */
   public static consumeImportedSnippet(): string | null {
     if (typeof sessionStorage === 'undefined') return null;
     try {
@@ -379,9 +346,6 @@ export class ScratchpadStorage {
     return null;
   }
 
-  /**
-   * 设置划选文段供工作台使用
-   */
   public static setImportedSnippet(text: string): void {
     if (typeof sessionStorage === 'undefined') return;
     try {
@@ -389,9 +353,6 @@ export class ScratchpadStorage {
     } catch {}
   }
 
-  /**
-   * 获取指定 ID 的预设模板，若未找到则返回默认文献翻译模板
-   */
   public static getTemplate(templateId: string): TemplatePreset {
     const found = TEMPLATE_PRESETS.find((t) => t.id === templateId);
     return found || TEMPLATE_PRESETS[0];

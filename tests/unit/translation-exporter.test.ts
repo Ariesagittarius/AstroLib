@@ -60,7 +60,7 @@ describe('TranslationExporter Suite', () => {
     });
 
     expect(res.filename).toContain('-Satisfied-');
-    // p-0 与 p-1 是 isSatisfied: true，p-2 是 false，因此 p-2 不应在仅采纳导出中
+
     expect(res.content).toContain('向量空间');
     expect(res.content).toContain('篇幅统计：共 2 个对照单元 (仅读者满意/采纳段落)');
     expect(res.content).not.toContain('$$\\mathbf{u} + \\mathbf{v} = \\mathbf{v} + \\mathbf{u}$$');
@@ -78,7 +78,7 @@ describe('TranslationExporter Suite', () => {
     expect(res.content).toContain('# 向量代数基础');
     expect(res.content).toContain('## 1.1 向量空间');
     expect(res.content).toContain('域 $F$ 上的向量空间 $V$ 是配备两种代数运算的集合。');
-    // 不应包含英文原文的提示语
+
     expect(res.content).not.toContain('(中英双语对照)');
   });
 

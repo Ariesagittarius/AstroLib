@@ -135,19 +135,15 @@ def test():
 
     const container = new MockEl('article');
 
-    // 1. 标题
     const h2 = new MockEl('h2', '2.3 Mergesort');
     container.appendChild(h2);
 
-    // 2. 代码块（应被严格跳过）
     const pre = new MockEl('pre', 'function mergesort(a)');
     container.appendChild(pre);
 
-    // 3. 行间公式（应被严格跳过）
     const math = new MockEl('div', '$$T(n) = 2T(n/2) + O(n)$$', 'katex-display');
     container.appendChild(math);
 
-    // 4. 知识卡片（应被拆分为标题与正文两个独立单元）
     const card = new MockEl('div', '', 'knowledge-card', { 'data-title': 'Box: Binary search' });
     const header = new MockEl('div', 'Box: Binary search', 'card-header');
     const body = new MockEl('div', '', 'card-body');
@@ -157,23 +153,18 @@ def test():
     card.appendChild(body);
     container.appendChild(card);
 
-    // 5. 结尾普通段落
     const pEnd = new MockEl('p', 'Final concluding remarks.');
     container.appendChild(pEnd);
 
     const units = ParagraphAligner.extractFromArticleDom(container as any);
 
-    // 验证总共提取了 4 个单元（跳过了 pre 和 katex-display）
     expect(units.length).toBe(4);
 
-    // 单元 1: 标题 2.3 Mergesort
     expect(units[0]).toMatchObject({ id: 'p-0', type: 'heading', sourceText: '2.3 Mergesort' });
 
-    // 单元 2: 卡片标题 Box: Binary search（类型为 card-title）
     expect(units[1]).toMatchObject({ id: 'p-1', type: 'card-title', sourceText: 'Box: Binary search' });
     expect(header.getAttribute('data-trans-card-title')).toBe('true');
 
-    // 单元 3: 卡片内部正文段落
     expect(units[2]).toMatchObject({
       id: 'p-2',
       type: 'paragraph',
@@ -181,10 +172,8 @@ def test():
     });
     expect(cardP.getAttribute('data-trans-id')).toBe('p-2');
 
-    // 单元 4: 结尾段落
     expect(units[3]).toMatchObject({ id: 'p-3', type: 'paragraph', sourceText: 'Final concluding remarks.' });
 
-    // 验证 pre 和 math 没有被赋予 data-trans-id
     expect(pre.hasAttribute('data-trans-id')).toBe(false);
     expect(math.hasAttribute('data-trans-id')).toBe(false);
   });
@@ -281,8 +270,8 @@ def test():
 
     const tr2 = new MockTableEl('tr');
     const td1 = new MockTableEl('td', 'Copying array');
-    const td2 = new MockTableEl('td', '2'); // 纯数字单元格，应当跳过
-    const td3 = new MockTableEl('td', ''); // 空/纯图片单元格，应当跳过
+    const td2 = new MockTableEl('td', '2');
+    const td3 = new MockTableEl('td', '');
     tr2.appendChild(td1);
     tr2.appendChild(td2);
     tr2.appendChild(td3);
@@ -292,7 +281,6 @@ def test():
 
     const units = ParagraphAligner.extractFromArticleDom(container as any);
 
-    // 应该只提取 Operation, Problem size, Copying array (3个单元格)
     expect(units.length).toBe(3);
     expect(units[0]).toMatchObject({ id: 'p-0', type: 'table-cell', sourceText: 'Operation' });
     expect(units[1]).toMatchObject({ id: 'p-1', type: 'table-cell', sourceText: 'Problem size' });

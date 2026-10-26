@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """《电子电路基础》（刘宝玲 主编，第2版，高教出版社）自动化标准导入脚本。
 
 执行流水线：
@@ -44,14 +43,14 @@ CHAPTER_TITLES = {
 }
 
 SECTIONS_DEF = [
-    # Ch 1
+
     (1, 1, r'^##\s*1\.1\s*半导体的基本特性', '半导体的基本特性', 'sec'),
     (1, 2, r'^##\s*1\.2\s*半导体二极管的工作原理及特性', '半导体二极管的工作原理及特性', 'sec'),
     (1, 3, r'^##\s*1\.3\s*半导体二极管电路', '半导体二极管电路', 'sec'),
     (1, 4, r'^##\s*1\.4\s*计算机仿真例题', '计算机仿真例题', 'sec'),
     (1, 5, r'^##\s*本章小结', '本章小结', 'summary'),
     (1, 6, r'^##\s*习题', '第1章习题', 'exercise'),
-    # Ch 2
+
     (2, 1, r'^##\s*2\.1\s*双极型晶体管', '双极型晶体管', 'sec'),
     (2, 2, r'^##\s*2\.2\s*放大电路的基本知识', '放大电路的基本知识', 'sec'),
     (2, 3, r'^##\s*2\.3\s*基本共射放大电路的工作原理及分析方法', '基本共射放大电路的工作原理及分析方法', 'sec'),
@@ -64,7 +63,7 @@ SECTIONS_DEF = [
     (2, 10, r'^##\s*2\.10\s*计算机仿真例题', '计算机仿真例题', 'sec'),
     (2, 11, r'^##\s*本章小结', '本章小结', 'summary'),
     (2, 12, r'^##\s*习题', '第2章习题', 'exercise'),
-    # Ch 3
+
     (3, 1, r'^##\s*3\.1\s*MOS\s*场效应管', 'MOS场效应管', 'sec'),
     (3, 2, r'^##\s*3\.2\s*结型场效应管', '结型场效应管', 'sec'),
     (3, 3, r'^##\s*\\?\*?3\.3\s*VDMOS.*管和.*IGBT.*管', 'VDMOS管和IGBT管', 'sec'),
@@ -73,7 +72,7 @@ SECTIONS_DEF = [
     (3, 6, r'^##\s*3\.6\s*计算机仿真例题', '计算机仿真例题', 'sec'),
     (3, 7, r'^##\s*本章小结', '本章小结', 'summary'),
     (3, 8, r'^##\s*习题', '第3章习题', 'exercise'),
-    # Ch 4
+
     (4, 1, r'^##\s*4\.1\s*频率特性概述', '频率特性概述', 'sec'),
     (4, 2, r'^##\s*4\.2\s*晶体管结电容对放大电路高频特性的影响', '晶体管结电容对放大电路高频特性的影响', 'sec'),
     (4, 3, r'^##\s*4\.3\s*双极型晶体管放大电路的频率特性', '双极型晶体管放大电路的频率特性', 'sec'),
@@ -81,7 +80,7 @@ SECTIONS_DEF = [
     (4, 5, r'^##\s*4\.5\s*计算机仿真例题', '计算机仿真例题', 'sec'),
     (4, 6, r'^##\s*本章小结', '本章小结', 'summary'),
     (4, 7, r'^##\s*习题', '第4章习题', 'exercise'),
-    # Ch 5
+
     (5, 1, r'^##\s*5\.1\s*反馈的基本概念及判断方法', '反馈的基本概念及判断方法', 'sec'),
     (5, 2, r'^##\s*5\.2\s*负反馈对放大电路性能的影响', '负反馈对放大电路性能的影响', 'sec'),
     (5, 3, r'^##\s*5\.3\s*负反馈放大电路的分析方法', '负反馈放大电路的分析方法', 'sec'),
@@ -89,7 +88,7 @@ SECTIONS_DEF = [
     (5, 5, r'^##\s*5\.5\s*计算机仿真例题', '计算机仿真例题', 'sec'),
     (5, 6, r'^##\s*本章小结', '本章小结', 'summary'),
     (5, 7, r'^##\s*习题', '第5章习题', 'exercise'),
-    # Ch 6
+
     (6, 1, r'^##\s*6\.1\s*集成运算放大器的组成及基本特性', '集成运算放大器的组成及基本特性', 'sec'),
     (6, 2, r'^##\s*6\.2\s*集成运算放大器的主要参数', '集成运算放大器的主要参数', 'sec'),
     (6, 3, r'^##\s*\\?\*?6\.3\s*其他集成运算放大器简介', '其他集成运算放大器简介', 'sec'),
@@ -102,7 +101,7 @@ SECTIONS_DEF = [
     (6, 10, r'^##\s*6\.10\s*计算机仿真例题', '计算机仿真例题', 'sec'),
     (6, 11, r'^##\s*本章小结', '本章小结', 'summary'),
     (6, 12, r'^##\s*习题', '第6章习题', 'exercise'),
-    # Ch 7
+
     (7, 1, r'^##\s*7\.1\s*波形的基础知识', '波形的基础知识', 'sec'),
     (7, 2, r'^##\s*7\.2\s*半导体器件的开关特性', '半导体器件的开关特性', 'sec'),
     (7, 3, r'^##\s*7\.3\s*门电路', '门电路', 'sec'),
@@ -114,7 +113,7 @@ SECTIONS_DEF = [
     (7, 9, r'^##\s*7\.9\s*计算机仿真例题', '计算机仿真例题', 'sec'),
     (7, 10, r'^##\s*本章小结', '本章小结', 'summary'),
     (7, 11, r'^##\s*习题', '第7章习题', 'exercise'),
-    # Appendix & Answers
+
     (8, 1, r'^#\s*附录\s*电子电路的计算机辅助分析与设计', '附录_电子电路计算机辅助分析与设计', 'appendix'),
     (8, 2, r'^#\s*部分习题参考答案', '部分习题参考答案', 'answers'),
     (8, 3, r'^##\s*参考文献', '参考文献', 'references'),
@@ -161,7 +160,6 @@ def read_and_stitch():
     with open(os.path.join(TASK_DIRS[2], 'full.md'), 'r', encoding='utf-8') as f:
         lines3 = f.readlines()
 
-    # Boundary 1 fix:
     if lines1[-1].endswith('要求'):
         lines1[-1] = lines1[-1] + lines2[0]
         lines2 = lines2[1:]
@@ -169,7 +167,6 @@ def read_and_stitch():
         lines1[-1] = lines1[-1][:-1] + lines2[0]
         lines2 = lines2[1:]
 
-    # Boundary 2 fix:
     clean_p3_head = []
     skip = True
     for l in lines3:
@@ -187,7 +184,6 @@ def read_and_stitch():
 
     raw_text = ''.join(lines1 + lines2 + clean_p3_head)
 
-    # 兜底：若有残存的 <img src="images/xxx.jpg" ...> 转换为 Markdown 语法
     raw_text = re.sub(r'<img\b[^>]*src=["\'](images/[^"\']+)["\'][^>]*>', r'![](\1)', raw_text)
 
     return [l + '\n' for l in raw_text.splitlines()]
@@ -236,7 +232,6 @@ def main():
     all_lines = read_and_stitch()
     print(f"📖 拼接后蓝本行数: {len(all_lines)}")
 
-    # 1. 提取前言体系
     idx_intro = None
     idx_cip = None
     idx_preface2 = None
@@ -276,7 +271,6 @@ def main():
         f.write(IMPORTS_HEADER.format(title='第一版前言') + pref1_body + '\n')
     print("  [page] 生成 01_第一版前言.mdx")
 
-    # 2. 定位各小节起止行号
     curr_idx = 0
     section_ranges = []
     for ch, sec, pat, title, kind in SECTIONS_DEF:
@@ -292,7 +286,6 @@ def main():
         section_ranges.append((ch, sec, title, kind, match_idx))
         curr_idx = match_idx + 1
 
-    # 定位各章引言起始点
     ch_head_indices = {}
     ch_pat = re.compile(r'^##\s*第\s*(\d+)\s*章')
     for i, line in enumerate(all_lines):
@@ -301,14 +294,12 @@ def main():
             ch_num = int(m.group(1))
             ch_head_indices[ch_num] = i
 
-    # 3. 预先解析书末部分习题参考答案
     ans_item = [item for item in section_ranges if item[3] == 'answers'][0]
     ref_item = [item for item in section_ranges if item[3] == 'references'][0]
     ans_raw_lines = all_lines[ans_item[4]:ref_item[4]]
     answers_map = parse_answers_map(ans_raw_lines, sanitizer)
     print(f"📖 书末解析出 {len(answers_map)} 道习题参考答案")
 
-    # 4. 逐节点生成 MDX 与题库 Item
     q_re = re.compile(r'^(?:#{1,6}\s*)?([1-7])\.(\d+)\.(\d+)\.?\s*(.*)$')
     all_questions_by_ch = {}
     total_q_count = 0
@@ -319,7 +310,7 @@ def main():
         raw_lines = all_lines[start_idx:end_idx]
 
         if kind == 'exercise':
-            # 处理课后习题页面
+
             ex_lines = raw_lines[1:] if raw_lines and raw_lines[0].strip().startswith('##') else raw_lines
             q_matches = []
             for line_no, line in enumerate(ex_lines):
@@ -337,11 +328,9 @@ def main():
                 q_code = f"{q_c}.{q_s}.{q_n}"
                 card_title = f"习题 {q_code}"
 
-                # 第一行剥离题号
                 q_block_lines[0] = first_line_stem
                 stem_clean = sanitizer.sanitize_body(q_block_lines).strip()
 
-                # 关联参考答案
                 sol_mdx = ""
                 sol_text = answers_map.get(q_code, "")
                 if sol_text:
@@ -350,7 +339,6 @@ def main():
                 card_mdx = f'<Exercise title="{card_title}">\n{stem_clean}{sol_mdx}\n</Exercise>'
                 mdx_cards.append(card_mdx)
 
-                # 题库 Item
                 q_id = f"EC-TB-CH{q_c:02d}-S{q_s:02d}-Q{q_n:02d}"
                 q_item = {
                     "id": q_id,
@@ -401,7 +389,7 @@ def main():
             print(f"  [page] 生成 {fname} (共 {len(q_matches)} 道习题)")
 
         elif kind == 'summary':
-            # 本章小结
+
             body_lines = list(raw_lines)
             if body_lines and body_lines[0].strip().startswith('##'):
                 body_lines = body_lines[1:]
@@ -414,7 +402,7 @@ def main():
             print(f"  [page] 生成 {fname}")
 
         elif kind == 'appendix':
-            # 附录
+
             body_lines = list(raw_lines)
             if body_lines and body_lines[0].strip().startswith('#'):
                 body_lines = body_lines[1:]
@@ -427,7 +415,7 @@ def main():
             print(f"  [page] 生成 {fname}")
 
         elif kind == 'answers':
-            # 部分习题参考答案独立页面
+
             body_lines = list(raw_lines)
             if body_lines and body_lines[0].strip().startswith('#'):
                 body_lines = body_lines[1:]
@@ -440,7 +428,7 @@ def main():
             print(f"  [page] 生成 {fname}")
 
         elif kind == 'references':
-            # 参考文献
+
             body_lines = list(raw_lines)
             if body_lines and body_lines[0].strip().startswith('#'):
                 body_lines = body_lines[1:]
@@ -453,7 +441,7 @@ def main():
             print(f"  [page] 生成 {fname}")
 
         else:
-            # 常规小节或计算机仿真例题
+
             body_lines = list(raw_lines)
             prefix = ""
             if sec == 1 and ch in ch_head_indices:
@@ -463,7 +451,6 @@ def main():
                     intro_content = card_parser.render_body(ch_intro_lines[1:])
                     prefix = f"## 第{ch}章 {CHAPTER_TITLES[ch]}\n\n" + (intro_content + "\n\n" if intro_content else "")
 
-            # 剥离小节自身标题行
             if body_lines and body_lines[0].strip().startswith('##'):
                 body_lines = body_lines[1:]
 
@@ -477,7 +464,6 @@ def main():
                 f.write(IMPORTS_HEADER.format(title=page_title) + full_body + '\n')
             print(f"  [page] 生成 {fname}")
 
-    # 5. 导出题库全量 JSON
     exercise_db = {
         "book": "electronic_circuits",
         "title": "电子电路基础（第2版）",
@@ -493,7 +479,6 @@ def main():
         json.dump(exercise_db, f, ensure_ascii=False, indent=2)
     print(f"\n📦 题库数据成功导出: {OUT_EXERCISE_JSON} (共 {total_q_count} 题)")
 
-    # 6. 复制全书引用的本地图片
     print("\n🖼️ 开始扫描并拷贝所有引用的图片...")
     all_mdx_files = [os.path.join(OUT_DOCS_DIR, f) for f in os.listdir(OUT_DOCS_DIR) if f.endswith('.mdx')]
     img_refs = set()
@@ -525,7 +510,6 @@ def main():
     if missing:
         print(f"  [warn] 缺失图片列表: {missing}")
 
-    # 7. 复制封面
     if os.path.exists(COVER_SRC_IMAGE):
         shutil.copy2(COVER_SRC_IMAGE, OUT_COVER_PATH)
         print(f"📸 封面已就绪: {OUT_COVER_PATH}")

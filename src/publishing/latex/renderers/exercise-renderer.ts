@@ -1,8 +1,3 @@
-/**
- * src/publishing/latex/renderers/exercise-renderer.ts
- * 生产级学术练习册 / 试卷 LaTeX 源码生成引擎 (基于 Jinwen-XU/homework 宏包标准)
- */
-
 import type { SlimQuestionItem } from '../../../types/exercises';
 import {
   type ExerciseExportSettings,
@@ -18,21 +13,18 @@ import {
 export type LatexExportConfig = ExerciseExportSettings;
 export const DEFAULT_LATEX_CONFIG: LatexExportConfig = DEFAULT_EXERCISE_EXPORT_SETTINGS;
 
-/**
- * 格式化选择题选项，生成 tasks 宏包标准语法
- */
 export function formatChoiceTasks(options: Array<{ key: string; text_raw?: string; text_html?: string }>): string {
   if (!options || options.length === 0) return '';
 
   const cleanedOptions = options.map((opt) => {
     let t = (opt.text_raw || opt.text_html || '').trim();
-    // 去除选项前可能自带的 A. B. C. D. 避免重复编号
+
     t = t.replace(/^[A-Da-d][\.\、\s]\s*/, '');
     return formatLatexContent(t);
   });
 
   const maxVisualWidth = Math.max(...cleanedOptions.map((o) => getVisualWidth(o)));
-  // 精准列数计算：长选项 (>=30) 排 1 列，中等 (>=10) 排 2 列，短选项 (<10) 排 4 列
+
   const cols = maxVisualWidth >= 30 ? 1 : maxVisualWidth >= 10 ? 2 : 4;
 
   let code = `\\begin{tasks}(${cols})\n`;
@@ -43,9 +35,6 @@ export function formatChoiceTasks(options: Array<{ key: string; text_raw?: strin
   return code;
 }
 
-/**
- * 获取自然书写留白空间对应的 LaTeX 命令
- */
 export function getSpaceLatex(type: string, writingSpace: 'comfortable' | 'compact' | 'none'): string {
   if (writingSpace === 'none' || type === 'choice') return '';
 
@@ -56,23 +45,18 @@ export function getSpaceLatex(type: string, writingSpace: 'comfortable' | 'compa
     return '\\vspace{3.0cm}\n';
   }
 
-  // comfortable
   if (type === 'blank') return '\\vspace{1.2cm}\n';
   if (type === 'calc') return '\\vspace{5.5cm}\n';
   if (type === 'proof') return '\\vspace{7.5cm}\n';
   return '\\vspace{4.5cm}\n';
 }
 
-/**
- * 主生成函数：根据题目列表与配置生成纯正 Jinwen-XU/homework 宏包标准的 LaTeX 源码
- */
 export function generateLatexDocument(
   questions: SlimQuestionItem[],
   userConfig: Partial<LatexExportConfig> = {}
 ): string {
   const config: LatexExportConfig = { ...DEFAULT_LATEX_CONFIG, ...userConfig };
 
-  // 题型分组统计
   const typeGroups: Record<string, SlimQuestionItem[]> = {
     choice: [],
     blank: [],
@@ -90,7 +74,6 @@ export function generateLatexDocument(
   const paperOption = config.paperSize === 'b5' ? 'b5paper' : 'a4paper';
   const fontPt = `${config.fontSize === 10.5 ? '10.5pt' : `${config.fontSize}pt`}`;
 
-  // 构建 documentclass options (严格遵循 Jinwen-XU/homework 宏包规范)
   const classOptions: string[] = [
     paperOption,
     fontPt === '10.5pt' ? '11pt' : fontPt,
@@ -114,14 +97,12 @@ export function generateLatexDocument(
     classOptions.push('colored solution');
   }
 
-  // 学术排版与字体配置 (统一委托至 Academic Typography System 唯一入口)
   const typographyCode = renderFontPreamble(config, {
     includePackage: false,
     resolutionMode: config.resolutionMode || 'deterministic',
     userExplicit: userConfig,
   });
 
-  // 页码设置（显式覆盖 homework.cls 默认的 \fancypagestyle{fancy}，杜绝双重页脚与浅灰残留）
   let pageNumberCode = '';
   if (config.pageNumbering === 'simple') {
     pageNumberCode = `
@@ -206,9 +187,6 @@ ${typographyCode}${pageNumberCode}
 \\ExplSyntaxOff
 `;
 
-  // -------------------------------------------------------------------------
-  // 卷头与元数据 (Header & Metadata Control)
-  // -------------------------------------------------------------------------
   if (config.headerMode === 'standard') {
     const titleSub = config.showSubtitle && config.subtitle && config.subtitle.trim()
       ? ` \\\\\n  \\large\\normalfont ${escapeLatexMeta(config.subtitle)}`
@@ -260,15 +238,12 @@ ${dateCode}
 \\vspace{0.3em}\\hrule\\vspace{1.0em}
 `;
   } else {
-    // headerMode === 'none' (无卷头纯题面，最大化节约纸张)
+
     code += `
 \\begin{document}
 `;
   }
 
-  // -------------------------------------------------------------------------
-  // 题目正文列表渲染
-  // -------------------------------------------------------------------------
   const sectionRoman = ['一', '二', '三', '四', '五', '六', '七', '八'];
   let currentSectionIdx = 0;
 
@@ -298,12 +273,10 @@ ${dateCode}
       code += `\\begin{problem}\n`;
       code += `  ${stemLatex}\n`;
 
-      // 选择题选项排版 (tasks 宏包)
       if (q.type === 'choice' && q.options && q.options.length > 0) {
         code += `\n  ${formatChoiceTasks(q.options)}\n`;
       }
 
-      // 如果是随题附答案模式 (inline solution)
       if (config.answerPlacement === 'inline') {
         const ans = formatLatexContent(q.answer || '').trim();
         const rawSteps = q.steps_raw || q.hints_raw || '';
@@ -332,7 +305,7 @@ ${dateCode}
         }
         code += `\\end{solution}\n\n`;
       } else {
-        // 纯题干留白空间
+
         if (spaceCmd) {
           code += `\n  ${spaceCmd}`;
         }
@@ -341,11 +314,8 @@ ${dateCode}
     });
   });
 
-  // -------------------------------------------------------------------------
-  // 参考答案与详细推导附录 (Appendix Mode)
-  // -------------------------------------------------------------------------
   if (config.answerPlacement === 'appendix') {
-    // 按照大题顺序组装题目列表，保证题号严格一一对应
+
     const orderedQuestions: SlimQuestionItem[] = [];
     typeOrder.forEach(({ type }) => {
       const list = typeGroups[type] || [];
@@ -358,7 +328,6 @@ ${dateCode}
     code += `\\clearpage\n`;
     code += `\\section*{参考答案与详细推导}\n\n`;
 
-    // 1. 答案速查三线表 (longtable + booktabs，支持长题库自动分页)
     code += `\\subsection*{一、参考答案速查}\n\n`;
     code += `\\begin{longtable}{c p{5.5cm} c p{5.5cm}}\n`;
     code += `  \\toprule\n`;
@@ -400,7 +369,6 @@ ${dateCode}
 
     code += `\\end{longtable}\n\n`;
 
-    // 2. 详细解答与证明过程 (按 Jinwen-XU/homework 的 solution 环境)
     code += `\\subsection*{二、详细推导与证明过程}\n\n`;
 
     let qIdx = 1;

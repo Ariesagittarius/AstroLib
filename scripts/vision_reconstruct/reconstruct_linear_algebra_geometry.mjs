@@ -11,12 +11,8 @@ const bookContentDir = path.join(ROOT_DIR, 'src/content/docs/collections/math/li
 if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 if (!fs.existsSync(bookContentDir)) fs.mkdirSync(bookContentDir, { recursive: true });
 
-/**
- * 全书物理页码与章节规划表
- * 常数偏移: PHYSICAL_PAGE = BOOK_PAGE + 10
- */
 export const SECTIONS = [
-  // ===================== 第 1 章 行列式 (Phys 11 ~ 41) =====================
+
   {
     chapter: 1,
     section: '1.1',
@@ -87,9 +83,6 @@ export const SECTIONS = [
   }
 ];
 
-/**
- * 文本清洗器：剥离思维链残留、Markdown围栏及溢出的课后题
- */
 export function cleanGeminiOutput(rawText) {
   let cleaned = rawText.trim();
 
@@ -103,7 +96,6 @@ export function cleanGeminiOutput(rawText) {
     cleaned = cleaned.replace(/\r?\n```\s*$/, '');
   }
 
-  // 截断课后习题
   cleaned = cleaned.replace(/##\s*习题\s*[\d一二三四五六七八九]+[\s\S]*$/, '');
   cleaned = cleaned.replace(/###\s*习题\s*[\d一二三四五六七八九]+[\s\S]*$/, '');
   cleaned = cleaned.replace(/<Knowledge[^>]*title=["'][^"']*习题[\s\S]*$/, '');
@@ -112,9 +104,6 @@ export function cleanGeminiOutput(rawText) {
   return cleaned.trim();
 }
 
-/**
- * AST 卡片自动平衡与闭合器
- */
 export function balanceJsxCards(text) {
   const cardNames = ['Knowledge', 'Example', 'Solution', 'SideNote', 'Block', 'Analysis', 'Note', 'Method', 'Guide', 'Variant'];
   const tagRegex = /<(\/)?([a-zA-Z0-9_-]+)(?:\s+(?:"[^"]*"|'[^']*'|[^>'"])*)?(\/)?>/g;
@@ -159,55 +148,42 @@ export function balanceJsxCards(text) {
   return balancedText;
 }
 
-/**
- * MDX 后处理管道：规范 KaTeX、解耦长题干、规范配图路径
- */
 export function postProcessSectionMdx(content, chapter) {
   let text = content;
 
-  // 1. 将带 \tag 的行内公式提升为独立块级公式 $$
   text = text.replace(/(?<!\$)\$(?!\$)([^$\r\n]*?\\tag\{[^{}]+\}[^$\r\n]*?)\$(?!\$)/g, (match, formula) => {
     return `\n\n$$\n${formula.trim()}\n$$\n\n`;
   });
 
-  // 2. 保证包含 \tag 的 $$ 单行公式拆为前后空行的 3 行结构
   text = text.replace(/(?<!\$)\$\$([^\$\r\n]*?\\tag\{[^{}]+\}[^\$\r\n]*?)\$\$(?!\$)/g, (match, formula) => {
     return `\n\n$$\n${formula.trim()}\n$$\n\n`;
   });
 
-  // 3. 保证 $$ 块前后必须留有空行
   text = text.replace(/([^\r\n])\s*\n\$\$/g, (match, p1) => `${p1}\n\n$$`);
   text = text.replace(/\$\$\s*\n([^\r\n])/g, (match, p1) => `$$\n\n${p1}`);
 
-  // 4. 标准化 KaTeX tag 内的编号
   text = text.replace(/\\tag\{①\}/g, '\\tag{1}');
   text = text.replace(/\\tag\{②\}/g, '\\tag{2}');
   text = text.replace(/\\tag\{③\}/g, '\\tag{3}');
   text = text.replace(/\\tag\{④\}/g, '\\tag{4}');
   text = text.replace(/\\tag\{⑤\}/g, '\\tag{5}');
 
-  // 5. 保证 JSX 卡片开闭标签前后留有空行
   text = text.replace(/(<(?:Knowledge|Solution|Example|SideNote|Block|Analysis)(?:\s+(?:"[^"]*"|'[^']*'|[^>'"])*)?>)([^\r\n])/g, '$1\n\n$2');
   text = text.replace(/([^\r\n])(<\/(?:Knowledge|Solution|Example|SideNote|Block|Analysis)>)/g, '$1\n\n$2');
 
-  // 6. 严防课后习题泄露
   text = text.replace(/<Knowledge[^>]*title=["'][^"']*习题[\s\S]*$/, '');
   text = text.replace(/##\s*习题[\s\S]*$/, '');
   text = text.replace(/###\s*习题[\s\S]*$/, '');
   text = text.replace(new RegExp(`第\\s*${chapter}\\s*章习题[\\s\\S]*$`), '');
   text = text.replace(/综合练习题[\s\S]*$/, '');
 
-  // 7. AST 卡片配平
   text = balanceJsxCards(text);
 
-  // 8. 规范图片路径为 ./images/fig_X_Y.png
   text = text.replace(/!\[(.*?)\]\(images\//g, '![$1](./images/');
   text = text.replace(new RegExp(`!\\[(.*?)\\]\\(\\./images/fig_${chapter}\\.(\\d+)\\.png\\)`, 'g'), `![$1](./images/fig_${chapter}_$2.png)`);
 
-  // 9. 移除正文多余的 H1 标题
   text = text.replace(/^#[^#\r\n]+\r?\n+/gm, '');
 
-  // 10. 长例题题干分流（>60 字符），防止 title 导致全局加粗与折行挤压
   text = text.replace(/<Example\s+title="((?:例\s*[\d\.]+|例题\s*[\d\.]+|例\s*\d+)[^"]{60,})">/g, (match, fullTitle) => {
     const m = fullTitle.match(/^(例\s*[\d\.]+|例题\s*[\d\.]+|例\s*\d+)/);
     const prefix = m ? m[1] : '例题';
@@ -215,7 +191,6 @@ export function postProcessSectionMdx(content, chapter) {
     return `<Example title="${prefix}">\n\n${safeTitle}\n\n`;
   });
 
-  // 11. 清理多余空行
   text = text.replace(/\n{4,}/g, '\n\n\n');
 
   return text.trim();
@@ -281,22 +256,22 @@ ${boundaryDirective}
 3. 100% 工业级 KaTeX 纯净度与独立块级：
    - 变量符号统一用 $...$（如 $A, \boldsymbol{x}, \lambda, \det(A)$），严禁裸西文字符；
    - 【带编号公式】：所有带 \\tag{X.Y} 的公式必须作为独立块级公式，且前后必须留有空行：
-     
+
      $$
      formula \\tag{X.Y}
      $$
-     
+
    - 【严防嵌套 tag】：在 cases、aligned 或矩阵等公式环境内部严禁使用 \\tag，内部编号统一使用对齐符与标准括号数字（如 & (1) \\ & (2)）；
    - 杜绝公式内 Unicode 带圈字符（如 ①，②），一律使用 ASCII 标准 (1), (2)。
 
 4. 响应式配图规范：
    - 若版面内包含几何配图（如对角线法则图、空间坐标系、平面直线示意图），统一使用 Markdown 图片语法包裹在 <figure class="vp-figure"> 中：
-     
+
      <figure class="vp-figure">
        ![](./images/fig_X_Y.png)
        <figcaption>图 X.Y 详细说明</figcaption>
      </figure>
-     
+
    - 图片文件名统一遵循 ./images/fig_X_Y.png 规范。
 
 5. 杜绝课后习题平铺：
@@ -363,7 +338,6 @@ export async function runSection(sec, options = {}) {
     chunkOutputs.push(chunkText);
   }
 
-  // 组装并执行后处理
   const joinedBody = chunkOutputs.join('\n\n');
   const processedBody = postProcessSectionMdx(joinedBody, sec.chapter);
   const finalMdx = buildHeader(sec.section, sec.displayTitle, sec.leadIn) + processedBody + buildFooter(sec.chapter, sec.section, sec.title);
@@ -372,7 +346,6 @@ export async function runSection(sec, options = {}) {
   fs.writeFileSync(targetFile, finalMdx, 'utf-8');
   console.log(`\n📄 [Assembly] 成功组装保存第 ${sec.section} 节到：${targetFile} (${finalMdx.length} 字符)`);
 
-  // 质量门禁扫描
   console.log(`🔍 [Scan] 正在对 ${path.basename(targetFile)} 执行质量门禁扫描...`);
   try {
     const scanOut = execSync(`node scripts/scan-mdx.mjs "${targetFile}"`, { encoding: 'utf-8' });

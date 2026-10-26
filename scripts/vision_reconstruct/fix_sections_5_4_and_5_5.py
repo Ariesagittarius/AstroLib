@@ -18,42 +18,32 @@ REBUILD_DIR = 'src/content/docs/collections/math/engineering_analysis_rebuild'
 F55_PATH = os.path.join(REBUILD_DIR, '5.5_多元向量值函数的导数与微分.mdx')
 F54_PATH = os.path.join(REBUILD_DIR, '5.4_多元函数的Taylor公式与极值问题.mdx')
 
-# ----------------- 1. 处理 5.5 节 -----------------
 with open(F55_PATH, 'r', encoding='utf-8') as f:
     text_55 = f.read()
 
-# 找到真正第 5.5 节起点
-# "# 第五节 多元向量值函数的导数与微分"
 pattern_55_start = re.compile(r'#\s*第五节\s*多元向量值函数的导数与微分')
 m_55 = pattern_55_start.search(text_55)
 if not m_55:
     raise ValueError("未在 5.5 中找到 '# 第五节 多元向量值函数的导数与微分'")
 
-# 截取误植的 5.4 后半段 (Lagrange 内容)
-# 寻找正文前导说明后的位置
 lead_end = text_55.find('本节将数量值函数的导数与微分概念及其运算法则推广到向量值函数。')
 lead_end = text_55.find('\n', lead_end) + 1
 
 lagrange_raw = text_55[lead_end:m_55.start()].strip()
-# 去掉结尾可能有的 ***
+
 lagrange_raw = re.sub(r'\s*\*\*\*\s*$', '', lagrange_raw)
 
-# 剩余 5.5 真正正文
 body_55 = text_55[m_55.end():].strip()
 
-# 修复 5.5 中的矩阵多余 \end{bmatrix} (位于定义 5.3)
 body_55 = re.sub(
     r'(\\end\{bmatrix\}\s*)\n\\end\{bmatrix\}',
     r'\1',
     body_55
 )
 
-# 规范 5.5 标题层级
-# 5.1, 5.2 已经是 ## 级别，确保 5.3, 5.4 为 ##
 body_55 = re.sub(r'###\s*5\.3\s*微分运算法则', '## 5.3 复合求导链式法则与微分运算法则', body_55)
 body_55 = re.sub(r'###\s*5\.4\s*由方程组确定的隐函数微分法', '## 5.4 由方程组确定的隐函数微分法', body_55)
 
-# 重组完整的 5.5
 header_55 = """---
 title: '5.5 多元向量值函数的导数与微分'
 ---
@@ -79,7 +69,6 @@ import Exercise from '@/components/Exercise.astro';
 
 final_55 = header_55 + "\n\n" + body_55
 
-# 确保以 ExerciseTrigger 结尾
 if not final_55.strip().endswith('</ExerciseTrigger>'):
     final_55 = re.sub(r'<ExerciseTrigger[\s\S]*$', '', final_55).strip()
     final_55 += '\n\n<ExerciseTrigger chapter={5} section="5.4" title="5.5 多元向量值函数的导数与微分 课后真题与自测练习" />\n'
@@ -90,39 +79,31 @@ with open(F55_PATH, 'w', encoding='utf-8') as f:
 
 print(f"✅ 5.5 节清洗完毕！已移除误植内容，矩阵语法已修复。")
 
-# ----------------- 2. 处理 5.4 节 -----------------
 with open(F54_PATH, 'r', encoding='utf-8') as f:
     text_54 = f.read()
 
-# 移除 5.4 内部可能重复的一级/三级冗余大标题 "### 第四节 多元函数的 Taylor 公式与极值问题"
 text_54 = re.sub(r'###\s*第四节[^\n]*\n+', '', text_54)
 
-# 截断点：在 5.4 的 例 4.4 题干之后，替换原本的截断结尾
 ex44_marker = '<Example title="例 4.4 求函数 $f(x,y)=x^2+2x^2y+y^2$ 在圆域 $D=\\{(x,y) \\mid x^2+y^2 \\le 1\\}$ 上的最大值与最小值">'
 idx_ex44 = text_54.find(ex44_marker)
 if idx_ex44 == -1:
-    # 尝试更宽泛的匹配
+
     ex44_marker = '例 4.4'
     idx_ex44 = text_54.find('例 4.4')
 
-# 保留 5.4 从开头到 例 4.4 题干结束的内容
 cut_pos = text_54.find('</Example>', idx_ex44) + len('</Example>')
 base_54 = text_54[:cut_pos].strip()
 
-# 修复 lagrange_raw 中的 cases tag 错误
-# 将 \begin{cases} L_x = ... \tag{1} \\ ... \end{cases} 改造为规范的方程编号
 lagrange_fixed = lagrange_raw
 lagrange_fixed = re.sub(r'L_x = 2z \+ y \+ \\lambda yz = 0,\s*\\tag\{1\}', r'L_x = 2z + y + \\lambda yz = 0, & \\text{①}', lagrange_fixed)
 lagrange_fixed = re.sub(r'L_y = 2z \+ x \+ \\lambda xz = 0,\s*\\tag\{2\}', r'L_y = 2z + x + \\lambda xz = 0, & \\text{②}', lagrange_fixed)
 lagrange_fixed = re.sub(r'L_z = 2x \+ 2y \+ \\lambda xy = 0,\s*\\tag\{3\}', r'L_z = 2x + 2y + \\lambda xy = 0, & \\text{③}', lagrange_fixed)
 lagrange_fixed = re.sub(r'L_\\lambda = xyz - V = 0\.\s*\\tag\{4\}', r'L_\\lambda = xyz - V = 0, & \\text{④}', lagrange_fixed)
 
-# 其余独立公式编号
 lagrange_fixed = re.sub(r'\(y - x\)\(1 \+ \\lambda z\) = 0,\s*\\tag\{5\}', r'(y - x)(1 + \\lambda z) = 0, \\tag{4.27}', lagrange_fixed)
 lagrange_fixed = re.sub(r'\(2z - y\)\(2 \+ \\lambda x\) = 0,\s*\\tag\{6\}', r'(2z - y)(2 + \\lambda x) = 0, \\tag{4.28}', lagrange_fixed)
 lagrange_fixed = re.sub(r'x = y = 2z,\s*\\tag\{7\}', r'x = y = 2z, \\tag{4.29}', lagrange_fixed)
 
-# 缝合完整的例 4.4 解答、例 4.5、最小二乘法、产出水平、Lagrange 乘数法
 middle_content = """
 
 <Solution title="解">

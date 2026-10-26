@@ -11,14 +11,13 @@ const rebuildDir = path.join(ROOT_DIR, 'src/content/docs/collections/math/engine
 if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 if (!fs.existsSync(rebuildDir)) fs.mkdirSync(rebuildDir, { recursive: true });
 
-// Chapter 3 Section Specifications
 const SECTIONS = [
   {
     chapter: 3,
     section: '3.1',
     title: '定积分的概念存在条件与性质',
     startPage: 189,
-    endPage: 201, // Cuts before 习题 3.1
+    endPage: 201,
     leadIn: '本节通过几个实例引出定积分的定义、几何意义以及定积分的存在条件，最后介绍定积分的几个常用性质。\n\n'
   },
   {
@@ -26,7 +25,7 @@ const SECTIONS = [
     section: '3.2',
     title: '微积分基本公式与基本定理',
     startPage: 203,
-    endPage: 211, // Cuts before 习题 3.2
+    endPage: 211,
     leadIn: '本节将在讲解微积分基本公式（即 Newton-Leibniz 公式）与基本定理的基础上，阐述微分与积分的关系，将定积分的计算问题转化为求被积函数的原函数或不定积分的问题，说明求积分是求微分的逆运算。\n\n'
   },
   {
@@ -34,7 +33,7 @@ const SECTIONS = [
     section: '3.3',
     title: '两种基本积分法',
     startPage: 214,
-    endPage: 230, // Cuts before 习题 3.3
+    endPage: 230,
     leadIn: '利用积分的线性性质和基本积分表，只能计算某些简单函数的积分。因此，还需要进一步寻求计算积分的其他方法。本节介绍两种基本积分法，即换元法与分部积分法，它们分别对应于微分法中的复合函数求导法则与函数乘积的求导法则，也是其他各种特殊积分方法的基础，读者应当熟练掌握。\n\n'
   },
   {
@@ -42,7 +41,7 @@ const SECTIONS = [
     section: '3.4',
     title: '定积分的应用',
     startPage: 233,
-    endPage: 242, // Cuts before 习题 3.4
+    endPage: 242,
     leadIn: '在科学技术中有很多量都需要用定积分来表达。本节重点阐述建立这些量的积分表达式的常用方法——微元法，通过几何与物理方面的例子说明运用这种方法的具体步骤。\n\n'
   },
   {
@@ -50,7 +49,7 @@ const SECTIONS = [
     section: '3.5',
     title: '反常积分',
     startPage: 244,
-    endPage: 256, // Cuts before 习题 3.5 & Chapter review exercises
+    endPage: 256,
     leadIn: '根据定积分的定义，要使函数 $f$ 在区间 $[a,b]$ 上的定积分有意义，至少要满足两个条件：(1) 积分区间 $[a,b]$ 是有限的；(2) $f$ 是 $[a,b]$ 上的有界函数。但在许多理论和实际问题的研究中，往往要求把定积分的概念加以推广，研究无穷区间上或者无界函数的积分问题，这种积分称为反常积分。反常积分有两种，它们都可以通过对定积分再取一次极限来定义。本节讨论两种反常积分的概念及其审敛准则。\n\n'
   }
 ];
@@ -80,11 +79,11 @@ export function buildPrompt(section, title, isFirstBatch, isLastBatch) {
 3. 100% 工业级 KaTeX 纯净度与独立块级：
    - 变量符号统一用 $...$（如 $x, y, \\Delta x, \\mathrm{d}x, \\int_a^b$）；
    - 【带编号公式】：所有带 \\tag{X.Y} 的公式必须作为独立块级公式，且前后必须留有纯空行：
-     
+
      $$
      formula \\tag{X.Y}
      $$
-     
+
      严禁写在行内 $...$ 中，严禁紧贴正文不留空行（否则 KaTeX 将抛出 parse error 报错）。
 
 4. 响应式配图规范：
@@ -111,18 +110,15 @@ export function buildPrompt(section, title, isFirstBatch, isLastBatch) {
 export function cleanBatchText(rawText) {
   let cleaned = rawText.trim();
 
-  // Strip thinking outline preamble if present
   cleaned = cleaned.replace(/^---[\s\S]*?\*\*思考大纲\*\*[\s\S]*?---\s*/i, '');
   cleaned = cleaned.replace(/^---[\s\S]*?#\s*教材扫描图内容描述[\s\S]*?---\s*/i, '');
   cleaned = cleaned.replace(/^[\s\S]*?<\/thought>\s*/i, '');
 
-  // Strip outer code blocks
   if (cleaned.startsWith('```')) {
     cleaned = cleaned.replace(/^```[a-zA-Z0-9_-]*\r?\n/, '');
     cleaned = cleaned.replace(/\r?\n```\s*$/, '');
   }
 
-  // Remove trailing exercises if any leaked
   cleaned = cleaned.replace(/##\s*习题\s*[\d\.]+[\s\S]*$/, '');
   cleaned = cleaned.replace(/###\s*习题\s*[\d\.]+[\s\S]*$/, '');
   cleaned = cleaned.replace(/<Knowledge[^>]*title=["'][^"']*习题[\s\S]*$/, '');
@@ -134,34 +130,28 @@ export function cleanBatchText(rawText) {
 export function postProcessSectionMdx(content) {
   let text = content;
 
-  // 1. Convert any single $ with \tag to $$ display block
   text = text.replace(/(?<!\$)\$(?!\$)([^$\n\r]*?\\tag\{[^{}]+\}[^$\n\r]*?)\$(?!\$)/g, (match, formula) => {
     return `\n\n$$\n${formula.trim()}\n$$\n\n`;
   });
 
-  // 2. Ensure every single-line $$ formula containing \tag is broken into 3 lines with blank lines
   text = text.replace(/([^\r\n]?)\s*\$\$([^\r\n]*?\\tag\{[^{}]+\}[^\r\n]*?)\$\$/g, (match, prefix, formula) => {
     const pre = prefix ? `${prefix}\n\n` : '\n\n';
     return `${pre}$$\n${formula.trim()}\n$$\n\n`;
   });
 
-  // 3. For multiline $$ containing \tag, ensure blank lines around $$
   text = text.replace(/([^\r\n])\s*\$\$([\s\S]*?\\tag\{[^{}]+\}[\s\S]*?)\$\$/g, (match, prefix, formula) => {
     return `${prefix}\n\n$$\n${formula.trim()}\n$$\n\n`;
   });
 
-  // 4. Ensure blank line after opening JSX cards and before closing JSX cards
   text = text.replace(/(<(?:Knowledge|Solution|Example|SideNote|Block|Analysis)[^>]*>)([^\r\n])/g, '$1\n\n$2');
   text = text.replace(/([^\r\n])(<\/(?:Knowledge|Solution|Example|SideNote|Block|Analysis)>)/g, '$1\n\n$2');
 
-  // 5. Truncate exercises if any leaked
   text = text.replace(/<Knowledge[^>]*title=["'][^"']*习题[\s\S]*$/, '');
   text = text.replace(/##\s*习题[\s\S]*$/, '');
   text = text.replace(/###\s*习题[\s\S]*$/, '');
   text = text.replace(/第\s*3\s*章习题[\s\S]*$/, '');
   text = text.replace(/综合练习题[\s\S]*$/, '');
 
-  // 6. Close unclosed cards if truncation cut off before closing tag
   const tags = ['Knowledge', 'Example', 'Solution', 'SideNote', 'Block', 'Analysis'];
   for (const tag of tags) {
     const openMatches = (text.match(new RegExp(`<${tag}\\b`, 'g')) || []).length;
@@ -173,10 +163,8 @@ export function postProcessSectionMdx(content) {
     }
   }
 
-  // 7. Remove hallucinated table image placeholders if any
   text = text.replace(/<figure[^>]*>\s*<img[^>]*src=["'][^"']*fig_3_2_1\.png["'][^>]*>\s*<figcaption>[^<]*<\/figcaption>\s*<\/figure>/gi, '');
 
-  // 8. Deduplicate excessive newlines
   text = text.replace(/\n{4,}/g, '\n\n\n');
 
   return text.trim();
@@ -214,7 +202,6 @@ async function runSection(sec) {
   console.log(`📖 物理页范围：Phys ${sec.startPage} ~ ${sec.endPage} (共 ${sec.endPage - sec.startPage + 1} 页)`);
   console.log(`======================================================`);
 
-  // Build batches (3 pages per batch)
   const batches = [];
   for (let p = sec.startPage; p <= sec.endPage; p += 3) {
     const bEnd = Math.min(p + 2, sec.endPage);
@@ -257,7 +244,6 @@ async function runSection(sec) {
     chunkOutputs.push(chunkText);
   }
 
-  // Assemble and Post-Process Section MDX
   const joinedBody = chunkOutputs.join('\n\n');
   const processedBody = postProcessSectionMdx(joinedBody);
   const finalMdx = buildHeader(sec.section, sec.title, sec.leadIn) + processedBody + buildFooter(sec.chapter, sec.section, sec.title);
@@ -266,7 +252,6 @@ async function runSection(sec) {
   fs.writeFileSync(targetFile, finalMdx, 'utf-8');
   console.log(`\n📄 [Assembly] 已保存第 ${sec.section} 节到：${targetFile} (${finalMdx.length} 字符)`);
 
-  // Quality scan gate
   console.log(`🔍 [Scan] 正在校验 ${path.basename(targetFile)}...`);
   try {
     const scanOut = execSync(`node scripts/scan-mdx.mjs "${targetFile}"`, { encoding: 'utf-8' });
@@ -285,7 +270,6 @@ async function main() {
   console.log(`🌟 目标章节：3.1 ~ 3.5 全量 5 个小节 (Phys 189 ~ 256)`);
   console.log(`=============================================================\n`);
 
-  // Materialize chapter figures first
   try {
     console.log(`[Materialize] 正在实体化第三章插图资产...`);
     execSync(`.venv\\Scripts\\python scripts/vision_reconstruct/materialize_figures.py --chapter 3`, { stdio: 'inherit' });
@@ -311,7 +295,6 @@ async function main() {
   console.log(`已完成文件清单：`);
   completedFiles.forEach(f => console.log(`  - ${f}`));
 
-  // Global validation on Chapter 3
   console.log(`\n🔍 正在对第三章执行全量质量门禁复核...`);
   try {
     const globalScan = execSync(`node scripts/scan-mdx.mjs "src/content/docs/collections/math/engineering_analysis_rebuild"`, { encoding: 'utf-8' });

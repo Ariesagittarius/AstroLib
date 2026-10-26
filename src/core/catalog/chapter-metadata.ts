@@ -1,35 +1,16 @@
-/**
- * src/core/catalog/chapter-metadata.ts
- * 教材章节权威层级元数据解析器 (Canonical Chapter Metadata Resolver)
- *
- * 架构规范：
- * - 归属于 Core / Catalog 领域层 (Layer 1/2)
- * - 纯领域逻辑，负责结合 collections.config.mjs、题库映射与文件 Frontmatter，
- *   为章节生成绝对权威的章号、大章名称、节号与动态计数器前缀。
- * - 严格遵循 Rule 1 (UI is not a domain model) & Rule 2 (Publishing is independent):
- *   Publishing 仅作为该元数据的消费者，绝不负责反向推断章节语义。
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { collections } from '../../config/collections.config.mjs';
 import type { ChapterCanonicalMetadata } from '../../types/chapter-semantic';
 
-// 内存缓存：避免重复读取磁盘与题库 JSON
 const metadataCache = new Map<string, ChapterCanonicalMetadata>();
 const exerciseJsonCache = new Map<string, any>();
 
-/**
- * 清洗标题字符串中的特殊控制字符与首尾空格
- */
 function cleanString(str: string): string {
   if (!str) return '';
   return str.replace(/['"]/g, '').trim();
 }
 
-/**
- * 尝试从题库映射数据中读取权威章节元数据
- */
 function tryLookupExerciseMapping(bookSlug: string, sectionSlug: string): {
   chapterNumber?: number;
   chapterTitle?: string;
@@ -41,7 +22,7 @@ function tryLookupExerciseMapping(bookSlug: string, sectionSlug: string): {
   try {
     let exerciseData = exerciseJsonCache.get(bookSlug);
     if (!exerciseData) {
-      // 检查可能存在的题库文件
+
       const candidatePaths = [
         path.resolve(process.cwd(), `src/data/exercises/${bookSlug}_textbook_exercises.json`),
         path.resolve(process.cwd(), `src/data/exercises/${bookSlug.replace(/_/g, '-')}_textbook_exercises.json`),
@@ -84,7 +65,7 @@ function tryLookupExerciseMapping(bookSlug: string, sectionSlug: string): {
       }
     }
   } catch (err) {
-    // 忽略读取错误，自动降级至命名规范解析
+
   }
 
   return null;
@@ -100,9 +81,6 @@ export interface ResolveChapterMetadataInput {
   filePath?: string;
 }
 
-/**
- * 权威解析教材章节层级元数据
- */
 export function resolveChapterCanonicalMetadata(
   input: ResolveChapterMetadataInput
 ): ChapterCanonicalMetadata {
@@ -116,7 +94,6 @@ export function resolveChapterCanonicalMetadata(
   let bookTitle = input.bookTitle || '';
   let bookAuthor = input.bookAuthor || '';
 
-  // 1. 若缺少书籍信息，从 collections.config.mjs 权威查询
   if ((!bookTitle || !bookAuthor) && bookSlug) {
     for (const col of collections) {
       const b = col.books.find((item) => item.slug === bookSlug || item.id === bookSlug);
@@ -129,7 +106,6 @@ export function resolveChapterCanonicalMetadata(
     }
   }
 
-  // 2. 尝试从既有教材题库映射中提取最高精度的章号与章名
   const fromMapping = tryLookupExerciseMapping(bookSlug, input.slug);
 
   let chapterNumber = fromMapping?.chapterNumber;
@@ -139,16 +115,15 @@ export function resolveChapterCanonicalMetadata(
 
   const baseTitle = cleanString(input.rawTitle || input.slug.replace(/_/g, ' '));
 
-  // 3. 若无映射，使用规范正则表达式解析标题与文件名
   if (!sectionNumber || !chapterNumber) {
-    // 形如 "2.2 求导的基本法则" 或 "10.1 定积分概念"
+
     const matchSec = baseTitle.match(/^(\d+)\.(\d+)[\s_]*(.*)$/);
     if (matchSec) {
       if (!chapterNumber) chapterNumber = parseInt(matchSec[1], 10);
       if (!sectionNumber) sectionNumber = `${matchSec[1]}.${matchSec[2]}`;
       if (!sectionTitle) sectionTitle = matchSec[3].trim();
     } else {
-      // 形如 "第2章 一元函数微分学" 或 "02 导数"
+
       const matchCh = baseTitle.match(/^(?:第)?(\d+)[章节讲部分\s_]+(.*)$/);
       if (matchCh) {
         if (!chapterNumber) chapterNumber = parseInt(matchCh[1], 10);
@@ -163,15 +138,10 @@ export function resolveChapterCanonicalMetadata(
     sectionTitle = baseTitle;
   }
 
-  // 补全大章标题
   if (!chapterTitle && chapterNumber) {
     chapterTitle = `第 ${chapterNumber} 章`;
   }
 
-  // 4. 动态计算节内编号前缀 numberingPrefix（绝不硬编码！）
-  // 针对例如 "2.2 求导的基本法则"：
-  // 节内的小节标题在教材原文中通常为 "2.1 ...", "2.2 ...", 定理为 "定理 2.1", "定理 2.2"
-  // 其中前缀 '2.' 正对应当前节号在教材中的次级编号 (minor number: 2)
   let numberingPrefix = '1.';
   if (sectionNumber) {
     const parts = sectionNumber.split('.');

@@ -6,9 +6,6 @@ const ROOT = process.cwd();
 const outputDir = path.join(ROOT, 'test/output');
 const rebuildDir = path.join(ROOT, 'src/content/docs/collections/math/engineering_analysis_rebuild');
 
-// ----------------------------------------------------
-// Assemble Section 2.5: Taylor定理及其应用
-// ----------------------------------------------------
 console.log('Assembling Section 2.5...');
 const p2_5_chunks = [
   fs.readFileSync(path.join(outputDir, '2.5_batch_162_164.mdx'), 'utf-8'),
@@ -41,16 +38,13 @@ import Exercise from '@/components/Exercise.astro';
 const footer2_5 = `\n\n<ExerciseTrigger chapter={2} section="2.5" title="2.5 Taylor定理及其应用 课后真题与自测练习" />\n`;
 
 let body2_5 = p2_5_chunks.join('\n\n');
-// Auto-convert single-dollar inline math with \tag to display block
+
 body2_5 = body2_5.replace(/^\$([^\$\n]+?\\tag\{[^\}\n]+\}[^\$\n]*?)\$$/gm, '$$\n$1\n$$');
 
 const file2_5 = path.join(rebuildDir, '2.5_Taylor定理及其应用.mdx');
 fs.writeFileSync(file2_5, header2_5 + body2_5.trim() + footer2_5, 'utf-8');
 console.log('Saved Section 2.5 to', file2_5);
 
-// ----------------------------------------------------
-// Assemble Section 2.6: 函数性态的研究
-// ----------------------------------------------------
 console.log('Assembling Section 2.6...');
 const chunk1 = fs.readFileSync(path.join(outputDir, '2.5_batch_171_173.mdx'), 'utf-8');
 const chunk2 = fs.readFileSync(path.join(outputDir, '2.5_batch_174_176.mdx'), 'utf-8');
@@ -58,7 +52,6 @@ const chunk3 = fs.readFileSync(path.join(outputDir, '2.5_batch_177_177.mdx'), 'u
 const chunk4 = fs.readFileSync(path.join(outputDir, '2.6_batch_178_180.mdx'), 'utf-8');
 let chunk5 = fs.readFileSync(path.join(outputDir, '2.6_batch_181_183.mdx'), 'utf-8');
 
-// Truncate chunk5 before 习题 2.6
 const cutoffIndex = chunk5.indexOf('<Knowledge title="习题 2.6">');
 if (cutoffIndex !== -1) {
   chunk5 = chunk5.slice(0, cutoffIndex).trim();
@@ -67,7 +60,6 @@ if (cutoffIndex !== -1) {
   if (cutoffIndex2 !== -1) chunk5 = chunk5.slice(0, cutoffIndex2).trim();
 }
 
-// Close any open Example if chunk5 ended with </Solution>
 if (chunk5.endsWith('</Solution>') && !chunk5.includes('</Example>\n\n<Knowledge title="习题')) {
   chunk5 += '\n</Example>';
 }
@@ -103,7 +95,6 @@ const file2_6 = path.join(rebuildDir, '2.6_函数性态的研究.mdx');
 fs.writeFileSync(file2_6, header2_6 + body2_6.trim() + footer2_6, 'utf-8');
 console.log('Saved Section 2.6 to', file2_6);
 
-// Validate both
 console.log('\nValidating Section 2.5...');
 execSync(`node scripts/scan-mdx.mjs "${file2_5}"`, { stdio: 'inherit' });
 

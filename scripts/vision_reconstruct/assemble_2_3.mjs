@@ -11,11 +11,9 @@ const targetPath = path.join(
 let part1 = fs.readFileSync(part1Path, 'utf-8');
 let part2 = fs.readFileSync(part2Path, 'utf-8');
 
-// Normalize headings from # 3.x to ## 3.x
 part1 = part1.replace(/^#\s*3\./gm, '## 3.');
 part2 = part2.replace(/^#\s*3\./gm, '## 3.');
 
-// Fix the unclosed Knowledge tag around line 55 in part2
 part2 = part2.replace(
   /在 \(3\.3\) 式中，取 \$x_0=0\$[\s\S]*?<\/Knowledge>/,
   `<Knowledge title="常用近似计算公式">
@@ -30,7 +28,6 @@ $$
 </Knowledge>`
 );
 
-// Strip trailing divider ***
 part2 = part2.replace(/\r?\n\*\*\*\s*$/, '');
 
 const header = `---

@@ -1,8 +1,3 @@
-/**
- * tests/helpers/latex-validators.ts
- * LaTeX 源码平衡性与无泄露审计工具
- */
-
 export interface LatexViolation {
   kind: string;
   message: string;
@@ -12,7 +7,6 @@ export interface LatexViolation {
 export function validateLatexSyntax(latexCode: string): LatexViolation[] {
   const violations: LatexViolation[] = [];
 
-  // 1. 占位符残留检测
   if (/§§|___MATH|___TYPST|TYPST_/.test(latexCode)) {
     violations.push({
       kind: 'placeholder_leak',
@@ -20,7 +14,6 @@ export function validateLatexSyntax(latexCode: string): LatexViolation[] {
     });
   }
 
-  // 2. HTML 标签残留检测 (允许特定注释，不允许普通标签)
   const htmlMatch = latexCode.match(/<\/?[a-z][a-z0-9]*[^<>]*>/i);
   if (htmlMatch) {
     violations.push({
@@ -30,7 +23,6 @@ export function validateLatexSyntax(latexCode: string): LatexViolation[] {
     });
   }
 
-  // 3. HTML 实体残留检测
   const entityMatch = latexCode.match(/&(?:nbsp|amp|lt|gt|quot|#39);/);
   if (entityMatch) {
     violations.push({
@@ -40,19 +32,17 @@ export function validateLatexSyntax(latexCode: string): LatexViolation[] {
     });
   }
 
-  // 4. 环境平衡配对检测
   const envStack: string[] = [];
   const lines = latexCode.split(/\r?\n/);
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    // 忽略纯注释行
+
     if (/^\s*%/.test(line)) continue;
 
     const beginMatches = [...line.matchAll(/\\begin\{([a-zA-Z*]+)\}/g)];
     const endMatches = [...line.matchAll(/\\end\{([a-zA-Z*]+)\}/g)];
 
-    // 顺序记录
     const events: { type: 'begin' | 'end'; name: string; index: number }[] = [];
     for (const m of beginMatches) {
       if (m.index !== undefined) events.push({ type: 'begin', name: m[1], index: m.index });

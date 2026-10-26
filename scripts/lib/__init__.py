@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from .mdx_sanitizer import MdxSanitizer, TextCleaner
 from .section_chunker import SectionChunker, SectionData, ChapterData
 from .card_parser import CardParser

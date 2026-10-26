@@ -1,8 +1,3 @@
-/**
- * src/types/notices.ts
- * Notice 框架领域模型与类型契约定义
- */
-
 export type NoticeVariant = 'wiki' | 'banner' | 'callout' | 'quote' | 'minimal';
 export type NoticeSeverity = 'info' | 'tip' | 'warning' | 'caution' | 'neutral';
 

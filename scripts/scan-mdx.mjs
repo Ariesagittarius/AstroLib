@@ -1,4 +1,3 @@
-// 一次性扫描脚本：用与 Astro 相同的 MDX 编译管线检查指定目录下的所有 .mdx 文件
 import fs from 'node:fs';
 import path from 'node:path';
 import { compile } from '@mdx-js/mdx';
@@ -53,12 +52,11 @@ const mermaidErrors = [];
 for (const file of files) {
   const content = fs.readFileSync(file, 'utf-8');
   const relFile = path.relative(process.cwd(), file).replace(/\\/g, '/');
-  // 剥离 frontmatter（Astro 会单独处理，编译 MDX 时不含它）
+
   const body = content.replace(/^---[\s\S]*?---\r?\n?/, '');
 
   let fileHasError = false;
 
-  // 1. MDX 结构与 JSX 标签编译校验
   try {
     const compiled = await compile({ value: body, path: file }, {
       remarkPlugins: [remarkMath],
@@ -101,9 +99,8 @@ for (const file of files) {
     return high + 1;
   };
 
-  // 2. KaTeX 公式语法精确校验
   if (!skipMath) {
-    // 块级公式
+
     const displayMatches = content.matchAll(/\$\$([\s\S]+?)\$\$/g);
     for (const m of displayMatches) {
       const raw = m[1].trim();
@@ -122,7 +119,6 @@ for (const file of files) {
       }
     }
 
-    // 行内公式（排除代码块与块级公式）
     const noBlocks = content.replace(/```[\s\S]*?```/g, (m) => ' '.repeat(m.length))
       .replace(/\$\$[\s\S]+?\$\$/g, (m) => ' '.repeat(m.length));
 
@@ -145,7 +141,6 @@ for (const file of files) {
     }
   }
 
-  // 3. 本地图片与静态资源物理存在性校验 (Image Asset Integrity Gate)
   const mdImgMatches = content.matchAll(/!\[.*?\]\((.*?)\)/g);
   for (const m of mdImgMatches) {
     const rawPath = (m[1] || '').trim();
@@ -171,7 +166,6 @@ for (const file of files) {
     }
   }
 
-  // 严格禁止原生 HTML <img src="./images/..."> 引用（无法被 Astro 打包管线识别导致生产/开发环境 404 破图）
   const htmlImgMatches = content.matchAll(/<img\b[^>]*src=["'](.*?)["']/g);
   for (const m of htmlImgMatches) {
     const rawPath = (m[1] || '').trim();
@@ -187,7 +181,6 @@ for (const file of files) {
     }
   }
 
-  // 4. Mermaid 图表语法与结构完整性校验 (Mermaid Syntax Integrity Gate)
   const mermaidMatches = content.matchAll(/```mermaid([\s\S]*?)```/g);
   let mermaidIdx = 0;
   for (const m of mermaidMatches) {
@@ -271,5 +264,3 @@ if (!failures.length && !mathErrors.length && !imageErrors.length && !mermaidErr
 } else {
   process.exit(1);
 }
-
-

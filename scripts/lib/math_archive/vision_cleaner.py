@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 大邮数学集多模态视觉公式精准清洗与题库重构引擎
 结合 PyMuPDF 高精页面渲染与 DeepSeek (deepseek-v4-flash-vision-exp) 视觉模型，将 PDF 试卷精准转录为高质量标准 LaTeX 题库。
@@ -28,7 +27,6 @@ from .curriculum_mapper import CurriculumClassifier
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
-
 
 DEFAULT_API_KEY = os.environ.get(
     "GEMINI_API_KEY",
@@ -110,7 +108,6 @@ PROMPT_SYSTEM = r"""你是一位顶级的大学数学文献数字化与 LaTeX �
 }
 """
 
-
 def parse_latex_json(raw_text: str) -> dict:
     """
     状态机健壮解析可能包含未转义 LaTeX 反斜杠与非法控制字符的 LLM JSON 响应
@@ -127,7 +124,6 @@ def parse_latex_json(raw_text: str) -> dict:
         s = s[:-3]
     s = s.strip()
 
-    # 提取最外层有效 JSON 对象边界
     first_brace = s.find('{')
     last_brace = s.rfind('}')
     if first_brace == -1 or last_brace == -1 or last_brace <= first_brace:
@@ -177,7 +173,7 @@ def parse_latex_json(raw_text: str) -> dict:
                         res.append('\\/')
                         i += 2
                     elif next_char == 'n':
-                        # 如果后面紧跟字母（如 \nabla, \neq, \nu, \notin, \null），则是 LaTeX 命令，不是换行
+
                         if i + 2 < n and s[i + 2].isalpha():
                             res.append('\\\\')
                             i += 1
@@ -185,15 +181,14 @@ def parse_latex_json(raw_text: str) -> dict:
                             res.append('\\n')
                             i += 2
                     elif next_char in ['b', 'f', 'r', 't']:
-                        # \frac, \begin, \right, \text 等在 LaTeX 中是命令，绝非 JSON 的 \b, \f, \r, \t 控制符
-                        # 统一转义为 \\ 保护 LaTeX 语法
+
                         res.append('\\\\')
                         i += 1
                     elif next_char == 'u' and i + 5 < n and all(c in '0123456789abcdefABCDEF' for c in s[i+2:i+6]):
                         res.append(s[i:i+6])
                         i += 6
                     else:
-                        # 其它未转义的 LaTeX 反斜杠（如 \alpha, \int, \sum 等），转为 \\
+
                         res.append('\\\\')
                         i += 1
                 else:
@@ -208,7 +203,7 @@ def parse_latex_json(raw_text: str) -> dict:
     try:
         parsed = json.loads(sanitized)
     except json.JSONDecodeError:
-        # 二次容错修复：尝试去除末尾多余逗号
+
         fixed = re.sub(r',\s*([\]}])', r'\1', sanitized)
         parsed = json.loads(fixed)
 
@@ -229,7 +224,6 @@ def parse_latex_json(raw_text: str) -> dict:
         return val
 
     return _sanitize_obj(parsed)
-
 
 class BUPTVisionExtractor:
     """基于 Gemini 2.5 Flash 视觉多模态的试卷重构抽取器"""
@@ -382,7 +376,6 @@ class BUPTVisionExtractor:
         }
         data_bytes = json.dumps(payload).encode("utf-8")
 
-        # 优先使用成本最低的轻量视觉模型 (Flash-Lite 系列)
         models = [
             "gemini-3.1-flash-lite",
             "gemini-flash-lite-latest",
@@ -409,7 +402,7 @@ class BUPTVisionExtractor:
                     raise ValueError(f"No candidates in Gemini response: {raw_resp[:200]}")
 
                 cand = res["candidates"][0]["content"]["parts"][0]["text"]
-                # 成功后加入 1s 微缓冲，平滑请求速率
+
                 time.sleep(1.0)
                 return parse_latex_json(cand)
 
@@ -441,15 +434,13 @@ class BUPTVisionExtractor:
 
             for q in sec.get("questions", []):
                 q_num = q.get("order") or global_idx
-                
-                # 题干防类型崩溃
+
                 stem_raw = q.get("stem", "")
                 if isinstance(stem_raw, list):
                     stem = "\n".join(str(x) for x in stem_raw).strip()
                 else:
                     stem = str(stem_raw or "").strip()
 
-                # 答案防类型崩溃与结构化展开
                 ans_raw = q.get("answer", "")
                 sub_questions = []
                 if isinstance(ans_raw, list):
@@ -471,7 +462,6 @@ class BUPTVisionExtractor:
                 else:
                     ans = str(ans_raw or "").strip()
 
-                # 解析防类型崩溃
                 hints_raw = q.get("analysis", "")
                 if isinstance(hints_raw, list):
                     hints = "\n".join(str(x) for x in hints_raw).strip()
@@ -480,7 +470,6 @@ class BUPTVisionExtractor:
 
                 score = q.get("score")
 
-                # 解析选项
                 options = []
                 for opt in q.get("options", []):
                     if isinstance(opt, str):
@@ -530,7 +519,6 @@ class BUPTVisionExtractor:
                     mapping={}
                 )
 
-                # 映射知识点
                 mapping_obj = self.classifier.classify_question(q_item)
                 cat = paper_meta.get("category", "")
                 if mapping_obj:

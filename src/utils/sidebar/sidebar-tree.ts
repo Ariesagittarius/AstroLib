@@ -23,9 +23,6 @@ export interface SidebarGroupItem {
 
 export type SidebarItem = SidebarLinkItem | SidebarGroupItem;
 
-/**
- * 递归检测子节点是否包含某 URL 前缀
- */
 function hasHrefPrefix(item: any, pfx: string): boolean {
   if (item.type === 'link' && typeof item.href === 'string' && item.href.startsWith(pfx)) {
     return true;
@@ -36,9 +33,6 @@ function hasHrefPrefix(item: any, pfx: string): boolean {
   return false;
 }
 
-/**
- * 从原始 sidebar 中提取任意图书的完整章节目录树
- */
 function getBookEntries(sidebar: any[], colSlug: string, bookSlug: string): any[] | null {
   const bookPrefix = `/collections/${colSlug}/${bookSlug}/`;
   for (const entry of sidebar) {
@@ -52,11 +46,6 @@ function getBookEntries(sidebar: any[], colSlug: string, bookSlug: string): any[
   return null;
 }
 
-/**
- * 构造 Google Docs 规范的双级侧边栏结构：
- * 一级菜单：列出各合集分类（大学数学、大学物理）及同级别所有图书
- * 二级菜单：各图书均支持展开查看章节目录树，当前图书自动展开定位
- */
 export function buildTwoTierSidebar(
   sidebar: any[],
   pathname: string,

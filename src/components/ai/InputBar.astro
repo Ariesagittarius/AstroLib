@@ -1,11 +1,11 @@
 ---
-// 表现层：InputBar 底部复合输入与操作卡片 (完全对标 Chrome Gemini 侧载官方 UI/UX 规范)
+
 ---
 
 <div class="ask-status" aria-live="polite"></div>
 
 <div class="ask-input-bar">
-  <!-- 章节选择浮层 (Popover: 输入 @ 或点击 + 时唤出) -->
+
   <div class="ask-chapter-picker-popover" id="ask-chapter-picker-popover" style="display: none;" role="dialog" aria-modal="false" aria-label="选择章节引用">
     <div class="ask-chapter-picker-header">
       <div class="ask-chapter-search-box">
@@ -20,7 +20,7 @@
     </div>
     <div class="ask-chapter-picker-body">
       <ul class="ask-chapter-picker-list" id="ask-chapter-picker-list">
-        <!-- 章节列表动态生成 -->
+
       </ul>
     </div>
     <div class="ask-chapter-picker-footer">
@@ -29,10 +29,9 @@
     </div>
   </div>
 
-  <!-- 模型快捷切换 Popover 菜单 (完全对标 Chrome Gemini 官方截图) -->
   <div class="ask-model-menu" id="ask-model-menu" style="display: none;" role="menu" aria-label="选择模型">
     <div class="ask-model-menu-list">
-      <!-- 自动 -->
+
       <button type="button" class="ask-model-menu-item" data-model-id="auto" role="menuitem">
         <div class="ask-model-item-text">
           <div class="ask-model-item-headline">自动</div>
@@ -41,7 +40,6 @@
         <svg class="ask-model-check-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
       </button>
 
-      <!-- 3.5 Flash-Lite -->
       <button type="button" class="ask-model-menu-item" data-model-id="gemini-3.5-flash-lite" role="menuitem">
         <div class="ask-model-item-text">
           <div class="ask-model-item-headline">3.5 Flash-Lite</div>
@@ -50,7 +48,6 @@
         <svg class="ask-model-check-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
       </button>
 
-      <!-- 3.8 Flash -->
       <button type="button" class="ask-model-menu-item is-active" data-model-id="gemini-3.8-flash" role="menuitem">
         <div class="ask-model-item-text">
           <div class="ask-model-item-headline">3.8 Flash</div>
@@ -59,7 +56,6 @@
         <svg class="ask-model-check-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
       </button>
 
-      <!-- 3.1 Pro -->
       <button type="button" class="ask-model-menu-item" data-model-id="gemini-3.1-pro" role="menuitem">
         <div class="ask-model-item-text">
           <div class="ask-model-item-headline">3.1 Pro</div>
@@ -68,7 +64,6 @@
         <svg class="ask-model-check-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
       </button>
 
-      <!-- 额外活动模型 (若用户配置了其他模型如 DeepSeek/校内模型) -->
       <button type="button" class="ask-model-menu-item ask-model-extra-item" id="ask-model-extra-item" style="display: none;" role="menuitem">
         <div class="ask-model-item-text">
           <div class="ask-model-item-headline" id="ask-model-extra-headline">当前模型</div>
@@ -79,7 +74,6 @@
 
       <div class="ask-model-menu-divider"></div>
 
-      <!-- 扩展思考开关 -->
       <div class="ask-model-menu-switch-item">
         <div class="ask-model-item-text">
           <div class="ask-model-item-headline">扩展思考</div>
@@ -93,7 +87,6 @@
         </label>
       </div>
 
-      <!-- 自动折叠工具探索开关 -->
       <div class="ask-model-menu-switch-item">
         <div class="ask-model-item-text">
           <div class="ask-model-item-headline">收起工具探索</div>
@@ -111,10 +104,8 @@
     </div>
   </div>
 
-  <!-- Gemini 统一圆角复合输入卡片 (三层架构) -->
   <div class="ask-gemini-input-card">
-    
-    <!-- 1. 顶层：上下文引用行 (Context Row) -->
+
     <div class="ask-context-row" id="ask-context-row" style="display: none;">
       <div class="ask-context-indicator">
         <svg class="ask-context-icon" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true">
@@ -123,13 +114,13 @@
         <span class="ask-context-text" id="ask-context-text">正在引用本章节内容</span>
       </div>
       <div class="ask-context-actions">
-        <!-- 多章节折叠/展开指示按钮 (>= 2 章时展示) -->
+
         <button type="button" class="ask-context-expand-btn" id="ask-context-expand-btn" style="display: none;" title="查看已引用的章节列表" aria-label="查看引用的章节" aria-expanded="false">
           <svg class="ask-context-expand-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
             <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
           </svg>
         </button>
-        <!-- 移除全部引用按钮 -->
+
         <button type="button" class="ask-context-remove-btn" id="ask-context-remove-btn" title="取消引用" aria-label="取消引用">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -138,14 +129,12 @@
       </div>
     </div>
 
-    <!-- 多章节展开明细列表抽屉 (点击展开箭头展示，支持单独移除某章) -->
     <div class="ask-context-dropdown" id="ask-context-dropdown" style="display: none;">
       <ul class="ask-context-items-list" id="ask-context-items-list">
-        <!-- 动态渲染引用的章节单项 -->
+
       </ul>
     </div>
 
-    <!-- 2. 中层：纯净多行文本输入区 (Textarea Row: 消除底部挤压，垂直居中对齐) -->
     <div class="ask-textarea-row">
       <textarea
         class="ask-input"
@@ -157,9 +146,8 @@
       ></textarea>
     </div>
 
-    <!-- 3. 底层：快捷操作工具栏 (Actions Row) -->
     <div class="ask-actions-row">
-      <!-- 左侧：添加章节按钮 (+ 按钮 / @ 快捷入口) -->
+
       <div class="ask-actions-left">
         <button type="button" class="ask-action-btn ask-add-chapter-btn" id="ask-add-chapter-btn" title="添加章节引用 (输入 @ 亦可)" aria-label="添加章节引用">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
@@ -168,9 +156,8 @@
         </button>
       </div>
 
-      <!-- 右侧：快捷模型切换胶囊 + 发送/停止按钮 -->
       <div class="ask-actions-right">
-        <!-- 模型切换药丸按钮 -->
+
         <button type="button" class="ask-model-pill-btn" id="ask-model-pill-btn" aria-haspopup="true" aria-expanded="false" title="切换当前问答模型">
           <span class="ask-model-pill-name" id="ask-model-pill-name">3.8 Flash</span>
           <svg class="ask-model-pill-arrow" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
@@ -178,13 +165,12 @@
           </svg>
         </button>
 
-        <!-- 发送 / 停止生成主操作按钮 -->
         <button class="ask-send-btn" id="ask-send-btn" type="button" title="发送 (Enter)" aria-label="发送" disabled>
-          <!-- 官方 Material Symbol arrow_upward -->
+
           <svg class="ask-send-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
             <path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/>
           </svg>
-          <!-- 官方 Material Symbol stop (生成中展示) -->
+
           <svg class="ask-stop-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true" style="display:none;">
             <path d="M6 6h12v12H6z"/>
           </svg>
@@ -193,6 +179,5 @@
     </div>
   </div>
 
-  <!-- 底部居中快捷键提示 -->
   <div class="ask-hint">Enter 发送 · Shift+Enter 换行</div>
 </div>

@@ -10,8 +10,7 @@ for page_idx in range(400, len(doc)):
     book_p = phys_p - 15
     page = doc[page_idx]
     text = page.get_text()
-    
-    # regex for "图" followed by optional whitespace/newline, then 1x.x.x
+
     pattern = r"图\s*\n?\s*(1[123]\s*[\.．]\s*\d+\s*[\.．]\s*\d+)\s*\n?\s*([^\n]*)"
     for m in re.finditer(pattern, text):
         fig_no = re.sub(r"\s+", "", m.group(1)).replace("．", ".")

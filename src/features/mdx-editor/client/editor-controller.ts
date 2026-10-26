@@ -1,14 +1,3 @@
-/**
- * 在线可视化精修工具 · 客户端逻辑（生产级重构版）
- *
- * 核心能力：
- *   - 单块/独立公式精准识别与高亮（含 $$...$$ 独立公式、卡片内折叠 Solution 等）
- *   - 连续多块范围框选（Shift+点击）：一键「合并包成卡片」、「批量移入卡片」、「合并为一段」、「批量删除」
- *   - 卡片专属快捷工具：一键「换卡片类型」、「修改标题」、「转为正文」、「移动」、「编辑源码」
- *   - 智能折叠展开：放行 summary/details 原生点击，顶部面板提供「一键展开全部/收起全部」
- *   - 健壮的草稿与批量写盘机制：支持连续修改、类型转换与撤销
- */
-
 type BlockInfo = {
   el: HTMLElement;
   file: string;
@@ -23,9 +12,8 @@ type RangeSelection = {
   blocks: HTMLElement[];
 };
 
-/** 单条草稿操作 */
 type DraftOp = {
-  key: string; // file#line 或 file#s-e：同块覆盖键
+  key: string;
   op: string;
   payload: Record<string, unknown>;
   anchorText: string;
@@ -51,7 +39,6 @@ const KIND_NAMES: Record<string, string> = {
 import { ICONS } from './icons';
 import { convertEnglishToMath } from './english-to-math';
 
-/** “包成卡片 / 切换卡片类型”的候选类型 */
 const WRAP_TYPES: Array<{ value: string; label: string }> = [
   { value: 'example', label: '例题 (Example)' },
   { value: 'variant', label: '变式 (Variant)' },
@@ -66,8 +53,6 @@ const WRAP_TYPES: Array<{ value: string; label: string }> = [
   { value: 'summary', label: '总结 (Summary)' },
 ];
 
-/* ---------------- 状态 ---------------- */
-
 let enabled = false;
 let selected: BlockInfo | null = null;
 let rangeSelected: RangeSelection | null = null;
@@ -76,16 +61,12 @@ let currentFile = '';
 let draftOps: DraftOp[] = [];
 let allSolutionsExpanded = false;
 
-/* ---------------- UI 元素（懒创建） ---------------- */
-
 let root: HTMLElement | null = null;
 let badge: HTMLElement | null = null;
 let toolbar: HTMLElement | null = null;
 let panel: HTMLElement | null = null;
 let modal: HTMLElement | null = null;
 let toastBox: HTMLElement | null = null;
-
-/* ---------------- 小工具 ---------------- */
 
 const enc = encodeURIComponent;
 
@@ -98,13 +79,11 @@ function mainContent(): HTMLElement {
   ) as HTMLElement;
 }
 
-/** 从任意元素向上找最近的“编辑块”（带 data-src-line 的元素） */
 function blockFrom(target: Element | null): HTMLElement | null {
   if (!target) return null;
   return target.closest('[data-src-line]') as HTMLElement | null;
 }
 
-/** 页面 URL 兜底推导源文件路径（data-src-file 缺失时） */
 function guessFileFromPath(): string {
   const p = location.pathname.replace(/\/+$/, '');
   return p ? 'src/content/docs' + p + '.mdx' : '';
@@ -115,7 +94,7 @@ function readBlock(el: HTMLElement): BlockInfo | null {
   if (!Number.isFinite(line) || line < 1) return null;
   const file = el.getAttribute('data-src-file') || currentFile || guessFileFromPath();
   const kind = el.getAttribute('data-src-kind') || 'paragraph';
-  // 所属卡片：向上找最近的卡片 kind 祖先（块自身是卡片时不视为父卡片）
+
   let parentKind: string | null = null;
   let p: HTMLElement | null = el.parentElement;
   while (p) {
@@ -129,14 +108,12 @@ function readBlock(el: HTMLElement): BlockInfo | null {
   return { el, file, line, kind, parentKind };
 }
 
-/** 同一父容器下的兄弟块（用于上移/下移/合并） */
 function siblingBlocks(el: HTMLElement): HTMLElement[] {
   const parent = el.parentElement;
   if (!parent) return [];
   return Array.from(parent.querySelectorAll(':scope > [data-src-line]')) as HTMLElement[];
 }
 
-/** 向上找最近的卡片元素 */
 function cardElementOf(info: BlockInfo): HTMLElement | null {
   let p = info.el.parentElement;
   while (p) {
@@ -147,7 +124,6 @@ function cardElementOf(info: BlockInfo): HTMLElement | null {
   return null;
 }
 
-/** 按全文行号在当前页面找块元素 */
 function findBlockByLine(line: number): HTMLElement | null {
   return mainContent().querySelector(`[data-src-line="${line}"]`) as HTMLElement | null;
 }
@@ -181,14 +157,11 @@ function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-/** HTML 片段 → 元素 */
 function htmlToElement(html: string): HTMLElement {
   const tmp = document.createElement('div');
   tmp.innerHTML = html;
   return (tmp.firstElementChild as HTMLElement) || document.createElement('div');
 }
-
-/* ---------------- UI 构建 ---------------- */
 
 function ensureRoot(): HTMLElement {
   if (root) return root;
@@ -339,13 +312,11 @@ function renderToolbar(info: BlockInfo): void {
 
   toolbar.innerHTML = '';
 
-  // 1. 块类型与行号信息徽章
   const infoSpan = document.createElement('span');
   infoSpan.className = 'dsh-toolbar-info';
   infoSpan.innerHTML = `<strong>${esc(KIND_NAMES[info.kind] || info.kind)}</strong> · L${info.line}`;
   toolbar.appendChild(infoSpan);
 
-  // Group 1: 排序与移动
   const gMove = document.createElement('div');
   gMove.className = 'dsh-toolbar-group';
   gMove.appendChild(
@@ -377,7 +348,6 @@ function renderToolbar(info: BlockInfo): void {
   toolbar.appendChild(gMove);
   toolbar.appendChild(divider());
 
-  // Group 2: 结构与卡片
   const gStruct = document.createElement('div');
   gStruct.className = 'dsh-toolbar-group';
   if (isCard && !isVideo) {
@@ -457,7 +427,6 @@ function renderToolbar(info: BlockInfo): void {
     toolbar.appendChild(divider());
   }
 
-  // Group 3: 内容与精修
   const gEdit = document.createElement('div');
   gEdit.className = 'dsh-toolbar-group';
   gEdit.appendChild(
@@ -494,7 +463,6 @@ function renderToolbar(info: BlockInfo): void {
   toolbar.appendChild(gEdit);
   toolbar.appendChild(divider());
 
-  // Group 4: 危险区
   const gDanger = document.createElement('div');
   gDanger.className = 'dsh-toolbar-group';
   gDanger.appendChild(
@@ -578,8 +546,6 @@ function renderRangeToolbar(range: RangeSelection): void {
   positionToolbar();
 }
 
-/* ---------------- 弹窗 ---------------- */
-
 function modalTextarea(value: string): HTMLTextAreaElement {
   const ta = document.createElement('textarea');
   ta.className = 'dsh-modal-textarea';
@@ -652,8 +618,6 @@ function toast(msg: string, clickable = false): void {
     window.setTimeout(() => t.remove(), 300);
   }, clickable ? 6000 : 2600);
 }
-
-/* ---------------- 顶部面板 ---------------- */
 
 function toggleAllSolutions(): void {
   allSolutionsExpanded = !allSolutionsExpanded;
@@ -785,8 +749,6 @@ function syncCurrentFile(): void {
   currentFile = el ? el.getAttribute('data-src-file') || '' : guessFileFromPath();
 }
 
-/* ---------------- 模式开关 ---------------- */
-
 function guardDraft(): boolean {
   if (!draftOps.length) return true;
   return window.confirm(`有 ${draftOps.length} 处未保存的修改，退出将丢弃。是否继续？`);
@@ -818,8 +780,6 @@ function setEnabled(on: boolean): void {
     toast(on ? '精修模式已开启：支持单选/Shift+多选，按 E 键退出' : '精修模式已关闭');
   }
 }
-
-/* ---------------- 草稿与批量核心 ---------------- */
 
 async function getBlockText(info: BlockInfo): Promise<string> {
   const r = await api(`/__edit__/source?file=${enc(info.file)}&line=${info.line}`);
@@ -925,8 +885,6 @@ function markDirty(el: HTMLElement): () => void {
   el.classList.add('dsh-dirty');
   return () => el.classList.remove('dsh-dirty');
 }
-
-/* ---------------- 单项操作执行 ---------------- */
 
 async function doTextEdit(op: string, payload: Record<string, unknown>, info: BlockInfo, label: string): Promise<boolean> {
   prepareDraft(draftKey(info));
@@ -1383,8 +1341,6 @@ async function doInsertRangeIntoCard(range: RangeSelection, target: { line: numb
   toast(`已将 ${range.blocks.length} 块移入卡片 L${target.line}`);
 }
 
-/* ---------------- 即时刷新 ---------------- */
-
 async function refreshContent(): Promise<boolean> {
   try {
     const html = await (await fetch(location.href, { headers: { Accept: 'text/html' }, credentials: 'same-origin' })).text();
@@ -1411,8 +1367,6 @@ async function refreshContent(): Promise<boolean> {
     return false;
   }
 }
-
-/* ---------------- 交互弹窗 ---------------- */
 
 async function openSourceEditor(info: BlockInfo): Promise<void> {
   const r = await api(`/__edit__/source?file=${enc(info.file)}&line=${info.line}`);
@@ -1773,8 +1727,6 @@ async function openLog(): Promise<void> {
   showModal({ title: `操作日志（${entries.length}）`, body: list, onSave: hideModal, saveLabel: '关闭' });
 }
 
-/* ---------------- 事件监听 ---------------- */
-
 function onKeyDown(e: KeyboardEvent): void {
   const t = e.target as HTMLElement | null;
   const typing = !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
@@ -1820,7 +1772,6 @@ function onClick(e: MouseEvent): void {
   if (!target || !(target instanceof Element)) return;
   if (root && root.contains(target)) return;
 
-  // 1. 如果点击的是 summary，放行原生展开/折叠，不 preventDefault
   if (target.closest('summary')) {
     return;
   }
@@ -1832,13 +1783,11 @@ function onClick(e: MouseEvent): void {
 
   e.preventDefault();
 
-  // 2. Shift + 点击：连续范围多选
   if (e.shiftKey && selected) {
     selectRange(selected, info);
     return;
   }
 
-  // 3. 普通单选（段落、卡片、独立行间公式、讲解视频统一选中，支持平级移动/编辑）
   selectBlock(info);
 }
 
@@ -1858,8 +1807,6 @@ function onDblClick(e: MouseEvent): void {
     }
   }
 }
-
-/* ---------------- 初始化 ---------------- */
 
 export function initEditor(): void {
   const w = window as any;

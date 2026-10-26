@@ -51,12 +51,11 @@ describe('BUPT DeepSeek Translation Provider Suite', () => {
 
   it('单段调用时能正确配合 StructurePreservingMasker 保护公式与组件占位符', async () => {
     const provider = new BuptTranslateProvider();
-    // Mock requestNode 返回包含占位符的中文译文
+
     vi.spyOn(provider as any, 'requestNode').mockResolvedValue(
       '检查算法：求和至多为 ⟦ASTRO_TOK_0⟧，长度为两位数。'
     );
 
-    // 临时将其注册至 service 测试端到端防护
     translationService.registerProvider(provider);
 
     const sample = 'Quick check: the sum is at most $9 + 9 + 9 = 27$, two digits long.';
@@ -80,7 +79,7 @@ describe('BUPT DeepSeek Translation Provider Suite', () => {
 
     const results = await provider.translateBatch(['First', 'fail', 'Third']);
     expect(results[0]).toBe('译:First');
-    expect(results[1]).toBe('fail'); // 降级为原文本
+    expect(results[1]).toBe('fail');
     expect(results[2]).toBe('译:Third');
   });
 
@@ -94,7 +93,7 @@ describe('BUPT DeepSeek Translation Provider Suite', () => {
     try {
       await provider.translate('Hello', { apiKey: 'ghp_invalid_token' });
       expect(spy).toHaveBeenCalled();
-      // 验证传入 requestNode 的 apiKey 被智能自愈为服务端的 sk- 开头 key
+
       const calledApiKey = spy.mock.calls[0][1];
       expect(calledApiKey).toBe('sk-valid-server-key');
     } finally {

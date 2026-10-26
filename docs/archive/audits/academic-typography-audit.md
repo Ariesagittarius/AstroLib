@@ -1,8 +1,8 @@
 # AstroLib Academic Typography Refactoring & Audit Report
 
-> **Project**: AstroLib (my-astro-site)  
-> **Target Chapter**: `3.3 两种基本积分法` (`src/content/docs/collections/math/engineering_analysis/3.3_两种基本积分法.mdx`)  
-> **Ground Truth Benchmark**: Compiled XeLaTeX PDF (`.tmp/export/3.3/两种基本积分法.pdf`, 17 pages)  
+> **Project**: AstroLib (my-astro-site)
+> **Target Chapter**: `3.3 两种基本积分法` (`src/content/docs/collections/math/engineering_analysis/3.3_两种基本积分法.mdx`)
+> **Ground Truth Benchmark**: Compiled XeLaTeX PDF (`.tmp/export/3.3/两种基本积分法.pdf`, 17 pages)
 > **Scope**: Academic Typography Optimization (Strictly zero layout/structural mutations)
 
 ---

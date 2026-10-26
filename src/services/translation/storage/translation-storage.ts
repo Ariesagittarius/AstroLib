@@ -1,16 +1,3 @@
-/**
- * src/services/translation/storage/translation-storage.ts
- * ============================================================================
- * AstroLib 双语助读章节译文持久化管理器 (Translation Storage Manager)
- * ============================================================================
- * 职责：
- * 1. 负责章节段落译文在浏览器本地的持久化存储与瞬时回填 (Hydration)；
- * 2. 支撑读者对满意译文的「采纳 (Satisfied)」、「微调精修 (Custom Edited)」状态记录；
- * 3. 跨会话零延迟恢复已译章节，大幅节省 AI 算力与网络消耗；
- * 4. 遵守 Rule 1 (UI is not a domain model) & Rule 7 (Utils Purity)。
- * ============================================================================
- */
-
 import type { ParagraphUnit, StoredChapterTranslation, StoredUnitTranslation, TranslationDisplayMode, TranslationProviderId } from '../types.ts';
 
 const STORAGE_PREFIX = 'astrolib_trans_doc_';
@@ -23,9 +10,7 @@ export const DEFAULT_TRANSLATION_PROVIDER: TranslationProviderId = 'google';
 export const TRANSLATION_PROVIDER_CHANGE_EVENT = 'astrolib:translation-provider-change';
 
 export class TranslationStorage {
-  /**
-   * 规范化章节标识 Key（默认提取当前路由 pathname）
-   */
+
   public static normalizeKey(rawKey?: string): string {
     if (rawKey && rawKey.trim()) {
       return rawKey.trim().replace(/\/$/, '') || 'root';
@@ -40,9 +25,6 @@ export class TranslationStorage {
     return `${STORAGE_PREFIX}${this.normalizeKey(chapterKey)}`;
   }
 
-  /**
-   * 加载指定章节的本地缓存
-   */
   public static loadChapter(chapterKey?: string): StoredChapterTranslation | null {
     if (typeof localStorage === 'undefined') return null;
     const key = this.getStorageKey(chapterKey || '');
@@ -59,10 +41,6 @@ export class TranslationStorage {
     }
   }
 
-  /**
-   * 将解析出的段落数组与本地缓存比对，就地回填 (Hydrate)
-   * 返回回填的段落数量及满意的段落数量
-   */
   public static hydrateUnits(chapterKey: string, units: ParagraphUnit[]): { hydratedCount: number; satisfiedCount: number } {
     const stored = this.loadChapter(chapterKey);
     if (!stored || !stored.units) {
@@ -91,9 +69,6 @@ export class TranslationStorage {
     return { hydratedCount, satisfiedCount };
   }
 
-  /**
-   * 保存单个段落译文及其满意/精修状态
-   */
   public static saveUnit(chapterKey: string, unit: ParagraphUnit): void {
     if (typeof localStorage === 'undefined' || !unit.translatedText) return;
     const key = this.getStorageKey(chapterKey);
@@ -119,9 +94,6 @@ export class TranslationStorage {
     }
   }
 
-  /**
-   * 批量保存整章段落译文
-   */
   public static saveChapter(chapterKey: string, units: ParagraphUnit[], chapterTitle?: string): void {
     if (typeof localStorage === 'undefined') return;
     const key = this.getStorageKey(chapterKey);
@@ -156,9 +128,6 @@ export class TranslationStorage {
     }
   }
 
-  /**
-   * 切换单个段落的满意（采纳）状态，返回切换后的状态
-   */
   public static toggleSatisfied(chapterKey: string, unitId: string, satisfied?: boolean): boolean {
     if (typeof localStorage === 'undefined') return false;
     const stored = this.loadChapter(chapterKey);
@@ -177,9 +146,6 @@ export class TranslationStorage {
     return nextVal;
   }
 
-  /**
-   * 保存读者手动微调/精修的译文（自动标记为满意）
-   */
   public static updateCustomTranslation(chapterKey: string, unitId: string, customText: string): void {
     if (typeof localStorage === 'undefined') return;
     const stored = this.loadChapter(chapterKey) || {
@@ -197,7 +163,7 @@ export class TranslationStorage {
       ...prev,
       translatedText: customText,
       isCustomEdited: true,
-      isSatisfied: true, // 用户精修过的译文默认视为满意
+      isSatisfied: true,
       updatedAt: Date.now(),
     };
     stored.updatedAt = Date.now();
@@ -207,9 +173,6 @@ export class TranslationStorage {
     } catch {}
   }
 
-  /**
-   * 一键将当前所有已翻译段落标记为满意
-   */
   public static markAllSatisfied(chapterKey: string, units: ParagraphUnit[]): void {
     if (typeof localStorage === 'undefined') return;
     const stored = this.loadChapter(chapterKey) || {
@@ -241,18 +204,12 @@ export class TranslationStorage {
     } catch {}
   }
 
-  /**
-   * 获取指定章节标记为满意的段落数量
-   */
   public static getSatisfiedCount(chapterKey?: string): number {
     const stored = this.loadChapter(chapterKey);
     if (!stored || !stored.units) return 0;
     return Object.values(stored.units).filter((u) => Boolean(u.isSatisfied)).length;
   }
 
-  /**
-   * 清除指定章节的翻译缓存
-   */
   public static clearChapter(chapterKey?: string): void {
     if (typeof localStorage === 'undefined') return;
     const key = this.getStorageKey(chapterKey || '');
@@ -261,10 +218,6 @@ export class TranslationStorage {
     } catch {}
   }
 
-
-  /**
-   * 获取当前全局译文呈现方式 ('sidebar' | 'inline')
-   */
   public static getDisplayMode(): TranslationDisplayMode {
     if (typeof localStorage === 'undefined') return DEFAULT_TRANSLATION_DISPLAY_MODE;
     try {
@@ -274,9 +227,6 @@ export class TranslationStorage {
     return DEFAULT_TRANSLATION_DISPLAY_MODE;
   }
 
-  /**
-   * 设置并持久化全局译文呈现方式，并派发全局同步事件
-   */
   public static setDisplayMode(mode: TranslationDisplayMode): void {
     if (typeof localStorage === 'undefined') return;
     try {
@@ -289,9 +239,6 @@ export class TranslationStorage {
     }
   }
 
-  /**
-   * 获取当前全局翻译服务商 ('google' | 'bupt' | 'gemini' 等)
-   */
   public static getProvider(): TranslationProviderId {
     if (typeof localStorage === 'undefined') return DEFAULT_TRANSLATION_PROVIDER;
     try {
@@ -303,9 +250,6 @@ export class TranslationStorage {
     return DEFAULT_TRANSLATION_PROVIDER;
   }
 
-  /**
-   * 设置并持久化全局翻译服务商，并派发全局同步事件
-   */
   public static setProvider(provider: TranslationProviderId): void {
     if (typeof localStorage === 'undefined') return;
     const normalized = provider === 'deepseek' ? 'bupt' : provider;
@@ -320,4 +264,3 @@ export class TranslationStorage {
     }
   }
 }
-

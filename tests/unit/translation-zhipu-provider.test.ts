@@ -63,7 +63,6 @@ describe('Zhipu AI GLM-4 Translation Provider Suite', () => {
   it('单段调用时能正确配合 StructurePreservingMasker 保护公式与组件占位符', async () => {
     const provider = new ZhipuTranslateProvider();
 
-    // 拦截全局 fetch 模拟智谱 API 返回带有 ⟦ASTRO_TOK_0⟧ 的译文
     const origFetch = globalThis.fetch;
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -108,14 +107,13 @@ describe('Zhipu AI GLM-4 Translation Provider Suite', () => {
 
     const results = await provider.translateBatch(['First', 'fail', 'Third'], { apiKey: 'mock-key' });
     expect(results[0]).toBe('译:First');
-    expect(results[1]).toBe('fail'); // 降级为原文本
+    expect(results[1]).toBe('fail');
     expect(results[2]).toBe('译:Third');
   });
 
   it('真实网络探活：连接官方真实端点验证握手与错误鉴权拦截', async () => {
     const provider = new ZhipuTranslateProvider();
 
-    // 如果环境变量中配置了真实的 ZHIPU_API_KEY，执行全真实翻译
     const realKey = (process.env.ZHIPU_API_KEY || '').trim();
     if (realKey && realKey.includes('.')) {
       const res = await provider.translate('Linear algebra is the study of linear sets of equations.', {
@@ -125,7 +123,7 @@ describe('Zhipu AI GLM-4 Translation Provider Suite', () => {
       expect(res.length).toBeGreaterThan(0);
       expect(res).toContain('线性代数');
     } else {
-      // 否则使用非法 Key 真实访问 open.bigmodel.cn，验证真实上游鉴权拒绝与友好异常包装
+
       await expect(
         provider.translate('Test connection', { apiKey: 'invalid.api_key_for_testing' })
       ).rejects.toThrow(/智谱 API 身份验证失败/);

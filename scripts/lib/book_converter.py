@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import os
 import re
 import shutil
@@ -45,7 +44,6 @@ class BookConverter:
         self.collection = collection
         self.task_dirs = task_dirs or []
 
-        # 路径解析
         script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.project_root = os.path.dirname(script_dir)
         self.task_root = task_root or os.path.join(self.project_root, 'task')
@@ -64,14 +62,12 @@ class BookConverter:
             shutil.rmtree(self.out_dir)
         os.makedirs(self.out_dir, exist_ok=True)
 
-        # 核心子组件实例化
         self.sanitizer = MdxSanitizer()
         self.cleaner = TextCleaner
         self.chunker = SectionChunker
         self.card_parser = CardParser(self.sanitizer)
         self.exercise_parser = ExerciseParser(self.sanitizer)
 
-        # 引用图片映射 {relative_path: source_task_dir}
         self.image_refs: dict[str, str | None] = {}
 
     def read_task_lines(self, rel_dir: str) -> list[str]:
@@ -95,7 +91,7 @@ class BookConverter:
     def write_mdx(self, filename: str, title: str, body: str, imports: str | None = None):
         """写入单篇 MDX 文件，自动格式化 frontmatter title，注入组件引入并自动收集正文中的图片引用。"""
         os.makedirs(self.out_dir, exist_ok=True)
-        # 自动收集图片
+
         self.collect_images_from_text(body)
 
         safe_title = self.sanitizer.clean_yaml_title(title)
@@ -207,13 +203,11 @@ class BookConverter:
         dst_name = dst_filename or f"{self.book_slug}.jpg"
         dst_path = os.path.join(self.covers_dir, dst_name)
 
-        # 查找来源
         if os.path.isabs(src_rel_or_name) and os.path.exists(src_rel_or_name):
             shutil.copy2(src_rel_or_name, dst_path)
             print(f"[cover] 封面已拷贝到 public/covers/{dst_name}")
             return
 
-        # 在 task_dirs 中逐一搜索
         found = None
         for d in self.task_dirs:
             cand1 = os.path.join(self.task_root, d, 'images', src_rel_or_name)

@@ -22,7 +22,7 @@ def find_file(prefix):
     return None
 
 MAPPINGS = {
-    # 1.1 节
+
     'fig_1_1.png': 'c237676a8c42',
     'fig_1_2.png': 'f2482ee5d737',
     'fig_1_3.png': '4a611497ede1',
@@ -34,24 +34,20 @@ MAPPINGS = {
     'fig_1_9.png': '558f764be7e7',
     'fig_1_10.png': 'dc09d673ea73',
     'fig_1_11.png': 'ba0c093d523a',
-    
-    # 1.2 节
+
     'fig_1_12.png': 'b0cd161e1e1c',
     'fig_1_13.png': '4bcd16a80029',
     'fig_1_14.png': '17cd81a5e57b',
     'fig_1_15.png': '1e18c1870244',
 
-    # 1.3 节
     'fig_1_16.png': '041d3898f37b',
     'fig_1_17.png': '6c4f868386e9',
     'fig_1_18.png': 'd3db3eaa3ac3',
     'fig_1_19.png': 'c6077fc0a80d',
 
-    # 1.4 节
     'fig_1_20.png': '7021d3a90b89',
     'fig_1_21.png': '96b4a4df8386',
 
-    # 1.5 节
     'fig_1_22.png': '4aa7f46ab47c',
     'fig_1_23.png': '4aa7f46ab47c',
     'fig_1_24.png': '816a70a3fd2f',

@@ -1,30 +1,12 @@
-/**
- * src/features/scratchpad/core/markdown-parser.ts
- * ============================================================================
- * 空白文档 Markdown / KaTeX / Mermaid / 学术卡片 核心解析引擎
- * ============================================================================
- * 职责：
- * 1. 负责 Frontmatter YAML 元数据与正文的高性能解析与双向序列化；
- * 2. 调度 KaTeX 实现行内与块级数学公式实时渲染，并注入 data-latex 属性；
- * 3. 拦截 Mermaid 图表代码块，编译为 AstroLib 统一的 .mermaid-container；
- * 4. 识别并编译 AstroLib 专属学术卡片组件（Knowledge, Theorem, Definition, Example, Note, Solution, Algorithm）；
- * 5. 产出语义化 HTML，并提取章节多级大纲（TOC）供右侧侧载栏联动。
- * ============================================================================
- */
-
 import { marked } from 'marked';
 import katex from 'katex';
 import type { DocumentMetadata, ParsedDocument, ParsedHeadingItem } from '../types.ts';
 
-// 配置 marked 解析器基础参数
 marked.setOptions({
   gfm: true,
   breaks: false,
 });
 
-/**
- * 提取并解析 Markdown 顶部的 YAML Frontmatter
- */
 export function parseFrontmatter(source: string): { metadata: DocumentMetadata; rawFrontmatter: string; body: string } {
   if (!source) {
     return { metadata: { title: '未命名草稿' }, rawFrontmatter: '', body: '' };
@@ -52,7 +34,6 @@ export function parseFrontmatter(source: string): { metadata: DocumentMetadata; 
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
 
-    // 处理列表子项: - item
     if (trimmed.startsWith('- ') && currentListKey) {
       const itemVal = trimmed.slice(2).trim().replace(/^['"]|['"]$/g, '');
       if (Array.isArray(metadata[currentListKey])) {
@@ -61,13 +42,11 @@ export function parseFrontmatter(source: string): { metadata: DocumentMetadata; 
       continue;
     }
 
-    // 解析 key: value
     const kv = line.match(/^([a-zA-Z0-9_\-]+)\s*:\s*(.*)$/);
     if (kv) {
       const key = kv[1].trim();
       let val = kv[2].trim();
 
-      // 判断是否开启新的多行列表: tags:
       if (!val) {
         currentListKey = key;
         metadata[key] = [];
@@ -76,7 +55,6 @@ export function parseFrontmatter(source: string): { metadata: DocumentMetadata; 
 
       currentListKey = null;
 
-      // 判断内联数组: [a, b, c]
       if (val.startsWith('[') && val.endsWith(']')) {
         const inner = val.slice(1, -1).trim();
         metadata[key] = inner
@@ -85,7 +63,6 @@ export function parseFrontmatter(source: string): { metadata: DocumentMetadata; 
         continue;
       }
 
-      // 去除两端单双引号
       val = val.replace(/^['"]|['"]$/g, '');
       metadata[key] = val;
     }
@@ -98,9 +75,6 @@ export function parseFrontmatter(source: string): { metadata: DocumentMetadata; 
   return { metadata, rawFrontmatter, body };
 }
 
-/**
- * 将结构化元数据序列化为 YAML Frontmatter 字符串
- */
 export function serializeFrontmatter(meta: DocumentMetadata): string {
   const lines: string[] = ['---'];
   const title = (meta.title || '未命名草稿').trim();
@@ -125,7 +99,6 @@ export function serializeFrontmatter(meta: DocumentMetadata): string {
     }
   }
 
-  // 写入其他自定义字段
   for (const [k, v] of Object.entries(meta)) {
     if (['title', 'description', 'author', 'subject', 'date', 'tags'].includes(k)) continue;
     if (typeof v === 'string') {
@@ -144,31 +117,22 @@ export function serializeFrontmatter(meta: DocumentMetadata): string {
   return lines.join('\n');
 }
 
-/**
- * 组装完整 Markdown（Frontmatter + 正文）
- */
 export function combineDocument(meta: DocumentMetadata, body: string): string {
   const fm = serializeFrontmatter(meta);
   return `${fm}\n\n${body.trim()}\n`;
 }
 
-/**
- * 生成标题的安全 URL Slug
- */
 function slugify(text: string): string {
   return text
     .toLowerCase()
     .trim()
-    .replace(/<[^>]+>/g, '') // 移除 HTML 标签
-    .replace(/[^\w\u4e00-\u9fa5\s-]/g, '') // 保留中文字符、字母、数字、破折号
+    .replace(/<[^>]+>/g, '')
+    .replace(/[^\w\u4e00-\u9fa5\s-]/g, '')
     .replace(/\s+/g, '-');
 }
 
-/**
- * 将 AstroLib 学术卡片标签编译为符合站点样式规范的 DOM 结构
- */
 function transformAcademicCards(html: string): string {
-  // 定义 12 种卡片的映射规则
+
   const cardConfigs: Record<string, { className: string; title: string; iconKind: string; isDetails?: boolean }> = {
     knowledge: { className: 'knowledge-card', title: '知识点', iconKind: 'knowledge' },
     theorem: { className: 'knowledge-card', title: '定理', iconKind: 'theorem' },
@@ -203,17 +167,15 @@ function transformAcademicCards(html: string): string {
 
   let transformed = html;
 
-  // 正则匹配自定义卡片组件标签：<Theorem title="...">...</Theorem> 等
   const tagPattern = /<([A-Z][a-zA-Z0-9]*)\b([^>]*)>([\s\S]*?)<\/\1>/g;
   transformed = transformed.replace(tagPattern, (_match, tagName, attrsStr, content) => {
     const key = tagName.toLowerCase();
     const config = cardConfigs[key];
     if (!config) {
-      // 非已知卡片，原样返回
+
       return _match;
     }
 
-    // 提取 title="..."
     const titleMatch = attrsStr.match(/\btitle=(?:["']([^"']*)["']|{`([^`]*)`})/);
     const title = (titleMatch ? (titleMatch[1] || titleMatch[2]) : config.title).trim();
     const cleanId = slugify(title) || `card-${Math.random().toString(36).slice(2, 7)}`;
@@ -257,7 +219,6 @@ function transformAcademicCards(html: string): string {
       `.trim();
     }
 
-    // 通用知识卡片与衍生卡片
     return `
       <div class="${config.className} toc-chunk" data-title="${title}" data-icon-kind="${config.iconKind}" id="${cleanId}">
         <div class="card-header" role="heading" aria-level="4">
@@ -274,9 +235,6 @@ function transformAcademicCards(html: string): string {
   return transformed;
 }
 
-/**
- * 核心 Markdown 与公式渲染引擎
- */
 export function renderMarkdown(markdownBody: string): { html: string; headings: ParsedHeadingItem[] } {
   if (!markdownBody || !markdownBody.trim()) {
     return {
@@ -285,7 +243,6 @@ export function renderMarkdown(markdownBody: string): { html: string; headings: 
     };
   }
 
-  // 1. 保护与提取 Mermaid 图表代码块
   const mermaidPlaceholders: Array<{ placeholder: string; replacement: string }> = [];
   let processed = markdownBody.replace(/```mermaid\r?\n([\s\S]*?)```/g, (_m, code) => {
     const p = `@@MERMAID_PLACEHOLDER_${mermaidPlaceholders.length}@@`;
@@ -296,10 +253,8 @@ export function renderMarkdown(markdownBody: string): { html: string; headings: 
     return p;
   });
 
-  // 2. 保护与提取 LaTeX 数学公式（防止 marked 误将其中的 _ / * / \ 转译）
   const mathPlaceholders: Array<{ placeholder: string; replacement: string }> = [];
 
-  // 2.1 块级公式 $$ ... $$ (外层优先，完整保留内部的 pmatrix / aligned 环境)
   processed = processed.replace(/\$\$([\s\S]*?)\$\$/g, (fullMatch, tex) => {
     const p = `@@MATH_BLOCK_${mathPlaceholders.length}@@`;
     const cleanTex = tex.trim();
@@ -316,7 +271,6 @@ export function renderMarkdown(markdownBody: string): { html: string; headings: 
     return p;
   });
 
-  // 2.2 独立的块级环境公式 \begin{...} ... \end{...}（未包裹在 $$ 中的裸环境）
   processed = processed.replace(/\\begin\{([a-zA-Z*]+)\}([\s\S]*?)\\end\{\1\}/g, (fullMatch) => {
     const p = `@@MATH_BLOCK_${mathPlaceholders.length}@@`;
     try {
@@ -332,7 +286,6 @@ export function renderMarkdown(markdownBody: string): { html: string; headings: 
     return p;
   });
 
-  // 2.3 行内公式 $ ... $
   processed = processed.replace(/(?<!\\)\$((?:\\\$|[^$\r\n])+?)\$/g, (fullMatch, tex) => {
     const p = `@@MATH_INLINE_${mathPlaceholders.length}@@`;
     const cleanTex = tex.trim();
@@ -349,29 +302,24 @@ export function renderMarkdown(markdownBody: string): { html: string; headings: 
     return p;
   });
 
-  // 3. 执行标准 Markdown 解析 (GFM)
   let rawHtml = marked.parse(processed) as string;
 
-  // 4. 回填 Mermaid 图表
   for (const item of mermaidPlaceholders) {
     rawHtml = rawHtml.replace(item.placeholder, item.replacement);
   }
 
-  // 5. 回填 LaTeX 数学公式
   for (const item of mathPlaceholders) {
     rawHtml = rawHtml.replace(item.placeholder, item.replacement);
   }
 
-  // 6. 转译 AstroLib 学术卡片组件
   let finalHtml = transformAcademicCards(rawHtml);
 
-  // 7. 扫描并注入大纲标题（Headings Slug & List）
   const headings: ParsedHeadingItem[] = [];
   const headingRegex = /<h([1-4])\b([^>]*)>([\s\S]*?)<\/h\1>/gi;
 
   finalHtml = finalHtml.replace(headingRegex, (_match, levelStr, attrsStr, innerHtml) => {
     const level = parseInt(levelStr, 10);
-    // 纯文本标题
+
     const text = innerHtml.replace(/<[^>]+>/g, '').trim();
     const idMatch = attrsStr.match(/\bid=["']([^"']*)["']/);
     const existingId = idMatch ? idMatch[1] : '';
@@ -388,9 +336,6 @@ export function renderMarkdown(markdownBody: string): { html: string; headings: 
   return { html: finalHtml, headings };
 }
 
-/**
- * 完整解析整个空白文档文本
- */
 export function renderDocument(fullSource: string): ParsedDocument {
   const { metadata, rawFrontmatter, body } = parseFrontmatter(fullSource);
   const { html, headings } = renderMarkdown(body);

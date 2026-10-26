@@ -1,19 +1,5 @@
-/**
- * mdx-editor/locate-block：块定位 —— 给定文件内容与目标行号（body 空间），
- * 解析 mdast 并返回包含该行的"编辑块"（卡片 / 段落 / 标题 / 列表 / 公式…）。
- *
- * 返回（均为 body 行号空间，1-based）：
- *   { kind, startLine, endLine, text, node, parentCard }
- *   - kind：卡片组件名小写（example/knowledge/…），或
- *           paragraph | heading | list | table | quote | code | formula | hr
- *   - text：块源码文本（LF 归一）
- *   - node：命中的 mdast 节点
- *   - parentCard：若命中节点位于某卡片内，给出该卡片块 { kind, startLine, endLine }
- */
-
 import { parseFile, lineOffsets, linesText } from './parse.mjs';
 
-/** mdast 节点类型 → 块 kind */
 const NODE_KIND = {
   heading: 'heading',
   paragraph: 'paragraph',
@@ -25,29 +11,20 @@ const NODE_KIND = {
   thematicBreak: 'hr',
 };
 
-/** 卡片 kind 集合（组件名小写） */
 export const CARD_KINDS = new Set([
   'example', 'variant', 'knowledge', 'note', 'solution',
   'block', 'method', 'guide', 'exercise', 'summary', 'analysis',
   'qrcodevideo',
 ]);
 
-/** 是否卡片节点（mdxJsxFlowElement 一律视为卡片块） */
 const isCardNode = (n) => n.type === 'mdxJsxFlowElement';
 const cardKind = (n) => (n.name || 'card').toLowerCase();
 
-/**
- * 定位包含 targetLine 的最深层编辑块。
- * 遍历顺序 = 源码顺序；卡片先于其子块访问、子块后访问覆盖 → 点卡片内段落命中段落，
- * 点卡片外壳（标题行等子块不含的行）命中卡片。
- * @param {string} content 全文
- * @param {number} targetLine body 行号（1-based）
- */
 export function locateBlock(content, targetLine) {
   const { mdast, body, offset } = parseFile(content);
   const offs = lineOffsets(body);
 
-  let hit = null; // { node, kind }
+  let hit = null;
   let hitParentCard = null;
   const cardStack = [];
 
@@ -76,7 +53,7 @@ export function locateBlock(content, targetLine) {
 
   walk(mdast);
   if (!hit) {
-    // 容错：若点击位置在空行或轻微错位，寻找最接近的块
+
     let closestNode = null;
     let closestDist = Infinity;
     let closestKind = null;
@@ -121,9 +98,6 @@ export function locateBlock(content, targetLine) {
   return { kind, startLine, endLine, text, node, parentCard, offset };
 }
 
-/**
- * 范围定位：给定起止行号（body 空间），提取完整代码行区间
- */
 export function locateRange(content, startLine, endLine) {
   const { body, offset } = parseFile(content);
   const offs = lineOffsets(body);
@@ -133,7 +107,6 @@ export function locateRange(content, startLine, endLine) {
   return { startLine: s, endLine: e, text, offset };
 }
 
-/** 判断 kind 是否为卡片 */
 export function isCardKind(kind) {
   return CARD_KINDS.has(kind);
 }

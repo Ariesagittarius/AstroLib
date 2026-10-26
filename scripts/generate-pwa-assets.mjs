@@ -1,4 +1,4 @@
-﻿import fs from 'node:fs';
+import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
 
@@ -9,7 +9,6 @@ if (!fs.existsSync(ICONS_DIR)) {
   fs.mkdirSync(ICONS_DIR, { recursive: true });
 }
 
-// 1. 生成各规格图标
 async function generateIcons() {
   const src = path.join(PUBLIC_DIR, 'favicon.png');
   if (!fs.existsSync(src)) {
@@ -17,15 +16,12 @@ async function generateIcons() {
     return;
   }
 
-  // 192x192
   await sharp(src).resize(192, 192).png().toFile(path.join(ICONS_DIR, 'icon-192.png'));
   console.log('✓ 生成 public/icons/icon-192.png');
 
-  // 512x512
   await sharp(src).resize(512, 512).png().toFile(path.join(ICONS_DIR, 'icon-512.png'));
   console.log('✓ 生成 public/icons/icon-512.png');
 
-  // 512x512 maskable (带安全内边距)
   const innerSize = 410;
   const resizedInner = await sharp(src)
     .resize(innerSize, innerSize, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })

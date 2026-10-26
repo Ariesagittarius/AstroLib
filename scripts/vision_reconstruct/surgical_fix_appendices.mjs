@@ -5,7 +5,6 @@ const ROOT_DIR = process.cwd();
 const rebuildDir = path.join(ROOT_DIR, 'src/content/docs/collections/math/engineering_analysis_rebuild');
 const imagesDir = path.join(rebuildDir, 'images');
 
-// 1. 补齐 a1 的图片映射
 const A1_MAPPINGS = {
   'figure_1_1.png': 'ad5bd10a13b697f47f4ae0b06400bea1bcca586ee0167c20f0b6786c6e337b21.jpg',
   'figure_1_2.png': '3c5444046a314b7a1aa7860a6c95e1a211b7c23563f73ddf3e7cff5376ee707b.jpg',
@@ -43,28 +42,24 @@ for (const [targetName, srcHash] of Object.entries(A1_MAPPINGS)) {
   }
 }
 
-// 2. 修复 a1 中的 \overparen
 const a1File = path.join(rebuildDir, 'a1_附录1-2_参数表示极坐标与常见曲线.mdx');
 let a1Content = fs.readFileSync(a1File, 'utf-8');
 a1Content = a1Content.replace(/\\overparen/g, '\\wideparen');
 fs.writeFileSync(a1File, a1Content, 'utf-8');
 console.log('[A1 Fix OK] 修复 \\overparen -> \\wideparen');
 
-// 3. 修复 a2 中的 Multiple \tag
 const a2File = path.join(rebuildDir, 'a2_附录3-4_三角函数公式与反三角函数.mdx');
 let a2Content = fs.readFileSync(a2File, 'utf-8');
 
-// 在 aligned / cases 环境内部，将 \tag{X.Y} 转为 & (X.Y)
 a2Content = a2Content.replace(/\\begin\{(aligned|cases)\}([\s\S]*?)\\end\{\1\}/g, (match, env, body) => {
   const fixedBody = body.replace(/\\tag\{([^{}]+)\}/g, '& ($1)');
   return `\\begin{${env}}${fixedBody}\\end{${env}}`;
 });
 
-// 处理跨多行的多重 tag 块
 a2Content = a2Content.replace(/\$\$([\s\S]*?)\$\$/g, (match, body) => {
   const tags = [...body.matchAll(/\\tag\{([^{}]+)\}/g)];
   if (tags.length > 1) {
-    // 超过一个 tag，保留第一个或转为序号
+
     let count = 0;
     return '$$\n' + body.replace(/\\tag\{([^{}]+)\}/g, (m, tagVal) => {
       count++;

@@ -16,10 +16,10 @@ for p in range(253, 298):
         lines = text.splitlines()
         for l in lines:
             l_str = l.strip()
-            # check section heading
+
             if re.match(r"^7\.\d+", l_str):
                 print(f"[SEC] P{phys_p} (book {phys_p-15}): {l_str}")
-            # check figure
+
             if "7." in l_str and ("图" in l_str or "ͼ" in l_str or "Figure" in l_str):
                 print(f"  [FIG] P{phys_p} (book {phys_p-15}): [{b[0]:.1f}, {b[1]:.1f}, {b[2]:.1f}, {b[3]:.1f}] -> {l_str}")
 

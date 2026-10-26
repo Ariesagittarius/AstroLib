@@ -1,5 +1,3 @@
-// scripts/vision_reconstruct/ch05_data_part1.cjs
-
 const ch05QuestionsPart1 = [
   {
     id: "LAG-TB-CH05-Q01",

@@ -141,7 +141,7 @@ describe('Exercises Dataset Acceptance Suite', () => {
       }
     }
     expect(totalQ).toBe(277);
-    // 验证书末官方答案回填率（216 题）
+
     expect(answeredQ).toBeGreaterThanOrEqual(200);
   });
 });

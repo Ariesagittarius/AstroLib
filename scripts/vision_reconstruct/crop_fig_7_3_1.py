@@ -9,8 +9,6 @@ doc = pymupdf.open(PDF_PATH)
 zoom = 2.0
 mat = pymupdf.Matrix(zoom, zoom)
 
-# 图 7.3.1 二进制熵函数曲线
-# Page 258 (phys_259), bbox roughly [50, 480, 230, 610]
 page = doc[258]
 rect = pymupdf.Rect(50, 480, 240, 615)
 pix = page.get_pixmap(matrix=mat, clip=rect)

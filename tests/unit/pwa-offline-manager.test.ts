@@ -9,7 +9,6 @@ import {
   clearOfflinePack,
 } from '../../src/scripts/pwa-offline-manager.ts';
 
-// 简易内存 Cache 模拟实现
 class MockCache {
   private store = new Map<string, Response>();
 
@@ -94,7 +93,7 @@ describe('pwa-offline-manager (PWA 离线全量数据包管理引擎)', () => {
 
   it('getOfflinePackStatus: 已灌入数据时能正确去重统计唯一篇数与估算占用空间', async () => {
     const cache = await mockCaches.open(PACK_CACHE_NAME);
-    // 模拟写入带斜杠与不带斜杠的双份键
+
     const dummyResp = new Response('<h1>Test</h1>', {
       headers: { 'Content-Type': 'text/html' }
     });
@@ -120,11 +119,9 @@ describe('pwa-offline-manager (PWA 离线全量数据包管理引擎)', () => {
       }
     };
 
-    // 生成 Gzip 二进制 Buffer
     const jsonStr = JSON.stringify(mockPackData);
     const gzBuffer = zlib.gzipSync(Buffer.from(jsonStr, 'utf8'));
 
-    // 拦截 fetch 返回 gzip 流
     global.fetch = vi.fn().mockImplementation(async (url: string) => {
       if (url === '/offline-packs/astrolib-all.json.gz') {
         return new Response(gzBuffer, {
@@ -146,14 +143,12 @@ describe('pwa-offline-manager (PWA 离线全量数据包管理引擎)', () => {
     expect(result.success).toBe(true);
     expect(result.total).toBe(3);
 
-    // 检查缓存桶中是否已灌入内容
     const cache = await mockCaches.open(PACK_CACHE_NAME);
     const cachedChapter = await cache.match('/collections/math/linear_algebra/01_绪论/');
     expect(cachedChapter).toBeDefined();
     const htmlText = await cachedChapter!.text();
     expect(htmlText).toContain('绪论内容');
 
-    // 检查进度回调是否到达 100%
     const lastProgress = progressLogs[progressLogs.length - 1];
     expect(lastProgress.pct).toBe(100);
     expect(lastProgress.text).toContain('全量离线包导入成功');

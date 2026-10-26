@@ -16,7 +16,7 @@ for p in range(253, 297):
         lines = text.splitlines()
         for l in lines:
             l_str = l.strip()
-            # If line mentions 图 7 or 图7
+
             if re.search(r"图\s*7", l_str):
                 print(f"P{phys_p} (doc {p}): [{b[0]:.1f}, {b[1]:.1f}, {b[2]:.1f}, {b[3]:.1f}] -> {l_str}")
 

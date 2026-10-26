@@ -1,8 +1,3 @@
-/**
- * src/components/exercises/exercise-math-tooltip.ts
- * 侧栏 AI 数学规范推导浮窗（M3 Rich Tooltip / Floating Card）交互控制器
- */
-
 import renderMathInElement from 'katex/contrib/auto-render';
 import { renderAcademicSolutionMarkdown as renderSolutionMarkdown, EXERCISE_KATEX_OPTIONS as KATEX_OPTIONS } from './exercise-markdown';
 import { getEffectiveAiClientConfig } from '../../ai/ai-config';
@@ -34,7 +29,7 @@ export class ExerciseMathTooltip {
   }
 
   private bindWindowEvents() {
-    // 监听全局点击：点击浮窗外部自动关闭 M3 Rich Tooltip（若处于固定状态则忽略）
+
     window.addEventListener('pointerdown', (e) => {
       if (!this.activeTooltipQid || !this.tooltipEl) return;
       if (this.isTooltipPinned) return;
@@ -45,7 +40,6 @@ export class ExerciseMathTooltip {
       this.closeAiRichTooltip();
     });
 
-    // 监听窗口尺寸变化：自适应微调浮窗位置
     window.addEventListener('resize', () => {
       if (this.activeTooltipQid) {
         if (this.isCustomPositioned && this.tooltipEl) {
@@ -74,9 +68,6 @@ export class ExerciseMathTooltip {
     return this.activeTooltipQid;
   }
 
-  /**
-   * 获取或初始化 Material 3 Rich Tooltip DOM 挂载容器
-   */
   public getOrCreateRichTooltip(): HTMLElement {
     let el = document.getElementById('ex-ai-rich-tooltip');
     if (!el) {
@@ -92,9 +83,6 @@ export class ExerciseMathTooltip {
     return el;
   }
 
-  /**
-   * 切换 AI 规范推导的 M3 Rich Tooltip 浮窗
-   */
   public toggleAiRichTooltip(qid: string, triggerBtn: HTMLElement) {
     if (this.activeTooltipQid === qid) {
       this.closeAiRichTooltip();
@@ -103,17 +91,10 @@ export class ExerciseMathTooltip {
     }
   }
 
-  /**
-   * 打开并定位 M3 Rich Tooltip 浮窗
-   */
-  /**
-   * 打开并定位 M3 Rich Tooltip 浮窗（并让渡收起右侧栏推导）
-   */
   public openAiRichTooltip(qid: string, triggerBtn: HTMLElement) {
     const q = this.host.getQuestion(qid);
     if (!q) return;
 
-    // 若之前已有其他题目的浮窗打开，恢复其侧栏展示
     if (this.activeTooltipQid && this.activeTooltipQid !== qid) {
       document.getElementById(`ai-body-${this.activeTooltipQid}`)?.classList.remove('tooltip-active-ceded');
     }
@@ -128,10 +109,8 @@ export class ExerciseMathTooltip {
     const solutionMd = this.host.getStoredAiSolution(qid) || '';
     const reasoningMd = this.host.getStoredAiReasoning(qid) || '';
 
-    // 让渡显示：在右侧栏为当前题目添加 .tooltip-active-ceded，隐藏冗长的推导内容
     document.getElementById(`ai-body-${qid}`)?.classList.add('tooltip-active-ceded');
 
-    // 更新触发按钮激活态
     document.querySelectorAll('.ex-ai-popout-btn').forEach((btn) => {
       btn.classList.toggle('active', btn.id === `ai-popout-${qid}`);
     });
@@ -222,11 +201,9 @@ export class ExerciseMathTooltip {
       </div>
     `;
 
-    // 绑定内部交互
     document.getElementById('ex-tooltip-close')?.addEventListener('click', () => this.closeAiRichTooltip());
     document.getElementById('ex-tooltip-dismiss')?.addEventListener('click', () => this.closeAiRichTooltip());
 
-    // 绑定固定 (Pin) 交互
     const pinBtn = document.getElementById('ex-tooltip-pin') as any;
     if (pinBtn) {
       const syncPin = (newPinned: boolean) => {
@@ -253,11 +230,10 @@ export class ExerciseMathTooltip {
       });
     }
 
-    // 绑定拖动 (Drag) 交互
     const dragBtn = document.getElementById('ex-tooltip-drag') as HTMLElement;
     if (dragBtn) {
       dragBtn.addEventListener('pointerdown', (e: PointerEvent) => {
-        if (e.button !== 0) return; // 仅限主键
+        if (e.button !== 0) return;
         if (!this.tooltipEl) return;
 
         try {
@@ -270,7 +246,6 @@ export class ExerciseMathTooltip {
         const initialLeft = rect.left;
         const initialTop = rect.top;
 
-        // 切换为显式 left/top 定位，脱离右侧栏相对 right 锚定
         this.tooltipEl.style.left = `${initialLeft}px`;
         this.tooltipEl.style.right = 'auto';
         this.tooltipEl.style.top = `${initialTop}px`;
@@ -288,7 +263,6 @@ export class ExerciseMathTooltip {
           const newLeft = initialLeft + deltaX;
           const newTop = initialTop + deltaY;
 
-          // 视口安全边界约束（上下左右保留 8px 呼吸间距，严禁移出屏幕）
           const clampX = Math.max(8, Math.min(newLeft, window.innerWidth - currentW - 8));
           const clampY = Math.max(8, Math.min(newTop, window.innerHeight - currentH - 8));
 
@@ -356,69 +330,53 @@ export class ExerciseMathTooltip {
       } catch {}
     }
 
-    // 计算定位：位于右侧栏的左侧
     this.repositionRichTooltip(triggerBtn);
 
-    // 展示
     tooltip.classList.add('visible');
     tooltip.setAttribute('aria-hidden', 'false');
 
-    // 双重校验定位（确保真实 DOM 渲染后的高度准确收拢）
     requestAnimationFrame(() => {
       this.repositionRichTooltip(triggerBtn);
     });
   }
 
-  /**
-   * 动态自适应定位 Rich Tooltip 到右侧栏左侧，并精准约束视口边界（杜绝下部遮挡）
-   */
   public repositionRichTooltip(triggerBtn: HTMLElement) {
     if (!this.tooltipEl) return;
     const btnRect = triggerBtn.getBoundingClientRect();
     const sidebar = document.querySelector('.custom-page-sidebar') || document.getElementById('exercise-sidebar-panel');
     const sidebarRect = sidebar ? sidebar.getBoundingClientRect() : { left: window.innerWidth - 320 };
 
-    // 1. 水平定位：位于右侧栏的左侧，留出 14px 呼吸间距
     const rightDist = window.innerWidth - sidebarRect.left + 14;
     this.tooltipEl.style.right = `${Math.max(16, rightDist)}px`;
     this.tooltipEl.style.left = 'auto';
 
-    // 2. 垂直视口边界约束
     const viewportH = window.innerHeight;
-    const navHeight = 72; // 顶栏避让区
-    const bottomPadding = 24; // 底部安全留白，确保底部动作栏 100% 完整可见
+    const navHeight = 72;
+    const bottomPadding = 24;
     const maxAvailableH = Math.max(260, viewportH - navHeight - bottomPadding);
 
-    // 舒适阅读目标高度（最大 620px，但不超过可用视口高度）
     const targetH = Math.min(maxAvailableH, 620);
 
-    // 3. 自适应计算 top
-    // 理想情况下，窗口上边略微高于触发按钮
     const btnCenterY = btnRect.top + btnRect.height / 2;
     let top = btnRect.top - 24;
 
-    // 如果按钮偏下，导致 top + targetH 超过屏幕下界，则向上收拢
     const maxTop = Math.max(navHeight, viewportH - targetH - bottomPadding);
     top = Math.max(navHeight, Math.min(top, maxTop));
 
     this.tooltipEl.style.top = `${top}px`;
-    // 动态限定 maxHeight，即使在超矮屏幕也能保证 footer 绝对不溢出视口
+
     this.tooltipEl.style.maxHeight = `${viewportH - top - bottomPadding}px`;
 
-    // 4. Caret 小角动态对齐按钮中心
     const caret = this.tooltipEl.querySelector('.ex-ai-rich-tooltip-caret') as HTMLElement;
     if (caret) {
       const caretTop = btnCenterY - top - 6;
-      // 限制小角在浮窗卡片自身上下边界内
+
       const actualHeight = this.tooltipEl.offsetHeight || targetH;
       const clampedCaretTop = Math.max(20, Math.min(caretTop, actualHeight - 36));
       caret.style.top = `${clampedCaretTop}px`;
     }
   }
 
-  /**
-   * 关闭 M3 Rich Tooltip 浮窗并恢复右侧栏推导让渡显示
-   */
   public closeAiRichTooltip() {
     const prevQid = this.activeTooltipQid;
     this.isTooltipPinned = false;
@@ -432,12 +390,11 @@ export class ExerciseMathTooltip {
     });
     this.activeTooltipQid = null;
 
-    // 让渡恢复：移除右侧栏对应题目的 .tooltip-active-ceded 状态，重新展示完整推导
     if (prevQid) {
       const aiBody = document.getElementById(`ai-body-${prevQid}`);
       if (aiBody) {
         aiBody.classList.remove('tooltip-active-ceded');
-        // 若推导内容已生成，确保 KaTeX 在侧栏中正确渲染
+
         const contentEl = document.getElementById(`ai-content-${prevQid}`);
         if (contentEl) {
           try {
@@ -448,13 +405,9 @@ export class ExerciseMathTooltip {
     }
   }
 
-  /**
-   * 实时将流式内容与思考过程同步渲染进打开的 Rich Tooltip 中
-   */
   public syncStreamingToRichTooltip(qid: string, md: string, reasoningMd = '', isStreaming = true) {
     if (this.activeTooltipQid !== qid) return;
 
-    // 1. 同步 CoT 思考过程组件（原地更新摘要，杜绝暴力销毁重建 DOM 容器）
     const cotContainer = document.getElementById('ex-tooltip-cot-container');
     if (cotContainer) {
       let box = document.getElementById('ex-tooltip-cot-box');
@@ -465,7 +418,7 @@ export class ExerciseMathTooltip {
       }
 
       if (box) {
-        // 原地更新摘要标签（纯文本变更，开销极低）
+
         const summaryEl = document.getElementById('ex-tooltip-cot-summary');
         if (summaryEl) {
           summaryEl.textContent = isStreaming && !md
@@ -473,7 +426,6 @@ export class ExerciseMathTooltip {
             : `已完成思考 · 共 ${reasoningMd.length} 字`;
         }
 
-        // 仅在已展开的情况下按需进行 Markdown 与 KaTeX 排版；折叠状态下绝不触碰隐藏 DOM
         const isExpanded = box.classList.contains('is-expanded');
         if (isExpanded) {
           const content = document.getElementById('ex-tooltip-cot-content');
@@ -487,7 +439,6 @@ export class ExerciseMathTooltip {
       }
     }
 
-    // 2. 同步推导正文
     const solutionEl = document.getElementById('ex-tooltip-solution');
     if (solutionEl) {
       solutionEl.innerHTML = renderSolutionMarkdown(md, isStreaming);

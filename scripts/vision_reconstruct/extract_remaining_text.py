@@ -1,10 +1,9 @@
-import fitz # PyMuPDF
+import fitz
 import os
 
 pdf_path = r"task\通信原理(第5版) -- 杨鸿文 -- 5, 2024 -- 北京：北京邮电大学出版社 9787563574919 .pdf"
 doc = fitz.open(pdf_path)
 
-# Let's inspect pages from phys 400 to 439
 output_file = r"scripts\vision_reconstruct\ch11_12_13_text.txt"
 os.makedirs(os.path.dirname(output_file), exist_ok=True)
 

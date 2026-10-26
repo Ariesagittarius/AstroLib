@@ -3,17 +3,6 @@ import fs from 'node:fs';
 const DEFAULT_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
 const MODEL = 'gemma-4-26b-a4b-it';
 
-/**
- * High-res Multimodal Vision Streaming Client for Google Gemma 4
- * @param {string} prompt - Task instructions and prompt
- * @param {string[]} imagePaths - Local file paths of page images (JPEG/PNG)
- * @param {object} [options]
- * @param {string} [options.apiKey] - Google API key (defaults to env or key)
- * @param {number} [options.retries=3] - Maximum retry attempts on 503/network error
- * @param {number} [options.temperature=0.1] - Sampling temperature
- * @param {number} [options.maxOutputTokens=16384] - Max token quota
- * @returns {Promise<{text: string, thought: string, durationMs: number}>}
- */
 export async function streamGemmaVision(prompt, imagePaths, options = {}) {
   const apiKey = options.apiKey || process.env.GEMINI_API_KEY || DEFAULT_API_KEY;
   const retries = options.retries ?? 10;
@@ -22,7 +11,6 @@ export async function streamGemmaVision(prompt, imagePaths, options = {}) {
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:streamGenerateContent?key=${apiKey}&alt=sse`;
 
-  // Ensure Thinking Token Guardrail is present to prevent thinking budget depletion
   const guardrail = '【核心指令】：思考过程请保持极简（不超过 100 字简要大纲），把全部输出配额用于生成完整的 MDX 正文！';
   const effectivePrompt = prompt.includes('思考过程请保持极简') ? prompt : `${guardrail}\n\n${prompt}`;
 
@@ -73,7 +61,7 @@ export async function streamGemmaVision(prompt, imagePaths, options = {}) {
         buffer += decoder.decode(value, { stream: true });
 
         const lines = buffer.split('\n');
-        buffer = lines.pop(); // 保留最后一个不完整的行
+        buffer = lines.pop();
 
         for (const line of lines) {
           const trimmed = line.trim();
@@ -98,7 +86,7 @@ export async function streamGemmaVision(prompt, imagePaths, options = {}) {
               process.stdout.write(`[GemmaVision] 分片: ${chunkCount}, 正文: ${fullText.length} 字, 思考: ${fullThought.length} 字\r`);
             }
           } catch {
-            // 忽略分片拼接时的单行 JSON 解析残缺
+
           }
         }
       }

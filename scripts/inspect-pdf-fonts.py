@@ -19,7 +19,6 @@ for p in presets:
 
     all_text = data + b'\n' + b'\n'.join(decompressed_chunks)
 
-    # Search for FontDescriptor / FontName or BaseFont
     base_fonts = set()
     for match in re.finditer(rb'/(?:BaseFont|FontName)\s*/([A-Za-z0-9\+\-_]+)', all_text):
         name = match.group(1).decode('latin1', errors='ignore')

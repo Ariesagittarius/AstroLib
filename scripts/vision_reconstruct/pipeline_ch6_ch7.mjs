@@ -5,7 +5,7 @@ function runStep(cmd, args) {
     console.log(`\n======================================================`);
     console.log(`🚀 [Pipeline Step] ${cmd} ${args.join(' ')}`);
     console.log(`======================================================\n`);
-    
+
     const proc = spawn(cmd, args, { stdio: 'inherit', shell: true });
     proc.on('close', (code) => {
       if (code === 0) resolve();
@@ -22,13 +22,11 @@ async function main() {
   console.log(`=============================================================\n`);
 
   try {
-    // Step 1: Chapter 6 remaining sections (6.5 to 6.8)
+
     await runStep('node', ['scripts/vision_reconstruct/reconstruct_chapters_5_6.mjs', '--from-section', '6.5']);
 
-    // Step 2: Chapter 7 full reconstruction (7.1 to 7.4)
     await runStep('node', ['scripts/vision_reconstruct/reconstruct_chapter_7.mjs']);
 
-    // Step 3: Global quality scan
     await runStep('node', ['scripts/scan-mdx.mjs', 'src/content/docs/collections/math/engineering_analysis_rebuild']);
 
     const totalMin = ((Date.now() - startTime) / 60000).toFixed(1);

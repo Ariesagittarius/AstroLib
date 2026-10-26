@@ -1,10 +1,3 @@
-/**
- * tests/acceptance/scratchpad-workspace.test.ts
- * ============================================================================
- * 空白文档与学术工作台 验收测试与双语助读集成契约
- * ============================================================================
- */
-
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -74,23 +67,19 @@ describe('Scratchpad Workspace Acceptance Suite', () => {
 
   describe('Bilingual Translation Compatibility (双语助读集成契约)', () => {
     it('工作台文献草稿必须能够被 ParagraphAligner 完整提取离散段落单元与类型', () => {
-      // 提取文献模板内容
+
       const tpl = ScratchpadStorage.getTemplate('literature-translation');
 
-      // 执行双语助读段落扫描切分提取
       const paragraphs = ParagraphAligner.extractFromMarkdown(tpl.draft.content);
 
-      // 验证提取到了有效段落
       expect(paragraphs.length).toBeGreaterThan(4);
 
-      // 验证包含标题、段落、数学公式与卡片等各种类型
       const types = paragraphs.map((p) => p.type);
       expect(types).toContain('heading');
       expect(types).toContain('paragraph');
       expect(types).toContain('math');
       expect(types).toContain('card');
 
-      // 验证段落单元的唯一 ID 赋值
       paragraphs.forEach((p, idx) => {
         expect(p.id).toBe(`p-${idx}`);
         expect(p.sourceText).toBeTruthy();
@@ -103,7 +92,6 @@ describe('Scratchpad Workspace Acceptance Suite', () => {
       const cssPath = path.resolve(process.cwd(), 'src/styles/components/scratchpad.css');
       const content = fs.readFileSync(cssPath, 'utf-8');
 
-      // 查找 z-index: 数字 的硬编码模式
       const hardcodedZIndexMatches = content.match(/z-index\s*:\s*([0-9]+)\s*;/g) || [];
 
       const violatingMatches: string[] = [];
@@ -123,19 +111,15 @@ describe('Scratchpad Workspace Acceptance Suite', () => {
       const workspacePath = path.resolve(process.cwd(), 'src/features/scratchpad/ui/ScratchpadWorkspace.astro');
       const content = fs.readFileSync(workspacePath, 'utf-8');
 
-      // 1. 模板选择采用纯净 modal overlay，严禁未包装的 bare md-dialog 裸露
       expect(content).not.toContain('<md-dialog');
       expect(content).toContain('id="scratchpad-template-modal"');
 
-      // 2. 必须具备顶栏浮动目录触发器与 Popup 下拉结构
       expect(content).toContain('id="scratchpad-toc-trigger"');
       expect(content).toContain('id="scratchpad-toc-popup"');
       expect(content).toContain('id="scratchpad-toc-list"');
 
-      // 3. 返回按钮必须带有专属 id 便于安全跳转原文章
       expect(content).toContain('id="scratchpad-back-btn"');
 
-      // 4. 双语助读按钮与滑入式抽屉完整挂载
       expect(content).toContain('data-scratchpad-translate');
       expect(content).toContain('data-translation-trigger');
       expect(content).toContain('ScratchpadTranslationDrawer');
@@ -145,7 +129,6 @@ describe('Scratchpad Workspace Acceptance Suite', () => {
       const pagePath = path.resolve(process.cwd(), 'src/pages/blank.astro');
       const content = fs.readFileSync(pagePath, 'utf-8');
 
-      // 严禁引入产生右侧固定大纲宽度的 PageSidebarOverride
       expect(content).not.toContain('PageSidebarOverride');
       expect(content).not.toContain('blank-page-sideload-aside');
       expect(content).toContain('class="blank-page-main"');
@@ -167,12 +150,10 @@ describe('Scratchpad Workspace Acceptance Suite', () => {
       const cssPath = path.resolve(process.cwd(), 'src/styles/components/scratchpad.css');
       const content = fs.readFileSync(cssPath, 'utf-8');
 
-      // 验证界面字体变量定义包含 Google 字体 (Plus Jakarta Sans) 与思源黑体 (Noto Sans SC)
       expect(content).toContain('--scratchpad-font-ui');
       expect(content).toContain('Plus Jakarta Sans');
       expect(content).toContain('Noto Sans SC');
 
-      // 验证主容器与顶栏显式应用统一界面字体
       expect(content).toContain('font-family: var(--scratchpad-font-ui);');
     });
 
@@ -197,4 +178,3 @@ describe('Scratchpad Workspace Acceptance Suite', () => {
     });
   });
 });
-

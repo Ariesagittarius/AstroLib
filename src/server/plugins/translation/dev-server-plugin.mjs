@@ -1,17 +1,3 @@
-/**
- * src/server/plugins/translation/dev-server-plugin.mjs
- * ============================================================================
- * Vite Dev Server 插件：学术教材结构无损翻译服务接口 (/api/translate/*)
- * ============================================================================
- * 端点职责：
- * 1. OPTIONS /api/translate/* -> 响应 CORS 预检
- * 2. GET /api/translate/health -> 健康探活
- * 3. GET /api/translate/providers -> 获取支持的翻译提供商列表
- * 4. POST /api/translate -> 翻译单段文本或整篇 Markdown（带结构遮蔽与还原）
- * 5. POST /api/translate/batch -> 批量翻译段落
- * ============================================================================
- */
-
 import { translationService } from '../../../services/translation/service.ts';
 
 const PROXY_PATH_PREFIX = '/api/translate';
@@ -47,7 +33,6 @@ export function translationDevServerPlugin() {
           return next();
         }
 
-        // 1. CORS 预检
         if (req.method === 'OPTIONS') {
           res.writeHead(204, {
             'Access-Control-Allow-Origin': '*',
@@ -62,7 +47,7 @@ export function translationDevServerPlugin() {
         const pathname = parsedUrl.pathname;
 
         try {
-          // 2. 健康探测: GET /api/translate/health
+
           if (req.method === 'GET' && pathname === `${PROXY_PATH_PREFIX}/health`) {
             return sendJson(res, 200, {
               ok: true,
@@ -72,7 +57,6 @@ export function translationDevServerPlugin() {
             });
           }
 
-          // 3. 提供商列表: GET /api/translate/providers
           if (req.method === 'GET' && pathname === `${PROXY_PATH_PREFIX}/providers`) {
             return sendJson(res, 200, {
               ok: true,
@@ -81,7 +65,6 @@ export function translationDevServerPlugin() {
             });
           }
 
-          // 4. 单段/全篇翻译: POST /api/translate
           if (req.method === 'POST' && (pathname === PROXY_PATH_PREFIX || pathname === `${PROXY_PATH_PREFIX}/`)) {
             const body = await readJsonBody(req);
             const { text, provider, sourceLang, targetLang, preserveStructure, apiKey, endpoint, model } = body;
@@ -109,7 +92,6 @@ export function translationDevServerPlugin() {
             });
           }
 
-          // 5. 批量段落翻译: POST /api/translate/batch
           if (req.method === 'POST' && pathname === `${PROXY_PATH_PREFIX}/batch`) {
             const body = await readJsonBody(req);
             const { paragraphs, provider, sourceLang, targetLang, preserveStructure } = body;
@@ -134,7 +116,6 @@ export function translationDevServerPlugin() {
             });
           }
 
-          // 其他路径 404
           return sendJson(res, 404, {
             ok: false,
             error: `未知翻译端点: ${pathname}`,

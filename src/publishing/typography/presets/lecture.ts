@@ -1,15 +1,3 @@
-/**
- * src/publishing/typography/presets/lecture.ts
- * 大学讲义预设 (Lecture) - Specialized 专门场景学术预设
- *
- * 设计理念：
- * - 专为随堂讲义、课程笔记、研讨班习题解答打造的清雅排版体验
- * - 中文正文：霞鹜文楷 GB Lite (LXGW WenKai GB Lite)
- * - 中文标题：思源黑体 (Source Han Sans SC)
- * - 西文与公式：STIX Two (Text & Math)
- * - 辅助楷体：霞鹜文楷 GB Lite (LXGW WenKai GB Lite)
- */
-
 import type { TypographyPreset } from '../types.ts';
 
 export const PRESET_LECTURE: TypographyPreset = {

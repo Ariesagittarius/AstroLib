@@ -1,20 +1,3 @@
-/**
- * src/features/scratchpad/client/scratchpad-controller.ts
- * ============================================================================
- * 空白文档与学术工作台（Scratchpad）前端交互控制器
- * ============================================================================
- * 职责：
- * 1. 驱动 Markdown 编辑区输入、按键绑定（Tab 缩进、括号自动配对、防抖渲染）；
- * 2. 调度 KaTeX、Mermaid、AstroLib 学术卡片渲染管线与公式复制交互；
- * 3. 驱动三档视口模式切换（分屏对照 / 专注阅读 / 专注写作）；
- * 4. 驱动元数据表单与 YAML Frontmatter 的双向数据流同步；
- * 5. 顶栏浮动 Popup 目录（TOC Dropdown）与平滑滚动锚点联动；
- * 6. 原文返回与阅读会话保持；
- * 7. 桥接 SideloadManager 与 TranslationDockController，实现滑入式双语助读与行内助读；
- * 8. 驱动学术打印与 Markdown 文件导出。
- * ============================================================================
- */
-
 import { sideloadManager } from '../../../components/sideload/sideload-manager.ts';
 import { TranslationDockController } from '../../../services/translation/client/translation-dock-controller.ts';
 import { initMermaid } from '../../../components/sidebar/mermaid-loader.ts';
@@ -39,7 +22,6 @@ export class ScratchpadController {
   private currentBodyContent = '';
   private rawFrontmatterMode = false;
 
-  // DOM 节点引用
   private rootEl: HTMLElement | null = null;
   private editorTextarea: HTMLTextAreaElement | null = null;
   private previewArticle: HTMLElement | null = null;
@@ -49,7 +31,6 @@ export class ScratchpadController {
   private statsCharEl: HTMLElement | null = null;
   private statsParaEl: HTMLElement | null = null;
 
-  // 防抖计时器
   private renderDebounceTimer: number | null = null;
   private saveDebounceTimer: number | null = null;
 
@@ -75,23 +56,18 @@ export class ScratchpadController {
     this.statsCharEl = document.getElementById('scratchpad-stat-chars');
     this.statsParaEl = document.getElementById('scratchpad-stat-paras');
 
-    // 0. 同步全站学术阅读正文字体偏好与字阶
     this.syncTypographyPrefs();
 
-    // 1. 初始化并同步返回原文章按钮
     this.syncBackButton();
 
-    // 2. 恢复视口模式
     this.currentViewMode = ScratchpadStorage.getViewMode();
     this.applyViewMode(this.currentViewMode);
 
-    // 3. 检查是否有来自阅读页的划选文段 (Snippet Import)
     const importedSnippet = ScratchpadStorage.consumeImportedSnippet();
 
-    // 4. 加载草稿或默认文献翻译模板
     const savedDraft = ScratchpadStorage.loadDraft();
     if (importedSnippet) {
-      // 读者选段唤起：载入选段作为新文献草稿
+
       this.currentMetadata = {
         title: '文献节选翻译与排版测试',
         description: '来自阅读时划选的学术文段',
@@ -106,30 +82,24 @@ export class ScratchpadController {
       this.currentMetadata = savedDraft.metadata || { title: '未命名草稿' };
       this.currentBodyContent = savedDraft.content || '';
     } else {
-      // 默认加载文献翻译预设
+
       const defaultTpl = TEMPLATE_PRESETS[0];
       this.currentMetadata = { ...defaultTpl.draft.metadata };
       this.currentBodyContent = defaultTpl.draft.content;
     }
 
-    // 5. 同步编辑器和元数据表单
     this.syncMetadataInputs();
     if (this.editorTextarea) {
       this.editorTextarea.value = this.currentBodyContent;
     }
 
-    // 6. 初次编译渲染
     this.executeRender();
 
-    // 7. 绑定全局事件委托与键盘快捷键
     this.bindEvents();
     this.bindEditorShortcuts();
     this.bindSideloadSync();
   }
 
-  /**
-   * 同步全站正文阅读字体（Latin + CJK 两栏体系）与字阶大小
-   */
   private syncTypographyPrefs(): void {
     try {
       applyFontPref(loadFontPref());
@@ -139,9 +109,6 @@ export class ScratchpadController {
     }
   }
 
-  /**
-   * 同步返回原文章按钮状态
-   */
   private syncBackButton(): void {
     const backBtn = document.getElementById('scratchpad-back-btn');
     if (!backBtn) return;
@@ -156,9 +123,6 @@ export class ScratchpadController {
     } catch {}
   }
 
-  /**
-   * 执行智能安全返回原文章逻辑
-   */
   public handleNavigateBack(): void {
     try {
       const returnUrl = sessionStorage.getItem('astrolib_blank_return_url');
@@ -189,9 +153,6 @@ export class ScratchpadController {
     window.location.href = '/';
   }
 
-  /**
-   * 应用视口布局模式（split / preview / edit）
-   */
   public applyViewMode(mode: WorkspaceViewMode): void {
     this.currentViewMode = mode;
     ScratchpadStorage.setViewMode(mode);
@@ -200,7 +161,6 @@ export class ScratchpadController {
     this.rootEl.classList.remove('view-split', 'view-preview', 'view-edit');
     this.rootEl.classList.add(`view-${mode}`);
 
-    // 更新顶栏控制器状态
     const buttons = this.rootEl.querySelectorAll<HTMLButtonElement>('[data-view-mode]');
     buttons.forEach((btn) => {
       const btnMode = btn.getAttribute('data-view-mode');
@@ -213,42 +173,30 @@ export class ScratchpadController {
       }
     });
 
-    // 触发图表重新自适应尺寸
     window.dispatchEvent(new Event('resize'));
   }
 
-  /**
-   * 执行 Markdown + KaTeX + 卡片渲染管线
-   */
   private executeRender(): void {
     if (!this.previewArticle) return;
 
     const fullSource = combineDocument(this.currentMetadata, this.currentBodyContent);
     const parsed = renderDocument(fullSource);
 
-    // 1. 写入正文 HTML
     this.previewArticle.innerHTML = parsed.html;
 
-    // 2. 统计更新
     this.updateStats(this.currentBodyContent);
 
-    // 3. 动态触发 Mermaid 图表编译
     try {
       initMermaid();
     } catch {}
 
-    // 4. 绑定 KaTeX 公式一键复制
     try {
       initFormulaActions();
     } catch {}
 
-    // 5. 动态同步顶栏浮动 Popup 目录 (TOC Dropdown)
     this.syncTocPopup(parsed.headings);
   }
 
-  /**
-   * 触发防抖实时渲染 (120ms)
-   */
   public scheduleRender(): void {
     if (this.renderDebounceTimer) {
       window.clearTimeout(this.renderDebounceTimer);
@@ -259,9 +207,6 @@ export class ScratchpadController {
     }, 120);
   }
 
-  /**
-   * 触发防抖草稿保存 (400ms)
-   */
   private scheduleSaveDraft(): void {
     if (this.saveStatusEl) {
       this.saveStatusEl.textContent = '保存中...';
@@ -281,9 +226,6 @@ export class ScratchpadController {
     }, 400);
   }
 
-  /**
-   * 持久化当前草稿
-   */
   private saveCurrentDraft(): void {
     const draft: ScratchpadDraft = {
       metadata: this.currentMetadata,
@@ -294,9 +236,6 @@ export class ScratchpadController {
     ScratchpadStorage.saveDraft(draft);
   }
 
-  /**
-   * 同步更新顶栏浮动目录（TOC Dropdown）列表
-   */
   private syncTocPopup(headings: Array<{ id: string; text: string; level: number }>): void {
     const tocList = document.getElementById('scratchpad-toc-list');
     const tocBadge = document.getElementById('scratchpad-toc-badge');
@@ -327,9 +266,6 @@ export class ScratchpadController {
     tocList.innerHTML = itemsHtml;
   }
 
-  /**
-   * 切换顶栏浮动目录开合
-   */
   public toggleTocPopup(open?: boolean): void {
     const popup = document.getElementById('scratchpad-toc-popup');
     const trigger = document.getElementById('scratchpad-toc-trigger');
@@ -348,9 +284,6 @@ export class ScratchpadController {
     }
   }
 
-  /**
-   * 打开模板选择对话框
-   */
   public openTemplateModal(): void {
     const modal = document.getElementById('scratchpad-template-modal');
     if (modal) {
@@ -360,19 +293,13 @@ export class ScratchpadController {
     }
   }
 
-  /**
-   * 关闭模板选择对话框
-   */
   public closeTemplateModal(): void {
     const modal = document.getElementById('scratchpad-template-modal');
     modal?.classList.remove('is-open');
   }
 
-  /**
-   * 打开双语助读抽屉
-   */
   public openTranslationDrawer(): void {
-    // 1. 若当前处在仅编辑模式，自动切换到分屏模式以便看见对照预览
+
     if (this.currentViewMode === 'edit') {
       this.applyViewMode('split');
     }
@@ -381,10 +308,8 @@ export class ScratchpadController {
     drawer?.classList.add('is-open');
     document.getElementById('scratchpad-translate-btn')?.classList.add('is-active');
 
-    // 激活侧载单例状态机
     sideloadManager.open('translate');
 
-    // 启动段落翻译对齐引擎
     setTimeout(() => {
       try {
         const transController = TranslationDockController.getInstance();
@@ -395,9 +320,6 @@ export class ScratchpadController {
     }, 80);
   }
 
-  /**
-   * 关闭双语助读抽屉
-   */
   public closeTranslationDrawer(): void {
     const drawer = document.getElementById('scratchpad-trans-drawer');
     drawer?.classList.remove('is-open');
@@ -405,14 +327,11 @@ export class ScratchpadController {
     sideloadManager.open('none');
   }
 
-  /**
-   * 切换双语助读开合 (Alt+Y)
-   */
   public toggleBilingualReading(): void {
     const transController = TranslationDockController.getInstance();
 
     if (transController.getDisplayMode() === 'inline') {
-      // 行内段落下方对照模式
+
       if (this.currentViewMode === 'edit') {
         this.applyViewMode('split');
       }
@@ -420,7 +339,6 @@ export class ScratchpadController {
       return;
     }
 
-    // 侧滑抽屉对照模式
     const drawer = document.getElementById('scratchpad-trans-drawer');
     if (drawer?.classList.contains('is-open')) {
       this.closeTranslationDrawer();
@@ -429,9 +347,6 @@ export class ScratchpadController {
     }
   }
 
-  /**
-   * 监听侧载与抽屉联动
-   */
   private bindSideloadSync(): void {
     window.addEventListener('astrolib:sideload-change', (e: any) => {
       const activeId = e?.detail?.activePanelId;
@@ -448,13 +363,10 @@ export class ScratchpadController {
     });
   }
 
-  /**
-   * 计算字符、字数与段落统计
-   */
   private updateStats(text: string): void {
     const clean = text.trim();
     const chars = clean.length;
-    // 简易中英文混合字数估算
+
     const words = (clean.match(/[\u4e00-\u9fa5]|[a-zA-Z0-9_\-]+/g) || []).length;
     const paras = clean ? clean.split(/\n\s*\n/).filter(Boolean).length : 0;
 
@@ -463,9 +375,6 @@ export class ScratchpadController {
     if (this.statsParaEl) this.statsParaEl.textContent = `${paras} 段落`;
   }
 
-  /**
-   * 同步元数据输入框表单
-   */
   private syncMetadataInputs(): void {
     const titleInput = document.getElementById('meta-field-title') as HTMLInputElement | null;
     const descInput = document.getElementById('meta-field-desc') as HTMLInputElement | null;
@@ -484,9 +393,6 @@ export class ScratchpadController {
     if (docTitleHeader) docTitleHeader.textContent = this.currentMetadata.title || '空白文档';
   }
 
-  /**
-   * 从表单控件读取元数据
-   */
   private readMetadataFromInputs(): void {
     const titleInput = document.getElementById('meta-field-title') as HTMLInputElement | null;
     const descInput = document.getElementById('meta-field-desc') as HTMLInputElement | null;
@@ -518,9 +424,6 @@ export class ScratchpadController {
     this.scheduleRender();
   }
 
-  /**
-   * 在编辑器光标处插入内容
-   */
   public insertSnippet(prefix: string, suffix: string = '', defaultPlaceholder: string = ''): void {
     const ta = this.editorTextarea;
     if (!ta) return;
@@ -534,7 +437,6 @@ export class ScratchpadController {
 
     ta.setRangeText(replacement, start, end, 'end');
 
-    // 选中占位符或移到后缀前
     if (!selected && defaultPlaceholder) {
       ta.setSelectionRange(start + prefix.length, start + prefix.length + defaultPlaceholder.length);
     }
@@ -543,9 +445,6 @@ export class ScratchpadController {
     this.scheduleRender();
   }
 
-  /**
-   * 载入预设模板
-   */
   public loadTemplate(templateId: string): void {
     const preset = ScratchpadStorage.getTemplate(templateId);
     this.currentMetadata = { ...preset.draft.metadata };
@@ -561,9 +460,6 @@ export class ScratchpadController {
     this.showToast(`已载入模板: ${preset.title}`);
   }
 
-  /**
-   * 重置清空当前文档
-   */
   public resetDraft(): void {
     ScratchpadStorage.clearDraft();
     const cleanTpl = TEMPLATE_PRESETS.find((t) => t.id === 'clean-blank') || TEMPLATE_PRESETS[0];
@@ -571,9 +467,6 @@ export class ScratchpadController {
     this.showToast('已重置草稿');
   }
 
-  /**
-   * 导出为 Markdown 文件
-   */
   public exportMarkdownFile(): void {
     const full = combineDocument(this.currentMetadata, this.currentBodyContent);
     const titleSlug = (this.currentMetadata.title || 'document').replace(/[^\w\u4e00-\u9fa5]/g, '_');
@@ -591,16 +484,12 @@ export class ScratchpadController {
     this.showToast('Markdown 文档导出成功');
   }
 
-  /**
-   * 导出 / 打印 PDF (仅打印预览正文部分)
-   */
   public exportPrintPdf(): void {
-    // 1. 关闭任何打开中的弹窗与侧抽屉
+
     this.closeTemplateModal();
     this.toggleTocPopup(false);
     this.closeTranslationDrawer();
 
-    // 2. 打印前切至预览或分屏状态
     if (this.currentViewMode === 'edit') {
       this.applyViewMode('preview');
     }
@@ -610,9 +499,6 @@ export class ScratchpadController {
     }, 150);
   }
 
-  /**
-   * 轻量气泡提示
-   */
   private showToast(msg: string): void {
     let toast = document.getElementById('scratchpad-toast');
     if (!toast) {
@@ -628,11 +514,8 @@ export class ScratchpadController {
     }, 2400);
   }
 
-  /**
-   * 绑定事件委托
-   */
   private bindEvents(): void {
-    // 1. 文本域输入监听
+
     this.editorTextarea?.addEventListener('input', () => {
       if (this.editorTextarea) {
         this.currentBodyContent = this.editorTextarea.value;
@@ -640,7 +523,6 @@ export class ScratchpadController {
       }
     });
 
-    // 2. 元数据面板字段变更
     const metaInputs = [
       'meta-field-title',
       'meta-field-desc',
@@ -654,7 +536,6 @@ export class ScratchpadController {
       });
     });
 
-    // 3. 元数据 YAML 原始模式切换
     const yamlToggleBtn = document.getElementById('meta-toggle-raw-yaml');
     yamlToggleBtn?.addEventListener('click', () => {
       this.rawFrontmatterMode = !this.rawFrontmatterMode;
@@ -672,7 +553,6 @@ export class ScratchpadController {
       }
     });
 
-    // 4. YAML 原始输入实时反解析
     const rawYamlTextarea = document.getElementById('meta-field-raw-yaml') as HTMLTextAreaElement | null;
     rawYamlTextarea?.addEventListener('input', () => {
       if (rawYamlTextarea) {
@@ -683,7 +563,6 @@ export class ScratchpadController {
       }
     });
 
-    // 5. 元数据面板展开/收起切换
     const metaToggleBtn = document.getElementById('scratchpad-meta-toggle');
     metaToggleBtn?.addEventListener('click', () => {
       if (!this.metaPanel) return;
@@ -692,19 +571,16 @@ export class ScratchpadController {
       metaToggleBtn.classList.toggle('is-active', isExpanded);
     });
 
-    // 6. 全局操作委托
     document.addEventListener('click', (e) => {
       const target = e.target as HTMLElement | null;
       if (!target) return;
 
-      // 返回原文章
       if (target.closest('#scratchpad-back-btn')) {
         e.preventDefault();
         this.handleNavigateBack();
         return;
       }
 
-      // 视口模式切换
       const viewModeBtn = target.closest<HTMLButtonElement>('[data-view-mode]');
       if (viewModeBtn) {
         e.preventDefault();
@@ -713,21 +589,18 @@ export class ScratchpadController {
         return;
       }
 
-      // 切换顶栏浮动目录
       if (target.closest('#scratchpad-toc-trigger')) {
         e.preventDefault();
         this.toggleTocPopup();
         return;
       }
 
-      // 关闭顶栏浮动目录
       if (target.closest('#scratchpad-toc-popup-close')) {
         e.preventDefault();
         this.toggleTocPopup(false);
         return;
       }
 
-      // 点击目录项平滑滚动至对应标题
       const tocLink = target.closest<HTMLAnchorElement>('[data-toc-target]');
       if (tocLink) {
         e.preventDefault();
@@ -742,55 +615,47 @@ export class ScratchpadController {
         return;
       }
 
-      // 点击空白处关闭顶栏浮动目录
       const tocDropdownWrap = target.closest('.scratchpad-toc-dropdown-wrap');
       if (!tocDropdownWrap) {
         this.toggleTocPopup(false);
       }
 
-      // 双语助读触发
       if (target.closest('[data-scratchpad-translate]')) {
         e.preventDefault();
         this.toggleBilingualReading();
         return;
       }
 
-      // 关闭双语助读侧抽屉
       if (target.closest('#trans-back-to-toc') || target.closest('#trans-sidebar-close')) {
         e.preventDefault();
         this.closeTranslationDrawer();
         return;
       }
 
-      // 导出 PDF 打印
       if (target.closest('[data-scratchpad-print]')) {
         e.preventDefault();
         this.exportPrintPdf();
         return;
       }
 
-      // 导出 Markdown 文件
       if (target.closest('[data-scratchpad-export-md]')) {
         e.preventDefault();
         this.exportMarkdownFile();
         return;
       }
 
-      // 打开模板选择对话框
       if (target.closest('[data-scratchpad-open-templates]')) {
         e.preventDefault();
         this.openTemplateModal();
         return;
       }
 
-      // 关闭模板选择对话框
       if (target.closest('#scratchpad-template-close-btn') || target.id === 'scratchpad-template-modal') {
         e.preventDefault();
         this.closeTemplateModal();
         return;
       }
 
-      // 选中某个模板
       const tplCard = target.closest<HTMLElement>('[data-template-id]');
       if (tplCard) {
         e.preventDefault();
@@ -802,7 +667,6 @@ export class ScratchpadController {
         return;
       }
 
-      // 重置清空草稿
       if (target.closest('[data-scratchpad-reset]')) {
         e.preventDefault();
         if (window.confirm('确定要清空当前草稿并重置为初始空白状态吗？未保存的内容将无法找回。')) {
@@ -811,7 +675,6 @@ export class ScratchpadController {
         return;
       }
 
-      // 快捷插入工具栏按钮
       const insertBtn = target.closest<HTMLButtonElement>('[data-insert-action]');
       if (insertBtn) {
         e.preventDefault();
@@ -821,7 +684,6 @@ export class ScratchpadController {
       }
     });
 
-    // 7. 监听全站字体与字阶变更事件联动
     window.addEventListener('astrolib:font-change', (e: any) => {
       if (e?.detail) {
         applyFontPref(e.detail);
@@ -837,9 +699,6 @@ export class ScratchpadController {
     });
   }
 
-  /**
-   * 处理工具栏快捷插入
-   */
   private handleToolbarInsert(action: string | null): void {
     if (!action) return;
     switch (action) {
@@ -891,28 +750,25 @@ export class ScratchpadController {
     }
   }
 
-  /**
-   * 绑定编辑器键盘操作（Tab、自动括号成对、Alt+快捷键、Esc关闭弹窗）
-   */
   private bindEditorShortcuts(): void {
     const ta = this.editorTextarea;
 
     if (ta) {
       ta.addEventListener('keydown', (e) => {
-        // 1. Tab 缩进 (2 个空格)
+
         if (e.key === 'Tab') {
           e.preventDefault();
           const start = ta.selectionStart;
           const end = ta.selectionEnd;
 
           if (e.shiftKey) {
-            // Shift + Tab 反缩进
+
             const before = ta.value.substring(0, start);
             if (before.endsWith('  ')) {
               ta.setRangeText('', start - 2, start, 'end');
             }
           } else {
-            // Tab 插入 2 空格
+
             ta.setRangeText('  ', start, end, 'end');
           }
 
@@ -921,7 +777,6 @@ export class ScratchpadController {
           return;
         }
 
-        // 2. 符号成对自动闭合
         const pairs: Record<string, string> = {
           '(': ')',
           '[': ']',
@@ -936,7 +791,7 @@ export class ScratchpadController {
           const start = ta.selectionStart;
           const end = ta.selectionEnd;
           if (start !== end) {
-            // 选中文字时包围文字
+
             e.preventDefault();
             const selected = ta.value.substring(start, end);
             const closed = `${e.key}${selected}${pairs[e.key]}`;
@@ -949,9 +804,8 @@ export class ScratchpadController {
       });
     }
 
-    // 3. 全局按键：Esc 关闭弹窗/目录/抽屉；Alt+Y 助读；Alt+P 打印；Alt+O 目录；Ctrl+S 保存
     window.addEventListener('keydown', (e) => {
-      // Escape 一键退出所有浮层
+
       if (e.key === 'Escape') {
         const modal = document.getElementById('scratchpad-template-modal');
         if (modal?.classList.contains('is-open')) {

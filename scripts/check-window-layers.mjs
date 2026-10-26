@@ -1,17 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/check-window-layers.mjs
- * ============================================================================
- * AstroLib Window Layer Linter (视窗层级规范守护脚本)
- * ============================================================================
- * 目的：阻止未来再次产生未经声明的硬编码大型 z-index 魔数（如 2147483xxx, 999999 等）。
- *
- * 规则：
- *   1. 跨组件全局视窗层级必须使用语义化设计令牌：var(--layer-*)。
- *   2. 局部组件微层级（Local Stacking Context）允许使用 <= 10 的局部小整数 (-1, 0, 1, 2, 3, 4, 5, 10)。
- *   3. 严禁使用 >= 50 的裸数值魔数（如 50, 99, 100, 1000, 99999, 999999, 2147483xxx）。
- * ============================================================================
- */
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -19,7 +6,6 @@ import path from 'node:path';
 const SRC_DIR = path.resolve('src');
 const ALLOWED_EXTS = new Set(['.css', '.astro', '.ts', '.tsx', '.mjs']);
 
-// 局部组件微层级允许的数值上限（用于 badge, outline marker, 局部图标等）
 const MAX_LOCAL_Z_INDEX = 10;
 
 function walkDir(dir, fileList = []) {
@@ -41,12 +27,11 @@ function checkFile(filePath) {
   const lines = content.split(/\r?\n/);
   const violations = [];
 
-  // 匹配 z-index: <value>;
   const zIndexRegex = /z-index\s*:\s*([^;!]+)(?:!important)?\s*;/gi;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    // 忽略注释行
+
     const trimmed = line.trim();
     if (trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*')) {
       continue;
@@ -56,7 +41,6 @@ function checkFile(filePath) {
     while ((match = zIndexRegex.exec(line)) !== null) {
       const rawVal = match[1].trim();
 
-      // 允许使用语义变量与 CSS 关键字
       if (
         rawVal.startsWith('var(--layer-') ||
         rawVal.startsWith('var(--sl-z-index') ||
@@ -69,15 +53,13 @@ function checkFile(filePath) {
         continue;
       }
 
-      // 检查纯数字
       const numVal = parseInt(rawVal, 10);
       if (!isNaN(numVal)) {
-        // 允许局部小数值 (<= MAX_LOCAL_Z_INDEX)
+
         if (numVal <= MAX_LOCAL_Z_INDEX && numVal >= -1) {
           continue;
         }
 
-        // 违规：使用了未授权的裸大型数字
         let recommendation = 'var(--layer-sticky)';
         if (numVal >= 800 && numVal < 1000) recommendation = 'var(--layer-system)';
         else if (numVal >= 700) recommendation = 'var(--layer-toast)';
@@ -132,4 +114,3 @@ if (totalViolations === 0) {
   console.error('   局部微层级（如指示线、badge）仅限使用 <= 10 的局部小数值。');
   process.exit(1);
 }
-

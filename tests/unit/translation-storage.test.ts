@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TranslationStorage } from '@/services/translation/storage/translation-storage.ts';
 import type { ParagraphUnit } from '@/services/translation/types.ts';
 
-// 模拟浏览器 localStorage
 class MockLocalStorage {
   private store: Record<string, string> = {};
 
@@ -134,7 +133,6 @@ describe('TranslationStorage Suite', () => {
     expect(activeUnits[0].translatedText).toBe('群是配备二元代数运算的集合。');
     expect(activeUnits[0].isSatisfied).toBe(true);
 
-    // 第二个单元未缓存，保持原始状态
     expect(activeUnits[1].status).toBe('idle');
     expect(activeUnits[1].translatedText).toBeUndefined();
   });
@@ -273,4 +271,3 @@ describe('TranslationStorage Suite', () => {
     });
   });
 });
-

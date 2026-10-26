@@ -10,19 +10,15 @@ function cleanFile(fileName) {
 
   let text = fs.readFileSync(filePath, 'utf-8');
 
-  // 1. 删除正文中不合法的模块导入（只保留顶部的 import 语句）
   text = text.replace(/import\s*\{[^}]*\}\s*from\s*['"][^'"]*['"];?\r?\n/g, '');
 
-  // 2. 修复 KaTeX 弧长符号
   text = text.replace(/\\wideparen/g, '\\widehat');
   text = text.replace(/\\overparen/g, '\\widehat');
 
-  // 3. 确保所有卡片标签前后有空行，杜绝 JSX 将 Markdown 误判为 JS 表达式
   const cardNames = 'Knowledge|Solution|Example|SideNote|Block|Analysis|Note|Method|Guide|Variant';
   text = text.replace(new RegExp(`(<(?:${cardNames})(?:\\s+(?:"[^"]*"|'[^']*'|[^>'"])*)?>)([^\\r\\n])`, 'g'), '$1\n\n$2');
   text = text.replace(new RegExp(`([^\\r\\n])(<\\/(?:${cardNames})>)`, 'g'), '$1\n\n$2');
 
-  // 4. 清理多余空行
   text = text.replace(/\n{4,}/g, '\n\n\n');
 
   fs.writeFileSync(filePath, text, 'utf-8');

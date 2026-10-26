@@ -1,4 +1,3 @@
-// scripts/vision_reconstruct/build_ch01.js
 const fs = require('fs');
 const path = require('path');
 const katex = require('katex');
@@ -910,7 +909,6 @@ const ch01Questions = [
   }
 ];
 
-// KaTeX 校验
 let errCount = 0;
 function testMath(str, qid, field) {
   if (!str) return;

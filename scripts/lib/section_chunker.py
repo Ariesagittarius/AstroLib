@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import re
 from dataclasses import dataclass, field
 
@@ -18,7 +17,6 @@ class ChapterData:
     sections: dict[int, SectionData] = field(default_factory=dict)
     tail: list[str] = field(default_factory=list)
     tail_types: dict[str, list[str]] = field(default_factory=dict)
-
 
 class SectionChunker:
     """通用章节、习题与结构切分器。"""
@@ -104,7 +102,7 @@ class SectionChunker:
         """从文末切出答案区域，返回 (正文行列表, 答案行列表)。"""
         start = cls.find_heading_index(lines, start_pattern)
         if start is None:
-            # 尝试回退查找附录后出现的裸章标题
+
             app_idx = -1
             for i, line in enumerate(lines):
                 if re.match(r'^##\s*附录', line.strip()):

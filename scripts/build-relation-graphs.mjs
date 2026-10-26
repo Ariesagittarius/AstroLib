@@ -1,12 +1,3 @@
-// scripts/build-relation-graphs.mjs
-// 构建期：为所有图书生成“全书各章节内联关系与知识图谱数据”，输出到 public/relation-graphs/<col>-<book>.json
-// （astro build 会把 public/ 原样拷到 dist/，供客户端零运行时开销懒加载）。
-//
-// 开关：src/config/features.config.mjs 里 features.relationGraph.enabled —— 关闭则跳过生成。
-// 用法：
-//   node scripts/build-relation-graphs.mjs                  # 生成全部图书
-//   node scripts/build-relation-graphs.mjs --only engineering_analysis   # 只生成指定 slug
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

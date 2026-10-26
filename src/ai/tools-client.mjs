@@ -1,31 +1,9 @@
-/**
- * src/ai/tools-client.mjs
- * -----------------------------------------------------------------------------
- * 客户端可执行的检索工具：把“书内查找”能力暴露给 LLM（OpenAI function-calling），
- * 全部基于【已加载的书内索引】+【注入的图书清单】实现，静态站零后端、零每令牌外成本。
- *
- * 与 src/ai/mcp/tools.mjs（Node 侧，含 fs/child_process/python_exec）不同，这里的
- * 工具只做可安全在浏览器执行的检索：
- *   list_books / book_toc / book_retrieve / book_chunk / book_slice_search /
- *   book_chapter_outline / book_read_section。
- * python_exec 等文件级工具保留在 Node MCP server。
- *
- * 相关性改进：
- *   · book_retrieve 采用“强标识符加权”打分（见 retriever.mjs），并返回命中词；
- *   · book_chapter_outline 让模型按标题/编号直接查看某章大纲（小节 + 各卡片编号/锚点）；
- *   · book_read_section 让模型直接读取一片连续正文（含全文与被截断标记）；
- *   · book_slice_search 返回命中上下文窗口 + 可跳转 url。
- *
- * 每个结果都“薄切片化”：文本截断到固定上限，避免把超长内容塞进模型上下文。
- * =============================================================================
- */
 import { createRetriever } from './retriever.mjs';
 import { buildOutline, matchChapter, sectionFrom } from './outline.mjs';
 
-const TEXT_CAP = 800;             // 检索/取片段单条文本上限
-const SECTION_TEXT_CAP = 1400;    // 区间读取单条文本上限（正文较长）
+const TEXT_CAP = 800;
+const SECTION_TEXT_CAP = 1400;
 
-/** 截断文本到上限，尾部不切片尽量在词边界 */
 function cap(s, n = TEXT_CAP) {
   const t = (s || '').trim();
   if (t.length <= n) return { text: t, truncated: false };
@@ -34,12 +12,10 @@ function cap(s, n = TEXT_CAP) {
   return { text: sp > n * 0.6 ? cut.slice(0, sp) : cut, truncated: true };
 }
 
-/** 把单一文本截断为字符串（用于旧字段兼容） */
 function capStr(s, n = TEXT_CAP) {
   return cap(s, n).text;
 }
 
-/** 在文本里取命中词附近的一张“上下文窗口”切片（供正则/子串命中时给模型定位） */
 function matchWindow(text, needle, mode, radius = 130) {
   const t = (text || '').trim();
   if (!t) return '';
@@ -57,17 +33,13 @@ function matchWindow(text, needle, mode, radius = 130) {
   return `${start > 0 ? '…' : ''}${t.slice(start, end)}${end < t.length ? '…' : ''}`;
 }
 
-/**
- * 生成用于 OpenAI function-calling 的工具定义数组（请求体的 tools 字段）。
- * @returns {Array<{type:'function', function:{name:string, description:string, parameters:object}}>}
- */
 export function buildToolDefs() {
   return [
     {
       type: 'function',
       function: {
         name: 'list_books',
-        description: '列出这家题库里的合集与图书（col/book/title），用于确定检索范围或了解有哪些书。', 
+        description: '列出这家题库里的合集与图书（col/book/title），用于确定检索范围或了解有哪些书。',
         parameters: {
           type: 'object',
           properties: {},
@@ -169,7 +141,6 @@ export function buildToolDefs() {
   ];
 }
 
-/** 工具名 → 人类可读描述（用于“可用工具”提示，保持简短） */
 export function toolsDesc() {
   return [
     'list_books（列出图书）、book_toc（当前书目录）、book_retrieve（检索当前书知识库）、',
@@ -178,13 +149,6 @@ export function toolsDesc() {
   ].join('');
 }
 
-/**
- * 执行一个客户端工具（供工具循环调用）。
- * @param {string} name
- * @param {object} args
- * @param {{ index:object, bookList:Array, col:string, book:string }} ctx
- * @returns {Promise<any>}
- */
 export async function runClientTool(name, args = {}, ctx = {}) {
   const idx = ctx.index;
   switch (name) {
@@ -242,7 +206,7 @@ export async function runClientTool(name, args = {}, ctx = {}) {
       if (mode === 'regex') {
         try { re = new RegExp(m, 'i'); } catch { re = null; }
       }
-      // 子串匹配先归一化（去 $…$/空白），避免 `$Fourier$` 这类噪声阻断“Fourier系数”之类精确词
+
       const norm = (x) => (x || '').toLowerCase().replace(/[\$\\{}^_~`|]/g, '').replace(/\s+/g, '');
       const normPat = mode === 'substring' ? norm(m) : '';
       const hits = [];
@@ -287,7 +251,7 @@ export async function runClientTool(name, args = {}, ctx = {}) {
       }
       const ch = matchChapter(chapters, String(args.chapter));
       if (!ch) return { found: false };
-      // 总量上限：单章可能含上千卡片，避免把超长大纲塞进上下文（成本约束）
+
       const MAX_SECTIONS = 100;
       const MAX_CARDS = 500;
       let budget = MAX_CARDS;

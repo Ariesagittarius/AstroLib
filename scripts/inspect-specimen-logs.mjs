@@ -7,7 +7,7 @@ for (const p of presets) {
   const logPath = path.join('.tmp', 'typography-specimen', `specimen_${p}.log`);
   if (!fs.existsSync(logPath)) continue;
   const log = fs.readFileSync(logPath, 'utf8');
-  
+
   const pagesMatch = log.match(/Output written on .*?\((\d+)\s+pages?/);
   const pages = pagesMatch ? pagesMatch[1] : 'unknown';
 

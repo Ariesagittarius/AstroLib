@@ -1,4 +1,3 @@
-// scripts/vision_reconstruct/build_ch04.cjs
 const fs = require('fs');
 const path = require('path');
 const katex = require('katex');
@@ -8,7 +7,6 @@ const part2 = require('./ch04_part2.cjs');
 
 const ch04Questions = [...part1, ...part2];
 
-// KaTeX 校验
 let errCount = 0;
 function testMath(str, qid, field) {
   if (!str) return;

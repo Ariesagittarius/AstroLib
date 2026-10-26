@@ -1,13 +1,3 @@
-/**
- * src/features/scratchpad/types.ts
- * ============================================================================
- * 空白文档与学术工作台（Scratchpad / Blank Document）类型定义
- * ============================================================================
- * 遵从 Tenet Rule 1: UI is not a domain model.
- * 业务数据结构与交互状态统一在此定义。
- * ============================================================================
- */
-
 export interface DocumentMetadata {
   title: string;
   description?: string;
