@@ -12,6 +12,7 @@
  */
 
 import { BipartiteMatcher } from '../../../services/bilingual/bipartite-matcher.ts';
+import { BilingualAlignerClient } from '../../../services/bilingual/aligner-client.ts';
 
 export interface AlignResultPayload {
   matrix: number[][];
@@ -199,18 +200,8 @@ export class BilingualOnnxEngine {
     const N = targetTexts.length;
     const matrix: number[][] = Array.from({ length: M }, () => new Array(N).fill(0));
 
-    const tokenize = (text: string) => {
-      return new Set(
-        text
-          .toLowerCase()
-          .replace(/[^\w\u4e00-\u9fa5]/g, ' ')
-          .split(/\s+/)
-          .filter((w) => w.length > 1)
-      );
-    };
-
-    const srcSets = sourceTexts.map((s) => tokenize(s));
-    const tgtSets = targetTexts.map((t) => tokenize(t));
+    const srcSets = sourceTexts.map((s) => BilingualAlignerClient.tokenizeMultilingual(s));
+    const tgtSets = targetTexts.map((t) => BilingualAlignerClient.tokenizeMultilingual(t));
 
     for (let i = 0; i < M; i++) {
       const setA = srcSets[i];
@@ -228,9 +219,10 @@ export class BilingualOnnxEngine {
 
         const relPosA = M > 1 ? i / (M - 1) : 0;
         const relPosB = N > 1 ? j / (N - 1) : 0;
-        const posProximity = Math.max(0, 1 - Math.abs(relPosA - relPosB));
+        const posProximity = Math.max(0, 1 - Math.abs(relPosA - relPosB) * 1.3);
 
-        matrix[i][j] = Math.round((jaccard * 0.7 + posProximity * 0.3) * 1000) / 1000;
+        const sim = Math.max(0, Math.min(1, jaccard * 0.6 + posProximity * 0.4));
+        matrix[i][j] = Math.round(sim * 1000) / 1000;
       }
     }
 

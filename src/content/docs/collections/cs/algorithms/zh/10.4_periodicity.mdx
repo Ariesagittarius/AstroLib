@@ -1,0 +1,92 @@
+---
+title: '10.4 周期性寻找'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 10.4 周期性
+
+假设 $\operatorname { Q F T } , \left| \alpha \right. = \left( \alpha _ { 0 } , \alpha _ { 1 } , \dots , \alpha _ { M - 1 } \right)$ 的输入使得 $\alpha _ { i } = \alpha _ { j }$ 每当 $i \equiv j$ mod k 时，其中 k 是除 M 的特定整数。也就是说，数组 α 由某些长度为 $( \alpha _ { 0 } , \alpha _ { 1 } , \ldots , \alpha _ { k - 1 } )$ 的序列的 $M / k$ 重复组成k.此外，假设 k 个数字 $\alpha _ { 0 } , \ldots , \alpha _ { k - 1 }$ 中有一个非零，例如 $\alpha _ { j }$ 。那么我们说 $\left| \alpha \right.$ 是周期性的，周期为k，偏移量为 $j .$
+
+<table> <tr> <td colspan="8">图 10.5 周期性叠加示例。</td> </tr> <tr> <td rowspan="2">period 3</td> <td> </td> <td> </td> <td> </td> <td> </td> <td>···</td> <td> </td> <td> </td> </tr> <tr> <td>0</td> <td>3</td> <td>6 </td> <td>9</td> <td> </td> <td>M-6</td> <td>M-3</td> </tr> <tr> <td rowspan="2">期间4</td> <td> </td> <td> </td> <td> </td> <td> </td> <td>···</td> <td> </td> <td> </td> </tr> <tr> <td>1</td> <td> </td> <td>5</td> <td>9</td> <td> </td> <td>M-7</td> <td>M-3</td> </tr> </table>
+
+事实证明，如果输入向量是周期性的，我们可以使用量子傅里叶采样来计算其周期！这是基于以下事实，并在下一个框中得到证明：
+
+假设量子傅里叶采样的输入是周期性的，周期为 $k ,$，对于某个 k 整除 M。那么输出将是 $M / k$ 的倍数，并且同样可能是 $M / k$ 的 k 倍数中的任何一个
+
+现在稍微思考一下，通过重复采样几次（反复准备周期性叠加并进行傅立叶采样），然后对返回的所有索引取最大公约数，我们将以非常高的概率得到数字 $M / k -$，并从中得到输入的周期k！
+
+<Knowledge title="Box: The Fourier transform of a periodic vector">
+
+假设向量 $| \pmb { \alpha } \rangle = ( \alpha _ { 0 } , \alpha _ { 1 } , \dots , \alpha _ { M - 1 } )$ 是周期性的，周期为 k 并且没有偏移（即，非零项是 $\alpha _ { 0 } , \alpha _ { k } , \alpha _ { 2 k } , . . . )$ 。因此，
+
+$$
+\left| \boldsymbol {\alpha} \right\rangle = \sum_ {j = 0} ^ {M / k - 1} \sqrt {\frac {k}{M}} \left| j k \right\rangle .
+$$
+
+我们将证明它的傅立叶变换 $\vert \beta \rangle = ( \beta _ { 0 } , \beta _ { 1 } , \dots , \beta _ { M - 1 } )$ 也是周期性的，周期为 $M / k$ 并且没有偏移。
+
+领取 $\begin{array} { r } { | \beta \rangle = \frac { 1 } { \sqrt { k } } \sum _ { j = 0 } ^ { k - 1 } \left| \frac { j M } { k } \right. } \end{array}$
+
+<Solution title="证明">
+
+在输入向量中，如果 k 除 $\ell ,$，则系数 $\alpha _ { \ell }$ 为 $\sqrt { k / M }$，否则为零。我们可以将其代入 $| \beta \rangle$ 的第j个系数的公式中
+
+</Solution>
+
+$$
+\beta_ {j} = \frac {1}{\sqrt {M}} \sum_ {\ell = 0} ^ {M - 1} \omega^ {j \ell} \alpha_ {\ell} = \frac {\sqrt {k}}{M} \sum_ {i = 0} ^ {M / k - 1} \omega^ {j i k}.
+$$
+
+总和是一个几何级数 $1 + \omega ^ { j k } + \omega ^ { 2 j k } + \omega ^ { 3 j k } + \cdot \cdot \cdot$ ，包含 $M / k$ 项和比率 $\omega ^ { j k }$ （回想一下 $\omega$ 是复数 M 次单位根）。有两种情况。如果比率正好为 1（如果 $j k \equiv 0$ mod $M$ 就会发生这种情况），则级数之和就是项数。如果比率不是 1，我们可以应用几何级数的常用公式来发现总和为 $\begin{array} { r } { \frac { 1 - \omega ^ { j k ( M / k ) } } { 1 - \omega ^ { j k } } = \frac { 1 - \omega ^ { M j } } { 1 - \omega ^ { j k } } = 0 } \end{array}$
+
+因此，如果 M 除 $j k _ { ; }$ ，则 $\beta _ { j }$ 为 $1 / \sqrt { k }$ ，否则为零。
+
+更一般地，我们可以认为原始叠加是周期性的，周期为 $k ,$，但有一些偏移 $l < k :$
+
+$$
+\left| \boldsymbol {\alpha} \right\rangle = \sum_ {j = 0} ^ {M / k - 1} \sqrt {\frac {k}{M}} \left| j k + l \right\rangle .
+$$
+
+然后，和以前一样，傅里叶变换 $| \beta \rangle$ 将具有精确为 $M / k$ 倍数的非零幅度
+
+领取 $\begin{array} { r } { | \beta \rangle = \frac { 1 } { \sqrt { k } } \sum _ { j = 0 } ^ { k - 1 } \omega ^ { l j M / k } | \frac { j M } { k } \rangle } \end{array}$
+
+这个断言的证明与前一个断言（练习 10.5）非常相似。
+
+我们得出的结论是，任何周期为 k 的周期叠加的 QFT 都是一个到处都为零的数组，除了索引是 $M / k ,$ 倍数的地方，并且所有这些 k 个非零 $c o e f f  \it$ 元素具有相等的绝对值。因此，如果我们对输出进行采样，我们将得到一个 $M / k _ { : }$ 倍数的索引，并且 k 个这样的索引中的每一个都会以 $1 / k .$ 的概率出现
+
+让我们把这个说得更精确一些。
+
+<Knowledge title="引理">
+
+假设 s 个独立样本是均匀抽取的
+
+</Knowledge>
+
+$$
+0, \frac {M}{k}, \frac {2 M}{k}, \ldots , \frac {(k - 1) M}{k}.
+$$
+
+那么以至少 $1 - k / 2 ^ { s }$ 的概率，这些样本的最大公约数是 $M / k .$
+
+<Solution title="证明">
+
+唯一可能失败的方法是，如果所有样本都是 $j \cdot M / k$ 的倍数，其中 $j$ 是大于 1 的某个整数。因此，请修复任何整数 $j \geq 2$ 。特定样本为 $\dot { \mathrm { ~ \it ~ j M / k ~ } }$ 倍数的机会至多为 $1 / j \leq 1 / 2 ;$，因此所有样本为 $j M / k$ 倍数的机会至多为 $1 / 2 ^ { s }$
+
+</Solution>
+
+到目前为止，我们一直在考虑特定数字 $j ;$，对于某些 $j \leq k$，发生这种不良事件的概率最多等于这些 ${ \mathrm { ~ . ~ } } j .$ 不同值的概率之和，不超过 $k / 2 ^ { s }$。
+
+通过将 s 取为 log M 的适当倍数，我们可以使故障概率尽可能小。
+
+</Knowledge>

@@ -1,0 +1,49 @@
+---
+title: '4.7 有向无环图中的最短路径'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 4.7 dags 中的最短路径
+
+有两个图的子类可以自动排除负循环的可能性：没有负边的图和没有循环的图。我们已经知道如何有效地处理前者。现在我们将看到如何在有向无环图上仅在线性时间内解决单源最短路径问题。
+
+和以前一样，我们需要执行一系列更新，其中包括每个最短路径作为子序列。效率的关键来源是
+
+在 dag 的任何路径中，顶点都以递增的线性化顺序出现。
+
+因此，通过深度优先搜索对 dag 进行线性化（即拓扑排序）就足够了，然后按排序顺序访问顶点，更新每个顶点的边。该算法如图 4.15 所示。
+
+请注意，我们的方案不要求边为正。特别是，我们可以通过相同的算法找到 dag 中的最长路径：只需否定所有边的长度。
+
+```txt
+Figure 4.15 A single-source shortest-path algorithm for directed acyclic graphs.
+
+procedure dag-shortest-paths(G,l,s)
+
+Input: Dag G = (V,E);
+edge lengths {le:e∈E}; vertex s∈V
+
+Output: For all vertices u reachable from s, dist(u) is set to the distance from s to u.
+
+for all u∈V:
+    dist(u) = ∞
+    prev(u) = nil
+
+dist(s) = 0
+
+Linearize G
+
+for each u∈V, in linearized order:
+    for all edges (u,v) ∈ E:
+    update(u,v)
+```

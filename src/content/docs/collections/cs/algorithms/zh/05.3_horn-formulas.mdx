@@ -1,0 +1,76 @@
+---
+title: '5.3 Horn公式'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 5.3 喇叭公式
+
+为了显示人类水平的智能，计算机必须至少能够执行一定程度的逻辑推理。 Horn 公式是执行此操作的特定框架，用于表达逻辑事实并得出结论。
+
+Horn 公式中最原始的对象是布尔变量，其值为 true 或 false。例如，变量 x、y 和 z 可能表示以下可能性。
+
+x 谋杀发生在厨房
+
+你管家是无辜的
+
+z 上校晚上 8 点就睡着了
+
+文字可以是变量 x 或其否定 $\overline { { x } } ( ^ { \mathfrak { a } } \mathrm { N O T } \ x ^ { \mathfrak { 3 } } )$ 。在霍恩公式中，有关变量的知识由两种子句表示：
+
+1. 蕴涵，其左侧是任意数量的正文字的 AND，其右侧是单个正文字。这些表述的形式是“如果左边的条件成立，那么右边的条件也一定为真”。例如，
+
+$$
+(z \land w) \Rightarrow u
+$$
+
+可能意味着“如果上校晚上 8 点睡着了，而谋杀案发生在晚上 8 点，那么上校就是无辜的。”一种退化类型的蕴涵是单例 ${ ^ { 6 6 } } \Rightarrow x ,$ ，”简单地表示 x 为真：“谋杀肯定发生在厨房里。”
+
+2. 纯否定子句，由任意数量的否定文字的 OR 组成，如下所示
+
+$$
+(\overline {{u}} \vee \overline {{v}} \vee \overline {{y}})
+$$
+
+（“他们不可能都是无辜的”）。
+
+给定这两种类型的一组子句，目标是确定是否存在一致的解释：为满足所有子句的变量分配真/假值。这也称为令人满意的作业。
+
+这两种子句将我们引向不同的方向。含义告诉我们将一些变量设置为 true，而否定子句则鼓励我们将它们设置为 false。我们求解霍恩公式的策略是这样的：我们从所有变量开始为假。然后，我们继续将其中一些设置为 true，一一设置为 true，但非常不情愿，并且只有在我们绝对必须这样做时，否则就会违反含义。一旦我们完成了这个阶段并且所有的含义都得到满足，我们才会转向否定条款并确保它们都得到满足。
+
+换句话说，我们的 Horn 子句算法是以下贪婪方案（吝啬可能更具描述性）：
+
+输入：霍恩公式
+
+输出：一个令人满意的作业（如果存在）
+
+将所有变量设置为 false
+
+当存在不满足的蕴涵时：将蕴涵的右侧变量设置为 true
+
+如果满足所有纯否定子句：返回赋值，否则：返回“公式不可满足”
+
+例如，假设公式是
+
+$$
+(w \land y \land z) \Rightarrow x, (x \land z) \Rightarrow w, x \Rightarrow y, \Rightarrow x, (x \land y) \Rightarrow w, (\overline {{w}} \lor \overline {{x}} \lor \overline {{y}}), (\overline {{z}}).
+$$
+
+我们从所有错误开始，然后注意到由于单例含义 $\Rightarrow \ x$ x 必须为真。然后我们看到 y 也必须为真，因为 $x \Rightarrow y$ 。等等。
+
+要了解该算法为何正确，请注意，如果它返回一个赋值，则该赋值同时满足蕴涵和否定子句，因此它确实是输入 Horn 公式的令人满意的真值赋值。所以我们只需要说服自己，如果算法没有找到令人满意的分配，那么就真的没有。之所以如此，是因为我们的“吝啬”规则保持了以下不变式：
+
+如果某组变量设置为 true，那么它们在任何令人满意的赋值中都必须为 true。
+
+因此，如果 while 循环后找到的真值分配不满足否定子句，则不可能有令人满意的真值分配。
+
+Horn 公式是 Prolog（“逻辑编程”）的核心，在这种语言中，您可以通过使用简单的逻辑表达式指定所需的输出属性来进行编程。 Prolog 解释器的主力是我们的贪婪可满足性算法。方便的是，它可以在时间上与公式的长度成线性关系来实现；你知道怎么做吗（练习 5.32）？

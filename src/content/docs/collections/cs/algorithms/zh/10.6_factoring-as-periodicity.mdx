@@ -1,0 +1,66 @@
+---
+title: '10.6 因子分解归结为周期性'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 10.6 因式分解为周期性
+
+我们已经看到了如何使用量子傅里叶变换来找到周期性叠加的周期。现在，我们通过一系列简单的简化来展示如何将因式分解重新转换为周期查找问题。
+
+固定一个整数 N。1 模 N 的非平凡平方根（回忆练习 1.36 和 1.40）是任何整数 $x \not \equiv \pm 1$ mod N，使得 $x ^ { 2 } \equiv 1$ mod N。如果我们可以找到 1 mod N 的非平凡平方根，那么很容易将 N 分解为两个非平凡因子的乘积（并重复该过程）将因子 N):
+
+<Knowledge title="引理">
+
+如果x是1模 $N _ { z }$ 的非平凡平方根，则 $\operatorname* { g c d } ( x + 1 , N )$ 是N的非平凡因子。
+
+</Knowledge>
+
+<Solution title="证明">
+
+$x ^ { 2 } \equiv 1$ mod N 意味着 N 除 $( x ^ { 2 } - 1 ) = ( x + 1 ) ( x - 1 )$ 。但是 N 不会除掉这些单独的项，因为 $x \not \equiv \pm 1$ mod N。因此 N 必须与 $( x + 1 )$ 和 $( x - 1 )$ 中的每一个都有一个不平凡的共同因子。特别是，$\operatorname* { g c d } ( N , x + 1 )$ 是N的一个重要因子。
+
+</Solution>
+
+示例。让 $N = 1 5$。然后 $4 ^ { 2 } \equiv 1$ mod 15，但是 $4 \not \equiv \pm 1$ mod 15。$\operatorname* { g c d } ( 4 - 1 , 1 5 ) = 3$ 和 $\operatorname* { g c d } ( 4 + 1 , 1 5 ) = 5$ 都是15的重要因子。
+
+为了完成与周期性的联系，我们需要一个进一步的概念。将 $x$ 模N的阶数定义为最小正整数r，使得 $x ^ { r } \equiv 1$ mod N。例如，2 mod 15的阶数是4。
+
+计算随机数 x mod N 的阶数与求非平凡平方根的问题密切相关，从而与因式分解密切相关。这是链接。
+
+<Knowledge title="引理">
+
+设 N 是至少有两个不同质因数的奇数复合，并让 $x$ 在 0 和 $N - 1$ $I f \operatorname* { g c d } ( x , N ) = 1$ 之间均匀随机选择，则 x mod N 的阶 r 的概率至少为 $1 / 2 _ { ; }$ ，并且此外 $x ^ { r / 2 }$ 是一个非平凡的平方根 $o f$ 1 mod $N$ 。
+
+</Knowledge>
+
+这个引理的证明留作练习。这意味着，如果我们可以计算随机选择的元素 x mod N 的阶 r，那么这个阶很可能是偶数，并且 $x ^ { r / 2 }$ 是 1 模 N 的非平凡平方根。在这种情况下，gcd $( x ^ { r / 2 } + 1 , N )$ 是 $N$ 的因子。
+
+例子。如果 $x = 2$ 和 $N = 1 5$ ，那么 2 的阶数是 4，因为 $2 ^ { 4 } \equiv 1$ mod 15。将 2 的一半次方，我们得到 $1 \colon 2 ^ { 2 } \equiv 4 \not \equiv \pm 1$ mod 15 的非平凡根。因此，我们通过计算 gcd 得到 15 的除数 $( 4 + 1 , 1 5 ) = 5$
+
+因此，我们将保理简化为订单查找问题。后一个问题的优点是它有一个与之相关的自然周期函数：固定 N 和 $x ,$ 并考虑函数 $f ( a ) = x ^ { a }$ mod N。如果 r 是 $x ,$ 的阶数，则 $f ( 0 ) = f ( r ) = f ( 2 r ) = \cdots = 1$ ，类似地，$f ( 1 ) = f ( r + 1 ) = f ( 2 r + 1 ) = \cdots = x$ 。因此 $f$ 是周期性的，周期为r。我们可以通过 1.2.2 节中的重复平方算法有效地计算它。因此，为了分解 $N$ ，我们需要做的就是弄清楚如何使用函数 $f$ 建立周期为 $r ;$ 的周期性叠加，然后我们可以使用第 10.3 节中的量子傅里叶采样来找到 $r .$ 。这将在下一个框中进行描述。
+
+<Knowledge title="Box: Setting up a periodic superposition">
+
+现在让我们看看如何使用周期函数 $f ( a ) = x ^ { a }$ mod N 来设置周期叠加。程序如下：
+
+我们从两个量子寄存器开始，最初都是 0。
+
+计算第一个寄存器模 M 的量子傅里叶变换，以获得 0 到 $\begin{array} { r } { M \mathrm { ~ - ~ } 1 : \mathrm { ~ } \frac { 1 } { \sqrt { M } } \mathrm { ~ } \overline { { \sum _ { a = 0 } ^ { M - 1 } \left| a , 0 \right. } } } \end{array}$ 之间所有数字的叠加。这是因为初始叠加可以被认为是周期为 M 的周期性，因此变换是周期为 1 的周期。
+
+我们现在计算函数 $f ( a ) = x ^ { a }$ mod N。执行此操作的量子电路将第一个寄存器 a 的内容视为 f 的输入，将第二个寄存器（最初为 0）视为答案寄存器。应用这个量子电路后，两个寄存器的状态为：$\textstyle \sum _ { a = 0 } ^ { M - 1 } { \frac { 1 } { \sqrt { M } } } { \big | } a , f ( a ) \rangle$
+
+我们现在测量第二个寄存器。这给出了第一个寄存器上的周期性叠加，周期为 r，周期为 f。原因如下：
+
+由于 f 是周期为 r 的周期函数，因此对于第一个寄存器中的每个第 r 个值，第二个寄存器的内容相同。因此，第二个寄存器的测量对于 0 到 $r - 1$ 之间的某个随机 k 产生 f(k) 测量后第一个寄存器的状态是什么？要回答这个问题，请回忆一下本章前面概述的部分测量规则。第一个寄存器现在仅叠加那些与第二个寄存器上的测量结果兼容的值。但 a 的这些值恰好是 $k , k + r , k +$ $2 r , \ldots , k + M - r$ 。所以第一个寄存器的结果状态是周期叠加α与周期r，这正是我们希望找到的x的阶数！
+
+</Knowledge>

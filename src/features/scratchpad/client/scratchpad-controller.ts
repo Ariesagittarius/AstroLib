@@ -83,8 +83,14 @@ export class ScratchpadController {
     // 1. 初始化并同步返回原文章按钮
     this.syncBackButton();
 
-    // 2. 恢复视口模式
-    this.currentViewMode = ScratchpadStorage.getViewMode();
+    // 2. 恢复视口模式 (优先遵循 URL query，例如 ?mode=compare)
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const urlMode = urlParams?.get('mode') as WorkspaceViewMode | null;
+    if (urlMode && ['split', 'preview', 'edit', 'compare'].includes(urlMode)) {
+      this.currentViewMode = urlMode;
+    } else {
+      this.currentViewMode = ScratchpadStorage.getViewMode();
+    }
     this.applyViewMode(this.currentViewMode);
 
     // 3. 检查是否有来自阅读页的划选文段 (Snippet Import)
@@ -128,6 +134,18 @@ export class ScratchpadController {
     this.bindEditorShortcuts();
     this.bindSideloadSync();
     this.bindCompareEvents();
+
+    // 8. 若 URL 指定自动载入算法对比范例 (例如 ?demo=algorithms 或 ?demo=1)
+    if (this.currentViewMode === 'compare' && urlParams?.get('demo')) {
+      const demoBtn = document.getElementById('scratchpad-load-demo-compare-btn');
+      const runBtn = document.getElementById('scratchpad-run-compare-btn');
+      if (demoBtn && runBtn) {
+        demoBtn.click();
+        setTimeout(() => {
+          runBtn.click();
+        }, 120);
+      }
+    }
   }
 
   /**

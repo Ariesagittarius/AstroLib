@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { BipartiteMatcher } from '../../src/services/bilingual/bipartite-matcher.ts';
+import { BilingualAlignerClient } from '../../src/services/bilingual/aligner-client.ts';
 import { BilingualOnnxEngine } from '../../src/server/plugins/bilingual-aligner/onnx-engine.ts';
 import type { ParagraphToken } from '../../src/services/bilingual/types.ts';
 
@@ -110,3 +111,67 @@ describe('BilingualOnnxEngine', () => {
     expect(matrix[0].length).toBe(2);
   });
 });
+
+describe('BilingualAlignerClient (Multilingual Paragraph Tokenizer & Fallback)', () => {
+  it('extracts numbers, math formulas, Latin terms and Chinese bigrams', () => {
+    const enText = 'Karatsuba discovered a divide-and-conquer algorithm in 1960 with $T(n) = 3T(n/2) + O(n)$.';
+    const tokensEn = BilingualAlignerClient.tokenizeMultilingual(enText);
+
+    expect(tokensEn.has('1960')).toBe(true);
+    expect(tokensEn.has('karatsuba')).toBe(true);
+    expect(tokensEn.has('$t(n)=3t(n/2)+o(n)$')).toBe(true);
+    // Cognate mapping: algorithm -> 算法, divide -> 分治
+    expect(tokensEn.has('算法')).toBe(true);
+    expect(tokensEn.has('分治')).toBe(true);
+
+    const zhText = '1960 年卡拉楚巴提出分治算法，得到递推式 $T(n) = 3T(n/2) + O(n)$。';
+    const tokensZh = BilingualAlignerClient.tokenizeMultilingual(zhText);
+
+    expect(tokensZh.has('1960')).toBe(true);
+    expect(tokensZh.has('分治')).toBe(true);
+    expect(tokensZh.has('算法')).toBe(true);
+    expect(tokensZh.has('$t(n)=3t(n/2)+o(n)$')).toBe(true);
+  });
+
+  it('aligns Algorithms Chapter 02.1 paragraphs using fallbackLexicalMatrix', () => {
+    const sources: ParagraphToken[] = [
+      { id: 'src-0', index: 0, text: '# 02.1 Multiplication', type: 'heading' },
+      { id: 'src-1', index: 1, text: 'The algorithm we all learned in school takes $O(n^2)$ time to multiply two $n$-bit integers.', type: 'paragraph' },
+      { id: 'src-2', index: 2, text: 'In 1960, Anatoly Karatsuba discovered a revolutionary divide-and-conquer algorithm with recurrence $T(n) = 3T(n/2) + O(n)$.', type: 'paragraph' },
+    ];
+
+    const targets: ParagraphToken[] = [
+      { id: 'tgt-0', index: 0, text: '# 02.1 整数乘法算法与分治策略', type: 'heading' },
+      { id: 'tgt-1', index: 1, text: '计算两个 $n$ 位整数需要做 $n^2$ 次乘法，时间复杂度为 $O(n^2)$。', type: 'paragraph' },
+      { id: 'tgt-2', index: 2, text: '1960 年卡拉楚巴（Anatoly Karatsuba）提出了一种分治算法，由此导出的递归关系为 $T(n) = 3T(n/2) + O(n)$。', type: 'paragraph' },
+    ];
+
+    const matrix = BilingualAlignerClient.fallbackLexicalMatrix(sources, targets);
+
+    // Diagonal elements should be highest
+    expect(matrix[0][0]).toBeGreaterThan(matrix[0][1]);
+    expect(matrix[1][1]).toBeGreaterThan(matrix[1][0]);
+    expect(matrix[2][2]).toBeGreaterThan(matrix[2][0]);
+
+    // Heading match score
+    expect(matrix[0][0]).toBeGreaterThan(0.5);
+    // Formula and number match scores
+    expect(matrix[1][1]).toBeGreaterThan(0.5);
+    expect(matrix[2][2]).toBeGreaterThan(0.5);
+
+    const links = BipartiteMatcher.extractLinks(matrix, sources, targets, {
+      threshold: 0.5,
+      maxPerSource: 1,
+      monotonicBias: 0.1,
+    });
+
+    expect(links.length).toBe(3);
+    expect(links[0].sourceId).toBe('src-0');
+    expect(links[0].targetId).toBe('tgt-0');
+    expect(links[1].sourceId).toBe('src-1');
+    expect(links[1].targetId).toBe('tgt-1');
+    expect(links[2].sourceId).toBe('src-2');
+    expect(links[2].targetId).toBe('tgt-2');
+  });
+});
+

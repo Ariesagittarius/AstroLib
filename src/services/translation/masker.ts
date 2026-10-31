@@ -41,11 +41,17 @@ const CODE_INLINE_REGEX = /`[^`\r\n]+`/g;
 // 7. JSX / Astro 自定义组件标签 (如 <Knowledge title="..."> 或 </Knowledge>)
 const JSX_COMPONENT_REGEX = /<\/?[A-Z][a-zA-Z0-9]*(?:\s+[^>]*?)?\/?>/g;
 
+// 7.1 HTML 结构排版标签 (如 <table>, <tr>, <td>, <sup>, <sub>，防止被机译引擎翻译为 <表> 等畸变标签)
+const HTML_STRUCTURE_TAG_REGEX = /<\/?(?:table|tbody|thead|tfoot|tr|td|th|caption|sup|sub)\b[^>]*>/gi;
+
 // 8. Markdown 超链接 URL 目标保护: [text](https://...)
 const MD_LINK_URL_REGEX = /(?<=\[[^\]]+\]\()https?:\/\/[^\s\)]+(?=\))/g;
 
 // 9. Markdown 图片完整语法保护: ![alt](url)
 const MD_IMAGE_REGEX = /!\[[^\]]*\]\([^\)]+\)/g;
+
+// 10. HTML 特殊实体保护 (如 &#123;, &#125;, &lt;, &gt;, &amp;，防止被机译引擎还原为裸括号/比较符破坏 MDX/JSX 解析)
+const HTML_ENTITY_REGEX = /&#(?:123|125|x7b|x7d);|&(?:lt|gt|amp);/gi;
 
 export class StructurePreservingMasker {
   /**
@@ -119,9 +125,19 @@ export class StructurePreservingMasker {
       return createToken(match, 'jsx-tag');
     });
 
+    // 步骤 8.1: 保护 HTML 表格与结构排版标签
+    processed = processed.replace(HTML_STRUCTURE_TAG_REGEX, (match) => {
+      return createToken(match, 'jsx-tag');
+    });
+
     // 步骤 9: 保护 Markdown 链接的目标 URL
     processed = processed.replace(MD_LINK_URL_REGEX, (match) => {
       return createToken(match, 'markdown-link-target');
+    });
+
+    // 步骤 10: 保护特殊 HTML 实体 (如 &#123; 和 &#125;)
+    processed = processed.replace(HTML_ENTITY_REGEX, (match) => {
+      return createToken(match, 'jsx-tag');
     });
 
     return {
@@ -149,10 +165,16 @@ export class StructurePreservingMasker {
     // 2. ⟦ASTRO_TOK_0⟧
     // 3. ⟦ ASTRO_TOK_0 ⟧ (翻译引擎自动在括号内注入的空格)
     // 4. [ASTRO_TOK_0] 或 [ ASTRO_TOK_0 ] (部分引擎将特殊中括号降级为英文中括号)
-    const TOLERANT_RESTORE_REGEX = /<span[^>]*translate="no"[^>]*>\s*[⟦\[]\s*ASTRO_TOK_(\d+)\s*[⟧\]]\s*<\/span>|[⟦\[]\s*ASTRO_TOK_(\d+)\s*[⟧\]]/gi;
+    // 5. ⟦ASTRO_TOK_8 0⟧ (翻译引擎在数字串中间插入了空格)
+    // 6. ⟦ASTR O_TOK_102⟧ (翻译引擎在字母中间插入了空格)
+    const TOLERANT_RESTORE_REGEX = /<span[^>]*translate="no"[^>]*>\s*[⟦\[]\s*A\s*S\s*T\s*R\s*O[_\s]*T\s*O\s*K[_\s]*([0-9\s]+?)\s*[⟧\]]\s*<\/span>|[⟦\[]\s*A\s*S\s*T\s*R\s*O[_\s]*T\s*O\s*K[_\s]*([0-9\s]+?)\s*[⟧\]]/gi;
 
-    let restored = translatedText.replace(TOLERANT_RESTORE_REGEX, (_match, p1, p2) => {
-      const idxStr = p1 ?? p2;
+    let textToProcess = translatedText;
+    // 防御：若两个占位符紧邻无空格，补齐空格避免还原后公式或组件紧贴发生语法混淆
+    textToProcess = textToProcess.replace(/([⟦\[]\s*A\s*S\s*T\s*R\s*O[_\s]*T\s*O\s*K[_\s]*[0-9\s]+?\s*[⟧\]])(?=[⟦\[]\s*A\s*S\s*T\s*R\s*O[_\s]*T\s*O\s*K[_\s]*[0-9\s]+?\s*[⟧\]])/gi, '$1 ');
+
+    let restored = textToProcess.replace(TOLERANT_RESTORE_REGEX, (_match, p1, p2) => {
+      const idxStr = (p1 ?? p2 ?? '').replace(/\s+/g, '');
       const key = `${TOKEN_PREFIX}${idxStr}${TOKEN_SUFFIX}`;
       const token = tokens.get(key);
       if (token) {

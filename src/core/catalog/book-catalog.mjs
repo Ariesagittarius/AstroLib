@@ -46,9 +46,15 @@ export function buildBookCatalog(directoryPath) {
       if (file !== 'images' && file !== '.git') {
         const subItems = buildBookCatalog(fullPath);
         if (subItems.length > 0) {
+          let groupTitle = file.replace(/^\d+[_-]/, '').replace(/_/g, ' ');
+          if (file.toLowerCase() === 'zh') {
+            groupTitle = '中文对照';
+          } else if (file.toLowerCase() === 'en') {
+            groupTitle = '英文原版';
+          }
           items.push({
             type: 'group',
-            title: file.replace(/^\d+[_-]/, '').replace(/_/g, ' '),
+            title: groupTitle,
             children: subItems,
           });
         }

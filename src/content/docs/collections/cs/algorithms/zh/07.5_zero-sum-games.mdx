@@ -1,0 +1,110 @@
+---
+title: '7.5 零和博弈'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+## 7.5 零和博弈
+
+我们可以用矩阵博弈来代表生活中的各种冲突情境。例如，校园石头剪刀布游戏由此处所示的支付矩阵指定。有两名玩家，分别称为“行”和“列”，他们各自从 $\{ r , p , s \}$ 中选择一个动作。然后，他们查找与他们的移动相对应的矩阵条目，并且列向行支付这笔金额。它是行的增益和列的损失。
+
+$$
+G = \begin{array}{c c c c c} & & \text {Column} \\ & & r & p & s \\ \hline & r & 0 & - 1 & 1 \\ \text {Row} & p & 1 & 0 & - 1 \\ & s & - 1 & 1 & 0 \end{array}
+$$
+
+现在假设他们两个反复玩这个游戏。如果“行”总是采取相同的行动，“列”就会很快赶上并总是采取反击，每次都会获胜。因此 Row 应该把事情混合起来：我们可以通过允许 Row 有一个混合策略来对此进行建模，其中每回合她以 $x _ { 1 } , p$ 概率和 $x _ { 2 } .$ 玩 $r$ ，以概率 $x _ { 3 }$ 玩 s 。该策略由向量 $\mathbf { x } = ( x _ { 1 } , x _ { 2 } , x _ { 3 } )$ 指定，正数加起来为 1。同样，Column 的混合策略是一些 $\mathbf { y } = ( y _ { 1 } , y _ { 2 } , y _ { 3 } ) .$ .<sup>2</sup>
+
+在游戏的任何一轮中，Row 和 Column 都有 $x _ { i } y _ { j }$ 的机会分别进行第 i 步和第 j 步。因此，预期（平均）收益是
+
+$$
+\sum_ {i, j} G _ {i j} \cdot \text { Prob } [ \text { Row   plays   } i, \text { Column   plays   } j ] = \sum_ {i, j} G _ {i j} x _ {i} y _ {j}.
+$$
+
+Row 想要最大化它，而 Column 想要最小化它。他们希望通过石头剪刀布获得什么回报？好吧，假设 Row 采取“完全随机”策略 $\mathbf { x } = ( 1 / 3 , 1 / 3 , 1 / 3 )$ 。如果 Column 玩 $^ { r , }$，那么平均收益（读取游戏矩阵的第一列）将为
+
+$$
+\frac {1}{3} \cdot 0 + \frac {1}{3} \cdot 1 + \frac {1}{3} \cdot - 1 = 0.
+$$
+
+如果 Column 播放 $p ,$ 或 s，也是如此。并且由于任何混合策略 $\left( y _ { 1 } , y _ { 2 } , y _ { 3 } \right)$ 的收益只是玩 $r , p ,$ 和 $s ,$ 的各个收益的加权平均值，因此它也必须为零。从前面的公式可以直接看出，
+
+$$
+\sum_ {i, j} G _ {i j} x _ {i} y _ {j} = \sum_ {i, j} G _ {i j} \cdot \frac {1}{3} y _ {j} = \sum_ {j} y _ {j} \left(\sum_ {i} \frac {1}{3} G _ {i j}\right) = \sum_ {j} y _ {j} \cdot 0 = 0,
+$$
+
+其中倒数第二个相等是 G 的每一列加起来为零的观察结果。因此，通过采用“完全随机”策略，无论 Column 做什么，Row 都会强制预期收益为零。这意味着列不能希望得到负的（预期）回报（请记住，他希望回报尽可能小）。但对称地，如果 Column 采取完全随机的策略，他也会强制预期收益为零，因此 Row 不能希望获得正的（预期）收益。简而言之，每个玩家能做的最好的事情就是完全随机地玩，预期收益为零。我们已经从数学上证实了您一直以来所知道的关于剪刀石头布的知识！
+
+让我们以稍微不同的方式思考这个问题，考虑两种情况：
+
+1. 第一行宣布她的策略，然后列选择他的策略。
+
+2. 第一列宣布他的策略，然后行选择她的策略。
+
+我们已经看到，如果双方都发挥最佳水平，则两种情况下的平均收益都是相同的（零）。但这很可能是由于石头剪刀布的高度对称性所致。在一般游戏中，我们预计第一个选项有利于 Column，因为他了解 Row 的策略并且可以在选择自己的策略时充分利用它。同样，我们预计第二个选项有利于 Row。令人惊讶的是，事实并非如此：如果两者都发挥最佳，那么提前宣布他或她的策略不会对玩家造成伤害！更重要的是，这种非凡的性质是线性规划对偶性的结果，实际上相当于线性规划对偶性。
+
+让我们通过一个非对称游戏来研究这个问题。想象一下总统选举的场景，其中有两名候选人竞选公职，他们的举动与他们可以关注的竞选问题相对应（缩写代表经济、社会、道德和减税）。奖励条目是 Column 失去的数百万选票。
+
+$$
+G = \begin{array}{c c c} \hline & m & t \\ \hline e & 3 & - 1 \\ s & - 2 & 1 \\ \hline \end{array}
+$$
+
+假设 Row 宣布她将玩混合策略 $\mathbf { x } = ( 1 / 2 , 1 / 2 )$ 。专栏应该做什么？移动 m 将产生 $1 / 2 ,$ 的预期损失，而 t 将产生 0 的预期损失。因此，Column 的最佳响应是纯策略 $\mathbf { y } = ( 0 , 1 )$
+
+更一般地，一旦 Row 的策略 $\mathbf { x } = ( x _ { 1 } , x _ { 2 } )$ 固定，总有一个对于 Column 来说是最佳的纯策略：要么移动 $m _ { ; }$ ，收益为 3x $_ 1 - 2 x _ { 2 }$ ，要么移动 $_ 1 - 2 x _ { 2 }$ ，收益为 $- x _ { 1 } + x _ { 2 }$ ，以较小者为准。毕竟，任何混合策略 y 都是这两种纯策略的加权平均值，因此无法击败两者中更好的策略。
+
+因此，如果 Row 被迫在 Column 播放之前宣布 x，她知道他的最佳响应将实现 min $\{ 3 x _ { 1 } - 2 x _ { 2 } , - x _ { 1 } + x _ { 2 } \}$ 的预期回报。她应该防御性地选择 x，以最大化针对此最佳响应的回报：
+
+选择最大化的 $( x _ { 1 } , x _ { 2 } )$
+
+$$
+\underbrace {\min \{3 x _ {1} - 2 x _ {2} , - x _ {1} + x _ {2} \}} _ {\text { payoff   from   Column's   best   response   to   x }}
+$$
+
+$x _ { i } \mathbf { \dot { s } }$ 的选择为 Row 的预期收益提供了最好的保证。现在我们将看到它可以被 LP 找到！主要技巧是注意对于固定的 $x _ { 1 }$ 和 $x _ { 2 }$，以下内容是等效的：
+
+$$
+z = \min \{3 x _ {1} - 2 x _ {2}, - x _ {1} + x _ {2} \}
+$$
+
+$$
+\begin{array}{c} \max z \\ z \leq 3 x _ {1} - 2 x _ {2} \\ z \leq - x _ {1} + x _ {2} \end{array}
+$$
+
+Row需要选择 $x _ { 1 }$ 和 $x _ { 2 }$ 来最大化这个z。
+
+$$
+\begin{array}{r c l} & \max & z \\ - 3 x _ {1} + 2 x _ {2} + z & \leq & 0 \\ x _ {1} - x _ {2} + z & \leq & 0 \\ x _ {1} + x _ {2} & = & 1 \\ & x _ {1}, x _ {2} & \geq & 0 \end{array}
+$$
+
+对称地，如果 Column 必须首先宣布他的策略，那么他的最佳选择是选择在 Row 的最佳响应下使损失最小化的混合策略 y，换句话说，
+
+$$
+\text { Pick } (y _ {1}, y _ {2}) \text {   that   minimizes   } \underbrace {\max \{3 y _ {1} - y _ {2} , - 2 y _ {1} + y _ {2} \}} _ {\text { outcome   of   Row's   best   response   to   y }}
+$$
+
+在 LP 形式中，这是
+
+$$
+\begin{array}{r l r} \min & w \\ - 3 y _ {1} + y _ {2} + w & \geq 0 \\ 2 y _ {1} - y _ {2} + w & \geq 0 \\ y _ {1} + y _ {2} & = 1 \\ y _ {1}, y _ {2} & \geq 0 \end{array}
+$$
+
+现在最重要的观察是这两个 $L P s$ 是对偶的（见图7.11）！因此，它们具有相同的最优值，称之为 V。
+
+让我们总结一下。通过求解 LP，Row（最大化者）可以为自己确定一个策略，无论 Column 做什么，都能保证至少 V 的预期结果。通过解决对偶 LP，Column（最小化器）可以保证最多 V 的预期结果，无论 Row 做什么。由此可见，这是唯一定义的最佳游戏：先验地甚至不确定这样的游戏是否存在。 V被称为游戏的价值。在我们的示例中，它是 $1 / 7$，并且当 Row 发挥其最佳混合策略 $( 3 / 7 , 4 / 7 )$ 并且 Column 发挥其最佳混合策略（2/7、5/7）时实现。
+
+这个例子很容易推广到任意博弈，并表明存在对双方都最优并实现相同价值的混合策略——这是称为最小-最大定理的博弈论的基本结果。可以写成方程形式如下：
+
+$$
+\max _ {\mathbf {x}} \min _ {\mathbf {y}} \sum_ {i, j} G _ {i j} x _ {i} y _ {j} = \min _ {\mathbf {y}} \max _ {\mathbf {x}} \sum_ {i, j} G _ {i j} x _ {i} y _ {j}.
+$$
+
+这是令人惊讶的，因为在左侧，Row 必须首先宣布她的策略，对于 Column 来说，应该比在右侧更好，在右侧，Row 必须首先宣布她的策略。对偶性使两者相等，就像最大流量和最小削减一样。

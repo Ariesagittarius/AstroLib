@@ -31,6 +31,44 @@ const stageSubjectLabel = [
   currentBook?.stageLabel,
   currentBook?.categoryLabel || currentBook?.subjectLabel
 ].filter(Boolean).join(' · ');
+
+// 双语教材与跨语言对照路由判定
+const isBilingualBook = Boolean(currentBook?.languages && currentBook.languages.length > 1);
+let counterpartUrl: string | null = null;
+let counterpartLabel: string | null = null;
+
+if (isBilingualBook && currentCol && currentBook) {
+  const isZh = pathname.includes(`/${currentBook.slug}/zh/`) || entrySlug.includes(`/${currentBook.slug}/zh/`);
+  const prefix = `/collections/${currentCol.slug}/${currentBook.slug}`;
+
+  if (isZh) {
+    // 当前为中文对照版 -> 对照版指向英文原著
+    const match = pathname.match(new RegExp(`${prefix}/zh/([^/?#]+)`));
+    const subpath = match ? match[1] : '';
+    let enKey = subpath;
+    if (currentBook.tocMapping) {
+      for (const [k, v] of Object.entries(currentBook.tocMapping)) {
+        if (v === `zh/${subpath}` || (Array.isArray(v) && v.includes(`zh/${subpath}`))) {
+          enKey = k;
+          break;
+        }
+      }
+    }
+    counterpartUrl = enKey ? `${prefix}/${enKey}/` : `${prefix}/`;
+    counterpartLabel = 'English (原著)';
+  } else {
+    // 当前为英文原著版 -> 对照版指向中文翻译
+    const match = pathname.match(new RegExp(`${prefix}/([^/?#]+)`));
+    const subpath = match ? match[1] : '';
+    let zhKey = `zh/${subpath}`;
+    if (currentBook.tocMapping?.[subpath]) {
+      const mapped = currentBook.tocMapping[subpath];
+      zhKey = Array.isArray(mapped) ? mapped[0] : mapped;
+    }
+    counterpartUrl = subpath ? `${prefix}/${zhKey}/` : `${prefix}/zh/`;
+    counterpartLabel = '中文对照';
+  }
+}
 ---
 
 {currentBook ? (
@@ -73,6 +111,36 @@ const stageSubjectLabel = [
             </svg>
             <span class="m3-chip-text">{stageSubjectLabel}</span>
           </md-assist-chip>
+        )}
+
+        {counterpartUrl && counterpartLabel && (
+          <a href={counterpartUrl} class="bilingual-chip-link" title={`切换至 ${counterpartLabel}`}>
+            <md-assist-chip
+              class="chapter-lang-chip"
+              label={counterpartLabel}
+              has-icon
+            >
+              <svg slot="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12.87 15.07l-2.54-2.51.03-.08c1.74-1.94 2.98-4.17 3.71-6.49H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+              </svg>
+              <span class="m3-chip-text">{counterpartLabel}</span>
+            </md-assist-chip>
+          </a>
+        )}
+
+        {isBilingualBook && (
+          <a href="/blank?mode=compare&demo=algorithms" class="bilingual-chip-link" title="在学术工作台中测试两篇文档端侧语义关联与热力图对比">
+            <md-assist-chip
+              class="chapter-compare-chip"
+              label="双语段落关联对比"
+              has-icon
+            >
+              <svg slot="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M9.01 14H2v2h7.01v3L13 15.5 9.01 12v2zm5.98-1v-3H22V8h-7.01V5L11 8.5l3.99 3.5z"/>
+              </svg>
+              <span class="m3-chip-text">双语段落关联对比</span>
+            </md-assist-chip>
+          </a>
         )}
 
         {features.translation?.enabled && (
@@ -140,6 +208,32 @@ const stageSubjectLabel = [
       --md-assist-chip-container-elevation: 0;
       --md-assist-chip-label-text-color: var(--sl-color-gray-2);
       --md-assist-chip-icon-color: var(--sl-color-gray-3);
+    }
+
+    .bilingual-chip-link {
+      text-decoration: none !important;
+      display: inline-flex;
+      outline: none;
+    }
+
+    .chapter-lang-chip {
+      --md-assist-chip-label-text-color: var(--sl-color-accent-high, #60a5fa) !important;
+      --md-assist-chip-icon-color: var(--sl-color-accent-high, #60a5fa) !important;
+      cursor: pointer !important;
+    }
+
+    .chapter-lang-chip:hover {
+      --md-assist-chip-container-color: var(--sl-color-accent-low, rgba(59, 130, 246, 0.15)) !important;
+    }
+
+    .chapter-compare-chip {
+      --md-assist-chip-label-text-color: #38bdf8 !important;
+      --md-assist-chip-icon-color: #38bdf8 !important;
+      cursor: pointer !important;
+    }
+
+    .chapter-compare-chip:hover {
+      --md-assist-chip-container-color: rgba(56, 189, 248, 0.15) !important;
     }
 
     .chapter-translate-chip {
