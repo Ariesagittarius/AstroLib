@@ -18,7 +18,7 @@ export interface DocumentMetadata {
   [key: string]: any;
 }
 
-export type WorkspaceViewMode = 'split' | 'preview' | 'edit';
+export type WorkspaceViewMode = 'split' | 'preview' | 'edit' | 'compare';
 
 export interface ScratchpadDraft {
   metadata: DocumentMetadata;

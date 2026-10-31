@@ -23,6 +23,13 @@ export interface ModuleItemConfig {
   targetPattern?: string;
 }
 
+export interface BookLanguageConfig {
+  id: string; // e.g. 'en', 'zh'
+  label: string; // e.g. 'English', '中文'
+  default?: boolean;
+  pathPrefix?: string; // e.g. 'en' or 'zh'
+}
+
 export interface Book {
   id: string;
   slug: string;
@@ -44,6 +51,8 @@ export interface Book {
   notices?: NoticeConfig[];
   trackClasses?: string[];
   modules?: Record<string, ModuleItemConfig>;
+  languages?: BookLanguageConfig[];
+  tocMapping?: Record<string, string | string[]>;
 }
 
 export interface Collection {

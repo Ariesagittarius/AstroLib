@@ -1,0 +1,129 @@
+/**
+ * src/styles/components/bilingual-reader.css
+ * ============================================================================
+ * AstroLib 双语对照与跨书关联阅读器样式表 (Bilingual Reader CSS)
+ * ============================================================================
+ * 遵循 Material Design 3 与 Rule 5.3 极简主义设计准则：
+ * 1. 宽屏（>= 1200px）双栏等宽并列，中央保留中缝与 SVG 贝塞尔连线；
+ * 2. 窄屏（< 1200px）自动降级；
+ * 3. 语义化层叠令牌（var(--layer-*)），拒绝硬编码 z-index。
+ * ============================================================================
+ */
+
+.bilingual-split-container {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - var(--sl-nav-height, 3.5rem));
+  display: grid;
+  grid-template-columns: 1fr 48px 1fr;
+  background: var(--sl-color-bg);
+  overflow: hidden;
+}
+
+@media (max-width: 1199px) {
+  .bilingual-split-container {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+  }
+}
+
+.bilingual-column-pane {
+  height: 100%;
+  overflow-y: auto;
+  padding: 1.5rem 2rem 5rem;
+  scroll-behavior: smooth;
+  background: var(--sl-color-bg);
+}
+
+.bilingual-col-source {
+  border-right: 1px solid var(--sl-color-hairline);
+}
+
+.bilingual-col-target {
+  border-left: 1px solid var(--sl-color-hairline);
+}
+
+.bilingual-gutter {
+  position: relative;
+  width: 48px;
+  background: var(--sl-color-bg-inline-code);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.bilingual-svg-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: var(--layer-sticky, 20);
+}
+
+/* 贝塞尔曲线箭头样式 */
+.bilingual-arrow-path {
+  fill: none;
+  stroke: var(--sl-color-gray-4);
+  stroke-linecap: round;
+  transition: stroke 0.2s cubic-bezier(0.2, 0, 0, 1), stroke-width 0.2s cubic-bezier(0.2, 0, 0, 1), opacity 0.2s;
+}
+
+.bilingual-arrow-path.is-primary {
+  stroke: var(--sl-color-accent);
+}
+
+.bilingual-arrow-path.is-active {
+  stroke: #6366f1 !important;
+  opacity: 0.95 !important;
+  filter: drop-shadow(0 2px 4px rgba(99, 102, 241, 0.3));
+}
+
+.bilingual-arrow-marker {
+  fill: currentColor;
+}
+
+/* 段落微光高亮与对齐轮廓 */
+.bilingual-highlight-active {
+  outline: 2px solid #6366f1;
+  outline-offset: 4px;
+  border-radius: 6px;
+  background-color: rgba(99, 102, 241, 0.05) !important;
+  transition: outline 0.2s, background-color 0.2s;
+}
+
+.bilingual-highlight-target {
+  outline: 2px dashed rgba(99, 102, 241, 0.8);
+  outline-offset: 4px;
+  border-radius: 6px;
+  background-color: rgba(99, 102, 241, 0.03) !important;
+  transition: outline 0.2s, background-color 0.2s;
+}
+
+/* 顶栏双语切换与状态指示 Chip */
+.bilingual-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1.2rem;
+  background: var(--sl-color-bg-inline-code);
+  border-bottom: 1px solid var(--sl-color-hairline);
+  font-size: 0.85rem;
+}
+
+.bilingual-title-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: var(--sl-color-text);
+}
+
+.bilingual-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}

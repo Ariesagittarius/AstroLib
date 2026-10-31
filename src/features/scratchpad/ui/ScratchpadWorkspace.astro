@@ -7,7 +7,9 @@
  */
 import { TEMPLATE_PRESETS } from '../core/storage.ts';
 import ScratchpadTranslationDrawer from './ScratchpadTranslationDrawer.astro';
+import AlignmentHeatmapSheet from '../../../components/bilingual/AlignmentHeatmapSheet.astro';
 import '../../../styles/components/scratchpad.css';
+import '../../../styles/components/bilingual-reader.css';
 ---
 
 <div class="scratchpad-container" id="scratchpad-root">
@@ -36,6 +38,10 @@ import '../../../styles/components/scratchpad.css';
       <button type="button" class="scratchpad-view-btn" data-view-mode="edit" title="专注写作模式">
         <md-icon style="font-size: 16px;">edit_note</md-icon>
         <span>写作</span>
+      </button>
+      <button type="button" class="scratchpad-view-btn" data-view-mode="compare" title="两篇文档端侧关联与热力图对比">
+        <md-icon style="font-size: 16px;">compare_arrows</md-icon>
+        <span>对比</span>
       </button>
     </div>
 
@@ -249,7 +255,51 @@ import '../../../styles/components/scratchpad.css';
         </article>
       </div>
     </section>
+
+    <!-- 专属双文档端侧语义关联对比区 (仅 view-compare 模式激活) -->
+    <section class="scratchpad-compare-pane" id="scratchpad-compare-pane" aria-label="双文档语义关联对比工作区" hidden>
+      <div class="compare-pane-header">
+        <div class="compare-title-wrap">
+          <span class="compare-title">双文档/跨书端侧语义关联与热力图对比</span>
+          <span class="compare-subtitle">传入两篇 Markdown 文本，端侧推理提取跨语言模糊映射</span>
+        </div>
+        <div class="compare-actions-wrap">
+          <button type="button" class="scratchpad-action-chip is-primary" id="scratchpad-run-compare-btn">
+            <md-icon style="font-size: 18px;">analytics</md-icon>
+            <span>计算语义关联</span>
+          </button>
+          <button type="button" class="scratchpad-action-chip" id="scratchpad-load-demo-compare-btn">
+            <md-icon style="font-size: 18px;">auto_stories</md-icon>
+            <span>载入算法双语范例</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="scratchpad-compare-grid">
+        <!-- 文档 A -->
+        <div class="compare-doc-box">
+          <div class="doc-box-header">文档 A (英文/原文)</div>
+          <textarea id="compare-text-a" class="scratchpad-textarea compare-textarea" placeholder="在此输入或粘贴文档 A 的 Markdown 文本..."></textarea>
+          <div id="compare-preview-a" class="compare-preview sl-markdown-content" data-col="source"></div>
+        </div>
+
+        <!-- 中缝连线画布 -->
+        <div class="compare-gutter">
+          <svg id="compare-svg-canvas" class="bilingual-svg-canvas"></svg>
+        </div>
+
+        <!-- 文档 B -->
+        <div class="compare-doc-box">
+          <div class="doc-box-header">文档 B (中文/对照)</div>
+          <textarea id="compare-text-b" class="scratchpad-textarea compare-textarea" placeholder="在此输入或粘贴文档 B 的 Markdown 文本..."></textarea>
+          <div id="compare-preview-b" class="compare-preview sl-markdown-content" data-col="target"></div>
+        </div>
+      </div>
+    </section>
   </main>
+
+  <!-- 底部微缩热力图看板 -->
+  <AlignmentHeatmapSheet initialThreshold={0.6} />
 
   <!-- 4. 专属双语助读侧滑抽屉 -->
   <ScratchpadTranslationDrawer />

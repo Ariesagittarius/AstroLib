@@ -1,0 +1,196 @@
+---
+/**
+ * src/components/bilingual/AlignmentHeatmapSheet.astro
+ * ============================================================================
+ * AstroLib 双语关联度热力图抽屉 (Alignment Heatmap Bottom Sheet)
+ * ============================================================================
+ * 遵循 Material Design 3 规范与 Rule 5.3 极简主义呼吸感：
+ * 1. 底部常驻微缩把手，点击平滑展开；
+ * 2. 动态阈值控制器（Slider）过滤弱相关连接；
+ * 3. 交互式 M x N 网格热力图，悬浮显示段落坐标与置信度，点击双栏对齐高亮；
+ * 4. 0 显存/0 内存冗余，纯客户端 Canvas/DOM 渲染。
+ * ============================================================================
+ */
+interface Props {
+  initialThreshold?: number;
+}
+
+const { initialThreshold = 0.6 } = Astro.props;
+---
+
+<aside id="bilingual-heatmap-sheet" class="bilingual-heatmap-sheet is-collapsed" aria-label="双语与跨书段落关联度热力图">
+  <!-- 抽屉顶部动作条 -->
+  <header class="heatmap-sheet-header">
+    <div class="sheet-title-group">
+      <button id="heatmap-sheet-toggle" class="sheet-toggle-btn" aria-label="折叠或展开热力图" type="button">
+        <svg class="toggle-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path fill="currentColor" d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+        </svg>
+      </button>
+      <span class="sheet-title">关联度热力图 (Heatmap)</span>
+      <span id="heatmap-links-badge" class="sheet-badge">0 对关联</span>
+    </div>
+
+    <!-- 阈值控制器 -->
+    <div class="sheet-controls">
+      <label for="heatmap-threshold-slider" class="control-label">
+        相似度阈值: <span id="heatmap-threshold-val">{initialThreshold.toFixed(2)}</span>
+      </label>
+      <input
+        type="range"
+        id="heatmap-threshold-slider"
+        class="heatmap-slider"
+        min="0.30"
+        max="0.95"
+        step="0.05"
+        value={initialThreshold.toString()}
+      />
+    </div>
+  </header>
+
+  <!-- 热力图内容渲染区 -->
+  <div class="heatmap-sheet-body">
+    <div class="heatmap-matrix-scroll-wrapper">
+      <div id="heatmap-matrix-grid" class="heatmap-matrix-grid">
+        <!-- 动态 JS 填充 Canvas 或 Cell 网格 -->
+        <canvas id="heatmap-canvas" class="heatmap-canvas"></canvas>
+      </div>
+    </div>
+    <div id="heatmap-cell-tooltip" class="heatmap-tooltip" aria-hidden="true"></div>
+  </div>
+</aside>
+
+<style>
+  .bilingual-heatmap-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(92vw, 1200px);
+    max-height: 280px;
+    background: var(--sl-color-bg);
+    border: 1px solid var(--sl-color-hairline);
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+    z-index: var(--layer-drawer);
+    transition: transform 0.28s cubic-bezier(0.2, 0, 0, 1), max-height 0.28s cubic-bezier(0.2, 0, 0, 1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .bilingual-heatmap-sheet.is-collapsed {
+    max-height: 44px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
+  }
+
+  .bilingual-heatmap-sheet.is-collapsed .toggle-icon {
+    transform: rotate(180deg);
+  }
+
+  .heatmap-sheet-header {
+    height: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1rem;
+    background: var(--sl-color-bg-inline-code);
+    border-bottom: 1px solid var(--sl-color-hairline);
+    user-select: none;
+  }
+
+  .sheet-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .sheet-toggle-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    color: var(--sl-color-text);
+    transition: background-color 0.2s, transform 0.2s;
+  }
+
+  .sheet-toggle-btn:hover {
+    background: var(--sl-color-gray-5);
+  }
+
+  .sheet-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--sl-color-text);
+  }
+
+  .sheet-badge {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-accent-high);
+    font-weight: 500;
+  }
+
+  .sheet-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .control-label {
+    font-size: 0.78rem;
+    color: var(--sl-color-gray-2);
+  }
+
+  .heatmap-slider {
+    width: 110px;
+    accent-color: var(--sl-color-accent);
+    cursor: pointer;
+  }
+
+  .heatmap-sheet-body {
+    flex: 1;
+    position: relative;
+    padding: 0.75rem 1rem;
+    overflow: hidden;
+    background: var(--sl-color-bg);
+  }
+
+  .heatmap-matrix-scroll-wrapper {
+    width: 100%;
+    height: 210px;
+    overflow: auto;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 8px;
+    background: var(--sl-color-bg-inline-code);
+  }
+
+  .heatmap-canvas {
+    display: block;
+    cursor: crosshair;
+  }
+
+  .heatmap-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-white);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: var(--layer-tooltip);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+</style>

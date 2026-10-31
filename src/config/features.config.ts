@@ -269,6 +269,21 @@ const featureDefs: Record<string, FeatureManifest<any>> = {
     ui: true,
   }),
 
+  bilingualComparison: defineFeature({
+    id: 'bilingualComparison',
+    cat: 'reader',
+    label: '双语对照与跨书关联',
+    desc: '端侧轻量向量推理驱动的目录/段落多向模糊匹配、双栏流式阅读与热力图',
+    enabled: true,
+    devOnly: false,
+    ui: true,
+    config: {
+      similarityThreshold: 0.6,
+      maxLinksPerParagraph: 3,
+      defaultDisplayMode: 'split',
+    },
+  }),
+
 
   feedback: defineFeature({
     id: 'feedback',

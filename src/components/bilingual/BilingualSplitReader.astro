@@ -1,0 +1,138 @@
+---
+/**
+ * src/components/bilingual/BilingualSplitReader.astro
+ * ============================================================================
+ * AstroLib 双语对照与跨书关联阅读器容器 (Bilingual Split Reader Container)
+ * ============================================================================
+ * 遵循 Material Design 3 规范与 Rule 1 (UI is not a domain model)：
+ * 1. 宽屏（>= 1200px）下 50%-50% 纯净学术双栏排版，中缝留出 SVG 连线画布；
+ * 2. 窄屏自适应响应式折叠；
+ * 3. 底部集成微缩热力图看板与阈值滑块。
+ * ============================================================================
+ */
+import AlignmentHeatmapSheet from './AlignmentHeatmapSheet.astro';
+
+interface Props {
+  sourceTitle?: string;
+  targetTitle?: string;
+  threshold?: number;
+}
+
+const {
+  sourceTitle = 'English (Original)',
+  targetTitle = '中文 (对照)',
+  threshold = 0.6,
+} = Astro.props;
+---
+
+<div id="bilingual-split-reader-root" class="bilingual-reader-wrapper">
+  <!-- 顶栏双语信息与控制器 -->
+  <header class="bilingual-header-bar">
+    <div class="bilingual-title-badge">
+      <span class="lang-tag source-tag">{sourceTitle}</span>
+      <span class="arrow-divider">↔</span>
+      <span class="lang-tag target-tag">{targetTitle}</span>
+    </div>
+
+    <div class="bilingual-actions">
+      <button id="bilingual-realign-btn" class="bilingual-action-btn" type="button" title="重新执行端侧向量对齐推理">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <path fill="currentColor" d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6c0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6c0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4l-4-4v3z"/>
+        </svg>
+        <span>刷新对齐</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 核心双栏阅读区 -->
+  <div class="bilingual-split-container">
+    <div class="bilingual-col-source bilingual-column-pane" data-col="source">
+      <slot name="source" />
+    </div>
+
+    <div class="bilingual-gutter">
+      <svg class="bilingual-svg-canvas"></svg>
+    </div>
+
+    <div class="bilingual-col-target bilingual-column-pane" data-col="target">
+      <slot name="target" />
+    </div>
+  </div>
+
+  <!-- 底部微缩热力图看板 -->
+  <AlignmentHeatmapSheet initialThreshold={threshold} />
+</div>
+
+<style>
+  @import '../../styles/components/bilingual-reader.css';
+
+  .bilingual-reader-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: var(--sl-color-bg);
+  }
+
+  .lang-tag {
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--sl-color-gray-5);
+    color: var(--sl-color-text);
+  }
+
+  .arrow-divider {
+    color: var(--sl-color-gray-3);
+    font-size: 0.8rem;
+  }
+
+  .bilingual-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--sl-color-hairline);
+    background: var(--sl-color-bg);
+    color: var(--sl-color-text);
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+  }
+
+  .bilingual-action-btn:hover {
+    background: var(--sl-color-gray-5);
+    border-color: var(--sl-color-gray-3);
+  }
+</style>
+
+<script>
+  import { BilingualReaderController } from '../../services/bilingual/bilingual-reader-controller.ts';
+
+  let currentController: BilingualReaderController | null = null;
+
+  function initBilingualReader() {
+    const root = document.getElementById('bilingual-split-reader-root');
+    if (!root) return;
+
+    currentController?.destroy();
+    currentController = new BilingualReaderController();
+    currentController.init(root);
+
+    const realignBtn = document.getElementById('bilingual-realign-btn');
+    realignBtn?.addEventListener('click', () => {
+      currentController?.runAlignment();
+    });
+  }
+
+  // 支持首次加载与 SPA 页面路由切换
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBilingualReader);
+  } else {
+    initBilingualReader();
+  }
+  document.addEventListener('astro:page-load', initBilingualReader);
+</script>

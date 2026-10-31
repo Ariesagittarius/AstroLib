@@ -37,6 +37,8 @@ import { geminiProxyDevServerPlugin } from './src/server/plugins/gemini-proxy/de
 import { buptProxyDevServerPlugin } from './src/server/plugins/bupt-proxy/dev-server-plugin.mjs';
 // 统一翻译模块：/api/translate/* 本地服务端点（Vite dev server 插件，仅 dev 启用）
 import { translationDevServerPlugin } from './src/server/plugins/translation/dev-server-plugin.mjs';
+// 双语向量关联与热力图推理模块：/__bilingual__/* 本地端点（Vite dev server 插件，仅 dev 启用）
+import { bilingualDevServerPlugin } from './src/server/plugins/bilingual-aligner/dev-server-plugin.mjs';
 // 离线数据包本地服务端点：/offline-packs/* 透明分发端点（Vite dev server 插件，仅 dev 启用）
 import { offlinePackDevServerPlugin } from './src/server/plugins/offline-pack/dev-server-plugin.mjs';
 // Mermaid 图表拦截插件：将 ```mermaid 代码块转化为 .mermaid-container DOM
@@ -251,6 +253,8 @@ export default defineConfig({
       geminiProxyDevServerPlugin(),
       // 统一学术教材翻译本地服务端点（仅 dev 启用）
       translationDevServerPlugin(),
+      // 双语向量关联与热力图推理端点（仅 dev 启用）
+      bilingualDevServerPlugin(),
       // BUPT AI 本地 Node.js 进程全双工中继反代端点（仅 dev 启用）
       buptProxyDevServerPlugin(),
       // 离线数据包本地开发分发端点（仅 dev 启用）

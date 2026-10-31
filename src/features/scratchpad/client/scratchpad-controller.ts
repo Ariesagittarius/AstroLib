@@ -28,6 +28,7 @@ import {
 import { ScratchpadStorage, TEMPLATE_PRESETS } from '../core/storage.ts';
 import { loadFontPref, applyFontPref } from '../../../scripts/font-presets.ts';
 import { loadFontSize, applyFontSize } from '../../../scripts/settings/typography-prefs.ts';
+import { BilingualReaderController } from '../../../services/bilingual/bilingual-reader-controller.ts';
 import type { DocumentMetadata, ScratchpadDraft, WorkspaceViewMode } from '../types.ts';
 
 export class ScratchpadController {
@@ -52,6 +53,7 @@ export class ScratchpadController {
   // 防抖计时器
   private renderDebounceTimer: number | null = null;
   private saveDebounceTimer: number | null = null;
+  private compareController: BilingualReaderController | null = null;
 
   public static getInstance(): ScratchpadController {
     if (!this.instance) {
@@ -125,6 +127,7 @@ export class ScratchpadController {
     this.bindEvents();
     this.bindEditorShortcuts();
     this.bindSideloadSync();
+    this.bindCompareEvents();
   }
 
   /**
@@ -197,7 +200,7 @@ export class ScratchpadController {
     ScratchpadStorage.setViewMode(mode);
 
     if (!this.rootEl) return;
-    this.rootEl.classList.remove('view-split', 'view-preview', 'view-edit');
+    this.rootEl.classList.remove('view-split', 'view-preview', 'view-edit', 'view-compare');
     this.rootEl.classList.add(`view-${mode}`);
 
     // 更新顶栏控制器状态
@@ -626,6 +629,67 @@ export class ScratchpadController {
     setTimeout(() => {
       toast?.classList.remove('is-visible');
     }, 2400);
+  }
+
+  /**
+   * 绑定双文档语义关联对比工作区事件
+   */
+  private bindCompareEvents(): void {
+    const runBtn = document.getElementById('scratchpad-run-compare-btn');
+    const demoBtn = document.getElementById('scratchpad-load-demo-compare-btn');
+    const textA = document.getElementById('compare-text-a') as HTMLTextAreaElement | null;
+    const textB = document.getElementById('compare-text-b') as HTMLTextAreaElement | null;
+    const previewA = document.getElementById('compare-preview-a');
+    const previewB = document.getElementById('compare-preview-b');
+    const compareGrid = document.querySelector('.scratchpad-compare-grid') as HTMLElement | null;
+
+    if (!runBtn || !demoBtn || !textA || !textB || !previewA || !previewB || !compareGrid) return;
+
+    const executeCompare = async () => {
+      const valA = textA.value.trim();
+      const valB = textB.value.trim();
+      if (!valA || !valB) return;
+
+      // 渲染 Markdown 为标准学术排版
+      previewA.innerHTML = renderDocument(valA).html;
+      previewB.innerHTML = renderDocument(valB).html;
+
+      // 为两列段落添加 source 与 target 特征属性，方便选择器抓取
+      previewA.classList.add('bilingual-col-source');
+      previewB.classList.add('bilingual-col-target');
+
+      // 启动并调度 BilingualReaderController
+      this.compareController?.destroy();
+      this.compareController = new BilingualReaderController();
+      this.compareController.init(compareGrid);
+    };
+
+    runBtn.addEventListener('click', () => {
+      executeCompare();
+    });
+
+    demoBtn.addEventListener('click', () => {
+      textA.value = `# 02.1 Multiplication
+
+How do we multiply two numbers?
+The algorithm we all learned in school takes $O(n^2)$ time to multiply two $n$-bit integers.
+Can we do better?
+
+In 1960, Anatoly Karatsuba discovered a revolutionary divide-and-conquer algorithm.
+By cleverly splitting each number into two halves of $n/2$ bits, Karatsuba realized we only need three multiplications instead of four.
+This yields the recurrence relation $T(n) = 3T(n/2) + O(n)$, achieving an astonishing $O(n^{\\log_2 3}) \\approx O(n^{1.585})$ time complexity!`;
+
+      textB.value = `# 02.1 整数乘法算法与分治策略
+
+我们自幼在小学便熟习的竖式乘法，计算两个 $n$ 位整数需要做 $n^2$ 次乘法，时间复杂度为 $O(n^2)$。
+计算机算法能否打破这一看似坚固的二次方壁垒？
+
+1960 年，苏联数学家卡拉楚巴（Anatoly Karatsuba）提出了一种极具启发性的分治策略。
+他将 $n$ 位大整数均分为高位与低位两部分，巧妙地将原本朴素展开所必需的 4 次半长整数乘法精简为 3 次乘法。
+由此导出的递归关系为 $T(n) = 3T(n/2) + O(n)$，其渐进时间复杂度降至 $O(n^{\\log_2 3}) \\approx O(n^{1.585})$！`;
+
+      executeCompare();
+    });
   }
 
   /**
