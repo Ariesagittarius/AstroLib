@@ -1,0 +1,1574 @@
+---
+/**
+ * src/pages/workspace/ingest.astro
+ * ============================================================================
+ * AstroLib MinerU 学术文献与切片解析双栏全屏工作台 (MD3E 风格)
+ * ============================================================================
+ * 核心功能：
+ * 1. 顶栏：
+ *    - 【高精 API】/【Agent 免密】/【本地】三档极简切换
+ *    - [结构化对照] / [连续阅读] 视窗模式一键分流（适配低性能设备）
+ *    - 可选页码切片 (如 1-20)、开始解析、下载清洗包、一键转入书籍库
+ * 2. 左栏：PDF.js 矢量画布 + 百分比自适应 SVG 标注选框（带分类彩色标牌）
+ * 3. 右栏：
+ *    - 结构化对照模式：1:1 独立块级卡片，带序号与类型标签，双向点击平滑聚焦
+ *    - 连续阅读模式：全篇流式 Markdown 与 KaTeX 排版，零多余 DOM 开销
+ * ============================================================================
+ */
+
+import '@fontsource-variable/noto-sans-sc';
+import '@fontsource-variable/noto-serif-sc';
+import '@fontsource-variable/plus-jakarta-sans';
+import '../../styles/tokens/layers.css';
+import '../../themes/material-you/tokens.css';
+import '../../styles/fonts.css';
+import 'katex/dist/katex.min.css';
+
+import { collections } from '../../config/collections.config.mjs';
+
+const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-site-theme="material-you">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{siteTitle}</title>
+    <link rel="icon" href="/favicon.png" />
+
+    <!-- 预加载 PDF.js CDN -->
+    <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script is:inline>
+      if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+    </script>
+
+    <style is:global>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: var(--md-font-google-sans, 'Google Sans', 'Google Sans Text', 'Noto Sans SC', system-ui, sans-serif);
+        background-color: var(--md-sys-color-background, #ffffff);
+        color: var(--md-sys-color-on-background, #1f1f1f);
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      /* KaTeX 基础间距与滚动 */
+      .katex-display {
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0.35rem 0;
+        margin: 0.4rem 0 !important;
+      }
+    </style>
+
+    <style>
+      /* 顶栏控制面板 */
+      .ingest-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.85rem;
+        padding: 0.55rem 1.25rem;
+        border-bottom: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+        background-color: var(--md-sys-color-surface, #ffffff);
+        flex-shrink: 0;
+        z-index: var(--layer-sticky);
+      }
+      [data-theme='dark'] .ingest-topbar {
+        background-color: var(--md-sys-color-surface, #1e1f20);
+        border-bottom-color: var(--md-sys-color-outline-variant, #3c4043);
+      }
+
+      .topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-width: 0;
+      }
+
+      .back-home-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--md-sys-color-primary, #0b57d0);
+        text-decoration: none;
+        padding: 0.35rem 0.65rem;
+        border-radius: var(--md-shape-corner-small, 8px);
+        transition: background-color 0.15s ease;
+      }
+      .back-home-link:hover {
+        background-color: var(--md-sys-color-surface-container-high, #eceff1);
+      }
+      [data-theme='dark'] .back-home-link {
+        color: var(--md-sys-color-primary, #a8c7fa);
+      }
+      [data-theme='dark'] .back-home-link:hover {
+        background-color: var(--md-sys-color-surface-container-high, #2b2e30);
+      }
+
+      .doc-info-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: var(--md-shape-corner-full, 9999px);
+        background-color: var(--md-sys-color-surface-container-low, #f8f9fa);
+        border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+        font-size: 0.8125rem;
+        max-width: 240px;
+      }
+      [data-theme='dark'] .doc-info-badge {
+        background-color: var(--md-sys-color-surface-container-low, #18191a);
+        border-color: var(--md-sys-color-outline-variant, #3c4043);
+      }
+
+      .doc-name {
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .doc-pages {
+        color: var(--md-sys-color-outline, #72777d);
+        font-size: 0.75rem;
+        white-space: nowrap;
+      }
+
+      .topbar-center {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+      }
+
+      /* 通道选择 Chips (三档：【高精 API】/【Agent 免密】/【本地】) */
+      .engine-chips {
+        display: inline-flex;
+        align-items: center;
+        background-color: var(--md-sys-color-surface-container-low, #f1f3f4);
+        border-radius: var(--md-shape-corner-full, 9999px);
+        padding: 3px;
+        border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+      }
+      [data-theme='dark'] .engine-chips {
+        background-color: var(--md-sys-color-surface-container-low, #1a1c1e);
+        border-color: var(--md-sys-color-outline-variant, #373b3e);
+      }
+
+      .engine-chip {
+        border: none;
+        background: transparent;
+        color: var(--md-sys-color-on-surface-variant, #5f6368);
+        padding: 0.28rem 0.75rem;
+        border-radius: var(--md-shape-corner-full, 9999px);
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      [data-theme='dark'] .engine-chip {
+        color: var(--md-sys-color-on-surface-variant, #9aa0a6);
+      }
+
+      .engine-chip.active {
+        background-color: var(--md-sys-color-surface, #ffffff);
+        color: var(--md-sys-color-primary, #0b57d0);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      [data-theme='dark'] .engine-chip.active {
+        background-color: var(--md-sys-color-surface-container-highest, #333537);
+        color: var(--md-sys-color-primary, #a8c7fa);
+      }
+
+      /* 视窗对齐模式切换 (结构化对照 vs 连续阅读) */
+      .view-mode-chips {
+        display: inline-flex;
+        align-items: center;
+        background-color: var(--md-sys-color-surface-container-low, #f1f3f4);
+        border-radius: var(--md-shape-corner-full, 9999px);
+        padding: 3px;
+        border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+      }
+      [data-theme='dark'] .view-mode-chips {
+        background-color: var(--md-sys-color-surface-container-low, #1a1c1e);
+        border-color: var(--md-sys-color-outline-variant, #373b3e);
+      }
+
+      .view-chip {
+        border: none;
+        background: transparent;
+        color: var(--md-sys-color-on-surface-variant, #5f6368);
+        padding: 0.28rem 0.65rem;
+        border-radius: var(--md-shape-corner-full, 9999px);
+        font-size: 0.75rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .view-chip.active {
+        background-color: var(--md-sys-color-surface, #ffffff);
+        color: var(--md-sys-color-primary, #0b57d0);
+        font-weight: 600;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+      }
+      [data-theme='dark'] .view-chip.active {
+        background-color: var(--md-sys-color-surface-container-highest, #333537);
+        color: var(--md-sys-color-primary, #a8c7fa);
+      }
+
+      .page-range-input {
+        width: 120px;
+        padding: 0.35rem 0.55rem;
+        border-radius: var(--md-shape-corner-small, 8px);
+        border: 1px solid var(--md-sys-color-outline-variant, #c4c7c5);
+        background-color: var(--md-sys-color-surface, #ffffff);
+        color: inherit;
+        font-size: 0.78rem;
+        outline: none;
+        transition: border-color 0.15s ease;
+      }
+      [data-theme='dark'] .page-range-input {
+        background-color: var(--md-sys-color-surface-container, #1e1f20);
+        border-color: var(--md-sys-color-outline-variant, #444746);
+      }
+
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 0.95rem;
+        border-radius: var(--md-shape-corner-full, 9999px);
+        background-color: var(--md-sys-color-primary, #0b57d0);
+        color: var(--md-sys-color-on-primary, #ffffff);
+        border: none;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.15s ease;
+      }
+      .btn-primary:hover:not(:disabled) {
+        opacity: 0.9;
+      }
+      .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      [data-theme='dark'] .btn-primary {
+        background-color: var(--md-sys-color-primary, #a8c7fa);
+        color: var(--md-sys-color-on-primary, #042e6d);
+      }
+
+      .btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.38rem 0.8rem;
+        border-radius: var(--md-shape-corner-full, 9999px);
+        background-color: transparent;
+        color: var(--md-sys-color-primary, #0b57d0);
+        border: 1px solid var(--md-sys-color-outline-variant, #c4c7c5);
+        font-size: 0.78rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      [data-theme='dark'] .btn-secondary {
+        color: var(--md-sys-color-primary, #a8c7fa);
+        border-color: var(--md-sys-color-outline-variant, #444746);
+      }
+
+      .btn-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: var(--md-shape-corner-full, 9999px);
+        background: transparent;
+        border: none;
+        color: var(--md-sys-color-on-surface-variant, #5f6368);
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+      }
+      .btn-icon:hover {
+        background-color: var(--md-sys-color-surface-container-high, #eceff1);
+      }
+
+      /* 状态条 */
+      .status-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.35rem 1.25rem;
+        background-color: var(--md-sys-color-surface-container-low, #f8f9fa);
+        border-bottom: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+        font-size: 0.78rem;
+        color: var(--md-sys-color-on-surface-variant, #5f6368);
+      }
+      [data-theme='dark'] .status-bar {
+        background-color: var(--md-sys-color-surface-container-low, #18191a);
+        border-bottom-color: var(--md-sys-color-outline-variant, #3c4043);
+      }
+
+      .progress-track {
+        flex: 1;
+        max-width: 280px;
+        height: 4px;
+        background-color: var(--md-sys-color-outline-variant, #e0e3e7);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-left: 1rem;
+      }
+      .progress-fill {
+        height: 100%;
+        width: 0%;
+        background-color: var(--md-sys-color-primary, #0b57d0);
+        transition: width 0.3s ease;
+      }
+      [data-theme='dark'] .progress-fill {
+        background-color: var(--md-sys-color-primary, #a8c7fa);
+      }
+
+      /* 双栏主体 */
+      .workspace-grid {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      /* 左栏：PDF 原文 */
+      .pane-pdf {
+        position: relative;
+        overflow-y: auto;
+        overflow-x: hidden;
+        background-color: var(--md-sys-color-surface-container-lowest, #f0f2f5);
+        border-right: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.25rem;
+      }
+      [data-theme='dark'] .pane-pdf {
+        background-color: #121314;
+        border-right-color: var(--md-sys-color-outline-variant, #3c4043);
+      }
+
+      .pdf-page-container {
+        position: relative;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        background-color: #ffffff;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 0 auto;
+        box-sizing: border-box;
+      }
+
+      .pdf-page-canvas {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      /* 左侧 PDF 标注层与选框（归一化 1000 百分比坐标，参照 MinerU 客户端高精度样式） */
+      .pdf-overlay-layer {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .bbox-highlight {
+        position: absolute;
+        border: 1.2px solid rgba(37, 99, 235, 0.45);
+        background-color: rgba(37, 99, 235, 0.02);
+        cursor: pointer;
+        border-radius: 2px;
+        pointer-events: auto;
+        box-sizing: border-box;
+        transition: border-color 0.12s ease, background-color 0.12s ease, box-shadow 0.12s ease;
+      }
+      .bbox-highlight:hover,
+      .bbox-highlight.hover-bbox {
+        border: 1.5px solid #2563eb;
+        background-color: rgba(37, 99, 235, 0.1);
+        z-index: 5;
+      }
+      .bbox-highlight.active {
+        border: 2px solid #2563eb;
+        background-color: rgba(37, 99, 235, 0.18);
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35);
+        z-index: 8;
+      }
+      .bbox-tag {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        font-size: 10px;
+        font-family: var(--md-font-google-sans, 'Noto Sans SC', system-ui, sans-serif);
+        font-weight: 600;
+        padding: 1px 5px;
+        border-radius: 2px;
+        background-color: #2563eb;
+        color: #ffffff;
+        pointer-events: none;
+        white-space: nowrap;
+        line-height: 1.2;
+        opacity: 0;
+        transition: opacity 0.12s ease;
+      }
+      .bbox-highlight:hover .bbox-tag,
+      .bbox-highlight.hover-bbox .bbox-tag,
+      .bbox-highlight.active .bbox-tag {
+        opacity: 1;
+      }
+
+      /* 语义类型专属微色阶 */
+      .bbox-highlight.type-equation { border-color: rgba(16, 185, 129, 0.55); }
+      .bbox-highlight.type-equation:hover, .bbox-highlight.type-equation.active { border-color: #059669; }
+      .bbox-highlight.type-equation .bbox-tag { background-color: #059669; }
+
+      .bbox-highlight.type-title { border-color: rgba(139, 92, 246, 0.55); }
+      .bbox-highlight.type-title:hover, .bbox-highlight.type-title.active { border-color: #7c3aed; }
+      .bbox-highlight.type-title .bbox-tag { background-color: #7c3aed; }
+
+      .bbox-highlight.type-table { border-color: rgba(245, 158, 11, 0.55); }
+      .bbox-highlight.type-table:hover, .bbox-highlight.type-table.active { border-color: #d97706; }
+      .bbox-highlight.type-table .bbox-tag { background-color: #d97706; }
+
+      .bbox-highlight.type-image, .bbox-highlight.type-figure { border-color: rgba(236, 72, 153, 0.55); }
+      .bbox-highlight.type-image:hover, .bbox-highlight.type-image.active { border-color: #db2777; }
+      .bbox-highlight.type-image .bbox-tag { background-color: #db2777; }
+
+      .bbox-highlight.type-header, .bbox-highlight.type-footer, .bbox-highlight.type-aside {
+        border-color: rgba(100, 116, 139, 0.4);
+      }
+      .bbox-highlight.type-header:hover, .bbox-highlight.type-footer:hover, .bbox-highlight.type-aside:hover,
+      .bbox-highlight.type-header.active, .bbox-highlight.type-footer.active, .bbox-highlight.type-aside.active {
+        border-color: #475569;
+      }
+      .bbox-highlight.type-header .bbox-tag, .bbox-highlight.type-footer .bbox-tag, .bbox-highlight.type-aside .bbox-tag {
+        background-color: #475569;
+      }
+
+      /* 右栏：结构化结果与连续阅读视窗 */
+      .pane-markdown {
+        overflow-y: auto;
+        padding: 2rem 2.8rem;
+        background-color: var(--md-sys-color-surface, #ffffff);
+        font-family: 'Noto Serif SC Variable', 'Noto Serif SC', 'Times New Roman', serif;
+        line-height: 1.85;
+      }
+      [data-theme='dark'] .pane-markdown {
+        background-color: var(--md-sys-color-surface, #1e1f20);
+      }
+
+      /* 结构化块级对齐容器 (Structured 1:1 Mode, 完美对齐 MinerU 客户端学术阅读体验) */
+      .structured-blocks-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+      .structured-block-item {
+        position: relative;
+        padding: 0.35rem 0.65rem;
+        border-left: 3px solid transparent;
+        border-radius: 4px;
+        background-color: transparent;
+        transition: border-color 0.15s ease, background-color 0.15s ease;
+        cursor: pointer;
+      }
+      .structured-block-item:hover,
+      .structured-block-item.hover-block {
+        background-color: rgba(37, 99, 235, 0.03);
+        border-left-color: rgba(37, 99, 235, 0.4);
+      }
+      .structured-block-item.active-block {
+        background-color: rgba(37, 99, 235, 0.07);
+        border-left-color: #2563eb;
+      }
+      [data-theme='dark'] .structured-block-item:hover,
+      [data-theme='dark'] .structured-block-item.hover-block {
+        background-color: rgba(168, 199, 250, 0.04);
+        border-left-color: rgba(168, 199, 250, 0.4);
+      }
+      [data-theme='dark'] .structured-block-item.active-block {
+        background-color: rgba(168, 199, 250, 0.1);
+        border-left-color: #a8c7fa;
+      }
+
+      .block-item-body {
+        font-size: 1.02rem;
+        line-height: 1.8;
+      }
+
+      /* 学术 AST 排版样式 (极简克制，去 SaaS 化) */
+      .doc-heading-1 {
+        font-size: 1.7rem;
+        font-weight: 700;
+        line-height: 1.3;
+        margin: 1.25rem 0 0.85rem 0;
+        font-family: var(--md-font-google-sans, 'Noto Sans SC', system-ui, sans-serif);
+        color: var(--md-sys-color-on-surface, #111827);
+        letter-spacing: -0.015em;
+      }
+      .doc-heading-2 {
+        font-size: 1.35rem;
+        font-weight: 600;
+        line-height: 1.35;
+        margin: 1.15rem 0 0.65rem 0;
+        font-family: var(--md-font-google-sans, 'Noto Sans SC', system-ui, sans-serif);
+        color: var(--md-sys-color-on-surface, #111827);
+        letter-spacing: -0.01em;
+      }
+      .doc-heading-3 {
+        font-size: 1.15rem;
+        font-weight: 600;
+        line-height: 1.4;
+        margin: 0.95rem 0 0.5rem 0;
+        font-family: var(--md-font-google-sans, 'Noto Sans SC', system-ui, sans-serif);
+        color: var(--md-sys-color-on-surface, #111827);
+      }
+      .doc-heading-4, .doc-heading-5, .doc-heading-6 {
+        font-size: 1.05rem;
+        font-weight: 600;
+        line-height: 1.4;
+        margin: 0.8rem 0 0.4rem 0;
+        font-family: var(--md-font-google-sans, 'Noto Sans SC', system-ui, sans-serif);
+        color: var(--md-sys-color-on-surface, #111827);
+      }
+      [data-theme='dark'] .doc-heading-1,
+      [data-theme='dark'] .doc-heading-2,
+      [data-theme='dark'] .doc-heading-3,
+      [data-theme='dark'] .doc-heading-4,
+      [data-theme='dark'] .doc-heading-5,
+      [data-theme='dark'] .doc-heading-6 {
+        color: var(--md-sys-color-on-surface, #f3f4f6);
+      }
+
+      .doc-paragraph {
+        margin: 0.35rem 0;
+        font-family: 'Noto Serif SC Variable', 'Noto Serif SC', 'Times New Roman', serif;
+        font-size: 1.02rem;
+        line-height: 1.82;
+        color: var(--md-sys-color-on-surface, #1f2937);
+        text-align: justify;
+        word-break: break-word;
+      }
+      [data-theme='dark'] .doc-paragraph {
+        color: var(--md-sys-color-on-surface, #e5e7eb);
+      }
+
+      .doc-equation-display {
+        margin: 1rem 0;
+        padding: 0.6rem 0;
+        text-align: center;
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+
+      .doc-figure {
+        margin: 1.5rem auto;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .doc-figure img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 4px;
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+        display: block;
+      }
+      .doc-figcaption {
+        font-family: var(--md-font-google-sans, 'Noto Sans SC', system-ui, sans-serif);
+        font-size: 0.86rem;
+        color: var(--md-sys-color-outline, #6b7280);
+        margin-top: 0.55rem;
+        line-height: 1.55;
+        max-width: 90%;
+        text-align: center;
+      }
+      [data-theme='dark'] .doc-figcaption {
+        color: #9ca3af;
+      }
+
+      .doc-table-wrapper {
+        margin: 1.25rem 0;
+        overflow-x: auto;
+      }
+      .doc-table-wrapper table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+      }
+      .doc-table-wrapper th,
+      .doc-table-wrapper td {
+        border: 1px solid var(--md-sys-color-outline-variant, #e5e7eb);
+        padding: 0.5rem 0.75rem;
+      }
+      [data-theme='dark'] .doc-table-wrapper th,
+      [data-theme='dark'] .doc-table-wrapper td {
+        border-color: #374151;
+      }
+      .doc-table-caption {
+        font-size: 0.85rem;
+        color: var(--md-sys-color-outline, #6b7280);
+        margin-top: 0.4rem;
+        text-align: center;
+      }
+
+      .doc-list {
+        margin: 0.5rem 0 0.5rem 1.5rem;
+        padding: 0;
+      }
+      .doc-list li {
+        margin: 0.25rem 0;
+      }
+
+      .doc-meta-header,
+      .doc-meta-aside {
+        font-size: 0.78rem;
+        color: var(--md-sys-color-outline, #9ca3af);
+        font-style: italic;
+        margin: 0.25rem 0;
+      }
+      .doc-meta-footnote {
+        font-size: 0.82rem;
+        color: var(--md-sys-color-on-surface-variant, #4b5563);
+        border-top: 1px solid var(--md-sys-color-outline-variant, #e5e7eb);
+        padding-top: 0.4rem;
+        margin-top: 0.75rem;
+      }
+      [data-theme='dark'] .doc-meta-footnote {
+        border-color: #374151;
+        color: #9ca3af;
+      }
+      }
+
+      .block-item-body {
+        font-size: 1.02rem;
+        line-height: 1.75;
+      }
+      .block-item-body h1,
+      .block-item-body h2,
+      .block-item-body h3 {
+        font-family: 'Noto Sans SC Variable', 'Noto Sans SC', sans-serif;
+        color: var(--md-sys-color-on-surface, #1f1f1f);
+        letter-spacing: -0.015em;
+        margin: 0.35rem 0;
+      }
+      .block-item-body p {
+        margin: 0;
+      }
+      .block-item-body img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 6px;
+        display: block;
+        margin: 0.4rem auto;
+      }
+      .block-item-body table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0.5rem 0;
+      }
+      .block-item-body th,
+      .block-item-body td {
+        border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+        padding: 0.4rem 0.65rem;
+      }
+
+      /* 连续阅读模式 (Continuous Reading Flow) */
+      .continuous-reading-flow {
+        font-size: 1.05rem;
+        line-height: 1.8;
+      }
+      .continuous-reading-flow h1,
+      .continuous-reading-flow h2,
+      .continuous-reading-flow h3 {
+        font-family: 'Noto Sans SC Variable', 'Noto Sans SC', sans-serif;
+        color: var(--md-sys-color-on-surface, #1f1f1f);
+        letter-spacing: -0.02em;
+        margin-top: 1.8rem;
+        margin-bottom: 0.8rem;
+      }
+      [data-theme='dark'] .continuous-reading-flow h1,
+      [data-theme='dark'] .continuous-reading-flow h2,
+      [data-theme='dark'] .continuous-reading-flow h3 {
+        color: var(--md-sys-color-on-surface, #e3e3e3);
+      }
+      .continuous-reading-flow p {
+        margin: 0.85rem 0;
+      }
+      .continuous-reading-flow img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        display: block;
+        margin: 1.25rem auto;
+      }
+      .continuous-reading-flow table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.25rem 0;
+      }
+      .continuous-reading-flow th,
+      .continuous-reading-flow td {
+        border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+        padding: 0.5rem 0.8rem;
+      }
+
+      /* 空状态与弹窗 */
+      .empty-pane {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--md-sys-color-outline, #72777d);
+        text-align: center;
+        gap: 0.75rem;
+      }
+
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: var(--layer-dialog);
+      }
+      .modal-card {
+        width: 90%;
+        max-width: 440px;
+        background-color: var(--md-sys-color-surface, #ffffff);
+        border-radius: var(--md-shape-corner-extra-large, 24px);
+        padding: 1.5rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      [data-theme='dark'] .modal-card {
+        background-color: var(--md-sys-color-surface-container-high, #2b2e30);
+      }
+      .modal-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin: 0;
+      }
+      .modal-input, .modal-select {
+        width: 100%;
+        padding: 0.6rem 0.8rem;
+        border-radius: var(--md-shape-corner-small, 8px);
+        border: 1px solid var(--md-sys-color-outline-variant, #c4c7c5);
+        background: transparent;
+        color: inherit;
+        font-size: 0.9rem;
+      }
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.6rem;
+        margin-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 顶栏操作区 -->
+    <header class="ingest-topbar">
+      <div class="topbar-left">
+        <a href="/" class="back-home-link">← 首页</a>
+        <div class="doc-info-badge" id="doc-badge">
+          <span class="doc-name" id="doc-name-text">未加载文档</span>
+          <span class="doc-pages" id="doc-pages-text"></span>
+        </div>
+      </div>
+
+      <div class="topbar-center">
+        <!-- 三档极简通道选择器 -->
+        <div class="engine-chips" role="radiogroup" aria-label="解析引擎通道">
+          <button type="button" class="engine-chip active" id="chip-api" title="官方云端 VLM 3.4.x 高精度解析，每日享 1000 页免费配额">
+            【高精 API】
+          </button>
+          <button type="button" class="engine-chip" id="chip-agent" title="免登录 / 免 Token / 限频轻量解析，专为 Agent 工作流与 <=20 页文档设计">
+            【Agent 免密】
+          </button>
+          <button type="button" class="engine-chip" id="chip-local" title="本机 RTX 5060 8G 离线 Pipeline 硬件加速">
+            【本地】
+          </button>
+        </div>
+
+        <!-- 视窗对齐模式切换 -->
+        <div class="view-mode-chips" role="radiogroup" aria-label="双栏对齐视图模式">
+          <button type="button" class="view-chip active" id="view-structured" title="1:1 结构化块级对照，双栏高亮同步聚焦">
+            结构化对照
+          </button>
+          <button type="button" class="view-chip" id="view-continuous" title="流式原生长文排版，零选框 DOM 开销，适合低性能设备">
+            连续阅读
+          </button>
+        </div>
+
+        <!-- 可选页码切片输入框 -->
+        <input
+          type="text"
+          class="page-range-input"
+          id="page-range-input"
+          placeholder="切片 (如 1-20)"
+          title="输入页码范围以节约配额并加速解析，默认全本解析"
+        />
+      </div>
+
+      <div class="topbar-right">
+        <!-- 开始解析主按钮 -->
+        <button type="button" class="btn-primary" id="btn-parse" disabled>
+          <span id="btn-parse-text">开始解析</span>
+        </button>
+
+        <!-- 成果出口动作组 -->
+        <button type="button" class="btn-secondary" id="btn-download-zip" style="display: none;">
+          下载清洗包
+        </button>
+        <button type="button" class="btn-secondary" id="btn-export-book" style="display: none;">
+          转入书籍库
+        </button>
+
+        <!-- API Key 设置按钮 -->
+        <button type="button" class="btn-icon" id="btn-open-token-modal" title="配置 MinerU API Token">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- 状态指示条 -->
+    <div class="status-bar" id="status-bar">
+      <span id="status-text">就绪</span>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- 双栏对照主体 -->
+    <main class="workspace-grid">
+      <!-- 左栏：PDF 原文矢量视窗 -->
+      <section class="pane-pdf" id="pane-pdf">
+        <div class="empty-pane" id="pdf-empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>
+          <p>请选择或上传 PDF 文档</p>
+        </div>
+      </section>
+
+      <!-- 右栏：结构化结果与连续阅读视窗 -->
+      <section class="pane-markdown" id="pane-markdown">
+        <div class="empty-pane" id="md-empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <polyline points="4 7 4 4 20 4 20 7" />
+            <line x1="9" y1="20" x2="15" y2="20" />
+            <line x1="12" y1="4" x2="12" y2="20" />
+          </svg>
+          <p>解析完成后将在此呈现高保真数学公式 (KaTeX) 与排版结构</p>
+        </div>
+        <!-- 结构化块级卡片视窗 -->
+        <div class="structured-blocks-container" id="structured-blocks-container" style="display: none;"></div>
+        <!-- 连续流式阅读视窗 -->
+        <article class="continuous-reading-flow" id="continuous-reading-container" style="display: none;"></article>
+      </section>
+    </main>
+
+    <!-- 弹窗 1：配置 MinerU API Token -->
+    <div class="modal-backdrop" id="token-modal" style="display: none;">
+      <div class="modal-card">
+        <h3 class="modal-title">配置 MinerU API 凭证</h3>
+        <p style="font-size: 0.85rem; color: var(--md-sys-color-outline, #72777d); margin: 0;">
+          每个账号每天拥有 1000 页面免费极速解析额度。<br />
+          可在 <a href="https://mineru.net" target="_blank" style="color: var(--md-sys-color-primary, #0b57d0);">mineru.net</a> 用户中心免费获取 Token。
+        </p>
+        <input type="text" class="modal-input" id="token-input" placeholder="粘贴 API Token (如 f31d7c3a...)" />
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="btn-close-token">取消</button>
+          <button type="button" class="btn-primary" id="btn-save-token">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 弹窗 2：转入 AstroLib 书籍合集 -->
+    <div class="modal-backdrop" id="export-modal" style="display: none;">
+      <div class="modal-card">
+        <h3 class="modal-title">转入 AstroLib 书籍合集</h3>
+        <p style="font-size: 0.85rem; color: var(--md-sys-color-outline, #72777d); margin: 0;">
+          自动将解析成果清洗并转换为合法 MDX，注入全书侧边栏与阅读器。
+        </p>
+        <div>
+          <label style="font-size: 0.8rem; font-weight: 500; display: block; margin-bottom: 0.3rem;">所属学科合集</label>
+          <select class="modal-select" id="export-collection-select">
+            {collections.map(c => (
+              <option value={c.slug}>{c.title} ({c.slug})</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 0.8rem; font-weight: 500; display: block; margin-bottom: 0.3rem;">书籍/论文 Slug (URL 路径)</label>
+          <input type="text" class="modal-input" id="export-slug-input" placeholder="如 my-paper-2026" />
+        </div>
+        <div>
+          <label style="font-size: 0.8rem; font-weight: 500; display: block; margin-bottom: 0.3rem;">显示书名/文献标题</label>
+          <input type="text" class="modal-input" id="export-title-input" placeholder="文献完整标题" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="btn-close-export">取消</button>
+          <button type="button" class="btn-primary" id="btn-confirm-export">确认入库</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Client-side Workspace Controller -->
+    <script>
+      import { marked } from 'marked';
+      import katex from 'katex';
+
+      (function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentTaskId = urlParams.get('taskId') || '';
+        let currentEngine = 'api';
+        let currentViewMode = 'structured'; // 'structured' | 'continuous'
+        let currentBlocks = [];
+        let currentMarkdown = '';
+        let pdfDocInstance = null;
+        let pollTimer = null;
+
+        // DOM 元素
+        const chipApi = document.getElementById('chip-api');
+        const chipAgent = document.getElementById('chip-agent');
+        const chipLocal = document.getElementById('chip-local');
+        const viewStructured = document.getElementById('view-structured');
+        const viewContinuous = document.getElementById('view-continuous');
+
+        const pageRangeInput = document.getElementById('page-range-input') as HTMLInputElement;
+        const btnParse = document.getElementById('btn-parse') as HTMLButtonElement;
+        const btnParseText = document.getElementById('btn-parse-text');
+        const btnDownloadZip = document.getElementById('btn-download-zip') as HTMLButtonElement;
+        const btnExportBook = document.getElementById('btn-export-book') as HTMLButtonElement;
+        const statusBarText = document.getElementById('status-text');
+        const progressFill = document.getElementById('progress-fill');
+        const docNameText = document.getElementById('doc-name-text');
+        const docPagesText = document.getElementById('doc-pages-text');
+        const panePdf = document.getElementById('pane-pdf');
+        const pdfEmptyState = document.getElementById('pdf-empty-state');
+        const mdEmptyState = document.getElementById('md-empty-state');
+        const structuredBlocksContainer = document.getElementById('structured-blocks-container');
+        const continuousReadingContainer = document.getElementById('continuous-reading-container');
+
+        // 弹窗 DOM
+        const tokenModal = document.getElementById('token-modal');
+        const tokenInput = document.getElementById('token-input') as HTMLInputElement;
+        const btnOpenTokenModal = document.getElementById('btn-open-token-modal');
+        const btnCloseToken = document.getElementById('btn-close-token');
+        const btnSaveToken = document.getElementById('btn-save-token');
+
+        const exportModal = document.getElementById('export-modal');
+        const exportColSelect = document.getElementById('export-collection-select') as HTMLSelectElement;
+        const exportSlugInput = document.getElementById('export-slug-input') as HTMLInputElement;
+        const exportTitleInput = document.getElementById('export-title-input') as HTMLInputElement;
+        const btnCloseExport = document.getElementById('btn-close-export');
+        const btnConfirmExport = document.getElementById('btn-confirm-export');
+
+        // 1. 三档通道切换 Chip 监听
+        function setEngine(engine: string) {
+          currentEngine = engine;
+          chipApi?.classList.toggle('active', engine === 'api');
+          chipAgent?.classList.toggle('active', engine === 'agent');
+          chipLocal?.classList.toggle('active', engine === 'local');
+
+          if (engine === 'agent') {
+            const pageNum = parseInt(docPagesText?.textContent?.replace(/\D/g, '') || '0', 10);
+            if (pageNum > 20) {
+              updateStatus(`提示：当前文档共 ${pageNum} 页，Agent 免密模式支持最多 20 页。建议在上方输入切片范围（如 1-20），或切换【高精 API】`, 100);
+            }
+          }
+        }
+
+        chipApi?.addEventListener('click', () => setEngine('api'));
+        chipAgent?.addEventListener('click', () => setEngine('agent'));
+        chipLocal?.addEventListener('click', () => setEngine('local'));
+
+        // 2. 视窗模式切换 (结构化对照 vs 连续阅读)
+        function setViewMode(mode: 'structured' | 'continuous') {
+          currentViewMode = mode;
+          try {
+            localStorage.setItem('astrolib_ingest_view_mode', mode);
+          } catch {}
+
+          viewStructured?.classList.toggle('active', mode === 'structured');
+          viewContinuous?.classList.toggle('active', mode === 'continuous');
+
+          if (currentMarkdown || currentBlocks.length > 0) {
+            if (mode === 'structured') {
+              if (structuredBlocksContainer) structuredBlocksContainer.style.display = 'flex';
+              if (continuousReadingContainer) continuousReadingContainer.style.display = 'none';
+              // 恢复左侧选框图层显示
+              document.querySelectorAll('.pdf-overlay-layer').forEach((el) => {
+                (el as HTMLElement).style.display = 'block';
+              });
+            } else {
+              if (structuredBlocksContainer) structuredBlocksContainer.style.display = 'none';
+              if (continuousReadingContainer) continuousReadingContainer.style.display = 'block';
+              // 连续阅读模式隐藏左侧选框图层，节省微渲染开销与事件消耗
+              document.querySelectorAll('.pdf-overlay-layer').forEach((el) => {
+                (el as HTMLElement).style.display = 'none';
+              });
+            }
+          }
+        }
+
+        try {
+          const savedMode = localStorage.getItem('astrolib_ingest_view_mode');
+          if (savedMode === 'continuous' || savedMode === 'structured') {
+            currentViewMode = savedMode;
+            viewStructured?.classList.toggle('active', savedMode === 'structured');
+            viewContinuous?.classList.toggle('active', savedMode === 'continuous');
+          }
+        } catch {}
+
+        viewStructured?.addEventListener('click', () => setViewMode('structured'));
+        viewContinuous?.addEventListener('click', () => setViewMode('continuous'));
+
+        // 3. Token 弹窗
+        btnOpenTokenModal?.addEventListener('click', () => {
+          if (tokenModal) tokenModal.style.display = 'flex';
+        });
+        btnCloseToken?.addEventListener('click', () => {
+          if (tokenModal) tokenModal.style.display = 'none';
+        });
+        btnSaveToken?.addEventListener('click', async () => {
+          const val = tokenInput?.value?.trim();
+          if (!val) return;
+          try {
+            const res = await fetch('/api/ingest/token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: val }),
+            });
+            const data = await res.json();
+            if (data.success) {
+              alert('MinerU API Token 保存成功！');
+              if (tokenModal) tokenModal.style.display = 'none';
+            } else {
+              alert('保存失败: ' + (data.error || '未知错误'));
+            }
+          } catch (e) {
+            alert('保存异常');
+          }
+        });
+
+        // 4. 初始化加载当前任务状态
+        if (currentTaskId) {
+          loadTaskInfo(currentTaskId);
+        } else {
+          updateStatus('请在首页上传 PDF 或将文件拖拽至此', 0);
+        }
+
+        async function loadTaskInfo(taskId: string) {
+          try {
+            updateStatus('正在加载文档元数据...', 10);
+            const res = await fetch(`/api/ingest/status?taskId=${encodeURIComponent(taskId)}`);
+            if (!res.ok) throw new Error(`未找到任务 ${taskId}`);
+            const data = await res.json();
+            const task = data.task;
+
+            if (docNameText) docNameText.textContent = task.fileName;
+            if (docPagesText) docPagesText.textContent = `共 ${task.pageCount} 页`;
+            if (exportTitleInput) exportTitleInput.value = task.fileName.replace(/\.pdf$/i, '');
+            if (exportSlugInput) exportSlugInput.value = task.fileName.replace(/\.pdf$/i, '').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+
+            btnParse.disabled = false;
+
+            // 加载左侧 PDF 矢量视图
+            loadPdfDocument(`/api/ingest/pdf?taskId=${encodeURIComponent(taskId)}`);
+
+            if (task.status === 'completed') {
+              updateStatus('解析已完成', 100);
+              fetchAndRenderResult(taskId);
+            } else if (task.status === 'processing' || task.status === 'uploading' || task.status === 'waiting-file' || task.status === 'downloading' || task.status === 'unpacking') {
+              startPollingStatus(taskId);
+            } else if (task.status === 'failed') {
+              updateStatus('解析失败：' + (task.error || '未知错误'), 0);
+            } else {
+              updateStatus('文档就绪，请点击“开始解析”', 0);
+            }
+          } catch (err) {
+            updateStatus('任务加载失败：' + (err instanceof Error ? err.message : String(err)), 0);
+          }
+        }
+
+        // 5. 开始解析按钮触发
+        btnParse?.addEventListener('click', async () => {
+          if (!currentTaskId) return;
+
+          btnParse.disabled = true;
+          if (btnParseText) btnParseText.textContent = '解析任务进行中...';
+
+          try {
+            const pageRanges = pageRangeInput?.value?.trim();
+            const res = await fetch('/api/ingest/parse', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                taskId: currentTaskId,
+                engine: currentEngine,
+                pageRanges,
+              }),
+            });
+
+            if (!res.ok) {
+              const errData = await res.json();
+              throw new Error(errData.error || '请求解析失败');
+            }
+
+            const labelMap: Record<string, string> = {
+              api: '已提交云端 VLM 识别集群...',
+              agent: '已提交 Agent 免密极速轻量解析...',
+              local: '启动本地 5060 推理引擎...',
+            };
+            updateStatus(labelMap[currentEngine] || '正在解析...', 25);
+            startPollingStatus(currentTaskId);
+          } catch (err) {
+            alert('启动解析失败：' + (err instanceof Error ? err.message : String(err)));
+            btnParse.disabled = false;
+            if (btnParseText) btnParseText.textContent = '开始解析';
+          }
+        });
+
+        // 6. 轮询状态
+        function startPollingStatus(taskId: string) {
+          if (pollTimer) clearInterval(pollTimer);
+
+          pollTimer = window.setInterval(async () => {
+            try {
+              const res = await fetch(`/api/ingest/status?taskId=${encodeURIComponent(taskId)}`);
+              if (!res.ok) return;
+              const data = await res.json();
+              const task = data.task;
+
+              const stateMap: Record<string, string> = {
+                'uploading': '正在上传文档...',
+                'waiting-file': '云端排队中...',
+                'pending': 'MinerU 调度解析中...',
+                'processing': 'MinerU 高精度识别中 (版面/公式/表格)...',
+                'downloading': '下载结构化成果 ZIP...',
+                'unpacking': '解包与资产格式化...',
+                'completed': '解析完成！',
+                'failed': '解析失败：' + (task.error || '未知错误'),
+              };
+
+              const msg = stateMap[task.status] || task.status;
+              updateStatus(msg, task.progress || 50);
+
+              if (task.status === 'completed') {
+                clearInterval(pollTimer);
+                btnParse.disabled = false;
+                if (btnParseText) btnParseText.textContent = '重新解析';
+                fetchAndRenderResult(taskId);
+              } else if (task.status === 'failed') {
+                clearInterval(pollTimer);
+                btnParse.disabled = false;
+                if (btnParseText) btnParseText.textContent = '重试解析';
+              }
+            } catch {
+              // ignore
+            }
+          }, 2000);
+        }
+
+        // 7. 获取并渲染解析结果
+        async function fetchAndRenderResult(taskId: string) {
+          try {
+            updateStatus('正在加载解析渲染数据...', 98);
+            const res = await fetch(`/api/ingest/result?taskId=${encodeURIComponent(taskId)}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            const result = data.result;
+
+            currentBlocks = result.layoutBlocks || [];
+            currentMarkdown = result.markdown || '';
+
+            // 渲染两种视图模式
+            renderStructuredBlocks(currentBlocks, currentMarkdown, taskId);
+            renderContinuousMarkdown(currentMarkdown, taskId);
+
+            // 渲染左侧 PDF 标注选框（百分比精确坐标）
+            renderOverlayBboxes(currentBlocks);
+
+            // 根据当前选定的 viewMode 呈现对应面板
+            setViewMode(currentViewMode as 'structured' | 'continuous');
+
+            // 显示出口动作
+            if (btnDownloadZip) btnDownloadZip.style.display = 'inline-flex';
+            if (btnExportBook) btnExportBook.style.display = 'inline-flex';
+
+            updateStatus(`解析完成，提取 ${currentBlocks.length} 个结构化块`, 100);
+          } catch (e) {
+            updateStatus('渲染解析结果失败', 100);
+          }
+        }
+
+        // 8. 模式一：1:1 结构化块级阅读渲染 (Structured Mode，对齐 MinerU 客户端视觉体验)
+        function renderStructuredBlocks(blocks: any[], md: string, taskId: string) {
+          if (!structuredBlocksContainer) return;
+          structuredBlocksContainer.innerHTML = '';
+
+          if (mdEmptyState) mdEmptyState.style.display = 'none';
+
+          blocks.forEach((block) => {
+            // 页码等无实质内容的元数据块不生成右侧独立正文段
+            if (!block.html && !block.text) return;
+
+            const item = document.createElement('div');
+            item.className = `structured-block-item type-${block.type || 'text'}`;
+            item.id = `card_${block.id}`;
+            item.setAttribute('data-block-id', block.id);
+            item.setAttribute('data-page-index', String(block.pageIndex));
+
+            // 正文内容容器
+            const body = document.createElement('div');
+            body.className = 'block-item-body';
+
+            if (block.html) {
+              // 优先使用 AST 编译器服务端高保真编译的 HTML (含公式 KaTeX、真实图片与表格)
+              body.innerHTML = block.html;
+            } else if (block.type === 'equation') {
+              try {
+                const cleanEq = (block.text || '').replace(/^\$\$|\$\$$/g, '').trim();
+                body.innerHTML = `<div class="doc-equation-display">${katex.renderToString(cleanEq, { displayMode: true, throwOnError: false })}</div>`;
+              } catch {
+                body.textContent = block.text || '';
+              }
+            } else if (block.type === 'image' || block.type === 'figure') {
+              const match = (block.text || '').match(/!\[(.*?)\]\((.*?)\)/);
+              const alt = match ? match[1] : (block.caption || '插图');
+              const src = match ? match[2] : '';
+              const imgName = src.split('/').pop() || `img_${block.id}.png`;
+              body.innerHTML = `<figure class="doc-figure"><img src="/api/ingest/image?taskId=${encodeURIComponent(taskId)}&name=${encodeURIComponent(imgName)}" alt="${alt}" loading="lazy" />${alt ? `<figcaption class="doc-figcaption">${alt}</figcaption>` : ''}</figure>`;
+            } else if (block.type === 'table') {
+              if ((block.text || '').includes('<table')) {
+                body.innerHTML = `<div class="doc-table-wrapper">${block.text}</div>`;
+              } else {
+                body.innerHTML = parseMathMarkdown(block.text || '', taskId);
+              }
+            } else {
+              body.innerHTML = parseMathMarkdown(block.text || '', taskId);
+            }
+
+            item.appendChild(body);
+
+            // 交互联动：悬停时同步高亮左侧 PDF 选框
+            item.addEventListener('mouseenter', () => {
+              const targetBbox = document.getElementById(`bbox_${block.id}`);
+              if (targetBbox) targetBbox.classList.add('hover-bbox');
+            });
+            item.addEventListener('mouseleave', () => {
+              const targetBbox = document.getElementById(`bbox_${block.id}`);
+              if (targetBbox) targetBbox.classList.remove('hover-bbox');
+            });
+
+            // 点击时双向精准聚焦
+            item.addEventListener('click', () => {
+              focusBlock(block.id, block.pageIndex);
+            });
+
+            structuredBlocksContainer.appendChild(item);
+          });
+        }
+
+        // 9. 模式二：连续长文阅读流渲染 (Continuous Reading Flow，低性能设备原生流)
+        function renderContinuousMarkdown(md: string, taskId: string) {
+          if (!continuousReadingContainer || !md) return;
+          continuousReadingContainer.innerHTML = parseMathMarkdown(md, taskId);
+        }
+
+        // 通用 Markdown 与 KaTeX 解析器
+        function parseMathMarkdown(content: string, taskId: string): string {
+          if (!content) return '';
+
+          // 保护并渲染公式
+          let processed = content.replace(/\$\$([\s\S]*?)\$\$/g, (_, eq) => {
+            try {
+              return `\n\n<div class="katex-display-wrapper">${katex.renderToString(eq.trim(), { displayMode: true, throwOnError: false })}</div>\n\n`;
+            } catch {
+              return `$$${eq}$$`;
+            }
+          });
+
+          processed = processed.replace(/\$([^\$\n]+?)\$/g, (_, eq) => {
+            try {
+              return `<span class="katex-inline-wrapper">${katex.renderToString(eq.trim(), { displayMode: false, throwOnError: false })}</span>`;
+            } catch {
+              return `$${eq}$`;
+            }
+          });
+
+          // 重定向图片路径
+          processed = processed.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, src) => {
+            const imgName = src.split('/').pop() || src;
+            const targetSrc = `/api/ingest/image?taskId=${encodeURIComponent(taskId)}&name=${encodeURIComponent(imgName)}`;
+            return `![${alt}](${targetSrc})`;
+          });
+
+          try {
+            return marked.parse(processed) as string;
+          } catch {
+            return `<pre>${content}</pre>`;
+          }
+        }
+
+        // 10. PDF.js 矢量画布渲染与百分比自适应标注层挂载
+        async function loadPdfDocument(pdfUrl: string) {
+          if (!window.pdfjsLib || !panePdf) return;
+
+          try {
+            panePdf.innerHTML = '';
+            pdfDocInstance = await window.pdfjsLib.getDocument(pdfUrl).promise;
+            const totalPages = pdfDocInstance.numPages;
+
+            // 根据 panePdf 的可用宽度动态计算 scale，防止超出视口产生水平溢出和左右偏移
+            const availableWidth = Math.max(300, (panePdf.clientWidth || 560) - 40);
+
+            for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+              const page = await pdfDocInstance.getPage(pageNum);
+              const unscaledViewport = page.getViewport({ scale: 1.0 });
+              const scale = availableWidth / unscaledViewport.width;
+              const viewport = page.getViewport({ scale });
+
+              const pageWrapper = document.createElement('div');
+              pageWrapper.className = 'pdf-page-container';
+              pageWrapper.id = `pdf-page-${pageNum - 1}`;
+              pageWrapper.style.width = '100%';
+              pageWrapper.style.maxWidth = `${viewport.width}px`;
+              pageWrapper.style.aspectRatio = `${unscaledViewport.width} / ${unscaledViewport.height}`;
+
+              const canvas = document.createElement('canvas');
+              canvas.className = 'pdf-page-canvas';
+
+              // 适配高分辨率屏幕 (devicePixelRatio)
+              const pixelRatio = window.devicePixelRatio || 1;
+              canvas.width = Math.floor(viewport.width * pixelRatio);
+              canvas.height = Math.floor(viewport.height * pixelRatio);
+              canvas.style.width = '100%';
+              canvas.style.height = '100%';
+
+              const context = canvas.getContext('2d');
+              if (pixelRatio !== 1) {
+                context?.scale(pixelRatio, pixelRatio);
+              }
+              await page.render({ canvasContext: context, viewport }).promise;
+
+              // 挂载百分比选框标注层
+              const overlayLayer = document.createElement('div');
+              overlayLayer.className = 'pdf-overlay-layer';
+              overlayLayer.setAttribute('data-page-index', String(pageNum - 1));
+
+              pageWrapper.appendChild(canvas);
+              pageWrapper.appendChild(overlayLayer);
+              panePdf.appendChild(pageWrapper);
+
+              // 若解析块已就绪，立即渲染当前页选框，杜绝时序空窗
+              if (currentBlocks.length > 0) {
+                renderOverlayBboxesForPage(pageNum - 1, currentBlocks);
+              }
+            }
+          } catch (err) {
+            if (pdfEmptyState) {
+              pdfEmptyState.innerHTML = `<p style="color: #d32f2f;">PDF 加载失败: ${err instanceof Error ? err.message : String(err)}</p>`;
+            }
+          }
+        }
+
+        // 11. 渲染百分比绝对对齐 Bounding Box (消除缩放偏移，带 MinerU 客户端浮标)
+        function renderOverlayBboxes(blocks: any[]) {
+          if (!blocks || blocks.length === 0) return;
+
+          // 按页分别挂载
+          const pageIndices = new Set(blocks.map((b) => b.pageIndex));
+          pageIndices.forEach((pIdx) => {
+            renderOverlayBboxesForPage(pIdx, blocks);
+          });
+        }
+
+        function renderOverlayBboxesForPage(pageIndex: number, blocks: any[]) {
+          const pageContainer = document.getElementById(`pdf-page-${pageIndex}`);
+          if (!pageContainer) return;
+
+          const overlay = pageContainer.querySelector('.pdf-overlay-layer');
+          if (!overlay) return;
+
+          // 清空防止重复堆叠
+          overlay.innerHTML = '';
+
+          const typeNameMap: Record<string, string> = {
+            title: '标题',
+            text: '文本',
+            equation: '公式',
+            table: '表格',
+            image: '图片',
+            figure: '插图',
+            header: '页眉',
+            footer: '页脚',
+            aside: '旁注',
+            list: '列表',
+          };
+
+          const pageBlocks = blocks.filter((b) => b.pageIndex === pageIndex);
+
+          pageBlocks.forEach((block) => {
+            const bbox = block.bbox;
+            if (!bbox || bbox.length !== 4) return;
+
+            const pw = block.pageWidth || 1000;
+            const ph = block.pageHeight || 1000;
+
+            const [x0, y0, x1, y1] = bbox;
+            const leftPct = (x0 / pw) * 100;
+            const topPct = (y0 / ph) * 100;
+            const widthPct = ((x1 - x0) / pw) * 100;
+            const heightPct = ((y1 - y0) / ph) * 100;
+
+            const rect = document.createElement('div');
+            rect.className = `bbox-highlight type-${block.type || 'text'}`;
+            rect.id = `bbox_${block.id}`;
+            rect.style.left = `${leftPct}%`;
+            rect.style.top = `${topPct}%`;
+            rect.style.width = `${widthPct}%`;
+            rect.style.height = `${heightPct}%`;
+
+            const tag = document.createElement('span');
+            tag.className = 'bbox-tag';
+            tag.textContent = typeNameMap[block.type] || block.type;
+            rect.appendChild(tag);
+
+            // 悬停联动：高亮右侧对应卡片
+            rect.addEventListener('mouseenter', () => {
+              const targetCard = document.getElementById(`card_${block.id}`);
+              if (targetCard) targetCard.classList.add('hover-block');
+            });
+            rect.addEventListener('mouseleave', () => {
+              const targetCard = document.getElementById(`card_${block.id}`);
+              if (targetCard) targetCard.classList.remove('hover-block');
+            });
+
+            // 点击选框：双向聚焦
+            rect.addEventListener('click', (e) => {
+              e.stopPropagation();
+              focusBlock(block.id, block.pageIndex);
+            });
+
+            overlay.appendChild(rect);
+          });
+        }
+
+        // 12. 核心双向同步对齐聚焦函数
+        function focusBlock(blockId: string, pageIndex: number) {
+          // 1. 左侧 PDF 选框高亮与居中
+          document.querySelectorAll('.bbox-highlight').forEach((r) => r.classList.remove('active'));
+          const targetRect = document.getElementById(`bbox_${blockId}`);
+          if (targetRect) {
+            targetRect.classList.add('active');
+            targetRect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else {
+            const pageEl = document.getElementById(`pdf-page-${pageIndex}`);
+            if (pageEl) pageEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+
+          // 2. 右侧结构化条目高亮与居中
+          document.querySelectorAll('.structured-block-item').forEach((c) => c.classList.remove('active-block'));
+          const targetCard = document.getElementById(`card_${blockId}`);
+          if (targetCard) {
+            targetCard.classList.add('active-block');
+            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+
+        // 13. 出口操作：下载清洗包 ZIP
+        btnDownloadZip?.addEventListener('click', () => {
+          if (!currentTaskId) return;
+          window.location.href = `/api/ingest/download-zip?taskId=${encodeURIComponent(currentTaskId)}`;
+        });
+
+        // 14. 出口操作：转入 AstroLib 书籍合集
+        btnExportBook?.addEventListener('click', () => {
+          if (exportModal) exportModal.style.display = 'flex';
+        });
+        btnCloseExport?.addEventListener('click', () => {
+          if (exportModal) exportModal.style.display = 'none';
+        });
+        btnConfirmExport?.addEventListener('click', async () => {
+          if (!currentTaskId) return;
+          const col = exportColSelect?.value;
+          const slug = exportSlugInput?.value?.trim();
+          const title = exportTitleInput?.value?.trim();
+
+          if (!col || !slug) {
+            alert('请完整填写合集与 Slug');
+            return;
+          }
+
+          try {
+            btnConfirmExport.textContent = '入库中...';
+            const res = await fetch('/api/ingest/export-book', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                taskId: currentTaskId,
+                collectionSlug: col,
+                bookSlug: slug,
+                bookTitle: title || slug,
+              }),
+            });
+
+            const data = await res.json();
+            if (data.success) {
+              alert(`🎉 成功转入书籍合集！\n路径: /collections/${col}/${slug}/01_全文研判/`);
+              if (exportModal) exportModal.style.display = 'none';
+              window.location.href = `/collections/${col}/${slug}/01_全文研判/`;
+            } else {
+              alert('入库失败: ' + (data.error || '未知错误'));
+            }
+          } catch (e) {
+            alert('入库请求异常');
+          } finally {
+            btnConfirmExport.textContent = '确认入库';
+          }
+        });
+
+        function updateStatus(text: string, percent: number) {
+          if (statusBarText) statusBarText.textContent = text;
+          if (progressFill) progressFill.style.width = `${percent}%`;
+        }
+      })();
+    </script>
+  </body>
+</html>
