@@ -224,6 +224,30 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         color: var(--md-sys-color-primary, #a8c7fa);
       }
 
+      /* 双语研判工具栏 */
+      .bilingual-toolbar {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+      .bilingual-select {
+        padding: 0.35rem 0.55rem;
+        border-radius: var(--md-shape-corner-small, 8px);
+        border: 1px solid var(--md-sys-color-outline-variant, #c4c7c5);
+        background-color: var(--md-sys-color-surface, #ffffff);
+        color: inherit;
+        font-size: 0.78rem;
+        outline: none;
+      }
+      [data-theme='dark'] .bilingual-select {
+        background-color: var(--md-sys-color-surface-container, #1e1f20);
+        border-color: var(--md-sys-color-outline-variant, #444746);
+      }
+      .btn-compact {
+        padding: 0.28rem 0.65rem;
+        font-size: 0.75rem;
+      }
+
       .page-range-input {
         width: 120px;
         padding: 0.35rem 0.55rem;
@@ -512,6 +536,71 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
       [data-theme='dark'] .structured-block-item.active-block {
         background-color: rgba(168, 199, 250, 0.1);
         border-left-color: #a8c7fa;
+      }
+
+      .block-translate-trigger {
+        position: absolute;
+        top: 6px;
+        right: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 2px 7px;
+        border-radius: 4px;
+        border: 1px solid var(--md-sys-color-outline-variant, #e0e3e7);
+        background-color: var(--md-sys-color-surface, #ffffff);
+        color: var(--md-sys-color-on-surface-variant, #5f6368);
+        font-size: 0.72rem;
+        font-family: var(--md-font-google-sans, 'Noto Sans SC', system-ui, sans-serif);
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.15s ease, background-color 0.15s ease;
+        z-index: 4;
+      }
+      .structured-block-item:hover .block-translate-trigger {
+        opacity: 1;
+      }
+      .block-translate-trigger:hover {
+        background-color: var(--md-sys-color-surface-container-high, #eceff1);
+        color: var(--md-sys-color-primary, #0b57d0);
+        border-color: var(--md-sys-color-primary, #0b57d0);
+      }
+      [data-theme='dark'] .block-translate-trigger {
+        background-color: #2b2e30;
+        border-color: #444746;
+        color: #c4c7c5;
+      }
+      [data-theme='dark'] .block-translate-trigger:hover {
+        background-color: #383b3e;
+        color: var(--md-sys-color-primary, #a8c7fa);
+        border-color: var(--md-sys-color-primary, #a8c7fa);
+      }
+
+      .block-item-translation {
+        margin-top: 0.6rem;
+        padding: 0.55rem 0.85rem;
+        background-color: var(--md-sys-color-surface-container-low, #f8f9fa);
+        border-left: 2px solid var(--md-sys-color-primary, #0b57d0);
+        border-radius: 0 4px 4px 0;
+        font-family: 'Noto Serif SC Variable', 'Noto Serif SC', 'Times New Roman', serif;
+        font-size: 0.98rem;
+        line-height: 1.8;
+        color: var(--md-sys-color-on-surface-variant, #374151);
+        text-align: justify;
+      }
+      [data-theme='dark'] .block-item-translation {
+        background-color: var(--md-sys-color-surface-container-low, #18191a);
+        border-left-color: var(--md-sys-color-primary, #a8c7fa);
+        color: var(--md-sys-color-on-surface-variant, #d1d5db);
+      }
+      .translation-loading {
+        font-size: 0.82rem;
+        color: var(--md-sys-color-outline, #6b7280);
+        font-style: italic;
+      }
+      .translation-error {
+        font-size: 0.82rem;
+        color: #ef4444;
       }
 
       .block-item-body {
@@ -820,13 +909,32 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           </button>
         </div>
 
-        <!-- 视窗对齐模式切换 -->
+        <!-- 视窗对齐模式切换 (三档单选视图) -->
         <div class="view-mode-chips" role="radiogroup" aria-label="双栏对齐视图模式">
           <button type="button" class="view-chip active" id="view-structured" title="1:1 结构化块级对照，双栏高亮同步聚焦">
             结构化对照
           </button>
+          <button type="button" class="view-chip" id="view-bilingual" title="开启双语研判对照模式，段落呈现学术级中文译文与保留公式">
+            双语研判
+          </button>
           <button type="button" class="view-chip" id="view-continuous" title="流式原生长文排版，零选框 DOM 开销，适合低性能设备">
             连续阅读
+          </button>
+        </div>
+
+        <!-- 双语服务选择与翻译动作 (在双语研判模式下展开) -->
+        <div class="bilingual-toolbar" id="bilingual-toolbar" style="display: none;">
+          <select class="bilingual-select" id="bilingual-provider-select" title="学术翻译引擎">
+            <option value="google">Google 翻译 (极速免费)</option>
+            <option value="gemini">Gemini 学术翻译</option>
+            <option value="bupt">北邮 DeepSeek 校内服务</option>
+            <option value="zhipu">智谱 GLM-4 学术</option>
+          </select>
+          <button type="button" class="btn-secondary btn-compact" id="btn-translate-page" title="批量翻译当前可视页的所有段落">
+            译本页
+          </button>
+          <button type="button" class="btn-secondary btn-compact" id="btn-translate-all" title="全篇批量自动研判翻译">
+            全篇研判
           </button>
         </div>
 
@@ -956,18 +1064,26 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         const urlParams = new URLSearchParams(window.location.search);
         let currentTaskId = urlParams.get('taskId') || '';
         let currentEngine = 'api';
-        let currentViewMode = 'structured'; // 'structured' | 'continuous'
+        let currentViewMode: 'structured' | 'bilingual' | 'continuous' = 'structured';
+        let translationProvider = 'google';
+        const blockTranslationCache = new Map<string, string>();
         let currentBlocks = [];
         let currentMarkdown = '';
         let pdfDocInstance = null;
         let pollTimer = null;
+        let isTranslatingAll = false;
 
         // DOM 元素
         const chipApi = document.getElementById('chip-api');
         const chipAgent = document.getElementById('chip-agent');
         const chipLocal = document.getElementById('chip-local');
         const viewStructured = document.getElementById('view-structured');
+        const viewBilingual = document.getElementById('view-bilingual');
         const viewContinuous = document.getElementById('view-continuous');
+        const bilingualToolbar = document.getElementById('bilingual-toolbar');
+        const bilingualProviderSelect = document.getElementById('bilingual-provider-select') as HTMLSelectElement;
+        const btnTranslatePage = document.getElementById('btn-translate-page');
+        const btnTranslateAll = document.getElementById('btn-translate-all');
 
         const pageRangeInput = document.getElementById('page-range-input') as HTMLInputElement;
         const btnParse = document.getElementById('btn-parse') as HTMLButtonElement;
@@ -1017,27 +1133,50 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         chipAgent?.addEventListener('click', () => setEngine('agent'));
         chipLocal?.addEventListener('click', () => setEngine('local'));
 
-        // 2. 视窗模式切换 (结构化对照 vs 连续阅读)
-        function setViewMode(mode: 'structured' | 'continuous') {
+        // 2. 视窗模式切换 (结构化对照 vs 双语研判 vs 连续阅读)
+        function setViewMode(mode: 'structured' | 'bilingual' | 'continuous') {
           currentViewMode = mode;
           try {
             localStorage.setItem('astrolib_ingest_view_mode', mode);
           } catch {}
 
           viewStructured?.classList.toggle('active', mode === 'structured');
+          viewBilingual?.classList.toggle('active', mode === 'bilingual');
           viewContinuous?.classList.toggle('active', mode === 'continuous');
 
+          if (bilingualToolbar) {
+            bilingualToolbar.style.display = mode === 'bilingual' ? 'inline-flex' : 'none';
+          }
+
           if (currentMarkdown || currentBlocks.length > 0) {
-            if (mode === 'structured') {
+            if (mode === 'structured' || mode === 'bilingual') {
               if (structuredBlocksContainer) structuredBlocksContainer.style.display = 'flex';
               if (continuousReadingContainer) continuousReadingContainer.style.display = 'none';
+
               // 恢复左侧选框图层显示
               document.querySelectorAll('.pdf-overlay-layer').forEach((el) => {
                 (el as HTMLElement).style.display = 'block';
               });
+
+              // 控制所有块的译文显隐
+              document.querySelectorAll('.block-item-translation').forEach((el) => {
+                const blockId = el.getAttribute('data-block-id');
+                if (mode === 'bilingual') {
+                  (el as HTMLElement).style.display = 'block';
+                } else {
+                  (el as HTMLElement).style.display = 'none';
+                }
+              });
+
+              if (mode === 'bilingual') {
+                // 切换至双语研判时，自动对当前可视页段落展开批量研判
+                translateCurrentVisiblePage(false);
+              }
             } else {
+              // 连续阅读模式
               if (structuredBlocksContainer) structuredBlocksContainer.style.display = 'none';
               if (continuousReadingContainer) continuousReadingContainer.style.display = 'block';
+
               // 连续阅读模式隐藏左侧选框图层，节省微渲染开销与事件消耗
               document.querySelectorAll('.pdf-overlay-layer').forEach((el) => {
                 (el as HTMLElement).style.display = 'none';
@@ -1047,16 +1186,33 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         }
 
         try {
-          const savedMode = localStorage.getItem('astrolib_ingest_view_mode');
-          if (savedMode === 'continuous' || savedMode === 'structured') {
+          const savedMode = localStorage.getItem('astrolib_ingest_view_mode') as any;
+          if (savedMode === 'continuous' || savedMode === 'structured' || savedMode === 'bilingual') {
             currentViewMode = savedMode;
             viewStructured?.classList.toggle('active', savedMode === 'structured');
+            viewBilingual?.classList.toggle('active', savedMode === 'bilingual');
             viewContinuous?.classList.toggle('active', savedMode === 'continuous');
           }
         } catch {}
 
         viewStructured?.addEventListener('click', () => setViewMode('structured'));
+        viewBilingual?.addEventListener('click', () => setViewMode('bilingual'));
         viewContinuous?.addEventListener('click', () => setViewMode('continuous'));
+
+        bilingualProviderSelect?.addEventListener('change', () => {
+          translationProvider = bilingualProviderSelect.value;
+          if (currentViewMode === 'bilingual') {
+            translateCurrentVisiblePage(true);
+          }
+        });
+
+        btnTranslatePage?.addEventListener('click', () => {
+          translateCurrentVisiblePage(true);
+        });
+
+        btnTranslateAll?.addEventListener('click', () => {
+          translateAllDocument();
+        });
 
         // 3. Token 弹窗
         btnOpenTokenModal?.addEventListener('click', () => {
@@ -1225,7 +1381,7 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
             renderOverlayBboxes(currentBlocks);
 
             // 根据当前选定的 viewMode 呈现对应面板
-            setViewMode(currentViewMode as 'structured' | 'continuous');
+            setViewMode(currentViewMode);
 
             // 显示出口动作
             if (btnDownloadZip) btnDownloadZip.style.display = 'inline-flex';
@@ -1245,108 +1401,335 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           if (mdEmptyState) mdEmptyState.style.display = 'none';
 
           blocks.forEach((block) => {
-            // 页码等无实质内容的元数据块不生成右侧独立正文段
-            if (!block.html && !block.text) return;
+            try {
+              // 页码等无实质内容的元数据块不生成右侧独立正文段
+              if (!block.html && !block.text) return;
 
-            const item = document.createElement('div');
-            item.className = `structured-block-item type-${block.type || 'text'}`;
-            item.id = `card_${block.id}`;
-            item.setAttribute('data-block-id', block.id);
-            item.setAttribute('data-page-index', String(block.pageIndex));
+              const item = document.createElement('div');
+              item.className = `structured-block-item type-${block.type || 'text'}`;
+              item.id = `card_${block.id}`;
+              item.setAttribute('data-block-id', block.id);
+              item.setAttribute('data-page-index', String(block.pageIndex));
 
-            // 正文内容容器
-            const body = document.createElement('div');
-            body.className = 'block-item-body';
+              // 正文内容容器
+              const body = document.createElement('div');
+              body.className = 'block-item-body';
 
-            if (block.html) {
-              // 优先使用 AST 编译器服务端高保真编译的 HTML (含公式 KaTeX、真实图片与表格)
-              body.innerHTML = block.html;
-            } else if (block.type === 'equation') {
-              try {
-                const cleanEq = (block.text || '').replace(/^\$\$|\$\$$/g, '').trim();
-                body.innerHTML = `<div class="doc-equation-display">${katex.renderToString(cleanEq, { displayMode: true, throwOnError: false })}</div>`;
-              } catch {
-                body.textContent = block.text || '';
-              }
-            } else if (block.type === 'image' || block.type === 'figure') {
-              const match = (block.text || '').match(/!\[(.*?)\]\((.*?)\)/);
-              const alt = match ? match[1] : (block.caption || '插图');
-              const src = match ? match[2] : '';
-              const imgName = src.split('/').pop() || `img_${block.id}.png`;
-              body.innerHTML = `<figure class="doc-figure"><img src="/api/ingest/image?taskId=${encodeURIComponent(taskId)}&name=${encodeURIComponent(imgName)}" alt="${alt}" loading="lazy" />${alt ? `<figcaption class="doc-figcaption">${alt}</figcaption>` : ''}</figure>`;
-            } else if (block.type === 'table') {
-              if ((block.text || '').includes('<table')) {
-                body.innerHTML = `<div class="doc-table-wrapper">${block.text}</div>`;
+              if (block.html) {
+                // 优先使用 AST 编译器服务端高保真编译的 HTML (含公式 KaTeX、真实图片与表格)
+                body.innerHTML = block.html;
+              } else if (block.type === 'equation') {
+                try {
+                  const cleanEq = (block.text || '').replace(/^\$\$|\$\$$/g, '').trim();
+                  body.innerHTML = `<div class="doc-equation-display">${katex.renderToString(cleanEq, { displayMode: true, throwOnError: false })}</div>`;
+                } catch {
+                  body.textContent = block.text || '';
+                }
+              } else if (block.type === 'image' || block.type === 'figure') {
+                const match = (block.text || '').match(/!\[(.*?)\]\((.*?)\)/);
+                const alt = match ? match[1] : (block.caption || '插图');
+                const src = match ? match[2] : '';
+                const imgName = src.split('/').pop() || `img_${block.id}.png`;
+                body.innerHTML = `<figure class="doc-figure"><img src="/api/ingest/image?taskId=${encodeURIComponent(taskId)}&name=${encodeURIComponent(imgName)}" alt="${alt}" loading="lazy" />${alt ? `<figcaption class="doc-figcaption">${alt}</figcaption>` : ''}</figure>`;
+              } else if (block.type === 'table') {
+                if ((block.text || '').includes('<table')) {
+                  body.innerHTML = `<div class="doc-table-wrapper">${block.text}</div>`;
+                } else {
+                  body.innerHTML = safeParseMathMarkdown(block.text || '', taskId);
+                }
               } else {
-                body.innerHTML = parseMathMarkdown(block.text || '', taskId);
+                body.innerHTML = safeParseMathMarkdown(block.text || '', taskId);
               }
-            } else {
-              body.innerHTML = parseMathMarkdown(block.text || '', taskId);
+
+              item.appendChild(body);
+
+              // 学术双语研判容器
+              const transContainer = document.createElement('div');
+              transContainer.className = 'block-item-translation';
+              transContainer.id = `trans_${block.id}`;
+              transContainer.setAttribute('data-block-id', block.id);
+              transContainer.style.display = currentViewMode === 'bilingual' ? 'block' : 'none';
+              const cachedHtml = blockTranslationCache.get(block.id);
+              transContainer.innerHTML = `<div class="translation-body">${cachedHtml || '<span class="translation-loading">待研判 (点击右上角“研判”立即生成)</span>'}</div>`;
+              item.appendChild(transContainer);
+
+              // 单段学术研判触发按钮 (针对正文文本与标题段)
+              if ((block.type === 'text' || block.type === 'title') && block.text && block.text.trim()) {
+                const transBtn = document.createElement('button');
+                transBtn.type = 'button';
+                transBtn.className = 'block-translate-trigger';
+                transBtn.title = '双语学术研判';
+                transBtn.innerHTML = `
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>
+                  </svg>
+                  <span>研判</span>
+                `;
+                transBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  translateBlock(block, true, transBtn);
+                });
+                item.appendChild(transBtn);
+              }
+
+              // 交互联动：悬停时同步高亮左侧 PDF 选框
+              item.addEventListener('mouseenter', () => {
+                const targetBbox = document.getElementById(`bbox_${block.id}`);
+                if (targetBbox) targetBbox.classList.add('hover-bbox');
+              });
+              item.addEventListener('mouseleave', () => {
+                const targetBbox = document.getElementById(`bbox_${block.id}`);
+                if (targetBbox) targetBbox.classList.remove('hover-bbox');
+              });
+
+              // 点击时双向精准聚焦
+              item.addEventListener('click', () => {
+                focusBlock(block.id, block.pageIndex);
+              });
+
+              structuredBlocksContainer.appendChild(item);
+            } catch (blockErr) {
+              console.error(`渲染块 ${block.id} 出错，跳过继续:`, blockErr);
             }
-
-            item.appendChild(body);
-
-            // 交互联动：悬停时同步高亮左侧 PDF 选框
-            item.addEventListener('mouseenter', () => {
-              const targetBbox = document.getElementById(`bbox_${block.id}`);
-              if (targetBbox) targetBbox.classList.add('hover-bbox');
-            });
-            item.addEventListener('mouseleave', () => {
-              const targetBbox = document.getElementById(`bbox_${block.id}`);
-              if (targetBbox) targetBbox.classList.remove('hover-bbox');
-            });
-
-            // 点击时双向精准聚焦
-            item.addEventListener('click', () => {
-              focusBlock(block.id, block.pageIndex);
-            });
-
-            structuredBlocksContainer.appendChild(item);
           });
         }
 
         // 9. 模式二：连续长文阅读流渲染 (Continuous Reading Flow，低性能设备原生流)
         function renderContinuousMarkdown(md: string, taskId: string) {
           if (!continuousReadingContainer || !md) return;
-          continuousReadingContainer.innerHTML = parseMathMarkdown(md, taskId);
+          continuousReadingContainer.innerHTML = safeParseMathMarkdown(md, taskId);
         }
 
-        // 通用 Markdown 与 KaTeX 解析器
-        function parseMathMarkdown(content: string, taskId: string): string {
+        // 结构保护的高保真 Markdown 与 KaTeX 解析器 (采用 Token Masking，彻底杜绝标签错乱截断)
+        function safeParseMathMarkdown(content: string, taskId: string): string {
           if (!content) return '';
 
-          // 保护并渲染公式
-          let processed = content.replace(/\$\$([\s\S]*?)\$\$/g, (_, eq) => {
+          const displayMathMap: string[] = [];
+          const inlineMathMap: string[] = [];
+
+          // 1. 抽取块级公式并替换为安全占位符 (防止 marked 将公式内部 _/*/~ 转为斜体/删除线)
+          let protectedMd = content.replace(/\$\$([\s\S]*?)\$\$/g, (_, eq) => {
+            const idx = displayMathMap.length;
             try {
-              return `\n\n<div class="katex-display-wrapper">${katex.renderToString(eq.trim(), { displayMode: true, throwOnError: false })}</div>\n\n`;
+              const rendered = katex.renderToString(eq.trim(), { displayMode: true, throwOnError: false });
+              displayMathMap.push(`<div class="doc-equation-display">${rendered}</div>`);
             } catch {
-              return `$$${eq}$$`;
+              displayMathMap.push(`<div class="doc-equation-display">$$\n${eq}\n$$</div>`);
             }
+            return `\n\n%%ASTROLIB_DISPLAY_MATH_${idx}%%\n\n`;
           });
 
-          processed = processed.replace(/\$([^\$\n]+?)\$/g, (_, eq) => {
+          // 2. 抽取行内公式并替换为安全占位符
+          protectedMd = protectedMd.replace(/\$([^\$\n]+?)\$/g, (_, eq) => {
+            const idx = inlineMathMap.length;
             try {
-              return `<span class="katex-inline-wrapper">${katex.renderToString(eq.trim(), { displayMode: false, throwOnError: false })}</span>`;
+              const rendered = katex.renderToString(eq.trim(), { displayMode: false, throwOnError: false });
+              inlineMathMap.push(`<span class="katex-inline-wrapper">${rendered}</span>`);
             } catch {
-              return `$${eq}$`;
+              inlineMathMap.push(`$${eq}$`);
             }
+            return `%%ASTROLIB_INLINE_MATH_${idx}%%`;
           });
 
-          // 重定向图片路径
-          processed = processed.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, src) => {
+          // 3. 重定向图片路径
+          protectedMd = protectedMd.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, src) => {
             const imgName = src.split('/').pop() || src;
             const targetSrc = `/api/ingest/image?taskId=${encodeURIComponent(taskId)}&name=${encodeURIComponent(imgName)}`;
             return `![${alt}](${targetSrc})`;
           });
 
+          // 4. 使用 marked 解析干净纯净的 Markdown
+          let html = '';
           try {
-            return marked.parse(processed) as string;
-          } catch {
-            return `<pre>${content}</pre>`;
+            html = marked.parse(protectedMd) as string;
+          } catch (err) {
+            console.error('Marked parse error:', err);
+            html = `<pre>${content}</pre>`;
+          }
+
+          // 5. 将占位符安全还原为高保真 KaTeX DOM
+          html = html.replace(/%%ASTROLIB_DISPLAY_MATH_(\d+)%%/g, (_, idx) => {
+            return displayMathMap[parseInt(idx, 10)] || '';
+          });
+
+          html = html.replace(/%%ASTROLIB_INLINE_MATH_(\d+)%%/g, (_, idx) => {
+            return inlineMathMap[parseInt(idx, 10)] || '';
+          });
+
+          return html;
+        }
+
+        // 9.1 单段双语研判翻译调用
+        async function translateBlock(block: any, forceRefresh = false, triggerBtn?: HTMLElement) {
+          const transEl = document.getElementById(`trans_${block.id}`);
+          if (!transEl) return;
+          const transBody = transEl.querySelector('.translation-body') as HTMLElement;
+          if (!transBody) return;
+
+          if (!forceRefresh && blockTranslationCache.has(block.id)) {
+            transEl.style.display = 'block';
+            transBody.innerHTML = blockTranslationCache.get(block.id)!;
+            return;
+          }
+
+          transEl.style.display = 'block';
+          transBody.innerHTML = '<span class="translation-loading">正在进行结构保护学术研判翻译...</span>';
+          if (triggerBtn) triggerBtn.style.opacity = '0.5';
+
+          try {
+            const res = await fetch('/api/translate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                text: block.text,
+                provider: translationProvider,
+                sourceLang: 'en',
+                targetLang: 'zh',
+                preserveStructure: true,
+              }),
+            });
+            const data = await res.json();
+            if (data.ok && data.translatedText) {
+              const rendered = safeParseMathMarkdown(data.translatedText, currentTaskId);
+              blockTranslationCache.set(block.id, rendered);
+              transBody.innerHTML = rendered;
+            } else {
+              transBody.innerHTML = `<span class="translation-error">研判未完成: ${data.error || '服务响应异常'}</span>`;
+            }
+          } catch (err) {
+            transBody.innerHTML = `<span class="translation-error">研判请求失败: ${err instanceof Error ? err.message : String(err)}</span>`;
+          } finally {
+            if (triggerBtn) triggerBtn.style.opacity = '';
           }
         }
 
-        // 10. PDF.js 矢量画布渲染与百分比自适应标注层挂载
+        // 9.2 精准获取当前视口正处于的真实页码
+        function getCurrentVisiblePageIndex(): number {
+          // 1. 优先基于左侧 PDF 视口当前显示的页面
+          if (panePdf) {
+            const paneRect = panePdf.getBoundingClientRect();
+            const pdfPages = Array.from(panePdf.querySelectorAll('.pdf-page-container'));
+            for (let i = 0; i < pdfPages.length; i++) {
+              const r = pdfPages[i].getBoundingClientRect();
+              if (r.bottom > paneRect.top + 50 && r.top < paneRect.bottom - 50) {
+                return i;
+              }
+            }
+          }
+
+          // 2. 其次基于右侧正文当前可见的块
+          const paneMd = document.getElementById('pane-markdown');
+          if (paneMd && structuredBlocksContainer && structuredBlocksContainer.style.display !== 'none') {
+            const paneRect = paneMd.getBoundingClientRect();
+            const items = Array.from(structuredBlocksContainer.querySelectorAll('.structured-block-item'));
+            for (const item of items) {
+              const r = item.getBoundingClientRect();
+              if (r.bottom > paneRect.top + 20 && r.top < paneRect.bottom - 20) {
+                const p = item.getAttribute('data-page-index');
+                if (p !== null) return parseInt(p, 10);
+              }
+            }
+          }
+
+          return 0;
+        }
+
+        // 9.3 批量研判当前可视页段落
+        async function translateCurrentVisiblePage(forceRefresh = false) {
+          if (!currentBlocks || currentBlocks.length === 0) return;
+
+          const targetPageIndex = getCurrentVisiblePageIndex();
+
+          const pageBlocks = currentBlocks.filter(
+            (b) => b.pageIndex === targetPageIndex && (b.type === 'text' || b.type === 'title') && b.text && b.text.trim().length > 0
+          );
+
+          if (pageBlocks.length === 0) {
+            updateStatus(`第 ${targetPageIndex + 1} 页无需要研判的正文段落`, 100);
+            return;
+          }
+
+          // 1. 立即展开该页所有块的译文容器并显示加载状态
+          pageBlocks.forEach((b) => {
+            const transEl = document.getElementById(`trans_${b.id}`);
+            if (transEl) {
+              transEl.style.display = 'block';
+              if (forceRefresh || !blockTranslationCache.has(b.id)) {
+                const transBody = transEl.querySelector('.translation-body');
+                if (transBody) {
+                  transBody.innerHTML = '<span class="translation-loading">正在进行结构保护学术研判...</span>';
+                }
+              }
+            }
+          });
+
+          // 2. 将右栏平滑定位至该页首个块 (若不在当前可视区)
+          const firstBlockEl = document.getElementById(`card_${pageBlocks[0].id}`);
+          if (firstBlockEl && structuredBlocksContainer && structuredBlocksContainer.style.display !== 'none') {
+            firstBlockEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+
+          updateStatus(`正在进行第 ${targetPageIndex + 1} 页双语研判 (${pageBlocks.length} 个段落)...`, 40);
+
+          const queue = [...pageBlocks];
+          const concurrency = 3;
+          const workers = Array(Math.min(concurrency, queue.length)).fill(null).map(async () => {
+            while (queue.length > 0) {
+              const block = queue.shift();
+              if (!block) break;
+              if (forceRefresh || !blockTranslationCache.has(block.id)) {
+                await translateBlock(block, forceRefresh);
+              }
+            }
+          });
+
+          await Promise.all(workers);
+          updateStatus(`第 ${targetPageIndex + 1} 页双语研判完成 (共 ${pageBlocks.length} 个段落)`, 100);
+        }
+
+        // 9.4 全篇自动批量研判
+        async function translateAllDocument() {
+          if (isTranslatingAll) return;
+          if (!currentBlocks || currentBlocks.length === 0) return;
+
+          const translatableBlocks = currentBlocks.filter(
+            (b) => (b.type === 'text' || b.type === 'title') && b.text && b.text.trim().length > 0
+          );
+
+          if (translatableBlocks.length === 0) return;
+
+          isTranslatingAll = true;
+          if (btnTranslateAll) btnTranslateAll.textContent = '全篇研判中...';
+          updateStatus(`开始全篇自动学术研判，共 ${translatableBlocks.length} 个段落...`, 10);
+
+          // 展开所有块
+          document.querySelectorAll('.block-item-translation').forEach((el) => {
+            (el as HTMLElement).style.display = 'block';
+          });
+
+          let completedCount = 0;
+          const queue = [...translatableBlocks];
+          const concurrency = 4;
+          const workers = Array(concurrency).fill(null).map(async () => {
+            while (queue.length > 0) {
+              const block = queue.shift();
+              if (!block) break;
+              if (!blockTranslationCache.has(block.id)) {
+                await translateBlock(block, false);
+              }
+              completedCount++;
+              const pct = Math.min(99, Math.round((completedCount / translatableBlocks.length) * 100));
+              updateStatus(`全篇双语研判进行中: ${completedCount}/${translatableBlocks.length} (${pct}%)`, pct);
+            }
+          });
+
+          await Promise.all(workers);
+          isTranslatingAll = false;
+          if (btnTranslateAll) btnTranslateAll.textContent = '全篇研判';
+          updateStatus(`🎉 全篇双语研判完成！共研判 ${translatableBlocks.length} 个段落`, 100);
+        }
+
+        // 10. PDF.js 矢量画布渲染与百分比自适应标注层挂载 (强化容错与页数校准)
         async function loadPdfDocument(pdfUrl: string) {
           if (!window.pdfjsLib || !panePdf) return;
 
@@ -1355,50 +1738,59 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
             pdfDocInstance = await window.pdfjsLib.getDocument(pdfUrl).promise;
             const totalPages = pdfDocInstance.numPages;
 
+            // 无论服务端估算如何，以 PDF.js 权威解析的真实总页数为准
+            if (docPagesText) {
+              docPagesText.textContent = `共 ${totalPages} 页`;
+            }
+
             // 根据 panePdf 的可用宽度动态计算 scale，防止超出视口产生水平溢出和左右偏移
             const availableWidth = Math.max(300, (panePdf.clientWidth || 560) - 40);
 
             for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-              const page = await pdfDocInstance.getPage(pageNum);
-              const unscaledViewport = page.getViewport({ scale: 1.0 });
-              const scale = availableWidth / unscaledViewport.width;
-              const viewport = page.getViewport({ scale });
+              try {
+                const page = await pdfDocInstance.getPage(pageNum);
+                const unscaledViewport = page.getViewport({ scale: 1.0 });
+                const scale = availableWidth / unscaledViewport.width;
+                const viewport = page.getViewport({ scale });
 
-              const pageWrapper = document.createElement('div');
-              pageWrapper.className = 'pdf-page-container';
-              pageWrapper.id = `pdf-page-${pageNum - 1}`;
-              pageWrapper.style.width = '100%';
-              pageWrapper.style.maxWidth = `${viewport.width}px`;
-              pageWrapper.style.aspectRatio = `${unscaledViewport.width} / ${unscaledViewport.height}`;
+                const pageWrapper = document.createElement('div');
+                pageWrapper.className = 'pdf-page-container';
+                pageWrapper.id = `pdf-page-${pageNum - 1}`;
+                pageWrapper.style.width = '100%';
+                pageWrapper.style.maxWidth = `${viewport.width}px`;
+                pageWrapper.style.aspectRatio = `${unscaledViewport.width} / ${unscaledViewport.height}`;
 
-              const canvas = document.createElement('canvas');
-              canvas.className = 'pdf-page-canvas';
+                const canvas = document.createElement('canvas');
+                canvas.className = 'pdf-page-canvas';
 
-              // 适配高分辨率屏幕 (devicePixelRatio)
-              const pixelRatio = window.devicePixelRatio || 1;
-              canvas.width = Math.floor(viewport.width * pixelRatio);
-              canvas.height = Math.floor(viewport.height * pixelRatio);
-              canvas.style.width = '100%';
-              canvas.style.height = '100%';
+                // 适配高分辨率屏幕 (devicePixelRatio)
+                const pixelRatio = window.devicePixelRatio || 1;
+                canvas.width = Math.floor(viewport.width * pixelRatio);
+                canvas.height = Math.floor(viewport.height * pixelRatio);
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
 
-              const context = canvas.getContext('2d');
-              if (pixelRatio !== 1) {
-                context?.scale(pixelRatio, pixelRatio);
-              }
-              await page.render({ canvasContext: context, viewport }).promise;
+                const context = canvas.getContext('2d');
+                if (pixelRatio !== 1) {
+                  context?.scale(pixelRatio, pixelRatio);
+                }
+                await page.render({ canvasContext: context, viewport }).promise;
 
-              // 挂载百分比选框标注层
-              const overlayLayer = document.createElement('div');
-              overlayLayer.className = 'pdf-overlay-layer';
-              overlayLayer.setAttribute('data-page-index', String(pageNum - 1));
+                // 挂载百分比选框标注层
+                const overlayLayer = document.createElement('div');
+                overlayLayer.className = 'pdf-overlay-layer';
+                overlayLayer.setAttribute('data-page-index', String(pageNum - 1));
 
-              pageWrapper.appendChild(canvas);
-              pageWrapper.appendChild(overlayLayer);
-              panePdf.appendChild(pageWrapper);
+                pageWrapper.appendChild(canvas);
+                pageWrapper.appendChild(overlayLayer);
+                panePdf.appendChild(pageWrapper);
 
-              // 若解析块已就绪，立即渲染当前页选框，杜绝时序空窗
-              if (currentBlocks.length > 0) {
-                renderOverlayBboxesForPage(pageNum - 1, currentBlocks);
+                // 若解析块已就绪，立即渲染当前页选框，杜绝时序空窗
+                if (currentBlocks.length > 0) {
+                  renderOverlayBboxesForPage(pageNum - 1, currentBlocks);
+                }
+              } catch (pageErr) {
+                console.error(`渲染第 ${pageNum} 页出错，跳过继续:`, pageErr);
               }
             }
           } catch (err) {

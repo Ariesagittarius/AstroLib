@@ -61,17 +61,40 @@ export class TaskManager {
 
   /**
    * 快速计算 PDF 真实页数 (无需重量级依赖)
+   * 优化策略：
+   * 1. 严格在单个 PDF 字典 `<< ... >>` 内部定位 `/Type /Pages` 与对应的 `/Count`
+   * 2. 统计所有独立叶子页对象 `/Type /Page\b` (排除 `/Pages`)
+   * 3. 统计全局最大的合法 `/Count` (排除书签大纲较小计数值)
    */
   public countPdfPages(buffer: Buffer): number {
     const raw = buffer.toString('latin1');
-    const countMatch = raw.match(/\/Count\s+(\d+)/);
-    if (countMatch && countMatch[1]) {
-      const c = parseInt(countMatch[1], 10);
-      if (!isNaN(c) && c > 0) return c;
+
+    // 方案 1: 在同一个字典 << ... >> 内部查找 /Type /Pages 和 /Count
+    const dictRegex = /<<([^>]+)>>/g;
+    let maxPagesCount = 0;
+    let match: RegExpExecArray | null;
+    while ((match = dictRegex.exec(raw)) !== null) {
+      const dictContent = match[1];
+      if (/\/Type\s*\/Pages\b/.test(dictContent)) {
+        const countM = dictContent.match(/\/Count\s+(\d+)/);
+        if (countM) {
+          const c = parseInt(countM[1], 10);
+          if (c > maxPagesCount) maxPagesCount = c;
+        }
+      }
     }
-    const pageMatches = raw.match(/\/Type\s*\/Page[^s]/g);
+    if (maxPagesCount > 0) return maxPagesCount;
+
+    // 方案 2: 统计所有叶子页节点 /Type /Page\b (排除 /Pages)
+    const pageMatches = raw.match(/\/Type\s*\/Page\b/g);
     if (pageMatches && pageMatches.length > 0) {
       return pageMatches.length;
+    }
+
+    // 方案 3: 全局最大的 /Count
+    const allCounts = [...raw.matchAll(/\/Count\s+(\d+)/g)].map((m) => parseInt(m[1], 10)).filter((n) => !isNaN(n));
+    if (allCounts.length > 0) {
+      return Math.max(...allCounts);
     }
     return 1;
   }

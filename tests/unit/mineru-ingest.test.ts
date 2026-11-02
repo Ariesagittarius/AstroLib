@@ -119,4 +119,16 @@ $$
       expect(titleBlock!.bbox[2]).toBeLessThanOrEqual(1000);
     }
   });
+
+  it('7. should accurately count PDF pages when outline dictionary contains small /Count first', () => {
+    // 构造模拟复杂 PDF：先出现大纲 /Type /Outlines /Count 2，后出现根页面树 /Type /Pages /Count 34
+    const complexPdf = Buffer.from(
+      '%PDF-1.5\n' +
+      '1 0 obj\n<</Type /Outlines /Count 2 /First 2 0 R /Last 3 0 R>>\nendobj\n' +
+      '4 0 obj\n<</Type /Pages /Count 34 /Kids [5 0 R]>>\nendobj\n' +
+      '%%EOF'
+    );
+    const count = taskManager.countPdfPages(complexPdf);
+    expect(count).toBe(34);
+  });
 });
