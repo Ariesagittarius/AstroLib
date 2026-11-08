@@ -1,0 +1,66 @@
+---
+title: '1.2 顶点度'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+设 $G = (V, E)$ 是一个非空图, $G$ 中顶点 $v$ 的邻点集记为 $N_G(v)$, 或简记为 $N(v)$. 更一般地, 对于 $U \subseteq V$, $U$ 在 $V \setminus U$ 中的邻点被称作 $U$ 的邻点 (neighbour), 这个顶点集记为 $N(U)$.
+
+顶点 $v$ 的度 (degree)(或价 (valency)) $d_G(v) = d(v)$ 是指关联 $v$ 的边数 $|E(v)|$. 由图的定义, 它等于 $v$ 的邻点的个数. 度为 0 的顶点叫做孤立顶点 (isolated vertex), $G$ 的最小度 (minimum degree) 记为 $\delta(G) := \min\{d(v) \mid v \in V\}$, 而最大度 (maximum degree) 记为 $\Delta(G) := \max\{d(v) \mid v \in V\}$. 如果 $G$ 的所有顶点都有相同的顶点度 $k$, 则称 $G$ 是 $k$-正则的 ($k$-regular), 或简称正则的 (regular). 3-正则图亦称为立方图 (cubic graph).
+
+图 $G$ 的平均度 (average degree) 定义为
+
+$$
+d(G) := \frac{1}{|V|} \sum_{v \in V} d(v).
+$$
+
+显然
+
+$$
+\delta(G) \leqslant d(G) \leqslant \Delta(G).
+$$
+
+顶点度是连接每个顶点的边数, 它是一个局部参数, 而平均度则是一个整体性的度量. 有时, 可以方便地把这个比率记为 $\varepsilon(G) := |E| / |V|$.
+
+当然, $d$ 和 $\varepsilon$ 这两个量是密切相关的. 如果对 $G$ 中所有顶点度求和, 那么每条边恰被计算两次, 即每个端点计算一次, 所以
+
+$$
+|E| = \frac{1}{2} \sum_{v \in V} d(v) = \frac{1}{2} d(G) \cdot |V|,
+$$
+
+从而有
+
+$$
+\varepsilon(G) = \frac{1}{2} d(G).
+$$
+
+<Knowledge title="命题 1.2.1">
+图中具有奇顶点度的顶点个数总是偶数.
+
+<Solution title="证明">
+因为 $|E| = \frac{1}{2}\sum_{v \in V} d(v)$ 是一个整数, 所以 $\sum_{v \in V} d(v)$ 是偶数. ∎
+</Solution>
+</Knowledge>
+
+如果一个图的最小度较大, 即每个顶点 (局部地) 关联很多边, 那么从整体上看该图也应具有同样的性质: 很多边关联一个顶点, 即 $\varepsilon(G) = \frac{1}{2} d(G) \geqslant \frac{1}{2}\delta(G)$; 但反过来, 当最小度较小时, 平均度可能较大. 然而, 具有较大度数的顶点不可能完全分散于具有较小度数的顶点之中, 正如下一个命题所示, 每个图 $G$ 都有一个子图使得它的平均度不小于 $G$ 的平均度, 且最小度大于其平均度的一半.
+
+<Knowledge title="命题 1.2.2">
+每个至少有一条边的图 $G$ 包含一个子图 $H$ 满足 $\delta(H) > \varepsilon(H) \geqslant \varepsilon(G)$.
+
+<Solution title="证明">
+我们用以下的方法从 $G$ 构造 $H$: 将度数较小的顶点逐个删除, 直到只剩下度数较大的顶点. 那么, 在不降低 $\varepsilon$ 的前提下, 我们可以删除具有多大 $d(v)$ 的顶点 $v$ 呢? 显然, 最多可以删除到 $d(v) = \varepsilon$: 这是因为当顶点数减少 1 时, 边数最多减少 $\varepsilon$, 所以边数和顶点数之比 $\varepsilon$ 不会减少.
+
+严格地说, 我们按照如下所示的方法构造 $G$ 的一个导出子图序列 $G = G_0 \supseteq G_1 \supseteq \cdots$: 如果 $G_i$ 有一个顶点 $v_i$ 满足 $d(v_i) \leqslant \varepsilon(G_i)$, 则令 $G_{i+1} := G_i - v_i$; 否则, 结束序列的构造, 并令 $H := G_i$. 对所有的 $i$, 由 $v_i$ 的选择, 可看出 $\varepsilon(G_{i+1}) \geqslant \varepsilon(G_i)$, 因此 $\varepsilon(H) \geqslant \varepsilon(G)$.
+
+图 $H$ 还具有什么其他性质呢? 因为 $\varepsilon(K^1) = 0 < \varepsilon(G)$, 所以序列中的每个图均为非平凡的, 特别地, $H \neq \varnothing$. 由 $H$ 中不存在适合删除的顶点推得 $\delta(H) > \varepsilon(H)$. ∎
+</Solution>
+</Knowledge>

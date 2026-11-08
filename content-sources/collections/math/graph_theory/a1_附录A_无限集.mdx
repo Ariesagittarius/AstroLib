@@ -1,0 +1,99 @@
+---
+title: '附录 A 无限集'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+这个附录简要地总结了集合论方面的概念和结果，比如 Zorn 引理和超限归纳法，这些都在第 8 章中用到.
+
+设 $A$ 和 $B$ 是集合. 如果存在一个 $A$ 和 $B$ 之间的双射，则我们记 $|A| = |B|$，并称 $A$ 和 $B$ 的基数相同 (same cardinality). 显然，这是集合之间的一个等价关系，我们可以把 $A$ 的基数 (cardinality) $|A|$ 看成包含 $A$ 的等价类. 如果存在单射 $A \to B$，则记 $|A| \leqslant |B|$，显然这是明确定义的且形成一个偏序：如果存在单射 $A \to B$ 和 $B \to A$，那么也存在双射 $A \to B$；[^1] 对每个集合，都存在另一个更大的集合，例如，当 $B$ 是 $A$ 的幂集（即 $A$ 的所有子集的集合）时，就有 $|A| < |B|$.
+
+我们归纳地定义自然数，一开始令 $0 := \varnothing$，因此自然数 $n$ 可记为 $n := \{0, \dots, n-1\}$. 所以，更正式地，通常所使用的 $|A| = n$ 可以看成 $|A| = |n|$ 的简化形式.
+
+如果存在一个自然数 $n$ 使得 $|A| = n$，那么称集合 $A$ 是有限的 (finite)；否则，称它为无限的 (infinite). 如果 $|A| \leqslant |\mathbb{N}|$，那么 $A$ 是可数的 (countable)；如果 $|A| = |\mathbb{N}|$，则称为可数无限的 (countably infinite). 双射 $\mathbb{N} \to A$ 是 $A$ 的一个列举 (enumeration). 如果 $A$ 是无限的，则 $|\mathbb{N}| \leqslant |A|$，所以 $|\mathbb{N}|$ 是最小的无限基数，用 $\aleph_0$ 表示；也存在一个最小的不可数基数，用 $\aleph_1$ 表示. 如果 $|A| = |\mathbb{R}|$，那么 $A$ 是不可数的，我们称 $A$ 有连续多个元素 (continuum many). 例如，存在连续多个无限 0-1 序列. ($\mathbb{R}$ 是否等于 $\aleph_1$ 或者更大基数依赖于集合论的公理假设，这里我们不涉及这个问题.) 注意到，如果 $A$ 是无限的且 $A$ 的元素是可数集，那么所有这些集合的并也不比 $A$ 本身大，即 $|\bigcup A| \leqslant |A|$.
+
+偏序集 $X$ 的元素 $x$ 在 $X$ 中是极小的 (minimal)，如果不存在 $y \in X$ 使得 $y < x$；$x$ 是极大的 (maximal)，如果不存在 $z \in X$ 使得 $x < z$. 偏序集可以有一个或很多个极大元或极小元，或者根本没有. 一个子集 $Y \subseteq X$ 在 $X$ 中的上界 (upper bound) 是 $X$ 中的任意元素 $x$ 使得对所有的 $y \in Y$ 有 $y \leqslant x$.
+
+链 (chain) 是一个偏序集，它满足每两个元素都是可比较的. 设 $(C, \leqslant)$ 是一个链，如果 $x, y \in C$ 满足 $x < y$ 但没有 $C$ 的元素 $z$ 使得 $x < z < y$，那么 $x$ 叫做 $y$ 在 $C$ 中的前趋 (predecessor)，而 $y$ 是 $x$ 的后继 (successor). 对给定 $z \in C$，集合 $\{x \in C \mid x < z\}$ 是 $C$ 的真初始线段 (initial segment).
+
+如果 $X$ 的每一个非空子集都有一个极小元，那么偏序集 $(X, \leqslant)$ 是个良基集 (well-founded set)，而一个良基链被称为良序的 (well-ordered). 例如，$\mathbb{N}, \mathbb{Z}$ 和 $\mathbb{R}$（在它们的通常顺序下）都是链，但只有 $\mathbb{N}$ 是良序的. 注意到，良序集 $X$ 的每一个元素 $x$ 都有后继元（除非 $x$ 在 $X$ 中是极大的），即 $\{y \in X \mid x < y\} \subset X$ 的唯一极小元. 然而，良序集的元素不一定有前趋，即使它不是极小元也如此. 没有前趋的元素叫做极限 (limit)，例如数字 1 在有理数良序集
+
+$$
+A = \left\{1 - \frac{1}{n+1} \ \middle|\  n \in \mathbb{N}\right\} \cup \left\{2 - \frac{1}{n+1} \ \middle|\  n \in \mathbb{N}\right\}
+$$
+
+中就是极限.
+
+有很多命题等价于选择公理（我们始终假设它成立），其中一个是：对每一个集合 $X$，存在一个关系使得 $X$ 是良序的，即
+
+<Knowledge title="良序定理">
+每一个集合可以被良序化.
+</Knowledge>
+
+如果在两个良序集合之间，存在一个双射保持它们的顺序，那么称这两个集合有同样的顺序类型 (same order type). 所以 $\mathbb{N}$ 和偶自然数的集合有同样的顺序类型，但它和上面定义的集合 $A$ 有不同的顺序类型. 具有同样顺序类型显然是一个等价关系，可以把这些顺序类型的集合看成等价类，所以这个术语是恰当的.
+
+当考虑由同样顺序类型的良序集所共同拥有的性质时，可以方便地用顺序类型中的某个特别选择的集合（即它的序数 (ordinal)）来代表这个顺序类型. 例如，代表 $\mathbb{N}$ 顺序类型的序数通常记为 $\omega$，所以上面的例子说明偶自然数的集合具有顺序类型 $\omega$. 具有相同基数的有限链总是具有同样的顺序类型，我们选择 $n$ 作为代表长度为 $n$ 的链的序数.
+
+通过取 $\alpha$ 与 $\beta$ 的串联 (concatenation) 的顺序类型所代表的序数作为和 $\alpha + \beta$，我们定义了序数上的加法 (addition)，注意到，这还是一个良序集. 例如，$\alpha + 1$ 是 $\alpha$ 的后继. 然而，我们没有定义逆运算 “$-$”.
+
+如果序数 $\beta$ 和另一个序数 $\alpha$ 的真初始线段有同样顺序类型，我们记 $\beta < \alpha$. 例如，对每个自然数 $n$，有 $0 \leqslant n < \omega$. 可以证明 $<$ 在每个序数集合上定义了一个序，进一步地定义了一个良序. 对 $\mathbb{N}$，这个序和通常的序相同，因此我们的符号不会产生混淆.
+
+因为序数的集合 $S$ 本身是良序的，正如其他任何良序集一样，它有顺序类型. 如果序数 $\alpha$ 是 $S$ 的严格上界，那么 $S$ 的顺序类型最多是 $\alpha$；如果 $S$ 由所有小于（不等于）$\alpha$ 的序数组成，则它的序数等于 $\alpha$. 事实上，正如自然数一样，无限序数通常也以这样的方式来定义，即使得 $\alpha$ 和 $\{\beta \mid \beta < \alpha\}$ 事实上相同，因此序数的序 $<$ 和关系 $\in$ 是一样的.
+
+这样我们可以自然地把顺序类型 $\alpha$ 的良序集 $S$ 记为族 $S = \{s_\beta \mid \beta < \alpha\}$ 使得对所有的 $\gamma < \beta < \alpha$ 有 $s_\gamma < s_\beta$. 当证明一个有关 $S$ 中元素的命题时，人们通常使用超限归纳法 (transfinite induction)，基本思路如下：
+
+假设想证明每一个 $s \in S$ 满足某个命题 $P$，我们用 $P(s)$ 表示 $P$ 对 $s$ 成立. 和通常的归纳法一样，我们证明对于每个 $\beta < \alpha$，如果 $P$ 对每一个满足 $\gamma < \beta$ 的 $s_\gamma$ 成立，那么 $P$ 也对 $s_\beta$ 成立. 在实用过程中，通常需要分别考虑两种情形：$\beta$ 是一个极限序数，还是一个后继. 因为 0 可以看作一个极限并且对所有 $\gamma < 0$，$P_\gamma$ 的假定是成立的，所以作为第一种情形的一部分，和普通归纳法一样，需要用第一原理检验 $P(s_0)$；然后，得到结论对每一个 $\beta < \alpha$ 有 $P(s_\beta)$，即每一个 $s \in S$ 满足 $P$.
+
+这个过程看起来简单，但有没有错误呢？当然，任何关于超限归纳法的恰当解释都需要集合论的严格检验，对普通的归纳法也一样. 非正式地，我们需要证明的是集合
+
+$$
+\{\beta < \alpha \mid P(s_\beta) \text{ 不成立}\}
+$$
+
+不包含最小元素. 因为它是良序的，所以它一定是空集，因此对所有 $\beta < \alpha$，$P(s_\beta)$ 成立.
+
+类似地，我们也可以对命题归纳地定义. 对每一个序数 $\alpha$，这种递归定义 (recursive definition) 确定了某个研究对象 $x_\alpha$，以某种方式和对象 $x_\beta$ 有关联（这里 $\beta < \alpha$，$x_\beta$ 可看成“前面已经定义过的”）. 在本附录一开始，我们有关自然数的定义就是一个这样的简单例子.
+
+现实中，$x_\alpha$ 的定义往往只对小于某个固定序数 $\alpha^*$ 的序数 $\alpha$ 才有意义，虽然这样一个最小的 $\alpha^*$ 提前并不知道. 例如，如果 $x_\alpha$ 是从图 $G$ 中根据某种规则递归地选取的不同顶点，显然当 $|\alpha^*| > |G|$ 时，我们不能对所有的 $\alpha < \alpha^*$ 都找到这样的 $x_\alpha$，因为 $\alpha \mapsto x_\alpha$ 将是从 $\alpha^*$ 到 $V(G)$ 的一个单射，从而蕴含着 $|\alpha^*| \leqslant |G|$. 由于存在比 $|G|$ 大的序数，例如与 $V(G)$ 的幂集的良序等价的序数，因此我们的递归推导不能无限地进行下去，即不能对所有的序数 $\alpha$ 定义 $x_\alpha$. 我们可能提前并不知道递归推导在哪里进行不下去，即哪个是最小的序数 $\alpha$ 使得在此处找不到 $x_\alpha$ 符合给定的规则，但这不重要：只需把找不到 $x_\alpha$ 的第一个 $\alpha$ 定义为 $\alpha^*$ 即可，并假定对所有 $\alpha < \alpha^*$ 我们已经定义了 $x_\alpha$，同时称递归推导在 $\alpha^*$ 步结束 (terminate). (事实上，通常我们希望递归定义可以结束. 在上面的例子中，也许我们只希望考虑所有根据定义来选取的顶点 $x \in G$ 的集合，即集合 $\{x_\alpha \mid \alpha < \alpha^*\}$.)
+
+注意到，关于 $x_\alpha$ 的递归定义可能涉及选择问题. 在我们的例子中，可能需要要求 $x_\alpha$ 是某个 $x_\beta$ 的邻居（这里 $\beta < \alpha$），但是存在若干个这样的 $x_\beta$，每一个有若干个邻居还没有被选择，从而并不能使得我们的递归推导在 $\alpha$ 步终止：只需选择一个合适的顶点作为 $x_\alpha$，并继续下去. 换句话说，我们接受 $\{x_\alpha \mid \alpha < \alpha^*\}$ 作为一个恰当定义的集合，即使可能并不能构造性地“知道”这个元素 $x_\alpha$.
+
+下面给出 Zorn 引理的正式表述：
+
+<Knowledge title="Zorn 引理">
+设 $(X, \leqslant)$ 是一个偏序集，使得 $X$ 中的每一个链在 $X$ 中有上界，那么 $X$ 包含至少一个极大元素.
+</Knowledge>
+
+注意到，应用 Zorn 引理时，关系 $\leqslant$ 并不需要对应于直观的“小于等于”. 例如，无论应用于集合或图，它既可以表示 “$\supseteq$” 也可以表示 “$\subseteq$”，从而一个链 $\mathcal{C}$ 的“上界”通常是所有可能的交 $\bigcap \mathcal{C}$.
+
+最后，我们讨论紧致性. 第 8 章中讨论的无限引理可以做如下推广：[^2] 如前所述，我们考虑有限集合的族 $\{X_p \mid p \in P\}$，这里不对集合元素用自然数进行标记，而是对每个集合 $X_p$ 用某个偏序集 $(P, \leqslant)$ 的元素 $p$ 来进行标记. 对于 $P$ 的唯一假定是，每两个元素有一个公共的上界：对所有的 $p, q$，存在一个 $r$ 使得 $p \leqslant r$ 和 $q \leqslant r$ 成立. 进一步地，对所有的 $q > p$ 存在映射 $f_{qp} \colon X_q \to X_p$，这和“只要 $r > q > p$ 就有 $f_{qp} \circ f_{rq} = f_{rp}$” 这一事实是兼容的.
+
+<Knowledge title="广义无限引理">
+对每个有限集合的族 $\{X_p \mid p \in P\}$ 存在代表 $x_p \in X_p$ 的族 $\{x_p \mid p \in P\}$ 使得只要 $q > p$ 就有 $f_{qp}(x_q) = x_p$.
+</Knowledge>
+
+显然，无限引理是它的一个特殊情形，对应于 $P = \mathbb{N}$ 而 $f_{qp}$ 由引理的前趋函数 $f$ 递归定义得到.
+
+下面对紧致性的组合叙述把元素的选择以及它们之间的相互联系很好地展示出来. 设 $X$ 是任意集合，$S$ 是一个有限集合，而 $\mathcal{F}$ 是 $X$ 的有限子集的集合. 假设对每个 $Y \in \mathcal{F}$，存在函数 $Y \to S$ 的一个固定集合 $\mathcal{A}(Y)$ 和 $Y$ 关联（我们把函数 $Y \to S$ 称作它的容许函数 (admissible function)）. 如果存在一个函数 $f \colon X \to S$ 使得它在 $\mathcal{Y}$ 中的集合上的所有限制都是容许的，即对所有的 $Y \in \mathcal{Y}$ 满足 $f|_Y \in \mathcal{A}(Y)$，则称 $\mathcal{Y} \subseteq \mathcal{F}$ 是相容的 (compatible).
+
+<Knowledge title="紧致性原理">
+如果每个有限 $\mathcal{Y} \subseteq \mathcal{F}$ 是相容的，那么 $\mathcal{F}$ 也是相容的.
+
+<Solution title="证明">
+使用 Tychonoff 定理（即紧致空间的任何乘积还是紧致的），广义无限引理和紧致性原理的证明只需要几行. 下面我们对紧致性原理进行演示.
+
+我们可以把所有函数 $X \to S$ 的集合看成 $S$ 的 $|X|$ 个拷贝的乘积，因此它们组成一个紧致空间. 对每个有限 $Y \subseteq X$，所有满足 $f|_Y \in \mathcal{A}(Y)$ 的函数 $f \colon X \to S$ 的集合在这个乘积空间中是闭的（也是开的）. 根据紧致空间的“有限交性质”（即闭集合组成的族有一个非空交，只要它的所有有限子族也具有这个性质），就可以推出紧致性原理. ∎
+</Solution>
+</Knowledge>
+
+[^1]: 这是 Cantor-Bernstein 定理，一个简单的图论证明见命题 8.4.6.
+[^2]: 在范畴论中，“广义无限引理”是指“有限集合的任意定向逆系统的逆极限是非空的”这一事实. 也可以不使用有限集合，使用任何其他紧致空间，见 8.8 节的应用.

@@ -1,0 +1,150 @@
+---
+title: '12.6 树分解和禁用子式'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+设 $\mathcal{H}$ 表示图的一个集合或一个族，那么
+
+$$
+\operatorname{Forb}_{\preccurlyeq}(\mathcal{H}) := \{G \mid \text{对所有的 } H \in \mathcal{H} \text{ 都有 } G \not\succcurlyeq H\}
+$$
+
+表示不包含 $\mathcal{H}$ 中任何图作为子式的所有图，它可看作一个图性质，即 $\operatorname{Forb}_{\preccurlyeq}(\mathcal{H})$ 在同构下是封闭的（通常，我们把 $\operatorname{Forb}_{\preccurlyeq}(\{H\})$ 缩写成 $\operatorname{Forb}_{\preccurlyeq}(H)$）. 当表达成上述形式时，我们说这个性质用图 $H \in \mathcal{H}$ 作为**禁用子式** (forbidden minor)（或者**排除子式** (excluded minor)）来表述.
+
+由命题 1.7.1 知，$\operatorname{Forb}_{\preccurlyeq}(\mathcal{H})$ 在子式关系下是封闭的，或者称**子式封闭的** (minor-closed)：如果 $G' \preccurlyeq G \in \operatorname{Forb}_{\preccurlyeq}(\mathcal{H})$，则 $G' \in \operatorname{Forb}_{\preccurlyeq}(\mathcal{H})$. 反过来，每个子式封闭的性质也可以用禁用子式来描述：
+
+<Knowledge title="引理 12.6.1">
+图性质 $\mathcal{P}$ 可以用禁用子式来表述当且仅当它在子式关系下是封闭的.
+
+<Solution title="证明">
+对充分性部分，注意到 $\mathcal{P} = \operatorname{Forb}_{\preccurlyeq}(\overline{\mathcal{P}})$，这里 $\overline{\mathcal{P}}$ 是 $\mathcal{P}$ 的补. ∎
+</Solution>
+</Knowledge>
+
+在 12.7 节，我们将回来讨论一般性的问题：给定一个子式封闭的性质，怎样用禁用子式来很好地描述它. 在这一节，我们开始对这种性质的一个特别例子进行探讨，即有界树宽这一性质.
+
+考虑“树宽小于某个给定整数 $k$”这一性质，由引理 12.4.1 和引理 12.6.1 知，这个性质可以用禁用子式来描述. 选择禁用集合 $\mathcal{H}$ 尽可能的小，我们发现当 $k = 2$ 时 $\mathcal{H} = \{K^3\}$：树宽 $< 2$ 的图恰好是所有森林. 当 $k = 3$ 时，有 $\mathcal{H} = \{K^4\}$：
+
+<Knowledge title="命题 12.6.2">
+图的树宽 $< 3$ 当且仅当它不包含 $K^4$ 子式.
+
+<Solution title="证明">
+由推论 12.3.5 知 $\operatorname{tw}(K^4) \geqslant 3$，所以根据引理 12.4.1，树宽 $< 3$ 的图不能包含 $K^4$ 作为子式.
+
+反过来，假设 $G$ 是一个不包含 $K^4$ 子式的图，且 $|G| \geqslant 3$. 给 $G$ 添加边直到 $G'$ 成为一个不包含 $K^4$ 子式的边极大图. 由命题 7.3.1 知，图 $G'$ 可以从三角形开始通过沿着若干 $K^2$ 进行粘贴递归地构造出来. 对递归步数用归纳法并根据推论 12.3.5 知，每个由这种方式构造出来的图有一个分解成三角形的树分解（像命题 12.3.6 的证明一样）. 图 $G'$ 的这样一个树分解的宽度为 2，由引理 12.3.2 知，它也是图 $G$ 的一个树分解. ∎
+</Solution>
+</Knowledge>
+
+随着 $k$ 的增大，用来刻画树宽 $< k$ 的图的禁用子式的列表会增长得很快，到目前为止明确知道的仅到 $k = 4$，见注释.
+
+上面问题的一个逆问题是：哪些 $H$（除 $K^3$ 和 $K^4$ 外）使得 $\operatorname{Forb}_{\preccurlyeq}(H)$ 中的图的树宽是有界的？例如，当 $H$ 是网格时，就是有界的.
+
+<Knowledge title="定理 12.6.3 (Robertson and Seymour, 1986)">
+对每个整数 $r$，都存在一个整数 $k$ 使得每个树宽至少为 $k$ 的图有一个 $r \times r$ 的网格子式.
+</Knowledge>
+
+乍一看，这个网格定理是一个特殊的技术性结果，但它有个意义深远的推论：
+
+<Knowledge title="推论 12.6.4">
+给定一个图 $H$，不包含 $H$ 作为子式的图具有有界树宽当且仅当 $H$ 是可平面的.
+
+<Solution title="证明">
+因为所有的网格以及它们的子式都是可平面的，所以具有非平面 $H$ 的族 $\operatorname{Forb}_{\preccurlyeq}(H)$ 包含所有网格，并且具有有界树宽（见定理 12.4.3 后面的讨论）.
+
+反过来，每个可平面图 $H$ 是某个网格的子式：取定 $H$ 的一个平面画法，把它的顶点和边放大，添加一个充分纤细的平面网格. 由定理 12.6.3 知，只要 $H$ 是可平面图，$\operatorname{Forb}_{\preccurlyeq}(H)$ 中的图就有有界树宽. ∎
+</Solution>
+</Knowledge>
+
+定理 12.6.3 有另外一个有趣的应用. 前面提到，我们称一类图 $\mathcal{H}$ 具有 **Erdős-Pósa 性质** (Erdős-Pósa property)，如果在一个图中覆盖 $\mathcal{H}$ 中的所有子图所需的顶点个数的上界是 $\mathcal{H}$ 中互不相交子图的最大个数的函数. 现在，设 $H$ 是一个固定的连通图，考虑图类 $\mathcal{H} = IH$，即那些可以收缩成 $H$ 的一个拷贝的图（因此 $G$ 有一个子图在 $\mathcal{H}$ 中当且仅当 $H \preccurlyeq G$）.
+
+<Knowledge title="定理 12.6.5 (Robertson and Seymour, 1986)">
+如果 $H$ 是可平面的，那么 $\mathcal{H}$ 有 Erdős-Pósa 性质.
+
+<Solution title="证明">
+我们要找一个函数 $f: \mathbb{N} \to \mathbb{N}$ 使得，给定 $k \in \mathbb{N}$ 和一个图 $G$，要么 $G$ 包含 $H$ 的 $k$ 个不交模型，要么存在一个阶至多为 $f(k)$ 的集合 $U$ 使得 $H \not\preccurlyeq G - U$.
+
+由推论 12.6.4 知，对每个 $k \geqslant 1$ 存在整数 $w_k$ 使得每个树宽至少为 $w_k$ 的图包含 $k$ 个 $H$ 的拷贝的不交并（同样是可平面的）作为子式. 一开始，令 $f(0) = f(1) = 0$，然后归纳地定义 $f(k)$ 如下：
+
+$$
+f(k) := 2f(k-1) + w_k.
+$$
+
+为了验证 $f$ 就是我们需要的函数，对 $k$ 使用归纳法. 对 $k \leqslant 1$，没有什么可证明的. 假设 $k$ 和 $G$ 在归纳假设步骤中已给定，如果 $\operatorname{tw}(G) \geqslant w_k$，由 $w_k$ 的定义，我们得到所需要的结论. 因此，假设 $\operatorname{tw}(G) < w_k$，且设 $(T, (V_t)_{t \in T})$ 是 $G$ 的一个宽度 $< w_k$ 的树分解. 我们按照下面的规则对树 $T$ 的边 $t_1 t_2$ 进行定向：设 $T_1, T_2$ 是 $T - t_1 t_2$ 的分别包含顶点 $t_1, t_2$ 的分支，令
+
+$$
+G_1 := G\left[\bigcup_{t \in T_1} (V_t \setminus V_{t_2})\right], \quad G_2 := G\left[\bigcup_{t \in T_2} (V_t \setminus V_{t_1})\right].
+$$
+
+如果 $H \preccurlyeq G_i$，那么我们把边 $t_1 t_2$ 定向为指向 $G_i$，因此对于给定的边 $t_1 t_2$，它有一个或两个方向，或者没有方向.
+
+如果 $T$ 的每条边最多有一个方向，那么我们沿着方向可以到达一个节点 $t \in T$ 使得在节点 $t$ 没有关联边向外指. 因为 $H$ 是连通的，由引理 12.3.1 知，$V_t$ 和每个 $IH \subseteq G$ 相交. 只需令 $U = V_t$ 就完成了证明，这是因为由树分解的选取知，$|V_t| \leqslant w_k \leqslant f(k)$.
+
+现在假设 $T$ 有一条边 $t_1 t_2$ 具有两个方向. 对每个 $i = 1, 2$，我们是否可以用至多 $f(k-1)$ 个顶点覆盖 $G_i$ 中的所有 $H$ 模型呢？如果对两个 $i$ 都可以，那么由引理 12.3.1 知，两个覆盖与 $V_{t_1} \cap V_{t_2}$ 结合起来就是对于 $G$ 我们需要的覆盖 $U$. 现在假设 $G_1$ 没有这样的覆盖，那么由归纳假设，$G_1$ 有 $k-1$ 个互不相交的 $H$ 模型. 由于 $t_1 t_2$ 也指向 $t_2$，故在 $G_2$ 中存在另外一个这样的模型，从而得到需要的共 $k$ 个 $G$ 的不交 $H$ 模型. ∎
+</Solution>
+</Knowledge>
+
+Erdős-Pósa 定理 (2.3.2) 是定理 12.6.5 的特殊情形（当 $H = K^3$ 时）. 如果 $H$ 是非平面图，那么定理中的结果是最好的，因此 $\mathcal{H} = IH$ 没有 Erdős-Pósa 性质（练习 48）.
+
+作为本节的结束，我们将叙述几个不包含给定完全图作为子式的结构性定理，这些定理的证明要比目前为止我们看到的任何结果都困难，甚至叙述它们都不是一件容易的事，但这值得一试，因为：禁用 $K^n$ 定理的叙述本身很有趣，并且它是图子式定理证明的核心，也可以应用到其他领域.
+
+图 $G$ 的一个**线性分解** (linear decomposition) 是满足如下条件的一族顶点集 $(V_i)_{i \in I}$：$V_i$ 的下标有一个线性序 $I$ 使得 $\bigcup_{i \in I} V_i = V(G)$，且图 $G$ 的每条边的两个端点都属于某个 $V_i$，同时只要 $i < j < k$ 就有 $V_i \cap V_k \subseteq V_j$. 当 $G$ 是有限图时，这个树分解的分解树是一条路，我们通常称它为**路分解** (path-decomposition). 如果每个 $V_i$ 包含至多 $k$ 个顶点，且 $k$ 是关于这个性质极小的，那么称 $(V_i)_{i \in I}$ 的**宽度** (width) 是 $k - 1$.
+
+设 $S'$ 是曲面 $S$ 的一个子空间（曲面是一个紧致的连通 2-维无边界流形，见附录 B），它是由去掉有限个不相交的闭圆盘的内部而得到的，记这些边界圆为 $C_1, C_2, \dots, C_k$. 这个空间在同态下由 $S$ 和整数 $k$ 确定，我们把它记作 $S - k$. 每个 $C_i$ 是一个连续映射 $f_i: [0, 1] \to S'$ 的象，这个映射除了 $f_i(0) = f_i(1)$ 外是单射. 我们称 $C_1, \dots, C_k$ 为 $S'$ 的**袖口** (cuff)，而点 $f_1(0), \dots, f_k(0)$ 为它们的**根** (root). 每个 $C_i$ 上的其他点作为 $(0, 1)$ 的象由 $f_i$ 线性排序，当用袖口作为线性分解的指标集时，我们将用到这些线性顺序. 类似于平面上的嵌入，我们可以定义图在 $S$（或者 $S - k$）上的**嵌入** (embedding).
+
+设 $H$ 是一个图，$S$ 是一个曲面，$k \in \mathbb{N}$. 如果 $H$ 有一个至多 $k$ 个顶点的集合 $X$ 使得 $H - X$ 可以记为 $H_0 \cup H_1 \cup \dots \cup H_k$ 的形式，并满足以下三个条件，则称 $H$ 在 $S$ 中是 **$k$-几乎可嵌入的** ($k$-nearly embeddable)：
+
+(N1) 存在一个嵌入 $\sigma: H_0 \hookrightarrow S - k$，它仅把顶点映射到袖口，但没有顶点映射到袖口的根；
+
+(N2) 图 $H_1, \dots, H_k$ 是互不相交的（但可能是空图），且对每个 $i$，有 $H_0 \cap H_i = \sigma^{-1}(C_i)$；
+
+(N3) 每个 $H_i\ (i \geqslant 1)$ 有一个宽度 $< k$ 的线性分解 $(V_z^i)_{z \in C_i \cap \sigma(H_0)}$ 使得对所有 $z$ 有 $\sigma^{-1}(z) \in V_z^i$.
+
+下面是不包含 $K^n$ 子式的图的结构定理（Robertson 和 Seymour 证明了这个定理的很多版本，定理 12.6.6 是其中最简单的一个，更一般性的版本见注释中的参考文献）. 当 $n = 5$ 时，Wagner 的最初结果（即定理 7.3.4）对图的结构给出了准确的描述. $n = 4$ 的情形包含在命题 7.3.1 中.
+
+<Knowledge title="定理 12.6.6 (Robertson and Seymour, 2003)">
+对每个 $n \geqslant 5$，存在一个 $k \in \mathbb{N}$ 使得每个不包含 $K^n$ 作为子式的图有一个树分解，它的躯干在一个 $K^n$ 不能嵌入的曲面上是 $k$-几乎可嵌入的.
+</Knowledge>
+
+注意到，只存在有限个 $K^n$ 不可嵌入的曲面，所以定理 12.6.6 中的这些曲面的集合可以用两个曲面（即这个集合中具有最大亏格的可定向和非可定向曲面）来代替.
+
+定理 12.6.6 也有一个逆命题，尽管它只是定性的. 上面描述的分解本身并不防止 $K^n$ 子式的出现，但是对每个 $n$ 存在一个 $r$ 使得具有这样一个分解的图都不包含 $K^r$ 子式，这是因为树分解的附着集的大小是有界的，即 $2k + n$，理由是在躯干中这些附着集导出完全子图，且躯干在不包含 $K^n$ 的曲面上是 $k$-几乎可嵌入的. 我们注意到定理 12.6.6 对无限图也是成立的.
+
+对于不包含给定拓扑子式的图，我们有下面这个相关的结构定理：
+
+<Knowledge title="定理 12.6.7 (Grohe and Marx, 2012)">
+对每个 $n \geqslant 5$，存在 $k \in \mathbb{N}$ 使得每个不包含 $K^n$ 作为拓扑子式的图都有一个树分解，它的躯干要么是 $k$-几乎可嵌入到一个 Euler 亏格 $\leqslant k$ 的曲面中，要么只有最多 $k$ 个顶点具有度 $> k$.
+</Knowledge>
+
+（曲面的 Euler 亏格的定义见附录 B.）
+
+对于禁用无限子式也存在结构定理，我们给出其中的两个.
+
+首先，考虑禁用 $K^{\aleph_0}$ 子式的结构定理. 如果图 $H$ 包含一个有限顶点集 $X$ 使得 $H - X$ 可以表达成 $H_0 \cup H_1$ 且在 $S = S^2$（球面）上对 $k = 1$ 满足 (N1) 和 (N2)，同时当 $k = |X|$ 时 (N3) 成立，那么我们称 $H$ 是**几乎可平面的** (nearly planar).（换句话说，删除有界多个顶点后 $H$ 可变成两个图的并，其中一个是可平面图，而另一个把有界线性宽度的子图缝接到 $S^2 - 1$ 的唯一袖口上.）我们称图 $G$ 的一个树分解 $(T, (V_t)_{t \in T})$ 具有**有限附着力** (finite adhesion)，如果它的所有附着集都是有限的，并且对 $T$ 中的每条无限路 $t_1 t_2 \dots$，极限 $\liminf_{i \to \infty} |V_{t_i} \cap V_{t_{i+1}}|$ 是有限的.
+
+和禁用 $K^n$ 子式的结构定理不同，禁用 $K^{\aleph_0}$ 子式的结构定理有一个直接的逆命题，因此它刻画了不包含 $K^{\aleph_0}$ 子式的图：
+
+<Knowledge title="定理 12.6.8">
+图 $G$ 不包含 $K^{\aleph_0}$ 子式当且仅当 $G$ 包含一个具有有限附着力的树分解，使得它的每个躯干是几乎可平面的.
+</Knowledge>
+
+最后，我们给出一个关于禁用 $K^{\aleph_0}$ 拓扑子式的结构定理. 如果图 $G$ 有一个树分解 $(T, (V_t)_{t \in T})$，它分解成有限个部分使得对 $T$ 的每条无限路 $t_1 t_2 \dots$，集合 $\bigcup_{j \geqslant 1} \bigcap_{i \geqslant j} V_{t_i}$ 是有限的，那么我们就称 $G$ 具有**有限树宽** (finite tree-width).
+
+<Knowledge title="定理 12.6.9">
+对连通图 $G$，下面的命题是等价的：
+
+(i) $G$ 不包含 $K^{\aleph_0}$ 作为拓扑子式；
+
+(ii) $G$ 具有有限树宽；
+
+(iii) $G$ 有一个正规支撑树 $T$，使得对 $T$ 中的每条射线 $R$，只存在有限多个顶点 $v$ 使得 $G$ 包含一个无限的 $v\text{–}(R - v)$ 扇.
+</Knowledge>

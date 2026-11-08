@@ -1,0 +1,176 @@
+---
+title: '7.5 正则性引理的应用'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+这节的目的是为了展示正则性引理在 (稠密) 极值图论中的一些典型应用. 假设我们试图证明一个图 $G$ 的某个边密度可以保证给定子图 $H$ 的存在性, 并且 $G$ 有一个 $\epsilon$ -正则划分. 那么对于划分集合的大部分顶点集对 $(V_{i}, V_{j})$ , 我们知道 $V_{i}$ 和
+
+$V_{j}$ 之间的边分布相当均匀；然而，它们的密度也许依赖这个顶点集对的选择。因为 G 有许多边，这个密度不可能对大部分的顶点集对是特别小的：其中相当大比例的顶点集对将具有某个正密度。此外，如果 G 是大的，那么也有很多顶点集对是大的，这是因为划分集合的个数是有界的，而且集合的阶相同。但是，任何两部分顶点数相同的足够大的二部图，具有固定的正边密度（不管多么小）和均匀的边分布，将包含任意给定的二部子图， $^{8}$ 这个结论将在下文中给出准确地描述。把 H 写成二部子图的并（例如取 H 的某个顶点着色的着色类的一对着色所导出的子图作为一个二部子图），我们就得到了 $H \subseteq G$ 。
+
+这些想法将在下面的引理 7.5.2 中具体给出. 然后, 我们将使用这个结果和正则性引理证明 7.1 节中的 Erdős-Stone 定理; 另一个应用将在后面定理 9.2.2 的证明中给出. 在这一节的结束部分, 我们对已经看到的正则性引理的应用, 做一个非正式的回顾, 总结一下在类似的应用中可以学到什么东西. 特别地, 我们考虑相关的不同参数是怎样相互依赖的, 以及怎样选取它们的顺序, 才可以使用正则性引理.
+
+首先注意到, 任意顶点集对 $(A, B)$ 的 $\epsilon$ -正则性蕴含着一个简单推理: 对任何不太小的子集 $Y \subseteq B$ , $A$ 的大多数顶点在 $Y$ 中大约有我们所期望的那么多个邻点.
+
+<Knowledge title="引理 7.5.1">
+设 $(A, B)$ 是一个 $\epsilon$ -正则对，其密度为 d，且 $Y \subseteq B$ 的阶满足 $|Y| \geqslant \epsilon |B|$ ，则 A 中除了少于 $\epsilon |A|$ 个顶点外，其余每个顶点在 Y 中有至少 $(d - \epsilon)|Y|$ 个邻点.
+
+<Solution title="证明">
+设 $X \subseteq A$ 是一个在 $Y$ 中邻点少于 $(d - \epsilon)|Y|$ 个的顶点集, 则 $\| X, Y \| < |X|(d - \epsilon)|Y|$ , 故
+
+$$
+d (X, Y) = \frac {\| X , Y \|}{| X | | Y |} <   d - \epsilon = d (A, B) - \epsilon .
+$$
+
+因为 $(A,B)$ 是 $\epsilon$ -正则的, 并且 $|Y| \geqslant \epsilon |B|$ , 从而可推出 $|X| < \epsilon |A|$ .
+
+设 G 是一个有 $\epsilon$ -正则划分 $\{V_{0}, V_{1}, \cdots, V_{k}\}$ 的图，其中例外集是 $V_{0}$ 且 $|V_{1}| = \cdots = |V_{k}| =: \ell$ 。给定 $d \in [0, 1]$ ，令 R 是一个顶点集为 $\{V_{1}, \cdots, V_{k}\}$ 的图，它的两个顶点 $V_{i}, V_{j}$ 是相邻的当且仅当它们在 G 中形成一个密度 $\geqslant d$ 的 $\epsilon$ -正则对。我们称 R 是一个参数为 $\epsilon, \ell$ 和 d 的正则性图 (regularity graph)。给定 $s \in N$ ，现在将 R 的每个顶点 $V_{i}$ 替换成 s 个顶点的集合 $V_{i}^{s}$ ，将每条边替换成对应的 s-集合之间的完全二部图，并把得到的图记为 $R_{s}$ 。(例如，对 $R = K^{r}$ ，我们有 $R_{s} = K_{s}^{r}$ 。)
+
+下面的引理说明, 若 $d > 0$ , $\epsilon$ 足够小, 且 $V_{i}$ 足够大, 则 $R_{s}$ 的子图也能在 $G$ 中找到. 事实上, $\epsilon$ 和 $\ell$ 的值仅依赖于 (d 以及) 这个子图的最大度.
+</Solution>
+</Knowledge>
+
+<Knowledge title="引理 7.5.2">
+对任意 $d \in (0,1]$ 和 $\Delta \geqslant 1$ ，存在 $\epsilon_{0} > 0$ 满足下列性质：若 G 是任意图，H 是满足 $\Delta(H) \leqslant \Delta$ 的图， $s \in N$ ，且 R 是具有参数 $\epsilon \leqslant \epsilon_{0}, \ell \geqslant 2s/d^{\Delta}$ 和 d
+
+的任意正则性图，则
+
+$$
+H \subseteq R _ {s} \Rightarrow H \subseteq G.
+$$
+
+<Solution title="证明">
+给定 $d$ 和 $\Delta$ , 选择 $\epsilon_0 > 0$ 足够小使得 $\epsilon_0 < d$ 并且
+
+$$
+(d - \epsilon_ {0}) ^ {\Delta} - \Delta \epsilon_ {0} \geqslant \frac {1}{2} d ^ {\Delta}.\tag{1}
+$$
+
+这样的选择是可能的, 因为当 $\epsilon \to 0$ 时, $(d - \epsilon)^{\Delta} - \Delta \epsilon \to d^{\Delta}$ . 设 $G, H, s$ 和 $R$ 如定理中所述, 而 $\{V_0, V_1, \cdots, V_k\}$ 是 $G$ 的 $\epsilon$ -正则划分, 它生成 $R$ , 因此, $\epsilon \leqslant \epsilon_0$ , $V(R) = \{V_1, \cdots, V_k\}$ 且 $|V_1| = \cdots = |V_k| = \ell \geqslant 2s / d^{\Delta}$ . 我们假设 $H$ 是 $R_s$ 的一个子图 (而不仅仅同构于它), 它的顶点是 $u_1, \cdots, u_h$ . 每个顶点 $u_i$ 位于 $R_s$ 的 $s$ -集 $V_j^s$ 中的一个, 这定义了一个映射 $\sigma: i \mapsto j$ . 我们的目标是定义一个 $H$ 的嵌入 $u_i \mapsto v_i \in V_{\sigma(i)}$ 作为 $G$ 的子图, 因此, $v_1, \cdots, v_h$ 将是不同的, 并且只要 $u_i u_j$ 是 $H$ 的一条边, $v_i v_j$ 就是 $G$ 的一条边.
+
+我们的计划是归纳地选取顶点 $v_{1}, \cdots, v_{h}$ . 贯穿整个归纳过程, 我们将给每个 $u_{i}$ 分配一个 “目标集合” $Y_{i} \subseteq V_{\sigma(i)}$ , 它包含所有仍然可以成为 $v_{i}$ 的候选顶点. 一开始, $Y_{i}$ 是整个集合 $V_{\sigma(i)}$ , 随着嵌入的进行, $Y_{i}$ 将变得越来越小 (直到它变成 $\{v_{i}\}$ , 这时 $v_{i}$ 被选中): 只要选中一个顶点 $v_{j}$ 满足 j &lt; i 和 $u_{j}u_{i} \in E(H)$ , 我们就去掉所有 $Y_{i}$ 中与 $v_{j}$ 不邻接的那些顶点. 因此集合 $Y_{i}$ 的变化如下:
+
+$$
+V _ {\sigma (i)} = Y _ {i} ^ {0} \supseteq \dots \supseteq Y _ {i} ^ {i} = \{v _ {i} \},
+$$
+
+这里, $Y_{i}^{j}$ 表示在定义了 $v_{j}$ 和去掉 $Y_{i}^{j - 1}$ 中相应顶点之后得到的 $Y_{i}$ 的版本.
+
+为了使这个想法实现, 我们需要确保目标集 $Y_{i}$ 不会变的太小. 当嵌入一个顶点 $u_{j}$ 时, 考虑所有满足 $u_{j}u_{i} \in E(H)$ 的指标 $i > j$ , 存在至多 $\Delta$ 个这样的 $i$ . 对每个这样的 $i$ , 我们希望挑选 $v_{j}$ 使得
+
+$$
+Y _ {i} ^ {j} = N (v _ {j}) \cap Y _ {i} ^ {j - 1}\tag{2}
+$$
+
+仍旧是相对较大的：比 $Y_{i}^{j - 1}$ 最多小一个常数因子（比如因子 $(d - \epsilon)$ ）。这是可以实现的：在引理7.5.1中，令 $A = V_{\sigma (j)}, B = V_{\sigma (i)}$ 和 $Y = Y_{i}^{j - 1}$ ，若 $Y_{i}^{j - 1}$ 的阶仍旧至少为 $\epsilon \ell$ (归纳法可以保证)，则在 $v_{j}$ 的选择中，除了最多 $\epsilon \ell$ 个外，其他将使得(2)中那样的新集合 $Y_{i}^{j}$ 满足
+
+$$
+| Y _ {i} ^ {j} | \geqslant (d - \epsilon) | Y _ {i} ^ {j - 1} |.\tag{3}
+$$
+
+对 $i$ 的所有相关值, 同时地排除那些关于 $v_{j}$ 的坏选择, 我们发现除了 $V_{\sigma(j)}$ 中 (特别地, $Y_{j}^{j-1} \subseteq V_{\sigma(j)}$ 中) $v_{j}$ 的最多 $\Delta \epsilon \ell$ 个选择外, 其他的对所有的 $i$ 满足 (3) 式.
+
+剩下要证明的是, 上面考虑过的作为引理 7.5.1 中 Y 的集合 $Y_{i}^{j-1}$ , 它的阶永远不会降到 $\epsilon\ell$ 以下, 并且当挑选 $v_{j} \in Y_{j}^{j-1}$ 时, 至少有 s 个合适的候选者, 这是因为,在 $u_{j}$ 之前, 作为 $V_{\sigma(j)}$ 的一个象, 至多 $s - 1$ 个顶点 $u$ 被给出, 然后我们可以选择不同于这些的顶点作为 $v_{j}$ .
+
+但是, 所有的这些都可以从 $\epsilon_0$ 的选取中得到的. 事实上, 初始目标集 $Y_i^0$ 的阶为 $\ell$ , 并且当某个满足 $j < i$ 和 $u_j u_i \in E(H)$ 的 $v_j$ 被定义后, 每个 $Y_i$ 被收缩了 $(d - \epsilon)$ 倍, 这种收缩至多发生 $\Delta$ 次. 因此, 对所有的 $j \leqslant i$ , 有
+
+$$
+|Y_{i}^{j - 1}| - \Delta \epsilon \ell \underset {(3)}{\geqslant}(d - \epsilon)^{\Delta}\ell -\Delta \epsilon \ell \geqslant (d - \epsilon_{0})^{\Delta}\ell -\Delta \epsilon_{0}\ell \underset {(1)}{\geqslant}\frac{1}{2} d^{\Delta}\ell \geqslant s.
+$$
+
+特别地, 我们得到了想要的 $|Y_i^{j-1}| \geqslant \epsilon \ell$ 以及 $|Y_j^{j-1}| - \Delta \epsilon \ell \geqslant s$ .
+
+现在我们已准备好, 可以证明 Erdős-Stone 定理了.
+
+定理 7.1.2 的证明 按定理的要求, 令 $r \geqslant 2$ 及 $s \geqslant 1$ . 对 s = 1, 结论可由 Turán 定理直接得到, 所以我们假设 $s \geqslant 2$ . 设 $\gamma > 0$ 是给定的, 这个 $\gamma$ 将扮演定理中 $\epsilon$ 的角色. 若任何满足 $|G| =: n$ 的图 G 有
+
+$$
+\| G \| \geqslant t _ {r - 1} (n) + \gamma n ^ {2}
+$$
+
+条边, 则 $\gamma < 1$ . 我们需要证明, 若 $n$ 是足够大的话, 则 $K_{s}^{r} \subseteq G$ .
+
+我们的计划是使用正则性引理证明 $G$ 有一个密度足够大的正则性图 $R$ , 由Turán定理, 它包含一个 $K^r$ , 从而 $R_s$ 包含一个 $K_s^r$ , 所以我们希望使用引理7.5.2得到 $K_s^r \subseteq G$ .
+
+输入 $d := \gamma$ 和 $\Delta := \Delta(K_s^r)$ , 则引理 7.5.2 返回一个 $\epsilon_0 > 0$ . 为了应用正则性引理, 令 $m > 1 / \gamma$ 并且选择 $\epsilon > 0$ 足够小使得 $\epsilon \leqslant \epsilon_0$ , 以及
+
+$$
+\epsilon <   \gamma / 2 <   1,\tag{1}
+$$
+
+且
+
+$$
+\delta := 2 \gamma - \epsilon^ {2} - 4 \epsilon - d - \frac {1}{m} > 0,
+$$
+
+上式是可实现的, 因为 $2\gamma - d - \frac{1}{m} > 0$ . 输入 $\epsilon$ 和 $m$ 时, 正则性引理返回一个整数 $M$ . 假设
+
+$$
+n \geqslant \frac {2 M s}{d ^ {\Delta} (1 - \epsilon)}.
+$$
+
+因为这个值至少为 m，所以正则性引理为我们提供了 G 的一个 $\epsilon$ -正则划分 $\{V_{0}, V_{1}, \cdots, V_{k}\}$ ，这里 $m \leqslant k \leqslant M$ 。设 $|V_{1}| = \cdots = |V_{k}| =: \ell$ ，则
+
+$$
+n \geqslant k \ell ,\tag{2}
+$$
+
+并且, 由 $n$ 的选择得
+
+$$
+\ell = \frac {n - | V _ {0} |}{k} \geqslant \frac {n - \epsilon n}{M} = n \frac {1 - \epsilon}{M} \geqslant \frac {2 s}{d ^ {\Delta}}.
+$$
+
+设 $R$ 是 $G$ 的正则性图, 它的参数 $\epsilon, \ell, d$ 对应与上述划分, 则如果 $K^r \subseteq R$ (因此 $K_s^r \subseteq R_s$ ), 由引理7.5.2可以得出 $K_s^r \subseteq G$ .
+
+我们的计划是应用 Turán 定理证明 $K^{r} \subseteq R$ ，因此需要检验 R 是否有足够多的边，即是否有足够多的 $\epsilon$ -正则对 $(V_{i}, V_{j})$ 具有密度至少为 d。这可以从 G 至少有 $t_{r-1}(n) + \gamma n^{2}$ 条边的假设得到，或者说，边密度大约为 $\frac{r - 2}{r - 1} + 2\gamma$ ：这远大于 Turán 图 $T^{r-1}(k)$ 的近似密度 $\frac{r - 2}{r - 1}$ ，因此也远大于任何 G 能够从 $t_{r-1}(k)$ 个稠密对所导出的密度，即便所有的这些对的密度为 1。
+
+下面让我们更准确地估计 $\|R\|$ . G 有多少条边位于 $\epsilon$ -正则对以外呢? $V_{0}$ 中至多有 $\binom{|V_{0}|}{2}$ 条边, 且由 $\epsilon$ -正则的定义中的条件 (i), 这些边最多为 $\frac{1}{2}(\epsilon n)^{2}$ 条. 另外, 至多有 $|V_{0}|k\ell \leqslant \epsilon n^{2}$ 条边连接 $V_{0}$ 与其他划分集; 有至多 $\epsilon k^{2}$ 个其他的非 $\epsilon$ -正则对 $(V_{i}, V_{j})$ , 每个至多包含 $\ell^{2}$ 条边, 故总共至多有 $\epsilon k^{2}\ell^{2}$ 条边; 每个密度不够大 (&lt; d) 的 $\epsilon$ -正则对包含最多 $d\ell^{2}$ 条边, 总共至多有 $\frac{1}{2}k^{2}d\ell^{2}$ 条边; 最后, 划分集 $V_{1}, \cdots, V_{k}$ 的每个的内部包含至多 $\binom{\ell}{2}$ 条边, 共计 $\frac{1}{2}\ell^{2}k$ 条边. 所有其他 G 中的边位于密度至少为 d 的 $\epsilon$ -正则对中, 所以这些边贡献了 R 中的边. 因为每条 R 中的边对应 G 中至多 $\ell^{2}$ 条边, 因此, 我们有
+
+$$
+\| G \| \leqslant \frac {1}{2} \epsilon^ {2} n ^ {2} + \epsilon n ^ {2} + \epsilon k ^ {2} \ell^ {2} + \frac {1}{2} k ^ {2} d \ell^ {2} + \frac {1}{2} \ell^ {2} k + \| R \| \ell^ {2}.
+$$
+
+所以, 对所有足够大的 $n$ , 有
+
+$$
+\begin{array}{r l} \| R \| & \geqslant \frac {1}{2} k ^ {2} \frac {\| G \| - \frac {1}{2} \epsilon^ {2} n ^ {2} - \epsilon n ^ {2} - \epsilon k ^ {2} \ell^ {2} - \frac {1}{2} d k ^ {2} \ell^ {2} - \frac {1}{2} k \ell^ {2}}{\frac {1}{2} k ^ {2} \ell^ {2}} \\ & \geqslant \frac {1}{2} k ^ {2} \left(\frac {t _ {r - 1} (n) + \gamma n ^ {2} - \frac {1}{2} \epsilon^ {2} n ^ {2} - \epsilon n ^ {2}}{n ^ {2} / 2} - 2 \epsilon - d - \frac {1}{k}\right) \\ & \geqslant \frac {1}{2} k ^ {2} \left(\frac {t _ {r - 1} (n)}{n ^ {2} / 2} + 2 \gamma - \epsilon^ {2} - 4 \epsilon - d - \frac {1}{m}\right) \\ & = \frac {1}{2} k ^ {2} \left(t _ {r - 1} (n) \binom {n} {2} ^ {- 1} \left(1 - \frac {1}{n}\right) + \delta\right) \\ & > \frac {1}{2} k ^ {2} \frac {r - 2}{r - 1} \\ & \geqslant t _ {r - 1} (k). \end{array}
+$$
+
+(由引理 7.1.4 可得上述的严格不等式.) 因此, 由定理 7.1.1 有 $K^r \subseteq R$ , 证毕. $\square$
+
+看过正则性引理的一个典型应用的全部细节后, 现在让我们回过头来尝试从糠中把小麦分离出来: 主要的思想是什么, 各种参数是如何相互依赖的, 它们被选择的顺序是怎样的?
+
+我们的任务是说明, 倘若 $G$ 足够大, 对于 $n$ 个顶点的图, 如果它不生成一个 $K^r$ 就必然包含子图 $K_s^r$ , 那么有 $\gamma n^2$ 条多余的边, 使得这些边不能属于这个图. 我们的计划是通过使用引理7.5.2来达到这个目的, 这要求输入两个参数: $d$ 和 $\Delta$ . 因为希望在 $G$ 中找到一个 $H = K_s^r$ 的拷贝, 很明显, 必须选定 $\Delta := \Delta(K_s^r)$ . 我们将稍后回到怎样选择 $d$ 的问题上来.
+
+给定 $d$ 和 $\Delta$ , 引理 7.5.2 告诉我们选择多小的 $\epsilon$ 才能使得正则性引理为我们提供一个合适的划分. 正则性引理也要求输入一个划分类数目的下界 $m$ , 我们将在下面讨论这个 $m$ 和 $d$ .
+
+现在剩下的就是选择足够大的 G 使得划分类的阶至少为 $2s/d^{\Delta}$ ，这是引理 7.5.2 要求的条件之一。(这里的 s 依赖于我们希望嵌入的图 H, $s := |H|$ 将肯定足够大。在我们的情形，使用 $H = K_{s}^{r}$ 中的 s.) 对 G 多大才是“足够大”，可以直接由正则性引理提供的划分类的个数的上界 M 得出：粗略地说，不考虑 $V_{0}, |G| \geqslant 2Ms/d^{\Delta}$ 的假设就足够了。
+
+迄今为止, 每一步都很直接明了, 都是此类正则性引理的任何应用中的标准步骤, 下面才是有趣的部分, 它是这个证明的特别所在: 注意到, 只要 $d$ 足够小, $\gamma n^2$ 条 “多余的边” 迫使划分集产生一个 “新的稠密的 $\epsilon$ -正则对”, 总共产生了多于 $t_{r-1}(k)$ 个稠密的 $\epsilon$ -正则对 (这里 “稠密” 意味着 “密度至少为 $d$ ”), 因此, 迫使 $R$ 包含一个 $K^r$ 并且因此 $R_s$ 包含一个 $K_s^r$ .
+
+让我们检验一下为什么会是这样的．假设有至多 $t_{r - 1}(k)$ 个稠密的 $\epsilon$ -正则对，在这些正则对中，即使使用那些达到最多边数（即 $\ell^2$ 条边，这里 $\ell$ 仍然表示划分集中除 $V_{0}$ 外的所有集合的公共阶数，所以 $k\ell$ 几乎等于 $n$ )的对， $G$ 也只有至多
+
+$$
+\frac {1}{2} k ^ {2} \frac {r - 2}{r - 1} \ell^ {2} \leqslant \frac {1}{2} n ^ {2} \frac {r - 2}{r - 1}
+$$
+
+条边. 因此, 我们有几乎恰好 $\gamma n^2$ 条边剩下来需要安置在图中别的地方: 或者置于密度小于 $d$ 的 $\epsilon$ -正则对中, 或者以某种特别的方式, 即置于非正则对中, 或一个划分集内, 或有一个端点在 $V_0$ 中. 现在在低密度 $\epsilon$ -正则对中的边数少于
+
+$$
+\frac {1}{2} k ^ {2} d \ell^ {2} \leqslant \frac {1}{2} d n ^ {2},
+$$
+
+因此, 如果 $d \leqslant \gamma$ , 那么它少于额外边数的一半. 另外一半, 即剩下的 $\frac{1}{2} \gamma n^2$ 条边, 倘若选择 $m$ 足够大以及 $\epsilon$ 足够小 (给出 $\epsilon$ 的另外一个上界), 这些边就太多了, 不能以特别的方式安置. 剩下的工作是计算可行的 $m$ 和 $\epsilon$ , 这是一个常规问题.
+</Solution>
+</Knowledge>

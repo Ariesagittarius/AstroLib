@@ -1,0 +1,106 @@
+---
+title: '8.7 拓扑圈空间'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+作为新引进理论的一个更全面的应用，我们看一看如何把有限图的圈空间通过使用无限回路和拓扑支撑树，延伸到局部有限图 $G = (V, E)$ 上.
+
+和通常的树一样，拓扑支撑树 $T$ 的每两个点通过唯一的弧连接：引理 8.6.5 蕴含着弧的存在性，而唯一性可以和有限图情形一样证明. 所以，在 $T$ 中加入一条边 $e$ 产生了 $T \cup e$ 中的唯一圈，它的边组成了关于 $T$ 的 $e$ 的基本回路 (fundamental circuit) $C_e$. 注意到，$C_e$ 可以是无限的.
+
+类似地，对每条边 $f \in E(T)$，空间 $T \setminus \mathring{f}$ 恰有两个弧分支，这两个分支之间的边集合是 $T$ 的一个基本割 (fundamental cut) $D_f$. 因为 $T \setminus \mathring{f}$ 的两个弧分支是闭的 (引理 8.6.6) 但不交，故引理 8.6.3 (ii) 蕴含着 $D_f$ 是有限的.
+
+和有限图一样，对所有 $f \in E(T)$ 和 $e \in E \setminus E(T)$，$e \in D_f$ 当且仅当 $f \in C_e$. 如果一棵拓扑支撑树是某个正规支撑树的闭包 (参考引理 8.6.8)，那么这种支撑树对我们特别有用处：它的基本回路和基本割都是有限的.
+
+对于局部有限图，我们有两个圈空间：一个是 1.9 节中通常的“有限性”圈空间，另一个是基于拓扑回路的新“拓扑”圈空间. 前一个是后一个的子空间，正如所有有限割的空间是所有割的空间的子空间一样. 通过拟阵对偶性，这四个空间神奇地联系在一起，见注解和练习 118.
+
+我们称 $E$ 的子集族 $(D_i)_{i \in I}$ 是薄的 (thin)，如果没有边属于无限多个 $D_i$；而这个族的薄和 (thin sum) $\sum_{i \in I} D_i$ 是指恰好属于奇数个 $D_i$ 的所有边的集合. 现在定义 $G$ 的 (拓扑) 圈空间 ((topological) cycle space) $\mathcal{C}(G)$，它是边空间 $\mathcal{E}(G)$ 的子空间，由所有回路的全部薄和所组成.
+
+我们称一个给定回路的集合 $\mathcal{Z}$ 生成 (generates) $\mathcal{C}(G)$，如果 $\mathcal{C}(G)$ 的每个元素是 $\mathcal{Z}$ 中元素的薄和. 例如，图 8.1.3 中所示的梯子的拓扑圈空间能由它的所有正方形 (4-元素回路)，或者由包含所有水平边以及除一个外的所有正方形的无限回路生成. 类似地，图 8.6.1 中的“疯狂回路”是由此图中的所有有限面的边界的薄和所生成的.
+
+我们把 1.9 节中定义的圈空间 (即有限回路的 (有限) 和) 称作 $G$ 的有限性圈空间 (finitary cycle space)，并用 $\mathcal{C}_{\mathrm{fin}}(G)$ 表示. 显然，$\mathcal{C}_{\mathrm{fin}}(G) \subseteq \mathcal{C}(G)$. 后面我们会看到，$\mathcal{C}_{\mathrm{fin}}(G)$ 包含 $\mathcal{C}(G)$ 的所有有限元素，但从定义看这并不明显，见练习 115. 然而，当 $G$ 是有限时，显然有 $\mathcal{C}_{\mathrm{fin}}(G) = \mathcal{C}(G)$.
+
+我们在 1.9 节中指出，$G$ 的有限边集属于 $\mathcal{C}_{\mathrm{fin}}(G)$ 当且仅当它和 $G$ 每个的割集相交偶数次，并且任意通常的支撑树的基本回路通过有限和可以生成 $\mathcal{C}_{\mathrm{fin}}(G)$. 对拓扑圈空间 $\mathcal{C}(G)$，我们有类似的结论：
+
+<Knowledge title="定理 8.7.1">
+对局部有限连通图 $G$ 的每一个边集 $D$，下面的命题是等价的：
+
+(i) $D \in \mathcal{C}(G)$；
+
+(ii) $D$ 和 $G$ 的每个有限割 $F$ 相交于偶数条边；
+
+(iii) $D$ 是 $G$ 的任意拓扑支撑树的基本回路的薄和.
+
+<Solution title="证明">
+根据 $\mathcal{C}(G)$ 的定义以及“$G$ 包含一棵拓扑支撑树 (引理 8.6.11)”这一事实，蕴含关系 (iii) $\to$ (i) 成立.
+
+下面我们证明蕴含关系 (i) $\to$ (ii). 根据假定，$D$ 是回路的一个薄和，只有有限多个可以和 $F$ 相交，所以只需证明每个回路与 $F$ 的偶数条边相交. 这可以从引理 8.6.3 (i) 推出：给定 $|G|$ 中的一个圈 $C$，$C$ 在 $F$ 中两条边 (如果存在的话) 之间的路段是一些弧，弧的顶点都位于割 $F$ 的同一侧. 当我们沿着 $C$ 移动时，这些侧交错变化，所以存在偶数条这样的弧，从而有偶数条 $C$ 的边在 $F$ 中.
+
+剩下需要证明的是 (ii) $\to$ (iii). 用 $C_e$ 表示边 $e \notin E(T)$ 的基本回路，而 $D_f$ 是边 $f \in E(T)$ 的基本割. 回顾一下，根据引理 8.6.3 (ii)，这些 $D_f$ 是有限割. 下面我们证明
+$$
+D = \sum_{e \in D \setminus E(T)} C_e. \tag{*}
+$$
+上面的和式是严格定义的：因为 $f \in C_e \Leftrightarrow e \in D_f$ 且基本割是有限的，所以在在这个和式中的 $C_e$ 组成了一个薄族. 为了证明 (*)，我们验证 $D' := D + \sum_{e \in D \setminus E(T)} C_e = \emptyset$.
+
+首先注意到 $D' \subseteq E(T)$：$T$ 的任意属于 $D$ 的弦也属于和式中唯一一个 $C_e$. 所以每个 $f \in D'$ 是 $T$ 的唯一一条边，因此在有限割 $D_f$ 中它也是 $D'$ 的唯一边，这蕴含着 $|D' \cap D_f| = 1$，但这产生矛盾，因为由 (ii) 知 $D$ 和 $D_f$ 相交偶数次，同时由引理 8.6.3 知 $C_e$ 也和 $D_f$ 相交偶数次. ∎
+</Solution>
+</Knowledge>
+
+<Knowledge title="推论 8.7.2">
+$\mathcal{C}(G)$ 由有限回路生成.
+
+<Solution title="证明">
+由引理 8.6.8 知，任意一棵正规生成树都是拓扑生成树. 对正规生成树的闭包使用定理 8.7.1 即得. ∎
+</Solution>
+</Knowledge>
+
+本节的第二个目标是，对拓扑圈空间证明命题 1.9.1 (ii) 的类似结果：空间中的元素 $D$ 不仅是薄和，而且是回路的不交并. 对有限图，可以容易地用贪婪方法找到这些回路：我们“沿着 $D$ 的边前行”直到找到一个回路，并删除它，然后再重复这个过程.
+
+当 $G$ 是无限时，我们也遵循相同的策略，但从 $D$ 孤立一个回路就不再是简单的工作了. 例如，在图 8.6.1 中，不需要知道“疯狂圈的边集 $D$ 是一个回路”这一基本事实，我们也可以立即看出 $D$ 一定在 $\mathcal{C}(G)$ 中：它是所有界定一个面的有限回路的薄和. 所以，我们的证明一定要可以把 $D$ “分解”成不交回路. 因为 $D$ 本身是包含在 $D$ 中的唯一回路，所以证明必须只从 $D \in \mathcal{C}(G)$ 这一信息来重新构造复杂的疯狂圈，并且需要“一般性的”构造，而不是依赖于这个图的特殊结构.
+
+<Knowledge title="定理 8.7.3">
+对每个局部有限图 $G$，$\mathcal{C}(G)$ 的任意元素都是回路的不交并.
+
+<Solution title="证明">
+我们可以假定 $G$ 是连通的，所以是可数的. 设 $D \in \mathcal{C}(G)$ 已给定，然后列举它的边. 归纳地构造不交回路 $C \subseteq D$ 的序列，使得每个回路包含 $D$ 的列举中还没有出现在前面构造的回路中的最小边，那么所有这些回路组成我们所需要的一个划分.
+
+假设我们已经构造了有限多个不交的回路，每个都包含在 $D$ 中. 从 $D$ 中删去回路的边得到了边集 $D'$，它还在 $\mathcal{C}(G)$ 中. 设 $e$ 是 $D$ 的列举中 $D'$ 的最小边，我们在 $|G|$ 中由 $D' \setminus \{e\}$ 支撑的标准子空间中，找到一条 $e$ 的端点之间的拓扑路 $\pi$. 由引理 8.6.4 知，$\pi$ 的象包含一条这两个端点之间的弧 $A$，并且 $A \cup e$ 是定义下一个回路的圈.
+
+把 $G$ 的顶点列举为 $v_0, v_1, \cdots$，这里 $e = v_0 v_1$. 设 $S_n := \{v_0, v_1, \cdots, v_n\}$. 对每个 $n \geqslant 1$，设 $G_n$ 是从 $G$ 通过把 $G - S_n$ 的每个分支收缩成一个顶点，并删除所有环边但保留平行边而得到的有限多重图. 注意到，$V(G_n)$ 和 $E(G_n)$ 都是有限的，并且 $G[S_n] \subseteq G_n$. 用 $v_n'$ 表示 $G_{n-1} - S_{n-1}$ 的顶点，它的分支集 $V_n$ 包含 $v_n$.
+
+我们可以把 $E(G_n)$ 看成 $E(G)$ 的子集，则 $G_n$ 的割也是 $G$ 的割. 由定理 8.7.1 知，$D'$ 和这些割相交于偶数条边. 特别地，$G_n$ 的每个顶点与 $D'$ 中偶数条边相关联. 根据命题 1.9.1，我们有 $D' \cap E(G_n) \in \mathcal{C}(G_n)$，所以 $G_n$ 包含一条通过 $e$ 的圈，它所有的边都在 $D'$ 中. 设 $P_n$ 是这个圈的唯一 $v_0\text{--}v_1$ 途径，它不包含 $e$ 并且不重复任何顶点.
+
+设 $\mathcal{V}_n$ 是 $G_n - e$ 中所有满足“没有 $v_0, \cdots, v_n$ 中的顶点 (从而也没有边) 出现多于一次”的 $v_0\text{--}v_1$ 途径的集合，因此 $P_n \in \mathcal{V}_n \neq \emptyset$，并且 $\mathcal{V}_n$ 是有限的. 每个途径 $W \in \mathcal{V}_n\ (n \geqslant 2)$ 导出一个途径 $W' \in \mathcal{V}_{n-1}$，它由 $W$ 在 $G_{n-1}$ 中的边组成，并以同样的顺序和方向前行（原注：$W$ 和 $W'$ 的边都是严格定义的：每个属于 $G_{n-1}$ 的边 $e \in W$ 至少有一个端点在 $S_{n-1}$ 中，它在 $W$ 中要么是前置于 $e$ 要么是后置于 $e$. 在 $W'$ 中，这个顶点同样地分别前置或后置于 $e$）. 所以，$W'$ 是从 $W$ 通过用 $v_n'$ 来代替不在 $G_{n-1}$ 中的任意子途径的顶点和边而得到的. $W$ 的任意这样的子途径上的顶点要么是 $v_n$ 要么是 $G_n - S_n$ 的顶点使得这些顶点的分支集包含在 $V_n$ 中. 由无限引理知，可以选择途径 $W_n \in \mathcal{V}_n$ 使得对任意 $n \geqslant 2$ 有 $W_n' = W_{n-1}$.
+
+下一个目标是把这些途径 $W_n$ 变成拓扑路 $\pi_n : [0, 1] \to |G_n|$，沿着这些路从 $v_0$ 到 $v_1$ 并反映它们的相容性. 对 $n = 1, 2, \cdots$，我们将分步定义这些 $\pi_n$ 如下：
+
+对 $n = 1$，注意到 $W_1$ 恰好有两条边：因为 $e$ 没有平行边，所以它至少有两条；因为 $G_1$ 的每条边关联到 $v_0$ 或 $v_1$，所以它至多有两条. 设 $\pi_1$ 把 $[0, \frac{1}{3}]$ 满射到第一条边，把 $[\frac{1}{3}, \frac{2}{3}]$ 满射到 $W_1$ 的唯一内点，并且把 $[\frac{2}{3}, 1]$ 满射到第二条边.
+
+对 $n \geqslant 2$，归纳地假定 $\pi_{n-1}$ 遵循同样的顺序和方向沿 $W_{n-1}$ 的边前行. 对非孤立点闭区间 $I \subseteq [0, 1]$，$\pi_{n-1}$ 在 $W_{n-1}$ 上的每个顶点 $v \in G_{n-1} - S_{n-1}$ 处“暂停”，并把 $I$ 立即映射到这个顶点. (所以，如果 $W_{n-1}$ 访问顶点 $v$ 五次，那么 $\pi_{n-1}^{-1}(v)$ 就是五个这样区间的不交并.) 为了定义 $\pi_n$，对所有满足 $\pi_{n-1}(\lambda) \in |G_n|$ 的 $\lambda$，我们令 $\pi_n(\lambda) := \pi_{n-1}(\lambda)$.
+
+所有其他的 $\lambda \in [0, 1]$ 满足 $\pi_{n-1}(\lambda) = v_n'$. 这些 $\lambda$ 组成一个闭区间的不交并，每个对应于 $W_{n-1}$ 上 $v_n'$ 的一次出现. 记得，$W_n$ 是从 $W_{n-1}$ 通过用 $W_n$ 的子途径来代替 $v_n'$ 的每次出现而得到的，这里的子途径的顶点要么是 $v_n$ 要么是 $G_n - S_n$ 中的顶点使得这些顶点的分支集包含在 $V_n$ 中. 对 $v_n'$ 在 $W_{n-1}$ 上的每次出现，设 $\pi_n$ 位于对应的区间 $I$ 上，这里 $I$ 满足 $\pi_{n-1}(I) = \{v_n'\}$ 在 $W_n$ 的这个子途径上前行，并对非孤立点区间在这个子途径于 $G_n - S_n$ 中的顶点处再次暂停.
+
+这些映射 $\pi_n$ 趋向于极限 $\pi : [0, 1] \to |G|$，定义如下：设 $\lambda \in [0, 1]$ 已经给定，如果对某个 $n$ 有 $\pi_n(\lambda) \in |G|$，则对所有 $m > n$ 有 $\pi_m(\lambda) = \pi_n(\lambda)$，并且令 $\pi(\lambda) := \pi_n(\lambda)$. 否则，对所有 $n$ 均有 $\pi_n(\lambda) \in V(G_n) \setminus S_n$，设 $U_n$ 是 $G_n$ 的这个顶点 $u_n := \pi_n(\lambda)$ 在 $G$ 中的分支集，根据映射 $\pi_n$ 的归纳构造，有 $U_1 \supseteq U_2 \supseteq \cdots$. 因为 $U_n$ 支撑 $G - S_n$ 的一个分支 $C_n = C_n(\lambda)$，所以我们可以找到 $G$ 的一条射线，它的尾巴在每个 $C_n$ 中，设 $\pi(\lambda)$ 是这条射线的末端 $\omega$. 注意到，$\omega$ (所以 $\pi(\lambda)$) 是严格定义的：每个末端 $\omega' \neq \omega$ 和 $\omega$ 被某个 $S_n$ 分离，从而不能在 $C_n$ 中有一条射线.
+
+要证明 $\pi$ 是我们希望得到的 $|G|$ 的拓扑 $v_0\text{--}v_1$ 路，只需验证在每个 $\lambda$ 的连续性. 如果对某个 $n$，$\pi(\lambda) = \pi_n(\lambda)$ 成立，那么在 $\lambda$ 的小邻域中 $\pi$ 也和 $\pi_n$ 相同，所以 $\pi_n$ 的连续性蕴含了 $\pi$ 的连续性. 否则，$\pi(\lambda)$ 是一个末端 (比如 $\omega$)，那么 $\omega$ 在 $|G|$ 中有一个邻域基，它由开集 $\hat{C}_\epsilon(S_n, \omega)$ 组成，这里 $C(S_n, \omega)$ 是分支 $C_n(\lambda)$ (前面已经定义)，因为 $\omega$ 在它里面有一个射线.
+
+现在 $\lambda$ 是区间 $I \subseteq [0, 1]$ 的一个内点，这里 $\pi_n$ 把 $I$ 映射到顶点 $u_n = \pi_n(\lambda)$. 根据构造，有 $\pi(I) \subseteq \overline{C_n(\lambda)} \subseteq \hat{C}_\epsilon(S_n, \omega)$，从而证明了 $\pi$ 的连续性. ∎
+</Solution>
+</Knowledge>
+
+<Knowledge title="推论 8.7.4">
+$\mathcal{C}(G)$ 在无限薄和下是封闭的.
+
+<Solution title="证明">
+考虑 $\mathcal{C}(G)$ 的元素的薄和 $\sum_{i \in I} D_i$. 根据定理 8.7.3，每个 $D_i$ 是回路的不交并，它们一起组成了一个薄族，这个薄族的和属于 $\mathcal{C}(G)$ 而且等于 $\sum_{i \in I} D_i$. ∎
+</Solution>
+</Knowledge>

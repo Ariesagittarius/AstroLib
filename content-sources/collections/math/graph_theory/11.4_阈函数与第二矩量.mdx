@@ -1,0 +1,248 @@
+---
+title: '11.4 阈函数与第二矩量'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+我们看到，11.3 节的大部分结果有一个有趣的共同特点: 只要 $p$ 的取值是常数，那么它在结果中不扮演任何角色，即与 $p$ 独立. 例如，如果 $\mathcal{G}(n, p)$ 中几乎每个具有 $p = 0.99$ 的图都有某个给定性质，那么几乎每个具有 $p = 0.01$ 的图也有同样的性质，这怎么可能呢?
+
+我们的随机模型对于 $p$ 值变化的不敏感性并不是故意所为. 然而，对于大部分性质，存在一个 $p$ 值的临界点，使得对小于临界点的任何常数 $p$ 值图性质会“刚好”出现或不出现: 这是 $n$ 的一个函数，当 $n \to \infty$ 时，它趋向零. 比如，在 Erdős 定理的证明中，对我们研究的两个关联性质，这个临界概率是 $p(n) = 1/n$.
+
+我们称一个正实函数 $t = t(n)$ 是关于图性质 $\mathcal{P}$ 的阈函数 (threshold function)，如果对所有 $p = p(n)$ 与 $G \in \mathcal{G}(n, p)$ 下列关系成立:
+$$
+\lim_{n \to \infty} \mathbb{P}[G \in \mathcal{P}] = \begin{cases} 0, & \text{当 } n \to \infty \text{ 时}, p/t \to 0, \\ 1, & \text{当 } n \to \infty \text{ 时}, p/t \to \infty. \end{cases}
+$$
+如果 $\mathcal{P}$ 有一个阈函数 $t$，显然 $t$ 的任意正倍数 $ct$ 也是 $\mathcal{P}$ 的阈函数，所以在这种意义下，阈函数在常数倍数下是唯一的[^1].
+
+Bollobás 和 Thomason (1987) 证明了，如果递增图性质（除平凡的外）在加边运算下是封闭的，那么所有这种图性质一定有阈函数. 对于固定的 $H$，形如 $\{G \mid G \supseteq H\}$ 的性质是最常见的性质，在这节，我们会计算它的阈函数.
+
+为了计算它的阈函数，把所考虑的图性质叙述成下面的形式会方便问题的解决:
+$$
+\mathcal{P} = \{G \mid X(G) \geqslant 1\},
+$$
+这里 $X \geqslant 0$ 是 $\mathcal{G}(n, p)$ 上的一个恰当随机变量. 例如，我们可以选取 $\mathcal{G}(n, p)$ 上 $\mathcal{P}$ 的指示随机变量. 但是，$X$ 的其他选择也是允许的，例如，如果 $\mathcal{P}$ 是连通性，我们可以把 $X(G)$ 取为 $G$ 的支撑树的个数.
+
+怎样才能证明 $\mathcal{P}$ 有一个阈函数 $t$ 呢? 任何这样的证明将由两部分组成: 一部分证明当 $p$ 相对于 $t$ 较小时几乎没有 $G \in \mathcal{G}(n, p)$ 具有性质 $\mathcal{P}$；另一部分证明当 $p$ 较大时几乎每个图 $G$ 具有性质 $\mathcal{P}$.
+
+由于 $X \geqslant 0$，因此对于证明的第一部分，可以使用 Markov 不等式计算 $\mathbb{E}(X)$ 的上界来代替计算 $\mathbb{P}[X \geqslant 1]$: 如果 $\mathbb{E}(X)$ 比 1 小很多，那么只有少数几个 $G \in \mathcal{G}(n, p)$ 使得 $X(G)$ 可以大于 1，并且当 $n \to \infty$ 时有 $\mathbb{E}(X) \to 0$. 另外，期望值比概率容易计算: 不必考虑事件的独立性或者事件的不相容性，我们可以计算随机变量和的数学期望，例如，对于指示随机变量可以简单地把每个期望值相加而得到.
+
+对于证明的第二部分，情况比较复杂. 为了证明 $\mathbb{P}[X \geqslant 1]$ 是大概率，只是从下面界定 $\mathbb{E}(X)$ 是不够的: 由于 $X$ 没有上界，$\mathbb{E}(X)$ 可能因为 $X$ 值在仅仅几个图上非常大而变得较大. 然而，对大部分图 $G \in \mathcal{G}(n, p)$[^2]，$X$ 仍然可以是 0. 为了证明 $\mathbb{P}[X \geqslant 1] \to 1$，我们必须证明上面提到的情形不可能发生，也就是说，$X$ 并没有太经常地且太多地偏离它的均值.
+
+下面的概率工具可以帮助我们达到目标. 习惯性地，记
+$$
+\mu := \mathbb{E}(X)
+$$
+且 $\sigma \geqslant 0$ 定义如下:
+$$
+\sigma^2 := \mathbb{E}((X - \mu)^2).
+$$
+这个量 $\sigma^2$ 被称作方差 (variance) 或者 $X$ 的二阶矩 (second moment)，根据定义，它是 $X$ 偏离均值多少的一个度量. 由于 $\mathbb{E}$ 是线性的，把 $\sigma^2$ 的右边项展开可得
+$$
+\sigma^2 = \mathbb{E}(X^2 - 2\mu X + \mu^2) = \mathbb{E}(X^2) - \mu^2.
+$$
+注意到，$\mu$ 和 $\sigma^2$ 总是由某个固定概率空间中的随机变量定义的，这里我们考虑的空间是 $\mathcal{G}(n, p)$，两个量都是 $n$ 的函数.
+
+下面的引理包含了我们所需要的结论: $X$ 不可能太经常地偏离它的均值太远.
+
+<Knowledge title="引理 11.4.1 (Chebyshev 不等式)">
+对所有实数 $\lambda > 0$，有
+$$
+\mathbb{P}[|X - \mu| \geqslant \lambda] \leqslant \sigma^2 / \lambda^2.
+$$
+
+<Solution title="证明">
+根据引理 11.1.5 以及 $\sigma^2$ 的定义得
+$$
+\mathbb{P}[|X - \mu| \geqslant \lambda] = \mathbb{P}[(X - \mu)^2 \geqslant \lambda^2] \leqslant \sigma^2 / \lambda^2.
+$$
+∎
+</Solution>
+</Knowledge>
+
+为了证明对几乎所有 $G \in \mathcal{G}(n, p)$ 有 $X(G) \geqslant 1$，Chebyshev 不等式可以如下使用:
+
+<Knowledge title="引理 11.4.2">
+如果对所有充分大的 $n$ 有 $\mu > 0$，且当 $n \to \infty$ 时 $\sigma^2/\mu^2 \to 0$，那么对几乎所有 $G \in \mathcal{G}(n, p)$，有 $X(G) > 0$.
+
+<Solution title="证明">
+任何具有 $X(G) = 0$ 的图 $G$ 满足 $|X(G) - \mu| = \mu$. 令 $\lambda := \mu$，因此引理 11.4.1 蕴含着
+$$
+\mathbb{P}[X = 0] \leqslant \mathbb{P}[|X - \mu| \geqslant \mu] \leqslant \sigma^2/\mu^2 \xrightarrow[n \to \infty]{} 0.
+$$
+由于 $X \geqslant 0$，这意味着几乎肯定地有 $X > 0$，也就是说，对几乎所有的 $G \in \mathcal{G}(n, p)$ 有 $X(G) > 0$. ∎
+</Solution>
+</Knowledge>
+
+作为本节的主要结果，我们现在证明一个定理，该定理将给出所有形式为 $\mathcal{P}_H$ 的图性质的阈函数，这里 $\mathcal{P}_H$ 表示包含固定图 $H$ 的一个拷贝作为子图的图性质.
+
+给定 $H$，令 $k := |H|$ 和 $\ell := \|H\|$，并设 $\ell \geqslant 1$. 把图 $G$ 中同构于 $H$ 的子图个数记为 $X(G)$.
+
+给定 $n \in \mathbb{N}$，设 $\mathcal{G}(n, p)$ 中图的顶点集为 $\{0, \dots, n-1\}$，用 $\mathcal{H}$ 表示顶点取自 $\{0, \dots, n-1\}$ 的 $H$ 的所有拷贝的集合，即
+$$
+\mathcal{H} = \{H' \mid H' \simeq H, V(H') \subseteq \{0, \dots, n-1\}\}.
+$$
+给定 $H' \in \mathcal{H}$ 和 $G \in \mathcal{G}(n, p)$，用 $H' \subseteq G$ 表示 $H'$ 本身是 $G$ 的一个子图，而不仅仅是 $H'$ 的一个同构拷贝. 如同引理 11.1.4 的证明一样，通过双重计数可以得到
+$$
+\mathbb{E}(X) = \sum_{H' \in \mathcal{H}} \mathbb{P}[H' \subseteq G]. \tag{1}
+$$
+对每个固定的 $H' \in \mathcal{H}$，因为 $\|H\| = \ell$，我们有
+$$
+\mathbb{P}[H' \subseteq G] = p^\ell. \tag{2}
+$$
+我们用 $h$ 表示在一个固定 $k$-集上 $H$ 的同构拷贝的个数，显然，$h \leqslant k!$. 由于在 $\mathcal{H}$ 里的图存在 $\binom{n}{k}$ 个可能的顶点集，因此我们有
+$$
+|\mathcal{H}| = \binom{n}{k} h \leqslant \binom{n}{k} k! \leqslant n^k. \tag{3}
+$$
+给定概率 $p = p(n)$ 和一个候选的阈函数 $t = t(n)$，令 $\gamma := p/t$. 第一个引理处理了 $\gamma \to 0$ 的情形.
+
+<Knowledge title="引理 11.4.3">
+如果 $t = n^{-1/\varepsilon(H)}$，且 $p$ 使得当 $n \to \infty$ 时有 $\gamma \to 0$，那么几乎没有 $G \in \mathcal{G}(n, p)$ 属于 $\mathcal{P}_H$.
+
+<Solution title="证明">
+我们的目的是找到 $\mathbb{E}(X)$ 的上界，并且证明当 $n \to \infty$ 时这个上界趋向于零. 根据 $t$ 的选择和 $\gamma$ 的定义，有
+$$
+p = \gamma t = \gamma n^{-k/\ell},
+$$
+因此
+$$
+\mathbb{E}(X) \underset{(1), (2)}{=} |\mathcal{H}| p^\ell \underset{(3)}{\leqslant} n^k \left(\gamma n^{-k/\ell}\right)^\ell = \gamma^\ell.
+$$
+所以如果当 $n \to \infty$ 时有 $\gamma \to 0$，根据 Markov 不等式 (引理 11.1.5)，那么
+$$
+\mathbb{P}[G \in \mathcal{P}_H] = \mathbb{P}[X \geqslant 1] \leqslant \mathbb{E}(X) \leqslant \gamma^\ell \xrightarrow[n \to \infty]{} 0.
+$$
+∎
+</Solution>
+</Knowledge>
+
+和引理 11.4.3 中的函数 $t$ 不同，对于 $\mathcal{P}_H$，我们的阈函数不用 $\varepsilon(H)$ 来表达，而是用
+$$
+\varepsilon'(H) := \max \{\varepsilon(H') \mid H' \subseteq H\}
+$$
+来表示. 我们的第二个引理处理 $\gamma \to \infty$ 的情形.
+
+<Knowledge title="引理 11.4.4">
+如果 $t = n^{-1/\varepsilon'(H)}$，且 $p$ 使得当 $n \to \infty$ 时有 $\gamma \to \infty$，那么几乎所有 $G \in \mathcal{G}(n, p)$ 属于 $\mathcal{P}_H$.
+
+<Solution title="证明">
+根据 $t$ 的选择和 $\gamma$ 的定义，我们有
+$$
+p = \gamma n^{-1/\varepsilon'}, \tag{4}
+$$
+这里 $\varepsilon' := \varepsilon'(H)$.
+
+在开始主要定理的证明前，首先注意到以下不等式，它在后面的证明中会用到. 对所有的 $n \geqslant k$，有
+$$
+\begin{aligned}
+\binom{n}{k} n^{-k} &= \frac{1}{k!} \left(\frac{n}{n} \dots \frac{n-k+1}{n}\right) \\
+&\geqslant \frac{1}{k!} \left(\frac{n-k+1}{n}\right)^k \\
+&= \frac{1}{k!} \left(1 - \frac{k-1}{n}\right)^k.
+\end{aligned} \tag{5}
+$$
+在我们的情形，当 $n$ 增大且 $k$ 是有界时，$n^k$ 超过 $\binom{n}{k}$ 不多于一个常数因子，这个因子是独立于 $n$ 的.
+
+我们的目标是应用引理 11.4.2，从而找到 $\sigma^2/\mu^2 = (\mathbb{E}(X^2) - \mu^2)/\mu^2$ 的上界. 为了帮助估计 $\mathbb{E}(X^2)$，把 $X^2$ 重新表达成下面这种非寻常形式:
+$$
+X^2(G) = |\{H \in \mathcal{H} \mid H \subseteq G\}|^2 = |\{(H', H'') \in \mathcal{H}^2 \mid H' \subseteq G \text{ 且 } H'' \subseteq G\}|.
+$$
+如同 (1) 中一样，现在我们可以通过双重计数来计算 $\mathbb{E}(X^2)$:
+$$
+\mathbb{E}(X^2) = \sum_{(H', H'') \in \mathcal{H}^2} \mathbb{P}[H' \cup H'' \subseteq G]. \tag{6}
+$$
+其次，我们计算概率 $\mathbb{P}[H' \cup H'' \subseteq G]$. 给定 $H', H'' \in \mathcal{H}$，我们有
+$$
+\mathbb{P}[H' \cup H'' \subseteq G] = p^{2\ell - \|H' \cap H''\|}.
+$$
+对 $i := |H' \cap H''|$，根据 $\varepsilon'$ 的定义，有 $\|H' \cap H''\| \leqslant i\varepsilon'$，所以得到
+$$
+\mathbb{P}[H' \cup H'' \subseteq G] \leqslant p^{2\ell - i\varepsilon'}. \tag{7}
+$$
+我们已经估计了 (6) 中和式的每一项，这对于整个和式意味着什么呢? 由于 (7) 依赖于参数 $i = |H' \cap H''|$，我们把 (6) 中和式下标 $\mathcal{H}^2$ 的范围划分成子集
+$$
+\mathcal{H}_i^2 := \{(H', H'') \in \mathcal{H}^2 \mid |H' \cap H''| = i\}, \quad i = 0, \dots, k,
+$$
+并对每个 $\mathcal{H}_i^2$ 单独地计算对应的和
+$$
+A_i := \sum_i \mathbb{P}[H' \cup H'' \subseteq G].
+$$
+（这里与下面一样，我们用 $\sum_i$ 表示关于所有对 $(H', H'') \in \mathcal{H}_i^2$ 的总和.）
+
+如果 $i = 0$，那么 $H'$ 与 $H''$ 是不相交的，因此事件 $H' \subseteq G$ 与 $H'' \subseteq G$ 是独立的. 所以
+$$
+\begin{aligned}
+A_0 &= \sum_0 \mathbb{P}[H' \cup H'' \subseteq G] \\
+&= \sum_0 \mathbb{P}[H' \subseteq G] \cdot \mathbb{P}[H'' \subseteq G] \\
+&\leqslant \sum_{(H', H'') \in \mathcal{H}^2} \mathbb{P}[H' \subseteq G] \cdot \mathbb{P}[H'' \subseteq G] \\
+&= \left(\sum_{H' \in \mathcal{H}} \mathbb{P}[H' \subseteq G]\right) \cdot \left(\sum_{H'' \in \mathcal{H}} \mathbb{P}[H'' \subseteq G]\right) \\
+&\underset{(1)}{=} \mu^2.
+\end{aligned} \tag{8}
+$$
+现在，让我们对于 $i \geqslant 1$ 估计 $A_i$. 注意到 $\sum_i$ 可被记作 $\sum_{H' \in \mathcal{H}} \sum_{H'' \in \mathcal{H}: |H' \cap H''| = i}$. 对于固定的 $H'$，第二个和式包含了
+$$
+\binom{k}{i} \binom{n-k}{k-i} h
+$$
+个被加项: $\mathcal{H}$ 中满足 $|H'' \cap H'| = i$ 的图 $H''$ 的个数. 因此，对于所有的 $i \geqslant 1$ 以及合适的与 $n$ 独立的常数 $c_1, c_2$，如果 $\gamma \geqslant 1$，则
+$$
+\begin{aligned}
+A_i &= \sum_i \mathbb{P}[H' \cup H'' \subseteq G] \\
+&\underset{(7)}{\leqslant} \sum_{H' \in \mathcal{H}} \binom{k}{i} \binom{n-k}{k-i} h p^{2\ell} p^{-i\varepsilon'} \\
+&\underset{(4)}{=} |\mathcal{H}| \binom{k}{i} \binom{n-k}{k-i} h p^{2\ell} (\gamma n^{-1/\varepsilon'})^{-i\varepsilon'} \\
+&\leqslant |\mathcal{H}| p^\ell c_1 n^{k-i} h p^\ell \gamma^{-i\varepsilon'} n^i \\
+&\underset{(1), (2)}{=} \mu c_1 n^k h p^\ell \gamma^{-i\varepsilon'} \\
+&\underset{(5)}{\leqslant} \mu c_2 \binom{n}{k} h p^\ell \gamma^{-i\varepsilon'} \\
+&\underset{(1)-(3)}{=} \mu^2 c_2 \gamma^{-i\varepsilon'} \\
+&\leqslant \mu^2 c_2 \gamma^{-\varepsilon'}.
+\end{aligned}
+$$
+根据 $A_i$ 的定义，令 $c_3 := kc_2$，我们有
+$$
+\mathbb{E}(X^2)/\mu^2 \underset{(6)}{=} \left(A_0/\mu^2 + \sum_{i=1}^k A_i/\mu^2\right) \underset{(8)}{\leqslant} 1 + c_3 \gamma^{-\varepsilon'}.
+$$
+由假定 $\ell = \|H\| > 0$ 知 $\varepsilon' \geqslant \varepsilon > 0$，所以
+$$
+\frac{\sigma^2}{\mu^2} = \frac{\mathbb{E}(X^2) - \mu^2}{\mu^2} \leqslant c_3 \gamma^{-\varepsilon'} \xrightarrow[\gamma \to \infty]{} 0.
+$$
+由引理 11.4.2 知，几乎肯定地 $X > 0$，也就是说，几乎所有 $G \in \mathcal{G}(n, p)$ 都有一个子图同构于 $H$，因此属于 $\mathcal{P}_H$. ∎
+</Solution>
+</Knowledge>
+
+<Knowledge title="定理 11.4.5 (Erdős and Rényi, 1960; Bollobás, 1981)">
+设 $H$ 是一个具有至少一条边的图，那么 $t := n^{-1/\varepsilon'(H)}$ 是性质 $\mathcal{P}_H$ 的一个阈函数.
+
+<Solution title="证明">
+我们需要证明，如果当 $n \to \infty$ 时有 $\gamma \to 0$，那么几乎没有 $G \in \mathcal{G}(n, p)$ 属于 $\mathcal{P}_H$；如果当 $n \to \infty$ 时有 $\gamma \to \infty$，那么几乎所有 $G \in \mathcal{G}(n, p)$ 属于 $\mathcal{P}_H$. 后一个结论已经在引理 11.4.4 中证明了.
+
+为了证明如果 $\gamma \to 0$，则几乎没有 $G \in \mathcal{G}(n, p)$ 属于 $\mathcal{P}_H$，我们对子图 $H' \subseteq H$ 运用引理 11.4.3，这里 $H'$ 是在 $\varepsilon'(H)$ 的定义中达到最大值的子图，即 $H'$ 使得 $\varepsilon(H') = \varepsilon'(H)$. 引理意味着几乎没有 $G \in \mathcal{G}(n, p)$ 包含 $H'$ 的一个拷贝. 因为任何包含 $H$ 的图也包含 $H'$，所以这蕴含着几乎没有 $G \in \mathcal{G}(n, p)$ 包含 $H$ 的拷贝，证毕. ∎
+</Solution>
+</Knowledge>
+
+对于平衡图 (balanced graph) (即满足 $\varepsilon'(H) = \varepsilon(H)$ 的图)，定理 11.4.5 中的界很容易计算. 圈和树是平衡图的例子. 对于圈，我们可以得到 Erdős 定理的证明中看到的那个阈函数:
+
+<Knowledge title="推论 11.4.6">
+如果 $k \geqslant 3$，那么 $t(n) = n^{-1}$ 是包含 $k$-圈这一性质的阈函数. ∎
+</Knowledge>
+
+注意到，$t$ 并不依赖 $k$. (也可参见练习 18.)
+
+对于树，也有类似现象. 在这种情况，阈函数依赖于树的阶数，但不依赖它的形状:
+
+<Knowledge title="推论 11.4.7">
+如果 $T$ 是一个阶数为 $k \geqslant 2$ 的树，那么 $t(n) = n^{-k/(k-1)}$ 是包含 $T$ 的拷贝这一性质的阈函数. ∎
+</Knowledge>
+
+对于阈函数的系统研究，使得我们对图 $G \in \mathcal{G}(n, p)$ 的典型性质随着 $p = p(n)$ 增长率的增加而表现出的整体面貌有所了解. 这个过程，被称作随机图的进化 (evolution of random graphs)，十分令人着迷: 如同生物的进化一样，变化以“跳跃式”进行，突变发生在 $p$ 的增长率超过阈函数的瞬间.
+
+粗略地说，一开始我们取边概率 $p$ 使得它的数量阶小于 $n^{-2}$，对于这样的 $p$，随机图 $G \in \mathcal{G}(n, p)$ 几乎肯定地没有边. 然而，随着 $p$ 的增大，图获得越来越多的结构. 当 $p$ 趋向于 $n^{-1}$ 时，它的分支成为越来越大的树 (推论 11.4.7)，直到 $p = n^{-1}$ 时，第一个圈出现了 (练习 18). 很快，这些分支中的一些将有几个交叉弦，使得这个图变成非平面图. 同时，一个分支生长得比其他分支快，直到 $p = (\log n) n^{-1}$ 附近它吞并其他分支，使得这个图成为连通的. 几乎紧接着，在 $p = (1 + \epsilon)(\log n) n^{-1}$ 时，我们的随机图几乎肯定地有一个 Hamilton 圈……
+
+[^1]: 我们的阈概念仅仅反映了最粗糙的但有趣的筛选层次: 对于某些性质，例如连通性，人们可以定义更精确的阈使得常数因子是决定性的.
+
+[^2]: 例如，对于 $n^{-1}$ 与 $(\log n)n^{-1}$ 之间的某个 $p$，几乎每个 $G \in \mathcal{G}(n, p)$ 包含一个孤立点（因此没有支撑树），但它的支撑树的期望值随着 $n$ 趋向于 $\infty$. 细节见练习 11.

@@ -1,0 +1,106 @@
+---
+title: '6.1 环流'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+将图看作一个网络：它的边上负载着某种流，如水流、电流、数据流或其他类似的流。那么，我们应如何准确地建立这一模型呢？
+
+首先，需要知道通过每条边 $e = xy$ 的流量及流向。在模型中，我们给顶点对 $(x, y)$ 赋值一个正整数 $k$，来表示存在 $k$ 个单位的流从 $x$ 经过 $e$ 流向 $y$；或者给 $(x, y)$ 赋值 $-k$ 来表示 $e$ 上有 $k$ 个单位相反方向的流，即从 $y$ 流向 $x$。对于这样的赋值 $f: V^2 \to \mathbb{Z}$，以及 $G$ 中任意两个相邻的顶点 $x$ 和 $y$，有 $f(x, y) = -f(y, x)$。
+
+通常情况下，在网络中，流只从少数几个节点流入或流出，而在所有其他节点，流入总量与流出总量相等。在我们的模型中，这意味着在大多数节点 $x$，函数 $f$ 满足 **Kirchhoff 定律** (Kirchhoff's law)
+
+$$
+\sum_{y \in N(x)} f(x, y) = 0.
+$$
+
+在这一章，我们将满足以上两个性质的任意映射 $f: V^2 \to \mathbb{Z}$ 称为图 $G$ 上的一个“流”。有时，会用其他群取代 $\mathbb{Z}$，通常我们考虑的图都是多重图。[^1] 事实上，“流”的理论不仅对现实中的流模型行之有效，而且它与图论的其他部分有着一些深刻和令人惊讶的联系，尤其是与连通性和着色问题。
+
+## 6.1 环流
+
+令 $G = (V, E)$ 是一个 (无向) 多重图，$G$ 的每条边 $e = xy$ 有两个方向 (direction) $(x, y)$ 和 $(y, x)$。(如果 $e$ 是一个环边，这两个方向是一样的，所以环边只有一个方向。) 一条边和它的一个方向所组成的三元组 $(e, x, y)$ 叫做一个**定向边** (oriented edge)。对应于 $e$ 的定向边是它的**定向** (orientation)，记为 $\vec{e}$ 和 $\overleftarrow{e}$，所以 $\{\vec{e}, \overleftarrow{e}\} = \{(e, x, y), (e, y, x)\}$，但通常不知道哪一个是哪一个。我们把所有定向边的集合记为
+
+$$
+\vec{E} := \{(e, x, y) \mid e \in E; x, y \in V; e = xy\}.
+$$
+
+我们把 $\vec{E}$ 中的元素表示为 $\vec{e}, \overleftarrow{e}$，等等，即使还没有定义边 $e$，而“$e$”用来表示它对应的无向边。
+
+对于任意定向边的集合 $\vec{F} \subseteq \vec{E}$，令
+
+$$
+\overleftarrow{F} := \{\overleftarrow{e} \mid \vec{e} \in \vec{F}\}.
+$$
+
+注意到 $\vec{E}$ 本身是对称的：$\overleftarrow{E} = \vec{E}$。对任意两个顶点集 $X, Y \subseteq V$ (不一定不相交) 和 $\vec{F} \subseteq \vec{E}$，定义
+
+$$
+\vec{F}(X, Y) := \{(e, x, y) \in \vec{F} \mid x \in X; y \in Y; x \neq y\},
+$$
+
+将 $\vec{F}(\{x\}, Y)$ 简写为 $\vec{F}(x, Y)$，并且记
+
+$$
+\vec{F}(x) := \vec{F}(x, V) = \vec{F}(\{x\}, \overline{\{x\}}).
+$$
+
+这里，$\overline{X}$ 表示顶点集 $X \subseteq V$ 的补 $V \setminus X$。注意，在 $\vec{F}(X, Y)$ 和 $\vec{F}(x)$ 的定义中，不考虑在顶点 $x \in X \cap Y$ 处的环边。
+
+设 $H$ 是加法意义下具有零元 0 的阿贝尔半群。[^2] 给定顶点集 $X, Y \subseteq V$ (不一定是不相交的) 和函数 $f: \vec{E} \to H$，令
+
+$$
+f(X, Y) := \sum_{\vec{e} \in \vec{E}(X, Y)} f(\vec{e}). \tag{1}
+$$
+
+同样地，将 $f(\{x\}, Y)$ 记作 $f(x, Y)$，等等。
+
+从现在开始，我们假设 $H$ 是一个阿贝尔群。若 $f$ 满足下面两个条件：
+
+(F1) 对任意具有 $x \neq y$ 的 $(e, x, y) \in \vec{E}$，有 $f(e, x, y) = -f(e, y, x)$；
+
+(F2) 对任意 $v \in V$，有 $f(v, V) = 0$。
+
+则称 $f$ 是图 $G$ 上的一个 (取值自 $H$ 的) **环流** (circulation)。
+
+如果 $f$ 满足 (F1)，则对所有的 $X \subseteq V$，有
+
+$$
+f(X, X) = 0.
+$$
+
+如果 $f$ 满足 (F2)，则
+
+$$
+f(X, V) = \sum_{x \in X} f(x, V) = 0.
+$$
+
+从这两个基本性质不难看出，在环流中，穿过任意一个割的净流量为零。
+
+<Knowledge title="命题 6.1.1">
+如果 $f$ 是一个环流，那么对任意集合 $X \subseteq V$，有 $f(X, \overline{X}) = 0$。
+
+<Solution title="证明">
+$$
+f(X, \overline{X}) = f(X, V) - f(X, X) = 0 - 0 = 0.
+$$
+∎
+</Solution>
+</Knowledge>
+
+由于桥本身就是割，故命题 6.1.1 蕴含着桥上的环流总是零。
+
+<Knowledge title="推论 6.1.2">
+如果 $f$ 是一个环流且 $e = xy$ 是 $G$ 中一个桥，则 $f(e, x, y) = 0$。
+</Knowledge>
+
+[^1]: 为保持一致性，对某些命题，我们只对简单图 (即没有环边和多重边) 进行叙述，因为其证明依赖于书中前面证明的关于简单图的结论，然而这些命题对多重图也是成立的。
+[^2]: 本书并不包含群论知识。对于 $H$，这里所考虑的半群只包括自然数、整数、实数、循环群 $\mathbb{Z}_k$ 以及它们的乘积 $\mathbb{Z}_k \times \mathbb{Z}_m$。

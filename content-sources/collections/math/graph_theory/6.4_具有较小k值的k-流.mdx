@@ -1,0 +1,97 @@
+---
+title: '6.4 具有较小 k 值的 k-流'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+平凡地，一个图有 1-流 (空集) 当且仅当它不含边。在这一节，作为简单的例子，我们会收集若干关于图包含 2-、3-、或 4-流的充分条件。更多例子可在练习中找到。
+
+<Knowledge title="命题 6.4.1">
+一个图有 2-流当且仅当它的所有度数为偶数。
+
+<Solution title="证明">
+根据定理 6.3.3，图 $G = (V, E)$ 有 2-流当且仅当它有 $\mathbb{Z}_2$-流，即当且仅当取值为 $\bar{1}$ 的常值映射 $\vec{E} \to \mathbb{Z}_2$ 满足 (F2)，这一条件成立当且仅当所有度数为偶数。
+∎
+</Solution>
+</Knowledge>
+
+在本章余下部分，若一个图的所有顶点度数为偶数，我们就称它是**偶的** (even)。
+
+<Knowledge title="命题 6.4.2">
+一个三正则图有 3-流当且仅当它是二部图。
+
+<Solution title="证明">
+设 $G = (V, E)$ 是一个三正则图。我们首先假定 $G$ 有一个 3-流，因此也有一个 $\mathbb{Z}_3$-流 $f$。我们证明 $G$ 中任意一个圈 $C = x_0 \dots x_\ell x_0$ 的长度为偶数 (参考命题 1.6.1)。考虑 $C$ 上两条连续边，比如 $e_{i-1} := x_{i-1}x_i$ 和 $e_i := x_i x_{i+1}$。如果 $f$ 把 $C$ 中的前向边赋相同的值，即如果 $f(e_{i-1}, x_{i-1}, x_i) = f(e_i, x_i, x_{i+1})$，那么与 $x_i$ 关联的第三条边的任意非零赋值都不能使 $f$ 在 $x_i$ 满足 (F2)。因此，$f$ 给 $C$ 上的边交错地赋值 $\bar{1}$ 和 $\bar{2}$。特别地，$C$ 的长度为偶数。
+
+反过来，令 $G$ 是一个二部图，其顶点划分为 $\{X, Y\}$。因为 $G$ 是三正则的，故对所有的边 $e = xy (x \in X, y \in Y)$，取 $f(e, x, y) := \bar{1}$ 和 $f(e, y, x) := \bar{2}$ 而定义的映射 $\vec{E} \to \mathbb{Z}_3$ 是 $G$ 上的 $\mathbb{Z}_3$-流。那么，根据定理 6.3.3，$G$ 有一个 3-流。
+∎
+</Solution>
+</Knowledge>
+
+完全图 $K^n$ 的流数是多少呢？对奇数 $n > 1$，由命题 6.4.1 我们有 $\varphi(K^n) = 2$。此外，$\varphi(K^2) = \infty, \varphi(K^4) = 4$，这些都可以很容易地由命题 6.4.2 和命题 6.4.5 直接得到。有趣的是，$K^4$ 是唯一一个流数为 4 的完全图：
+
+<Knowledge title="命题 6.4.3">
+对所有偶数 $n > 4$，$\varphi(K^n) = 3$。
+
+<Solution title="证明">
+命题 6.4.1 蕴含着对所有偶数 $n, \varphi(K^n) \geqslant 3$。我们对 $n$ 用归纳法来证明具有偶数 $n > 4$ 的图 $G = K^n$ 都有一个 3-流。
+
+作为归纳法的开始，考虑 $n = 6$，则 $G$ 是三个边不交图 $G_1, G_2, G_3$ 的并，其中 $G_1, G_2 = K^3$ 而 $G_3 = K_{3,3}$。显然，$G_1$ 和 $G_2$ 都有 2-流，而由命题 6.4.2 知，$G_3$ 有 3-流，那么这些流的并是 $G$ 上的一个 3-流。
+
+现在令 $n > 6$，并假设结论对 $n - 2$ 成立。显然，$G$ 是 $K^{n-2}$ 和图 $G' = (V', E')$ 的边不交的并，其中 $G' = \overline{K^{n-2}} * K^2$。根据归纳假设，$K^{n-2}$ 有 3-流。由定理 6.3.3，我们只需要找到 $G'$ 上的一个 $\mathbb{Z}_3$-流即可。对 $\overline{K^{n-2}} \subseteq G$ 中的每个顶点 $z$，令 $f_z$ 是三角形 $zxyz \subseteq G'$ 上的一个 $\mathbb{Z}_3$-流，其中 $e = xy$ 是 $K^2$ 在 $G$ 中的边。令 $f: \vec{E}' \to \mathbb{Z}_3$ 是这些流之和。显然，除了 $(e, x, y)$ 和 $(e, y, x)$ 之外，$f$ 处处非零。若 $f(e, x, y) \neq \bar{0}$，则 $f$ 即为所需的 $G'$ 上的 $\mathbb{Z}_3$-流；若 $f(e, x, y) = \bar{0}$，则 $f + f_z$ (对任意 $z$) 是 $G'$ 上的 $\mathbb{Z}_3$-流。
+∎
+</Solution>
+</Knowledge>
+
+<Knowledge title="命题 6.4.4">
+每个 4-边连通图有 4-流。
+
+<Solution title="证明">
+设 $G$ 是一个 4-边连通图，由推论 2.4.2，$G$ 有两棵边不交的支撑树 $T_i (i = 1, 2)$。对每条边 $e \notin T_i$，令 $C_{i,e}$ 是包含 $e$ 的关于 $T_i$ 的基本圈，而 $f_{i,e}$ 是围绕 $C_{i,e}$ 取值 $\bar{i}$ 的 $\mathbb{Z}_4$-流，更准确地说，是一个在 $C_{i,e}$ 的边上取值为 $\bar{i}$ 或 $-\bar{i}$，而在其他边上为零的 $\vec{E} \to \mathbb{Z}_4$ 环流。
+
+令 $f_1 := \sum_{e \notin T_1} f_{1,e}$。因为每个 $e \notin T_1$ 位于唯一的圈 $C_{1,e'}$ (即对 $e = e'$) 中，所以 $f_1$ 在 $T_1$ 之外只取值 $\bar{1}$ 或 $-\bar{1} (= \bar{3})$。记
+
+$$
+F := \{e \in E(T_1) \mid f_1(e) = \bar{0}\},
+$$
+
+且 $f_2 := \sum_{e \in F} f_{2,e}$。同上面一样，对所有 $e \in F$ 有 $f_2(e) = \bar{2} = -\bar{2}$。那么 $f := f_1 + f_2$ 是两个在 $\mathbb{Z}_4$ 上取值的环流之和，因此本身也是 $\mathbb{Z}_4$ 上的环流。此外，$f$ 是处处非零的：在 $F$ 的边上，它取值 $\bar{2}$；在 $T_1 - F$ 的边上它与 $f_1$ 取值相同 (因此，根据 $F$ 的选取，它是非零的)；而在 $T_1$ 之外的所有边上，它取值为 $\bar{1}$ 或 $\bar{3}$。因此，$f$ 是 $G$ 上的 $\mathbb{Z}_4$-流，根据定理 6.3.3，论断成立。
+∎
+</Solution>
+</Knowledge>
+
+下面的命题描述了一类含 4-流的图，它可以用包含 2-流的图来刻画。给定整数 $m, n \geqslant 2$，我们用 $\mathbb{Z}_m \times \mathbb{Z}_n$ 表示元素为 $(a, b)$，这里 $a \in \mathbb{Z}_m$ 和 $b \in \mathbb{Z}_n$，且运算为
+
+$$
+(a, b) + (a', b') := (a + a', b + b')
+$$
+
+的群。
+
+<Knowledge title="命题 6.4.5">
+(i) 一个图有 4-流当且仅当它是两个偶图的并；
+
+(ii) 一个三正则图有 4-流当且仅当它是 3-边可着色的。
+
+<Solution title="证明">
+由推论 6.3.2 和定理 6.3.3，一个图有 4-流当且仅当它有 $\mathbb{Z}_2^2$-流，这里 $\mathbb{Z}_2^2 := \mathbb{Z}_2 \times \mathbb{Z}_2$。因此结论 (i) 可由命题 6.4.1 直接推得。
+
+(ii) 设 $G = (V, E)$ 是一个三正则图。我们首先假定 $G$ 有一个 $\mathbb{Z}_2^2$-流 $f$，并定义了一个边着色 $E \to \mathbb{Z}_2^2 \setminus \{0\}$。因为对所有的 $a \in \mathbb{Z}_2^2$，有 $a = -a$，所以对每个 $\vec{e} \in \vec{E}$，有 $f(\vec{e}) = f(\overleftarrow{e})$，用颜色 $f(\vec{e})$ 给边 $e$ 着色。如果两条有公共端点 $v$ 的边着色相同，则 $f$ 在这两条边上的值加起来会为零。根据 (F2)，$f$ 将会给在 $v$ 的第三边赋值为零，由于这和 $f$ 的定义矛盾，所以我们的边着色是正确的。
+
+反过来，因为 $\mathbb{Z}_2^2$ 的三个非零元之和为零，对所有的 $\vec{e} \in \vec{E}$，令 $f(\vec{e}) = f(\overleftarrow{e}) = c(e)$，所以每个 3-边着色 $c: E \to \mathbb{Z}_2^2 \setminus \{0\}$ 都定义了 $G$ 上的一个 $\mathbb{Z}_2^2$-流。
+∎
+</Solution>
+</Knowledge>
+
+<Knowledge title="推论 6.4.6">
+每个三正则 3-边可着色的图不包含桥。
+</Knowledge>

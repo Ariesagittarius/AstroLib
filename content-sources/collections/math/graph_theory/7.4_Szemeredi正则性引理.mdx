@@ -1,0 +1,256 @@
+---
+title: '7.4 Szemerédi 正则性引理'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+40 多年前, 在证明整数算术级数的一个定理时, Szemerédi 发展了一个研究图论的工具, 近年来, 这个工具已经成为研究极值图论的不二选择, 它被称作正则性引理 (regularity lemma). 粗略地说, 这个引理告诉我们, 所有的图都能被随机图以下列方式逼近: 每个图可以被分成若干个相等部分, 使得它的大部分边分布在不同的部分之间, 并且任何两部分之间的边分布得相当均匀——正如我们对随机生成的图所期望的那样.
+
+为了准确地表达正则性引理, 我们需要一些定义. 令 $G = (V, E)$ 是一个图, $X, Y \subseteq V$ 是不相交的集合, 我们用 $\|X, Y\|$ 表示 $G$ 中 $X - Y$ 边的个数, 并称
+
+$$
+d(X, Y) := \frac{\|X, Y\|}{|X||Y|}
+$$
+
+是顶点集对 $(X, Y)$ 的密度 (density). (这是一个介于 0 和 1 之间的实数.) 给定某个 $\epsilon > 0$, 我们称不交集合 $A, B \subseteq V$ 构成的顶点集对 $(A, B)$ 是 $\epsilon$-正则的 ($\epsilon$-regular), 如果对所有满足 $|X| \geqslant \epsilon |A|$ 和 $|Y| \geqslant \epsilon |B|$ 的 $X \subseteq A$ 和 $Y \subseteq B$, 有
+
+$$
+|d(X, Y) - d(A, B)| \leqslant \epsilon.
+$$
+
+因此, $\epsilon$-正则对中的边分布相当均匀, 并且我们开始取的 $\epsilon$ 越小, 它就越均匀.
+
+考虑 $V$ 的一个划分 $\{V_0, V_1, \dots, V_k\}$, 这里 $V_0$ 被挑出作为一个例外集 (exceptional set). (这个例外集 $V_0$ 可以为空.$^6$) 我们称 $G$ 的如此划分是一个 $\epsilon$-正则划分 ($\epsilon$-regular partition), 如果它满足下面的三个条件:
+
+(i) $|V_0| \leqslant \epsilon |V|$;
+
+(ii) $|V_1| = \dots = |V_k|$;
+
+(iii) 除了至多 $\epsilon k^2$ 个顶点集对 $(V_i, V_j)$ ($1 \leqslant i < j \leqslant k$), 其他顶点集对都是 $\epsilon$-正则的.
+
+例外集 $V_0$ 的角色仅仅是为了方便: 它使得要求其他划分集都有相同的阶成为可能. 因为条件 (iii) 只对集合 $V_1, \dots, V_k$ 产生影响, 我们可以将 $V_0$ 看成一个箱子: 当我们评估这个划分的正则性时, 箱子中的顶点可以被忽略, 但是它仅包含很少这样的顶点.
+
+<Knowledge title="定理 7.4.1 (正则性引理)">
+对每个 $\epsilon > 0$ 和每个整数 $m \geqslant 1$, 存在整数 $M$ 使得每个阶至少为 $m$ 的图拥有一个 $\epsilon$-正则划分 $\{V_0, V_1, \dots, V_k\}$, 且满足 $m \leqslant k \leqslant M$.
+</Knowledge>
+
+所以正则性引理表明, 给定任意 $\epsilon > 0$, 每个图存在一个 $\epsilon$-正则划分, 且划分中集合的个数是有界的. 划分中集合的个数的上界 $M$ 保证了, 大的图的划分集合也是大的. 注意到, 当划分集合是单点集时, $\epsilon$-正则性是平凡的; 而当划分集合较大时, $\epsilon$-正则性是一个很强的性质. 引理也允许我们确定划分集合数目的下界 $m$, 它可以被用来增加分布在不同划分集合之间的边数 (即由正则性引理决定的边) 相对于划分集合内部的边数 (对于这部分我们一无所知) 的比例, 更多细节参见练习 38.
+
+注意到, 正则性引理现在的形式是为稠密图$^7$而设计的; 对稀疏图, 因为所有集合对的密度 (从而它们之间的差异) 趋于零 (练习 39), 所以引理变得平凡.
+
+在本节余下的部分, 我们给出正则性引理的证明. 虽然证明并不难, 但是第一次接触正则性引理的读者可能更急于领略这个引理的代表性应用, 而不是它的证明技巧. 对于这样的读者, 我们欢迎你现在就跳到 7.5 节的开头部分, 等有空时再回来读这个证明.
+
+对实数 $\mu_1, \dots, \mu_k > 0$ 和 $e_1, \dots, e_k \geqslant 0$, 我们将需要下面的不等式:
+
+$$
+\sum \frac{e_i^2}{\mu_i} \geqslant \frac{\left(\sum e_i\right)^2}{\sum \mu_i}. \tag{1}
+$$
+
+令 $a_i := \sqrt{\mu_i}$ 和 $b_i := e_i / \sqrt{\mu_i}$, 上式可由 Cauchy-Schwarz 不等式 $\sum a_i^2 \sum b_i^2 \geqslant \left(\sum a_i b_i\right)^2$ 得到.
+
+设 $G = (V, E)$ 是一个图且 $n := |V|$. 对于不交集合 $A, B \subseteq V$, 定义
+
+$$
+q(A, B) := \frac{|A||B|}{n^2} d^2(A, B) = \frac{\|A, B\|^2}{|A||B|n^2}.
+$$
+
+对 $A$ 的划分 $\mathcal{A}$ 和 $B$ 的划分 $\mathcal{B}$, 令
+
+$$
+q(\mathcal{A}, \mathcal{B}) := \sum_{A' \in \mathcal{A}; B' \in \mathcal{B}} q(A', B'),
+$$
+
+并且对 $V$ 的一个划分 $\mathcal{P} = \{C_1, \dots, C_k\}$, 令
+
+$$
+q(\mathcal{P}) := \sum_{i < j} q(C_i, C_j).
+$$
+
+然而, 如果 $\mathcal{P} = \{C_0, C_1, \dots, C_k\}$ 是 $V$ 的一个划分, $C_0$ 是它的例外集, 我们将 $C_0$ 看成孤立顶点的集合, 并且定义
+
+$$
+q(\mathcal{P}) := q(\tilde{\mathcal{P}}),
+$$
+
+这里 $\tilde{\mathcal{P}} := \{C_1, \dots, C_k\} \cup \{\{v\} \mid v \in C_0\}$.
+
+函数 $q(\mathcal{P})$ 在正则性引理的证明中扮演了一个极为关键的角色. 一方面, 它衡量划分 $\mathcal{P}$ 的正则性: 如果 $\mathcal{P}$ 有太多非正则的顶点集对 $(A, B)$, 我们可以取出违反正则性的子集中的对 $(X, Y)$, 并且将顶点集 $X$ 和 $Y$ 放进它们自己的划分集中; 就如我们将要证明的那样, 这将细分 $\mathcal{P}$, 得到一个新的划分, 新划分的 $q$ 值远大于原来划分的 $q$ 值. 这里, “远大于”意味着 $q(\mathcal{P})$ 的增长是有下界的, 这个界是仅依赖于 $\epsilon$ 的常数. 另一方面,
+
+$$
+\begin{aligned}
+q(\mathcal{P}) &= \sum_{i < j} q(C_i, C_j) \\
+&= \sum_{i < j} \frac{|C_i||C_j|}{n^2} d^2(C_i, C_j) \\
+&\leqslant \frac{1}{n^2} \sum_{i < j} |C_i||C_j| \\
+&\leqslant 1.
+\end{aligned}
+$$
+
+所以 $q(\mathcal{P})$ 增加一个常数的次数也被一个常数所限制, 换句话说, 经过某个有界次数的细分, 我们的划分将是 $\epsilon$-正则的! 为完成正则性引理的证明, 我们接下来需要做的是注意到, 如果一开始将 $V$ 划分成 $m$ 个集合, 那么最后一次划分所包含的集合个数是多少, 并选择这个集合个数作为我们希望得到的上界 $M$.
+
+让我们给出严格的证明. 首先证明, 当细分一个划分时, $q$ 值不会降低:
+
+<Knowledge title="引理 7.4.2">
+(i) 设 $C, D \subseteq V$ 是不交的集合. 若 $\mathcal{C}$ 是 $C$ 的一个划分, $\mathcal{D}$ 是 $D$ 的一个划分, 则 $q(\mathcal{C}, \mathcal{D}) \geqslant q(C, D)$.
+
+(ii) 若 $\mathcal{P}, \mathcal{P}'$ 是 $V$ 的划分, 且 $\mathcal{P}'$ 是 $\mathcal{P}$ 的细分, 则 $q(\mathcal{P}') \geqslant q(\mathcal{P})$.
+
+<Solution title="证明">
+(i) 设 $\mathcal{C} =: \{C_1, \dots, C_k\}$, $\mathcal{D} =: \{D_1, \dots, D_\ell\}$, 则
+
+$$
+\begin{aligned}
+q(\mathcal{C}, \mathcal{D}) &= \sum_{i, j} q(C_i, D_j) \\
+&= \frac{1}{n^2} \sum_{i, j} \frac{\|C_i, D_j\|^2}{|C_i||D_j|} \\
+&\underset{(1)}{\geqslant} \frac{1}{n^2} \frac{\left(\sum_{i, j} \|C_i, D_j\|\right)^2}{\sum_{i, j} |C_i||D_j|} \\
+&= \frac{1}{n^2} \frac{\|C, D\|^2}{\left(\sum_i |C_i|\right)\left(\sum_j |D_j|\right)} \\
+&= q(C, D).
+\end{aligned}
+$$
+
+(ii) 设 $\mathcal{P} := \{C_1, \dots, C_k\}$, 且对 $i = 1, \dots, k$, 令 $\mathcal{C}_i$ 是由 $\mathcal{P}'$ 导出的 $C_i$ 的划分. 因为 $q(\mathcal{P}') = \sum_i q(\mathcal{C}_i) + \sum_{i < j} q(\mathcal{C}_i, \mathcal{C}_j)$, 故
+
+$$
+\begin{aligned}
+q(\mathcal{P}) &= \sum_{i < j} q(C_i, C_j) \\
+&\underset{\text{(i)}}{\leqslant} \sum_{i < j} q(\mathcal{C}_i, \mathcal{C}_j) \\
+&\leqslant q(\mathcal{P}').
+\end{aligned}
+$$
+∎
+</Solution>
+</Knowledge>
+
+接下来, 我们证明通过对一个划分的一个非正则顶点集对的细分, 可将 $q$ 值提高少许, 因为我们这里只处理一对集合, 所以增加量仍然小于任意常数.
+
+<Knowledge title="引理 7.4.3">
+设 $\epsilon > 0$, 且 $C, D \subseteq V$ 是不交的集合. 若 $(C, D)$ 不是 $\epsilon$-正则的, 则存在 $C$ 的划分 $\mathcal{C} = \{C_1, C_2\}$ 和 $D$ 的划分 $\mathcal{D} = \{D_1, D_2\}$ 使得
+
+$$
+q(\mathcal{C}, \mathcal{D}) \geqslant q(C, D) + \epsilon^4 \frac{|C||D|}{n^2}.
+$$
+
+<Solution title="证明">
+假设 $(C, D)$ 不是 $\epsilon$-正则的, 则存在集合 $C_1 \subseteq C$ 和 $D_1 \subseteq D$, 其中 $|C_1| \geqslant \epsilon |C|$, $|D_1| \geqslant \epsilon |D|$, 使得对于 $\eta := d(C_1, D_1) - d(C, D)$ 有
+
+$$
+|\eta| > \epsilon. \tag{2}
+$$
+
+令 $\mathcal{C} := \{C_1, C_2\}$ 和 $\mathcal{D} := \{D_1, D_2\}$, 这里 $C_2 := C \setminus C_1, D_2 := D \setminus D_1$.
+
+下面我们证明 $\mathcal{C}$ 和 $\mathcal{D}$ 满足引理的结论. 记 $c_i := |C_i|$, $d_i := |D_i|$, $e_{ij} := \|C_i, D_j\|$, $c := |C|$, $d := |D|$ 以及 $e := \|C, D\|$. 如引理 7.4.2 的证明一样, 有
+
+$$
+\begin{aligned}
+q(\mathcal{C}, \mathcal{D}) &= \frac{1}{n^2} \sum_{i, j} \frac{e_{ij}^2}{c_i d_j} \\
+&= \frac{1}{n^2} \left(\frac{e_{11}^2}{c_1 d_1} + \sum_{i+j > 2} \frac{e_{ij}^2}{c_i d_j}\right) \\
+&\underset{(1)}{\geqslant} \frac{1}{n^2} \left(\frac{e_{11}^2}{c_1 d_1} + \frac{(e - e_{11})^2}{cd - c_1 d_1}\right).
+\end{aligned}
+$$
+
+由 $\eta$ 的定义, 我们有 $e_{11} = c_1 d_1 e / cd + \eta c_1 d_1$. 另外, 由 $C_1$ 和 $D_1$ 的选择知, $c_1 \geqslant \epsilon c$ 且 $d_1 \geqslant \epsilon d$, 所以
+
+$$
+\begin{aligned}
+n^2 q(\mathcal{C}, \mathcal{D}) &\geqslant \frac{1}{c_1 d_1} \left(\frac{c_1 d_1 e}{cd} + \eta c_1 d_1\right)^2 + \frac{1}{cd - c_1 d_1} \left(\frac{cd - c_1 d_1}{cd} e - \eta c_1 d_1\right)^2 \\
+&= \frac{c_1 d_1 e^2}{c^2 d^2} + \frac{2e\eta c_1 d_1}{cd} + \eta^2 c_1 d_1 + \frac{cd - c_1 d_1}{c^2 d^2} e^2 - \frac{2e\eta c_1 d_1}{cd} + \frac{\eta^2 c_1^2 d_1^2}{cd - c_1 d_1} \\
+&\geqslant \frac{e^2}{cd} + \eta^2 c_1 d_1 \\
+&\underset{(2)}{\geqslant} \frac{e^2}{cd} + \epsilon^4 cd.
+\end{aligned}
+$$
+∎
+</Solution>
+</Knowledge>
+
+最后, 我们将证明, 如果一个划分有若干非正则的划分集合对, 以至于它不满足 $\epsilon$-正则划分的定义, 则同时划分所有这些对将导致 $q$ 增加一个常数.
+
+<Knowledge title="引理 7.4.4">
+设 $0 < \epsilon \leqslant 1/4$, $\mathcal{P} = \{C_0, C_1, \dots, C_k\}$ 是 $V$ 的一个划分, 其中它的例外集 $C_0$ 的阶满足 $|C_0| \leqslant \epsilon n$, 并且 $|C_1| = \dots = |C_k| =: c$. 若 $\mathcal{P}$ 不是 $\epsilon$-正则的, 则存在一个 $V$ 的划分 $\mathcal{P}' = \{C_0', C_1', \dots, C_\ell'\}$, 这里例外集 $C_0'$ 满足 $|C_0'| \leqslant |C_0| + n/2^k$ 且 $k \leqslant \ell \leqslant k 4^{k+1}$, 而所有其他集合 $C_i'$ 有相同的阶, 并且要么 $\mathcal{P}'$ 是 $\epsilon$-正则的, 要么有
+
+$$
+q(\mathcal{P}') \geqslant q(\mathcal{P}) + \epsilon^5 / 2.
+$$
+
+<Solution title="证明">
+对所有 $1 \leqslant i < j \leqslant k$, 我们如下定义 $C_i$ 的一个划分 $\mathcal{C}_{ij}$ 和 $C_j$ 的一个划分 $\mathcal{C}_{ji}$: 如果集合对 $(C_i, C_j)$ 是 $\epsilon$-正则的, 令 $\mathcal{C}_{ij} := \{C_i\}$ 以及 $\mathcal{C}_{ji} := \{C_j\}$, 否则, 由引理 7.4.3 知, 存在 $C_i$ 的划分 $\mathcal{C}_{ij}$ 和 $C_j$ 的划分 $\mathcal{C}_{ji}$, 使得 $|\mathcal{C}_{ij}| = |\mathcal{C}_{ji}| = 2$ 以及
+
+$$
+q(\mathcal{C}_{ij}, \mathcal{C}_{ji}) \geqslant q(C_i, C_j) + \epsilon^4 \frac{|C_i||C_j|}{n^2} = q(C_i, C_j) + \frac{\epsilon^4 c^2}{n^2}. \tag{3}
+$$
+
+对每个 $i = 1, \dots, k$, 令 $\mathcal{C}_i$ 表示 $C_i$ 的唯一极小划分, 它细分每个划分 $\mathcal{C}_{ij}$ ($j \neq i$). (换句话说, 只要 $C_i$ 中的两个元素位于 $\mathcal{C}_{ij}$ (对每个 $j \neq i$) 的相同划分集合中, 我们就把这两个元素看作等价的, 那么 $\mathcal{C}_i$ 是等价类的集合.) 因此, $|\mathcal{C}_i| \leqslant 2^{k-1}$. 现在考虑 $V$ 的划分
+
+$$
+\mathcal{C} := \{C_0\} \cup \bigcup_{i=1}^k \mathcal{C}_i,
+$$
+
+这里 $C_0$ 是例外集, 则 $\mathcal{C}$ 细分 $\mathcal{P}$, 并且 $|\mathcal{C} \setminus \{C_0\}| \leqslant k 2^{k-1}$, 所以
+
+$$
+k \leqslant |\mathcal{C}| \leqslant k 2^k. \tag{4}
+$$
+
+令 $\mathcal{C}_0 := \{\{v\} \mid v \in C_0\}$. 如果 $\mathcal{P}$ 不是 $\epsilon$-正则的, 则多于 $\epsilon k^2$ 个对 $(C_i, C_j)$ ($1 \leqslant i < j \leqslant k$) 的划分 $\mathcal{C}_{ij}$ 是非平凡的. 因此, 由具有例外集的划分上 $q$ 的定义和引理 7.4.2 (i), 有
+
+$$
+\begin{aligned}
+q(\mathcal{C}) &= \sum_{1 \leqslant i < j} q(\mathcal{C}_i, \mathcal{C}_j) + \sum_{1 \leqslant i} q(\mathcal{C}_0, \mathcal{C}_i) + \sum_{0 \leqslant i} q(\mathcal{C}_i) \\
+&\geqslant \sum_{1 \leqslant i < j} q(\mathcal{C}_{ij}, \mathcal{C}_{ji}) + \sum_{1 \leqslant i} q(\mathcal{C}_0, \{C_i\}) + q(\mathcal{C}_0) \\
+&\underset{(3)}{\geqslant} \sum_{1 \leqslant i < j} q(C_i, C_j) + \epsilon k^2 \frac{\epsilon^4 c^2}{n^2} + \sum_{1 \leqslant i} q(\mathcal{C}_0, \{C_i\}) + q(\mathcal{C}_0) \\
+&= q(\mathcal{P}) + \epsilon^5 \left(\frac{kc}{n}\right)^2 \\
+&\geqslant q(\mathcal{P}) + \epsilon^5 / 2.
+\end{aligned}
+$$
+
+$\left(\text{对最后一个不等式, 因为已知 } |C_0| \leqslant \epsilon n \leqslant \frac{1}{4} n, \text{ 所以 } kc \geqslant \frac{3}{4} n.\right)$
+
+为了将 $\mathcal{C}$ 变成我们想要的划分 $\mathcal{P}'$, 剩下的工作就是将它的集合分成元素个数相等的块, 这些块足够小, 使得剩下的顶点可以放到例外集中, 并且使得例外集不太大.
+
+如果 $c < 4^k$, 则由 $C_0' := C_0$ 和单点集 $\{v\}$ (对每个 $v \in V \setminus C_0$) 所组成的 $\epsilon$-正则划分 $\mathcal{P}'$ 就是我们所期望的划分, 因为存在 $\ell$ 个这样的单点集, 且 $k \leqslant \ell = kc < k 4^k$.
+
+如果 $c \geqslant 4^k$, 设 $C_1', \dots, C_\ell'$ 是阶为 $d := \lfloor c/4^k \rfloor \geqslant 1$ 的不交集的极大族, 使得每个 $C_i'$ 被包含在某个 $C \in \mathcal{C} \setminus \{C_0\}$ 中, 同时, 令 $C_0' := V \setminus \bigcup C_i'$, 则 $\mathcal{P}' = \{C_0', C_1', \dots, C_\ell'\}$ 确实是 $V$ 的一个划分. 此外, $\tilde{\mathcal{P}}'$ 细分 $\tilde{\mathcal{C}}$, 所以由引理 7.4.2 (ii) 知
+
+$$
+q(\mathcal{P}') \geqslant q(\mathcal{C}) \geqslant q(\mathcal{P}) + \frac{\epsilon^5}{2}.
+$$
+
+因为每个集合 $C_i' \neq C_0'$ 也被包含在 $C_1, \dots, C_k$ 中的一个, 然而最多有 $c/d \leqslant 4^{k+1}$ 个集合 $C_i'$ 包含在同一个 $C_j$ 中 (由 $d$ 的选择), 我们也得到需要的 $k \leqslant \ell \leqslant k 4^{k+1}$. 最后, 在选取过集合 $C_1', \dots, C_\ell'$ 之后, $\mathcal{C}$ 的每个集合 $C \neq C_0$ 中剩下至多 $d$ 个顶点, 所以
+
+$$
+\begin{aligned}
+|C_0'| &\leqslant |C_0| + d|\mathcal{C}| \\
+&\underset{(4)}{\leqslant} |C_0| + \frac{c}{4^k} k 2^k \\
+&= |C_0| + ck / 2^k \\
+&\leqslant |C_0| + n / 2^k.
+\end{aligned}
+$$
+∎
+</Solution>
+</Knowledge>
+
+现在, 通过反复应用引理 7.4.4, 我们可得到正则性引理的证明.
+
+<Solution title="定理 7.4.1 的证明">
+给定 $\epsilon > 0$ 和 $m \geqslant 1$, 不失一般性地假设 $\epsilon \leqslant 1/4$. 令 $s := 2/\epsilon^5$, 则 $s$ 是在图的一个划分上反复运用引理 7.4.4 直至这个划分变成 $\epsilon$-正则的次数的上界. 注意到, 对所有划分 $\mathcal{P}$, 有 $q(\mathcal{P}) \leqslant 1$.
+
+为了 (反复) 应用引理 7.4.4, 一个具有 $|C_1| = \dots = |C_k|$ 的划分 $\{C_0, C_1, \dots, C_k\}$ 必须形式上满足: 它的例外集的阶 $|C_0|$ 一定不能超过 $\epsilon n$. 然而, 在引理 7.4.4 的每次应用中, 例外集最多能增加 $n/2^k$. (更准确地说, 最多增加 $n/2^\ell$, 这里 $\ell$ 是当前划分中其他集合的个数, 但是, 由引理 7.4.4 知 $\ell \geqslant k$, 所以 $n/2^k$ 当然是这个增长的上界.) 因此我们想从一个足够大的 $k$ 开始, 使得即便是 $s$ 个 $n/2^k$ 的增加加在一起也至多是 $\frac{1}{2} \epsilon n$; 同时, 保证 $n$ 足够大, 使得对任何 $|C_0|$ 的初值 (这里 $|C_0| < k$), 我们有 $|C_0| \leqslant \frac{1}{2} \epsilon n$. (如果初始划分中有 $k$ 个非例外集合 $C_1, \dots, C_k$, 我们应该允许一个初值至多为 $k$ 的 $C_0$, 以便得到 $|C_1| = \dots = |C_k|$.)
+
+所以, 令 $k \geqslant m$ 足够大, 使得 $2^{k-1} \geqslant s/\epsilon$, 则 $s/2^k \leqslant \epsilon/2$. 因此, 只要 $k/n \leqslant \epsilon/2$, 即对所有的 $n \geqslant 2k/\epsilon$, 则我们有
+
+$$
+k + \frac{s}{2^k} n \leqslant \epsilon n. \tag{5}
+$$
+
+现在让我们选择 $M$: 这个 $M$ 应该是反复应用引理 7.4.4 至多 $s$ 次后的 (非例外) 划分集合的个数的上界, 其中在每次重复中, 集合的个数可以从它的当前取值 $r$ 至多增长到 $r 4^{r+1}$. 所以, 令 $f$ 是函数 $x \mapsto x 4^{x+1}$, $M := \max\{f^s(k), 2k/\epsilon\}$, 其中第二项 $2k/\epsilon$ 保证了任何 $n \geqslant M$ 是足够大, 从而能够满足 (5) 式.
+
+最后我们要说明的是, 每个阶至少为 $m$ 的图 $G = (V, E)$ 有一个 $\epsilon$-正则划分 $\{V_0, V_1, \dots, V_{k'}\}$, 且 $m \leqslant k' \leqslant M$. 设 $G$ 是一个给定的图, 且 $n := |G|$. 如果 $n \leqslant M$, 我们将 $G$ 分成 $k' := n$ 个单点集, 选取 $V_0 := \varnothing$ 以及 $|V_1| = \dots = |V_{k'}| = 1$. 显然, $G$ 的这个划分是 $\epsilon$-正则的. 现在假设 $n > M$. 令 $C_0 \subseteq V$ 是使得 $k =: k'$ 整除 $|V \setminus C_0|$ 的极小集合, 且令 $\{C_1, \dots, C_k\}$ 是任何将 $V \setminus C_0$ 分成元素个数相同的集合的划分, 则 $|C_0| < k$, 进一步地, 由 (5) 式得 $|C_0| \leqslant \epsilon n$. 我们从 $\{C_0, C_1, \dots, C_k\}$ 开始, 反复应用引理 7.4.4, 直到得到的 $G$ 的划分是 $\epsilon$-正则的. 在最多 $s$ 次重复后, 我们会得到这个结果, 这是因为由 (5) 式, 划分中的例外集始终不超过 $\epsilon n$, 所以引理 7.4.4 确实可以反复应用不超过 $s$ 次 ($s$ 是可以运用次数的最大理论值). ∎
+</Solution>

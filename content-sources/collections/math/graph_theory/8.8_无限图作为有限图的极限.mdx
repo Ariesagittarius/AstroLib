@@ -1,0 +1,90 @@
+---
+title: '8.8 无限图作为有限图的极限'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+对局部有限图 $G$ 的有限子式 $G_n$ 是通过删除前面 $n$ 个顶点并收缩出现的分支而得到的图. 在最后一节我们来看看空间 $|G|$ 如何扮演 $G_n$ 的“极限”这一角色, 把 $|G|$ 和 $G_n$ 之间的关系用更正式的语言描述. 澄清它们之间的关系有助于把有限图上的定理转化成无限图上的定理, 这也是我们考虑空间 $|G|$ 的初衷.
+
+设 $(P, \leqslant)$ 是一个有向 (directed) 偏序集, 即对任意 $p, q$, 存在一个 $r$ 使得 $p \leqslant r$ 和 $q \leqslant r$. 一个子集 $Q \subseteq P$ 在 $P$ 中是共尾的 (cofinal), 如果对任意 $p \in P$ 存在某个 $q \in Q$ 满足 $p \leqslant q$.
+
+对每个 $p \in P$, 设 $X_p$ 是一个紧致 Hausdorff 拓扑空间, 后面它也表示有限图. 假定连续映射 $f_{qp}: X_q \to X_p$ (对所有 $q > p$) 是相容的 (compatible), 即只要 $r > q > p$, 就有 $f_{qp} \circ f_{rq} = f_{rp}$. 这些键合映射 $^{15}$ (bonding maps) $f_{qp}$ 和空间族 $\mathcal{X} = (X_p \mid p \in P)$ 一起被称为逆系统 (inverse system).
+
+令集合 $X$ 包含所有的 $x = (x_p \mid p \in P)$, 这里 $x_p \in X_p$ 并且对 $P$ 中的所有 $p < q$ 有 $f_{qp}(x_q) = x_p$. 这个 $X$ 是 $\mathcal{X}$ 的逆极限 (inverse limit), 即 $X = \varprojlim \mathcal{X}$. 我们给 $X$ 一个从乘积空间 $\prod_{p \in P} X_p$ 得到的子空间拓扑. 注意, 和 $X_p$ 一样, 根据 Tychonoff 定理, 乘积空间是 Hausdorff 和紧致的.
+
+空间 $X = \varprojlim \mathcal{X}$ 是所有对应于 $q \in P$ 的集合 $X_{<q}$ 的交, 这里 $X_{<q}$ 是所有满足 $f_{qp}(x_q) = x_p$ (对每个 $p < q$) 的 $(x_p \mid p \in P) \in \prod_p X_p$ 的集合. 根据 $X_p$ 是 Hausdorff 以及映射 $f_{qp}$ 是连续的这一事实, 我们可以证明 $\prod_p X_p$ 的这些子集 $X_{<q}$ 是闭的, 所以 $X = \bigcap_{q \in P} X_{<q}$ 在紧致空间 $\prod_p X_p$ 中是闭的, 从而是紧致的.
+
+因为 $P$ 是有向的, 只要 $X_p$ 是非空的, 那么集合 $X_{<q}$ 具有有限交性质. 从而 $X = \bigcap_q X_{<q}$ 也是非空的:
+
+<Knowledge title="引理 8.8.1">
+$X = \varprojlim (X_p \mid p \in P)$ 是一个紧致 Hausdorff 空间. 如果对所有 $p \in P$ 有 $X_p \neq \varnothing$, 那么 $X$ 也是非空的. ∎
+</Knowledge>
+
+给定图 $G = (V, E, \Omega)$, 把 $V$ 的所有“只有有限条跨越边的”有限划分的集合记为 $P = P(G)$. $P$ 中, 当 $q$ 细分 $p$ 时, 定义序 $p \leqslant q$, 那么 $P$ 成为一个有向偏序集. 对每个 $p$, 设 $G/p$ 是 $p$ 上的有限多重图, 它的边是 $p$ 的跨越边. $^{16}$ $G/p$ 的对应于非单点划分类的顶点是它的虚拟顶点 (dummy vertex), 而 $G/p$ 的其他顶点 (它们具有划分类 $\{v\}$) 可以看成 $G$ 的顶点, 所以记作 $v$.
+
+在紧致空间 $X_p := |G/p|$ 上, 对 $q > p$, 我们有相容的商映射 $f_{qp}: X_q \to X_p$, 它把 $G/q$ 的顶点映射到 $G/p$ 的包含它们作为子集的顶点上. 对于 $G/q$ 的边, 如果它也是 $G/p$ 的边, 那么这个映射是恒等的; 对于 $G/q$ 的其他边, 映射把这些边映射到 $G/p$ 的虚拟顶点, 这里的虚拟顶点对应的划分类在 $G/q$ 中包含边的两个端点. 设
+
+$$
+\|G\| := \varprojlim (X_p \mid p \in P),
+$$
+
+把那些 $f_{qp}$ 作为键合映射.
+
+<Knowledge title="定理 8.8.2">
+如果 $G$ 是局部有限的且连通的, 则 $\|G\|$ 同构于 $|G|$.
+
+<Solution title="证明">
+由于 $\|G\|$ 是紧致的并且 $|G|$ 是 Hausdorff 的, 因此只需构造一个连续双射 $\sigma: \|G\| \to |G|$. 设 $x = (x_p \mid p \in P) \in \|G\|$ 已经给定.
+
+如果存在 $p \in P$ 使得 $x_p$ 不是 $G/p$ 的虚拟顶点, 那么 $x_p \in |G| \setminus \Omega$, 我们令 $\sigma(x) := x_p$. 要验证 $\sigma$ 是严格定义的, 考虑两个这样的点 $x_p$ 和 $x_{p'}$, 并选取 $q > p, p'$, 那么 $x_q$ 也不是虚拟顶点, 根据 $f_{qp}$ 和 $f_{qp'}$ 的定义, 我们有 $x_p = x_q = x_{p'}$.
+
+假定每个 $x_p$ 都是虚拟顶点. 对所有 $n \in \mathbb{N}$, 设 $S_n$ 是在某个固定列举中 $G$ 的前 $n$ 个顶点的集合, 而 $p_n \in P$ 表示一个划分, 它包含 $S_n$ 中的顶点作为单点划分类, 以及 $G - S_n$ 的分支的顶点集作为余下的划分类. 这个序列 $p_0, p_1, \dots$ 在 $P$ 中是共尾的, 因为每个 $p \in P$ 被所有 $p_n$ 细分, 这里的 $n$ 足够大使得 $p$ 的所有跨越边的端点都在 $S_n$ 中.
+
+因为, 只要 $p = p_m < p_n = q$, 就有 $f_{qp}(x_q) = x_p$, 所以连通顶点集 $U_n = x_{p_n}$ 组成一个递减序列 $U_0 \supseteq U_1 \supseteq \cdots$. 容易构造 $G$ 的一条射线 $R$ 使得, 对每个 $n$, 射线的尾巴在 $G[U_n]$ 中. 把 $R$ 的末端记为 $\omega$.
+
+对每个 $p \in P$, 集合 $U = x_p$ 包含所有 $U_n$ (这里 $p < p_n$) 作为子集. 由于 $p_n$ 在 $P$ 中是共尾的, 所以每个 $G[x_p]$ 包含 $R$ 的一个尾巴. 反过来, 对每个末端 $\omega' \neq \omega$, 存在一个 $n$ 使得 $G[U_n]$ 不包含来自 $\omega'$ 的射线, 所以 $\omega$ 是 $G$ 的唯一末端, 并且对所有 $p \in P$ 这个末端在 $G[x_p]$ 中有一条射线. 令 $\sigma(x) := \omega$. 我们完成了 $\sigma$ 的定义.
+
+要证明 $\sigma$ 是单射, 考虑两个不同的点 $x, x' \in \|G\|$, 不妨设它们在分支 $x_p \neq x'_p$ 不同. 如果其中一个不是 $G/p$ 的虚拟顶点, 那么显然 $\sigma(x) \neq \sigma(x')$. 如果两个都是虚拟顶点, 则 $U = x_p$ 和 $U' = x'_p$ 是 $G$ 的不交顶点集合, 它们被有限条边分离. 因为 $\sigma(x)$ 是一个具有属于 $G[U]$ 的射线的末端, 而 $\sigma(x')$ 是一个具有属于 $G[U']$ 的射线的末端, 所以 $\sigma(x)$ 和 $\sigma(x')$ 一定是不同的.
+
+要证明 $\sigma$ 是满射, 设 $x \in |G|$ 已经给定. 如果 $x$ 不是一个末端, 选择 $p(x) \in P$ 使得它包含顶点 $x$ 或者 $x$ 所在边的端点, 作为单点划分类. 对 $P$ 中的每个 $q \geqslant p(x)$, 令 $x_q := x$; 对任意 $p'$, 如果 $p'$ 小于某个满足 $q \geqslant p(x)$ 的 $q$, 即 $p' < q$, 就令 $x_{p'} := f_{qp'}(x)$. 所以 $(x_p \mid p \in P)$ 在 $\|G\|$ 中是严格定义的, 并且它被 $\sigma$ 映射到 $x$.
+
+如果 $x$ 是一个末端, 那么对每个 $p \in P$, $G/p$ 恰好有一个虚拟顶点 $x_p$ 使得 $x$ 在 $G[x_p]$ 中有一条射线. 只要 $p < q$, 这些 $x_p$ 就满足 $f_{qp}(x_q) = x_p$, 因此 $(x_p \mid p \in P)$ 是 $\|G\|$ 中的一个点, 并且它被 $\sigma$ 映射到 $x$.
+
+下面我们证明 $\sigma$ 在 $\|G\|$ 中每个点 $(x_p \mid p \in P)$ 是连续的. 如果 $\sigma(x)$ 不是末端, 那么存在某个 $p(x) \in P$ 使得 $\sigma(x) = x_{p(x)}$, 它是 $X_{p(x)}$ 的一个点但不是虚拟顶点. 在 $|G|$ 中 $\sigma(x)$ 的每个基本开邻域 $O$ 也是 $X_{p(x)}$ 中同一个点 $x_{p(x)}$ 的基本邻域. 因此, 对所有 $p \neq p(x)$ 满足 $O_{p(x)} = O$ 和 $O_p = X_p$ 的集合 $\prod_{p \in P} O_p$ 是 $\prod_p X_p$ 中的基本开邻域, 它与 $\|G\|$ 的交是 $\|G\|$ 的开邻域, 并且 $\sigma$ 把它映射到 $O$.
+
+如果 $\sigma(x)$ 是一个末端 $\omega$, 考虑 $|G|$ 中 $x$ 的任意基本开邻域 $O = \hat{C}_\varepsilon(S, \omega)$. 设 $p(\omega) \in P$ 是 $V$ 的一个划分, 它的划分类包括 $G - S$ 的分支的顶点集和 $S$ 中的单点. 那么, $V(C)$ 是 $G/p(\omega)$ 的一个虚拟顶点, 把它叫做 $x_{p(\omega)}$. 设 $O_{p(\omega)} \subseteq X_{p(\omega)}$ 是由 $x_{p(\omega)}$ 和任意 $C$-$S$ 边在 $O$ 中的内部点所组成, 它们也是 $X_{p(\omega)}$ 的点. 和前面一样, 在对所有 $p \neq p(x)$ 满足 $O_p = X_p$ 的集合 $\prod_p X_p$ 中, $x$ 有一个基本开邻域 $\prod_p O_p$, 它与 $\|G\|$ 的交被 $\sigma$ 映射到 $O$. ∎
+</Solution>
+</Knowledge>
+
+注意到, 这里的证明没有用到 $|G|$ 的紧致性: 作为一个推论我们可以重新得到命题 8.6.1.
+
+在定理 8.8.2 的证明中, 我们发现处理 $P$ 中的共尾序列比考虑整个 $P$ 更方便. 在下面这个简单引理中, 这个想法得到进一步的应用:
+
+<Knowledge title="引理 8.8.3">
+设 $(X_p \mid p \in P)$ 是紧致空间的一个逆系统, 而 $Q \subseteq P$ 在 $P$ 中是共尾的, 并且 $(X_p \mid p \in Q)$ 具有相同的键合映射. 如果映射把每个点 $(x_p \mid p \in P)$ 映射到它的限制 $(x_p \mid p \in Q)$ 上, 那么这个映射定义了一个从 $\varprojlim (X_p \mid p \in P)$ 到 $\varprojlim (X_p \mid p \in Q)$ 的同胚. ∎
+</Knowledge>
+
+根据定理 8.8.2 和这个引理, 对应于局部有限图 $G$ 的 $|G|$ 是 8.6 节定义的 $G$ 的有限收缩子式 $G_n$ 的逆极限. 确实, 对在定理证明中定义的 $P$ 的共尾序列 $p_0, p_1, \dots$, 我们有 $G_n = G/p_n$, 并且根据引理, $|G|$ 是对应紧致空间 $X_{p_n}$ 的逆极限.
+
+和 $|G|$ 本身一样, $X = |G|$ 的每个标准子空间 $X'$ 可以作为有限多重图的逆极限来得到. 确实, 由 $(x_p \mid p \in P) \mapsto x_p$ 定义的投影 $f_p: X \to X_p$ 是连续的, 因为 $X'$ 是紧致的, 所以 $X'$ 投影像 $X'_p \subseteq X_p$ 也是紧致的, 且 $f_{qp}$ 把 $X'_q$ 映射到 $X'_p$. 因此, $(X'_p \mid p \in P)$ 是具有键合映射 $f'_{qp} := f_{qp} \upharpoonright X'_q$ 的逆系统, 并且 $X' = \varprojlim (X'_p \mid p \in P)$.
+
+更具有代表性地, 我们希望找到具有某种性质 (例如拓扑支撑树) 的标准子空间 $X'$. 我们可以尝试去构造某个 $X'_p$, 使得它的逆极限是 $X'$. 但是, 对所有的 $p \in P$ 找到这样相容的 $X'_p$ 并不容易. 这里, 引理 8.8.3 可以提供帮助: 对所有 $p$, 只需在某个共尾的 $Q \subseteq P$ 中找到它们即可. 例如, 我们可以在所有的 $G_n$ 中, 通过把树 $T_n \subseteq G_n$ 中的虚拟顶点扩展成 $T_{n+1} \subseteq G_{n+1}$ 中的一个星来归纳地构造一棵支撑树. 那么给定的键合映射 $X_{p_n} \to X_{p_m}$ 把由 $T_n$ 导出的子空间 $X'_{p_n}$ 映射到由 $T_m$ 导出的子空间, 并且这些 $X'_{p_n}$ 把 $X = |G|$ 中的拓扑支撑树作为它的逆极限. 这个构造成立的原因是 $p_n$ 的划分类在 $G$ 中是连通的, 但我们不能对 $P(G)$ 中所有划分这样做.
+
+$|G|$ 或者一个标准子空间中的弧和圈, 可以通过对 $Y = [0, 1]$ 或 $Y = S^1$ 使用下面的提升引理来容易地得到. 设 $(X_p \mid p \in P)$ 是紧致空间的任意逆系统, 具有键合映射 $f_{qp}$, 并设 $X$ 是它的逆极限. 记 $Y$ 是具有连续相容映射 $g_p: Y \to X_p$ 的拓扑空间, 这里的映射 $g_p$ 关于 $f_{qp}$ 是可交换的, 即只要 $p < q$ 就有 $g_p = f_{qp} \circ g_q$. 我们称族 $(g_p \mid p \in P)$ 是最终单射的 (eventually injective), 如果对任意不同的 $y, y' \in Y$, 存在某个 $p \in P$ 使得 $g_p(y) \neq g_p(y')$.
+
+<Knowledge title="引理 8.8.4">
+存在唯一的连续映射 $g: Y \to X$, 它是关于投影映射 $f_p: X \to X_p$ 可交换的, 即对所有的 $p \in P$ 有 $g_p = f_p \circ g$. 如果 $g_p$ 是最终单射的, 则 $g$ 是单射的. ∎
+</Knowledge>
+
+例如, 假设我们想找到 $X$ 中某两个点 $x$ 和 $y$ 之间的弧, 那么通过寻找与 $f_{qp}$ 可交换的拓扑 $f_p(x)$-$f_p(y)$ 路 $g_p: [0, 1] \to X_p$ 就可以找到拓扑 $x$-$y$ 路 $g: [0, 1] \to X$. 如果我们可以使这些 $g_p$ 是最终单射的, 那么 $g$ 就是单射的, 它的象就是我们寻找的弧.
+
+类似地, 如果我们可以找到一个关于最终单射的相容圈 $g_p: S^1 \to X_p$, 那么它的象就包含 $G/p$ 的所有顶点, 并且是关于 $f_{qp}$ 可交换的, 那么 $g$ 就定义了 $G$ 的一个 Hamilton 圈, 即 $|G|$ 中通过每一个顶点的圈.

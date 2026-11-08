@@ -1,0 +1,196 @@
+---
+title: '11.1 随机图的概念'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+在本书前面几个地方，我们已经接触过 Erdős 的一个非常重要的定理: 对每个整数 $k$，存在图 $G$ 同时满足 $g(G) > k$ 和 $\chi(G) > k$. 通俗的说法是: 存在同时具有任意大围长和任意大色数的图.
+
+怎样证明这样的定理呢? 通常的方法是构造一个具有这两个性质的图，也许需要对 $k$ 归纳地逐步构造. 然而，这并不是一件容易的事: 第二条性质属于整体性质，同时它被第一条性质限制. 也就是说，图“整体上”具有大色数，但局部是无圈的 (因此是 2-可着色的)；然而这种通过用具有相同或类似性质的小块来构造整个图的尝试并不成功.
+
+1959 年，在 Erdős 的开创性文章里，他采用了一个截然不同的方法: 对每个 $n$，在有 $n$ 个顶点的图的集合上定义一个概率空间，并且证明对于一些仔细选择的概率度量和足够大的 $n$，存在一个具有上面两条性质且顶点个数为 $n$ 的图的概率是大于零的.
+
+这个方法，现在被称作概率方法 (probabilistic method)，在图论以及离散数学的其他分支中已经发展成一个成熟且具有多种用途的证明技巧，随机图 (random graph) 理论本身也成为一个学科. 本章的目的是对随机图提供一个基本而又严谨的介绍: 仅提供足够多的内容来理解它的基本概念、思想与技巧，同时提供足够多的线索来了解隐藏在计算背后的强大威力和优美之处.
+
+Erdős 的定理断言了具有某种性质的图的存在性: 这是一个非常平常的结论，并没有显示证明中用到随机性的痕迹. 在随机图中，也有一些在叙述中已经包含了一定的随机性: 这是一些关于几乎所有 (almost all) 图的定理，我们将在 11.3 节讨论这个概念. 在最后一节，我们给出 Erdős 和 Rényi 定理的一个详细证明，它演示了在随机图中被经常使用的证明技术，即第二时刻方法 (second moment method).
+
+## 11.1 随机图的概念
+
+设 $V$ 是 $n$ 个元素的固定集合，比如 $V = \{0, \dots, n-1\}$. 我们的目标是把 $V$ 上所有图的集合 $\mathcal{G}$ 变成一个概率空间，然后考虑一些关于随机对象的典型问题: 一个图 $G \in \mathcal{G}$ 具有这个或者那个性质的概率是多少? $G$ 的一个给定不变量的期望值是多少，比如围长的期望值或者色数的期望值是多少?
+
+直观地看，我们可以随机地生成如下 $G$: 对于每个 $e \in [V]^2$，依据某种随机实验来决定 $e$ 是或者不是 $G$ 的一条边，这种实验被独立地执行，每次成功（即接受 $e$ 作为 $G$ 的一条边）的概率等于某个固定的值 $p \in [0, 1]$[^1]. 那么如果 $G_0$ 是 $V$ 上有 $m$ 条边的固定图，基本事件 $\{G_0\}$ 有概率 $p^m q^{\binom{n}{2} - m}$ (这里 $q := 1 - p$)，这个概率就是随机生成的图恰好是这个特定的图 $G_0$ 的可能性. (注意，$G$ 同构于 $G_0$ 的概率通常比这个要大.) 但是，如果所有基本事件的概率因此被决定，那么我们需要的空间 $\mathcal{G}$ 的整个概率度量也就被决定了. 因此尚待验证的是: 在 $\mathcal{G}$ 上的这样一个概率度量（即满足所有的边以概率 $p$ 独立地出现）确实存在[^2].
+
+为了在 $\mathcal{G}$ 上正式地构造一个概率度量，我们开始通过对每条可能的边 $e \in [V]^2$ 定义它自己的一个小概率空间 $\Omega_e := \{0_e, 1_e\}$，这里 $\mathbb{P}_e(\{1_e\}) := p$ 和 $\mathbb{P}_e(\{0_e\}) := q$ 是它的两个基本事件的概率. 我们想要的概率空间 $\mathcal{G} = \mathcal{G}(n, p)$ 可以定义为乘积空间
+$$
+\Omega := \prod_{e \in [V]^2} \Omega_e.
+$$
+因此，严格地说，$\Omega$ 的每个元素是一个映射 $\omega$，它对每条边 $e \in [V]^2$ 赋值 $0_e$ 或者 $1_e$，故 $\Omega$ 上的概率度量 $\mathbb{P}$ 是所有度量 $\mathbb{P}_e$ 的乘积度量. 在实际操作中，我们把 $\omega$ 与 $V$ 上的图 $G$ 等同看待，$G$ 的边集是
+$$
+E(G) = \{e \mid \omega(e) = 1_e\},
+$$
+并称 $G$ 为 $V$ 上具有概率 $p$ 的一个随机图 (random graph).
+
+遵循标准的概率术语，我们现在可以称 $V$ 上若干图的集合为 $\mathcal{G}(n, p)$ 中的一个事件 (event). 特别地，对每条边 $e \in [V]^2$，$V$ 上包含 $e \in E(G)$ 的所有图 $G$ 的集合
+$$
+A_e := \{\omega \mid \omega(e) = 1_e\}
+$$
+构成一个事件，即 $e$ 是 $G$ 的一条边这一事件. 对于这些事件，我们现在能严格地证明一直以来引导我们的直觉:
+
+<Knowledge title="命题 11.1.1">
+事件 $A_e$ 是独立的，且发生的概率是 $p$.
+
+<Solution title="证明">
+根据定义，有
+$$
+A_e = \{1_e\} \times \prod_{e' \neq e} \Omega_{e'}.
+$$
+由于 $\mathbb{P}$ 是所有度量 $\mathbb{P}_e$ 的乘积度量，这意味着
+$$
+\mathbb{P}(A_e) = p \cdot \prod_{e' \neq e} 1 = p.
+$$
+类似地，如果 $\{e_1, \dots, e_k\}$ 是 $[V]^2$ 的任何子集，则
+$$
+\begin{aligned}
+\mathbb{P}(A_{e_1} \cap \dots \cap A_{e_k}) &= \mathbb{P}\left(\{1_{e_1}\} \times \dots \times \{1_{e_k}\} \times \prod_{e \notin \{e_1, \dots, e_k\}} \Omega_e\right) \\
+&= p^k \\
+&= \mathbb{P}(A_{e_1}) \dots \mathbb{P}(A_{e_k}).
+\end{aligned}
+$$
+∎
+</Solution>
+</Knowledge>
+
+与以前讨论的一样，$\mathbb{P}$ 由 $p$ 的值以及 $A_e$ 是独立的这一假设而唯一决定. 因此为了计算 $\mathcal{G}(n, p)$ 中的概率，我们通常只需要使用这两个假设就够了. $\mathcal{G}(n, p)$ 的相关模型已完成了它的使命，以后就不需要了.
+
+作为一个简单的计算例子，设 $G$ 是 $V$ 上的一个图，而 $H$ 是 $V$ 的子集上的一个固定图，考虑 $G$ 包含 $H$ 作为一个子图这一事件，令 $|H| =: k, \|H\| =: \ell$. 事件 $H \subseteq G$ 的概率是关于所有边 $e \in H$ 概率 $A_e$ 的乘积，因此 $\mathbb{P}[H \subseteq G] = p^\ell$. 相比之下，$H$ 是 $G$ 的导出子图的概率是 $p^\ell q^{\binom{k}{2} - \ell}$: 这里我们要求不包含在 $H$ 中的边也不包含在 $G$ 中，并且不出现的边也是独立的且具有概率 $q$.
+
+计算 $G$ 有一个导出子图同构于 $H$ 的概率 $p_H$ 通常会比较困难的: 由于 $V$ 的子集上 $H$ 的出现可能重叠，它们在 $G$ 中出现的事件是不独立的. 然而（对于所有 $k$-子集 $U \subseteq V$）概率 $\mathbb{P}[H \simeq G[U]]$ 的和总是 $p_H$ 的一个上界，这是因为 $p_H$ 是所有这些事件并的度量. 例如，如果 $H = \overline{K^k}$，我们有关于这个概率的平凡上界，即 $G$ 包含 $H$ 的一个导出拷贝的概率:
+
+<Knowledge title="引理 11.1.2">
+对于所有满足 $n \geqslant k \geqslant 2$ 的整数 $n, k$，$G \in \mathcal{G}(n, p)$ 包含一个 $k$ 个顶点的独立集的概率至多是
+$$
+\mathbb{P}[\alpha(G) \geqslant k] \leqslant \binom{n}{k} q^{\binom{k}{2}}.
+$$
+
+<Solution title="证明">
+一个固定 $k$-集合 $U \subseteq V$ 在 $G$ 中是独立的概率是 $q^{\binom{k}{2}}$. 因为只有 $\binom{n}{k}$ 个这样的集合，所以结论得证. ∎
+</Solution>
+</Knowledge>
+
+类似地，$G \in \mathcal{G}(n, p)$ 包含一个 $K^k$ 的概率至多为
+$$
+\mathbb{P}[\omega(G) \geqslant k] \leqslant \binom{n}{k} p^{\binom{k}{2}}.
+$$
+如果 $k$ 是固定的，且 $n$ 足够小使得概率 $\mathbb{P}[\alpha(G) \geqslant k]$ 和 $\mathbb{P}[\omega(G) \geqslant k]$ 的上界和小于 1，那么 $\mathcal{G}$ 包含一个图，它不满足这两个性质中的任何一个，即既不包含 $K^k$ 也不包含 $\overline{K^k}$ 作为导出子图. 从而任何这样的 $n$ 是关于 $k$ 的 Ramsey 数的一个下界.
+
+正如下面定理所显示的那样，这个下界相当接近于定理 9.1.1 证明中所蕴含的上界 $2^{2k-3}$.
+
+<Knowledge title="定理 11.1.3 (Erdős, 1947)">
+对每个整数 $k \geqslant 3$，$k$ 的 Ramsey 数满足
+$$
+R(k) > 2^{k/2}.
+$$
+
+<Solution title="证明">
+对 $k = 3$，平凡地有 $R(3) \geqslant 3 > 2^{3/2}$，因此假设 $k \geqslant 4$. 我们证明对所有的 $n \leqslant 2^{k/2}$ 和 $G \in \mathcal{G}(n, 1/2)$，概率 $\mathbb{P}[\alpha(G) \geqslant k]$ 和 $\mathbb{P}[\omega(G) \geqslant k]$ 都小于 $1/2$.
+
+由于 $p = q = 1/2$，故对于所有的 $n \leqslant 2^{k/2}$ (对 $k \geqslant 4$，使用 $k! > 2^k$)，引理 11.1.2 以及对 $\omega(G)$ 的类似命题蕴含了下列关系:
+$$
+\begin{aligned}
+\mathbb{P}[\alpha(G) \geqslant k], \mathbb{P}[\omega(G) \geqslant k] &\leqslant \binom{n}{k} \left(\frac{1}{2}\right)^{\binom{k}{2}} \\
+&< (n^k / 2^k) 2^{-\frac{1}{2}k(k-1)} \\
+&\leqslant (2^{k^2/2} / 2^k) 2^{-\frac{1}{2}k(k-1)} \\
+&= 2^{-k/2} \\
+&< \frac{1}{2}.
+\end{aligned}
+$$
+∎
+</Solution>
+</Knowledge>
+
+在随机图的背景下，每个常见的图不变量（例如平均度、连通度、围长、色数等等）都能被解释为关于 $\mathcal{G}(n, p)$ 的一个非负随机变量 (random variable)，即一个函数
+$$
+X: \mathcal{G}(n, p) \to [0, \infty).
+$$
+$X$ 的均值 (mean) 或者期望值 (expected value) 定义为
+$$
+\mathbb{E}(X) := \sum_{G \in \mathcal{G}(n, p)} \mathbb{P}(\{G\}) \cdot X(G).
+$$
+如果 $X$ 取整数值，我们有另一种方法计算 $\mathbb{E}(X)$，即把对应于 $k$ 的概率加起来:
+$$
+\mathbb{E}(X) = \sum_{k \geqslant 1} \mathbb{P}[X \geqslant k] = \sum_{k \geqslant 1} k \cdot \mathbb{P}[X = k].
+$$
+注意到，期望值的算子 $\mathbb{E}$ 是线性的: 对于任何两个 $\mathcal{G}(n, p)$ 上的随机变量 $X, Y$ 和 $\lambda \geqslant 0$，我们有 $\mathbb{E}(X + Y) = \mathbb{E}(X) + \mathbb{E}(Y)$ 和 $\mathbb{E}(\lambda X) = \lambda \mathbb{E}(X)$.
+
+由于我们的概率空间是有限的，期望值通常可以通过简单的双重计数来得到，这是一个标准的组合数学技巧，我们之前在推论 4.2.10 及定理 5.5.4 的证明中也遇到过. 例如，如果 $X$ 是 $\mathcal{G}(n, p)$ 的一个随机变量，它计算在某个固定图集合 $\mathcal{H}$ 中 $G$ 的子图个数，根据 $\mathbb{E}(X)$ 的定义，我们计算满足 $H \in \mathcal{H}$ 和 $H \subseteq G$ 的二元组 $(G, H)$ 的个数，且每项被概率 $\mathbb{P}(\{G\})$ 加权. 从算法的角度看，为了计算 $\mathbb{E}(X)$，在“外圈”中检查图 $G \in \mathcal{G}(n, p)$ 是否成立；然后对每个 $G$，在“内圈”中考察每个 $H \in \mathcal{H}$，只要 $H \subseteq G$ 就计算“$\mathbb{P}(\{G\})$”. 或者说，我们可以计算同样的赋权对的集合，这次 $H$ 在“外圈”中而 $G$ 在“内圈”中，这等于对所有 $H \in \mathcal{H}$ 把概率 $\mathbb{P}[H \subseteq G]$ 加起来:
+$$
+\mathbb{E}(X) = \sum_{G \in \mathcal{G}(n, p)} |\{H \in \mathcal{H}: H \subseteq G\}| \cdot \mathbb{P}(\{G\}) = \sum_{H \in \mathcal{H}} \mathbb{P}[H \subseteq G].
+$$
+为了对细节再解释一次，并介绍到目前为止经常用到的概率术语，我们计算一个随机图 $G \in \mathcal{G}(n, p)$ 中具有给定长度 $k \geqslant 3$ 的圈的期望值.（在 11.2 节 Erdős 定理的证明中，我们也会用到它.）假设 $X: \mathcal{G}(n, p) \to \mathbb{N}$ 是一个随机变量，该变量把它的 $k$-圈的个数（即同构于 $C^k$ 的子图个数）赋值到一个随机图 $G$ 上.
+
+潜在地，存在多少个这样的圈呢? 换句话说，顶点在 $V$ 中的所有 $k$-圈的集合 $\mathcal{C}_k$ 有多大呢? 因为对 $V$ 的 $k$ 个不同顶点的序列，存在
+$$
+(n)_k := n(n - 1)(n - 2)\dots(n - k + 1)
+$$
+种选取方法，而每个 $k$-圈可以被 $2k$ 个这样的序列确定，所以显然有
+$$
+|\mathcal{C}_k| = (n)_k / 2k. \tag{1}
+$$
+
+<Knowledge title="引理 11.1.4">
+在 $G \in \mathcal{G}(n, p)$ 中，$k$-圈的期望值为
+$$
+\mathbb{E}(X) = \frac{(n)_k}{2k} p^k.
+$$
+
+<Solution title="证明">
+对每个固定的 $C \in \mathcal{C}_k$，考虑它的指示随机变量 (indicator random variable) $X_C: \mathcal{G}(n, p) \to \{0, 1\}$:
+$$
+X_C: G \mapsto \begin{cases} 1, & C \subseteq G, \\ 0, & \text{否则}. \end{cases}
+$$
+由于 $X_C$ 仅取 1 为正值，它的期望值 $\mathbb{E}(X_C)$ 等于 $\mathcal{G}(n, p)$ 中所有包含 $C$ 的图集合的度量 $\mathbb{P}[X_C = 1]$，但是这恰好是 $C \subseteq G$ 的概率:
+$$
+\mathbb{E}(X_C) = \mathbb{P}[C \subseteq G] = p^k. \tag{2}
+$$
+随机变量 $X$ 把每个图 $G$ 赋值为 $k$-圈的个数，所以对每个 $G$ 有
+$$
+X(G) = \sum_{C \in \mathcal{C}_k} X_C(G),
+$$
+或者简写为 $X = \sum X_C$. 由于期望值是线性的，结合 (1) 和 (2) 我们有
+$$
+\mathbb{E}(X) = \sum_{C \in \mathcal{C}_k} \mathbb{E}(X_C) = \sum_{C \in \mathcal{C}_k} \mathbb{P}[C \subseteq G] = \frac{(n)_k}{2k} p^k.
+$$
+证毕. ∎
+</Solution>
+</Knowledge>
+
+对于某个固定的 $a > 0$，决定满足 $X(G) < a$（从而 $G$ 满足某个指定性质 $\mathcal{P}$）的图 $G$ 的存在性，可以通过计算随机变量 $X$ 的均值而得到，这是一个简单又有效的方法. 确实，如果 $X$ 的期望值较小，因为对所有 $G \in \mathcal{G}(n, p)$ 有 $X(G) \geqslant 0$，那么不可能有很多 $\mathcal{G}(n, p)$ 中的图具有较大的 $X(G)$ 值，因此对 $\mathcal{G}(n, p)$ 中的许多图，$X$ 一定是较小的，于是我们有信心在这些图中找到一个具有给定性质 $\mathcal{P}$ 的图.
+
+这个简单想法正是无数的随机图非构造性证明的核心，包括下节将看到的 Erdős 定理的证明. 把这个想法量化之后，我们得到下面的引理，其证明可以从期望值的定义及 $\mathbb{P}$ 的可加性立即得到:
+
+<Knowledge title="引理 11.1.5 (Markov 不等式)">
+设 $X \geqslant 0$ 是关于 $\mathcal{G}(n, p)$ 的一个随机变量且 $a > 0$，那么
+$$
+\mathbb{P}[X \geqslant a] \leqslant \mathbb{E}(X)/a.
+$$
+
+<Solution title="证明">
+$$
+\mathbb{E}(X) = \sum_{G \in \mathcal{G}(n, p)} \mathbb{P}(\{G\}) \cdot X(G) \geqslant \sum_{G \in \mathcal{G}(n, p), X(G) \geqslant a} \mathbb{P}(\{G\}) \cdot a = \mathbb{P}[X \geqslant a] \cdot a.
+$$
+∎
+</Solution>
+</Knowledge>
+
+[^1]: 通常 $p$ 的值将依赖于集合 $V$ 的阶数 $n$，这里随机图在 $V$ 上生成，所以 $p$ 将是 $n$ 的某个函数: $n \mapsto p(n)$. 然而，注意到 $V$ (因此 $n$) 对于 $\mathcal{G}$ 的定义是固定的: 对于每个 $n$，我们将分别构造 $G$ 在 $V = \{0, \dots, n-1\}$ 上的一个概率空间. 在每个空间中，任意 $e \in [V]^2$ 是 $G$ 的一条边的概率都是相等的.
+
+[^2]: 任何相信这个事实的读者可以直接跳到命题 11.1.1 的结束处，而不妨碍以后部分的理解.

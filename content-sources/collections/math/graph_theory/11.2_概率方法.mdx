@@ -1,0 +1,86 @@
+---
+title: '11.2 概率方法'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+粗略地说，离散数学中的概率方法是从下面的想法发展起来的: 为了证明具有某个给定性质的研究对象的存在性，我们在比较大的（当然是非空的）对象的集合上定义一个概率空间，然后证明这个空间中的一个元素具有正的概率且具有给定的性质. 存在于这个概率空间中的“对象”可以是任意类型: 某个固定图的顶点划分或者排序，它可以是关于映射的，或嵌入的，或者图本身. 在本节，为了展示概率方法，我们对这方向的一个最早期结果: Erdős 的关于大围长与高色数的经典定理（定理 5.2.5），给出详细的阐述.
+
+Erdős 的定理说: 给定任何正整数 $k$，存在一个图 $G$ 具有围长 $g(G) > k$ 和色数 $\chi(G) > k$. 让我们称长度至多为 $k$ 的圈为短圈 (short cycle)，而包含 $|G|/k$ 或者更多顶点的集合为大集合 (large set). 为了证明 Erdős 的定理，只要找到一个图 $G$ 没有短圈和大的独立顶点集，那么 $G$ 中的任何顶点着色类是小的（即不是大集合），因此着色 $G$ 需要多于 $k$ 种颜色.
+
+我们怎样才能找到这样一个图 $G$ 呢? 如果选择 $p$ 足够小，那么 $\mathcal{G}(n, p)$ 中的随机图不太可能包含任何（短的）圈. 如果选择 $p$ 足够大，那么 $G$ 不太可能有一个大的独立顶点集合. 因此问题是: 这两个 $p$ 的区间是否重叠，也就是说，我们是否可以选择 $p$ 使得，对某个 $n$，它足够小使得 $\mathbb{P}[g \leqslant k] < 1/2$ 成立，同时它又足够大使得 $\mathbb{P}[\alpha \geqslant n/k] < 1/2$ 成立呢? 如果这样的 $p$ 存在，那么 $\mathcal{G}(n, p)$ 将包含至少一个图，它或者没有短圈或者没有大的独立集.
+
+不幸的是，$p$ 的这样一个选择是不可能的: $p$ 的这两个区间不重叠! 我们在 11.4 节会看到，必须保持 $p$ 小于 $n^{-1}$ 才能使 $G$ 中的短圈不太可能出现，但对于任何这样的 $p$，$G$ 中将很可能根本没有圈（练习 18），因此 $G$ 将是二部的，所以不太可能出现至少 $n/2$ 个独立顶点.
+
+然而我们也不是毫无进展，为了使大的独立集不太可能出现，我们将把 $p$ 固定在 $n^{-1}$ 之上，例如对某个 $\varepsilon > 0$，取为 $n^{\varepsilon - 1}$. 幸运的是，如果 $\varepsilon$ 足够小，那么在 $G$ 中将产生很少几个短圈，即使与 $n$ 比较（通常是与 $n^k$ 比较）也是如此. 如果我们在每个这样的圈上删除一个顶点，得到的图 $H$ 将没有短圈，且它的独立数 $\alpha(H)$ 将至多等于 $G$ 的独立数. 由于 $H$ 并不比 $G$ 小很多，如此它的色数将仍然很大，所以我们找到了一个具有大围长和大色数的图.
+
+为 Erdős 定理的正式证明作准备，首先证明边概率 $p = n^{\varepsilon - 1}$ 确实足够大可以保证 $G \in \mathcal{G}(n, p)$ “几乎肯定”没有大的独立顶点集. 更准确地说，我们证明下面更强的命题:
+
+<Knowledge title="引理 11.2.1">
+设 $k > 0$ 是一个整数，而 $p = p(n)$ 是 $n$ 的一个函数使得对于大的 $n$，有 $p(n) \geqslant 16k^2/n$，那么
+$$
+\lim_{n \to \infty} \mathbb{P}\left[\alpha \geqslant \frac{1}{2} n/k\right] = 0.
+$$
+
+<Solution title="证明">
+对于所有满足 $n \geqslant r \geqslant 2$ 的整数 $n$ 和 $r$，以及所有随机图 $G \in \mathcal{G}(n, p)$，引理 11.1.2 蕴含着
+$$
+\mathbb{P}[\alpha \geqslant r] \leqslant \binom{n}{r} q^{\binom{r}{2}} \leqslant 2^n q^{\binom{r}{2}} \leqslant 2^n e^{-p\binom{r}{2}},
+$$
+这里，最后一个不等式由事实，对所有 $p$ 有 $1 - p \leqslant e^{-p}$，而推出. (对于 $x = -p$，比较函数 $x \mapsto e^x$ 和 $x \mapsto x + 1$.) 如果 $p \geqslant 16k^2/n$ 且 $r \geqslant \frac{1}{2}n/k \geqslant 2$，则有
+$$
+\mathbb{P}[\alpha \geqslant r] \leqslant 2^n e^{-pr^2/4} \leqslant 2^n e^{-pn^2/16k^2} \leqslant 2^n e^{-n} \xrightarrow[n \to \infty]{} 0.
+$$
+因为 $\alpha$ 是个整数，所以对 $r = \lceil \frac{1}{2}n/k \rceil$ 有 $\mathbb{P}[\alpha \geqslant r] = \mathbb{P}\left[\alpha \geqslant \frac{1}{2}n/k\right]$，这蕴含着我们要证的结论. ∎
+</Solution>
+</Knowledge>
+
+现在我们准备好了证明定理 5.2.5，它可以重新叙述为:
+
+<Knowledge title="定理 11.2.2 (Erdős, 1959)">
+对每个整数 $k$，存在一个图 $H$ 满足围长 $g(H) > k$ 和色数 $\chi(H) > k$.
+
+<Solution title="证明">
+假设 $k \geqslant 3$，固定 $\varepsilon$ 使得 $0 < \varepsilon < 1/k$，且令 $p := n^{\varepsilon - 1}$. 让 $X(G)$ 表示在随机图 $G \in \mathcal{G}(n, p)$ 中短圈的个数，也就是说，长度至多为 $k$ 的圈的个数.
+
+根据引理 11.1.4，我们有
+$$
+\mathbb{E}(X) = \sum_{i=3}^k \frac{(n)_i}{2i} p^i \leqslant \frac{1}{2} \sum_{i=3}^k n^i p^i \leqslant \frac{1}{2} (k - 2) n^k p^k.
+$$
+注意到，由于 $np = n^\varepsilon \geqslant 1$，故有 $(np)^i \leqslant (np)^k$，根据引理 11.1.5，则
+$$
+\begin{aligned}
+\mathbb{P}[X \geqslant n/2] &\leqslant \mathbb{E}(X) / (n/2) \\
+&\leqslant (k - 2) n^{k-1} p^k \\
+&= (k - 2) n^{k-1} n^{(\varepsilon - 1)k} \\
+&= (k - 2) n^{k\varepsilon - 1}.
+\end{aligned}
+$$
+根据 $\varepsilon$ 的选择，故 $k\varepsilon - 1 < 0$，从而有
+$$
+\lim_{n \to \infty} \mathbb{P}[X \geqslant n/2] = 0.
+$$
+假设 $n$ 是足够大的整数使得 $\mathbb{P}[X \geqslant n/2] < \frac{1}{2}$ 且 $\mathbb{P}\left[\alpha \geqslant \frac{1}{2}n/k\right] < \frac{1}{2}$，其中后者是根据 $p$ 的选择和引理 11.2.1 而得到的. 于是存在一个图 $G \in \mathcal{G}(n, p)$ 包含少于 $n/2$ 个短圈，且 $\alpha(G) < \frac{1}{2}n/k$. 从每个圈上删除一个顶点，令 $H$ 是得到的图，那么 $|H| \geqslant n/2$ 且 $H$ 没有短圈，因此 $g(H) > k$. 由 $G$ 的定义得
+$$
+\chi(H) \geqslant \frac{|H|}{\alpha(H)} \geqslant \frac{n/2}{\alpha(G)} > k.
+$$
+∎
+</Solution>
+</Knowledge>
+
+<Knowledge title="推论 11.2.3">
+存在具有任意大围长和任意大图不变量 $\kappa, \varepsilon$ 与 $\delta$ 的图.
+
+<Solution title="证明">
+应用引理 5.2.3 和定理 1.4.3 即可. ∎
+</Solution>
+</Knowledge>

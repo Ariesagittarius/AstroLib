@@ -1,0 +1,94 @@
+---
+title: '8.3 齐次与通用图'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+与有限图不同，无限图提供了一种可能性：我们可以只用一个样本图来表示整个图性质 $\mathcal{P}$，即给定某个固定基数，单个图包含了性质 $\mathcal{P}$ 中的所有图. 这样的图称为对这一性质是“通用的”.
+
+更准确地说，如果 $\leqslant$ 表示一个图关系（如子式、拓扑子式、子图，或同构意义下的导出子图关系），我们称一个可数图 $G^*$ 在 $\mathcal{P}$ 中（对 $\leqslant$）是通用的 (universal)，如果 $G^* \in \mathcal{P}$ 且对每个可数图 $G \in \mathcal{P}$，有 $G \leqslant G^*$.
+
+是否存在一个图在所有可数图的集合中都是通用的呢？假设一个图 $R$ 具有以下性质：
+
+$$
+\begin{aligned}
+&\text{如果 } U \text{ 和 } W \text{ 是 } R \text{ 中不相交的有限顶点集，那么就存在一个} \\
+&\text{顶点 } v \in R - U - W \text{，使得它在 } R \text{ 中与 } U \text{ 的所有顶点邻接，} \tag{$*$} \\
+&\text{但不与 } W \text{ 中的任何顶点邻接.}
+\end{aligned}
+$$
+
+则 $R$ 是通用的，即使对图关系中最强的关系（即导出子图关系）也如此. 的确，为了把一个给定的可数图 $G$ 嵌入到 $R$ 中，我们只需要将它的顶点 $v_1, v_2, \dots$ 归纳地映射到 $R$ 中，确保 $v_n$ 映射到一个顶点 $v \in R$，而该顶点与 $v_n$ 在 $G[v_1, \dots, v_n]$ 中的所有邻点的象都邻接，与 $v_n$ 在 $G[v_1, \dots, v_n]$ 中的所有非邻点的象均不邻接. 显然，这样的映射是 $G$ 和它的象所导出的 $R$ 的子图之间的一个同构.
+
+<Knowledge title="定理 8.3.1 (Erdős and Rényi, 1963)">
+存在唯一可数图 $R$ 满足性质 (*).
+
+<Solution title="证明">
+为了证明存在性，我们归纳地构造满足性质 (*) 的图 $R$. 令 $R_0 := K^1$. 对所有 $n \in \mathbb{N}$，令 $R_{n+1}$ 是由 $R_n$ 对每个集合 $U \subseteq V(R_n)$ 添加一个新顶点 $v$，并将它与 $U$ 中的所有顶点连接，与 $U$ 之外任意顶点均不连接而得到的图. (特别地，新添加的这些顶点构成了 $R_{n+1}$ 中的一个独立集.) 显然，$R := \bigcup_{n \in \mathbb{N}} R_n$ 具有性质 (*).
+
+为了证明唯一性，设 $R = (V, E)$ 和 $R' = (V', E')$ 是满足性质 (*) 的两个图，每个都给定了固定的顶点列举. 我们通过无限步构造一个双射 $\varphi : V \to V'$，在每一步对一个新顶点 $v \in V$ 定义 $\varphi(v)$.
+
+在每一奇数步，我们考察 $V$ 的列举中第一个使得 $\varphi(v)$ 尚未定义的顶点 $v$. 令 $U$ 是 $v$ 在 $R$ 中已经定义了 $\varphi(u)$ 的那些邻点 $u$ 所组成的集合，那么这个集合是有限的. 对 $R'$ 应用 (*)，找到 $\varphi$ 的象（它是一个有限集）之外的顶点 $v' \in V'$ 使得 $v'$ 在 $R'$ 中与 $\varphi(U)$ 中的所有顶点邻接，但与 $\varphi$ 的象中的任何其他顶点不邻接. 令 $\varphi(v) := v'$.
+
+在定义过程的每一偶数步，我们交换 $R$ 和 $R'$ 的角色进行相同的操作：考察 $V'$ 的列举中第一个还不在 $\varphi$ 的象中的顶点 $v'$，在已定义 $\varphi$（对应地，$\varphi^{-1}$）的顶点中，取定新顶点 $v$ 使得它和 $v'$ 有同样的邻接性和非邻接性，并令 $\varphi(v) = v'$.
+
+根据 $v$ 和 $v'$ 的最小选择性，这个双射在所有 $V$ 和所有 $V'$ 中均有定义，它显然是一个同构. ∎
+</Solution>
+</Knowledge>
+
+定理 8.3.1 中的图 $R$ 通常被称为 **Rado 图** (Rado graph)，是以 Richard Rado 的名字命名的，因为他给出了最早的显式定义之一. 在上面唯一性部分的证明中，我们在交错步骤中构造双射的方法称作**往返** (back and forth) 技巧.
+
+Rado 图 $R$ 在另外一个（令人着迷的）方面也是唯一的. 我们将在 11.3 节看到更多的相关结果. 但是，可以简单地归纳为：给定某个正概率 $p \in (0, 1)$，如果顶点对成为边的（独立且固定的）概率为 $p$，就生成了一个可数无限随机图，那么概率为 1 的图具有性质 (*)，故它与 $R$ 是同构的！在无限图的背景下，Rado 图也被称为（可数无限）**随机图** (random graph).
+
+正如我们对随机图所期望的那样，Rado 图表现出了高度的一致性. 一方面是它对微小变动的弹性：删掉有限个顶点或边，或作类似的局部变化，它保持“不变”而只是生成 $R$ 的另一个拷贝（练习 50）.
+
+然而，它下面的这个一致性，还是让人吃惊：无论我们把 $R$ 的顶点集如何划分成两个部分，其中至少一个部分会导出 $R$ 的另一个同构拷贝. 除了一些平凡的情形，Rado 图是唯一满足这一性质的可数图，因此从另一个角度看它也是唯一的.
+
+<Knowledge title="命题 8.3.2">
+Rado 图是除了 $K^{\aleph_0}$ 和 $\overline{K^{\aleph_0}}$ 外唯一的可数图 $G$，使得无论将 $V(G)$ 如何划分成两个部分，总有一个部分导出 $G$ 的一个同构拷贝.
+
+<Solution title="证明">
+我们首先证明 Rado 图 $R$ 具有这一划分性质. 令 $\{V_1, V_2\}$ 为 $V(R)$ 的一个划分. 若 (*) 对 $R[V_1]$ 和 $R[V_2]$ 均不成立，比如分别对集合 $U_1, W_1$ 和 $U_2, W_2$ 不成立，则在 $R$ 中对 $U = U_1 \cup U_2$ 和 $W = W_1 \cup W_2$，(*) 也不成立，矛盾.
+
+为证明唯一性，令 $G = (V, E)$ 为满足划分性质的可数图，设 $V_1$ 是它的孤立顶点集，$V_2$ 是剩下顶点的集合. 如果 $V_1 \neq \varnothing$，则 $G \not\simeq G[V_2]$，这是因为 $G$ 包含孤立顶点而 $G[V_2]$ 不包含. 因此，$G = G[V_1] \simeq \overline{K^{\aleph_0}}$. 类似地，如果 $G$ 有一个顶点与所有其他顶点邻接，则 $G = K^{\aleph_0}$.
+
+现在假设 $G$ 不包含孤立顶点，也不存在一个顶点与其他所有顶点邻接. 如果 $G$ 不是 Rado 图，则存在集合 $U, W$ 使得在 $G$ 中 (*) 不成立，选择 $U, W$ 使得 $|U \cup W|$ 最小. 先假设 $U \neq \varnothing$，并取 $u \in U$. 令 $V_1$ 由 $u$ 和 $U \cup W$ 之外所有不与 $u$ 邻接的顶点组成，令 $V_2$ 是所有剩下顶点的集合. 因为 $u$ 在 $G[V_1]$ 中是孤立顶点，我们有 $G \not\simeq G[V_1]$，因此 $G \simeq G[V_2]$. 根据 $|U \cup W|$ 的最小性，存在顶点 $v \in G[V_2] - U - W$ 与 $U \setminus \{u\}$ 中每个顶点邻接，而与 $W$ 中任何顶点都不邻接. 但是 $v$ 也与 $u$ 邻接，因为 $v$ 位于 $V_2$ 中，因此 $U, W$ 和 $v$ 对 $G$ 满足 (*)，与假设矛盾.
+
+最后，假定 $U = \varnothing$，则 $W \neq \varnothing$. 取 $w \in W$ 并考虑 $V$ 的划分 $\{V_1, V_2\}$，这里 $V_1$ 由 $w$ 以及 $w$ 在 $W$ 之外的邻点组成. 同前面一样，$G \not\simeq G[V_1]$，因此 $G \simeq G[V_2]$. 所以 $U$ 和 $W \setminus \{w\}$（不妨设 $v \in V_2 \setminus W$）在 $G[V_2]$ 中满足 (*)，这样 $U, W, v$ 在 $G$ 中满足 (*). ∎
+</Solution>
+</Knowledge>
+
+表现 Rado 图结构的高度一致性的另一个标志是，它具有大的自同构群. 比如，很容易可以看到 $R$ 是**顶点可传递的** (vertex-transitive)：给定任意两个顶点 $x$ 和 $y$，存在 $R$ 的一个自同构将 $x$ 映射到 $y$.
+
+事实上，还有更多的信息：利用往复技巧，我们可以容易地证明 Rado 图是**齐次的** (homogeneous)，即任意两个有限导出子图之间的任意同构可以拓广成整个图的同构（练习 51）.
+
+还有哪些可数图也是齐次的呢？完全图 $K^{\aleph_0}$ 和它的补图显然是这样的例子. 此外，对每个整数 $r \geqslant 3$，存在一个齐次的不含 $K^r$ 子图的图 $R^r$，它的构造如下：令 $R_0^r := K^1$，对 $R_n^r$ 的每个导出子图 $H \not\supseteq K^{r-1}$，设 $R_{n+1}^r$ 是连接新顶点 $v_H$ 和 $H$ 中所有顶点得到的图，故可令 $R^r := \bigcup_{n \in \mathbb{N}} R_n^r$. 显然，因为 $R_{n+1}^r$ 的所有新顶点 $v_H$ 是独立的，如果 $R_n^r$ 不包含 $K^r$，则 $R_{n+1}^r$ 也不包含 $K^r$，所以对 $n$ 归纳可得 $R^r \not\supseteq K^r$. 正如 Rado 图一样，在不包含 $K^r$ 子图的图中 $R^r$ 是通用的，从定理 8.3.1 证明中的往返论证可以容易看出 $R^r$ 是齐次的.
+
+根据下面由 Lachlan 和 Woodrow 得到的深刻定理，我们看到目前为止所得到的可数齐次图基本上囊括了所有这类图：
+
+<Knowledge title="定理 8.3.3 (Lachlan and Woodrow, 1980)">
+每个可数无限齐次图属于以下之一：
+
+- 同阶完全图的不交并，或这种图的补图；
+- 对某个 $r \geqslant 3$，图 $R^r$ 或者其补图；
+- Rado 图 $R$.
+</Knowledge>
+
+作为本节的结束，我们回到最初讨论的问题：对哪些图性质，存在一个图是关于该性质通用的？对这一问题的大多数研究都从一种更一般的理论模型角度来表述，因此研究都是基于所有图关系中最强的一个，即导出子图关系. 因此，这些结果大多数是否定的，参见本章末的注解.
+
+从图论的角度看，在较弱的子图关系下（甚至拓扑子式或子式关系下）寻找通用图看来更有希望. 比如，尽管对子图或导出子图关系不存在通用平面图，但在子式关系下却存在这样的图：
+
+<Knowledge title="定理 8.3.4 (Diestel and Kühn, 1999)">
+在子式关系下存在一个通用平面图.
+</Knowledge>
+
+到现在为止，该定理是这种类型中唯一的一个，但是应该可以找到更多. 比如，对哪些图 $X$，在 $\mathrm{Forb}_{\preceq}(X) = \{G \mid X \not\preccurlyeq G\}$ 中存在一个子式关系下的通用图？

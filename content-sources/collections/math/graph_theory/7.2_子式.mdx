@@ -1,0 +1,98 @@
+---
+title: '7.2 子式'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+在本节和下一节, 我们探讨多大程度上对图的不变量 (例如平均度、色数, 或者围长) 的假设可以保证这个图包含一个给定图作为子式或拓扑子式.
+
+作为第一个问题, 考虑一个类似于 Turán 定理的结果: $n$ 阶图需要多少条边才能保证它包含一个 $K^r$ 子式或拓扑子式? 对于 $K^r$ 子图问题, 我们需要至少 $\frac{1}{2} \frac{r - 2}{r - 1} n^2$ 条边; 对 $K^r$ 子式问题, 所需要的边数大约是关于 $n$ 的线性函数: 只需要假定图有足够大的平均度 (依赖于 $r$) 就可以.
+
+<Knowledge title="命题 7.2.1">
+对任意 $r \in \mathbb{N}$, 每个平均度至少为 $2^{r-2}$ 的图都包含一个 $K^r$ 子式.
+
+<Solution title="证明">
+对 $r$ 使用归纳法. 当 $r \leqslant 2$ 时, 命题平凡成立. 在归纳步骤, 设 $r \geqslant 3$ 且 $G$ 是任意一个平均度至少为 $2^{r-2}$ 的图, 那么 $\varepsilon(G) \geqslant 2^{r-3}$, 设 $H$ 是 $G$ 中满足 $\varepsilon(H) \geqslant 2^{r-3}$ 的极小子式. 任选一个顶点 $x \in H$, 由 $H$ 的极小性, $x$ 不是孤立顶点, 而且 $x$ 的每个邻点 $y$ 和 $x$ 有至少 $2^{r-3}$ 个公共邻点, 否则, 收缩边 $xy$ 将会减少一个顶点和至多 $2^{r-3}$ 条边, 从而得到一个更小的子式 $H'$, 且 $\varepsilon(H') \geqslant 2^{r-3}$. 由 $x$ 的邻点集合在 $H$ 中导出的子图的最小度至少为 $2^{r-3}$, 因此由归纳假设知它包含一个 $K^{r-1}$ 子式, 把它和 $x$ 放在一起就构成了我们所需要的 $G$ 的 $K^r$ 子式. ∎
+</Solution>
+</Knowledge>
+
+在命题 7.2.1 中, 对 $r$ 使用归纳法, 我们需要平均顶点度 $2^{r-2}$ 来保证 $K^r$ 子式的存在性, 但保证拓扑 $K^r$ 子式的存在性要更难一点: 我们需先固定分支顶点, 再归纳地构造它的细分边, 这需要平均顶点度至少为 $2^{\binom{r}{2}}$. 除了这点外, 证明的思路是相同的:
+
+<Knowledge title="命题 7.2.2">
+对任意 $r \geqslant 2$, 每个平均度至少为 $2^{\binom{r}{2}}$ 的图都包含拓扑 $K^r$ 子式.
+
+<Solution title="证明">
+对 $r = 2$ 命题显然成立, 故假设 $r \geqslant 3$. 我们对 $m$ 用归纳法, 这里 $m = r, \dots, \binom{r}{2}$, 证明每个具有平均度 $d(G) \geqslant 2^m$ 的图 $G$ 都包含有 $r$ 个顶点和 $m$ 条边的拓扑子式 $X$.
+
+如果 $m = r$, 由命题 1.2.2 和命题 1.3.1 知, $G$ 包含一条长度至少为 $\varepsilon(G) + 1 \geqslant 2^{r-1} + 1 \geqslant r + 1$ 的圈, 令 $X = C^r$ 得到结论.
+
+现在设 $r < m \leqslant \binom{r}{2}$, 并假定结论对小的 $m$ 成立. 给定满足 $d(G) \geqslant 2^m$ 的图 $G$, 有 $\varepsilon(G) \geqslant 2^{m-1}$. 由于 $G$ 有一个分支 $C$ 满足 $\varepsilon(C) \geqslant \varepsilon(G)$, 所以我们可以假设 $G$ 是连通的. 考虑极大的集合 $U \subseteq V(G)$ 使得 $U$ 在 $G$ 中是连通的, 同时 $\varepsilon(G/U) \geqslant 2^{m-1}$. 这样的集合 $U$ 是存在的, 因为取 $|U| = 1$, 那么 $G$ 本身可以看成 $G/U$. 由于 $G$ 是连通的, 因此 $N(U) \neq \varnothing$.
+
+设 $H := G[N(U)]$. 如果 $H$ 有一个顶点度为 $d_H(v) < 2^{m-1}$ 的顶点 $v$, 那么我们可以把它加到 $U$ 中, 这与 $U$ 的极大性矛盾: 当在 $G/U$ 中收缩边 $vv_U$ 时, 我们失去一个顶点以及 $d_H(v) + 1 \leqslant 2^{m-1}$ 条边, 因此还有 $\varepsilon \geqslant 2^{m-1}$, 所以 $d(H) \geqslant \delta(H) \geqslant 2^{m-1}$. 由归纳假设, $H$ 包含一个 $TY$ 满足 $|Y| = r$ 和 $\|Y\| = m - 1$. 设 $x, y$ 是这个 $TY$ 的两个分支顶点并且 $x, y$ 在 $Y$ 中不相邻. 因为 $x$ 和 $y$ 属于 $N(U)$, 同时 $U$ 在 $G$ 中是连通的, 所以 $G$ 包含一条内部顶点属于 $U$ 的 $x-y$ 路. 把这条路加到 $TY$ 上, 我们就得到了期望的 $TX$. ∎
+</Solution>
+</Knowledge>
+
+在 3.5 节, 我们使用了命题 7.2.2 (在那里被称作引理 3.5.1) 中的 $TK^r$ 来证明: 具有足够大连通度 $f(k)$ 的图是 $k$-连接的. 后来, 在定理 3.5.3 中看到, 连通度可以降低到 $2k$, 只要加上平均度至少为 $16k$ 就可以保证同一结论.
+
+反过来, 更进一步地使用定理 3.5.3, 我们可以把命题 7.2.2 中的界从指数减少成二次, 并且在不考虑乘法常数的意义下这个界是最好的 (练习 24):
+
+<Knowledge title="定理 7.2.3">
+存在一个常数 $c \in \mathbb{R}$, 使得对每个 $r \in \mathbb{N}$, 平均度 $d(G) \geqslant cr^2$ 的图 $G$ 都包含 $K^r$ 作为拓扑子式.
+
+<Solution title="证明">
+我们证明 $c = 10$ 时定理成立. 设 $G$ 是一个满足 $d(G) \geqslant 10r^2$ 的图. 由定理 1.4.3 在 $k := r^2$ 时的情形知, $G$ 包含一个子图 $H$, 使得 $\kappa(H) \geqslant r^2$ 和 $\varepsilon(H) > \varepsilon(G) - r^2 \geqslant 4r^2$. 为了在 $H$ 中找到一个 $TK^r$, 我们首先挑选 $H$ 的 $r$ 个顶点作为分支顶点, 并记这 $r$ 个顶点的集合为 $X$; 然后选取集合 $Y$, 它是由 $H$ 中 $X$ 的 $r(r - 1)$ 个邻点组成的, 其中 $X$ 的每个顶点有 $r - 1$ 个邻点在 $Y$ 中. 这些顶点被限定为初始细分顶点. 我们总共有 $r^2$ 个顶点, 由于 $\delta(H) \geqslant \kappa(H) \geqslant r^2$, 它们可以被选为互不相同的.
+
+现在剩下的工作是, 通过 $H' := H - X$ 中对应于 $K^r$ 的边不交路成对地连接 $Y$ 中的顶点. 如果 $Y$ 在 $H'$ 中是连接的, 这可以实现. 更一般地, 通过验证 $H'$ 满足定理 3.5.3 在 $k = \frac{1}{2} r(r - 1)$ 时的条件, 证明 $H'$ 是 $\frac{1}{2} r(r - 1)$-连接的. 首先, 我们有 $\kappa(H') \geqslant \kappa(H) - r \geqslant r(r - 1) = 2k$, 因为 $H'$ 是由 $H$ 通过删除至多 $r|H|$ 条边 (以及某些顶点) 而得到的, 我们也有 $\varepsilon(H') \geqslant \varepsilon(H) - r \geqslant 4r(r - 1) = 8k$. ∎
+</Solution>
+</Knowledge>
+
+对较小的 $r$, 我们可以设法确定 $n$ 阶图包含 $TK^r$ 子图所需的确切边数. 当 $r = 4$ 时, 这个值是 $2n - 2$ (见推论 7.3.2). 当 $r = 5$ 时, 平面三角剖分蕴含着一个下界 $3n - 5$ (推论 4.2.10). 反过来, $3n - 5$ 条边确实足以保证 $TK^5$ 的存在性 (而不仅仅是存在 $TK^5$ 或 $TK_{3,3}$, 如推论 4.2.10 和 Kuratowski 定理所揭示的那样), 这已经是一个非常难证明的定理 (Mader, 1998).
+
+保证 $K^r$ 子式存在性所需要的平均度比保证 $TK^r$ 存在性所需要的要小, 其准确值已经确定. 关于 $c$ 的取值可参见下面定理后面的注释.
+
+<Knowledge title="定理 7.2.4 (Kostochka, 1982)">
+存在一个常数 $c \in \mathbb{R}$, 使得对每个 $r \in \mathbb{N}$, 每个平均度 $d(G) \geqslant cr\sqrt{\log r}$ 的图 $G$ 包含子式 $K^r$. 作为 $r$ 的函数, 如果不考虑常数 $c$, 这个界是最好的.
+</Knowledge>
+
+这个定理较容易的必要部分, 即为保证 $K^r$ 子式存在所需的平均度是 $cr\sqrt{\log r}$ 这一事实, 可以由随机图 (见第 11 章) 得出. 反过来, 证明这个平均度条件是充分的, 可以使用与定理 3.5.3 的证明类似的方法得到.
+
+我们选择不证明定理 7.2.4, 而是在本节的剩余部分讨论如何保证子式存在性的另一个引人注目的方向: 在一个图中, 我们可以通过增加它的围长 (只要不仅仅通过细分图的边) 来迫使图包含 $K^r$ 子式. 乍一看, 这也许近乎荒谬. 但是, 如果我们不尝试直接得到 $K^r$ 子式, 而是试着得到一个仅仅有较大的最小度或者平均度的子式 (由定理 7.2.4 知这足够了), 那么这个问题看起来会更加可信. 因为如果一个图的围长 $g$ 很大, 那么以 $x$ 为中心的球 $\{v \mid d(x, v) < \lfloor g/2 \rfloor\}$ 会导出一个有较多叶子的树, 每个叶子除了有一条关联边在这棵树上, 其余的关联边都不在这棵树上. 收缩足够多这样的不相交树, 我们希望得到一个有较大平均度的子式, 从而我们将有一个较大的完全子式.
+
+下面的引理实现了这个想法.
+
+<Knowledge title="引理 7.2.5">
+设 $d, k \in \mathbb{N}$, 其中 $d \geqslant 3$, 而 $G$ 是一个最小度 $\delta(G) \geqslant d$ 和围长 $g(G) \geqslant 8k + 3$ 的图, 那么 $G$ 有一个子式 $H$, 它的最小度 $\delta(H) \geqslant d(d - 1)^k$.
+
+<Solution title="证明">
+设 $X \subseteq V(G)$ 是一个对于所有互异的 $x, y \in X$ 满足 $d(x, y) > 2k$ 的极大集合. 对每一个 $x \in X$, 令 $T_x^0 := \{x\}$. 给定 $i < 2k$, 假设我们已经定义了不交的树 $T_x^i \subseteq G$ (对每个 $x \in X$ 定义一个), 这些树的顶点恰好是 $G$ 中距离 $X$ 至多为 $i$ 的顶点. 连接每一个与 $X$ 距离为 $i + 1$ 的顶点到一个距离为 $i$ 的邻点, 我们得到一个类似的不交树 $T_x^{i+1}$ 的集合. 因为 $G$ 的每个顶点与 $X$ 的距离至多为 $2k$ (由 $X$ 的极大性知), 用这样的方法得到的树集合 $T_x := T_x^{2k}$ 划分 $G$ 的顶点集. 设 $H$ 是由收缩 $G$ 中每棵树 $T_x$ 而得到的子式.
+
+要证明 $\delta(H) \geqslant d(d-1)^k$, 首先注意到, 因为 $\mathrm{diam}(T_x) \leqslant 4k$ 以及 $g(G) > 4k + 1$, 所以 $T_x$ 实际上是 $G$ 的导出子图. 类似地, 在 $G$ 中任意两棵树 $T_x, T_y$ 之间, 至多有一条边: 若有两条这样的边, 加上连接在 $T_x$ 和 $T_y$ 中的端点的路, 将形成一个长度至多为 $8k + 2 < g(G)$ 的圈. 因此所有离开 $T_x$ 的边在收缩中都被保留了下来.
+
+有多少条这样的边呢? 注意到, 对每一个顶点 $u \in T_x^{k-1}$, 它的所有 $d_G(u) \geqslant d$ 个邻点 $v$ 也在 $T_x$ 中: 因为对每个其他顶点 $y \in X$, 有 $d(v, x) \leqslant k$ 和 $d(x, y) > 2k$, 因此 $d(v, y) > k \geqslant d(v, x)$, 所以当那些树被定义时, $v$ 被加到 $T_x$ 上而不是 $T_y$ 上. 因此, $T_x^k$, 当然 $T_x$ 也一样, 包含至少 $d(d-1)^{k-1}$ 个叶子. 但是, $T_x$ 的每个叶子至少向 $T_x$ 外连 $d-1$ 条边, 所以 $T_x$ 向其他树 $T_y$ 连了至少 $d(d-1)^k$ 条边. ∎
+</Solution>
+</Knowledge>
+
+结合引理 7.2.5, 定理 7.2.4 蕴含着下面的结果.
+
+<Knowledge title="定理 7.2.6 (Thomassen, 1983)">
+存在一个函数 $f: \mathbb{N} \longrightarrow \mathbb{N}$ 使得每个最小度至少为 3、围长至少为 $f(r)$ 的图, 对所有 $r \in \mathbb{N}$, 都包含一个 $K^r$ 子式.
+
+<Solution title="证明">
+我们证明对某个常数 $c \in \mathbb{R}$, 当 $f(r) := 8\log r + 4\log \log r + c$ 时, 定理成立. 设 $k = k(r) \in \mathbb{N}$ 是满足 $3 \cdot 2^k \geqslant c' r \sqrt{\log r}$ 的极小整数, 这里 $c' \in \mathbb{R}$ 是定理 7.2.4 中的常数. 那么对一个合适的常数 $c \in \mathbb{R}$, 我们有 $8k + 3 \leqslant 8\log r + 4\log \log r + c$, 再由引理 7.2.5 及定理 7.2.4, 得证. ∎
+</Solution>
+</Knowledge>
+
+大的围长也能被用来保证一个拓扑 $K^r$ 子式的存在性. 我们现在需要一些度至少为 $r - 1$ 的顶点作为分支顶点, 但是, 如果假设最小度为 $r - 1$ 来保证这些, 我们甚至可以用一个独立于 $r$ 的围长的界得到拓扑 $K^r$ 子式.
+
+<Knowledge title="定理 7.2.7 (Kühn and Osthus, 2002)">
+存在一个常数 $g$, 使得每个满足 $\delta(G) \geqslant r - 1$ 和 $g(G) \geqslant g$ 的图 $G$ 都有 $G \supseteq TK^r$.
+</Knowledge>

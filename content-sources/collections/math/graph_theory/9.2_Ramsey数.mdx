@@ -1,0 +1,98 @@
+---
+title: '9.2 Ramsey 数'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+Ramsey 定理也可以这样描述：设 $H = K^r$，如果 $G$ 是一个有充分多顶点的图，那么或者 $G$ 本身或者 $G$ 的补图 $\overline{G}$ 包含 $H$ 的拷贝作为子图。因为对 $h := |H|$ 有 $H \subseteq K^h$，显然对任意图 $H$ 结论也成立。
+
+然而，如果我们寻找最小的 $n$ 使得每一个阶为 $n$ 的图 $G$ 都有上述性质，即 $n$ 是 $H$ 的 Ramsey 数 (Ramsey number) $R(H)$，那么上述问题是有意义的：如果 $H$ 只有少数边，那么它就很容易嵌入到 $G$ 或 $\overline{G}$ 中，因此 $R(H)$ 应该比 $R(h) = R(K^h)$ 来得小。
+
+更一般地，把 $R(H_1, H_2)$ 定义为最小的 $n \in \mathbb{N}$，使得对任意阶为 $n$ 的图 $G$，要么 $H_1 \subseteq G$，要么 $H_2 \subseteq \overline{G}$。对多数 $H_1$ 和 $H_2$，只知道 $R(H_1, H_2)$ 的一些粗略估计。有趣的是，由随机图给出的下界 (定理 11.1.3) 经常要比由直接构造得到的下界更准确。
+
+下面的命题描述了一族相对大的图类，它的准确 Ramsey 数可以得到确定，这是少数几个已知的情形之一：
+
+<Knowledge title="命题 9.2.1">
+令 $s, t$ 是正整数，而 $T$ 是一个阶为 $t$ 的树，那么
+$$
+R(T, K^s) = (s - 1)(t - 1) + 1.
+$$
+
+<Solution title="证明">
+由 $s - 1$ 个 $K^{t - 1}$ 的不交并构成的图是不包含 $T$ 的，而这个图的补图，即完全 $(s - 1)$-部图 $K_{t - 1}^{s - 1}$ 不包含 $K^s$，这样就证明了 $R(T, K^s) \geqslant (s - 1)(t - 1) + 1$。
+
+反过来，令 $G$ 是任意阶为 $n = (s - 1)(t - 1) + 1$ 的图，并且它的补图不含 $K^s$。那么 $s > 1$ 并且在 $G$ 的任意顶点着色中 (在第 5 章的意义下)，最多有 $s - 1$ 个顶点可以着同一种颜色。因此 $\chi(G) \geqslant \lceil n / (s - 1) \rceil = t$。由引理 5.2.3，$G$ 包含一个子图 $H$ 满足 $\delta(H) \geqslant t - 1$。由推论 1.5.4，它包含 $T$ 的一个拷贝。∎
+</Solution>
+</Knowledge>
+
+作为本节的主要结果，我们证明一个罕见的普遍性定理，它为一大类图 (这类图由常见的图不变量定义) 的 Ramsey 数提供了一个很好的上界。这个定理解决了稀疏图的 Ramsey 数：具有有界最大度的图 $H$ 的 Ramsey 数以 $|H|$ 的线性方式增长，这是对定理 9.1.1 中指数上界的很大改进。
+
+<Knowledge title="定理 9.2.2 (Chvátal, Rödl, Szemerédi, Trotter, 1983)">
+对每个正整数 $\Delta$，都存在一个常数 $c$，使得所有具有 $\Delta(H) \leqslant \Delta$ 的图 $H$ 都有
+$$
+R(H) \leqslant c |H|.
+$$
+
+<Solution title="证明">
+证明的基本思路如下：我们想证明如果 $|G|$ 足够大 (但不要太大)，那么 $H \subseteq G$ 或者 $H \subseteq \overline{G}$。考虑 $G$ 的一个 $\varepsilon$-正则划分 (由正则性引理得到)，如果这个正则划分中有足够多的 $\varepsilon$-正则对是高密度的，那么我们就希望在 $G$ 中找到 $H$ 的拷贝；如果大多数 $\varepsilon$-正则对是低密度的，我们尝试在 $\overline{G}$ 中找 $H$。令 $R, R'$ 和 $R''$ 分别为 $G$ 的正则性图，它的边分别对应于密度对 $\geqslant 0, \geqslant 1/2$ 和 $< 1/2$，$^2$ 则 $R$ 是 $R'$ 和 $R''$ 的边不交并。
+
+现在为了得到 $H \subseteq G$ 或者 $H \subseteq \overline{G}$，由引理 7.5.2，我们只需要确保 $H$ 包含在一个恰当的“膨胀了的正则性图” $R_s'$ 或 $R_s''$ 中即可。因为 $\chi(H) \leqslant \Delta(H) + 1 \leqslant \Delta + 1$，所以如果 $s \geqslant \sigma(H)$，这是会发生的，并且我们可以在 $R'$ 或 $R''$ 中找一个 $K^{\Delta + 1}$。这是很容易做到的：只需要 $K^r \subseteq R$，这里 $r$ 是 $\Delta + 1$ 的 Ramsey 数，因为 $R$ 是稠密的，故 $K^r \subseteq R$ 可由 Turán 定理容易地得到。
+
+现在我们给出正式的证明，先给定 $\Delta \geqslant 1$。对输入的 $d := 1/2$ 和 $\Delta$，引理 7.5.2 将返回一个 $\varepsilon_0$。令 $m := R(\Delta + 1)$ 是 $\Delta + 1$ 的 Ramsey 数。设 $\varepsilon \leqslant \varepsilon_0$ 是一个足够小的正值使得对 $k = m$ (所以对 $k \geqslant m$ 也成立) 有
+$$
+2\varepsilon < \frac{1}{m - 1} - \frac{1}{k}. \tag{1}
+$$
+特别地，我们有 $\varepsilon < 1$。最后，令 $M$ 是一个由输入 $\varepsilon$ 和 $m$ 到正则性引理 (定理 7.4.1) 后返回的整数。
+
+到现在为止，所有的数值都依赖于 $\Delta$。我们将证明
+$$
+c := \frac{2^{\Delta + 1} M}{1 - \varepsilon}
+$$
+是使得定理成立的常数。令给定的 $H$ 满足 $\Delta(H) \leqslant \Delta$ 且令 $s := |H|$。设 $G$ 是任意一个阶为 $n \geqslant c |H|$ 的图。我们证明 $H \subseteq G$ 或 $H \subseteq \overline{G}$。
+
+由定理 7.4.1 知，$G$ 有一个 $\varepsilon$-正则划分 $\{V_0, V_1, \dots, V_k\}$，此划分中 $V_0$ 是例外集并且 $|V_1| = \dots = |V_k| =: \ell$，其中 $m \leqslant k \leqslant M$。因此
+$$
+\ell = \frac{n - |V_0|}{k} \geqslant n \frac{1 - \varepsilon}{M} \geqslant c s \frac{1 - \varepsilon}{M} \geqslant 2^{\Delta + 1} s = 2 s / d^\Delta. \tag{2}
+$$
+令 $R$ 是一个正则性图，这里 $\varepsilon, \ell$ 和 0 为对应于这个划分的参数。由 $R$ 的定义，$R$ 有 $k$ 个顶点和
+$$
+\begin{aligned}
+\|R\| &\geqslant \binom{k}{2} - \varepsilon k^2 \\
+&= \frac{1}{2} k^2 \left(1 - \frac{1}{k} - 2\varepsilon\right) \\
+&\underset{(1)}{>} \frac{1}{2} k^2 \left(1 - \frac{1}{k} - \frac{1}{m - 1} + \frac{1}{k}\right) \\
+&= \frac{1}{2} k^2 \frac{m - 2}{m - 1} \\
+&\geqslant t_{m - 1}(k)
+\end{aligned}
+$$
+条边。由定理 7.1.1 知，$R$ 包含一个子图 $K = K^m$。
+
+现在我们用两种颜色对 $R$ 的边进行着色：如果某条边对应于一个密度至少为 $1/2$ 的对 $(V_i, V_j)$，就对此边着红色；否则就着绿色。设 $R'$ 是红色边所组成的 $R$ 的支撑子图，$R''$ 是由绿边以及对应的对的密度恰好是 $1/2$ 的边所组成的 $R$ 的支撑子图，则 $R'$ 为 $G$ 的具有参数 $\varepsilon, \ell$ 和 $1/2$ 的正则性图，$R''$ 是具有相同参数的 $\overline{G}$ 的正则性图：容易验证，对每个对 $(V_i, V_j)$，若它对于 $G$ 是 $\varepsilon$-正则的，则对于 $\overline{G}$ 也是 $\varepsilon$-正则的。
+
+由 $m$ 的定义可知，对于 $r := \chi(H) \leqslant \Delta + 1$，图 $K$ 包含一个红色或绿色的 $K^r$。相对应地，我们有 $H \subseteq R_s'$ 或 $H \subseteq R_s''$。因为 $\varepsilon \leqslant \varepsilon_0$，并且由 (2) 知 $\ell \geqslant 2s / d^\Delta$，所以 $R'$ 和 $R''$ 都满足引理 7.5.2，故 $H \subseteq G$ 或者 $H \subseteq \overline{G}$，证毕。∎
+</Solution>
+</Knowledge>
+
+这一节到目前为止，我们一直在问同一个问题：对一个完全图 $G$，如果它的每个边 2-着色都产生一个单色的给定子图 $H$，那么 $G$ 的最小阶数是多少。假如我们不要求 $G$ 是完全的，也不关注 $G$ 的阶是多少，而是考虑它的结构，即考虑在子图关系下将 $G$ 最小化的问题。给定图 $H$ 以及性质“每个边 2-着色都有一个单色子图 $H$”，如果 $G$ 是关于这个性质的极小图，那么我们称 $G$ 对于 $H$ 是 Ramsey-极小的 (Ramsey-minimal)。
+
+这些 Ramsey-极小图是怎样的图呢？它们是否唯一？下面的结论就第二个问题对某些 $H$ 给出了答案，并给出了它的漂亮证明：
+
+<Knowledge title="命题 9.2.3">
+若 $T$ 是一个树但不是星，那么存在无限多个关于 $T$ 是 Ramsey-极小的图。
+
+<Solution title="证明">
+令 $|T| =: r$。我们证明对每个 $n \in \mathbb{N}$，都存在一个阶至少为 $n$ 的图关于 $T$ 是 Ramsey-极小的。
+
+由定理 5.2.5 知，存在一个图 $G$ 满足色数 $\chi(G) > r^2$ 且围长 $g(G) > n$。若用红、绿两种颜色对 $G$ 的边进行着色，那么红色子图和绿色子图不可能同时有第 5 章中提到的那种顶点 $r$-着色，因为否则的话，我们可以用从这两种着色产生的着色来对 $G$ 的顶点进行着色，从而得到与 $\chi(G) > r^2$ 相矛盾的结论。所以我们令 $G' \subseteq G$ 是单色的，且满足 $\chi(G') > r$。由引理 5.2.3，$G'$ 有一个最小度至少为 $r$ 的子图。由推论 1.5.4 知，它包含 $T$ 的拷贝。
+
+设 $G^* \subseteq G$ 是关于 $T$ Ramsey-极小的，显然 $G^*$ 不是一个森林，因为任意一个森林的边都可以通过 2-着色 (划分) 使得不存在单色的子森林包含一条长为 3 的路，更不可能包含 $T$ 的拷贝。(这里我们用到 $T$ 不是星的假设，因此它包含 $P^3$。) 故 $G^*$ 包含一个长为 $g(G^*)$ 的圈，因为 $G^* \subseteq G$，所以 $g(G^*) \geqslant g(G) > n$。特别地，$|G^*| > n$。结论得证。∎
+</Solution>
+</Knowledge>

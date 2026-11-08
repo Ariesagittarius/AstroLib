@@ -1,0 +1,81 @@
+---
+title: '2.3 Erdős-Pósa定理'
+---
+
+import Guide from '@/components/Guide.astro';
+import Knowledge from '@/components/Knowledge.astro';
+import Example from '@/components/Example.astro';
+import Analysis from '@/components/Analysis.astro';
+import Solution from '@/components/Solution.astro';
+import Variant from '@/components/Variant.astro';
+import Note from '@/components/Note.astro';
+import Block from '@/components/Block.astro';
+import Method from '@/components/Method.astro';
+import Exercise from '@/components/Exercise.astro';
+
+在 2.1 节中，König 定理和 Hall 定理的主要魅力所在是，只要某个很明显的障碍子图不出现，我们想要的匹配就存在了。例如，在 König 定理中，除非可用少于 $k$ 个顶点来覆盖图中的所有边，否则我们总可以找到 $k$ 条独立边。
+
+更一般地，如果 $G$ 是一个任意图（不必是二部图），而 $\mathcal{H}$ 是任意图族，我们尝试把 $\mathcal{H}$ 中（可能相同的）若干图不相交地填装到 $G$ 中。设最多可能填装的图的个数为 $k$，将 $k$ 和 $G$ 中可以覆盖 $\mathcal{H}$ 中的所有子图的顶点最小数 $s$ 进行比较。如果 $s$ 有一个独立于 $G$ 的、关于 $k$ 的函数作为上界，则称 $\mathcal{H}$ 具有 **Erdős-Pósa 性质** (Erdős-Pósa property)。（所以，严格地说，$\mathcal{H}$ 有这个性质意味着，存在一个 $\mathbb{N} \to \mathbb{N}$ 的函数 $k \mapsto f(k)$ 使得对于每个 $k$ 和 $G$，或者 $G$ 包含 $k$ 个不相交子图，都和 $\mathcal{H}$ 中的一个图同构，或者存在一个至多有 $f(k)$ 个顶点的集合 $U \subseteq V(G)$ 使得 $G - U$ 没有子图属于 $\mathcal{H}$。）
+
+在这一节，我们的目标是证明 Erdős-Pósa 定理，即所有圈组成的图族具有这样的性质：我们能够找到一个函数 $f$（大约是 $4k \log k$）使得每个图或者包含 $k$ 个不相交的圈，或者包含一个至多有 $f(k)$ 个顶点的集合覆盖所有圈。
+
+我们先证明立方图中一个更强的命题。对于 $k \in \mathbb{N}$，令
+
+$$
+s_k := \begin{cases}
+4 k r_k, & k \geqslant 2, \\
+1, & k \leqslant 1,
+\end{cases} \quad \text{这里 } r_k := \log k + \log \log k + 4.
+$$
+
+<Knowledge title="引理 2.3.1">
+设 $k \in \mathbb{N}$，且 $H$ 是一个立方多重图。若 $|H| \geqslant s_k$，则 $H$ 包含 $k$ 个不相交的圈。
+
+<Solution title="证明">
+我们对 $k$ 用数学归纳法。当 $k \leqslant 1$ 时，这个结论显然成立。设 $k \geqslant 2$，归纳假设命题对于 $k - 1$ 成立。设 $C$ 是 $H$ 中的一个最短圈。
+
+首先证明 $H - C$ 包含一个立方多重图的细分 $H'$ 使得 $|H'| \geqslant |H| - 2|C|$。设 $m$ 是 $C$ 和 $H - C$ 之间的边数。由于 $H$ 是立方图且 $d(C) = 2$，所以有 $m \leqslant |C|$。现在我们考虑 $V(H)$ 的二部划分 $\{V_1, V_2\}$。首先令 $V_1 := V(C)$ 并且允许 $V_2 = \varnothing$。如果 $H[V_2]$ 有一个顶点的度数至多为 1，那么把这个顶点移动到 $V_1$ 中，从而获得一个新的划分 $\{V_1, V_2\}$，且划分的两个部分之间的边数更少。假设存在 $n$ 个这样的移动（我们的假设蕴含着 $n \leqslant 3$，但这里并不需要这个），但没有更多的，那么得到的划分 $\{V_1, V_2\}$ 的两个部分之间的边数至多是 $m - n$，并且 $H[V_2]$ 至多有 $m - n$ 个顶点的度小于 3，这是因为这些顶点都和一条横跨两部分的边关联。由于不能把这些顶点移动到 $V_1$ 中去，所以这些顶点在 $H[V_2]$ 中的度数恰好为 2。设 $H'$ 是在 $H[V_2]$ 中压缩这些度为 2 的顶点后得到的立方多重图，则得到所需的结果
+
+$$
+|H'| \geqslant |H| - |C| - n - (m - n) \geqslant |H| - 2|C|.
+$$
+
+要完成证明，只需证明 $|H'| \geqslant s_{k-1}$。由推论 1.3.5 知 $|C| \leqslant 2\log |H|$（或者，如果 $|C| = g(H) \leqslant 2$，则 $|H| \geqslant s_k$）以及 $|H| \geqslant s_k \geqslant 6$，则
+
+$$
+|H'| \geqslant |H| - 2|C| \geqslant |H| - 4 \log |H| \geqslant s_k - 4 \log s_k.
+$$
+
+（在最后一个不等式中，用到了函数 $x \mapsto x - 4\log x$ 在 $x \geqslant 6$ 时的递增性。）
+
+接下来只需证明 $s_k - 4\log s_k \geqslant s_{k-1}$。当 $k = 2$ 时，显然成立，因此我们假设 $k \geqslant 3$，则 $r_k \leqslant 4\log k$（这对于 $k \geqslant 4$ 时显然成立，而对 $k = 3$ 的情形还需要若干计算），那么
+
+$$
+\begin{aligned}
+s_k - 4 \log s_k &= 4 (k - 1) r_k + 4 \log k + 4 \log \log k + 16 - (8 + 4 \log k + 4 \log r_k) \\
+&\geqslant s_{k-1} + 4 \log \log k + 8 - 4 \log (4 \log k) \\
+&= s_{k-1}.
+\end{aligned}
+$$
+
+∎
+</Solution>
+</Knowledge>
+
+<Knowledge title="定理 2.3.2 (Erdős and Pósa, 1965)">
+存在一个函数 $f: \mathbb{N} \to \mathbb{N}$，使得对任意 $k \in \mathbb{N}$，每个图或者包含 $k$ 个不相交的圈，或者存在一个至多有 $f(k)$ 个顶点的集合与所有圈相交。
+
+<Solution title="证明">
+我们证明当 $f(k) := \lfloor s_k + k - 1 \rfloor$ 时结论成立。给定整数 $k$，并设 $G$ 是一个任意图。不妨设 $G$ 包含一个圈，则它有一个极大子图 $H$ 使得 $H$ 中每个顶点的度数为 2 或 3。设 $U$ 是 $H$ 中度数为 3 的顶点的集合。
+
+设 $\mathcal{C}$ 是图 $G$ 中与 $U$ 不相交，且与 $H$ 恰好交于一个顶点的所有圈的集合。设 $Z \subseteq V(H) \setminus U$ 是这些顶点的集合。对于每个 $z \in Z$ 选出一个圈 $C_z \in \mathcal{C}$ 与 $H$ 恰好交于 $z$，设 $\mathcal{C}' := \{C_z \mid z \in Z\}$，由 $H$ 的极大性，$\mathcal{C}'$ 中的圈互不相交。
+
+设 $\mathcal{D}$ 是 $H$ 的与 $Z$ 不相交的 2-正则分支的集合，则 $\mathcal{C}' \cup \mathcal{D}$ 是另一个互不相交的圈集。如果 $|\mathcal{C}' \cup \mathcal{D}| \geqslant k$，证明完成；否则，可以在 $\mathcal{D}$ 中的每个圈上取一个顶点添加到 $Z$ 中，得到一个集合 $X$，它至多有 $k - 1$ 个顶点，且与 $\mathcal{C}$ 中的所有圈以及 $H$ 的所有 2-正则分支相交。现在考虑 $G$ 中任意不与 $X$ 相交的圈。由 $H$ 的极大性知，它与 $H$ 相交，但不是 $H$ 的分支，也不在 $\mathcal{C}$ 中，而且不包含 $U$ 外的任意两个不同顶点之间的 $H$-路，从而这个圈与 $U$ 相交。
+
+我们已经证明 $G$ 中的每个圈与 $X \cup U$ 相交。由于 $|X| \leqslant k - 1$，除非 $H$ 包含 $k$ 个互不相交的圈，否则我们只需证明 $|U| < s_k$。对压缩 $H$ 中的 2 度顶点得到的多重图运用引理 2.3.1 即可得到所要的结论。∎
+</Solution>
+</Knowledge>
+
+可以把定理 2.3.2 的证明进行修改给出一个关于填装边不交圈和用边覆盖这些圈的类似结果，证明梗概见第 7 章的练习 22。另外一个应用 Ramsey 定理的简单证明见第 9 章的练习 6。
+
+在第 12 章我们将会再次见到 Erdős-Pósa 性质。在那里，定理 2.3.2 的一个非常重要的推广将会是图子式理论中一个令人意外的简单推论。
