@@ -1,15 +1,5 @@
-/**
- * pwa-offline-manager.ts —— AstroLib PWA 离线全量数据包管理引擎 (v2.0)
- * ============================================================================
- * 负责从同源高速分发端点（或分卷清单）下载经过 Gzip 极致压缩的离线数据包，
- * 采用原生 DecompressionStream 硬件加速解压，并在客户端本地批量灌入 Cache Storage (PACK_CACHE)，
- * 彻底杜绝 GitHub 跨域限制 (CORS) 与 404，实现零网络依赖的断网秒开阅读。
- * ============================================================================
- */
-
 export const PACK_CACHE_NAME = 'astrolib-pwa-v1-pack';
 
-// 同源预打包下载端点（主推 Gzip 压缩包 ~45MB，10倍流量精简）
 export const PRIMARY_PACK_URL = '/offline-packs/astrolib-all.json.gz';
 export const MANIFEST_URL = '/offline-packs/manifest.json';
 export const LEGACY_GITHUB_RELEASE_BASE = 'https://github.com/Ariesagittarius/AstroLib/releases/latest/download';
@@ -44,9 +34,6 @@ interface OfflineManifest {
   allSizeMb?: string;
 }
 
-/**
- * 查询当前本地已安装的离线数据包状态
- */
 export async function getOfflinePackStatus(): Promise<OfflinePackStatus> {
   if (typeof window === 'undefined' || !('caches' in window)) {
     return { hasPack: false, count: 0, approxSizeMb: '0' };
@@ -60,20 +47,18 @@ export async function getOfflinePackStatus(): Promise<OfflinePackStatus> {
 
     const cache = await caches.open(PACK_CACHE_NAME);
     const keys = await cache.keys();
-    // 由于每个页面同时存入了普通路径与带尾部斜杠路径，实际章节数为键数 / 2（向上取整保底）
+
     const totalKeys = keys.length;
     if (totalKeys === 0) {
       return { hasPack: false, count: 0, approxSizeMb: '0' };
     }
 
-    // 过滤去重统计真实唯一文章数
     const uniquePaths = new Set(keys.map(k => {
       const pathname = new URL(k.url).pathname;
       return pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
     }));
     const count = uniquePaths.size;
 
-    // 粗略估算占用空间 (每篇平均约 350KB 原始 HTML)
     const approxSizeMb = ((count * 350) / 1024).toFixed(1);
     return {
       hasPack: true,
@@ -86,9 +71,6 @@ export async function getOfflinePackStatus(): Promise<OfflinePackStatus> {
   }
 }
 
-/**
- * 解码由流式下载得到的二进制分块，若为 Gzip 则调用 DecompressionStream 硬件加速解压
- */
 async function decodePackBytes(
   combined: Uint8Array,
   isGzip: boolean
@@ -106,9 +88,6 @@ async function decodePackBytes(
   return decoder.decode(combined);
 }
 
-/**
- * 下载单个离线数据包并解压返回文章字典
- */
 async function fetchAndDecodeSinglePack(
   targetUrl: string,
   onProgress?: ProgressCallback,
@@ -174,9 +153,6 @@ async function fetchAndDecodeSinglePack(
   return packData.articles;
 }
 
-/**
- * 批量把 HTML 字典写入 PACK_CACHE 缓存桶
- */
 async function writeArticlesToCacheStorage(
   articles: Record<string, string>,
   onProgress?: ProgressCallback,
@@ -200,7 +176,6 @@ async function writeArticlesToCacheStorage(
       },
     });
 
-    // 同时缓存普通形式与带尾部斜杠形式，保障 Service Worker 100% 命中
     await cache.put(urlPath, resp.clone());
     const cleanPath = urlPath.endsWith('/') ? urlPath.slice(0, -1) : urlPath + '/';
     await cache.put(cleanPath, resp);
@@ -215,9 +190,6 @@ async function writeArticlesToCacheStorage(
   return total;
 }
 
-/**
- * 保底策略：通过并发抓取站点现存章节路由，直接录入 PACK_CACHE
- */
 async function fallbackDirectCrawl(
   routes: string[],
   onProgress?: ProgressCallback
@@ -272,10 +244,6 @@ async function fallbackDirectCrawl(
   return completed;
 }
 
-/**
- * 核心调度：从高可用源下载全站离线数据包并写入 Cache Storage
- * 具备 Tier 1 (同源全量压缩包) -> Tier 2 (分卷清单) -> Tier 3 (端侧直录) 多级容灾能力
- */
 export async function downloadAndInstallOfflinePack(
   packUrl?: string,
   onProgress?: ProgressCallback
@@ -284,7 +252,6 @@ export async function downloadAndInstallOfflinePack(
     throw new Error('当前浏览器不支持 Cache Storage，无法离线缓存');
   }
 
-  // 1. 若用户指定了自定义 URL，按指定 URL 拉取
   if (packUrl) {
     if (onProgress) onProgress(5, '正在连接离线数据节点...');
     const articles = await fetchAndDecodeSinglePack(packUrl, onProgress, 5, 65);
@@ -294,7 +261,6 @@ export async function downloadAndInstallOfflinePack(
     return { success: true, total };
   }
 
-  // 2. Tier 1: 同源极速 Gzip 全站压缩包 (Primary)
   try {
     if (onProgress) onProgress(5, '正在连接全站离线数据节点...');
     const articles = await fetchAndDecodeSinglePack(PRIMARY_PACK_URL, onProgress, 5, 65);
@@ -306,7 +272,6 @@ export async function downloadAndInstallOfflinePack(
     console.warn('[PWA-Pack] Tier 1 全量总包获取未成功，自动切换至 Tier 2 分卷模式:', tier1Error.message);
   }
 
-  // 3. Tier 2: 读取 manifest.json，逐卷拉取图书分包
   try {
     if (onProgress) onProgress(15, '正在查询离线数据分卷清单...');
     const manifestResp = await fetch(MANIFEST_URL);
@@ -333,7 +298,6 @@ export async function downloadAndInstallOfflinePack(
         return { success: true, total };
       }
 
-      // 若清单存在但无 books，尝试根据 allRoutes 进行端侧直录
       if (manifest.allRoutes && manifest.allRoutes.length > 0) {
         const total = await fallbackDirectCrawl(manifest.allRoutes, onProgress);
         if (onProgress) onProgress(100, `全站页面直录离线完成！共 ${total} 篇`);
@@ -345,7 +309,6 @@ export async function downloadAndInstallOfflinePack(
     console.warn('[PWA-Pack] Tier 2 分卷拉取未成功，尝试 Tier 3 端侧直录兜底:', tier2Error.message);
   }
 
-  // 4. Tier 3: 终极自愈，从当前站点页面中提取章节并并发录入
   try {
     if (onProgress) onProgress(20, '正在初始化端侧直录缓存...');
     const fallbackRoutes: string[] = [];
@@ -370,9 +333,6 @@ export async function downloadAndInstallOfflinePack(
   throw new Error('未检测到可用的离线数据包，请检查网络连接后重试');
 }
 
-/**
- * 一键清空本地离线数据包，释放磁盘空间
- */
 export async function clearOfflinePack(): Promise<boolean> {
   if (typeof window === 'undefined' || !('caches' in window)) return false;
 

@@ -1,8 +1,8 @@
 # AstroLib Unified Publishing Architecture: E2E Acceptance Report
 
-> **Document Status**: Complete & Accepted  
-> **Timestamp**: 2026-09-07  
-> **Target Scope**: 教材章节 (Chapter) 与课后习题 (Exercise) 统一发布与 LaTeX/PDF 导出架构  
+> **Document Status**: Complete & Accepted
+> **Timestamp**: 2026-09-07
+> **Target Scope**: 教材章节 (Chapter) 与课后习题 (Exercise) 统一发布与 LaTeX/PDF 导出架构
 > **Governing Specifications**: [AGENTS.md](file:///d:/Antigravity/project/AstroLib/AGENTS.md) & [ARCHITECTURE_REVIEW.md](file:///d:/Antigravity/project/AstroLib/docs/architecture/ARCHITECTURE_REVIEW.md)
 
 ---

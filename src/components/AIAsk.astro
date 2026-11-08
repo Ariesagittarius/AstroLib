@@ -1,5 +1,4 @@
 ---
-// AI 书内智能问答主组件 · SSR 壳与表现层组合
 import { features } from '../config/features.config.mjs';
 import { collections } from '../config/collections.config.mjs';
 import ChatDrawer from './ai/ChatDrawer.astro';
@@ -36,13 +35,12 @@ const bookTitle = currentBook ? currentBook.title : '';
   </ChatDrawer>
 </ai-ask>
 
-<script>
-  import { mountToOverlayRoot } from '../utils/overlay/overlay-root';
+<script>import { mountToOverlayRoot } from '../utils/overlay/overlay-root';
 
   function ensureMounted() {
     const el = document.querySelector<HTMLElement>('ai-ask');
     if (!el) return;
-    // 保护性守卫：若元素已被停靠至右侧栏侧载底座中，或标记为 is-docked，严禁将其拔出至浮层根节点
+
     if (
       el.classList.contains('is-docked') ||
       el.closest('#ai-sidebar-panel') ||
@@ -65,12 +63,10 @@ const bookTitle = currentBook ? currentBook.title : '';
     }
   }
 
-  // 若历史状态为侧载停靠，预先加载控制器以静默就绪
   if (typeof localStorage !== 'undefined' && localStorage.getItem('astrolib_ai_docked') === 'true') {
     loadAiAsk();
   }
 
-  // 点击右下角 AI 悬浮球 (ask-fab) 时按需加载控制器
   document.addEventListener('click', (e) => {
     if (typeof localStorage !== 'undefined' && localStorage.getItem('astrolib_lite_mode') === 'true') return;
     const fab = (e.target as HTMLElement)?.closest<HTMLElement>('.ask-fab');
@@ -86,13 +82,11 @@ const bookTitle = currentBook ? currentBook.title : '';
     }
   });
 
-  // 监听外部查询事件：若尚未加载控制器，等待加载后执行外部问答
   window.addEventListener('aiask:query', (e: Event) => {
     const ce = e as CustomEvent;
     const detail = ce.detail;
     if ((ce as any).__handled) return;
 
-    // 若已经定义并挂载了 ai-ask 控制器，优先直接调用，避免重新触发 ensureMounted
     const el = document.querySelector('ai-ask') as any;
     if (el && typeof el._openWithQuestion === 'function' && detail?.prompt) {
       (ce as any).__handled = true;

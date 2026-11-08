@@ -14,7 +14,7 @@ for p in range(232, 248):
     for b in page.get_text("blocks"):
         txt = b[4].strip().replace("\n", " ")
         if len(txt) > 0:
-            # show clean ascii or escaped text
+
             print(f"  [{b[0]:.1f}, {b[1]:.1f}, {b[2]:.1f}, {b[3]:.1f}] {txt[:100]}")
 
 doc.close()

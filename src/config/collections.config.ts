@@ -1,22 +1,8 @@
 import { NOTICE_PRESETS } from './notices.config.ts';
 import type { Collection, Book } from '../types/collections.ts';
 
-/**
- * 中央书库配置：合集（collections）与图书（books）的唯一数据源。
- *
- * 遵循 Rule 1 (UI is not a domain model) & Rule 3 (Source of Truth)
- */
-/**
- * 静态构建期零预置书籍架构 (Zero-Built-in Books)
- * 确保 Astro 静态构建不会固化任何预编译书籍，彻底消除 dist/collections
- */
 export const collections: Collection[] = [];
 
-/**
- * 完整源书库元数据配置 (Source Collections Registry)
- * 12 本教材的权威模块定义 (modules)、交叉引用类名 (trackClasses) 及双语对齐配置。
- * 供 ABP 编译器 (pack-book-abp.mjs)、内容质检管线和离线测试使用。
- */
 export const sourceCollections: Collection[] = [
   {
     id: 'math',

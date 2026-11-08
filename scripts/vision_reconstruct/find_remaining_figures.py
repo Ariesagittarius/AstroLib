@@ -6,16 +6,15 @@ doc = fitz.open(r"task\通信原理(第5版) -- 杨鸿文 -- 5, 2024 -- 北京�
 
 figures = []
 
-for page_idx in range(400, len(doc)): # Phys 401 to end
+for page_idx in range(400, len(doc)):
     phys_p = page_idx + 1
     book_p = phys_p - 15
     page = doc[page_idx]
-    
-    # Search for blocks
+
     blocks = page.get_text("blocks")
     for b in blocks:
         text = b[4].strip()
-        # Find "图 1x.x.x" or "图1x.x.x"
+
         m = re.search(r"图\s*(1[123]\s*[\.．]\s*\d+\s*[\.．]\s*\d+)\s*([^\n]*)", text)
         if m:
             fig_no = m.group(1).replace(" ", "").replace("．", ".")

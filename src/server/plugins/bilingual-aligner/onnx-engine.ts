@@ -1,16 +1,3 @@
-/**
- * src/server/plugins/bilingual-aligner/onnx-engine.ts
- * ============================================================================
- * AstroLib 端侧轻量向量推理引擎 (On-Device Lightweight Embedding Engine)
- * ============================================================================
- * 核心技术能力：
- * 1. Node.js 原生驱动多语言向量嵌入（ONNX Runtime / Transformers.js）；
- * 2. 硬件加速优先（Windows DirectML，适配 RTX 5060 等独显），自动回退至 CPU；
- * 3. 内存与显存自适应管理（惰性加载、计算后保持极轻量驻留、超期释放）；
- * 4. 离线/模型首次加载时的容错与降级机制。
- * ============================================================================
- */
-
 import { BipartiteMatcher } from '../../../services/bilingual/bipartite-matcher.ts';
 import { BilingualAlignerClient } from '../../../services/bilingual/aligner-client.ts';
 
@@ -43,9 +30,6 @@ export class BilingualOnnxEngine {
     return this.instance;
   }
 
-  /**
-   * 惰性获取推理 Pipeline（优先 DML，回退 CPU）
-   */
   private async getPipeline(): Promise<any> {
     if (this.pipelineInstance) {
       this.lastUsedTimestamp = Date.now();
@@ -53,7 +37,7 @@ export class BilingualOnnxEngine {
     }
 
     if (this.isLoading) {
-      // 等待加载完成
+
       while (this.isLoading) {
         await new Promise((r) => setTimeout(r, 100));
       }
@@ -66,7 +50,6 @@ export class BilingualOnnxEngine {
     try {
       const { pipeline } = await import('@huggingface/transformers');
 
-      // 使用超时防护，避免在无网或弱网环境下阻塞
       const loadWithTimeout = async () => {
         try {
           return await pipeline('feature-extraction', this.modelName, {
@@ -96,15 +79,12 @@ export class BilingualOnnxEngine {
     }
   }
 
-  /**
-   * 批量计算文本嵌入向量
-   */
   async embedTexts(texts: string[]): Promise<number[][] | null> {
     const pipe = await this.getPipeline();
     if (!pipe) return null;
 
     try {
-      // 过滤和清洗文本
+
       const cleanTexts = texts.map((t) => t.slice(0, 512).trim() || 'empty');
       const output = await pipe(cleanTexts, { pooling: 'mean', normalize: true });
 
@@ -125,13 +105,9 @@ export class BilingualOnnxEngine {
     }
   }
 
-  /**
-   * 对齐两组段落文本并输出 M x N 矩阵
-   */
   async alignParagraphs(sourceTexts: string[], targetTexts: string[]): Promise<AlignResultPayload> {
     const startTime = performance.now();
 
-    // 1. 尝试神经网络向量计算
     const srcEmbeds = await this.embedTexts(sourceTexts);
     const tgtEmbeds = await this.embedTexts(targetTexts);
 
@@ -144,7 +120,6 @@ export class BilingualOnnxEngine {
       };
     }
 
-    // 2. 降级：词法启发式相似度
     const matrix = this.fallbackLexicalMatrix(sourceTexts, targetTexts);
     return {
       matrix,
@@ -153,9 +128,6 @@ export class BilingualOnnxEngine {
     };
   }
 
-  /**
-   * 目录章节标题多向语义对齐
-   */
   async matchToc(
     sourceChapters: { id: string; title: string }[],
     targetChapters: { id: string; title: string }[]

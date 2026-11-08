@@ -1,21 +1,4 @@
 ---
-/**
- * src/pages/workspace/ingest.astro
- * ============================================================================
- * AstroLib MinerU 学术文献与切片解析双栏全屏工作台 (MD3E 风格)
- * ============================================================================
- * 核心功能：
- * 1. 顶栏：
- *    - 【高精 API】/【Agent 免密】/【本地】三档极简切换
- *    - [结构化对照] / [连续阅读] 视窗模式一键分流（适配低性能设备）
- *    - 可选页码切片 (如 1-20)、开始解析、下载清洗包、一键转入书籍库
- * 2. 左栏：PDF.js 矢量画布 + 百分比自适应 SVG 标注选框（带分类彩色标牌）
- * 3. 右栏：
- *    - 结构化对照模式：1:1 独立块级卡片，带序号与类型标签，双向点击平滑聚焦
- *    - 连续阅读模式：全篇流式 Markdown 与 KaTeX 排版，零多余 DOM 开销
- * ============================================================================
- */
-
 import '@fontsource-variable/noto-sans-sc';
 import '@fontsource-variable/noto-serif-sc';
 import '@fontsource-variable/plus-jakarta-sans';
@@ -37,16 +20,14 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
     <title>{siteTitle}</title>
     <link rel="icon" href="/favicon.png" />
 
-    <!-- 预加载 PDF.js CDN -->
-    <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script is:inline>
-      if (window.pdfjsLib) {
+    <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js">
+</script>
+    <script is:inline>if (window.pdfjsLib) {
         window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
       }
-    </script>
+</script>
 
-    <style is:global>
-      * {
+    <style is:global>* {
         box-sizing: border-box;
       }
       body {
@@ -59,18 +40,16 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         display: flex;
         flex-direction: column;
       }
-      /* KaTeX 基础间距与滚动 */
+
       .katex-display {
         overflow-x: auto;
         overflow-y: hidden;
         padding: 0.35rem 0;
         margin: 0.4rem 0 !important;
       }
-    </style>
+</style>
 
-    <style>
-      /* 顶栏控制面板 */
-      .ingest-topbar {
+    <style>.ingest-topbar {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -149,7 +128,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         gap: 0.65rem;
       }
 
-      /* 通道选择 Chips (三档：【高精 API】/【Agent 免密】/【本地】) */
       .engine-chips {
         display: inline-flex;
         align-items: center;
@@ -188,7 +166,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         color: var(--md-sys-color-primary, #a8c7fa);
       }
 
-      /* 视窗对齐模式切换 (结构化对照 vs 连续阅读) */
       .view-mode-chips {
         display: inline-flex;
         align-items: center;
@@ -224,7 +201,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         color: var(--md-sys-color-primary, #a8c7fa);
       }
 
-      /* 双语研判工具栏 */
       .bilingual-toolbar {
         display: inline-flex;
         align-items: center;
@@ -332,7 +308,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         background-color: var(--md-sys-color-surface-container-high, #eceff1);
       }
 
-      /* 状态条 */
       .status-bar {
         display: flex;
         align-items: center;
@@ -367,7 +342,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         background-color: var(--md-sys-color-primary, #a8c7fa);
       }
 
-      /* 双栏主体 */
       .workspace-grid {
         flex: 1;
         display: grid;
@@ -376,7 +350,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         overflow: hidden;
       }
 
-      /* 左栏：PDF 原文 */
       .pane-pdf {
         position: relative;
         overflow-y: auto;
@@ -410,7 +383,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         height: auto;
       }
 
-      /* 左侧 PDF 标注层与选框（归一化 1000 百分比坐标，参照 MinerU 客户端高精度样式） */
       .pdf-overlay-layer {
         position: absolute;
         inset: 0;
@@ -464,7 +436,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         opacity: 1;
       }
 
-      /* 语义类型专属微色阶 */
       .bbox-highlight.type-equation { border-color: rgba(16, 185, 129, 0.55); }
       .bbox-highlight.type-equation:hover, .bbox-highlight.type-equation.active { border-color: #059669; }
       .bbox-highlight.type-equation .bbox-tag { background-color: #059669; }
@@ -492,7 +463,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         background-color: #475569;
       }
 
-      /* 右栏：结构化结果与连续阅读视窗 */
       .pane-markdown {
         overflow-y: auto;
         padding: 2rem 2.8rem;
@@ -504,7 +474,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         background-color: var(--md-sys-color-surface, #1e1f20);
       }
 
-      /* 结构化块级对齐容器 (Structured 1:1 Mode, 完美对齐 MinerU 客户端学术阅读体验) */
       .structured-blocks-container {
         display: flex;
         flex-direction: column;
@@ -608,7 +577,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         line-height: 1.8;
       }
 
-      /* 学术 AST 排版样式 (极简克制，去 SaaS 化) */
       .doc-heading-1 {
         font-size: 1.7rem;
         font-weight: 700;
@@ -786,7 +754,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         padding: 0.4rem 0.65rem;
       }
 
-      /* 连续阅读模式 (Continuous Reading Flow) */
       .continuous-reading-flow {
         font-size: 1.05rem;
         line-height: 1.8;
@@ -826,7 +793,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         padding: 0.5rem 0.8rem;
       }
 
-      /* 空状态与弹窗 */
       .empty-pane {
         display: flex;
         flex-direction: column;
@@ -882,10 +848,10 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         gap: 0.6rem;
         margin-top: 0.5rem;
       }
-    </style>
+</style>
   </head>
   <body>
-    <!-- 顶栏操作区 -->
+
     <header class="ingest-topbar">
       <div class="topbar-left">
         <a href="/" class="back-home-link">← 首页</a>
@@ -896,7 +862,7 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
       </div>
 
       <div class="topbar-center">
-        <!-- 三档极简通道选择器 -->
+
         <div class="engine-chips" role="radiogroup" aria-label="解析引擎通道">
           <button type="button" class="engine-chip active" id="chip-api" title="官方云端 VLM 3.4.x 高精度解析，每日享 1000 页免费配额">
             【高精 API】
@@ -909,7 +875,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           </button>
         </div>
 
-        <!-- 视窗对齐模式切换 (三档单选视图) -->
         <div class="view-mode-chips" role="radiogroup" aria-label="双栏对齐视图模式">
           <button type="button" class="view-chip active" id="view-structured" title="1:1 结构化块级对照，双栏高亮同步聚焦">
             结构化对照
@@ -922,7 +887,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           </button>
         </div>
 
-        <!-- 双语服务选择与翻译动作 (在双语研判模式下展开) -->
         <div class="bilingual-toolbar" id="bilingual-toolbar" style="display: none;">
           <select class="bilingual-select" id="bilingual-provider-select" title="学术翻译引擎">
             <option value="google">Google 翻译 (极速免费)</option>
@@ -938,7 +902,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           </button>
         </div>
 
-        <!-- 可选页码切片输入框 -->
         <input
           type="text"
           class="page-range-input"
@@ -949,12 +912,11 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
       </div>
 
       <div class="topbar-right">
-        <!-- 开始解析主按钮 -->
+
         <button type="button" class="btn-primary" id="btn-parse" disabled>
           <span id="btn-parse-text">开始解析</span>
         </button>
 
-        <!-- 成果出口动作组 -->
         <button type="button" class="btn-secondary" id="btn-download-zip" style="display: none;">
           下载清洗包
         </button>
@@ -962,7 +924,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           转入书籍库
         </button>
 
-        <!-- API Key 设置按钮 -->
         <button type="button" class="btn-icon" id="btn-open-token-modal" title="配置 MinerU API Token">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
@@ -971,7 +932,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
       </div>
     </header>
 
-    <!-- 状态指示条 -->
     <div class="status-bar" id="status-bar">
       <span id="status-text">就绪</span>
       <div class="progress-track">
@@ -979,9 +939,8 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
       </div>
     </div>
 
-    <!-- 双栏对照主体 -->
     <main class="workspace-grid">
-      <!-- 左栏：PDF 原文矢量视窗 -->
+
       <section class="pane-pdf" id="pane-pdf">
         <div class="empty-pane" id="pdf-empty-state">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -992,7 +951,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         </div>
       </section>
 
-      <!-- 右栏：结构化结果与连续阅读视窗 -->
       <section class="pane-markdown" id="pane-markdown">
         <div class="empty-pane" id="md-empty-state">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -1002,14 +960,13 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           </svg>
           <p>解析完成后将在此呈现高保真数学公式 (KaTeX) 与排版结构</p>
         </div>
-        <!-- 结构化块级卡片视窗 -->
+
         <div class="structured-blocks-container" id="structured-blocks-container" style="display: none;"></div>
-        <!-- 连续流式阅读视窗 -->
+
         <article class="continuous-reading-flow" id="continuous-reading-container" style="display: none;"></article>
       </section>
     </main>
 
-    <!-- 弹窗 1：配置 MinerU API Token -->
     <div class="modal-backdrop" id="token-modal" style="display: none;">
       <div class="modal-card">
         <h3 class="modal-title">配置 MinerU API 凭证</h3>
@@ -1025,7 +982,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
       </div>
     </div>
 
-    <!-- 弹窗 2：转入 AstroLib 书籍合集 -->
     <div class="modal-backdrop" id="export-modal" style="display: none;">
       <div class="modal-card">
         <h3 class="modal-title">转入 AstroLib 书籍合集</h3>
@@ -1055,9 +1011,7 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
       </div>
     </div>
 
-    <!-- Client-side Workspace Controller -->
-    <script>
-      import { marked } from 'marked';
+    <script>import { marked } from 'marked';
       import katex from 'katex';
 
       (function () {
@@ -1073,7 +1027,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         let pollTimer = null;
         let isTranslatingAll = false;
 
-        // DOM 元素
         const chipApi = document.getElementById('chip-api');
         const chipAgent = document.getElementById('chip-agent');
         const chipLocal = document.getElementById('chip-local');
@@ -1100,7 +1053,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         const structuredBlocksContainer = document.getElementById('structured-blocks-container');
         const continuousReadingContainer = document.getElementById('continuous-reading-container');
 
-        // 弹窗 DOM
         const tokenModal = document.getElementById('token-modal');
         const tokenInput = document.getElementById('token-input') as HTMLInputElement;
         const btnOpenTokenModal = document.getElementById('btn-open-token-modal');
@@ -1114,7 +1066,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         const btnCloseExport = document.getElementById('btn-close-export');
         const btnConfirmExport = document.getElementById('btn-confirm-export');
 
-        // 1. 三档通道切换 Chip 监听
         function setEngine(engine: string) {
           currentEngine = engine;
           chipApi?.classList.toggle('active', engine === 'api');
@@ -1133,7 +1084,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
         chipAgent?.addEventListener('click', () => setEngine('agent'));
         chipLocal?.addEventListener('click', () => setEngine('local'));
 
-        // 2. 视窗模式切换 (结构化对照 vs 双语研判 vs 连续阅读)
         function setViewMode(mode: 'structured' | 'bilingual' | 'continuous') {
           currentViewMode = mode;
           try {
@@ -1153,12 +1103,10 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
               if (structuredBlocksContainer) structuredBlocksContainer.style.display = 'flex';
               if (continuousReadingContainer) continuousReadingContainer.style.display = 'none';
 
-              // 恢复左侧选框图层显示
               document.querySelectorAll('.pdf-overlay-layer').forEach((el) => {
                 (el as HTMLElement).style.display = 'block';
               });
 
-              // 控制所有块的译文显隐
               document.querySelectorAll('.block-item-translation').forEach((el) => {
                 const blockId = el.getAttribute('data-block-id');
                 if (mode === 'bilingual') {
@@ -1169,15 +1117,14 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
               });
 
               if (mode === 'bilingual') {
-                // 切换至双语研判时，自动对当前可视页段落展开批量研判
+
                 translateCurrentVisiblePage(false);
               }
             } else {
-              // 连续阅读模式
+
               if (structuredBlocksContainer) structuredBlocksContainer.style.display = 'none';
               if (continuousReadingContainer) continuousReadingContainer.style.display = 'block';
 
-              // 连续阅读模式隐藏左侧选框图层，节省微渲染开销与事件消耗
               document.querySelectorAll('.pdf-overlay-layer').forEach((el) => {
                 (el as HTMLElement).style.display = 'none';
               });
@@ -1214,7 +1161,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           translateAllDocument();
         });
 
-        // 3. Token 弹窗
         btnOpenTokenModal?.addEventListener('click', () => {
           if (tokenModal) tokenModal.style.display = 'flex';
         });
@@ -1242,7 +1188,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           }
         });
 
-        // 4. 初始化加载当前任务状态
         if (currentTaskId) {
           loadTaskInfo(currentTaskId);
         } else {
@@ -1264,7 +1209,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
 
             btnParse.disabled = false;
 
-            // 加载左侧 PDF 矢量视图
             loadPdfDocument(`/api/ingest/pdf?taskId=${encodeURIComponent(taskId)}`);
 
             if (task.status === 'completed') {
@@ -1282,7 +1226,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           }
         }
 
-        // 5. 开始解析按钮触发
         btnParse?.addEventListener('click', async () => {
           if (!currentTaskId) return;
 
@@ -1320,7 +1263,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           }
         });
 
-        // 6. 轮询状态
         function startPollingStatus(taskId: string) {
           if (pollTimer) clearInterval(pollTimer);
 
@@ -1356,12 +1298,11 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
                 if (btnParseText) btnParseText.textContent = '重试解析';
               }
             } catch {
-              // ignore
+
             }
           }, 2000);
         }
 
-        // 7. 获取并渲染解析结果
         async function fetchAndRenderResult(taskId: string) {
           try {
             updateStatus('正在加载解析渲染数据...', 98);
@@ -1373,17 +1314,13 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
             currentBlocks = result.layoutBlocks || [];
             currentMarkdown = result.markdown || '';
 
-            // 渲染两种视图模式
             renderStructuredBlocks(currentBlocks, currentMarkdown, taskId);
             renderContinuousMarkdown(currentMarkdown, taskId);
 
-            // 渲染左侧 PDF 标注选框（百分比精确坐标）
             renderOverlayBboxes(currentBlocks);
 
-            // 根据当前选定的 viewMode 呈现对应面板
             setViewMode(currentViewMode);
 
-            // 显示出口动作
             if (btnDownloadZip) btnDownloadZip.style.display = 'inline-flex';
             if (btnExportBook) btnExportBook.style.display = 'inline-flex';
 
@@ -1393,7 +1330,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           }
         }
 
-        // 8. 模式一：1:1 结构化块级阅读渲染 (Structured Mode，对齐 MinerU 客户端视觉体验)
         function renderStructuredBlocks(blocks: any[], md: string, taskId: string) {
           if (!structuredBlocksContainer) return;
           structuredBlocksContainer.innerHTML = '';
@@ -1402,7 +1338,7 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
 
           blocks.forEach((block) => {
             try {
-              // 页码等无实质内容的元数据块不生成右侧独立正文段
+
               if (!block.html && !block.text) return;
 
               const item = document.createElement('div');
@@ -1411,12 +1347,11 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
               item.setAttribute('data-block-id', block.id);
               item.setAttribute('data-page-index', String(block.pageIndex));
 
-              // 正文内容容器
               const body = document.createElement('div');
               body.className = 'block-item-body';
 
               if (block.html) {
-                // 优先使用 AST 编译器服务端高保真编译的 HTML (含公式 KaTeX、真实图片与表格)
+
                 body.innerHTML = block.html;
               } else if (block.type === 'equation') {
                 try {
@@ -1443,7 +1378,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
 
               item.appendChild(body);
 
-              // 学术双语研判容器
               const transContainer = document.createElement('div');
               transContainer.className = 'block-item-translation';
               transContainer.id = `trans_${block.id}`;
@@ -1453,7 +1387,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
               transContainer.innerHTML = `<div class="translation-body">${cachedHtml || '<span class="translation-loading">待研判 (点击右上角“研判”立即生成)</span>'}</div>`;
               item.appendChild(transContainer);
 
-              // 单段学术研判触发按钮 (针对正文文本与标题段)
               if ((block.type === 'text' || block.type === 'title') && block.text && block.text.trim()) {
                 const transBtn = document.createElement('button');
                 transBtn.type = 'button';
@@ -1472,7 +1405,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
                 item.appendChild(transBtn);
               }
 
-              // 交互联动：悬停时同步高亮左侧 PDF 选框
               item.addEventListener('mouseenter', () => {
                 const targetBbox = document.getElementById(`bbox_${block.id}`);
                 if (targetBbox) targetBbox.classList.add('hover-bbox');
@@ -1482,7 +1414,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
                 if (targetBbox) targetBbox.classList.remove('hover-bbox');
               });
 
-              // 点击时双向精准聚焦
               item.addEventListener('click', () => {
                 focusBlock(block.id, block.pageIndex);
               });
@@ -1494,20 +1425,17 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           });
         }
 
-        // 9. 模式二：连续长文阅读流渲染 (Continuous Reading Flow，低性能设备原生流)
         function renderContinuousMarkdown(md: string, taskId: string) {
           if (!continuousReadingContainer || !md) return;
           continuousReadingContainer.innerHTML = safeParseMathMarkdown(md, taskId);
         }
 
-        // 结构保护的高保真 Markdown 与 KaTeX 解析器 (采用 Token Masking，彻底杜绝标签错乱截断)
         function safeParseMathMarkdown(content: string, taskId: string): string {
           if (!content) return '';
 
           const displayMathMap: string[] = [];
           const inlineMathMap: string[] = [];
 
-          // 1. 抽取块级公式并替换为安全占位符 (防止 marked 将公式内部 _/*/~ 转为斜体/删除线)
           let protectedMd = content.replace(/\$\$([\s\S]*?)\$\$/g, (_, eq) => {
             const idx = displayMathMap.length;
             try {
@@ -1519,7 +1447,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
             return `\n\n%%ASTROLIB_DISPLAY_MATH_${idx}%%\n\n`;
           });
 
-          // 2. 抽取行内公式并替换为安全占位符
           protectedMd = protectedMd.replace(/\$([^\$\n]+?)\$/g, (_, eq) => {
             const idx = inlineMathMap.length;
             try {
@@ -1531,14 +1458,12 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
             return `%%ASTROLIB_INLINE_MATH_${idx}%%`;
           });
 
-          // 3. 重定向图片路径
           protectedMd = protectedMd.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, src) => {
             const imgName = src.split('/').pop() || src;
             const targetSrc = `/api/ingest/image?taskId=${encodeURIComponent(taskId)}&name=${encodeURIComponent(imgName)}`;
             return `![${alt}](${targetSrc})`;
           });
 
-          // 4. 使用 marked 解析干净纯净的 Markdown
           let html = '';
           try {
             html = marked.parse(protectedMd) as string;
@@ -1547,7 +1472,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
             html = `<pre>${content}</pre>`;
           }
 
-          // 5. 将占位符安全还原为高保真 KaTeX DOM
           html = html.replace(/%%ASTROLIB_DISPLAY_MATH_(\d+)%%/g, (_, idx) => {
             return displayMathMap[parseInt(idx, 10)] || '';
           });
@@ -1559,7 +1483,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           return html;
         }
 
-        // 9.1 单段双语研判翻译调用
         async function translateBlock(block: any, forceRefresh = false, triggerBtn?: HTMLElement) {
           const transEl = document.getElementById(`trans_${block.id}`);
           if (!transEl) return;
@@ -1603,9 +1526,8 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           }
         }
 
-        // 9.2 精准获取当前视口正处于的真实页码
         function getCurrentVisiblePageIndex(): number {
-          // 1. 优先基于左侧 PDF 视口当前显示的页面
+
           if (panePdf) {
             const paneRect = panePdf.getBoundingClientRect();
             const pdfPages = Array.from(panePdf.querySelectorAll('.pdf-page-container'));
@@ -1617,7 +1539,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
             }
           }
 
-          // 2. 其次基于右侧正文当前可见的块
           const paneMd = document.getElementById('pane-markdown');
           if (paneMd && structuredBlocksContainer && structuredBlocksContainer.style.display !== 'none') {
             const paneRect = paneMd.getBoundingClientRect();
@@ -1634,7 +1555,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           return 0;
         }
 
-        // 9.3 批量研判当前可视页段落
         async function translateCurrentVisiblePage(forceRefresh = false) {
           if (!currentBlocks || currentBlocks.length === 0) return;
 
@@ -1649,7 +1569,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
             return;
           }
 
-          // 1. 立即展开该页所有块的译文容器并显示加载状态
           pageBlocks.forEach((b) => {
             const transEl = document.getElementById(`trans_${b.id}`);
             if (transEl) {
@@ -1663,7 +1582,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
             }
           });
 
-          // 2. 将右栏平滑定位至该页首个块 (若不在当前可视区)
           const firstBlockEl = document.getElementById(`card_${pageBlocks[0].id}`);
           if (firstBlockEl && structuredBlocksContainer && structuredBlocksContainer.style.display !== 'none') {
             firstBlockEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -1687,7 +1605,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           updateStatus(`第 ${targetPageIndex + 1} 页双语研判完成 (共 ${pageBlocks.length} 个段落)`, 100);
         }
 
-        // 9.4 全篇自动批量研判
         async function translateAllDocument() {
           if (isTranslatingAll) return;
           if (!currentBlocks || currentBlocks.length === 0) return;
@@ -1702,7 +1619,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           if (btnTranslateAll) btnTranslateAll.textContent = '全篇研判中...';
           updateStatus(`开始全篇自动学术研判，共 ${translatableBlocks.length} 个段落...`, 10);
 
-          // 展开所有块
           document.querySelectorAll('.block-item-translation').forEach((el) => {
             (el as HTMLElement).style.display = 'block';
           });
@@ -1729,7 +1645,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           updateStatus(`🎉 全篇双语研判完成！共研判 ${translatableBlocks.length} 个段落`, 100);
         }
 
-        // 10. PDF.js 矢量画布渲染与百分比自适应标注层挂载 (强化容错与页数校准)
         async function loadPdfDocument(pdfUrl: string) {
           if (!window.pdfjsLib || !panePdf) return;
 
@@ -1738,12 +1653,10 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
             pdfDocInstance = await window.pdfjsLib.getDocument(pdfUrl).promise;
             const totalPages = pdfDocInstance.numPages;
 
-            // 无论服务端估算如何，以 PDF.js 权威解析的真实总页数为准
             if (docPagesText) {
               docPagesText.textContent = `共 ${totalPages} 页`;
             }
 
-            // 根据 panePdf 的可用宽度动态计算 scale，防止超出视口产生水平溢出和左右偏移
             const availableWidth = Math.max(300, (panePdf.clientWidth || 560) - 40);
 
             for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
@@ -1763,7 +1676,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
                 const canvas = document.createElement('canvas');
                 canvas.className = 'pdf-page-canvas';
 
-                // 适配高分辨率屏幕 (devicePixelRatio)
                 const pixelRatio = window.devicePixelRatio || 1;
                 canvas.width = Math.floor(viewport.width * pixelRatio);
                 canvas.height = Math.floor(viewport.height * pixelRatio);
@@ -1776,7 +1688,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
                 }
                 await page.render({ canvasContext: context, viewport }).promise;
 
-                // 挂载百分比选框标注层
                 const overlayLayer = document.createElement('div');
                 overlayLayer.className = 'pdf-overlay-layer';
                 overlayLayer.setAttribute('data-page-index', String(pageNum - 1));
@@ -1785,7 +1696,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
                 pageWrapper.appendChild(overlayLayer);
                 panePdf.appendChild(pageWrapper);
 
-                // 若解析块已就绪，立即渲染当前页选框，杜绝时序空窗
                 if (currentBlocks.length > 0) {
                   renderOverlayBboxesForPage(pageNum - 1, currentBlocks);
                 }
@@ -1800,11 +1710,9 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           }
         }
 
-        // 11. 渲染百分比绝对对齐 Bounding Box (消除缩放偏移，带 MinerU 客户端浮标)
         function renderOverlayBboxes(blocks: any[]) {
           if (!blocks || blocks.length === 0) return;
 
-          // 按页分别挂载
           const pageIndices = new Set(blocks.map((b) => b.pageIndex));
           pageIndices.forEach((pIdx) => {
             renderOverlayBboxesForPage(pIdx, blocks);
@@ -1818,7 +1726,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           const overlay = pageContainer.querySelector('.pdf-overlay-layer');
           if (!overlay) return;
 
-          // 清空防止重复堆叠
           overlay.innerHTML = '';
 
           const typeNameMap: Record<string, string> = {
@@ -1862,7 +1769,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
             tag.textContent = typeNameMap[block.type] || block.type;
             rect.appendChild(tag);
 
-            // 悬停联动：高亮右侧对应卡片
             rect.addEventListener('mouseenter', () => {
               const targetCard = document.getElementById(`card_${block.id}`);
               if (targetCard) targetCard.classList.add('hover-block');
@@ -1872,7 +1778,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
               if (targetCard) targetCard.classList.remove('hover-block');
             });
 
-            // 点击选框：双向聚焦
             rect.addEventListener('click', (e) => {
               e.stopPropagation();
               focusBlock(block.id, block.pageIndex);
@@ -1882,9 +1787,8 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           });
         }
 
-        // 12. 核心双向同步对齐聚焦函数
         function focusBlock(blockId: string, pageIndex: number) {
-          // 1. 左侧 PDF 选框高亮与居中
+
           document.querySelectorAll('.bbox-highlight').forEach((r) => r.classList.remove('active'));
           const targetRect = document.getElementById(`bbox_${blockId}`);
           if (targetRect) {
@@ -1895,7 +1799,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
             if (pageEl) pageEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
 
-          // 2. 右侧结构化条目高亮与居中
           document.querySelectorAll('.structured-block-item').forEach((c) => c.classList.remove('active-block'));
           const targetCard = document.getElementById(`card_${blockId}`);
           if (targetCard) {
@@ -1904,13 +1807,11 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           }
         }
 
-        // 13. 出口操作：下载清洗包 ZIP
         btnDownloadZip?.addEventListener('click', () => {
           if (!currentTaskId) return;
           window.location.href = `/api/ingest/download-zip?taskId=${encodeURIComponent(currentTaskId)}`;
         });
 
-        // 14. 出口操作：转入 AstroLib 书籍合集
         btnExportBook?.addEventListener('click', () => {
           if (exportModal) exportModal.style.display = 'flex';
         });
@@ -1961,6 +1862,6 @@ const siteTitle = 'MinerU 学术文献智能解析工作台 · AstroLib';
           if (progressFill) progressFill.style.width = `${percent}%`;
         }
       })();
-    </script>
+</script>
   </body>
 </html>

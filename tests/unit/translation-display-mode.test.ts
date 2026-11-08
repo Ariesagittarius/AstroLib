@@ -376,20 +376,15 @@ describe('Translation Display Mode Suite (侧边栏对照 vs 段落下方显示)
     const controller = TranslationDockController.getInstance();
     controller.setDisplayMode('inline', false);
 
-    // 确保右侧栏处于本节大纲 (toc)
     expect(sideloadManager.getActivePanelId()).toBe('toc');
 
-    // 触发翻译
     await controller.showInlineTranslations();
 
-    // 核心断言：右侧边栏完全未被打开或劫持，保持为大纲 toc
     expect(sideloadManager.getActivePanelId()).toBe('toc');
 
-    // 核心断言：正文各段落下方直接注入了行内翻译块
     const inlineBlocks = rootArticle.querySelectorAll('.trans-inline-block');
     expect(inlineBlocks.length).toBeGreaterThan(0);
 
-    // 再次触发翻译时，平滑收起行内翻译，右侧边栏依然保持为大纲 toc
     controller.hideInlineTranslations();
     expect(sideloadManager.getActivePanelId()).toBe('toc');
     const remainingBlocks = rootArticle.querySelectorAll('.trans-inline-block');
@@ -401,17 +396,13 @@ describe('Translation Display Mode Suite (侧边栏对照 vs 段落下方显示)
     const controller = TranslationDockController.getInstance();
     controller.setDisplayMode('sidebar', false);
 
-    // 展开右侧边栏翻译
     sideloadManager.open('translate');
     expect(sideloadManager.getActivePanelId()).toBe('translate');
 
-    // 用户在设置中切换显示方式为 inline
     controller.setDisplayMode('inline', false);
 
-    // 右侧边栏应立即恢复默认大纲，不被占用
     expect(sideloadManager.getActivePanelId()).toBe('toc');
 
-    // 正文中应出现行内段落下翻译块
     const inlineBlocks = rootArticle.querySelectorAll('.trans-inline-block');
     expect(inlineBlocks.length).toBeGreaterThan(0);
   });
@@ -422,13 +413,10 @@ describe('Translation Display Mode Suite (侧边栏对照 vs 段落下方显示)
     controller.setDisplayMode('sidebar', false);
     expect(sideloadManager.getActivePanelId()).toBe('toc');
 
-    // 用户在设置中切换显示方式为 inline
     controller.setDisplayMode('inline', false);
 
-    // 右侧边栏必须绝对保持为大纲 toc
     expect(sideloadManager.getActivePanelId()).toBe('toc');
 
-    // 正文中必须立即出现段落下翻译块（解决“选择段落下方显示时正文没有反应”的问题）
     const inlineBlocks = rootArticle.querySelectorAll('.trans-inline-block');
     expect(inlineBlocks.length).toBeGreaterThan(0);
   });
@@ -442,12 +430,11 @@ describe('Translation Display Mode Suite (侧边栏对照 vs 段落下方显示)
     expect(inlineBlocks.length).toBeGreaterThan(0);
 
     for (const block of inlineBlocks) {
-      // 核心断言：绝对没有 .trans-inline-badge 与 .trans-inline-meta
+
       expect(block.innerHTML).not.toContain('trans-inline-badge');
       expect(block.innerHTML).not.toContain('trans-inline-meta');
       expect(block.innerHTML).not.toContain('>译文<');
 
-      // 核心断言：正文紧凑包裹在 .trans-inline-text 内
       expect(block.innerHTML).toContain('trans-inline-text');
     }
   });
@@ -456,17 +443,14 @@ describe('Translation Display Mode Suite (侧边栏对照 vs 段落下方显示)
     const { TranslationDockController } = await import('../../src/services/translation/client/translation-dock-controller');
     const controller = TranslationDockController.getInstance();
 
-    // 默认提供商应为 google
     expect(TranslationStorage.getProvider()).toBe('google');
     expect(controller.getProvider()).toBe('google');
 
-    // 切换至 gemini
     controller.setProvider('gemini');
     expect(TranslationStorage.getProvider()).toBe('gemini');
     expect(controller.getProvider()).toBe('gemini');
     expect(store.get('astrolib_trans_provider')).toBe('gemini');
 
-    // 切换至 bupt
     controller.setProvider('bupt');
     expect(TranslationStorage.getProvider()).toBe('bupt');
     expect(controller.getProvider()).toBe('bupt');
@@ -477,33 +461,28 @@ describe('Translation Display Mode Suite (侧边栏对照 vs 段落下方显示)
     const controller = TranslationDockController.getInstance();
     controller.setDisplayMode('inline', false);
 
-    // 开启行内助读
     await controller.showInlineTranslations();
 
-    // 验证正文顶端挂载了行内控制条
     const toolbar = rootArticle.querySelector('.trans-inline-toolbar');
     expect(toolbar).not.toBeNull();
     expect(toolbar?.innerHTML).toContain('双语助读');
     expect(toolbar?.innerHTML).toContain('data-inline-provider="gemini"');
 
-    // 清空 fetch 调用记录并切换服务商为 gemini
     (globalThis.fetch as any).mockClear();
     controller.setProvider('gemini');
 
-    // 验证调用了翻译端点重新发起翻译，且请求体内 provider 为 gemini
     expect(globalThis.fetch).toHaveBeenCalled();
     const calls = (globalThis.fetch as any).mock.calls;
     const lastCallBody = JSON.parse(calls[0][1].body);
     expect(lastCallBody.provider).toBe('gemini');
 
-    // 关闭行内助读时，控制条随之安全移除
     controller.hideInlineTranslations();
     const remainingToolbar = rootArticle.querySelector('.trans-inline-toolbar');
     expect(remainingToolbar).toBeNull();
   });
 
   it('跳过行间公式与代码块验证：<pre> 和 .katex-display 绝不被提取为翻译单元，且绝不插入行内译文块', async () => {
-    // 构造包含代码块与行间公式的 DOM
+
     const pre = new FakeElement('pre');
     pre.textContent = 'function mergesort(a[1...n])';
     pre.parentElement = rootArticle;
@@ -521,11 +500,9 @@ describe('Translation Display Mode Suite (侧边栏对照 vs 段落下方显示)
 
     await controller.showInlineTranslations(true);
 
-    // 验证 pre 和 katex-display 没有被赋予 data-trans-id
     expect(pre.hasAttribute('data-trans-id')).toBe(false);
     expect(katex.hasAttribute('data-trans-id')).toBe(false);
 
-    // 验证 pre 和 katex-display 下方绝对没有生成行内译文块
     const allInlineBlocks = rootArticle.querySelectorAll('.trans-inline-block');
     for (const block of allInlineBlocks) {
       expect(block.innerHTML).not.toContain('function mergesort');
@@ -536,7 +513,7 @@ describe('Translation Display Mode Suite (侧边栏对照 vs 段落下方显示)
   });
 
   it('卡片精准切分与原位包裹验证：卡片标题与卡片正文分别翻译，卡片标题包裹在 card-header 内部，卡片正文包裹在 card-body 内部', async () => {
-    // 构造卡片结构
+
     const card = new FakeElement('div');
     card.className = 'knowledge-card';
     card.setAttribute('data-title', 'Box: Binary search');
@@ -566,22 +543,18 @@ describe('Translation Display Mode Suite (侧边栏对照 vs 段落下方显示)
 
     await controller.showInlineTranslations(true);
 
-    // 核心断言 1：卡片标题被单独提取并赋予 data-trans-id
     expect(header.hasAttribute('data-trans-id')).toBe(true);
     expect(header.getAttribute('data-trans-card-title')).toBe('true');
 
-    // 核心断言 2：卡片标题的行内翻译块位于 card-header 内部，带有 is-card-title 样式类
     const headerInline = header.querySelector('.trans-inline-block');
     expect(headerInline).not.toBeNull();
     expect(headerInline?.classList.contains('is-card-title')).toBe(true);
 
-    // 核心断言 3：卡片正文 p 的行内翻译块位于 card-body 内部，绝不溢出到 card 外侧
     const bodyInline = body.querySelector('.trans-inline-block');
     expect(bodyInline).not.toBeNull();
 
-    // 验证整个 card 外部没有被多余插入译文块
     const directChildrenOfCard = card.children;
-    expect(directChildrenOfCard.length).toBe(2); // 仅有 header 和 body
+    expect(directChildrenOfCard.length).toBe(2);
 
     controller.hideInlineTranslations();
   });
@@ -612,16 +585,13 @@ describe('Translation Display Mode Suite (侧边栏对照 vs 段落下方显示)
 
     await controller.showInlineTranslations(true);
 
-    // 单元格被赋予 data-trans-id
     expect(th.hasAttribute('data-trans-id')).toBe(true);
     expect(td.hasAttribute('data-trans-id')).toBe(true);
 
-    // 核心断言 1：tr 的直接子节点依然只有 th 和 td，译文块必须包裹在 th/td 内部，绝不能直接成为 tr 的子元素
     expect(tr.children.length).toBe(2);
     expect(tr.children[0]).toBe(th);
     expect(tr.children[1]).toBe(td);
 
-    // 核心断言 2：th 和 td 内部均存在行内译文块，且具备 is-table-cell 和 is-noindent 类
     const thInline = th.querySelector('.trans-inline-block');
     const tdInline = td.querySelector('.trans-inline-block');
     expect(thInline).not.toBeNull();

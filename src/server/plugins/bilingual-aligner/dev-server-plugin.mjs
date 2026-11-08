@@ -1,10 +1,3 @@
-/**
- * src/server/plugins/bilingual-aligner/dev-server-plugin.mjs
- * ============================================================================
- * Vite Dev Server 插件：端侧轻量向量对齐与目录多向匹配服务接口 (/__bilingual__/*)
- * ============================================================================
- */
-
 import { BilingualOnnxEngine } from './onnx-engine.ts';
 
 const BILINGUAL_PATH_PREFIX = '/__bilingual__';
@@ -42,7 +35,6 @@ export function bilingualDevServerPlugin() {
           return next();
         }
 
-        // 1. CORS 预检
         if (req.method === 'OPTIONS') {
           res.writeHead(204, {
             'Access-Control-Allow-Origin': '*',
@@ -56,7 +48,7 @@ export function bilingualDevServerPlugin() {
         const path = rawUrl.split('?')[0];
 
         try {
-          // 2. 健康探活 /__bilingual__/health
+
           if (req.method === 'GET' && path === `${BILINGUAL_PATH_PREFIX}/health`) {
             return sendJson(res, 200, {
               status: 'ok',
@@ -65,7 +57,6 @@ export function bilingualDevServerPlugin() {
             });
           }
 
-          // 3. 段落向量对齐 /__bilingual__/align
           if (req.method === 'POST' && path === `${BILINGUAL_PATH_PREFIX}/align`) {
             const body = await readJsonBody(req);
             const sourceTexts = body.sourceTexts || [];
@@ -79,7 +70,6 @@ export function bilingualDevServerPlugin() {
             return sendJson(res, 200, result);
           }
 
-          // 4. 目录章节对齐 /__bilingual__/toc-match
           if (req.method === 'POST' && path === `${BILINGUAL_PATH_PREFIX}/toc-match`) {
             const body = await readJsonBody(req);
             const sourceChapters = body.sourceChapters || [];

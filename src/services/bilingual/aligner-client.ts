@@ -1,25 +1,9 @@
-/**
- * src/services/bilingual/aligner-client.ts
- * ============================================================================
- * AstroLib 双语对照与关联分析客户端调度中心 (Bilingual Aligner Client)
- * ============================================================================
- * 负责客户端：
- * 1. 从左右双栏文章 DOM 中提取段落序列与文本 Token；
- * 2. 调度服务端/端侧推理端点（/__bilingual__/align）；
- * 3. 维护客户端结果缓存（避免重复滚动与对比时重复推理）；
- * 4. 离线/服务未就绪时的容错自适应。
- * ============================================================================
- */
-
 import { BipartiteMatcher } from './bipartite-matcher.ts';
 import type { AlignmentMatrixResult, ParagraphLink, ParagraphToken } from './types.ts';
 
 export class BilingualAlignerClient {
   private static cache = new Map<string, AlignmentMatrixResult>();
 
-  /**
-   * 从 DOM 容器中提取段落结构与文本 Token
-   */
   static extractTokens(container: HTMLElement, prefix: 'src' | 'tgt'): ParagraphToken[] {
     if (!container) return [];
 
@@ -45,7 +29,7 @@ export class BilingualAlignerClient {
     let index = 0;
 
     elements.forEach((el) => {
-      // 避免重复提取嵌套在卡片内部的普通段落
+
       if (el.tagName.toLowerCase() === 'p' && el.closest('.knowledge-card, .example-card, .variant-card, .method-card, .summary-card, .exercise-card')) {
         return;
       }
@@ -83,9 +67,6 @@ export class BilingualAlignerClient {
     return tokens;
   }
 
-  /**
-   * 调度向量对齐计算
-   */
   static async computeAlignment(
     sources: ParagraphToken[],
     targets: ParagraphToken[],
@@ -105,7 +86,7 @@ export class BilingualAlignerClient {
     const startTime = performance.now();
 
     try {
-      // 发送至服务端端点
+
       const resp = await fetch('/__bilingual__/align', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -137,10 +118,9 @@ export class BilingualAlignerClient {
         return result;
       }
     } catch {
-      // 后台服务离线或未运行时的降级处理：使用轻量词法相似度兜底
+
     }
 
-    // 本地降级轻量对齐（基于 Jaccard + 共有词元匹配）
     const matrix = this.fallbackLexicalMatrix(sources, targets);
     const links = BipartiteMatcher.extractLinks(matrix, sources, targets, {
       threshold,
@@ -160,9 +140,6 @@ export class BilingualAlignerClient {
     return result;
   }
 
-  /**
-   * 计算机科学与数学高频跨语言双语同义词/同义概念词典
-   */
   private static readonly CS_MATH_COGNATES: Record<string, string[]> = {
     prologue: ['序言', '前言'],
     preface: ['前言', '序言'],
@@ -208,29 +185,23 @@ export class BilingualAlignerClient {
     rsa: ['rsa'],
   };
 
-  /**
-   * 提取中英文本中的跨语言词元特征集合（含数学公式、数值、拉丁专有词与汉字二元组）
-   */
   public static tokenizeMultilingual(text: string): Set<string> {
     const tokens = new Set<string>();
     const lower = text.toLowerCase();
 
-    // 1. 提取所有数值 (例如 02.1, 1960, 3, 1.585)
     const numbers = lower.match(/\b\d+(?:\.\d+)?\b/g);
     if (numbers) {
       numbers.forEach((n) => tokens.add(n));
     }
 
-    // 2. 提取 LaTeX 数学公式表达式与核心符号
     const mathFormulas = lower.match(/\$[^$]+\$/g);
     if (mathFormulas) {
       mathFormulas.forEach((m) => {
-        // 清洗多余空格后加入公式整体
+
         tokens.add(m.replace(/\s+/g, ''));
       });
     }
 
-    // 3. 提取拉丁英文词汇并进行跨语言同义概念映射
     const latinWords = lower.match(/\b[a-z]{2,}\b/g);
     if (latinWords) {
       latinWords.forEach((word) => {
@@ -242,7 +213,6 @@ export class BilingualAlignerClient {
       });
     }
 
-    // 4. 提取汉字二元组 (Bigrams)，精确捕获中文语素
     const hanChars = text.match(/[\u4e00-\u9fa5]/g);
     if (hanChars && hanChars.length >= 2) {
       for (let i = 0; i < hanChars.length - 1; i++) {
@@ -253,9 +223,6 @@ export class BilingualAlignerClient {
     return tokens;
   }
 
-  /**
-   * 兜底轻量比对矩阵生成（融合词元 Jaccard 相似度、结构角色相容性与相对位置先验）
-   */
   public static fallbackLexicalMatrix(sources: ParagraphToken[], targets: ParagraphToken[]): number[][] {
     const M = sources.length;
     const N = targets.length;
@@ -280,18 +247,15 @@ export class BilingualAlignerClient {
         const union = setA.size + setB.size - intersection;
         let jaccard = union > 0 ? intersection / union : 0;
 
-        // 若双方类型一致（如均为 heading、math 或 card），给予结构相容性温和偏置
         let typeBonus = 0;
         if (typeA && typeB && typeA === typeB) {
           typeBonus = typeA === 'heading' ? 0.15 : 0.08;
         }
 
-        // 相对位置相近度先验
         const relPosA = M > 1 ? i / (M - 1) : 0;
         const relPosB = N > 1 ? j / (N - 1) : 0;
         const posProx = Math.max(0, 1 - Math.abs(relPosA - relPosB) * 1.3);
 
-        // 综合加权评分 (Jaccard 权重 0.55 + 位置 0.35 + 结构 0.10)
         let sim = jaccard * 0.55 + posProx * 0.35 + typeBonus;
         sim = Math.max(0, Math.min(1, sim));
 

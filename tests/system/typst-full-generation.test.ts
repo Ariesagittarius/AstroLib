@@ -12,7 +12,6 @@ describe('Typst Full Generation System Test', () => {
     expect(fs.existsSync(dataFile)).toBe(true);
     const rawData = JSON.parse(fs.readFileSync(dataFile, 'utf8'));
 
-    // 选取跨多个章节的一组题目
     const questions: any[] = [];
     for (const [ch, qList] of Object.entries<any[]>(rawData.chapters)) {
       if (qList.length > 0) {

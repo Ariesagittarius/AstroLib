@@ -15,15 +15,12 @@ export function getXelatexCmd(): string | null {
       execSync(`"${cand}" --version`, { stdio: 'ignore' });
       return cand;
     } catch {
-      // 尝试下一个候选路径
+
     }
   }
   return null;
 }
 
-/**
- * 探测宿主环境是否存在可用的 xelatex 编译器
- */
 export function hasXelatex(): boolean {
   return getXelatexCmd() !== null;
 }
@@ -46,16 +43,12 @@ export function getChromiumPath(): string | null {
       execSync(`"${cand}" --version`, { stdio: 'ignore' });
       return cand;
     } catch {
-      // 继续探测
+
     }
   }
   return null;
 }
 
-/**
- * 探测宿主环境是否存在 Edge / Chrome 浏览器 (供无头 UI 测试使用)
- */
 export function hasChromiumBrowser(): boolean {
   return getChromiumPath() !== null;
 }
-

@@ -100,11 +100,11 @@ ${boundaryDirective}
 3. 100% 工业级 KaTeX 纯净度与独立块级：
    - 变量符号统一用 $...$（如 $a_n, S_n, x, q, u_n(x), \\sum_{n=1}^{\\infty} a_n$）；
    - 【带编号公式】：所有带 \\tag{X.Y} 的公式必须作为独立块级公式，且前后必须留有纯空行：
-     
+
      $$
      formula \\tag{X.Y}
      $$
-     
+
      严禁写在行内 $...$ 中，严禁紧贴正文不留空行；
    - 严禁在 cases 或环境内部嵌套 \\tag{X}，编号统一使用 (1), (2)。
 
@@ -132,19 +132,16 @@ ${boundaryDirective}
 export function cleanBatchText(rawText) {
   let cleaned = rawText.trim();
 
-  // Strip thinking outline preamble if present
   cleaned = cleaned.replace(/^---[\s\S]*?\*\*思考大纲\*\*[\s\S]*?---\s*/i, '');
   cleaned = cleaned.replace(/^---[\s\S]*?#\s*教材扫描图内容描述[\s\S]*?---\s*/i, '');
   cleaned = cleaned.replace(/^---[\s\S]*?###\s*思考过程[\s\S]*?---\s*/i, '');
   cleaned = cleaned.replace(/^[\s\S]*?<\/thought>\s*/i, '');
 
-  // Strip outer code blocks
   if (cleaned.startsWith('```')) {
     cleaned = cleaned.replace(/^```[a-zA-Z0-9_-]*\r?\n/, '');
     cleaned = cleaned.replace(/\r?\n```\s*$/, '');
   }
 
-  // Remove trailing exercises if any leaked
   cleaned = cleaned.replace(/##\s*习题\s*[\d\.]+[\s\S]*$/, '');
   cleaned = cleaned.replace(/###\s*习题\s*[\d\.]+[\s\S]*$/, '');
   cleaned = cleaned.replace(/<Knowledge[^>]*title=["'][^"']*习题[\s\S]*$/, '');
@@ -156,52 +153,41 @@ export function cleanBatchText(rawText) {
 export function postProcessSectionMdx(content, chapter) {
   let text = content;
 
-  // 1. Convert any single $ with \tag to $$ display block
   text = text.replace(/(?<!\$)\$(?!\$)([^$\r\n]*?\\tag\{[^{}]+\}[^$\r\n]*?)\$(?!\$)/g, (match, formula) => {
     return `\n\n$$\n${formula.trim()}\n$$\n\n`;
   });
 
-  // 2. Ensure every single-line $$ formula containing \tag is broken into 3 lines with blank lines
   text = text.replace(/(?<!\$)\$\$([^\$\r\n]*?\\tag\{[^{}]+\}[^\$\r\n]*?)\$\$(?!\$)/g, (match, formula) => {
     return `\n\n$$\n${formula.trim()}\n$$\n\n`;
   });
 
-  // 3. Ensure blank line before and after display $$ blocks
   text = text.replace(/([^\r\n])\s*\n\$\$/g, (match, p1) => `${p1}\n\n$$`);
   text = text.replace(/\$\$\s*\n([^\r\n])/g, (match, p1) => `$$\n\n${p1}`);
 
-  // 4. Normalize KaTeX circled numbers in tag
   text = text.replace(/\\tag\{①\}/g, '\\tag{1}');
   text = text.replace(/\\tag\{②\}/g, '\\tag{2}');
   text = text.replace(/\\tag\{③\}/g, '\\tag{3}');
   text = text.replace(/\\tag\{④\}/g, '\\tag{4}');
   text = text.replace(/\\tag\{⑤\}/g, '\\tag{5}');
 
-  // 4b. Cleanup duplicate \end{aligned}
   text = text.replace(/\\end\{aligned\}\s*\\end\{aligned\}/g, '\\end{aligned}');
 
-  // 5. Ensure blank line after opening JSX cards and before closing JSX cards
   text = text.replace(/(<(?:Knowledge|Solution|Example|SideNote|Block|Analysis)(?:\s+(?:"[^"]*"|'[^']*'|[^>'"])*)?>)([^\r\n])/g, '$1\n\n$2');
   text = text.replace(/([^\r\n])(<\/(?:Knowledge|Solution|Example|SideNote|Block|Analysis)>)/g, '$1\n\n$2');
 
-  // 6. Truncate exercises if any leaked
   text = text.replace(/<Knowledge[^>]*title=["'][^"']*习题[\s\S]*$/, '');
   text = text.replace(/##\s*习题[\s\S]*$/, '');
   text = text.replace(/###\s*习题[\s\S]*$/, '');
   text = text.replace(new RegExp(`第\\s*${chapter}\\s*章习题[\\s\\S]*$`), '');
   text = text.replace(/综合练习题[\s\S]*$/, '');
 
-  // 7. Balance JSX tags with token stream
   text = balanceJsxCards(text);
 
-  // 8. Image path normalization
   text = text.replace(/!\[(.*?)\]\(images\//g, '![$1](./images/');
   text = text.replace(new RegExp(`!\\[(.*?)\\]\\(\\./images/fig_${chapter}\\.(\\d+)\\.png\\)`, 'g'), `![$1](./images/fig_${chapter}_$2.png)`);
 
-  // 9. Remove top-level # H1 headings to prevent duplicate H1 with page title
   text = text.replace(/^#[^#\r\n]+\r?\n+/gm, '');
 
-  // 10. Decouple long Example titles (>70 chars) to prevent global bolding and overflow
   text = text.replace(/<Example\s+title="((?:例\s*[\d\.]+|例题\s*[\d\.]+|例\s*\d+)[^"]{70,})">/g, (match, fullTitle) => {
     const m = fullTitle.match(/^(例\s*[\d\.]+|例题\s*[\d\.]+|例\s*\d+)/);
     const prefix = m ? m[1] : '例题';
@@ -209,7 +195,6 @@ export function postProcessSectionMdx(content, chapter) {
     return `<Example title="${prefix}">\n\n${safeTitle}\n\n`;
   });
 
-  // 11. Deduplicate excessive newlines
   text = text.replace(/\n{4,}/g, '\n\n\n');
 
   return text.trim();
@@ -338,7 +323,6 @@ export async function runSection(sec) {
     chunkOutputs.push(chunkText);
   }
 
-  // Assemble and Post-Process Section MDX
   const joinedBody = chunkOutputs.join('\n\n');
   const processedBody = postProcessSectionMdx(joinedBody, sec.chapter);
   const finalMdx = buildHeader(sec.section, sec.displayTitle, sec.leadIn) + processedBody + buildFooter(sec.chapter, sec.section, sec.title);
@@ -347,7 +331,6 @@ export async function runSection(sec) {
   fs.writeFileSync(targetFile, finalMdx, 'utf-8');
   console.log(`\n📄 [Assembly] 成功组装保存第 ${sec.section} 节到：${targetFile} (${finalMdx.length} 字符)`);
 
-  // Quality scan gate
   console.log(`🔍 [Scan] 正在对 ${path.basename(targetFile)} 执行质量门禁扫描...`);
   try {
     const scanOut = execSync(`node scripts/scan-mdx.mjs "${targetFile}"`, { encoding: 'utf-8' });

@@ -1,16 +1,4 @@
 ---
-/**
- * src/pages/blank.astro
- * ============================================================================
- * 空白文档与学术工作台独立页面路由 (/blank/)
- * ============================================================================
- * 职责：
- * 1. 挂载 ScratchpadWorkspace 工作台主体组件；
- * 2. 纯净全屏撑满空间（移除右侧静态大纲栏，TOC 采用顶栏浮动 Popup 交互）；
- * 3. 完整引入全站 Material You 动态主题、KaTeX 公式与字体排版体系；
- * 4. 满足 Rule 9 (Runtime must not mutate source)，所有状态仅留存于客户端浏览器。
- * ============================================================================
- */
 import ScratchpadWorkspace from '../features/scratchpad/ui/ScratchpadWorkspace.astro';
 import ChapterExportModal from '../components/publishing/ChapterExportModal.astro';
 import Analytics from '../components/Analytics.astro';
@@ -44,16 +32,13 @@ const pageDescription = '支持自主编辑元数据与正文，具备公式/Mer
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
 
-    <!-- 恢复用户全站外观、主题与字体排版偏好设置 -->
-    <script is:inline>
-      (function() {
+    <script is:inline>(function() {
         try {
           var theme = localStorage.getItem('astrolib-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
           document.documentElement.setAttribute('data-theme', theme);
           var siteTheme = localStorage.getItem('astrolib-site-theme') || 'material-you';
           document.documentElement.setAttribute('data-site-theme', siteTheme);
 
-          // 恢复用户正文阅读字体偏好 (starlight-font: Latin + CJK 两栏体系)
           var fontKey = 'starlight-font';
           var rawFont = localStorage.getItem(fontKey);
           if (rawFont) {
@@ -64,7 +49,6 @@ const pageDescription = '支持自主编辑元数据与正文，具备公式/Mer
             }
           }
 
-          // 恢复用户正文字号偏好 (astrolib_font_size)
           var fontSizeKey = 'astrolib_font_size';
           var fontSize = localStorage.getItem(fontSizeKey);
           if (fontSize) {
@@ -72,7 +56,6 @@ const pageDescription = '支持自主编辑元数据与正文，具备公式/Mer
             document.documentElement.style.setProperty('--academic-font-size-body', pt + 'pt');
           }
 
-          // 恢复 M3 主题动态配色与缓存
           var colorKey = 'starlight-m3-theme-color';
           var m3Color = localStorage.getItem(colorKey);
           if (m3Color) document.documentElement.dataset.m3ThemeColor = m3Color;
@@ -85,17 +68,16 @@ const pageDescription = '支持自主编辑元数据与正文，具备公式/Mer
           }
         } catch (e) {}
       })();
-    </script>
+</script>
   </head>
   <body class="scratchpad-page-body">
     <div class="blank-page-shell">
-      <!-- 主工作区容器（无右侧静态边栏，100% 填满视口空间） -->
+
       <div class="blank-page-main">
         <ScratchpadWorkspace />
       </div>
     </div>
 
-    <!-- 弹窗与视窗全局挂载节点 -->
     <div id="astro-overlay-root">
       <div class="astrolib-sideload-scrim" id="astrolib-sideload-scrim" aria-hidden="true"></div>
       {features.chapterExport?.enabled && <ChapterExportModal />}
@@ -103,8 +85,7 @@ const pageDescription = '支持自主编辑元数据与正文，具备公式/Mer
 
     <Analytics />
 
-    <style is:global>
-      body.scratchpad-page-body {
+    <style is:global>body.scratchpad-page-body {
         margin: 0;
         padding: 0;
         overflow: hidden;
@@ -130,6 +111,6 @@ const pageDescription = '支持自主编辑元数据与正文，具备公式/Mer
         flex-direction: column;
         overflow: hidden;
       }
-    </style>
+</style>
   </body>
 </html>

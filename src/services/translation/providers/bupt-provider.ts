@@ -1,16 +1,3 @@
-/**
- * src/services/translation/providers/bupt-provider.ts
- * ============================================================================
- * 北京邮电大学「人人有算力」DeepSeek 学术翻译服务提供商 (BUPT DeepSeek Translator)
- * ============================================================================
- * 优势与特点：
- * 1. 依托北京邮电大学「人人有算力」校内专用大模型算力网关，国内直连免翻；
- * 2. 搭载 DeepSeek 理科推理模型（deepseek-v4-flash），学术推理与数学公式表达力强；
- * 3. 严格遵从指令，原样保护 ⟦ASTRO_TOK_N⟧ 结构占位符与数学环境；
- * 4. 自动过滤模型思考过程 (<think>...</think>)，直接呈现高质量标准中文译文。
- * ============================================================================
- */
-
 import https from 'node:https';
 import dns from 'node:dns';
 import fs from 'node:fs';
@@ -43,8 +30,7 @@ export class BuptTranslateProvider implements ITranslationProvider {
 
     let apiKey = (options.apiKey || '').trim();
     if (apiKey && !apiKey.startsWith('sk-')) {
-      // 客户端传入的 key 非 sk- 开头（例如残留了 GitHub Token），对于 BUPT LiteLLM 网关必定 401
-      // 优先回退至服务端 .env 配置
+
       const serverKey = typeof process !== 'undefined' ? (process.env?.BUPT_API_KEY || '').trim() : '';
       if (serverKey && serverKey.startsWith('sk-')) {
         apiKey = serverKey;
@@ -61,7 +47,7 @@ export class BuptTranslateProvider implements ITranslationProvider {
 
     const payload = {
       model,
-      temperature: 0.1, // 低温度以保证学术翻译的一致性与严谨度
+      temperature: 0.1,
       messages: [
         { role: 'system', content: ACADEMIC_SYSTEM_PROMPT },
         {
@@ -73,11 +59,10 @@ export class BuptTranslateProvider implements ITranslationProvider {
 
     let rawContent = '';
 
-    // Node.js 服务端 / CLI 环境下：针对校内 host 建立直连 IP 10.3.19.2 的安全 SNI 连接，绕过代理干扰
     if (typeof window === 'undefined') {
       rawContent = await this.requestNode(payload, apiKey, endpoint);
     } else {
-      // 浏览器环境：通过本地 Dev Proxy 反代或生产直连端点
+
       const headers: Record<string, string> = {
         'Content-Type': 'application/json; charset=utf-8',
       };
@@ -104,7 +89,6 @@ export class BuptTranslateProvider implements ITranslationProvider {
       rawContent = content;
     }
 
-    // 后处理：清除思考标签、代码块包裹与防扩写过滤
     return this.cleanTranslatedOutput(rawContent, trimmed);
   }
 
@@ -139,11 +123,8 @@ export class BuptTranslateProvider implements ITranslationProvider {
     }
   }
 
-  /**
-   * Node.js 环境下通过直连 Agent 执行 HTTP 请求
-   */
   private async requestNode(payload: any, apiKey: string, endpointUrl: string): Promise<string> {
-    // 若运行在 CLI 或非 Vite 环境下且 process.env 未注入，或传入了非法前缀 key，自动从 .env 回填
+
     if (!apiKey || !apiKey.startsWith('sk-')) {
       try {
         if (fs.existsSync('.env')) {
@@ -224,7 +205,7 @@ export class BuptTranslateProvider implements ITranslationProvider {
 
   private resolveEndpoint(customEndpoint?: string): string {
     if (customEndpoint) return customEndpoint;
-    // 浏览器端在开发态优先复用本地 Vite 反代避免 CORS 与代理干扰
+
     if (typeof window !== 'undefined') {
       const isDev = Boolean(
         window.location.hostname === 'localhost' ||
@@ -236,9 +217,6 @@ export class BuptTranslateProvider implements ITranslationProvider {
     return BUPT_OFFICIAL_ENDPOINT;
   }
 
-  /**
-   * 清洗模型输出，移除思考链、XML 边界与多余的 markdown 代码块包裹，防短标题扩写
-   */
   public cleanTranslatedOutput(raw: string, sourceText = ''): string {
     let text = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
     text = text.replace(/<\/?(?:source_text|text_to_translate|translation|translated_text)>/gi, '').trim();

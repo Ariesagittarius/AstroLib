@@ -11,7 +11,6 @@ const titleHtml = renderTitleHtml(rawTitle);
 const entryId = entry.id || '';
 const entrySlug = entry.slug || '';
 
-// 深度匹配当前路由所属图书及合集
 let currentBook = null;
 let currentCol = null;
 
@@ -32,7 +31,6 @@ const stageSubjectLabel = [
   currentBook?.categoryLabel || currentBook?.subjectLabel
 ].filter(Boolean).join(' · ');
 
-// 双语教材与跨语言对照路由判定
 const isBilingualBook = Boolean(currentBook?.languages && currentBook.languages.length > 1);
 let counterpartUrl: string | null = null;
 let counterpartLabel: string | null = null;
@@ -42,7 +40,7 @@ if (isBilingualBook && currentCol && currentBook) {
   const prefix = `/collections/${currentCol.slug}/${currentBook.slug}`;
 
   if (isZh) {
-    // 当前为中文对照版 -> 对照版指向英文原著
+
     const match = pathname.match(new RegExp(`${prefix}/zh/([^/?#]+)`));
     const subpath = match ? match[1] : '';
     let enKey = subpath;
@@ -57,7 +55,7 @@ if (isBilingualBook && currentCol && currentBook) {
     counterpartUrl = enKey ? `${prefix}/${enKey}/` : `${prefix}/`;
     counterpartLabel = 'English (原著)';
   } else {
-    // 当前为英文原著版 -> 对照版指向中文翻译
+
     const match = pathname.match(new RegExp(`${prefix}/([^/?#]+)`));
     const subpath = match ? match[1] : '';
     let zhKey = `zh/${subpath}`;
@@ -162,8 +160,7 @@ if (isBilingualBook && currentCol && currentBook) {
   <h1 id={PAGE_TITLE_ID} class="chapter-title" set:html={titleHtml}></h1>
 )}
 
-<style>
-  @layer starlight.core {
+<style>@layer starlight.core {
     .chapter-header {
       display: flex;
       flex-direction: column;
@@ -246,7 +243,6 @@ if (isBilingualBook && currentCol && currentBook) {
       --md-assist-chip-container-color: var(--sl-color-accent-low, rgba(59, 130, 246, 0.15)) !important;
     }
 
-    /* Fallback and styling before hydration */
     md-assist-chip:not(:defined) {
       display: inline-flex;
       align-items: center;
@@ -271,13 +267,10 @@ if (isBilingualBook && currentCol && currentBook) {
       flex-shrink: 0;
     }
 
-    /* When defined by Lit, the shadow DOM handles the label via `label` property,
-       so hide the light DOM fallback text to prevent duplication */
     md-assist-chip:defined .m3-chip-text {
       display: none;
     }
 
-    /* Strict bounding on all SVGs inside md-assist-chip */
     md-assist-chip svg {
       width: 0.95rem !important;
       height: 0.95rem !important;
@@ -288,8 +281,6 @@ if (isBilingualBook && currentCol && currentBook) {
   }
 </style>
 
-<script>
-  import '@material/web/chips/chip-set.js';
+<script>import '@material/web/chips/chip-set.js';
   import '@material/web/chips/assist-chip.js';
 </script>
-

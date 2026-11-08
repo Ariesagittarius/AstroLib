@@ -1,11 +1,6 @@
 import type { APIRoute } from 'astro';
 import { features } from '../config/features.config.mjs';
 
-/**
- * 动态静态 robots.txt 路由
- * 构建期由 Astro SSG 自动渲染为 dist/robots.txt
- * 自动绑定当前配置的站点绝对域名，并屏蔽开发/私有接口与全书打印页
- */
 export const GET: APIRoute = ({ site }) => {
   const siteUrl = site
     ? site.href.replace(/\/$/, '')

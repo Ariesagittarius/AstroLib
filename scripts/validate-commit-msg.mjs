@@ -10,7 +10,6 @@ if (!commitMsgFile || !fs.existsSync(commitMsgFile)) {
 
 const rawMsg = fs.readFileSync(commitMsgFile, 'utf8');
 
-// Filter out git comment lines (starting with #)
 const lines = rawMsg.split(/\r?\n/).filter(line => !line.trim().startsWith('#'));
 const firstLine = (lines[0] || '').trim();
 
@@ -19,21 +18,14 @@ if (!firstLine) {
   process.exit(1);
 }
 
-// Special case: Merge commits or auto-generated squash commits
 if (/^Merge branch /i.test(firstLine) || /^Merge remote-tracking branch /i.test(firstLine) || /^Revert /i.test(firstLine)) {
   process.exit(0);
 }
 
-// Conventional Commits Pattern (Academic & Restrained English):
-// e.g. feat(ai): integrate contextual document retrieval
-// e.g. fix(katex): prevent formula text overlap on narrow viewports
-// e.g. chore: upgrade astro and starlight dependencies
 const conventionalPattern = /^(feat|fix|perf|refactor|docs|style|chore|test|release|ci|build)(\([a-z0-9_/-]+\))?:\s+[a-z0-9].+$/;
 
-// Check for non-ASCII characters (disallows Chinese characters, special unicode symbols, emojis)
 const nonAsciiPattern = /[^\x00-\x7F]/;
 
-// Check for emoji patterns explicitly
 const emojiPattern = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
 
 let hasError = false;

@@ -58,7 +58,6 @@ describe('Bilingual Algorithms Book Contract', () => {
     const enRaw = fs.readFileSync(enFile, 'utf-8');
     const zhRaw = fs.readFileSync(zhFile, 'utf-8');
 
-    // Extract non-empty paragraphs
     const extractParas = (content: string, prefix: 'src' | 'tgt'): ParagraphToken[] => {
       const body = content
         .replace(/^---[\s\S]*?---/, '')
@@ -82,7 +81,6 @@ describe('Bilingual Algorithms Book Contract', () => {
 
     const matrix = BilingualAlignerClient.fallbackLexicalMatrix(sources, targets);
 
-    // Diagonal elements should have higher similarity than off-diagonal
     expect(matrix[0][0]).toBeGreaterThan(matrix[0][1]);
     expect(matrix[1][1]).toBeGreaterThan(matrix[1][0]);
     expect(matrix[4][4]).toBeGreaterThan(matrix[4][3]);

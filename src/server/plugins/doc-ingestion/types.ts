@@ -1,10 +1,3 @@
-/**
- * src/server/plugins/doc-ingestion/types.ts
- * ============================================================================
- * AstroLib MinerU 文档摄取与自动解析系统类型定义
- * ============================================================================
- */
-
 export type IngestEngineType = 'api' | 'agent' | 'local';
 
 export type TaskStatus =
@@ -22,7 +15,7 @@ export interface LayoutBlock {
   id: string;
   type: 'title' | 'text' | 'equation' | 'image' | 'table' | 'header' | 'footer' | 'figure' | 'list' | 'aside';
   pageIndex: number;
-  bbox: [number, number, number, number]; // [x0, y0, x1, y1] (72 DPI pt or normalized)
+  bbox: [number, number, number, number];
   pageWidth?: number;
   pageHeight?: number;
   text?: string;
@@ -38,10 +31,10 @@ export interface IngestTaskMeta {
   fileName: string;
   fileSize: number;
   pageCount: number;
-  pageRanges?: string; // 如 "1-20"
+  pageRanges?: string;
   engine: IngestEngineType;
   status: TaskStatus;
-  progress: number; // 0 - 100
+  progress: number;
   createdAt: number;
   updatedAt: number;
   completedAt?: number;

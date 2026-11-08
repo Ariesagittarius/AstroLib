@@ -1,10 +1,3 @@
-/**
- * tests/contract/ingest-endpoints.test.ts
- * ============================================================================
- * MinerU 文档摄取服务端中间件接口契约测试 (/api/ingest/*)
- * ============================================================================
- */
-
 import { describe, it, expect } from 'vitest';
 import { ingestDevServerPlugin } from '../../src/server/plugins/doc-ingestion/dev-server-plugin.mjs';
 import { Readable } from 'node:stream';
@@ -112,7 +105,6 @@ describe('Ingest Dev Server Plugin Contract Tests', () => {
 
     const createdTaskId = data.task.taskId;
 
-    // 测试根据 taskId 查询状态
     const statusReq = createMockReqRes({
       method: 'GET',
       url: `/api/ingest/status?taskId=${createdTaskId}`,
@@ -122,7 +114,6 @@ describe('Ingest Dev Server Plugin Contract Tests', () => {
     const statusData = JSON.parse(statusReq.getBody());
     expect(statusData.task.taskId).toBe(createdTaskId);
 
-    // 清理创建的临时测试目录
     const taskDir = path.join(TaskManager.getInstance().getBaseDir(), createdTaskId);
     fs.rmSync(taskDir, { recursive: true, force: true });
   });

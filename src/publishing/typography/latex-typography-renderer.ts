@@ -1,16 +1,3 @@
-/**
- * src/publishing/typography/latex-typography-renderer.ts
- * AstroLib 学术导出字体 LaTeX Preamble 渲染引擎 (Phase 4.5 Hardened Edition)
- *
- * 核心特性：
- * 1. 严格支持两种解析模式：
- *    - deterministic: 严禁依赖任何操作系统级未知字体，仅使用项目资产与 TeX Live 官方内建静态字体。
- *    - adaptive: 允许探测并优先匹配宿主机安装的高质量系统字体。
- * 2. 彻底杜绝 Variable Font (可变字体) 导致的 xdvipdfmx 崩溃 (StaticFontOnlyForPublishing = true)。
- * 3. 规范化 Legacy Mapping：实现 Base Preset + Specific Overrides 的正交组合语义，杜绝粗暴单向赋值。
- * 4. 显式日志与追踪：在 LaTeX 宏包中注入 \typeout 诊断标记，方便精确审计解析流。
- */
-
 import type {
   TypographyPresetId,
   TypographyPreset,
@@ -21,10 +8,6 @@ import type {
   NormalizedTypographyIntent,
   ResolvedTypographyConfig,
 } from './types.ts';
-
-// -----------------------------------------------------------------------------
-// 官方学术预设注册表导入与重导出 (Decoupled from Presets Layer)
-// -----------------------------------------------------------------------------
 
 import {
   PRESET_REGISTRY,
@@ -52,19 +35,10 @@ export {
   listTypographyPresets,
 };
 
-// -----------------------------------------------------------------------------
-// 规范化 Legacy Mapping 解析器 (Normalized Intent -> Base Preset + Overrides)
-// -----------------------------------------------------------------------------
-
-/**
- * 将历史废弃参数精准规范化为排版意图 (NormalizedTypographyIntent)
- * 严格遵循正交组合语义，杜绝简单粗暴地将某个参数直接降格替换整个 Preset
- */
 export function normalizeLegacyIntent(legacy: LegacyTypographyOptions): NormalizedTypographyIntent {
-  // 1. 判定基线预设 (Base Preset)
+
   let basePresetId: TypographyPresetId = 'scholarly';
 
-  // 若中文选 default，则基线偏向 classic 传统学术
   if (legacy.cjkFont === 'default') {
     basePresetId = 'classic';
   } else if (legacy.cjkFont === 'sourcehan' || legacy.cjkFont === 'song') {
@@ -79,7 +53,6 @@ export function normalizeLegacyIntent(legacy: LegacyTypographyOptions): Normaliz
     }
   }
 
-  // 2. 独立提取公式字体覆盖 (Math Override)
   let mathFamily: string | undefined;
   if (legacy.mathFont === 'typst') {
     mathFamily = 'NewCMMath-Book.otf';
@@ -100,18 +73,12 @@ export function normalizeLegacyIntent(legacy: LegacyTypographyOptions): Normaliz
   };
 }
 
-/**
- * 统一解析排版配置
- * @param target 目标预设 ID、自定义预设对象或历史参数
- * @param mode 显式指定解析模式 ('deterministic' | 'adaptive'，默认为 'deterministic')
- */
 export function resolveTypographyConfig(
   target?: TypographyPresetId | TypographyPreset | LegacyTypographyOptions,
   mode: FontResolutionMode = 'deterministic'
 ): ResolvedTypographyConfig {
   const warnings: string[] = [];
 
-  // 1. 完整自定义 TypographyPreset 对象
   if (target && typeof target === 'object' && 'id' in target && 'chineseBody' in target) {
     return {
       preset: target as TypographyPreset,
@@ -121,7 +88,6 @@ export function resolveTypographyConfig(
     };
   }
 
-  // 2. 标准 TypographyPresetId
   if (typeof target === 'string' && PRESET_REGISTRY[target as TypographyPresetId]) {
     return {
       preset: PRESET_REGISTRY[target as TypographyPresetId],
@@ -131,13 +97,11 @@ export function resolveTypographyConfig(
     };
   }
 
-  // 3. 历史 Legacy 配置解析 (Base Preset + Specific Overrides)
   if (target && typeof target === 'object') {
     const legacy = target as LegacyTypographyOptions;
     const intent = normalizeLegacyIntent(legacy);
     const basePreset = PRESET_REGISTRY[intent.basePresetId];
 
-    // 深拷贝以应用正交覆写，绝不污染全局预设注册表
     const clonedPreset: TypographyPreset = JSON.parse(JSON.stringify(basePreset));
 
     if (intent.overrides?.mathFamily) {
@@ -159,7 +123,6 @@ export function resolveTypographyConfig(
     };
   }
 
-  // 4. 默认采用 Scholarly 预设
   return {
     preset: PRESET_SCHOLARLY,
     resolutionMode: mode,
@@ -168,13 +131,6 @@ export function resolveTypographyConfig(
   };
 }
 
-// -----------------------------------------------------------------------------
-// LaTeX Preamble 级联回退生成器 (Cascading Font Resolution)
-// -----------------------------------------------------------------------------
-
-/**
- * 递归构建多重 \\IfFontExistsTF 回退树
- */
 function buildFontspecFallback(
   fontTypeCmd: '\\setCJKmainfont' | '\\setCJKsansfont' | '\\setCJKfamilyfont' | '\\setmainfont',
   families: string[],
@@ -215,9 +171,6 @@ ${renderStep(index + 1).split('\n').map((l) => '  ' + l).join('\n')}
   return renderStep(0);
 }
 
-/**
- * 统一生成完整的 Academic Typography LaTeX Preamble
- */
 export function renderTypographyPreamble(
   targetConfig?: TypographyPresetId | TypographyPreset | LegacyTypographyOptions,
   options: {
@@ -230,13 +183,11 @@ export function renderTypographyPreamble(
   const { preset, source } = resolveTypographyConfig(targetConfig, mode);
   const includePkg = options.includeUnicodeMathPkg ?? true;
 
-  // 根据 resolutionMode 选择候选字体清单
   const selectFamilies = (spec: TypographyFontSpec): string[] => {
     const list = mode === 'deterministic' ? spec.deterministicFamilies : spec.adaptiveFamilies;
     return [...list];
   };
 
-  // 1. 中文正文候选链
   const cjkBodyList = [
     ...selectFamilies(preset.chineseBody),
     preset.guaranteedFallback.cjk,
@@ -254,7 +205,6 @@ export function renderTypographyPreamble(
     { extraOptions: cjkBodyOpts, guaranteedEnd: preset.guaranteedFallback.cjk }
   );
 
-  // 2. 中文无衬线标题候选链
   const cjkHeadingList = [
     ...selectFamilies(preset.chineseHeading),
     preset.guaranteedFallback.cjkSans,
@@ -269,7 +219,6 @@ export function renderTypographyPreamble(
     { extraOptions: cjkHeadingOpts, guaranteedEnd: preset.guaranteedFallback.cjkSans }
   );
 
-  // 3. 楷体/辅助标注候选链
   const kaiList = [
     ...selectFamilies(preset.kaiFont),
     'FandolKai-Regular.otf',
@@ -285,7 +234,6 @@ export function renderTypographyPreamble(
     }
   );
 
-  // 4. 西文正文字体 (\setmainfont)
   const latinList = [
     ...selectFamilies(preset.latinText),
     preset.guaranteedFallback.latin,
@@ -305,7 +253,6 @@ export function renderTypographyPreamble(
     { extraOptions: latinOpts, guaranteedEnd: preset.guaranteedFallback.latin }
   );
 
-  // 5. 数学公式字体 (\setmathfont)
   const mathFamilies = [
     preset.math.family,
     ...(preset.math.fallbackFamilies || []),
@@ -330,7 +277,6 @@ export function renderTypographyPreamble(
     mathCode = `\\setmathfont{${mathFamilies[0]}}${mathOptStr}\n`;
   }
 
-  // 6. 版面度量与学术语义命令配置
   const lineSpreadCode = `\\linespread{${preset.metrics.baselineStretch}}`;
 
   let preamble = `% =========================================================================

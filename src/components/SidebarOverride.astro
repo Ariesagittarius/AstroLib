@@ -9,11 +9,9 @@ import { buildTwoTierSidebar } from '../utils/sidebar/sidebar-tree';
 const { sidebar } = Astro.locals.starlightRoute;
 const pathname = Astro.url.pathname;
 
-// 构造 Google Docs 规范的双级侧边栏结构
 const filteredSidebar = buildTwoTierSidebar(sidebar, pathname, collections);
 const bookMatch = pathname.match(/\/collections\/([^/]+)\/([^/]+)/);
 
-// 当前图书的 EPUB 下载链接：优先探测本地 public/epub/<slug>.epub，若无则回退至 GitHub Release 资产链接。
 let epubHref = null;
 if (features.epub.enabled && bookMatch) {
   const bookSlug = bookMatch[2];
@@ -32,12 +30,10 @@ if (features.epub.enabled && bookMatch) {
 }
 ---
 
-<!-- 1. 渲染过滤后的侧边栏结构 -->
 <SidebarPersister>
   <SidebarSublist sublist={filteredSidebar} />
 </SidebarPersister>
-<script is:inline>
-  (() => {
+<script is:inline>(() => {
     try {
       const top = parseInt(sessionStorage.getItem('astrolib_sidebar_scroll') || '', 10);
       const scroller = document.getElementById('starlight__sidebar');
@@ -60,8 +56,7 @@ if (features.epub.enabled && bookMatch) {
   </div>
 )}
 
-<style>
-  .epub-entry {
+<style>.epub-entry {
     margin: auto 0.75rem 0.25rem 0;
     display: flex;
     justify-content: flex-end;
@@ -92,9 +87,7 @@ if (features.epub.enabled && bookMatch) {
   }
 </style>
 
-<!-- 2. 注入客户端路由与交互管线：阅读记录、SPA 极速导航引擎与数字资源弹层 -->
-<script>
-  import '../scripts/navigation/recent-reading';
+<script>import '../scripts/navigation/recent-reading';
   import '../scripts/navigation/spa-engine';
   import '../scripts/navigation/academic-resource';
 </script>

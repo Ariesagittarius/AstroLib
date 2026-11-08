@@ -8,10 +8,8 @@ os.makedirs(output_dir, exist_ok=True)
 
 doc = fitz.open(pdf_path)
 
-# Definition of the 21 figures with page and search pattern
-# Format: (fig_id, phys_page, caption_regex, top_padding_ratio_or_keyword, bottom_offset)
 figure_targets = [
-    # Chapter 11
+
     ("fig_11_2_1", 403, r"图\s*11\.\s*2\.1\s*"),
     ("fig_11_2_2", 404, r"图\s*11\.\s*2\.\s*2\s*BPSK"),
     ("fig_11_2_3", 404, r"图\s*11\.\s*2\.\s*3\s*产生QAM"),
@@ -24,14 +22,12 @@ figure_targets = [
     ("fig_11_5_1", 409, r"图\s*11\.\s*5\.1\s*OFDM"),
     ("fig_11_6_1", 411, r"图\s*11\.6\.1\s*DAB"),
 
-    # Chapter 12
     ("fig_12_1_1", 412, r"图\s*12\.\s*1\.\s*1\s*简化的通信"),
     ("fig_12_3_1", 418, r"图\s*12\.\s*3\.\s*1\s*频谱效率"),
     ("fig_12_3_2", 419, r"图\s*12\.\s*3\.\s*2\s*实际编码"),
     ("fig_12_4_1", 421, r"图\s*12\.\s*4\.\s*1\s*移动通信"),
     ("fig_12_4_2", 422, r"图\s*12\.4\.2\s*衰落信道"),
 
-    # Chapter 13
     ("fig_13_2_1", 425, r"图\s*13\.\s*2\.\s*1\s*树形图"),
     ("fig_13_3_1", 426, r"图\s*13\.3\.\s*1\s*电路转接"),
     ("fig_13_4_1", 430, r"图\s*13\.\s*4\.\s*1\s*电话信令"),
@@ -39,21 +35,20 @@ figure_targets = [
     ("fig_13_5_1", 433, r"图\s*13\.\s*5\.\s*1\s*NGN"),
 ]
 
-# Let's inspect each figure's caption bbox on its page and figure out the drawing bbox above/below it
 results = []
 for fig_id, phys_p, cap_pattern in figure_targets:
     page = doc[phys_p - 1]
     blocks = page.get_text("blocks")
-    
+
     cap_block = None
     for b in blocks:
         text = b[4].strip()
         if re.search(cap_pattern, text):
             cap_block = b
             break
-            
+
     if not cap_block:
-        # try more relaxed
+
         for b in blocks:
             text = b[4].strip()
             clean_text = re.sub(r"\s+", "", text)
@@ -61,7 +56,7 @@ for fig_id, phys_p, cap_pattern in figure_targets:
             if fig_id.replace("_", ".") in clean_text:
                 cap_block = b
                 break
-                
+
     results.append({
         "fig_id": fig_id,
         "phys_page": phys_p,

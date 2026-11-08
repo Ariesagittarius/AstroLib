@@ -22,7 +22,6 @@ Naturally, there is nothing special about the number 10.
     expect(result.tokensPreserved).toBe(5);
     expect(result.tokensRestored).toBe(5);
 
-    // 验证核心 LaTeX 公式与组件未受破坏
     expect(result.translatedText).toContain('$9 + 9 + 9 = 27$');
     expect(result.translatedText).toContain('$b \\geq 2$');
     expect(result.translatedText).toContain('\\begin{array}');

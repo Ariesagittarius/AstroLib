@@ -1,15 +1,3 @@
-/**
- * src/services/translation/providers/gemini-provider.ts
- * ============================================================================
- * Google Gemini 学术翻译服务提供商 (Gemini Academic Translator)
- * ============================================================================
- * 优势：
- * 1. 深度理解计算机科学算法与离散数学专业领域语境；
- * 2. 严格遵从指令，原样保护 ⟦ASTRO_TOK_N⟧ 结构占位符；
- * 3. 产出自然、地道、符合中国高校学术专著习惯的译文。
- * ============================================================================
- */
-
 import type { ITranslationProvider, TranslateOptions, TranslationProviderId } from '../types.ts';
 
 const DEFAULT_GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
@@ -52,7 +40,7 @@ export class GeminiTranslateProvider implements ITranslationProvider {
 
     const payload = {
       model,
-      temperature: 0.1, // 低温度以保证翻译的一致性与严谨度
+      temperature: 0.1,
       messages: [
         { role: 'system', content: ACADEMIC_SYSTEM_PROMPT },
         {
@@ -143,7 +131,7 @@ export class GeminiTranslateProvider implements ITranslationProvider {
 
   private resolveEndpoint(customEndpoint?: string): string {
     if (customEndpoint) return customEndpoint;
-    // 浏览器端在开发态优先复用本地 Vite 反代避免 CORS
+
     if (typeof window !== 'undefined') {
       const isDev = Boolean(
         window.location.hostname === 'localhost' ||

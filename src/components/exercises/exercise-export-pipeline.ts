@@ -1,16 +1,3 @@
-/**
- * src/components/exercises/exercise-export-pipeline.ts
- * 课后自测与试卷 LaTeX / Typst 云端编译与多格式导出流水线控制器
- *
- * 核心职责：
- * 1. 挂载 LaTeX 试卷/练习册排版配置模态框及二级编译配置弹窗；
- * 2. 调度学术版式（Handout 教材体例 / Exam 测试卷头 / 作答留白 / 答案附录）；
- * 3. 动态生成 LaTeX 源码并支持 Overleaf 联调、源码复制与 .tex 下载；
- * 4. 驱动 GitHub Actions 云端编译工作流（workflow_dispatch / Git Blob / Release 资产轮询）；
- * 5. 驱动本地 XeLaTeX 离线双遍编译器与原生无痛打印；
- * 6. 管理 PDF 预览 iframe 状态并在页面切换时安全释放 PDFium 渲染引擎。
- */
-
 import { generateLatexDocument, type LatexExportConfig, DEFAULT_LATEX_CONFIG } from '../../publishing/latex/latex-generator';
 import { getStoredExportSettings, saveStoredExportSettings } from '../../publishing/common/export-settings';
 import {
@@ -51,7 +38,6 @@ export class ExerciseExportPipeline {
   private currentLatexConfig: LatexExportConfig = { ...DEFAULT_LATEX_CONFIG };
   private currentGeneratedLatexCode: string = '';
 
-  // 云端 XeLaTeX 编译与免服务器打印字段
   private latexSettingsOpenBtn: HTMLElement | null = null;
   private latexSettingsModal: HTMLElement | null = null;
   private latexSettingsCloseBtn: HTMLElement | null = null;
@@ -126,7 +112,6 @@ export class ExerciseExportPipeline {
     this.latexPreviewCopyBtn = root.querySelector('#ex-latex-preview-copy-btn');
     this.latexDownloadBtn = root.querySelector('#ex-latex-download-btn');
 
-    // 云端编译与二级设置弹窗 DOM 查询
     this.latexSettingsOpenBtn = root.querySelector('#ex-latex-open-settings-btn');
     this.latexSettingsModal = root.querySelector('#ex-latex-settings-modal');
     this.latexSettingsCloseBtn = root.querySelector('#ex-close-settings-modal-btn');
@@ -191,7 +176,6 @@ export class ExerciseExportPipeline {
       btn.addEventListener('click', () => this.closeLatexModal());
     });
 
-    // 1. 模板版式 Filter Chips (handout / exam)
     this.bindChipSetSingleSelect(
       'ex-chip-set-template',
       'data-template',
@@ -208,7 +192,6 @@ export class ExerciseExportPipeline {
       }
     );
 
-    // 2. 卷头与元数据 Filter Chips (standard / compact / none)
     this.bindChipSetSingleSelect(
       'ex-chip-set-header',
       'data-header-mode',
@@ -218,7 +201,6 @@ export class ExerciseExportPipeline {
       }
     );
 
-    // 3. 作答留白 Filter Chips (comfortable / compact / none)
     this.bindChipSetSingleSelect(
       'ex-chip-set-writing-space',
       'data-writing-space',
@@ -230,7 +212,6 @@ export class ExerciseExportPipeline {
       }
     );
 
-    // 4. 参考答案附录 Filter Chips (appendix / inline / none)
     this.bindChipSetSingleSelect(
       'ex-chip-set-answer-mode',
       'data-answer-mode',
@@ -242,7 +223,6 @@ export class ExerciseExportPipeline {
       }
     );
 
-    // 兼容回退：模板版式分段控制器切换 (handout / exam)
     this.root.querySelectorAll('.ex-segmented-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         this.root?.querySelectorAll('.ex-segmented-btn').forEach((b) => {
@@ -264,7 +244,6 @@ export class ExerciseExportPipeline {
       });
     });
 
-    // 页面与字体规格
     const paperSelect = this.root.querySelector('#ex-latex-paper-size') as HTMLSelectElement;
     if (paperSelect) {
       paperSelect.addEventListener('change', (e) => {
@@ -315,7 +294,6 @@ export class ExerciseExportPipeline {
       });
     }
 
-    // 作答留白单选
     this.root.querySelectorAll('input[name="ex-latex-writing-space"]').forEach((radio) => {
       radio.addEventListener('change', (e) => {
         this.currentLatexConfig.writingSpace = (e.target as HTMLInputElement).value as any;
@@ -323,7 +301,6 @@ export class ExerciseExportPipeline {
       });
     });
 
-    // 参考答案附录单选
     this.root.querySelectorAll('input[name="ex-latex-answer-mode"]').forEach((radio) => {
       radio.addEventListener('change', (e) => {
         this.currentLatexConfig.answerPlacement = (e.target as HTMLInputElement).value as any;
@@ -331,7 +308,6 @@ export class ExerciseExportPipeline {
       });
     });
 
-    // Overleaf、复制与下载按钮（在更多导出下拉菜单中）
     if (this.latexOverleafBtn) {
       this.latexOverleafBtn.addEventListener('click', () => {
         this.closeMoreExportMenu();
@@ -354,7 +330,6 @@ export class ExerciseExportPipeline {
       });
     }
 
-    // 更多导出方式二级下拉菜单切换与外部点击关闭
     if (this.moreExportBtn && this.moreExportMenu) {
       this.moreExportBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -372,7 +347,6 @@ export class ExerciseExportPipeline {
       });
     }
 
-    // 云端编译配置独立二级弹窗开关与保存
     if (this.latexSettingsOpenBtn) {
       this.latexSettingsOpenBtn.addEventListener('click', () => this.openSettingsModal());
     }
@@ -391,7 +365,6 @@ export class ExerciseExportPipeline {
       this.ghSaveConfigBtn.addEventListener('click', () => this.saveCompilerSettings());
     }
 
-    // 阶段 1 主 CTA 按钮: 开始生成 PDF (GitHub Actions 云端)
     if (this.latexStartCompileBtn) {
       this.latexStartCompileBtn.addEventListener('click', () => {
         const config = getStoredCompilerConfig();
@@ -405,21 +378,18 @@ export class ExerciseExportPipeline {
       });
     }
 
-    // 阶段 1 本地编译按钮: 调用本地 XeLaTeX 引擎离线双遍编译
     if (this.latexLocalCompileBtn) {
       this.latexLocalCompileBtn.addEventListener('click', () => {
         this.startLocalCompilation();
       });
     }
 
-    // 阶段 2 返回修改配置按钮
     if (this.latexBackConfigBtn) {
       this.latexBackConfigBtn.addEventListener('click', () => {
         this.switchLatexStage('config');
       });
     }
 
-    // 阶段 2 主 CTA: 下载 PDF 文件
     if (this.latexDownloadPdfBtn) {
       this.latexDownloadPdfBtn.addEventListener('click', () => {
         if (this.currentCompiledPdfUrl) {
@@ -432,7 +402,6 @@ export class ExerciseExportPipeline {
       });
     }
 
-    // 次要打印按钮
     if (this.latexPrintBtn) {
       this.latexPrintBtn.addEventListener('click', () => {
         if (this.currentCompiledPdfUrl) {
@@ -442,12 +411,10 @@ export class ExerciseExportPipeline {
       });
     }
 
-    // 取消编译按钮
     if (this.latexCancelCompileBtn) {
       this.latexCancelCompileBtn.addEventListener('click', () => this.cancelCloudCompilation());
     }
 
-    // 耗时较长挂起状态下的辅助操作
     if (this.continueWaitBtn) {
       this.continueWaitBtn.addEventListener('click', () => this.continueWaitingCompilation());
     }
@@ -455,7 +422,6 @@ export class ExerciseExportPipeline {
       this.checkResultNowBtn.addEventListener('click', () => this.checkCompilationResultDirectly());
     }
 
-    // 结果面板云端排版与纯源码 Tab 切换
     if (this.tabCloudBtn && this.tabSourceBtn) {
       this.tabCloudBtn.addEventListener('click', () => {
         this.tabCloudBtn?.classList.add('active');
@@ -475,7 +441,6 @@ export class ExerciseExportPipeline {
   public openLatexModal() {
     if (!this.latexModal) return;
 
-    // 根据当前视图设定标题与科目（严谨学术体例）
     let title = '工科数学分析';
     let subtitle = '章节真题精选与自测练习';
     let courseName = '工科数学分析';
@@ -505,20 +470,17 @@ export class ExerciseExportPipeline {
     this.currentLatexConfig.subtitle = subtitle;
     this.currentLatexConfig.courseName = courseName;
 
-    // 获取当前选定题量并更新 Header 提示
     const questions = this.host.getFilteredQuestions();
 
     if (this.latexModalMeta) {
       this.latexModalMeta.textContent = `${title} · 共 ${questions.length} 道习题`;
     }
 
-    // 初始化编译配置项到输入框
     const cfg = getStoredCompilerConfig();
     if (this.ghTokenInput) this.ghTokenInput.value = cfg.token;
     if (this.ghRepoInput) this.ghRepoInput.value = `${cfg.owner}/${cfg.repo}`;
     if (this.ghTransportModeSelect) this.ghTransportModeSelect.value = cfg.transportMode || 'auto';
 
-    // 同步排版预设与本地存储 (包含历史配置静默迁移)
     const storedExport = getStoredExportSettings();
     if (storedExport.typography) {
       this.currentLatexConfig.typography = storedExport.typography;
@@ -528,7 +490,6 @@ export class ExerciseExportPipeline {
       typoSelect.value = this.currentLatexConfig.typography;
     }
 
-    // 同步 4 组 M3 Filter Chips 状态与体例提示
     this.syncChipSetSelection('ex-chip-set-template', 'data-template', this.currentLatexConfig.template || 'handout');
     this.syncChipSetSelection('ex-chip-set-header', 'data-header-mode', this.currentLatexConfig.headerMode || 'standard');
     this.syncChipSetSelection('ex-chip-set-writing-space', 'data-writing-space', this.currentLatexConfig.writingSpace || 'comfortable');
@@ -540,7 +501,6 @@ export class ExerciseExportPipeline {
           : '标准自测测试卷头 · 紧凑排版 · 纯净无干扰题面';
     }
 
-    // 默认展示排版配置视图（若已有生成结果则直达预览）
     if (this.currentCompiledPdfUrl || this.isCompiling) {
       this.switchLatexStage('result');
     } else {
@@ -578,10 +538,6 @@ export class ExerciseExportPipeline {
     this.compileAbortController?.abort();
   }
 
-  /**
-   * 彻底释放 PDFium / Chrome 内部 PDF 渲染引擎与位图表面
-   * 将 iframe 导航至 about:blank，中断跨页面历史记录与 BFCache 对大位图的驻留
-   */
   public releaseLatexPdfViewer() {
     if (this.currentCompiledPdfUrl && this.currentCompiledPdfUrl.startsWith('blob:')) {
       try {
@@ -846,7 +802,6 @@ export class ExerciseExportPipeline {
     this.compileAbortController = new AbortController();
     this.compileStartTime = Date.now();
 
-    // 确保切换到编译交付与 PDF 预览阶段
     this.switchLatexStage('result');
     this.setLatexExportState('compiling', '正在向 GitHub Actions 算力池调度编译任务...');
 
@@ -940,7 +895,6 @@ export class ExerciseExportPipeline {
   public async startLocalCompilation() {
     if (this.isCompiling) return;
 
-    // 检查本地编译服务与 XeLaTeX 编译器探活状态
     try {
       const healthResp = await fetch('/__chapter_export__/health');
       if (!healthResp.ok) {
@@ -1036,7 +990,6 @@ export class ExerciseExportPipeline {
         this.latexLogPre.textContent += `[${new Date().toLocaleTimeString()}] 本地 XeLaTeX 双遍编译完成！已生成 PDF 目标产物并自动下载。\n`;
       }
 
-      // 自动触发浏览器下载 PDF
       const a = document.createElement('a');
       a.href = pdfUrl;
       a.download = pdfFilename;
@@ -1082,7 +1035,7 @@ export class ExerciseExportPipeline {
         const val = chip.getAttribute(dataAttr);
         if (!val) return;
         if (val === getValue()) {
-          // 单选互斥守卫：点击已激活项禁止反选
+
           e.preventDefault();
           this.syncChipSetSelection(chipSetId, dataAttr, val);
           return;
@@ -1179,9 +1132,6 @@ export class ExerciseExportPipeline {
     this.host.showToast('已取消编译');
   }
 
-  /**
-   * 防抖触发 LaTeX 源码生成与排版预览，防止连续切换配置时造成大量字符串分配与 CPU 停顿
-   */
   public scheduleRefreshLatexPreview(immediate = false) {
     if (immediate) {
       if (this.latexDebounceTimer) {
@@ -1203,18 +1153,14 @@ export class ExerciseExportPipeline {
   public refreshLatexPreview() {
     if (!this.latexModal) return;
 
-    // 获取当前要导出的题目集合
     const questions = this.host.getFilteredQuestions();
 
-    // 生成 LaTeX 源码
     this.currentGeneratedLatexCode = generateLatexDocument(questions, this.currentLatexConfig);
 
-    // 更新右侧代码显示
     if (this.latexCodeTextarea) {
       this.latexCodeTextarea.value = this.currentGeneratedLatexCode;
     }
 
-    // 更新统计徽章
     const qCountEl = this.latexModal.querySelector('#ex-latex-stat-qcount');
     const linesEl = this.latexModal.querySelector('#ex-latex-stat-lines');
 
@@ -1223,7 +1169,6 @@ export class ExerciseExportPipeline {
     if (qCountEl) qCountEl.textContent = `题目：${questions.length} 题`;
     if (linesEl) linesEl.textContent = `${linesCount} 行代码`;
 
-    // 更新建议下载文件名
     const defaultFilename = this.getLatexExportFilename();
     if (this.latexFilenameBadge) {
       this.latexFilenameBadge.textContent = defaultFilename;

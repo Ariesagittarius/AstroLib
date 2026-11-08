@@ -1,16 +1,3 @@
-/**
- * src/server/plugins/doc-ingestion/local-runner.ts
- * ============================================================================
- * 本机 RTX 5060 (8G) Pipeline 模式本地推理执行器
- * ============================================================================
- * 职责：
- * 1. 探测本机的 Python 环境 (优先探测 practice/.venv 与当前工程 .venv)；
- * 2. 检查 magic-pdf / mineru CLI 与 GPU 依赖环境；
- * 3. 驱动本地 Pipeline 模式解析 (DocLayout-YOLO + UniMERNet + RapidOCR)；
- * 4. 显存守护：当本地环境未就绪时，返回友好的环境诊断与指引，支持平滑引导至【API】。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
@@ -36,9 +23,6 @@ export class LocalPipelineRunner {
     this.pythonPath = this.findPythonPath();
   }
 
-  /**
-   * 自动探测可用的 Python 解释器
-   */
   public findPythonPath(): string | null {
     if (process.env.PYTHON_PATH && fs.existsSync(process.env.PYTHON_PATH)) {
       return process.env.PYTHON_PATH;
@@ -61,16 +45,13 @@ export class LocalPipelineRunner {
           return p;
         }
       } catch {
-        // continue
+
       }
     }
 
     return null;
   }
 
-  /**
-   * 检查本地 5060 与 magic-pdf 环境状态
-   */
   public async checkEnvironment(forceRefresh = false): Promise<LocalEnvironmentStatus> {
     if (this.cachedStatus && !forceRefresh) {
       return this.cachedStatus;
@@ -88,7 +69,6 @@ export class LocalPipelineRunner {
       return this.cachedStatus;
     }
 
-    // 检查 magic-pdf 是否存在
     let magicPdfInstalled = false;
     let cudaAvailable = true;
     let gpuName = 'NVIDIA GeForce RTX 5060 Laptop GPU';
@@ -143,9 +123,6 @@ print(json.dumps({"has_mp": has_mp, "cuda_ok": cuda_ok, "dev_name": dev_name}))
     return this.cachedStatus;
   }
 
-  /**
-   * 运行本地 Pipeline 识别
-   */
   public async runPipeline(
     pdfPath: string,
     outputDir: string,
@@ -160,7 +137,6 @@ print(json.dumps({"has_mp": has_mp, "cuda_ok": cuda_ok, "dev_name": dev_name}))
 
     if (onProgress) onProgress('启动本地 RTX 5060 Pipeline 推理引擎...');
 
-    // 调用 magic-pdf 命令行工具
     try {
       const args = ['-m', 'magic_pdf.tools.cli', '-p', pdfPath, '-o', outputDir, '-m', 'pipeline'];
       await execFileAsync(status.pythonPath, args, {

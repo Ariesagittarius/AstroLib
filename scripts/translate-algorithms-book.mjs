@@ -1,18 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/translate-algorithms-book.mjs
- * ============================================================================
- * AstroLib 《Algorithms》(DPV) 全书学术级结构保护双语翻译自动化脚本
- * ============================================================================
- * 职责：
- * 1. 批量读取 src/content/docs/collections/cs/algorithms/*.mdx 原始章节；
- * 2. 映射规范的学术中文标题；
- * 3. 结构保护遮蔽 (公式、JSX 组件、代码块、引用徽章等 100% 结构无损)；
- * 4. 自动修复相对图片引用 (images/ -> ../images/)，零磁盘冗余共享原书插图；
- * 5. 写入 src/content/docs/collections/cs/algorithms/zh/*.mdx；
- * 6. 支持 --limit, --chapter, --all 灵活参数，执行后自动触发 scan-mdx 验证。
- * ============================================================================
- */
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -126,10 +112,8 @@ function parseArgs() {
 function postProcessChineseMdx(text, fileName) {
   let processed = text;
 
-  // 1. 修复图片相对路径：从 images/ 变更为 ../images/
   processed = processed.replace(/!\[(.*?)\]\(images\//g, '![$1](../images/');
 
-  // 2. 规范替换常见学术卡片 title 属性
   processed = processed
     .replace(/<Solution\s+title=["']Proof["']>/g, '<Solution title="证明">')
     .replace(/<Example\s+title=["']Example["']>/g, '<Example title="例题">')
@@ -137,19 +121,15 @@ function postProcessChineseMdx(text, fileName) {
     .replace(/<Knowledge\s+title=["']Theorem["']>/g, '<Knowledge title="定理">')
     .replace(/<Knowledge\s+title=["']Lemma["']>/g, '<Knowledge title="引理">');
 
-  // 3. 修复相邻公式紧贴可能产生的 $$ 混淆
   processed = processed.replace(/(\$(?:[^\$\r\n]+?)\$)(?=\$(?:[^\$\r\n]+?)\$)/g, '$1 ');
 
-  // 4. 修复常见英文题号列表被过度机译的问题，如 (m) 译为（米），(p) 译为（页）
   processed = processed
     .replace(/（米）/g, '(m) ')
     .replace(/（页）/g, '(p) ')
     .replace(/（([a-zA-Z])）/g, '($1) ');
 
-  // 4.1 修复未被遮蔽的数学比较符形如 <post( 误当 JSX 标签的问题
   processed = processed.replace(/<([a-zA-Z_][a-zA-Z0-9_]*\()/g, '&lt;$1');
 
-  // 5. 规范 frontmatter title 替换为高精度中文标题
   const zhTitle = CHINESE_TITLES[fileName];
   if (zhTitle) {
     processed = processed.replace(/^title:\s*['"].*?['"]/m, `title: '${zhTitle}'`);
@@ -203,7 +183,6 @@ async function main() {
     fs.mkdirSync(TARGET_DIR, { recursive: true });
   }
 
-  // 收集待翻译文件清单
   let allFiles = Object.keys(CHINESE_TITLES);
   if (specificFiles.length > 0) {
     allFiles = allFiles.filter((f) => specificFiles.includes(f));
@@ -228,7 +207,6 @@ async function main() {
       failCount++;
     }
 
-    // 温和延时 250ms，防止并发请求冲撞
     if (i < filesToProcess.length - 1) {
       await new Promise((r) => setTimeout(r, 250));
     }

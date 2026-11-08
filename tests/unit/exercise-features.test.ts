@@ -129,7 +129,6 @@ describe('Exercise Features and Fallbacks', () => {
     saveProviderApiKey('gemini', 'AIzaSyTestGeminiKey');
     expect(getProviderApiKey('gemini')).toBe('AIzaSyTestGeminiKey');
 
-    // 确保各提供商 key 隔离不互相覆盖
     expect(getProviderApiKey('deepseek')).toBe('sk-test-deepseek-key');
   });
 });

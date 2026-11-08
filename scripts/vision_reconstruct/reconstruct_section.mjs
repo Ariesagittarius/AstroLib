@@ -5,41 +5,30 @@ import { streamGemmaVision } from './gemma_vision_client.mjs';
 
 const ROOT_DIR = process.cwd();
 
-/**
- * Clean up markdown fences or thought summaries that Gemma may output
- */
 export function cleanGemmaOutput(rawText) {
   let cleaned = rawText.trim();
 
-  // Strip thinking outline preamble if present
   cleaned = cleaned.replace(/^---[\s\S]*?\*\*思考大纲\*\*[\s\S]*?---\s*/i, '');
   cleaned = cleaned.replace(/^---[\s\S]*?#\s*教材扫描图内容描述[\s\S]*?---\s*/i, '');
   cleaned = cleaned.replace(/^[\s\S]*?<\/thought>\s*/i, '');
 
-  // Strip outer ```mdx ... ``` or ```markdown ... ``` or ``` ... ```
   if (cleaned.startsWith('```')) {
     cleaned = cleaned.replace(/^```[a-zA-Z0-9_-]*\r?\n/, '');
     cleaned = cleaned.replace(/\r?\n```\s*$/, '');
   }
 
-  // Remove trailing exercises if any leaked
   cleaned = cleaned.replace(/##\s*习题\s*[\d\.]+[\s\S]*$/, '');
   cleaned = cleaned.replace(/###\s*习题\s*[\d\.]+[\s\S]*$/, '');
   cleaned = cleaned.replace(/<ExerciseTrigger[\s\S]*$/, '');
 
-  // Auto-convert single-dollar inline math with \tag{...} to display math blocks $$
   cleaned = cleaned.replace(/^\$([^\$\n]+?\\tag\{[^\}\n]+\}[^\$\n]*?)\$$/gm, '$$\n$1\n$$');
 
-  // Ensure display math blocks with \tag{...} have blank lines before and after
   cleaned = cleaned.replace(/([^\r\n])\r?\n(\$\$[\s\S]*?\\tag\{[^\}\n]+\}[\s\S]*?\$\$)/g, '$1\n\n$2');
   cleaned = cleaned.replace(/(\$\$[\s\S]*?\\tag\{[^\}\n]+\}[\s\S]*?\$\$)\r?\n([^\r\n])/g, '$1\n\n$2');
 
   return cleaned.trim();
 }
 
-/**
- * AstroLib Section Frontmatter and imports template
- */
 export function buildMdxHeader(section, title) {
   return `---
 title: '${section} ${title}'
@@ -66,9 +55,6 @@ export function buildMdxFooter(chapter, section, title) {
   return `\n\n<ExerciseTrigger chapter={${chapter}} section="${section}" title="${section} ${title} 课后真题与自测练习" />\n`;
 }
 
-/**
- * Build system prompt for Gemma 4 visual reconstruction
- */
 export function buildPrompt(section, title, isFirstBatch, isLastBatch) {
   return `【核心指令】：思考过程请保持极简（不超过 100 字简要大纲），把全部输出配额用于生成完整的 MDX 正文！
 
@@ -94,11 +80,11 @@ export function buildPrompt(section, title, isFirstBatch, isLastBatch) {
 3. 100% 工业级 KaTeX 纯净度与独立块级：
    - 变量符号统一用 $...$（如 $x, y, \\Delta x$），规范微商 \\frac{\\mathrm{d}y}{\\mathrm{d}x}、极限 \\lim_{x \\to x_0}；
    - 【带编号公式】：所有带 \\tag{X.Y} 的公式必须作为独立块级公式，且前后必须留有空行：
-     
+
      $$
      formula \\tag{X.Y}
      $$
-     
+
      严禁写在行内 $...$ 中，严禁紧贴正文不留空行（否则 KaTeX 将抛出 parse error 报错）。
 
 4. 响应式配图规范：
@@ -121,9 +107,6 @@ export function buildPrompt(section, title, isFirstBatch, isLastBatch) {
 `;
 }
 
-/**
- * Reconstruct a single section
- */
 export async function reconstructSection(options) {
   const {
     chapter,
@@ -153,7 +136,6 @@ export async function reconstructSection(options) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  // 1. Ensure all physical pages are sliced
   const missingPages = [];
   for (let p = startPage; p <= endPage; p++) {
     const pageImg = path.join(chPagesDir, `phys_${p}.jpg`);
@@ -170,7 +152,6 @@ export async function reconstructSection(options) {
     console.log(`[Slice] 所有物理页已完成切图 (Phys ${startPage} ~ ${endPage})。`);
   }
 
-  // Materialize chapter figures
   try {
     const matCmd = `.venv\\Scripts\\python scripts/vision_reconstruct/materialize_figures.py --chapter ${chapter}`;
     execSync(matCmd, { stdio: 'inherit' });
@@ -178,7 +159,6 @@ export async function reconstructSection(options) {
     console.warn('[Materialize Warning]', e.message);
   }
 
-  // 2. Build page batches
   const batches = [];
   for (let p = startPage; p <= endPage; p += batchSize) {
     const bEnd = Math.min(p + batchSize - 1, endPage);
@@ -198,7 +178,6 @@ export async function reconstructSection(options) {
     console.log(`  批次 ${idx + 1}: Phys ${b.start} ~ ${b.end} (${b.pages.length} 张图片)`);
   });
 
-  // 3. Process batches
   const chunkOutputs = [];
   for (let idx = 0; idx < batches.length; idx++) {
     const b = batches[idx];
@@ -226,7 +205,6 @@ export async function reconstructSection(options) {
     chunkOutputs.push(chunkText);
   }
 
-  // 4. Assemble final MDX
   const finalMdxContent =
     buildMdxHeader(section, title) +
     chunkOutputs.join('\n\n') +
@@ -238,7 +216,6 @@ export async function reconstructSection(options) {
   fs.writeFileSync(targetFilePath, finalMdxContent, 'utf-8');
   console.log(`\n📄 [Assembly] 成功组装并写入目标文件：${targetFilePath} (${finalMdxContent.length} 字符)`);
 
-  // 5. Run scan-mdx gate
   console.log(`\n🔍 [Quality Gate] 正在执行 MDX 语法与 KaTeX 强校验...`);
   try {
     const scanOutput = execSync(`node scripts/scan-mdx.mjs "${targetFilePath}"`, { encoding: 'utf-8' });
@@ -252,7 +229,6 @@ export async function reconstructSection(options) {
   return targetFilePath;
 }
 
-// Support CLI execution
 if (process.argv[1]?.endsWith('reconstruct_section.mjs')) {
   const args = process.argv.slice(2);
   const getArg = (flag, def) => {

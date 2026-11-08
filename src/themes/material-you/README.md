@@ -64,5 +64,3 @@ Material You 在 AstroLib 中完整覆盖通用 UI 壳层：
 4. **Navigation Drawer (Left Sidebar)**：M3 Tonal Surface 侧栏与全圆角导览指示药丸（`secondary-container` 选中态）。
 5. **TOC & Floating Action Controls**：胶囊动作按钮、3px 圆角高亮条、Extended FAB 浮动按钮。
 6. **Mobile Shell**：支持沉浸式顶栏、侧滑抽屉与 Bottom Sheet 拖拽手柄。
-
-

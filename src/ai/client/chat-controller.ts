@@ -72,7 +72,7 @@ const DOCKED_STORAGE_KEY = 'astrolib_ai_docked';
 function decorateFootnotes(html: string, decorate = true): string {
   if (!decorate || !html) return html || '';
   const protectedBlocks: string[] = [];
-  // 保护 pre, code, a 标签，以及包含数学公式的标签与 HTML 属性，避免数学公式下标被误换为链接
+
   let safe = html.replace(/(<(?:pre|code|a|p\s+class="md-math")[^>]*>[\s\S]*?<\/(?:pre|code|a|p)>|<[^>]+>)/gi, (m) => {
     protectedBlocks.push(m);
     return `___FN_PROT_${protectedBlocks.length - 1}___`;
@@ -256,7 +256,7 @@ export class AIAskElement extends HTMLElement {
   }
 
   connectedCallback() {
-    // 单例守卫：确保全站仅存在一个活跃的 ai-ask 根实例（防止 SPA 切页在 main-pane 产生重复实例）
+
     const allInstances = document.querySelectorAll('ai-ask');
     if (allInstances.length > 1) {
       for (const inst of allInstances) {
@@ -277,13 +277,13 @@ export class AIAskElement extends HTMLElement {
         this._history.classList.remove('open');
         this._historyBtn && this._historyBtn.classList.remove('ask-settings-open');
       }
-      // 点击外部关闭模型菜单
+
       if (this._modelMenu && this._modelMenu.style.display !== 'none') {
         if (!this._modelMenu.contains(target) && (!this._modelPillBtn || !this._modelPillBtn.contains(target))) {
           this._closeModelMenu();
         }
       }
-      // 点击外部关闭章节选择器
+
       if (this._chapterPickerPopover && this._chapterPickerPopover.style.display !== 'none') {
         if (!this._chapterPickerPopover.contains(target) && (!this._addChapterBtn || !this._addChapterBtn.contains(target))) {
           this._closeChapterPicker();
@@ -322,7 +322,6 @@ export class AIAskElement extends HTMLElement {
     window.addEventListener('keydown', this._onKeyDownAltD);
     window.addEventListener('keydown', this._onKeyDownEsc);
 
-    // 订阅侧载管理器状态变更：若非 AI 面板激活（如 Esc 或切回大纲），自动将 DOM 归位并关闭浮窗
     this._unsubSideload = sideloadManager.subscribe((state) => {
       if (state.activePanelId !== 'ai' && this._isDocked) {
         this._undockInternal(false);
@@ -441,7 +440,6 @@ export class AIAskElement extends HTMLElement {
       });
     }
 
-    // 章节多选选择器 Popover 元素与交互
     this._addChapterBtn = this.querySelector('#ask-add-chapter-btn') as HTMLButtonElement;
     this._chapterPickerPopover = this.querySelector('#ask-chapter-picker-popover') as HTMLElement;
     this._chapterSearchInput = this.querySelector('#ask-chapter-search-input') as HTMLInputElement;
@@ -484,7 +482,6 @@ export class AIAskElement extends HTMLElement {
       });
     }
 
-    // 模型快捷切换 Popover 菜单与药丸按钮
     this._modelPillBtn = this.querySelector('#ask-model-pill-btn') as HTMLButtonElement;
     this._modelPillName = this.querySelector('#ask-model-pill-name') as HTMLElement;
     this._modelMenu = this.querySelector('#ask-model-menu') as HTMLElement;
@@ -520,7 +517,6 @@ export class AIAskElement extends HTMLElement {
     this._messages = this.querySelector('.ask-messages') as HTMLElement;
     this._bookEl = this.querySelector('.ask-book') as HTMLElement;
 
-    // Apply saved panel dimensions if present
     const dims = getAiPanelDimensions();
     if (this._panel) {
       if (dims.width) this._panel.style.setProperty('--ask-panel-width', `${dims.width}px`);
@@ -531,7 +527,7 @@ export class AIAskElement extends HTMLElement {
 
     if (this._messages) {
       this._messages.addEventListener('click', (e: MouseEvent) => {
-        // 工具面板 Tab 切换 (结果 / 参数)
+
         const tabBtn = (e.target as HTMLElement).closest('.ask-tool-tab');
         if (tabBtn) {
           e.preventDefault();
@@ -556,7 +552,6 @@ export class AIAskElement extends HTMLElement {
           return;
         }
 
-        // 工具数据复制
         const copyBtn = (e.target as HTMLElement).closest('.ask-tool-copy-btn');
         if (copyBtn) {
           e.preventDefault();
@@ -577,7 +572,6 @@ export class AIAskElement extends HTMLElement {
           return;
         }
 
-        // 错误卡片重试
         const retryBtn = (e.target as HTMLElement).closest('.ask-error-retry-btn');
         if (retryBtn) {
           e.preventDefault();
@@ -585,7 +579,6 @@ export class AIAskElement extends HTMLElement {
           return;
         }
 
-        // 错误卡片打开快速设置调整模型
         const settingsTrigger = (e.target as HTMLElement).closest('.ask-error-settings-btn');
         if (settingsTrigger) {
           e.preventDefault();
@@ -593,7 +586,6 @@ export class AIAskElement extends HTMLElement {
           return;
         }
 
-        // 错误卡片完整日志复制
         const copyErrBtn = (e.target as HTMLElement).closest('.ask-error-copy-btn');
         if (copyErrBtn) {
           e.preventDefault();
@@ -689,7 +681,6 @@ export class AIAskElement extends HTMLElement {
     }
     if (this._close) this._close.addEventListener('click', () => this._closePanel());
 
-    // Settings trigger dispatches global event to open quick settings AI panel
     if (this._settingsBtn) {
       this._settingsBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1067,7 +1058,7 @@ export class AIAskElement extends HTMLElement {
           return (article.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 4000);
         }
       } catch {
-        // ignore
+
       }
       return '';
     })();
@@ -1188,7 +1179,6 @@ export class AIAskElement extends HTMLElement {
       this._isDocked = true;
       try { localStorage.setItem(DOCKED_STORAGE_KEY, 'true'); } catch {}
 
-      // 移动整个 ai-ask 元素至右侧栏侧载面板
       mountEl.appendChild(this);
       mountEl.setAttribute('aria-hidden', 'false');
       this.classList.add('is-docked');
@@ -1203,7 +1193,6 @@ export class AIAskElement extends HTMLElement {
         this._panel.classList.add('ask-open');
       }
 
-      // 更新按钮状态
       if (this._dockBtn) {
         this._dockBtn.title = '从侧边栏返回浮窗 (Alt+D)';
         this._dockBtn.setAttribute('aria-label', '从侧边栏返回浮窗');
@@ -1212,23 +1201,19 @@ export class AIAskElement extends HTMLElement {
       if (this._undockIcon) this._undockIcon.style.display = '';
       if (this._sideloadBackBtn) this._sideloadBackBtn.style.display = 'inline-flex';
 
-      // 隐藏 FAB 悬浮球 (同时设置 inline style !important 与 hidden 属性)
       if (this._fab) {
         this._fab.style.setProperty('display', 'none', 'important');
         this._fab.setAttribute('hidden', '');
       }
 
-      // 驱动侧载状态机
       sideloadManager.open('ai');
 
-      // 若开启了“侧载默认引用本章”，自动激活引用 Chip
       if (getAiSideloadRefChapter()) {
         this._enableChapterReference();
       } else {
         this._disableChapterReference();
       }
 
-      // 清除动画 class
       if (!immediate) {
         setTimeout(() => {
           this.classList.remove('docking-in');
@@ -1237,14 +1222,12 @@ export class AIAskElement extends HTMLElement {
         this.classList.remove('docking-in');
       }
 
-      // 维持滚动与焦点
       requestAnimationFrame(() => {
         this._scrollThread();
         this._input && this._input.focus({ preventScroll: true });
       });
     };
 
-    // 若当前浮窗处于展开可见状态且未开启减弱动效，先播放离开淡出动效
     if (!immediate && !prefersReducedMotion && this._panel && this._panel.classList.contains('ask-open')) {
       this._panel.classList.add('docking-out');
       setTimeout(performDock, 130);
@@ -1258,9 +1241,9 @@ export class AIAskElement extends HTMLElement {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const performUndock = () => {
-      // 1. 先恢复侧载默认视图（大纲），使 data-sideload-active 与 --sl-sideload-width 立即同步就绪
+
       sideloadManager.switchToDefault();
-      // 2. 执行浮窗 DOM 挂载回退与状态恢复
+
       this._undockInternal(keepOpen);
     };
 
@@ -1288,7 +1271,6 @@ export class AIAskElement extends HTMLElement {
       mountEl.setAttribute('aria-hidden', 'true');
     }
 
-    // 将整个 ai-ask 移回原始容器 (如 #astro-overlay-root)
     let targetParent = this._originalParent;
     if (!targetParent || (mountEl && targetParent === mountEl) || targetParent.id === 'ai-sidebar-panel' || !document.body.contains(targetParent)) {
       targetParent = document.getElementById('astro-overlay-root') || document.getElementById('astrolib-overlay-root') || document.body;
@@ -1299,7 +1281,6 @@ export class AIAskElement extends HTMLElement {
       targetParent.appendChild(this);
     }
 
-    // 恢复 FAB 悬浮球显现 (仅主动退出侧载时播放微缩放恢复动效)
     if (this._fab) {
       this._fab.style.removeProperty('display');
       this._fab.removeAttribute('hidden');
@@ -1309,7 +1290,6 @@ export class AIAskElement extends HTMLElement {
       }, 240);
     }
 
-    // 更新按钮状态
     if (this._dockBtn) {
       this._dockBtn.title = '前往侧边栏 (Alt+D)';
       this._dockBtn.setAttribute('aria-label', '前往侧边栏');
@@ -1334,7 +1314,7 @@ export class AIAskElement extends HTMLElement {
       };
 
       this._panel.addEventListener('animationend', settleDock, { once: true });
-      // 兜底定时器：在 250ms 入场动效结束后强制切换为静止就绪态，彻底防止二次动画触发
+
       setTimeout(settleDock, 260);
 
       requestAnimationFrame(() => {
@@ -1401,7 +1381,6 @@ export class AIAskElement extends HTMLElement {
     if (cached && cached.meta && cached.meta.title) this._setBookTitle(cached.meta.title);
     else this._setBookTitle(this.getAttribute('data-book-title') || m[2]);
 
-    // 路由切换时，重置章节缓存；若处于侧载且引用激活，更新当前章节引用
     this._bookChaptersCache = null;
     if (this._isDocked && this._refCurrentChapter) {
       const cur = this._getCurrentChapterInfo();
@@ -1414,7 +1393,6 @@ export class AIAskElement extends HTMLElement {
       this._updateContextRow();
     }
 
-    // 探测并平滑恢复侧载停靠态
     if (typeof localStorage !== 'undefined' && localStorage.getItem(DOCKED_STORAGE_KEY) === 'true') {
       const mountEl = document.getElementById('ai-sidebar-panel');
       if (mountEl) {
@@ -1549,7 +1527,6 @@ export class AIAskElement extends HTMLElement {
     const lastUserMsg = t.messages[userIndex].text;
     if (!lastUserMsg) return;
 
-    // 回滚该提问及后续可能失败的消息
     t.messages = t.messages.slice(0, userIndex);
     this._saveActiveThread();
     this._renderThread(t);
@@ -2054,7 +2031,6 @@ export class AIAskElement extends HTMLElement {
     const q = this._input.value.trim();
     if (!q || this._busy) return;
 
-    // 收集引用的章节列表
     const chapterRefs: ReferencedChapter[] = this._referencedChapters.slice();
     if (this._isDocked && this._refCurrentChapter) {
       const cur = this._getCurrentChapterInfo();
@@ -2063,7 +2039,6 @@ export class AIAskElement extends HTMLElement {
       }
     }
 
-    // 确保引用的所有章节文本在发送前已完成拉取 (最多等待 1.2s)
     await Promise.all(
       chapterRefs.map(async (c) => {
         if (!c.text) {
@@ -2100,7 +2075,6 @@ export class AIAskElement extends HTMLElement {
     const sourcesEl = aiMsg.querySelector('.ask-sources') as HTMLElement;
     if (discussion) sourcesEl.style.display = 'none';
 
-    // 立即插入 Material 3 官方微光思考占位
     blocksEl.innerHTML = createM3LoadingHtml({
       variant: 'default',
       size: 'compact',

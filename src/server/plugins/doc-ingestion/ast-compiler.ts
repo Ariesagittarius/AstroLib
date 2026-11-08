@@ -1,11 +1,3 @@
-/**
- * src/server/plugins/doc-ingestion/ast-compiler.ts
- * ============================================================================
- * AstroLib MinerU 结构化 AST 编译器
- * 将 MinerU content_list_v2.json / layout.json / full.md 编译为统一高质量 LayoutBlock
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import path from 'node:path';
 import katex from 'katex';
@@ -20,9 +12,6 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#39;');
 }
 
-/**
- * 将 LaTeX 数学公式安全渲染为 KaTeX HTML
- */
 function renderMath(tex: string, displayMode: boolean): string {
   try {
     return katex.renderToString(tex.trim(), {
@@ -34,14 +23,11 @@ function renderMath(tex: string, displayMode: boolean): string {
   }
 }
 
-/**
- * 核心导出函数：将解压目录编译为结构化 LayoutBlock 集合
- */
 export function compileIngestAST(targetDir: string, taskId: string): LayoutBlock[] {
-  // 1. 优先尝试 MinerU 原生 content_list_v2.json 或 content_list.json
+
   const listFiles = fs.readdirSync(targetDir).filter((f) => f.includes('content_list') && f.endsWith('.json'));
   if (listFiles.length > 0) {
-    // 优先 v2
+
     const file = listFiles.find((f) => f.includes('v2')) || listFiles[0];
     try {
       const data = JSON.parse(fs.readFileSync(path.join(targetDir, file), 'utf-8'));
@@ -49,11 +35,10 @@ export function compileIngestAST(targetDir: string, taskId: string): LayoutBlock
         return compileFromContentList(data, taskId);
       }
     } catch {
-      // fallback
+
     }
   }
 
-  // 2. 次选 layout.json
   const layoutPath = path.join(targetDir, 'layout.json');
   if (fs.existsSync(layoutPath)) {
     try {
@@ -62,28 +47,23 @@ export function compileIngestAST(targetDir: string, taskId: string): LayoutBlock
         return compileFromLayoutJson(raw.pdf_info, taskId);
       }
     } catch {
-      // fallback
+
     }
   }
 
-  // 3. 后备：纯 Markdown (如 Agent 轻量接口)
   const mdFiles = fs.readdirSync(targetDir).filter((f) => f.endsWith('.md'));
   if (mdFiles.length > 0) {
     try {
       const mdContent = fs.readFileSync(path.join(targetDir, mdFiles[0]), 'utf-8');
       return compileFromMarkdown(mdContent, taskId);
     } catch {
-      // ignore
+
     }
   }
 
   return [];
 }
 
-/**
- * 编译器 1：基于 MinerU content_list_v2.json 进行高保真 AST 编译
- * 该文件中的 bbox 坐标均为归一化 1000 分制 [x0, y0, x1, y1] (0 - 1000)
- */
 function compileFromContentList(pages: any[], taskId: string): LayoutBlock[] {
   const blocks: LayoutBlock[] = [];
 
@@ -187,7 +167,7 @@ function compileFromContentList(pages: any[], taskId: string): LayoutBlock[] {
         text = (item.content?.page_aside_text_content || []).map((c: any) => c.content || '').join('');
         html = `<aside class="doc-meta-aside">${escapeHtml(text)}</aside>`;
       } else if (rawType === 'page_number') {
-        // 页码仅在左侧 PDF 保留选框，右侧正文流不渲染独立段落
+
         blockType = 'footer';
         text = (item.content?.page_number_content || []).map((c: any) => c.content || '').join('');
         html = '';
@@ -211,9 +191,6 @@ function compileFromContentList(pages: any[], taskId: string): LayoutBlock[] {
   return blocks;
 }
 
-/**
- * 编译器 2：从 layout.json 的 pdf_info 编译回退
- */
 function compileFromLayoutJson(pdfInfo: any[], taskId: string): LayoutBlock[] {
   const blocks: LayoutBlock[] = [];
 
@@ -269,7 +246,6 @@ function compileFromLayoutJson(pdfInfo: any[], taskId: string): LayoutBlock[] {
         html = `<p class="doc-paragraph">${innerHtml}</p>`;
       }
 
-      // 将 layout.json 的 pt 坐标归一化为 1000 分制
       const normBbox: [number, number, number, number] = [
         Math.round((pb.bbox[0] / pageWidth) * 1000),
         Math.round((pb.bbox[1] / pageHeight) * 1000),
@@ -293,9 +269,6 @@ function compileFromLayoutJson(pdfInfo: any[], taskId: string): LayoutBlock[] {
   return blocks;
 }
 
-/**
- * 编译器 3：从纯 Markdown 编译回退 (Agent 免密接口)
- */
 function compileFromMarkdown(mdContent: string, taskId: string): LayoutBlock[] {
   const blocks: LayoutBlock[] = [];
   const sections = mdContent.split(/\n\n+/);
@@ -329,7 +302,7 @@ function compileFromMarkdown(mdContent: string, taskId: string): LayoutBlock[] {
       blockType = 'table';
       html = `<div class="doc-table-wrapper"><pre>${escapeHtml(trimmed)}</pre></div>`;
     } else {
-      // 普通段落，解析行内公式
+
       let pText = trimmed.replace(/\$([^\$\n]+?)\$/g, (_, eq) => renderMath(eq, false));
       html = `<p class="doc-paragraph">${pText}</p>`;
     }

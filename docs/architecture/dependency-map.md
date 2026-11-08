@@ -71,7 +71,7 @@
   ```typescript
   // 在 src/utils/latex/latex-generator.ts 中
   import type { SlimQuestionItem } from '../../components/exercises/exercise-controller';
-  
+
   // 在 src/utils/typst/typst-generator.ts 中
   import type { SlimQuestionItem } from '../../components/exercises/exercise-controller';
   ```

@@ -1,16 +1,3 @@
-/**
- * src/services/bilingual/heatmap-controller.ts
- * ============================================================================
- * AstroLib 双语关联度热力图客户端控制器 (Heatmap Sheet Controller)
- * ============================================================================
- * 负责：
- * 1. 驱动底部抽屉展开/折叠交互；
- * 2. 在 Canvas 上高性能绘制 M x N 矩阵热力图（避免大篇幅 DOM 节点的重排重绘开销）；
- * 3. 响应阈值滑块拖拽，实时高亮有效关联单元；
- * 4. 悬浮浮层提示与点击联动滚动事件分发。
- * ============================================================================
- */
-
 import type { AlignmentMatrixResult } from './types.ts';
 
 export interface HeatmapCallbacks {
@@ -46,13 +33,11 @@ export class HeatmapController {
   private bindEvents() {
     if (!this.sheetEl) return;
 
-    // 1. 折叠展开切换
     const toggleBtn = this.sheetEl.querySelector('#heatmap-sheet-toggle');
     toggleBtn?.addEventListener('click', () => {
       this.sheetEl?.classList.toggle('is-collapsed');
     });
 
-    // 2. 阈值滑块事件
     this.sliderEl?.addEventListener('input', (e) => {
       const val = parseFloat((e.target as HTMLInputElement).value);
       this.currentThreshold = val;
@@ -63,7 +48,6 @@ export class HeatmapController {
       this.render();
     });
 
-    // 3. Canvas 鼠标交互 (Hover & Click)
     this.canvas?.addEventListener('mousemove', (e) => this.handleCanvasHover(e));
     this.canvas?.addEventListener('mouseleave', () => this.hideTooltip());
     this.canvas?.addEventListener('click', (e) => this.handleCanvasClick(e));
@@ -109,19 +93,18 @@ export class HeatmapController {
 
         if (sim >= this.currentThreshold) {
           activePairs++;
-          // 关联高亮色（基于 Material 3 Primary 蓝紫微光）
+
           const alpha = Math.min(1, Math.max(0.35, sim));
           ctx.fillStyle = `rgba(99, 102, 241, ${alpha})`;
           ctx.fillRect(x + 1, y + 1, this.cellSize - 2, this.cellSize - 2);
 
-          // 超高相似度单元加内边框
           if (sim >= 0.85) {
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
             ctx.lineWidth = 1;
             ctx.strokeRect(x + 1.5, y + 1.5, this.cellSize - 3, this.cellSize - 3);
           }
         } else {
-          // 底网格微弱占位
+
           ctx.fillStyle = 'rgba(150, 150, 150, 0.08)';
           ctx.fillRect(x + 1, y + 1, this.cellSize - 2, this.cellSize - 2);
         }

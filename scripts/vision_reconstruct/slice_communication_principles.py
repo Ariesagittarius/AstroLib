@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+
 """
 scripts/vision_reconstruct/slice_communication_principles.py
 《通信原理（第5版）》（杨鸿文主编，北京邮电大学出版社）专用高清物理切片与压缩工具
@@ -22,7 +22,7 @@ from PIL import Image
 
 DEFAULT_PDF = "task/通信原理(第5版) -- 杨鸿文 -- 5, 2024 -- 北京：北京邮电大学出版社 9787563574919 .pdf"
 DEFAULT_OUT = "test/data/comm_pages"
-OFFSET = 15  # 物理页与原书印刷页偏移常数
+OFFSET = 15
 
 def process_page(pdf_path, p, output_dir, dpi=150, quality=85):
     """处理单个页面的渲染与优化压缩保存"""
@@ -39,7 +39,7 @@ def process_page(pdf_path, p, output_dir, dpi=150, quality=85):
     img = Image.open(io.BytesIO(png_data))
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
-    
+
     img.save(out_file, format="JPEG", quality=quality, optimize=True)
     return p, out_file, os.path.getsize(out_file), True
 

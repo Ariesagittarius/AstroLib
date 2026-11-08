@@ -14,7 +14,7 @@ Some introductory text here.`;
 
     const { maskedText, tokens } = StructurePreservingMasker.mask(source);
 
-    expect(tokens.size).toBe(3); // frontmatter + 2 imports
+    expect(tokens.size).toBe(3);
     expect(maskedText).toContain('⟦ASTRO_TOK_0⟧');
     expect(maskedText).toContain('Some introductory text here.');
 
@@ -36,7 +36,6 @@ End of example.`;
     expect(maskedText).not.toContain('\\begin{array}');
     expect(maskedText).toContain('⟦ASTRO_TOK_0⟧');
 
-    // 模拟翻译服务将其他文本翻译为中文
     const simulatedTranslation = maskedText.replace(
       'Here is an addition in binary:',
       '这是二进制加法的一个示例：'
@@ -55,12 +54,11 @@ End of example.`;
     const { maskedText, tokens } = StructurePreservingMasker.mask(source);
     expect(tokens.size).toBe(3);
 
-    // 模拟翻译，中间故意不留空格
     const simulated = `运行时间为⟦ASTRO_TOK_0⟧，对于任意底数⟦ASTRO_TOK_1⟧，上界为⟦ASTRO_TOK_2⟧。`;
 
     const { restoredText, restoredCount } = StructurePreservingMasker.unmask(simulated, tokens);
     expect(restoredCount).toBe(3);
-    // 验证盘古排版自愈：中文与行内公式之间补齐空格
+
     expect(restoredText).toBe(
       `运行时间为 $O(n)$，对于任意底数 $b \\geq 2$，上界为 $\\lceil \\log_b(N+1) \\rceil$。`
     );
@@ -79,7 +77,7 @@ def fib1(n):
 Notice that \`fib1\` takes exponential time.`;
 
     const { maskedText, tokens } = StructurePreservingMasker.mask(source);
-    expect(tokens.size).toBe(3); // 2 inline code + 1 code block
+    expect(tokens.size).toBe(3);
 
     const simulated = `考虑函数⟦ASTRO_TOK_0⟧：\n\n⟦ASTRO_TOK_1⟧\n\n注意⟦ASTRO_TOK_2⟧需要指数级时间。`;
 
@@ -97,7 +95,7 @@ Naturally, there is nothing special about the number 10.
 </Knowledge>`;
 
     const { maskedText, tokens } = StructurePreservingMasker.mask(source);
-    expect(tokens.size).toBe(2); // opening tag and closing tag
+    expect(tokens.size).toBe(2);
 
     expect(maskedText).toContain('⟦ASTRO_TOK_0⟧');
     expect(maskedText).toContain('Naturally, there is nothing special about the number 10.');
@@ -115,15 +113,12 @@ Naturally, there is nothing special about the number 10.
     const source = `Check $X = Y + Z$ now.`;
     const { tokens } = StructurePreservingMasker.mask(source);
 
-    // 变异 1: 带有内联空格 ⟦ ASTRO_TOK_0 ⟧
     const mutated1 = `请检查 ⟦ ASTRO_TOK_0 ⟧ 结果。`;
     expect(StructurePreservingMasker.unmask(mutated1, tokens).restoredText).toBe(`请检查 $X = Y + Z$ 结果。`);
 
-    // 变异 2: 降级为方括号 [ASTRO_TOK_0]
     const mutated2 = `请检查 [ASTRO_TOK_0] 结果。`;
     expect(StructurePreservingMasker.unmask(mutated2, tokens).restoredText).toBe(`请检查 $X = Y + Z$ 结果。`);
 
-    // 变异 3: 带空格的方括号 [ ASTRO_TOK_0 ]
     const mutated3 = `请检查 [ ASTRO_TOK_0 ] 结果。`;
     expect(StructurePreservingMasker.unmask(mutated3, tokens).restoredText).toBe(`请检查 $X = Y + Z$ 结果。`);
   });

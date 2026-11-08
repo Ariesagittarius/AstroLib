@@ -3,7 +3,6 @@ import re
 
 doc = pymupdf.open("task/通信原理(第5版) -- 杨鸿文 -- 5, 2024 -- 北京：北京邮电大学出版社 9787563574919 .pdf")
 
-# Section 6.5 is from page 218 to 238 (phys 233 to 253, doc indices 232 to 248)
 fig_regex = re.compile(r"图\s*6\s*[\.．]\s*5\s*[\.．]\s*(\d+)")
 
 print("=== Scanning 6.5 Headings & Figures ===")

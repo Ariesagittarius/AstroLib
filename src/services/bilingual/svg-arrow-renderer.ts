@@ -1,16 +1,3 @@
-/**
- * src/services/bilingual/svg-arrow-renderer.ts
- * ============================================================================
- * AstroLib 跨中缝贝塞尔曲线箭头渲染引擎 (SVG Bézier Arrow Renderer)
- * ============================================================================
- * 负责在双语对照/跨书对比并排阅读器中：
- * 1. 动态量算左右两栏段落 DOM 物理坐标；
- * 2. 在中缝（Gutter）SVG 画布上渲染平滑三次贝塞尔（Cubic Bézier）连线；
- * 3. 关联粗细、透明度与置信度动态渐变；
- * 4. 响应页面滚动与窗口尺寸重算。
- * ============================================================================
- */
-
 import type { ParagraphLink } from './types.ts';
 
 export interface ArrowRenderOptions {
@@ -46,9 +33,6 @@ export class SvgArrowRenderer {
     this.container = null;
   }
 
-  /**
-   * 确保 SVG 拥有正规箭头定义 (marker-end)
-   */
   private ensureMarker() {
     if (!this.svg) return;
     let defs = this.svg.querySelector('defs');
@@ -84,9 +68,6 @@ export class SvgArrowRenderer {
     this.svg.setAttribute('viewBox', `0 0 ${rect.width} ${rect.height}`);
   }
 
-  /**
-   * 渲染连线集合
-   */
   renderLinks(links: ParagraphLink[], options: ArrowRenderOptions = {}) {
     if (!this.svg || !this.container) return;
     this.updateSvgDimensions();
@@ -94,7 +75,6 @@ export class SvgArrowRenderer {
     const svgRect = this.svg.getBoundingClientRect();
     const threshold = options.threshold ?? 0.6;
 
-    // 清空现有路径（保留 defs）
     const existingPaths = this.svg.querySelectorAll('.bilingual-arrow-path');
     existingPaths.forEach((p) => p.remove());
 
@@ -108,7 +88,6 @@ export class SvgArrowRenderer {
       const srcRect = srcEl.getBoundingClientRect();
       const tgtRect = tgtEl.getBoundingClientRect();
 
-      // 计算相对于 SVG 容器的坐标
       const x0 = srcRect.right - svgRect.left;
       const y0 = srcRect.top + srcRect.height / 2 - svgRect.top;
 
@@ -127,7 +106,6 @@ export class SvgArrowRenderer {
       path.setAttribute('data-target-id', link.targetId);
       path.setAttribute('data-similarity', link.similarity.toString());
 
-      // 计算类名与高亮状态
       const isSourceActive = options.activeSourceId === link.sourceId;
       const isTargetActive = options.activeTargetIds?.includes(link.targetId);
       const isHovered = options.hoveredLinkId === `${link.sourceId}->${link.targetId}`;
@@ -139,7 +117,6 @@ export class SvgArrowRenderer {
 
       path.setAttribute('class', classNames.join(' '));
 
-      // 动态样式：粗细与透明度
       const strokeWidth = isSourceActive ? 2.5 : Math.max(1, link.similarity * 2);
       const opacity = isSourceActive ? 0.95 : Math.max(0.25, link.similarity * 0.8);
 

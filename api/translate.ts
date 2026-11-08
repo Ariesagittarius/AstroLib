@@ -1,17 +1,3 @@
-/**
- * api/translate.ts
- * ============================================================================
- * AstroLib 生产环境翻译服务端点 (Vercel Serverless Function - Self-Contained)
- * ============================================================================
- * 职责：
- * 1. 响应 CORS 预检 (OPTIONS)，支持生产域名与本地跨域调用；
- * 2. GET /api/translate -> 健康探活与提供商列表；
- * 3. POST /api/translate -> 服务端翻译兜底支持（独立自包含，零外部相对导入，杜绝 Vercel 打包崩溃）；
- * 4. POST /api/translate/batch -> 批量段落翻译；
- * 5. 全面兼容 Node.js runtime (req, res) 与 Web standard Request / Edge runtime。
- * ============================================================================
- */
-
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -31,7 +17,6 @@ async function translateWithGoogle(text: string, apiKey?: string): Promise<strin
   const trimmed = text.trim();
   if (!trimmed) return text;
 
-  // 1. Google Cloud Translation API (v2) if API Key provided
   if (apiKey && apiKey.startsWith('AIzaSy')) {
     try {
       const url = `https://translation.googleapis.com/language/translate/v2?key=${encodeURIComponent(apiKey)}`;
@@ -48,7 +33,6 @@ async function translateWithGoogle(text: string, apiKey?: string): Promise<strin
     } catch {}
   }
 
-  // 2. Chrome Extension Endpoint (clients5)
   try {
     const res = await fetch('https://clients5.google.com/translate_a/t?client=dict-chrome-ex', {
       method: 'POST',
@@ -69,7 +53,6 @@ async function translateWithGoogle(text: string, apiKey?: string): Promise<strin
     }
   } catch {}
 
-  // 3. Fallback GTX
   try {
     const gtxUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-CN&dt=t&q=${encodeURIComponent(trimmed)}`;
     const gtxRes = await fetch(gtxUrl, {
@@ -191,9 +174,6 @@ async function readNodeBody(req: any): Promise<any> {
   }
 }
 
-/**
- * Node.js Runtime Handler (Vercel Standard Node.js Function)
- */
 async function handleNode(req: any, res: any) {
   if (req.method === 'OPTIONS') {
     if (typeof res.status === 'function') {
@@ -268,9 +248,6 @@ async function handleNode(req: any, res: any) {
   return sendNodeJson(res, 405, { ok: false, error: 'Method Not Allowed' });
 }
 
-/**
- * Web Standard Request / Edge Runtime Handler
- */
 async function handleWeb(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -338,9 +315,6 @@ async function handleWeb(req: Request): Promise<Response> {
   return Response.json({ ok: false, error: 'Method Not Allowed' }, { status: 405, headers: CORS_HEADERS });
 }
 
-/**
- * Universal Handler Entrypoint
- */
 export default async function handler(req: any, res?: any) {
   if (!res && typeof req?.headers?.get === 'function') {
     return handleWeb(req);

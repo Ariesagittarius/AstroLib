@@ -1,16 +1,3 @@
-/**
- * src/services/translation/providers/zhipu-provider.ts
- * ============================================================================
- * 智谱开放平台 GLM-4-Flash 学术翻译服务提供商 (Zhipu AI GLM-4 Translator)
- * ============================================================================
- * 优势与特点：
- * 1. 采用智谱开放平台官方永久免费模型 GLM-4-Flash，国内免翻直连；
- * 2. 具备优秀的中英文理科与计算机专业语境推导能力，术语精准规范；
- * 3. 严格遵从指令，原样保护 ⟦ASTRO_TOK_N⟧ 结构占位符与数学环境；
- * 4. 自动过滤思考链与多余代码块包裹，输出沉静严谨的学术教材译文。
- * ============================================================================
- */
-
 import fs from 'node:fs';
 import type { ITranslationProvider, TranslateOptions, TranslationProviderId } from '../types.ts';
 
@@ -51,7 +38,7 @@ export class ZhipuTranslateProvider implements ITranslationProvider {
 
     const payload = {
       model,
-      temperature: 0.1, // 低温度保证学术翻译的严谨度与术语一致性
+      temperature: 0.1,
       messages: [
         { role: 'system', content: ACADEMIC_SYSTEM_PROMPT },
         {
@@ -131,13 +118,6 @@ export class ZhipuTranslateProvider implements ITranslationProvider {
     }
   }
 
-  /**
-   * 智能检索有效 API Key：
-   * 1. 显式入参 options.apiKey
-   * 2. 服务端环境变量 process.env.ZHIPU_API_KEY
-   * 3. 本地 .env 文件中的 ZHIPU_API_KEY 配置
-   * 4. 浏览器 LocalStorage 中的 astrolib_ai_provider_key_zhipu
-   */
   private resolveApiKey(explicitKey?: string): string {
     const trimmed = (explicitKey || '').trim();
     if (trimmed && !trimmed.startsWith('ghp_')) {
@@ -170,9 +150,6 @@ export class ZhipuTranslateProvider implements ITranslationProvider {
     return '';
   }
 
-  /**
-   * 清洗模型输出，移除思考链、XML 边界与多余的 markdown 代码块包裹，防短标题扩写
-   */
   public cleanTranslatedOutput(raw: string, sourceText = ''): string {
     let text = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
     text = text.replace(/<\/?(?:source_text|text_to_translate|translation|translated_text)>/gi, '').trim();

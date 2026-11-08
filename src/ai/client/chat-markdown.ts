@@ -1,35 +1,9 @@
-/**
- * AI 书内问答专用的高性能、防 XSS Markdown 解析器
- *
- * 特性支持：
- * 1. 块级元素：
- *    - 引用块（Blockquote）：`> ...` 与 `&gt; ...`，支持多行聚合与块内嵌套 Markdown
- *    - 表格（GFM Table）：`| ... |`，支持列对齐（`:---:`, `:---`, `---:`）、公式内含竖线（`$|x|$`）与转义竖线（`\|`）
- *    - 代码块（Code Fence）：` ``` ` 与 `~~~`
- *    - 数学公式块（Math Block）：`$$ ... $$`
- *    - 标题（Headings）：`#` 至 `######`
- *    - 分割线（Horizontal Rule）：`---`、`***`、`___`
- *    - 无序列表（Unordered List）：`-`、`*`、`+`
- *    - 有序列表（Ordered List）：`1.` 等
- *    - 段落（Paragraph）
- * 2. 行内元素：
- *    - Markdown 链接与站内 collections 自动徽章化（`makeAiBadgeLink`）
- *    - 行内代码：`` `code` ``
- *    - 粗体：`**bold**`
- *    - 斜体：`*italic*`
- *    - 删除线：`~~del~~`
- *    - 保持 KaTeX 行内公式 `$ ... $` 完整无损
- * 3. 安全防护：
- *    - 严格转义 `<`、`>` 与 `&`，杜绝任意 HTML 标签与脚本注入
- */
-
 export function safeLink(url: string): string {
   let u = (url || '').replace(/["'<>]/g, '').trim();
   if (!u) return '';
   u = u.replace(/&amp;/g, '&');
   if (/^javascript:/i.test(u) || /^data:/i.test(u) || /^vbscript:/i.test(u)) return '';
 
-  // 剔除可能被误捕获的尾部标点（如右括号、句号、分号等）
   u = u.replace(/[),.，。；;!?！？、]+$/, '').trim();
   if (!u) return '';
 
@@ -87,7 +61,6 @@ export function renderInline(s: string, openNew = true): string {
   const rel = openNew ? 'rel="noopener"' : '';
   const placeholders: string[] = [];
 
-  // 1. Markdown 链接 [text](url "title") 或 [text]( <url> )
   s = s.replace(/\[([^\]\n]+)\]\(\s*<?([^)\s>]+)>?(?:\s+["'][^"']*["'])?\s*\)/g, (_m, text, url) => {
     const href = safeLink(url);
     if (!href) return `[${text}](${url})`;
@@ -101,7 +74,6 @@ export function renderInline(s: string, openNew = true): string {
     return `___LINK_PLACEHOLDER_${placeholders.length - 1}___`;
   });
 
-  // 2. 裸路径/各类畸形 collections 链接（含 https://collections/...、//collections/...、/collections/...）
   s = s.replace(/(^|[^\w"'/=])((?:https?:)?\/\/[^\s<>"']*collections\/[^\s<>"']+|\/?collections\/[^\s<>"']+)/gi, (fullMatch, prefix, rawUrl) => {
     let cleanUrl = rawUrl.replace(/[),.，。；;!?！？、]+$/, '');
     const trailing = rawUrl.slice(cleanUrl.length);
@@ -112,26 +84,16 @@ export function renderInline(s: string, openNew = true): string {
     return `${prefix}___LINK_PLACEHOLDER_${placeholders.length - 1}___${trailing}`;
   });
 
-  // 3. 行内基础 Markdown 格式
   s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
   s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
 
-  // 4. 还原所有链接占位符
   s = s.replace(/___LINK_PLACEHOLDER_(\d+)___/g, (_m, idx) => placeholders[Number(idx)]);
 
   return s;
 }
 
-/**
- * 将 Markdown 表格行智能拆分为单元格
- *
- * 核心考量：
- * 1. 数学公式保护：支持公式内部含有管道符（例如 $|x| \le 1$ 或 $\|v\|$），避免公式竖线被误判为列分割符
- * 2. 行内代码保护：支持行内代码含管道符（如 `|`）
- * 3. 反斜杠转义：支持 \| 转义竖线
- */
 export function splitTableRow(line: string): string[] {
   let s = line.trim();
   if (s.startsWith('|')) s = s.slice(1);
@@ -147,14 +109,12 @@ export function splitTableRow(line: string): string[] {
   for (let idx = 0; idx < s.length; idx++) {
     const ch = s[idx];
 
-    // 转义字符
     if (ch === '\\' && idx + 1 < s.length) {
       current += ch + s[idx + 1];
       idx++;
       continue;
     }
 
-    // 代码块切换
     if (ch === '`') {
       inCode = !inCode;
       current += ch;
@@ -166,7 +126,6 @@ export function splitTableRow(line: string): string[] {
       continue;
     }
 
-    // 显示数学公式 $$
     if (ch === '$' && idx + 1 < s.length && s[idx + 1] === '$') {
       if (inDisplayMath) {
         inDisplayMath = false;
@@ -178,7 +137,6 @@ export function splitTableRow(line: string): string[] {
       continue;
     }
 
-    // 行内数学公式 $
     if (ch === '$') {
       if (!inDisplayMath) {
         inInlineMath = !inInlineMath;
@@ -187,7 +145,6 @@ export function splitTableRow(line: string): string[] {
       continue;
     }
 
-    // 表格列分隔符 |
     if (ch === '|' && !inInlineMath && !inDisplayMath) {
       cells.push(current.trim());
       current = '';
@@ -201,9 +158,6 @@ export function splitTableRow(line: string): string[] {
   return cells;
 }
 
-/**
- * 判断是否为有效的 Markdown 表格分割线行（如 |---|:---:|---:|）
- */
 export function isTableDelimiterRow(line: string): boolean {
   if (!line) return false;
   const trimmed = line.trim();
@@ -213,9 +167,6 @@ export function isTableDelimiterRow(line: string): boolean {
   return cells.every((c) => /^\s*:?-{1,}:?\s*$/.test(c));
 }
 
-/**
- * 判断指定行位置是否为 Markdown 表格起始（即当前行为表头且下一行为有效分割线）
- */
 export function isTableAt(lines: string[], idx: number): boolean {
   if (idx + 1 >= lines.length) return false;
   const header = lines[idx].trim();
@@ -227,21 +178,16 @@ export function isTableAt(lines: string[], idx: number): boolean {
   return hCells.length > 0 && dCells.length > 0;
 }
 
-/**
- * 递归/顺序解析 Markdown 块级元素
- */
 export function parseBlocks(lines: string[], openNew = true): string {
   const out: string[] = [];
   let i = 0;
   const inline = (t: string) => renderInline(t, openNew);
 
-  // 块起始探测正则（涵盖标题、引用块 > / &gt;、列表、公式块 $$、代码块）
   const BLOCK_START = /^(#{1,6})\s|^\s*(?:>|&gt;)(?:\s|$|>)|^\s*[-*+]\s|^\s*\d+[.)]\s|^\s*\$\$\s*$|^\s*\$\$.*|^\s*(?:```+|~~~+)/;
 
   while (i < lines.length) {
     const line = lines[i];
 
-    // 1. 代码块
     const fence = line.match(/^\s*(```+|~~~+)\s*([\w-]*)?\s*$/);
     if (fence) {
       const marker = fence[1][0];
@@ -256,7 +202,6 @@ export function parseBlocks(lines: string[], openNew = true): string {
       continue;
     }
 
-    // 2. $$ 数学块（支持单行与多行，含流式截断未闭合 $$ 的自动兜底闭合）
     if (/^\s*\$\$/.test(line)) {
       const buf = [line.trim()];
       if (/^\s*\$\$.*\$\$\s*$/.test(line) && line.trim().length > 4) {
@@ -281,7 +226,6 @@ export function parseBlocks(lines: string[], openNew = true): string {
       continue;
     }
 
-    // 3. 标题
     const h = line.match(/^(#{1,6})\s+(.*)$/);
     if (h) {
       out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`);
@@ -289,14 +233,12 @@ export function parseBlocks(lines: string[], openNew = true): string {
       continue;
     }
 
-    // 4. 分割线
     if (/^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(line)) {
       out.push('<hr/>');
       i++;
       continue;
     }
 
-    // 5. 引用块（Blockquote）：支持 > 与 &gt;，支持多行与块内嵌套 Markdown
     if (/^\s*(?:>|&gt;)\s?/.test(line)) {
       const buf: string[] = [];
       while (i < lines.length && /^\s*(?:>|&gt;)\s?/.test(lines[i])) {
@@ -308,7 +250,6 @@ export function parseBlocks(lines: string[], openNew = true): string {
       continue;
     }
 
-    // 6. GFM 表格
     if (isTableAt(lines, i)) {
       const headerLine = lines[i];
       const delimLine = lines[i + 1];
@@ -363,7 +304,6 @@ export function parseBlocks(lines: string[], openNew = true): string {
       continue;
     }
 
-    // 7. 无序列表
     const ulMatch = line.match(/^\s*[-*+]\s+(.*)$/);
     if (ulMatch) {
       const items: string[][] = [[ulMatch[1]]];
@@ -395,7 +335,6 @@ export function parseBlocks(lines: string[], openNew = true): string {
       continue;
     }
 
-    // 8. 有序列表
     const olMatch = line.match(/^\s*(\d+)[.)]\s+(.*)$/);
     if (olMatch) {
       const startNum = parseInt(olMatch[1], 10) || 1;
@@ -429,7 +368,6 @@ export function parseBlocks(lines: string[], openNew = true): string {
       continue;
     }
 
-    // 9. 普通段落
     if (!/^\s*$/.test(line)) {
       const buf = [line];
       i++;
@@ -447,14 +385,11 @@ export function parseBlocks(lines: string[], openNew = true): string {
   return out.join('\n');
 }
 
-/**
- * 外部主调用接口：将输入的 Markdown 字符串转换为渲染 HTML
- */
 export function mdToHtml(md: string, openNew = true): string {
   if (!md) return '';
-  // 1. 归一化行首可能已被上游转义的引用标记（如 &gt; 转回 >）
+
   const normalized = md.replace(/^(\s*)&gt;/gm, '$1>');
-  // 2. 严格转义 <、> 与 &，杜绝 HTML 标签注入；引用符 > 转为 &gt; 并由 parseBlocks 精确识别
+
   const src = normalized.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const lines = src.split(/\r?\n/);
   return parseBlocks(lines, openNew);

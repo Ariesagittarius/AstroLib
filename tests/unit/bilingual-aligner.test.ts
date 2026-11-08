@@ -13,7 +13,7 @@ describe('BipartiteMatcher', () => {
 
     expect(BipartiteMatcher.cosineSimilarity(a, b)).toBe(1);
     expect(BipartiteMatcher.cosineSimilarity(a, c)).toBe(0);
-    expect(BipartiteMatcher.cosineSimilarity(a, d)).toBe(0); // clamped to 0
+    expect(BipartiteMatcher.cosineSimilarity(a, d)).toBe(0);
   });
 
   it('builds an M x N similarity matrix', () => {
@@ -65,7 +65,7 @@ describe('BipartiteMatcher', () => {
 
   it('applies monotonic bias for sequential chapters when enabled', () => {
     const matrix = [
-      [0.85, 0.3, 0.86], // src-0 is slightly similar to tgt-2, but tgt-2 is far away
+      [0.85, 0.3, 0.86],
     ];
     const sources: ParagraphToken[] = [
       { id: 'src-0', index: 0, text: 'first paragraph', type: 'paragraph' },
@@ -76,7 +76,6 @@ describe('BipartiteMatcher', () => {
       { id: 'tgt-2', index: 2, text: '结尾段', type: 'paragraph' },
     ];
 
-    // Without monotonic bias, tgt-2 has higher score (0.86 > 0.85)
     const unbiased = BipartiteMatcher.extractLinks(matrix, sources, targets, {
       threshold: 0.6,
       maxPerSource: 1,
@@ -84,7 +83,6 @@ describe('BipartiteMatcher', () => {
     });
     expect(unbiased[0].targetId).toBe('tgt-2');
 
-    // With monotonic bias, tgt-2 is penalized because of position distance (posDiff = 1.0)
     const biased = BipartiteMatcher.extractLinks(matrix, sources, targets, {
       threshold: 0.6,
       maxPerSource: 1,
@@ -120,7 +118,7 @@ describe('BilingualAlignerClient (Multilingual Paragraph Tokenizer & Fallback)',
     expect(tokensEn.has('1960')).toBe(true);
     expect(tokensEn.has('karatsuba')).toBe(true);
     expect(tokensEn.has('$t(n)=3t(n/2)+o(n)$')).toBe(true);
-    // Cognate mapping: algorithm -> 算法, divide -> 分治
+
     expect(tokensEn.has('算法')).toBe(true);
     expect(tokensEn.has('分治')).toBe(true);
 
@@ -148,14 +146,12 @@ describe('BilingualAlignerClient (Multilingual Paragraph Tokenizer & Fallback)',
 
     const matrix = BilingualAlignerClient.fallbackLexicalMatrix(sources, targets);
 
-    // Diagonal elements should be highest
     expect(matrix[0][0]).toBeGreaterThan(matrix[0][1]);
     expect(matrix[1][1]).toBeGreaterThan(matrix[1][0]);
     expect(matrix[2][2]).toBeGreaterThan(matrix[2][0]);
 
-    // Heading match score
     expect(matrix[0][0]).toBeGreaterThan(0.5);
-    // Formula and number match scores
+
     expect(matrix[1][1]).toBeGreaterThan(0.5);
     expect(matrix[2][2]).toBeGreaterThan(0.5);
 
@@ -174,4 +170,3 @@ describe('BilingualAlignerClient (Multilingual Paragraph Tokenizer & Fallback)',
     expect(links[2].targetId).toBe('tgt-2');
   });
 });
-

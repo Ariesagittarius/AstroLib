@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+
 """
 Algorithms (Sanjoy Dasgupta, Christos Papadimitriou, Umesh Vazirani - DPV)
 MinerU 高清学术蓝本全量导入流水线
@@ -164,11 +164,11 @@ SECTIONS_SPECS = [
 def clean_math(math_str: str) -> str:
     """清理 KaTeX 不支持的 HTML 实体与异常宏。"""
     s = math_str
-    # 逆转义 HTML 实体为数学符号
+
     s = s.replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&')
-    # 修复非标宏 \nequiv -> \not\equiv
+
     s = re.sub(r'\\nequiv\b', r'\\not\\equiv', s)
-    # 修复 \text{... y_{i} ...} 在文本模式下的下标错误
+
     s = s.replace(
         r"\text {there is a setting of the y_{i} 's for which}",
         r"\text {there is a setting of the } y_i \text{ 's for which}"
@@ -183,10 +183,8 @@ def sanitize_mdx(text: str) -> str:
         protected.append(m.group(0))
         return f"___PROTECTED_{idx}___"
 
-    # 1. 保护代码块
     t = re.sub(r'```[\s\S]*?```', protect, text)
 
-    # 2. 保护行间公式
     def protect_display_math(m):
         math_s = clean_math(m.group(0))
         idx = len(protected)
@@ -194,7 +192,6 @@ def sanitize_mdx(text: str) -> str:
         return f"___PROTECTED_{idx}___"
     t = re.sub(r'\$\$[\s\S]*?\$\$', protect_display_math, t)
 
-    # 3. 保护行内公式 (使用负向后顾保证不匹配 \$ 货币符号)
     def protect_inline_math(m):
         math_s = clean_math(m.group(0))
         idx = len(protected)
@@ -202,21 +199,18 @@ def sanitize_mdx(text: str) -> str:
         return f"___PROTECTED_{idx}___"
     t = re.sub(r'(?<!\\)\$([^\$\n]+?)(?<!\\)\$', protect_inline_math, t)
 
-    # 4. 保护合法的 AstroLib 标签与标准 HTML 标签
     t = re.sub(
         r'</?(?:Exercise|Knowledge|Example|Analysis|Solution|Variant|Note|Block|Method|Guide|img|sup|sub|table|thead|tbody|tfoot|tr|td|th|p|b|i|strong|em|code|pre|div|a|span|h1|h2|h3|h4|h5|h6)(?:\s+[^>\n]*)?/?>',
         protect,
         t
     )
 
-    # 5. 转义正文中裸 < 为 &lt;
     t = t.replace('<', '&lt;')
-    # 6. 转义正文中花括号（防止被当作 JSX 表达式）
+
     t = t.replace('{', '&#123;').replace('}', '&#125;')
-    # 7. 转义正文中波浪号（表格内防止被误判删除线）
+
     t = t.replace('~', '～')
 
-    # 8. 还原受保护内容
     for idx, orig in enumerate(protected):
         t = t.replace(f"___PROTECTED_{idx}___", orig)
 
@@ -224,38 +218,32 @@ def sanitize_mdx(text: str) -> str:
 
 def clean_ocr_artifacts(text: str) -> str:
     """清理 MinerU 文本中的 OCR 误判标号与字符。"""
-    # 规范化连字
+
     for k, v in LIGATURE_MAP.items():
         text = text.replace(k, v)
 
-    # 清理字符 descender 被误判为 <sub>
     text = re.sub(r'<sub>([a-zA-Z\s,.\(\)]+)</sub>', r'\1', text)
-    # 清理非数字的 <sup>
+
     text = re.sub(r'<sup>([a-zA-Z\s,.\(\)]{2,})</sup>', r'\1', text)
 
-    # 规范化引号
     text = text.replace('\x92', "'").replace('\x91', "'")
     text = text.replace('’', "'").replace('‘', "'")
 
-    # 转换原生 HTML <img> 标签为 Markdown 格式，符合 Astro 打包规范
     text = re.sub(r'<img\b[^>]*src=["\'](images/[^"\']+)["\'][^>]*>', r'![](\1)', text)
     text = re.sub(r'<img\b[^>]*src=["\']([^"\']+)["\'][^>]*>', r'![](\1)', text)
 
-    # 移除 mineru-algorithm 上的 inline style（由全局 CSS .mineru-algorithm 控制，防止 JSX 报错）
     text = re.sub(
         r'<div class="mineru-algorithm"[^>]*>',
         r'<div class="mineru-algorithm">',
         text
     )
 
-    # 修复 03.1 中边框引用处的 OCR 乱码公式
     text = re.sub(
         r'shares a border with \$y\s*\.\s*\\overset\s*\{[^\$]+\}\$',
         r'shares a border with $y$.”',
         text
     )
 
-    # 转换被包裹为表格的 Trees Box
     def replace_trees_table(m):
         content = m.group(0)
         if '<td>Trees</td>' in content or '<td>Trees </td>' in content:
@@ -270,7 +258,7 @@ def clean_ocr_artifacts(text: str) -> str:
 
 def process_exercise_section(sec_content: str, ch_title: str) -> str:
     """将课后习题切分并完整封装入 <Exercise title="Exercise X.Y"> 卡片。"""
-    # 寻找 exercises 开头
+
     m_head = re.search(r'^##\s+Exercises\b', sec_content, re.MULTILINE)
     preamble = ""
     rest = sec_content
@@ -278,15 +266,13 @@ def process_exercise_section(sec_content: str, ch_title: str) -> str:
         preamble = f"## {ch_title}\n\n"
         rest = sec_content[m_head.end():].strip()
 
-    # 切分习题条目: 匹配行首数字编号如 0.1. 或 ## 7.12.
-    # 使用正则匹配所有题目的起始位置
     ex_pattern = re.compile(r'^(?:#{0,6}\s*)?(\d+\.\d+)\.?\s+(.*)$', re.MULTILINE)
     matches = list(ex_pattern.finditer(rest))
     if not matches:
         return preamble + rest
 
     out_chunks = []
-    # 题目前可能存在的说明性引言
+
     first_start = matches[0].start()
     if first_start > 0:
         intro_text = rest[:first_start].strip()
@@ -299,8 +285,6 @@ def process_exercise_section(sec_content: str, ch_title: str) -> str:
         end_pos = matches[i + 1].start() if i + 1 < len(matches) else len(rest)
         chunk = rest[start_pos:end_pos].strip()
 
-        # 去除题号前缀，获取题干
-        # 匹配第一行并提取内容
         first_line_end = chunk.find('\n')
         if first_line_end != -1:
             first_line = chunk[:first_line_end]
@@ -312,7 +296,6 @@ def process_exercise_section(sec_content: str, ch_title: str) -> str:
             m_first = ex_pattern.match(chunk)
             body = m_first.group(2).strip() if m_first else chunk
 
-        # 封装为 Exercise 卡片
         card = f'<Exercise title="Exercise {ex_num}">\n\n{body}\n\n</Exercise>\n'
         out_chunks.append(card)
 
@@ -322,7 +305,6 @@ def process_regular_section(sec_content: str, sec_num_title: str) -> str:
     """处理常规小节：章节引言格式化、Box 卡片化、定理与引理卡片化。"""
     c = sec_content
 
-    # 1. 规范化主小节标题与章级引言
     c = re.sub(r'^#\s+Chapter 0\s*\n+#\s+Prologue', '## Prologue', c, flags=re.MULTILINE)
     c = re.sub(r'^##\s+Chapter 1\s*\n+#\s+Algorithms with numbers', '## Chapter 1: Algorithms with numbers', c, flags=re.MULTILINE)
     c = re.sub(r'^##\s+Chapter 2\s*\n+#\s+Divide-and-conquer algorithms', '## Chapter 2: Divide-and-conquer algorithms', c, flags=re.MULTILINE)
@@ -335,16 +317,14 @@ def process_regular_section(sec_content: str, sec_num_title: str) -> str:
     c = re.sub(r'^##\s+Chapter 9\s*\n+#\s+Coping with NP-completeness', '## Chapter 9: Coping with NP-completeness', c, flags=re.MULTILINE)
     c = re.sub(r'^##\s+Chapter 10\s*\n+##\s+Quantum algorithms', '## Chapter 10: Quantum algorithms', c, flags=re.MULTILINE)
 
-    # 2. 识别并包装 Box
-    # 特殊处理 Bases and logs（其在 1.1.1 节中作为插页打断了正文加法句子）
     if '## Bases and logs' in c:
         m_box = re.search(r'##\s+Bases and logs\b([\s\S]*?)(5\.\s+It is even the sum[^\n]+)', c)
         if m_box:
             box_content = m_box.group(1).strip() + "\n\n" + m_box.group(2).strip()
             box_card = f'<Knowledge title="Box: Bases and logs">\n\n{box_content}\n\n</Knowledge>'
-            # 移除原处插入的 Box 文本，使得前后正文自然衔接
+
             c = c[:m_box.start()].rstrip() + "\n\n" + c[m_box.end():].lstrip()
-            # 插入到 1.1.2 节开始之前
+
             m_next_sec = re.search(r'(?=##\s+1\.1\.2\b)', c)
             if m_next_sec:
                 c = c[:m_next_sec.start()] + box_card + "\n\n" + c[m_next_sec.start():]
@@ -359,7 +339,7 @@ def process_regular_section(sec_content: str, sec_num_title: str) -> str:
         if m:
             box_header = m.group(1)
             start_idx = m.start()
-            # 寻找下一个 ## 标题
+
             next_h = re.search(r'\n(?=##\s+)', c[m.end():])
             if next_h:
                 end_idx = m.end() + next_h.start()
@@ -369,13 +349,11 @@ def process_regular_section(sec_content: str, sec_num_title: str) -> str:
             clean_box = f'<Knowledge title="Box: {box}">\n\n{box_body}\n\n</Knowledge>'
             c = c[:start_idx] + clean_box + c[end_idx:]
 
-    # 3. 识别并包装 Lemma / Property / Theorem
     def replace_lemma_property(m):
         kind = m.group(1)
         rest = m.group(2).strip()
         return f'<Knowledge title="{kind}">\n\n{rest}\n\n</Knowledge>'
 
-    # 匹配独立的 Lemma / Property 段落（行首以 Lemma / Property 开头）
     c = re.sub(
         r'^(Lemma|Property|Theorem)\s+([^\n]+(?:\n(?!\n|[#<]|Proof\b)[^\n]+)*)',
         replace_lemma_property,
@@ -383,7 +361,6 @@ def process_regular_section(sec_content: str, sec_num_title: str) -> str:
         flags=re.MULTILINE
     )
 
-    # 4. 识别并包装 Proof
     def replace_proof(m):
         body = m.group(1).strip()
         return f'<Solution title="Proof">\n\n{body}\n\n</Solution>'
@@ -400,7 +377,7 @@ def process_regular_section(sec_content: str, sec_num_title: str) -> str:
 def main():
     print("=== Step 1: Synchronizing images from Part 1 and Part 2 ===")
     os.makedirs(IMAGES_DIR, exist_ok=True)
-    # 清理旧图片
+
     for f in os.listdir(IMAGES_DIR):
         fp = os.path.join(IMAGES_DIR, f)
         if os.path.isfile(fp):
@@ -442,7 +419,6 @@ def main():
         section_ranges.append((fname, title, abs_pos))
         curr_pos = abs_pos + len(match.group(0))
 
-    # 确定历史注记截止点（忽略纸质书静态页码 Index）
     hist_pos = section_ranges[-1][2]
     idx_m = re.search(r'^##\s+Index\b', combined[hist_pos:], re.MULTILINE)
     total_bound = hist_pos + idx_m.start() if idx_m else len(combined)
@@ -451,7 +427,7 @@ def main():
 
     print("\n=== Step 4: Generating and sanitizing MDX files ===")
     os.makedirs(OUT_DIR, exist_ok=True)
-    # 删除旧的 MDX 文件
+
     for f in os.listdir(OUT_DIR):
         if f.endswith('.mdx'):
             os.remove(os.path.join(OUT_DIR, f))
@@ -461,22 +437,19 @@ def main():
         end_pos = section_ranges[i + 1][2] if i + 1 < len(section_ranges) else total_bound
         raw_content = combined[start_pos:end_pos].strip()
 
-        # 根据篇章类型执行结构增强
         if fname.endswith('_exercises.mdx'):
             processed_content = process_exercise_section(raw_content, title)
         elif fname == '00_preface.mdx':
-            # 移除开头的 ## Preface
+
             processed_content = re.sub(r'^##\s+Preface\s*', '', raw_content).strip()
         elif fname.startswith('11.1_'):
-            # 移除开头的 # Historical notes and further reading
+
             processed_content = re.sub(r'^#\s+Historical notes and further reading\s*', '## Historical notes and further reading\n\n', raw_content).strip()
         else:
             processed_content = process_regular_section(raw_content, title)
 
-        # 执行严格的 MDX 数学感知字符转义
         final_body = sanitize_mdx(processed_content)
 
-        # 写入目标文件
         file_content = IMPORTS_HEADER.format(title=title) + final_body + "\n"
         out_path = os.path.join(OUT_DIR, fname)
         with open(out_path, 'w', encoding='utf-8') as out_f:

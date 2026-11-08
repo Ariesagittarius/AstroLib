@@ -1,13 +1,10 @@
 ---
-// src/pages/print.astro
-// 该页面在构建/请求时自动根据选定图书抓取并拼装全书所有章节，提供一键 PDF 导出
 import { getCollection, render } from 'astro:content';
 import { collections } from '../config/collections.config.mjs';
 import Analytics from '../components/Analytics.astro';
 import 'katex/dist/katex.min.css';
 import '../styles/custom.css';
 
-// 收集全站图书扁平列表
 const allBooks = [];
 for (const col of collections) {
   for (const book of col.books || []) {
@@ -22,7 +19,6 @@ for (const col of collections) {
   }
 }
 
-// 获取当前请求指定的图书（支持 ?col=math&book=math_senior 或 ?book=math_senior 或 ?key=math/math_senior）
 const requestedCol = Astro.url.searchParams.get('col');
 const requestedBook = Astro.url.searchParams.get('book');
 const requestedKey = Astro.url.searchParams.get('key');
@@ -36,7 +32,6 @@ if (requestedKey) {
   if (found) currentBook = found;
 }
 
-// 目标路径前缀：collections/{colSlug}/{bookSlug}
 const prefix = `collections/${currentBook.colSlug}/${currentBook.bookSlug}`;
 
 const docs = await getCollection('docs');
@@ -45,12 +40,10 @@ function naturalSort(a, b) {
   return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
 }
 
-// 筛选出该图书下的所有章节，并按文件路径进行自然排序
 const bookDocs = docs
   .filter((doc) => doc.id.startsWith(prefix) || doc.id.startsWith(`${prefix}/`))
   .sort((a, b) => naturalSort(a.id, b.id));
 
-// 预渲染当前图书的所有章节 MDX
 const renderedChapters = await Promise.all(
   bookDocs.map(async (doc) => {
     const { Content } = await render(doc);
@@ -69,8 +62,7 @@ const renderedChapters = await Promise.all(
     <meta charset="utf-8" />
     <title>导出《{currentBook.bookTitle}》为 PDF | 打印控制台</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style>
-      body {
+    <style>body {
         font-family: system-ui, -apple-system, sans-serif;
         color: #1e293b;
         background-color: #fff;
@@ -155,7 +147,7 @@ const renderedChapters = await Promise.all(
       }
 
       .chapter-section {
-        /* 在打印时，每个新章节都自动强制从新一页开始 */
+
         page-break-before: always;
         break-before: page;
         margin-bottom: 4rem;
@@ -169,13 +161,12 @@ const renderedChapters = await Promise.all(
         color: #0f172a;
       }
 
-      /* 针对打印机排版的专门优化 CSS */
       @media print {
         body {
           padding: 0;
         }
         .print-header {
-          display: none !important; /* 打印输出时隐藏控制面板 */
+          display: none !important;
         }
         .book-cover-page {
           padding-top: 15vh;
@@ -187,12 +178,12 @@ const renderedChapters = await Promise.all(
           page-break-before: always !important;
           break-before: page !important;
         }
-        /* 防止例题、公式、卡片在页缝处被生硬切断 */
-        .example-card, 
-        .variant-card, 
-        .summary-card, 
-        .method-card, 
-        .knowledge-card, 
+
+        .example-card,
+        .variant-card,
+        .summary-card,
+        .method-card,
+        .knowledge-card,
         .fallback-block,
         .exercise-card,
         .note-block,
@@ -202,14 +193,14 @@ const renderedChapters = await Promise.all(
           break-inside: avoid !important;
         }
       }
-    </style>
+</style>
   </head>
   <body>
-    <!-- 打印引导面板 -->
+
     <header class="print-header">
       <h1 style="margin: 0 0 0.5rem 0; font-size: 1.6rem;">📖 全书 PDF 导出与打印控制台</h1>
       <p style="margin: 0; color: #475569;">已成功加载 <b>《{currentBook.bookTitle}》</b> 共 {renderedChapters.length} 篇章节。</p>
-      
+
       <div class="book-selector">
         <label for="book-select" style="font-weight: 600; color: #334155;">切换图书：</label>
         <select id="book-select" class="book-select-dropdown" onchange="location.href = '?key=' + this.value">
@@ -233,7 +224,6 @@ const renderedChapters = await Promise.all(
       </div>
     </header>
 
-    <!-- 全书内容汇总 -->
     <main class="book-container">
       <div class="book-cover-page">
         <h1 class="book-cover-title">{currentBook.bookTitle}</h1>
@@ -251,10 +241,7 @@ const renderedChapters = await Promise.all(
       }
     </main>
 
-    <!-- 打印前自动展开脚本 -->
-    <script is:inline>
-      // 在打印事件触发前，自动将页面上所有折叠的“查看解析”盒子展开，确保导出的 PDF 包含完整步骤
-      window.addEventListener('DOMContentLoaded', () => {
+    <script is:inline>window.addEventListener('DOMContentLoaded', () => {
         const details = document.querySelectorAll('details');
         details.forEach((d) => d.setAttribute('open', ''));
       });
@@ -262,7 +249,7 @@ const renderedChapters = await Promise.all(
         const details = document.querySelectorAll('details');
         details.forEach((d) => d.setAttribute('open', ''));
       });
-    </script>
+</script>
     <Analytics />
   </body>
 </html>
